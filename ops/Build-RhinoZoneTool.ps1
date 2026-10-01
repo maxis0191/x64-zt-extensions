@@ -4,7 +4,8 @@ $repo = Split-Path $PSScriptRoot -Parent
 if (!$ToolRoot) { $ToolRoot = Join-Path $repo 'tools/x64-zt' }
 $ToolRoot = (Resolve-Path -LiteralPath $ToolRoot).Path
 $revision = '6eebdd8a34c1f1f6b970fb5b15c0d0d360b1f5e4'
-if ((git -C $ToolRoot rev-parse HEAD) -ne $revision) { throw 'Unexpected ZoneTool revision.' }
+git -C $ToolRoot merge-base --is-ancestor $revision HEAD
+if ($LASTEXITCODE) { throw 'Unexpected ZoneTool ancestry.' }
 function Write-Overlay([string]$Relative, [scriptblock]$Transform) {
     $base = ((git -C $ToolRoot show ($revision + ':' + $Relative)) -join "`n").TrimEnd() + "`n"
     $generated = & $Transform $base
@@ -46,6 +47,23 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zone.cpp' {
 }
 Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
     param($base)
+    $capturePhysics = @'
+        // Capture the serialized Havok packfile before DB registration mutates it.
+        if (globals.dump && filesystem::get_fastfile() == "paris_rhino" &&
+            type == ASSET_TYPE_PHYSICSASSET && std::string(header->physicsAsset->name) == "ragdoll_alien_queen")
+        {
+            physics_asset::dump(header->physicsAsset);
+            for (const auto* suffix : {"", ".hkx"})
+            {
+                const auto relative = std::string("physicsasset/ragdoll_alien_queen") + suffix;
+                const auto destination = std::string("zonetool/paris_rhino/") + relative;
+                std::filesystem::create_directories(std::filesystem::path(destination).parent_path());
+                std::filesystem::copy_file(filesystem::get_dump_path() + relative, destination,
+                    std::filesystem::copy_options::overwrite_existing);
+            }
+        }
+'@
+    $base = Replace-One $base 'dump_asset(&xasset);' ($capturePhysics.Replace("`r`n","`n") + "`ndump_asset(&xasset);")
     $extract = @'
         if (std::find(args.begin(), args.end(), "-rhino-extract") != args.end())
         {
