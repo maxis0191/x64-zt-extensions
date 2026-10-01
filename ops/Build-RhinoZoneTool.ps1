@@ -148,6 +148,49 @@ Write-Overlay 'src/zonetool/zonetool/iw7/assets/techset.cpp' {
     }
     $base
 }
+Write-Overlay 'src/zonetool/zonetool/iw7/assets/gfximage.cpp' {
+    param($base)
+    $portableDump = @'
+        if (asset->streamed && utils::flags::has_flag("rhino_portable_images") &&
+            std::string(asset->name).starts_with("alien_queen_body_a_"))
+        {
+            dump_streamed_image(asset, false);
+            const auto source = filesystem::get_dump_path() + "streamed_images/";
+            const auto destination = std::string("zonetool/paris_rhino/streamed_images/");
+            std::filesystem::create_directories(destination);
+            const auto name = clean_name(asset->name);
+            std::filesystem::copy_file(source + name + ".iw7Image", destination + name + ".iw7Image",
+                std::filesystem::copy_options::overwrite_existing);
+            int streams = 0;
+            for (int i = 0; i < 4; ++i)
+            {
+                const auto file = name + "_stream" + std::to_string(i) + ".pixels";
+                if (!std::filesystem::exists(source + file)) continue;
+                std::filesystem::copy_file(source + file, destination + file,
+                    std::filesystem::copy_options::overwrite_existing);
+                ++streams;
+            }
+            if (!streams) throw std::runtime_error("No freshly decoded Rhino texture streams");
+            ZONETOOL_INFO("Portable Rhino image %s: %d streams", asset->name, streams);
+            return;
+        }
+'@
+    $base = Replace-One $base 'void gfx_image::dump(GfxImage* asset)' ('void gfx_image::dump(GfxImage* asset)')
+    $marker = "void gfx_image::dump(GfxImage* asset)`n`t{"
+    $base = Replace-One $base $marker ($marker + "`n" + $portableDump.Replace("`r`n","`n"))
+    $preferPortable = @'
+        if (utils::flags::has_flag("rhino_portable_images") &&
+            filesystem::get_fastfile() == "paris_rhino" && name.starts_with("alien_queen_body_a_"))
+        {
+            this->asset_ = this->parse_streamed_image(name, mem);
+            if (!this->asset_) throw std::runtime_error("Portable Rhino image missing");
+            if (this->asset_->pixelData) throw std::runtime_error("Unexpected resident pixels in streamed Rhino image");
+            memset(&this->asset_->texture, 0, sizeof(this->asset_->texture));
+            return;
+        }
+'@
+    Replace-One $base 'this->asset_ = this->parse(name, mem);' ($preferPortable.Replace("`r`n","`n") + "`n`t`tthis->asset_ = this->parse(name, mem);")
+}
 $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
 $installation = & $vswhere -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1
 if (!$installation) { throw 'VS2022 C++/ATL toolchain not found.' }
