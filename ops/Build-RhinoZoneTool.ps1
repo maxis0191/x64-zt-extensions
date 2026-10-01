@@ -49,24 +49,26 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
     param($base)
     $capturePhysics = @'
         // Capture the serialized Havok packfile before DB registration mutates it.
-        if (globals.dump && filesystem::get_fastfile() == "paris_rhino" &&
-            type == ASSET_TYPE_PHYSICSASSET && std::string(header->physicsAsset->name) == "ragdoll_alien_queen")
+        if (globals.dump && type == ASSET_TYPE_PHYSICSASSET && header->physicsAsset &&
+            header->physicsAsset->name && std::string(header->physicsAsset->name) == "ragdoll_alien_queen")
         {
             physics_asset::dump(header->physicsAsset);
-            for (const auto* suffix : {"", ".hkx"})
-            {
-                const auto relative = std::string("physicsasset/ragdoll_alien_queen") + suffix;
-                const auto destination = std::string("zonetool/paris_rhino/") + relative;
-                std::filesystem::create_directories(std::filesystem::path(destination).parent_path());
-                std::filesystem::copy_file(filesystem::get_dump_path() + relative, destination,
-                    std::filesystem::copy_options::overwrite_existing);
-            }
         }
 '@
     $base = Replace-One $base 'dump_asset(&xasset);' ($capturePhysics.Replace("`r`n","`n") + "`ndump_asset(&xasset);")
     $extract = @'
         if (std::find(args.begin(), args.end(), "-rhino-extract") != args.end())
         {
+            if (std::filesystem::exists("dump"))
+            {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator("dump"))
+                {
+                    if (!entry.is_regular_file()) continue;
+                    const auto file = entry.path().filename().string();
+                    if (file == "ragdoll_alien_queen" || file == "ragdoll_alien_queen.hkx")
+                        std::filesystem::remove(entry.path());
+                }
+            }
             filesystem::set_fastfile("paris_rhino");
             globals.target_game = game::iw7;
             globals.dump = true;
@@ -77,6 +79,36 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
                 for (const auto& candidate : {std::string("techsets_") + zone, std::string(zone), std::string("patch_") + zone})
                     if (zone_exists(candidate)) load_zone(candidate, DB_LOAD_SYNC);
             }
+            auto* acl = db_find_x_asset_header_safe(ASSET_TYPE_NET_CONST_STRINGS, "ncs_acl_level").netConstStrings;
+            bool rhino_registered = acl && acl->stringType == NETCONSTSTRINGTYPE_ANIMCLASS &&
+                acl->sourceType == NETCONSTSTRINGSOURCE_MAP;
+            if (rhino_registered)
+            {
+                rhino_registered = false;
+                for (unsigned int i = 0; i < acl->entryCount; ++i)
+                    if (acl->stringList[i] && std::string(acl->stringList[i]) == "alien_rhino_animclass") rhino_registered = true;
+            }
+            if (!rhino_registered) throw std::runtime_error("Beast ncs_acl_level does not register alien_rhino_animclass");
+
+            std::vector<std::filesystem::path> physics_roots;
+            if (std::filesystem::exists("dump"))
+            {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator("dump"))
+                {
+                    if (entry.is_regular_file() && entry.path().filename() == "ragdoll_alien_queen")
+                    {
+                        const auto hkx = std::filesystem::path(entry.path().string() + ".hkx");
+                        if (std::filesystem::exists(hkx)) physics_roots.push_back(entry.path());
+                    }
+                }
+            }
+            if (physics_roots.size() != 1) throw std::runtime_error("Expected exactly one freshly dumped Rhino physicsasset pair");
+            std::filesystem::create_directories("zonetool/paris_rhino/physicsasset");
+            std::filesystem::copy_file(physics_roots[0], "zonetool/paris_rhino/physicsasset/ragdoll_alien_queen",
+                std::filesystem::copy_options::overwrite_existing);
+            std::filesystem::copy_file(std::filesystem::path(physics_roots[0].string() + ".hkx"),
+                "zonetool/paris_rhino/physicsasset/ragdoll_alien_queen.hkx",
+                std::filesystem::copy_options::overwrite_existing);
             globals.dump = false;
             asset_type_filter.clear();
             auto* table = db_find_x_asset_header_safe(ASSET_TYPE_STRINGTABLE, "mp/dlc4_agent_definition.csv").stringTable;
@@ -102,7 +134,8 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
             utils::io::write_file("zonetool/paris_rhino/mp/paris_rhino_definition.csv", row);
         }
 '@
-    Replace-One $base 'auto args = get_command_line_arguments();' ('auto args = get_command_line_arguments();' + "`n" + $extract.Replace("`r`n","`n"))
+    $base = Replace-One $base 'auto args = get_command_line_arguments();' ('auto args = get_command_line_arguments();' + "`n" + $extract.Replace("`r`n","`n"))
+    Replace-One $base 'bool do_exit = false;' 'bool do_exit = std::find(args.begin(), args.end(), "-rhino-extract") != args.end();'
 }
 Write-Overlay 'src/zonetool/zonetool/iw7/assets/techset.cpp' {
     param($base)
