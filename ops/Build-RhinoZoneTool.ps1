@@ -134,8 +134,45 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
             utils::io::write_file("zonetool/paris_rhino/mp/paris_rhino_definition.csv", row);
         }
 '@
-    $base = Replace-One $base 'auto args = get_command_line_arguments();' ('auto args = get_command_line_arguments();' + "`n" + $extract.Replace("`r`n","`n"))
+    $audioInspect = @'
+        if (std::find(args.begin(), args.end(), "-rhino-audio-inspect") != args.end())
+        {
+            for (const auto* zone : {"code_post_gfx", "global", "common", "global_mp", "global_cp", "common_mp", "common_cp", "cp_final"})
+                for (const auto& candidate : {std::string("techsets_") + zone, std::string(zone), std::string("patch_") + zone})
+                    if (zone_exists(candidate)) load_zone(candidate, DB_LOAD_SYNC);
+            DB_EnumXAssets(ASSET_TYPE_SOUND_BANK, [](XAssetHeader header)
+            {
+                auto* bank = header.soundBank;
+                printf("RHINO_BANK name=%s zone=%s aliases=%u\n", bank->name ? bank->name : "<null>", bank->zone ? bank->zone : "<null>", bank->aliasCount);
+                for (unsigned int i = 0; i < bank->aliasCount; ++i)
+                    if (bank->alias[i].aliasName && std::string(bank->alias[i].aliasName).starts_with("queen_"))
+                        printf("RHINO_ALIAS %s\n", bank->alias[i].aliasName);
+            }, false);
+            fflush(stdout);
+            std::quick_exit(EXIT_SUCCESS);
+        }
+'@
+    $base = Replace-One $base 'auto args = get_command_line_arguments();' ('auto args = get_command_line_arguments();' + "`n" + $audioInspect.Replace("`r`n","`n") + "`n" + $extract.Replace("`r`n","`n"))
     Replace-One $base 'bool do_exit = false;' 'bool do_exit = std::find(args.begin(), args.end(), "-rhino-extract") != args.end();'
+}
+Write-Overlay 'src/zonetool/zonetool/iw7/assets/sound_bank.cpp' {
+    param($base)
+    $marker = "void sound_bank::prepare(zone_buffer* buf, zone_memory* mem)`n`t{"
+    $guard = @'
+        if (filesystem::get_fastfile().starts_with("paris_rhino"))
+        {
+            if (!asset_ || !asset_->zone || !asset_->gameLanguage || !asset_->soundLanguage || !asset_->alias || !asset_->aliasCount)
+                throw std::runtime_error("Missing retail Rhino soundbank: default/empty assets cannot be packed");
+            const std::unordered_set<std::string> required{"queen_attack_pounding", "queen_attack_pounding_second",
+                "queen_attack_pounding_third", "queen_charge", "queen_charge_start", "queen_charge_start_v2",
+                "queen_charge_start_v3", "queen_charge_to_stop", "queen_death", "queen_footstep", "queen_posture_01", "queen_posture_02"};
+            std::unordered_set<std::string> found;
+            for (unsigned int i = 0; i < asset_->aliasCount; ++i)
+                if (asset_->alias[i].aliasName && required.contains(asset_->alias[i].aliasName)) found.insert(asset_->alias[i].aliasName);
+            if (found.size() != required.size()) throw std::runtime_error("Retail Rhino sound aliases incomplete");
+        }
+'@
+    Replace-One $base $marker ($marker + "`n" + $guard.Replace("`r`n","`n"))
 }
 Write-Overlay 'src/zonetool/zonetool/iw7/assets/techset.cpp' {
     param($base)
