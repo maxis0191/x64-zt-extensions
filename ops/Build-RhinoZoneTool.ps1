@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 if (!$ToolRoot) { $ToolRoot = Join-Path $repo 'tools/x64-zt' }
 $ToolRoot = (Resolve-Path -LiteralPath $ToolRoot).Path
-$revision = '6eebdd8a34c1f1f6b970fb5b15c0d0d360b1f5e4'
+$revision = 'a4cec149f0dd34aa13e37e8f7ab754af11e122ec'
 git -C $ToolRoot merge-base --is-ancestor $revision HEAD
 if ($LASTEXITCODE) { throw 'Unexpected ZoneTool ancestry.' }
 function Write-Overlay([string]$Relative, [scriptblock]$Transform) {
@@ -23,6 +23,23 @@ function Replace-One([string]$Text, [string]$Marker, [string]$Replacement) {
     $Text.Replace($Marker,$Replacement)
 }
 Copy-Item -LiteralPath "$repo/src/custom_scripts/cp/experiments/zonetool_rhino.hpp" -Destination "$ToolRoot/src/zonetool/zonetool/iw7/zonetool_rhino.hpp"
+Write-Overlay 'src/zonetool/component/exception.cpp' {
+    param($base)
+    $base = Replace-One $base '#include <utils/io.hpp>' "#include <utils/io.hpp>`n#include <utils/flags.hpp>"
+    $marker = 'utils::thread::suspend_other_threads();'
+    if (($base.Split([string[]]@($marker), [StringSplitOptions]::None)).Count -ne 3) { throw 'Unexpected ZoneTool exception dialog count.' }
+    $headless = @'
+            if (utils::flags::has_flag("headless"))
+            {
+                utils::io::write_file("zonetool-headless-error.txt", error_str);
+                fprintf(stderr, "%s", error_str.c_str());
+                fflush(nullptr);
+                TerminateProcess(GetCurrentProcess(), exception_data.code);
+                return;
+            }
+'@
+    $base.Replace($marker, $headless.Replace("`r`n", "`n") + "`n" + $marker)
+}
 Write-Overlay 'src/zonetool/zonetool/iw7/zone.cpp' {
     param($base)
     $base = Replace-One $base '#include "zonetool.hpp"' "#include `"zonetool.hpp`"`n#include `"zonetool_rhino.hpp`""
@@ -48,6 +65,10 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zone.cpp' {
 Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
     param($base)
     $capturePhysics = @'
+        // Common/code shaders load before handle_params enables normal dumping.
+        // Capture their bytecode at registration too, before temporary storage is reused.
+        if (utils::flags::has_flag("rhino-extract") && type == ASSET_TYPE_PIXELSHADER && header->pixelShader)
+            pixel_shader::dump(header->pixelShader);
         // Capture the serialized Havok packfile before DB registration mutates it.
         if (globals.dump && type == ASSET_TYPE_PHYSICSASSET && header->physicsAsset &&
             header->physicsAsset->name && std::string(header->physicsAsset->name) == "ragdoll_alien_queen")
@@ -56,6 +77,7 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
         }
 '@
     $base = Replace-One $base 'dump_asset(&xasset);' ($capturePhysics.Replace("`r`n","`n") + "`ndump_asset(&xasset);")
+    $base = Replace-One $base '// enable dumping' ('if (utils::flags::has_flag("rhino-extract")) filesystem::set_fastfile("paris_rhino");' + "`n`t`t// enable dumping")
     $extract = @'
         if (std::find(args.begin(), args.end(), "-rhino-extract") != args.end())
         {
@@ -111,6 +133,18 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
                 std::filesystem::copy_options::overwrite_existing);
             globals.dump = false;
             asset_type_filter.clear();
+            // The CSV lists shaders before their techsets. Refresh their source files
+            // from the early DB-registration dumps before any asset parse can run.
+            const auto pixel_sources = std::filesystem::path("zonetool/paris_rhino/techsets/ps");
+            for (const auto& entry : std::filesystem::directory_iterator(pixel_sources))
+            {
+                if (!entry.is_regular_file() || entry.path().extension() != ".cso") continue;
+                const auto fresh = std::filesystem::path(filesystem::get_dump_path()) / "techsets/ps" / entry.path().filename();
+                const auto bytes = utils::io::read_file(fresh.string());
+                if (!std::filesystem::exists(fresh) || (!bytes.empty() && (bytes.size() < 32 || bytes.compare(0, 4, "DXBC"))))
+                    throw std::runtime_error(std::string("Fresh pixel shader dump invalid: ") + fresh.string());
+                std::filesystem::copy_file(fresh, entry.path(), std::filesystem::copy_options::overwrite_existing);
+            }
             auto* table = db_find_x_asset_header_safe(ASSET_TYPE_STRINGTABLE, "mp/dlc4_agent_definition.csv").stringTable;
             if (!table || table->columnCount < 14) throw std::runtime_error("Rhino definition table missing");
             std::string row;
@@ -134,8 +168,45 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
             utils::io::write_file("zonetool/paris_rhino/mp/paris_rhino_definition.csv", row);
         }
 '@
-    $base = Replace-One $base 'auto args = get_command_line_arguments();' ('auto args = get_command_line_arguments();' + "`n" + $extract.Replace("`r`n","`n"))
+    $audioInspect = @'
+        if (std::find(args.begin(), args.end(), "-rhino-audio-inspect") != args.end())
+        {
+            for (const auto* zone : {"code_post_gfx", "global", "common", "global_mp", "global_cp", "common_mp", "common_cp", "cp_final"})
+                for (const auto& candidate : {std::string("techsets_") + zone, std::string(zone), std::string("patch_") + zone})
+                    if (zone_exists(candidate)) load_zone(candidate, DB_LOAD_SYNC);
+            DB_EnumXAssets(ASSET_TYPE_SOUND_BANK, [](XAssetHeader header)
+            {
+                auto* bank = header.soundBank;
+                printf("RHINO_BANK name=%s zone=%s aliases=%u\n", bank->name ? bank->name : "<null>", bank->zone ? bank->zone : "<null>", bank->aliasCount);
+                for (unsigned int i = 0; i < bank->aliasCount; ++i)
+                    if (bank->alias[i].aliasName && std::string(bank->alias[i].aliasName).starts_with("queen_"))
+                        printf("RHINO_ALIAS %s\n", bank->alias[i].aliasName);
+            }, false);
+            fflush(stdout);
+            std::quick_exit(EXIT_SUCCESS);
+        }
+'@
+    $base = Replace-One $base 'auto args = get_command_line_arguments();' ('auto args = get_command_line_arguments();' + "`n" + $audioInspect.Replace("`r`n","`n") + "`n" + $extract.Replace("`r`n","`n"))
     Replace-One $base 'bool do_exit = false;' 'bool do_exit = std::find(args.begin(), args.end(), "-rhino-extract") != args.end();'
+}
+Write-Overlay 'src/zonetool/zonetool/iw7/assets/sound_bank.cpp' {
+    param($base)
+    $marker = "void sound_bank::prepare(zone_buffer* buf, zone_memory* mem)`n`t{"
+    $guard = @'
+        if (filesystem::get_fastfile().starts_with("paris_rhino"))
+        {
+            if (!asset_ || !asset_->zone || !asset_->gameLanguage || !asset_->soundLanguage || !asset_->alias || !asset_->aliasCount)
+                throw std::runtime_error("Missing retail Rhino soundbank: default/empty assets cannot be packed");
+            const std::unordered_set<std::string> required{"queen_attack_pounding", "queen_attack_pounding_second",
+                "queen_attack_pounding_third", "queen_charge", "queen_charge_start", "queen_charge_start_v2",
+                "queen_charge_start_v3", "queen_charge_to_stop", "queen_death", "queen_footstep", "queen_posture_01", "queen_posture_02"};
+            std::unordered_set<std::string> found;
+            for (unsigned int i = 0; i < asset_->aliasCount; ++i)
+                if (asset_->alias[i].aliasName && required.contains(asset_->alias[i].aliasName)) found.insert(asset_->alias[i].aliasName);
+            if (found.size() != required.size()) throw std::runtime_error("Retail Rhino sound aliases incomplete");
+        }
+'@
+    Replace-One $base $marker ($marker + "`n" + $guard.Replace("`r`n","`n"))
 }
 Write-Overlay 'src/zonetool/zonetool/iw7/assets/techset.cpp' {
     param($base)
@@ -147,6 +218,25 @@ Write-Overlay 'src/zonetool/zonetool/iw7/assets/techset.cpp' {
         $base = Replace-One $base $marker ($copy + "`n`t`t`t`t`t" + $marker)
     }
     $base
+}
+Write-Overlay 'src/zonetool/zonetool/iw7/assets/pixelshader.cpp' {
+    param($base)
+    $guard = @'
+        // Pixel program storage can be reused after asset loading. Never overwrite
+        // a valid early dump with stale bytes from a later dependency traversal.
+        if (asset->prog.loadDef.programSize && (!asset->prog.loadDef.program ||
+            asset->prog.loadDef.programSize < 32 || std::memcmp(asset->prog.loadDef.program, "DXBC", 4)))
+        {
+            printf("RHINO_SHADER stale pixel dump skipped: %s\n", asset->name);
+            return;
+        }
+'@
+    $base = Replace-One $base "void pixel_shader::dump(MaterialPixelShader* asset)`n`t{" ("void pixel_shader::dump(MaterialPixelShader* asset)`n`t{`n" + $guard.Replace("`r`n", "`n"))
+    $check = @'
+        if (buffer_size && (buffer_size < 32 || std::memcmp(buffer.data(), "DXBC", 4)))
+            throw std::runtime_error(std::string("Invalid pixel shader bytecode: ") + name);
+'@
+    Replace-One $base 'const auto buffer = file.read_bytes(buffer_size);' ('const auto buffer = file.read_bytes(buffer_size);' + "`n" + $check.Replace("`r`n", "`n"))
 }
 Write-Overlay 'src/zonetool/zonetool/iw7/assets/gfximage.cpp' {
     param($base)
