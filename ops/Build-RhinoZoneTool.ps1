@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 if (!$ToolRoot) { $ToolRoot = Join-Path $repo 'tools/x64-zt' }
 $ToolRoot = (Resolve-Path -LiteralPath $ToolRoot).Path
-$revision = '6eebdd8a34c1f1f6b970fb5b15c0d0d360b1f5e4'
+$revision = 'a4cec149f0dd34aa13e37e8f7ab754af11e122ec'
 git -C $ToolRoot merge-base --is-ancestor $revision HEAD
 if ($LASTEXITCODE) { throw 'Unexpected ZoneTool ancestry.' }
 function Write-Overlay([string]$Relative, [scriptblock]$Transform) {
