@@ -64,6 +64,7 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zone.cpp' {
 }
 Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
     param($base)
+    $base = Replace-One $base "namespace zonetool::iw7`n{" "namespace zonetool::iw7`n{`n    SndBank* isolate_rhino_bank(SndBank* donor, zone_memory* mem);"
     $capturePhysics = @'
         // Common/code shaders load before handle_params enables normal dumping.
         // Capture their bytecode at registration too, before temporary storage is reused.
@@ -169,9 +170,11 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
         }
 '@
     $audioInspect = @'
-        if (std::find(args.begin(), args.end(), "-rhino-audio-inspect") != args.end())
+        if (std::find(args.begin(), args.end(), "-rhino-audio-inspect") != args.end() ||
+            std::find(args.begin(), args.end(), "-rhino-audio-inspect-zmb") != args.end())
         {
-            for (const auto* zone : {"code_post_gfx", "global", "common", "global_mp", "global_cp", "common_mp", "common_cp", "cp_final"})
+            const bool spaceland = std::find(args.begin(), args.end(), "-rhino-audio-inspect-zmb") != args.end();
+            for (const auto* zone : {"code_post_gfx", "global", "common", "global_mp", "global_cp", "common_mp", "common_cp", spaceland ? "cp_zmb" : "cp_final"})
                 for (const auto& candidate : {std::string("techsets_") + zone, std::string(zone), std::string("patch_") + zone})
                     if (zone_exists(candidate)) load_zone(candidate, DB_LOAD_SYNC);
             DB_EnumXAssets(ASSET_TYPE_SOUND_BANK, [](XAssetHeader header)
@@ -179,9 +182,33 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
                 auto* bank = header.soundBank;
                 printf("RHINO_BANK name=%s zone=%s aliases=%u\n", bank->name ? bank->name : "<null>", bank->zone ? bank->zone : "<null>", bank->aliasCount);
                 for (unsigned int i = 0; i < bank->aliasCount; ++i)
+                {
+                    const auto& list = bank->alias[i];
+                    for (int h = 0; list.head && h < list.count; ++h)
+                    {
+                        const auto& alias = list.head[h];
+                        printf("RHINO_AUDIO_HEAD bank=%s alias=%s head=%d file=%s secondary=%s stop=%s context=%u:%u\n",
+                            bank->name ? bank->name : "", list.aliasName ? list.aliasName : "", h,
+                            alias.assetFileName ? alias.assetFileName : "", alias.secondaryAliasName ? alias.secondaryAliasName : "",
+                            alias.stopAliasName ? alias.stopAliasName : "", alias.contextType, alias.contextValue);
+                    }
                     if (bank->alias[i].aliasName && std::string(bank->alias[i].aliasName).starts_with("queen_"))
                         printf("RHINO_ALIAS %s\n", bank->alias[i].aliasName);
+                }
             }, false);
+            if (!spaceland)
+            {
+                zone_memory audit_memory(1024 * 1024);
+                auto* donor = db_find_x_asset_header_safe(ASSET_TYPE_SOUND_BANK, "cp_final.all").soundBank;
+                const auto donor_snapshot = *donor;
+                auto* isolated = isolate_rhino_bank(donor, &audit_memory);
+                if (memcmp(donor, &donor_snapshot, sizeof(SndBank)))
+                    throw std::runtime_error("Rhino isolation changed the retail donor bank");
+                for (unsigned int i = 0; i < isolated->aliasCount; ++i)
+                    printf("RHINO_AUDIO_SELECTED %s heads=%d\n", isolated->alias[i].aliasName, isolated->alias[i].count);
+                printf("RHINO_AUDIO_AUDIT_OK index_verified=1 donor_unchanged=1 donor_aliases=%u sound_zones=%u music=%u ducks=%u\n",
+                    donor->aliasCount, isolated->soundTable.zoneCount, isolated->musicSetCount, isolated->duckCount);
+            }
             fflush(stdout);
             std::quick_exit(EXIT_SUCCESS);
         }
@@ -191,18 +218,166 @@ Write-Overlay 'src/zonetool/zonetool/iw7/zonetool.cpp' {
 }
 Write-Overlay 'src/zonetool/zonetool/iw7/assets/sound_bank.cpp' {
     param($base)
+    $isolatedBank = @'
+    // Keep retail SAB addressing (zone/language/asset ids), but register only
+    // the Rhino aliases under a unique bank name. Never edit the DB donor.
+    SndBank* isolate_rhino_bank(SndBank* donor, zone_memory* mem)
+    {
+        if (!donor || !donor->alias || !donor->aliasCount || !donor->zone ||
+            !donor->gameLanguage || !donor->soundLanguage)
+            throw std::runtime_error("Rhino donor sound bank is incomplete");
+        std::unordered_map<std::string, unsigned int> by_name;
+        std::unordered_map<SndStringHash, unsigned int> by_id;
+        std::vector<unsigned int> selected;
+        std::unordered_set<unsigned int> included;
+        for (unsigned int i = 0; i < donor->aliasCount; ++i)
+        {
+            const auto& list = donor->alias[i];
+            if (!list.aliasName || !list.head || list.count <= 0 ||
+                !by_name.emplace(list.aliasName, i).second || !by_id.emplace(list.id, i).second)
+                throw std::runtime_error("Invalid or ambiguous Rhino donor alias list");
+            if (std::string(list.aliasName).starts_with("queen_"))
+            { included.insert(i); selected.push_back(i); }
+        }
+        if (selected.empty()) throw std::runtime_error("Rhino donor has no queen aliases");
+        for (size_t p = 0; p < selected.size(); ++p)
+        {
+            const auto& list = donor->alias[selected[p]];
+            for (int h = 0; h < list.count; ++h)
+            {
+                const auto& alias = list.head[h];
+                const auto dependency = [&](const char* name, SndStringHash id)
+                {
+                    if ((!name || !*name) && !id) return;
+                    auto found = by_name.end();
+                    if (name && *name) found = by_name.find(name);
+                    const auto hash_found = by_id.find(id);
+                    if (found == by_name.end() && hash_found == by_id.end())
+                        throw std::runtime_error("Rhino alias dependency is outside donor bank; inspect before adding it");
+                    const auto index = found != by_name.end() ? found->second : hash_found->second;
+                    if (id && donor->alias[index].id != id)
+                        throw std::runtime_error("Rhino alias dependency name/hash mismatch");
+                    // Fail closed if retail changes would import player dialogue.
+                    if (!std::string(donor->alias[index].aliasName).starts_with("queen_") &&
+                        std::string(donor->alias[index].aliasName) != "alien_footstep_mvmt")
+                        throw std::runtime_error("Rhino dependency needs explicit review: non-queen alias");
+                    if (included.insert(index).second) selected.push_back(index);
+                };
+                dependency(alias.secondaryAliasName, alias.secondaryId);
+                dependency(alias.stopAliasName, alias.stopAliasID);
+            }
+        }
+        if (selected.size() >= std::numeric_limits<unsigned short>::max())
+            throw std::runtime_error("Rhino alias index exceeds retail capacity");
+        auto* bank = mem->allocate<SndBank>();
+        *bank = *donor;
+        bank->name = mem->duplicate_string("paris_rhino_queen.all");
+        bank->aliasCount = static_cast<unsigned int>(selected.size());
+        bank->alias = mem->allocate<SndAliasList>(bank->aliasCount);
+        for (unsigned int i = 0; i < bank->aliasCount; ++i)
+        {
+            bank->alias[i] = donor->alias[selected[i]];
+            bank->alias[i].head = mem->allocate<SndAlias>(bank->alias[i].count);
+            memcpy(bank->alias[i].head, donor->alias[selected[i]].head, sizeof(SndAlias) * bank->alias[i].count);
+        }
+        // Rebuild exactly the retail bucket/overflow representation against
+        // the new count; copying the donor index addresses unrelated lists.
+        bank->aliasIndex = mem->allocate<SndIndexEntry>(bank->aliasCount);
+        memset(bank->aliasIndex, 0xFF, sizeof(SndIndexEntry) * bank->aliasCount);
+        std::vector<bool> indexed(bank->aliasCount, false);
+        constexpr auto empty = std::numeric_limits<unsigned short>::max();
+        for (unsigned short i = 0; i < bank->aliasCount; ++i)
+        {
+            const auto bucket = bank->alias[i].id % bank->aliasCount;
+            if (bank->aliasIndex[bucket].value == empty)
+            { bank->aliasIndex[bucket].value = i; indexed[i] = true; }
+        }
+        for (unsigned short i = 0; i < bank->aliasCount; ++i)
+        {
+            if (indexed[i]) continue;
+            auto tail = static_cast<unsigned short>(bank->alias[i].id % bank->aliasCount);
+            while (bank->aliasIndex[tail].next != empty) tail = bank->aliasIndex[tail].next;
+            unsigned short free = empty;
+            for (unsigned int j = 0; j < bank->aliasCount; ++j)
+                if (bank->aliasIndex[j].value == empty) { free = static_cast<unsigned short>(j); break; }
+            if (free == empty) throw std::runtime_error("Rhino alias index exhausted");
+            bank->aliasIndex[tail].next = free;
+            bank->aliasIndex[free].value = i;
+        }
+        for (unsigned short i = 0; i < bank->aliasCount; ++i)
+        {
+            auto slot = static_cast<unsigned short>(bank->alias[i].id % bank->aliasCount);
+            unsigned int steps = 0;
+            while (slot != empty && bank->aliasIndex[slot].value != i && steps++ < bank->aliasCount)
+                slot = bank->aliasIndex[slot].next;
+            if (slot == empty || steps >= bank->aliasCount)
+                throw std::runtime_error("Rhino alias index verification failed");
+        }
+        std::unordered_set<SndStringHash> required_ducks;
+        for (unsigned int i = 0; i < bank->aliasCount; ++i)
+            for (int h = 0; h < bank->alias[i].count; ++h)
+                if (bank->alias[i].head[h].duck) required_ducks.insert(bank->alias[i].head[h].duck);
+        std::vector<SndDuck> ducks;
+        for (unsigned int i = 0; i < donor->duckCount; ++i)
+            if (required_ducks.contains(donor->ducks[i].id))
+            {
+                if (donor->ducks[i].duckAlias && !by_id.contains(donor->ducks[i].duckAlias))
+                    throw std::runtime_error("Rhino duck alias is outside donor bank; review dependency");
+                if (donor->ducks[i].duckAlias && !included.contains(by_id.at(donor->ducks[i].duckAlias)))
+                    throw std::runtime_error("Rhino duck requires an unselected alias; review dependency");
+                ducks.push_back(donor->ducks[i]);
+            }
+        bank->duckCount = static_cast<unsigned int>(ducks.size());
+        bank->ducks = ducks.empty() ? nullptr : mem->allocate<SndDuck>(ducks.size());
+        if (!ducks.empty()) memcpy(bank->ducks, ducks.data(), sizeof(SndDuck) * ducks.size());
+        // No donor ambient zones, mixes, music or reverb tables may override
+        // Spaceland. Only selected-alias ducks are retained; global duck ids
+        // continue to resolve in the unchanged common bank.
+        bank->soundTable = {};
+        bank->sendEffectCount = 0; bank->sendEffects = nullptr;
+        bank->musicSetCount = 0; bank->musicSets = nullptr;
+        printf("RHINO_AUDIO_ISOLATED bank=%s donor_aliases=%u aliases=%u\n", bank->name, donor->aliasCount, bank->aliasCount);
+        return bank;
+    }
+
+'@
+    $base = Replace-One $base 'void sound_bank::init(const std::string& name, zone_memory* mem)' ($isolatedBank.Replace("`r`n", "`n") + "`n`tvoid sound_bank::init(const std::string& name, zone_memory* mem)")
+    $uniqueInit = @'
+        if (name == "paris_rhino_queen.all")
+        {
+            if (!filesystem::get_fastfile().starts_with("paris_rhino"))
+                throw std::runtime_error("Isolated Rhino bank requested outside Rhino pack");
+            auto* donor = db_find_x_asset_header_safe(ASSET_TYPE_SOUND_BANK, "cp_final.all").soundBank;
+            if (DB_IsXAssetDefault(ASSET_TYPE_SOUND_BANK, "cp_final.all"))
+                throw std::runtime_error("Missing retail cp_final.all donor");
+            this->asset_ = isolate_rhino_bank(donor, mem);
+            return;
+        }
+'@
+    $base = Replace-One $base 'this->asset_ = parse(name, mem);' ($uniqueInit.Replace("`r`n", "`n") + "`n`t`tthis->asset_ = parse(name, mem);")
     $marker = "void sound_bank::prepare(zone_buffer* buf, zone_memory* mem)`n`t{"
     $guard = @'
         if (filesystem::get_fastfile().starts_with("paris_rhino"))
         {
+            if (name_ != "paris_rhino_queen.all" || !asset_ || !asset_->name ||
+                std::string(asset_->name) != "paris_rhino_queen.all")
+                throw std::runtime_error("Full donor/unreviewed bank forbidden in Rhino pack");
             if (!asset_ || !asset_->zone || !asset_->gameLanguage || !asset_->soundLanguage || !asset_->alias || !asset_->aliasCount)
                 throw std::runtime_error("Missing retail Rhino soundbank: default/empty assets cannot be packed");
+            if (asset_->soundTable.zoneCount || asset_->musicSetCount || asset_->sendEffectCount)
+                throw std::runtime_error("Donor map audio metadata forbidden in Rhino pack");
             const std::unordered_set<std::string> required{"queen_attack_pounding", "queen_attack_pounding_second",
                 "queen_attack_pounding_third", "queen_charge", "queen_charge_start", "queen_charge_start_v2",
                 "queen_charge_start_v3", "queen_charge_to_stop", "queen_death", "queen_footstep", "queen_posture_01", "queen_posture_02"};
             std::unordered_set<std::string> found;
             for (unsigned int i = 0; i < asset_->aliasCount; ++i)
+            {
+                if (!asset_->alias[i].aliasName ||
+                    (!std::string(asset_->alias[i].aliasName).starts_with("queen_") &&
+                     std::string(asset_->alias[i].aliasName) != "alien_footstep_mvmt"))
+                    throw std::runtime_error("Unrelated alias forbidden in Rhino pack");
                 if (asset_->alias[i].aliasName && required.contains(asset_->alias[i].aliasName)) found.insert(asset_->alias[i].aliasName);
+            }
             if (found.size() != required.size()) throw std::runtime_error("Retail Rhino sound aliases incomplete");
         }
 '@
