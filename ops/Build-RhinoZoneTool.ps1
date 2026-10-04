@@ -1,4 +1,4 @@
-param([string]$ToolRoot)
+param([string]$ToolRoot, [ValidateRange(1,2)][int]$BuildJobs = 1)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 if (!$ToolRoot) { $ToolRoot = Join-Path $repo 'tools/x64-zt' }
@@ -463,6 +463,10 @@ Push-Location $ToolRoot
 try {
     & ./tools/premake5.exe vs2022
     if ($LASTEXITCODE) { throw 'ZoneTool project generation failed.' }
-    & "$installation/MSBuild/Current/Bin/MSBuild.exe" build/x64-zt.sln /m:3 /nr:false /v:minimal /p:Configuration=Release /p:Platform=x64
+    . "$PSScriptRoot/Resource-Scheduler.Core.ps1"
+    Invoke-IW7ResourceJob -Scope $repo -Owner 'ZoneTool native build' -PhysicalBytes (4GB * $BuildJobs) -CommitBytes (6GB * $BuildJobs) -Body {
+        & "$installation/MSBuild/Current/Bin/MSBuild.exe" build/x64-zt.sln "/m:$BuildJobs" /nr:false /v:minimal /p:Configuration=Release /p:Platform=x64 /p:MultiProcessorCompilation=false
+        if ($LASTEXITCODE) { throw 'ZoneTool native build failed.' }
+    }
     if ($LASTEXITCODE) { throw 'Rhino ZoneTool build failed.' }
 } finally { Pop-Location }
