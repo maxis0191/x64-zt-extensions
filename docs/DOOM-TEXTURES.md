@@ -89,6 +89,9 @@ dedicated Spaceland, exact candidate `fs_game`, and
 `level.paris_doom.active` state, switches only grey/Brute/clown agents between
 their original and prefixed model, and reapplies after retail grey merges.
 It does not fabricate the Doom state or alter actor health/ASM.
+It retains each changed entity until phase cleanup so an actor removed from
+`level.agentarray` by death can still be restored if it survives. Separate native
+corpse/gib entities and render snapshots remain part of runtime acceptance.
 
 The polling candidate has a maximum 50 ms switch delay. Crucially, `setmodel` can
 reinitialize scriptable attachments: unchanged source bytes do not prove preserved

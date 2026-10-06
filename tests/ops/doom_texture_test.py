@@ -62,6 +62,25 @@ class NegativeTests(unittest.TestCase):
             self.assertEqual(header[:24], bytes(24))
             self.assertEqual(report["original"], "test")
 
+    def test_streamed_mip_order_is_full_resolution(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "streamed.iw7Image"
+            header = bytearray(112)
+            struct.pack_into("<I", header, 24, 28)
+            struct.pack_into("<4H", header, 48, 1, 1, 1, 1)
+            header[56:58] = bytes((1, 1))
+            # Tail 2x2 + 1x1 first, then full-resolution 4x4 stream.
+            struct.pack_into("<HHI", header, 72, 2, 2, (2 << 26) | 20)
+            struct.pack_into("<HHI", header, 80, 4, 4, (3 << 26) | 84)
+            source.write_bytes(b"\x08\x01\x01\0\0\0" + header + b"\x06\x01streamed\0")
+            source.with_name("streamed_stream0.pixels").write_bytes(bytes((2, 3, 4, 5)) * 4 + bytes((6, 7, 8, 9)))
+            source.with_name("streamed_stream1.pixels").write_bytes(bytes((10, 11, 12, 13)) * 16)
+            target = Path(folder) / "doom_negative_streamed.iw7Image"
+            negative.invert_image(source, target)
+            _, pixels, width, height, mips = negative.read_image(target)
+            self.assertEqual((width, height, mips), (4, 4, 3))
+            self.assertEqual(pixels, bytes((245, 244, 243, 13)) * 16 + bytes((253, 252, 251, 5)) * 4 + bytes((249, 248, 247, 9)))
+
     def test_tagged_aliases_do_not_replace_substrings(self):
         raw = b"\x06\x01body\0\x07\x01skin\0\x07\x01skin_extra\0"
         result = negative.rename_records(raw, "body", {"skin"})
