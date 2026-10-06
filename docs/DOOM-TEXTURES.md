@@ -43,6 +43,11 @@ Cloned assets use the `doom_negative_` prefix. The effective Spaceland model
 NetConstStrings registry is preserved and extended, rather than replaced with an
 empty stub. Stock references must precede every clone in the build CSV so recursive
 dependency loading cannot accidentally serialize retail surfaces or shaders.
+Required material state and constant-buffer inputs are checked before writing a
+candidate; the underlying parser can otherwise omit a missing buffer definition.
+The reference-based pack and extended map registry are currently specific to
+Spaceland. Keep the candidate dedicated on that map until other-map loading/unload
+is proved; do not assume that phase restoration makes five-map voting compatible.
 
 ## Reproducible local preparation
 

@@ -152,6 +152,22 @@ def color_images(bindings, extra_colors=()):
     return colors
 
 
+def material_auxiliary(source, name, data):
+    clean = name.replace("*", "_")
+    techset = data["techniqueSet->name"].replace("*", "_")
+    required = [("state", ".statebits"), ("state", ".statebitsmap")]
+    if "stateFlags" not in data:
+        required.append(("state", ".stateinfo"))
+    if data.get("constantTable"):
+        required += [("constantbuffer", ".cbi"), ("constantbuffer", ".cbt")]
+    for kind, extension in required:
+        path = source / "techsets" / kind / techset / (clean + extension)
+        if not path.is_file() or not path.stat().st_size:
+            raise ValueError(f"Incomplete material state/constants: {name}{extension}")
+    return [(kind, path) for kind in ("state", "constantbuffer")
+            for path in (source / "techsets" / kind / techset).glob(clean + ".*")]
+
+
 def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
     if destination.exists():
         raise ValueError("Destination must be new; preserve previous candidates")
@@ -164,6 +180,9 @@ def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
     # Semantic 0 is shader-specific. Emission maps require explicit review,
     # rather than guessing from a file-name fragment and inverting packed data.
     colors = color_images(bindings, extra_colors)
+    material_data = {name: json.loads((source / "materials" / (name.replace("*", "_") + ".json")).read_text())
+                     for name in groups["material"]}
+    auxiliary_files = {name: material_auxiliary(source, name, data) for name, data in material_data.items()}
     images = []
     for name in sorted(colors):
         clean = name.replace("*", "_")
@@ -184,8 +203,7 @@ def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
                 for extra in original.parent.glob(name + "_lod*"):
                     (target.parent / (PREFIX + extra.name)).write_bytes(extra.read_bytes())
     for name in sorted(groups["material"]):
-        path = source / "materials" / (name.replace("*", "_") + ".json")
-        data = json.loads(path.read_text())
+        data = material_data[name]
         for binding in data["textureTable"]:
             if binding["image"] in colors:
                 binding["image"] = PREFIX + binding["image"]
@@ -195,12 +213,10 @@ def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
         techset = data["techniqueSet->name"].replace("*", "_")
         # State/constant-buffer bodies refer to the material's file name.
         # Preserve their exact bytes under the new material name.
-        for kind in ("state", "constantbuffer"):
-            folder = source / "techsets" / kind / techset
-            for auxiliary in folder.glob(name.replace("*", "_") + ".*"):
-                target = destination / "techsets" / kind / techset / (PREFIX + name.replace("*", "_") + auxiliary.suffix)
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(auxiliary.read_bytes())
+        for kind, auxiliary in auxiliary_files[name]:
+            target = destination / "techsets" / kind / techset / (PREFIX + name.replace("*", "_") + auxiliary.suffix)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(auxiliary.read_bytes())
     registries = []
     for path in (source / "netconststrings").glob("*.json"):
         data = json.loads(path.read_text())

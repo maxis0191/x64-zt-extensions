@@ -113,6 +113,8 @@ class NegativeTests(unittest.TestCase):
             (source / "references.csv").write_text("xmodelsurfs,,body_surfaces\n")
             (source / "materials/skin.json").write_text(json.dumps({"techniqueSet->name": "shader", "textureTable": [dict(image="color", semantic=2), dict(image="normal", semantic=5)]}))
             (source / "techsets/state/shader/skin.statebits").write_bytes(b"stock state")
+            (source / "techsets/state/shader/skin.statebitsmap").write_bytes(b"stock state map")
+            (source / "techsets/state/shader/skin.stateinfo").write_bytes(b"stock state info")
             (source / "techsets/constantbuffer/shader/skin.cbt").write_bytes(b"stock constants")
             (source / "netconststrings/map.json").write_text(json.dumps(dict(stringType=0, sourceType=0, stringList=["original_model"])))
             (captured / "images/color.iw7Image").write_bytes(image_dump("color", bytes((1, 2, 3, 4)), 1, 1, 1))
@@ -130,6 +132,14 @@ class NegativeTests(unittest.TestCase):
             self.assertEqual(len(registry), 8)
             self.assertFalse(report["gameplay_verified"])
             self.assertFalse(report["external_texture_pack_required"])
+            # ZoneTool can silently omit a missing constant-buffer definition;
+            # the preflight must reject it before publishing a candidate.
+            data = json.loads((source / "materials/skin.json").read_text())
+            data["constantTable"] = [dict(name="stock_constant")]
+            (source / "materials/skin.json").write_text(json.dumps(data))
+            with self.assertRaises(ValueError):
+                negative.prepare(source, captured, root / "incomplete-candidate")
+            self.assertFalse((root / "incomplete-candidate").exists())
 
 
 if __name__ == "__main__":
