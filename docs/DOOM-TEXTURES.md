@@ -1,9 +1,19 @@
-# Doom Fight negative texture candidate
+# Retired Doom Fight negative texture candidate
+
+Owner decision, 2026-10-06: skip the negative-color effect rather than require
+the 390.03 MiB texture download. This resident-texture approach is abandoned;
+do not re-admit, host, deploy or enable it when memory becomes available.
+Doom uses the ordinary retail enemy materials. The owner can explicitly reopen
+a separate lightweight approach later; custom-shader inversion is only an
+unverified possibility, not a supported simple server setting.
+The size came from storing full decoded RGBA8 mip copies, not from a proven
+minimum size for every possible color-change technique. Retain the source and
+dated offline diagnostics as research history, not a remaining acceptance gate.
 
 Scope: Spaceland Doom Fight in [issue 91](https://github.com/maxis0191/iw7-paris-server/issues/91).
 This candidate is separate from the encounter. It is absent from the normal
-module catalog and is not deployed to Paris Main. Rendering/playability acceptance
-requires an admitted protected standard-client test; source checks cannot establish it.
+module catalog and was never deployed to Paris Main. The sections below describe
+the retired experiment and its historical validation limits.
 
 ## Distribution contract
 
@@ -131,7 +141,7 @@ was sufficient. That refused test started no game and modified no client/profile
 parent's reviewed Doom native/scripts remain on stopped Main; the negative pack
 and controller are not deployed. [Sanitized record](deployments/2026-10-06-doom-negative-offline.json).
 
-## Optional controller and remaining acceptance
+## Historical optional controller and unverified checks
 
 `src/custom_scripts/cp/experiments/paris_doom_negative.gsc` additionally requires
 dedicated Spaceland, exact candidate `fs_game`, and
@@ -151,7 +161,7 @@ reinitialize scriptable attachments: unchanged source bytes do not prove preserv
 helmet, health-light or shield state. Do not enable this optional script in the
 ordinary catalog until those effects are observed and corrected if necessary.
 
-Acceptance requires a fresh-cache automatic download and matching hash with the
+Before retirement, acceptance would have required a fresh-cache automatic download and matching hash with the
 unchanged standard client; full-resolution rendering for every root/part-state
 variant; real protected combat including grey merge, Brute helmet changes and
 clown behavior; original rendering after phase end/abort/map transition; and a
