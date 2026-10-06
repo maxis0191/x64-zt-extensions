@@ -39,14 +39,16 @@ also remain unchanged. The output uses resident RGBA8 (matching the input's sRGB
 flag) to avoid recompression loss and an external PAK. Measure its actual resident
 and FF sizes before full-quality acceptance.
 
-Cloned assets use the `doom_negative_` prefix. The effective Spaceland model
-NetConstStrings registry is preserved and extended, rather than replaced with an
-empty stub. Stock references must precede every clone in the build CSV so recursive
+Cloned assets use the `doom_negative_` prefix. A separate COMMON model
+NetConstStrings registry, `ncs_mdl_doom_negative`, contains only the ten aliases;
+the retail MAP registry remains byte-for-byte unchanged. Replacing `ncs_mdl_level`
+failed the map-before-mod audit because the first registered table won. Stock
+references must precede every clone in the build CSV so recursive
 dependency loading cannot accidentally serialize retail surfaces or shaders.
 Required material state and constant-buffer inputs are checked before writing a
 candidate; the underlying parser can otherwise omit a missing buffer definition.
-The reference-based pack and extended map registry are currently specific to
-Spaceland. Keep the candidate dedicated on that map until other-map loading/unload
+The reference-based pack is currently checked against Spaceland stock.
+Keep the candidate dedicated on that map until other-map loading/unload
 is proved; do not assume that phase restoration makes five-map voting compatible.
 
 ## Reproducible local preparation
@@ -64,11 +66,21 @@ a generated output or copy a complete game for this worktree.
    Shared dependency sources are read-only; project-reference/prebuild actions are
    disabled. The first manual attempt exposed missing generated-project/prebuild
    inputs; the corrected helper copies the project files and disables that event.
-2. In a fresh owned runtime tool directory, use
+2. `ops/Prepare-DoomTextureWork.ps1 -ToolBinary <exporter> -ToolSHA256 <hash>
+   -StockRoot <retail-root>` creates fresh ignored scratch with the reviewed retail
+   executable, only needed FFs, and PAK input hardlinks. It copies `fileSysCheck.cfg`
+   into a separate mutable cache directory. Omitting that file caused initialization
+   to stall; the next diagnostic identified a hidden missing-assetfile1.pak error.
+   The supervised jobs timed out and closed only their exact owned tool processes.
+   In that scratch directory use
    `ops/Invoke-LabAssetTool.ps1` with the recorded tool checksum and arguments
    `-headless -unbuffered-io -doom-textures-source`. This helper reserves
    Extract 6 GiB physical / 8 GiB commit and supervises only its registered process.
-   The private overlay exports `dump/paris_enemy_doom_source`, not an entire map.
+   The private overlay exports `dump/paris_enemy_doom_source` and a sibling
+   `_aliases` directory, not an entire map. Names are changed on typed model,
+   scriptable and material pointers while the retail serializer runs, then restored.
+   Raw name-token rewriting could also rename an unrelated physics asset and is
+   rejected by the converter.
 3. Inspect `closure.csv`, `bindings.csv` and the dumped material JSON. Make an
    explicit list of color/emission images. Capture those sources with the reviewed
    tool's existing `-enemy-image-dump cp_zmb <list>
@@ -80,11 +92,44 @@ a generated output or copy a complete game for this worktree.
    pinned SHA-256. Run `ops/doom-textures/prepare_negative.py <source-dump>
    <selected-image-dump> <new-candidate-directory> [--extra-color <name>]` under an
    appropriate admitted asset job. Preserve failed candidates and diagnostics.
-5. Build the resulting `assets.csv` as `paris_enemy_doom_negative` using the reviewed
-   ZoneTool runtime guard. Keep the pack name's `paris_enemy_` prefix, needed by
-   its strict material/image parser. Verify inventory and hashes, exclude scripts,
-   world geometry and external PAK requirements, then package the resulting FF as
-   `mod.ff`. This is preparation, not permission to promote an unverified pack.
+5. Keep prepared sources inside that scratch directory. Run
+   `ops/Build-DoomNegativePack.ps1 -WorkingDirectory <scratch>
+   -PreparedDirectory <prepared> -ToolSHA256 <hash>`. It reserves Extract 6/8 GiB,
+   supervises compilation/parse and both loading-order audits, uses an identity-
+   guarded short drive alias for long material paths, and rejects unexpected stock
+   serialization or an external PAK. Core shader zones are loaded without their
+   full MP counterparts: the first broad recipe exhausted the weapon pool.
+   Canonical `proceduralbones` references replace the rejected original type alias.
+   Hash resident pixel bytes at asset registration; TEMP-block pointers can be
+   reused after consumption, so hashing them after subsequent zones gave false
+   mismatches. Package the checked FF as `mod.ff` under ignored runtime. This is
+   preparation, not permission to promote an unverified pack.
+
+## Offline candidate checkpoint - 2026-10-06
+
+The real extraction contains 10 models, 4 scriptables, 36 materials and 61 distinct
+images, of which 34 are color/emission images. All original mip sizes are
+retained. Source/output byte checks cover 152,873,640 RGBA texels including alpha;
+the resident image payload is 611,494,560 bytes (583.17 MiB). The built FF is
+408,978,108 bytes (390.03 MiB), SHA-256
+`32746D5CC8CA21DFD39C0573174746DC23586DC37E745970738F64493558BDC6`.
+The corrected exporter/auditor is SHA-256
+`414A68DBC3E1DDE6C26159FEC77DE0BF2077F854700F034BDD44C2443E2B4DF5`.
+
+Engine round trips pass with the map loaded before and after the custom FF: all
+10 aliases remain in their separate common registry; every retail MAP registry
+string remains identical; 277 surfaces preserve stock LOD, physics, bones, shader,
+material constants/state flags and non-color image pointers. Registration-time
+SHA-256 matches every byte of the 34 resident images. The inventory contains no
+script/world asset or external PAK; its only ordinary rawfile is the tool footer.
+This is headless engine parsing, with no renderer, client download or combat proof.
+
+At 19:06:24 UTC, admission of the complete 12 GiB client + 4 GiB dedicated scenario
+was refused: 18.59 GiB RAM was available, versus 23.95 GiB required to retain the
+25% physical reserve. About 5.36 GiB more available RAM is needed; commit headroom
+was sufficient. That refused test started no game and modified no client/profile. The
+parent's reviewed Doom native/scripts remain on stopped Main; the negative pack
+and controller are not deployed. [Sanitized record](deployments/2026-10-06-doom-negative-offline.json).
 
 ## Optional controller and remaining acceptance
 

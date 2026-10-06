@@ -122,6 +122,7 @@ def invert_image(source: Path, destination: Path):
     destination.write_bytes(output)
     return dict(name=name, original=original_name, width=width, height=height, mips=levels,
                 format=dxgi, bytes=len(negative), source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+                pixels_sha256=hashlib.sha256(negative).hexdigest(),
                 sha256=hashlib.sha256(output).hexdigest())
 
 
@@ -224,8 +225,12 @@ def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
     if len(registries) != 1:
         raise ValueError("Expected exactly one effective Spaceland model registry")
     path, data = registries[0]
-    data["stringList"] += [PREFIX + name for name in sorted(groups["xmodel"])]
-    target = destination / "netconststrings" / path.name
+    stock_registry = dict(name=path.stem, strings=data["stringList"])
+    # A separate COMMON registry coexists with each retail map's MAP registry.
+    # Reusing ncs_mdl_level makes the first registered table win on warm loads.
+    registry_name = "ncs_mdl_doom_negative"
+    data = dict(stringType=0, sourceType=2, stringList=[PREFIX + name for name in sorted(groups["xmodel"])])
+    target = destination / "netconststrings" / (registry_name + ".json")
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(data, indent=2) + "\n")
     references = (source / "references.csv").read_text().splitlines()
@@ -238,10 +243,11 @@ def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
     # must not serialize a retail shader/surface/image into this small pack.
     asset_rows = references + [f"{kind},{PREFIX}{name}" for kind, names in groups.items() for name in sorted(names)]
     asset_rows += [f"image,{PREFIX}{name}" for name in sorted(colors)]
-    asset_rows += [f"netconststrings,{path.stem}"]
+    asset_rows += [f"netconststrings,{registry_name}"]
     (destination / "assets.csv").write_text("\n".join(dict.fromkeys(asset_rows)) + "\n")
     report = dict(models=sorted(groups["xmodel"]), scriptables=sorted(groups["scriptable"]),
                   materials=sorted(groups["material"]), images=images, resident_bytes=sum(r["bytes"] for r in images),
+                  stock_model_registry=stock_registry,
                   native_client_required=False, external_texture_pack_required=False, gameplay_verified=False)
     (destination / "manifest.json").write_text(json.dumps(report, indent=2) + "\n")
     return report

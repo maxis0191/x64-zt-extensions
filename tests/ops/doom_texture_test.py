@@ -135,9 +135,13 @@ class NegativeTests(unittest.TestCase):
             self.assertIn("techset,,shader", rows[:first_clone])
             self.assertEqual((output / "techsets/state/shader/doom_negative_skin.statebits").read_bytes(), b"stock state")
             self.assertEqual((output / "techsets/constantbuffer/shader/doom_negative_skin.cbt").read_bytes(), b"stock constants")
-            registry = json.loads((output / "netconststrings/map.json").read_text())["stringList"]
-            self.assertEqual(registry[0], "original_model")
-            self.assertEqual(len(registry), 8)
+            registry = json.loads((output / "netconststrings/ncs_mdl_doom_negative.json").read_text())
+            self.assertEqual(registry["sourceType"], 2)
+            self.assertEqual(len(registry["stringList"]), 7)
+            self.assertTrue(all(name.startswith("doom_negative_") for name in registry["stringList"]))
+            self.assertFalse((output / "netconststrings/map.json").exists())
+            self.assertEqual(report["stock_model_registry"], dict(name="map", strings=["original_model"]))
+            self.assertEqual(json.loads((source / "netconststrings/map.json").read_text())["stringList"], ["original_model"])
             self.assertFalse(report["gameplay_verified"])
             self.assertFalse(report["external_texture_pack_required"])
             # ZoneTool can silently omit a missing constant-buffer definition;

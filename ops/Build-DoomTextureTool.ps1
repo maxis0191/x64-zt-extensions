@@ -30,12 +30,26 @@ $text = [IO.File]::ReadAllText($cpp)
 $marker = "`tstd::string string_table_csv(const StringTable* table)"
 if ($text.Split(@($marker),[StringSplitOptions]::None).Count -ne 2) { throw 'Extractor insertion marker changed.' }
 $text = $text.Replace($marker, "`t#include `"doom_texture_extract.hpp`"`r`n`r`n" + $marker)
+$captureMarker = '(?m)^\tvoid dump_asset\(XAsset\* asset\)\r?\n\t\{'
+if ([regex]::Matches($text,$captureMarker).Count -ne 1) { throw 'Image capture marker changed.' }
+$text = [regex]::Replace($text,$captureMarker,"`tvoid capture_doom_loaded_image(XAsset* asset);`r`n`tvoid dump_asset(XAsset* asset)`r`n`t{`r`n`t`tcapture_doom_loaded_image(asset);")
 $marker = "`t`tif (args.size() > 1)"
 if ($text.Split(@($marker),[StringSplitOptions]::None).Count -ne 2) { throw 'Argument insertion marker changed.' }
 $dispatch = @'
         if (std::find(args.begin(), args.end(), "-doom-textures-source") != args.end())
         {
             try { dump_doom_texture_sources(); fflush(nullptr); std::quick_exit(EXIT_SUCCESS); }
+            catch (const std::exception& error) { fprintf(stderr, "DOOM_TEXTURE_ERROR %s\n", error.what()); fflush(nullptr); std::quick_exit(EXIT_FAILURE); }
+        }
+        const auto doom_audit = std::find(args.begin(), args.end(), "-doom-textures-audit");
+        if (doom_audit != args.end())
+        {
+            try
+            {
+                if (doom_audit + 1 == args.end()) throw std::runtime_error("Doom audit needs the prepared manifest path");
+                audit_doom_texture_pack(*(doom_audit + 1), std::find(args.begin(), args.end(), "-doom-cold-order") != args.end());
+                fflush(nullptr); std::quick_exit(EXIT_SUCCESS);
+            }
             catch (const std::exception& error) { fprintf(stderr, "DOOM_TEXTURE_ERROR %s\n", error.what()); fflush(nullptr); std::quick_exit(EXIT_FAILURE); }
         }
 '@
