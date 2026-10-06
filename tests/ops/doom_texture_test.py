@@ -81,12 +81,18 @@ class NegativeTests(unittest.TestCase):
             self.assertEqual((width, height, mips), (4, 4, 3))
             self.assertEqual(pixels, bytes((245, 244, 243, 13)) * 16 + bytes((253, 252, 251, 5)) * 4 + bytes((249, 248, 247, 9)))
 
-    def test_tagged_aliases_do_not_replace_substrings(self):
-        raw = b"\x06\x01body\0\x07\x01skin\0\x07\x01skin_extra\0"
-        result = negative.rename_records(raw, "body", {"skin"})
-        self.assertEqual(result, b"\x06\x01doom_negative_body\0\x07\x01doom_negative_skin\0\x07\x01skin_extra\0")
-        with self.assertRaises(ValueError):
-            negative.rename_records(raw + b"\x06\x01body\0", "body", {"skin"})
+    def test_typed_alias_is_required_and_physics_name_is_untouched(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "source"
+            aliases = Path(folder) / "source_aliases/xmodel"
+            aliases.mkdir(parents=True)
+            raw = b"\x06\x01doom_negative_body\0\x07\x01doom_negative_skin\0\x07\x01body\0"
+            path = aliases / "doom_negative_body.xmb"
+            path.write_bytes(raw)
+            self.assertEqual(negative.typed_alias(source, "xmodel", "body"), raw)
+            path.write_bytes(b"\x06\x01body\0")
+            with self.assertRaises(ValueError):
+                negative.typed_alias(source, "xmodel", "body")
 
     def test_color_selection_requires_review_for_shader_specific_maps(self):
         bindings = [dict(image="skin", semantic="2"), dict(image="packed_c_misc", semantic="0"),
@@ -106,9 +112,11 @@ class NegativeTests(unittest.TestCase):
             for sub in ("xmodel", "materials", "netconststrings", "techsets/state/shader", "techsets/constantbuffer/shader"):
                 (source / sub).mkdir(parents=True)
             (captured / "images").mkdir(parents=True)
+            (root / "source_aliases/xmodel").mkdir(parents=True)
             (source / "closure.csv").write_text("".join("xmodel," + name + "\n" for name in negative.ROOT_MODELS) + "material,skin\n")
             for name in negative.ROOT_MODELS:
                 (source / "xmodel" / (name + ".xmb")).write_bytes(b"\x06\x01" + name.encode() + b"\0\x07\x01skin\0")
+                (root / "source_aliases/xmodel" / (negative.PREFIX + name + ".xmb")).write_bytes(b"\x06\x01" + (negative.PREFIX + name).encode() + b"\0\x07\x01doom_negative_skin\0")
             (source / "bindings.csv").write_text("material,image,semantic\nskin,color,2\nskin,normal,5\n")
             (source / "references.csv").write_text("xmodelsurfs,,body_surfaces\n")
             (source / "materials/skin.json").write_text(json.dumps({"techniqueSet->name": "shader", "textureTable": [dict(image="color", semantic=2), dict(image="normal", semantic=5)]}))

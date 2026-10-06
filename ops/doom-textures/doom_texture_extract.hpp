@@ -147,5 +147,27 @@ void dump_doom_texture_sources()
     std::string reference_list;
     for (const auto& row : references) reference_list += row + '\n';
     utils::io::write_file((output / "references.csv").string(), reference_list);
+    // Asset dump names are type-erased. Replacing tagged name bytes would also
+    // rename a physics/animation asset sharing a model's name. Let the typed
+    // retail serializer follow the actual pointers with only these names changed.
+    std::map<std::string, std::string> alias_names;
+    std::vector<std::pair<const char**, const char*>> original_names;
+    const auto restore_names = gsl::finally([&]
+    {
+        for (const auto& [field, original] : original_names) *field = original;
+        filesystem::set_fastfile(pack);
+    });
+    auto rename = [&](auto* asset)
+    {
+        original_names.emplace_back(&asset->name, asset->name);
+        const auto entry = alias_names.emplace(asset->name, "doom_negative_"s + asset->name).first;
+        asset->name = entry->second.c_str();
+    };
+    for (const auto& [name, data] : models) rename(data);
+    for (const auto& [name, data] : scriptables) rename(data);
+    for (const auto& [name, data] : materials) rename(data);
+    filesystem::set_fastfile(pack + "_aliases");
+    for (const auto& [name, data] : models) xmodel::dump(data);
+    for (const auto& [name, data] : scriptables) scriptable_def::dump(data);
     printf("DOOM_TEXTURE_SOURCE models=%zu scriptables=%zu materials=%zu images=%zu\n", models.size(), scriptables.size(), materials.size(), images.size());
 }

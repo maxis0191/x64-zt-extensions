@@ -125,15 +125,13 @@ def invert_image(source: Path, destination: Path):
                 sha256=hashlib.sha256(output).hexdigest())
 
 
-def rename_records(raw, own_name, names):
-    # Rewrite only complete, explicitly tagged literal strings/asset names.
-    own = b"\x06\x01" + own_name.encode("ascii") + b"\x00"
+def typed_alias(source, kind, name):
+    folder, suffix = ("xmodel", ".xmb") if kind == "xmodel" else ("scriptable", "")
+    path = source.with_name(source.name + "_aliases") / folder / (PREFIX + name + suffix)
+    raw = path.read_bytes()
+    own = b"\x06\x01" + (PREFIX + name).encode("ascii") + b"\x00"
     if raw.count(own) != 1:
-        raise ValueError(f"Expected one literal own name: {own_name}")
-    raw = raw.replace(own, b"\x06\x01" + (PREFIX + own_name).encode("ascii") + b"\x00")
-    for original in sorted(names):
-        tag = b"\x07\x01" + original.encode("ascii") + b"\x00"
-        raw = raw.replace(tag, b"\x07\x01" + (PREFIX + original).encode("ascii") + b"\x00")
+        raise ValueError(f"Expected a typed aliased dump: {name}")
     return raw
 
 
@@ -183,6 +181,8 @@ def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
     material_data = {name: json.loads((source / "materials" / (name.replace("*", "_") + ".json")).read_text())
                      for name in groups["material"]}
     auxiliary_files = {name: material_auxiliary(source, name, data) for name, data in material_data.items()}
+    aliased = {(kind, name): typed_alias(source, kind, name)
+               for kind in ("xmodel", "scriptable") for name in groups[kind]}
     images = []
     for name in sorted(colors):
         clean = name.replace("*", "_")
@@ -191,13 +191,12 @@ def prepare(source: Path, captured: Path, destination: Path, extra_colors=()):
         if len(found) != 1:
             raise ValueError(f"Expected one complete image source: {name}")
         images.append(invert_image(found[0], destination / "images" / (PREFIX + clean + ".iw7Image")))
-    aliases = set().union(*groups.values())
     for kind, folder, suffix in (("xmodel", "xmodel", ".xmb"), ("scriptable", "scriptable", "")):
         for name in sorted(groups[kind]):
             original = source / folder / (name + suffix)
             target = destination / folder / (PREFIX + name + suffix)
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(rename_records(original.read_bytes(), name, aliases))
+            target.write_bytes(aliased[kind, name])
             # Optional model physics LOD file uses the clone name, unchanged body.
             if kind == "xmodel":
                 for extra in original.parent.glob(name + "_lod*"):
