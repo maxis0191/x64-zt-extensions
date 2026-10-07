@@ -1,0 +1,40 @@
+{
+  "schema": "iw7.doom-texture-stage-plan/1",
+  "ready": false,
+  "executed": false,
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "first_candidate": {
+    "model": "paris_doom_helmet_rigid_a",
+    "material_reference": "mopw/character_park_clown_zombie_shoes",
+    "purpose": "isolate rigid geometry, bounds and scale before custom texture"
+  },
+  "second_candidate": {
+    "fastfile": "paris_enemy_doom_helmet_texture_a",
+    "model": "paris_doom_helmet_texture_a",
+    "material": "paris_doom_helmet_diffuse_a",
+    "image": "paris_doom_helmet_albedo_a",
+    "input_png": "albedo-source.png",
+    "intermediate_dds": "images/paris_doom_helmet_albedo_a.dds",
+    "png_conversion": "not executed; pinned DirectXTex Texconv must be built and hashed first",
+    "initial_dds_format_candidate": "R8G8B8A8_UNORM_SRGB",
+    "format_runtime_verified": false,
+    "material_reference_json_sha256": "687924c80afb088a285c5df4704475b0786310738687fc555db77a3974c7c8b6",
+    "technique_reference": "mopw_l_sm_replace_i0c0s0o0n0p0",
+    "material_transform": "copy small verified JSON only; unique name; replace diffuse image reference; inspect and preserve other semantics without retail payload copy",
+    "required_measurements": [
+      "DDS width, height, DXGI format, mip count and source/output SHA256",
+      "dependency list has exact custom image, no default fallback",
+      "GfxImage roundtrip pixel byte lengths and bounded pointers",
+      "original checker with known UV axes renders before Doom albedo",
+      "helmet silhouette, UV orientation, normals and tangent handedness",
+      "same-pose custom/control and stock restoration"
+    ]
+  },
+  "constraints": {
+    "no_windows_device_changes": true,
+    "no_retail_texture_copy": true,
+    "no_playermodel_claim": true,
+    "no_source_license_claim": true,
+    "heavy_execution_requires_parent_admission": true
+  }
+}
