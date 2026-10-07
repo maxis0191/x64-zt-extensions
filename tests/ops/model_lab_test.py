@@ -84,7 +84,7 @@ $http=[pscustomobject]@{AssetRoute=$build.HttpRoute;SHA256=$hash;Error=$null;Com
 $session=[pscustomobject]@{Identity=[pscustomobject]@{PID=123;Stdout="$Temp/base-client/client.stdout.log";CreatedUtc='synthetic';SHA256=$hash};Server=[pscustomobject]@{PID=456;Stdout="$Temp/server.stdout.log";CreatedUtc='synthetic'};OutputRoot="$Temp/base-client";Plan=[pscustomobject]@{GameRoot="$Temp/game"};Protected=$true;Failed=$false;StartedUtc=[datetime]::UtcNow.AddSeconds(-1)}
 [IO.File]::WriteAllBytes("$Temp/game/mods/paris_model_probe/mod.ff",$bytes)
 [IO.File]::WriteAllText($session.Identity.Stdout,'synthetic client log')
-$text="[Paris model] SCRIPT_MODEL_REQUESTED; model=paris_model_probe; entity=52; pixels_pending=1.`n[Paris model] READY_MODEL; model=paris_model_probe; game_time_ms=4500; pixels_pending=1.`n"
+$text="[Paris model] SCRIPT_MODEL_REQUESTED; model=paris_model_probe; entity=52; pixels_pending=1.`t`r`n[Paris model] READY_MODEL; model=paris_model_probe; game_time_ms=4500; pixels_pending=1.`t`r`n"
 [IO.File]::WriteAllText($session.Server.Stdout,$text)
 $journal=[ordered]@{utc=[datetime]::UtcNow.ToString('o');method='GET';path=$build.HttpRoute;bytes=$bytes.Length;sha256=$hash}
 [IO.File]::WriteAllText("$Temp/model-http.jsonl",($journal|ConvertTo-Json -Compress)+"`n")
