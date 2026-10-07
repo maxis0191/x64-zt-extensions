@@ -1,0 +1,39 @@
+{
+  "schema": "iw7.model-measurement/1",
+  "id": "paris_model_probe",
+  "measured_utc": "2026-10-06T23:32:21Z",
+  "evidence_run": "runtime/model-writer-source-20261007",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "writer_sha256": "26933C24E9520018AF0A714C4865FC01161C1D03F3E6A53FA5F86963021EDDE5",
+  "artifacts": [
+    {
+      "Path": "xmodel/paris_model_probe.xmb",
+      "Bytes": 939,
+      "SHA256": "B8C731255A81502B887BC58705AAAA37C540300C575AE3190859A751AAC391CE"
+    },
+    {
+      "Path": "xsurface/paris_model_probe_lod0.xsb",
+      "Bytes": 1231,
+      "SHA256": "FB05AF067B0186BE175ED4015DB26A3723BC3438154DB79C58A8B88EFEF324A9"
+    }
+  ],
+  "roundtrip": {
+    "schema": "iw7.model-roundtrip/1",
+    "vertices": 24,
+    "triangles": 12,
+    "bones": 1,
+    "surfaces": 1,
+    "lods": 1,
+    "geometry_roundtrip_verified": true,
+    "normal_encoding": "H1-1010102-candidate",
+    "iw7_normal_encoding_verified": false,
+    "material_reference": null,
+    "ff_built": false,
+    "pixels_verified": false,
+    "ready": false
+  },
+  "stock_reads": false,
+  "game_process": false,
+  "lease_released": true,
+  "ready": false
+}
