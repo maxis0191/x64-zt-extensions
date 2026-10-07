@@ -10,7 +10,8 @@ $head=& git -C $source rev-parse HEAD
 if($LASTEXITCODE -or $head -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or $manifest.source_pin -cne $head){throw 'Exact pinned tool source required.'}
 $dirty=@(& git -C $source status --porcelain --untracked-files=all)
 if($LASTEXITCODE -or $dirty.Count){throw 'Changed shared tool checkout must be preserved.'}
-$required=@('src/zonetool/zonetool/utils/io/assetmanager.hpp','src/zonetool/zonetool/utils/io/filesystem.hpp','src/zonetool/zonetool/utils/memory.hpp','src/zonetool/zonetool/iw7/structs.hpp','src/zonetool/zonetool/iw7/assets/xmodel.cpp','src/zonetool/zonetool/iw7/assets/xsurface.cpp','src/zonetool/game/shared.cpp','src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp','src/zonetool/zonetool/iw7/converter/h1/assets/xsurface.cpp')
+$shadowSource='src/zonetool/zonetool/h1/converter/iw7/assets/xmodel.cpp'
+$required=@('src/zonetool/zonetool/utils/io/assetmanager.hpp','src/zonetool/zonetool/utils/io/filesystem.hpp','src/zonetool/zonetool/utils/memory.hpp','src/zonetool/zonetool/iw7/structs.hpp','src/zonetool/zonetool/iw7/assets/xmodel.cpp','src/zonetool/zonetool/iw7/assets/xsurface.cpp',$shadowSource,'src/zonetool/game/shared.cpp','src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp','src/zonetool/zonetool/iw7/converter/h1/assets/xsurface.cpp')
 if(@($manifest.source_hashes.PSObject.Properties).Count -ne $required.Count -or @($required | Where-Object { $_ -cnotin $manifest.source_hashes.PSObject.Properties.Name }).Count){throw 'Exact writer interface provenance required.'}
 foreach($entry in $manifest.source_hashes.PSObject.Properties){
     $path=Assert-IW7LabPath (Join-Path $source $entry.Name) $source
@@ -21,6 +22,7 @@ foreach($entry in @(@('writer.cpp',$manifest.writer_sha256),@('probe_geometry.hp
     if((Get-FileHash -LiteralPath $path).Hash -ine $entry[1]){throw 'Prepared original input changed.'}
 }
 if($manifest.schema -cne 'iw7.model-writer-source/1' -or $manifest.ready -or $manifest.compiled -or $manifest.ff_built){throw 'Uncompiled source-only preparation required.'}
+if($manifest.shadow_cutoff_lod -ne 6 -or $manifest.collision_lod -ne 255 -or $manifest.shadow_sentinel_source -cne $shadowSource){throw 'Exact independent shadow/collision sentinel candidate required.'}
 $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 $vs=& $vswhere -products '*' -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1
 if($LASTEXITCODE -or !$vs){throw 'Installed official MSVC x64 tools required.'}
@@ -47,6 +49,7 @@ Invoke-IW7ResourceJob -Scope $prepared -Kind Build -PhysicalBytes 2GB -CommitByt
         if($LASTEXITCODE){throw 'Original geometry roundtrip failed.'}
         $roundtrip=($rows -join "`n") | ConvertFrom-Json
         if($roundtrip.schema -cne 'iw7.model-roundtrip/1' -or !$roundtrip.geometry_roundtrip_verified -or $roundtrip.ready -or $roundtrip.ff_built -or $roundtrip.pixels_verified){throw 'Roundtrip status contradiction.'}
+        if($roundtrip.shadow_cutoff_lod -ne 6 -or $roundtrip.collision_lod -ne 255){throw 'Measured shadow/collision sentinel roundtrip differs.'}
         $roundtrip | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $prepared 'geometry-roundtrip.json')
         $assets=@(foreach($name in @('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.xsb')){
             $path=Assert-IW7LabPath (Join-Path $prepared "artifacts/$name") $prepared

@@ -125,6 +125,11 @@ if(!$refused){throw 'Stale GET accepted'}
             self.assertFalse(manifest['compiled'])
             self.assertFalse(manifest['ready'])
             self.assertFalse(manifest['iw7_normal_encoding_verified'])
+            self.assertEqual(manifest['shadow_cutoff_lod'], 6)
+            self.assertEqual(manifest['collision_lod'], 255)
+            converter=prepare_writer.SHADOW_SENTINEL_SOURCE
+            self.assertEqual(manifest['shadow_sentinel_source'],converter)
+            self.assertIn(converter,manifest['source_hashes'])
             for name,sha in manifest['source_hashes'].items():
                 self.assertEqual(sha,hashlib.sha256((source/name).read_bytes()).hexdigest())
             self.assertEqual(manifest['header_sha256'],hashlib.sha256((output/'probe_geometry.hpp').read_bytes()).hexdigest())
@@ -138,6 +143,19 @@ if(!$refused){throw 'Stale GET accepted'}
                 with self.assertRaises(ValueError):
                     prepare_writer.prepare(refused,source)
             self.assertFalse(refused.exists())
+
+    def test_writer_preparation_requires_shadow_sentinel_converter_provenance(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "runtime") as folder:
+            source=Path(folder)/'source'
+            for name in prepare_writer.INTERFACES:
+                file=source/name
+                file.parent.mkdir(parents=True,exist_ok=True)
+                file.write_bytes(('synthetic interface '+name).encode())
+            (source/prepare_writer.SHADOW_SENTINEL_SOURCE).unlink()
+            output=Path(folder)/'missing-converter'
+            with self.assertRaises(FileNotFoundError):
+                prepare_writer.prepare(output,source,check_pin=False)
+            self.assertFalse(output.exists())
 
     def test_wrapper_dependency_closure_reaches_memory_refusal_before_any_child(self):
         if not shutil.which('pwsh'):self.skipTest('PowerShell7 required')

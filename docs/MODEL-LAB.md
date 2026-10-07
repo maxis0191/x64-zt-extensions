@@ -78,7 +78,7 @@ copied or used as a template. Optional physics, subdivision, animation, reactive
 motion and scriptable fields are absent. The source validator rejects nonfinite
 vectors, bad indices, inverted faces, wrong weights and false readiness.
 
-`prepare_writer.py` checks the clean pin and hashes nine source interfaces/order
+`prepare_writer.py` checks the clean pin and hashes ten source interfaces/order
 references, then emits source geometry, a generated header, `writer.cpp` and
 source provenance in a fresh directory. Linked ancestry/existing output are
 refused. With a recipient reference it additionally rechecks the exact retained
@@ -271,3 +271,27 @@ missing-import regression, exact model HTTP routing/worker disposal, foreign cac
 preservation, injected owned-session identity, stale GET/duplicate markers and
 false pixel/material acceptance. GSC parse passed; no model client/game was
 launched in this preparation step.
+
+## Invisible cube: isolated shadow sentinel candidate
+
+The protected run `runtime/agent-lab/20261007-000759-331-f456a89f` loaded
+the measured 1036-byte FF, requested a script model and captured fresh frames.
+Independent inspection did not establish a visible cube. Transport, entity
+creation and successful cleanup remain separate from pixel acceptance.
+
+The old original writer set `shadowCutoffLod=255`. The retained converter at
+`fab935826c898806855376662a8a03317b3ad8f1`,
+`h1/converter/iw7/assets/xmodel.cpp`, explicitly uses `shadowCutoffLod=6` and
+records that `0xFF caused models to fade out`. The candidate changes only this
+model field to 6; `collLod=255` is a distinct collision sentinel and stays intact.
+Preparation records the converter hash, and the standalone reader must prove
+both fields after roundtrip. This source evidence motivates the correction;
+no new compile, FF or visible result has yet been measured for it.
+
+If the candidate remains invisible, compare a recipient retail model with the
+custom model sequentially at the exact same script-model pose. Log player eye,
+view angles, entity origin/angles and the selected model. The current placement
+uses horizontal yaw at 96 units and eye height minus 12, ignoring view pitch;
+it may overlap the weapon. Repeat a pose above that overlap only after the
+same-pose control, keeping camera angles untouched. Material resolution, client
+model-index/NCS binding and LOD/culling data still need independent evidence.

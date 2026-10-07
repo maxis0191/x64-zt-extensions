@@ -8,6 +8,7 @@ import os
 from geometry import original_cube, validate
 
 PIN = 'fab935826c898806855376662a8a03317b3ad8f1'
+SHADOW_SENTINEL_SOURCE = 'src/zonetool/zonetool/h1/converter/iw7/assets/xmodel.cpp'
 INTERFACES = [
     'src/zonetool/zonetool/utils/io/assetmanager.hpp',
     'src/zonetool/zonetool/utils/io/filesystem.hpp',
@@ -15,6 +16,7 @@ INTERFACES = [
     'src/zonetool/zonetool/iw7/structs.hpp',
     'src/zonetool/zonetool/iw7/assets/xmodel.cpp',
     'src/zonetool/zonetool/iw7/assets/xsurface.cpp',
+    SHADOW_SENTINEL_SOURCE,
     'src/zonetool/game/shared.cpp',
     'src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp',
     'src/zonetool/zonetool/iw7/converter/h1/assets/xsurface.cpp',
@@ -90,6 +92,7 @@ def prepare(output, source, *, check_pin=True, recipient_evidence=None, stock_ro
               'header_sha256':hashlib.sha256(generated_header.encode()).hexdigest(),
               'geometry_source_sha256':hashlib.sha256(original_text.encode()).hexdigest(),'compiled':False,
               'geometry_roundtrip_verified':False,'iw7_normal_encoding_verified':False,
+              'shadow_cutoff_lod':6,'collision_lod':255,'shadow_sentinel_source':SHADOW_SENTINEL_SOURCE,
               'material_reference':material,'recipient_evidence_sha256':evidence_hash,'ff_built':False,'pixels_verified':False,'ready':False}
     output.mkdir(parents=True)
     (output/'geometry.source.json').write_text(original_text,encoding='utf-8',newline='\n')

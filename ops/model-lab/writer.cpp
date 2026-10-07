@@ -130,7 +130,9 @@ int main(int argc,char** argv){try{
     XModelSurfs surfs{};surfs.name="paris_model_probe_lod0";surfs.surfs=&surf;surfs.numsurfs=1;surfs.partBits[0]=surf.partBits[0];
     scr_string_t bone=0;unsigned char classification=0;unsigned short mip=0;Material material_asset{};material_asset.name=probe_material_name;Material* material=probe_material_name?&material_asset:nullptr;
     DObjAnimMat base{};base.quat[3]=1;base.transWeight=2;XBoneInfo info{};for(float& f:info.bounds.halfSize)f=8;info.radiusSquared=192;
-    XModel model{};model.name="paris_model_probe";model.hasLods=true;model.numLods=1;model.collLod=255;model.shadowCutoffLod=255;model.flags=XMODEL_FLAG_HAS_RIGID_VERT_LIST;
+    // Pinned H1->IW7 converter uses 6; its comment records 0xFF fade-outs.
+    // Keep collision's independent 0xFF sentinel unchanged. Pixel proof pending.
+    XModel model{};model.name="paris_model_probe";model.hasLods=true;model.numLods=1;model.collLod=255;model.shadowCutoffLod=6;model.flags=XMODEL_FLAG_HAS_RIGID_VERT_LIST;
     model.numBones=1;model.numRootBones=1;model.numsurfs=1;model.scale=1;model.radius=std::sqrt(192.0f);for(float& f:model.bounds.halfSize)f=8;
     model.boneNames=&bone;model.partClassification=&classification;model.baseMat=&base;model.boneInfo=&info;model.invHighMipRadius=&mip;model.materialHandles=&material;
     model.lodInfo[0].numsurfs=1;model.lodInfo[0].modelSurfs=&surfs;model.lodInfo[0].partBits[0]=surf.partBits[0];
@@ -142,10 +144,11 @@ int main(int argc,char** argv){try{
     require(!memcmp(rs->surfs[0].rigidVertLists,&rigid,sizeof(rigid)) && !memcmp(rs->partBits,surfs.partBits,sizeof(surfs.partBits)),"Rigid weights/part bits differ");
     require(!memcmp(rm->baseMat,&base,sizeof(base)) && !memcmp(rm->boneInfo,&info,sizeof(info)) && !memcmp(&rm->bounds,&model.bounds,sizeof(model.bounds)),"Rest pose/bone/model bounds differ");
     require(rm->radius==model.radius && rm->scale==1 && rm->partClassification[0]==0 && rm->invHighMipRadius[0]==0,"Scalar model metadata differs");
+    require(rm->shadowCutoffLod==6 && rm->collLod==255,"Shadow cutoff or independent collision sentinel differs");
     require(rm->lodInfo[0].numsurfs==1 && rm->lodInfo[0].surfIndex==0 && std::string(rm->lodInfo[0].modelSurfs->name)==surfs.name && !memcmp(rm->lodInfo[0].partBits,model.lodInfo[0].partBits,sizeof(model.lodInfo[0].partBits)),"LOD reference differs");
     for(unsigned i=1;i<6;i++)require(!rm->lodInfo[i].modelSurfs,"Unexpected extra LOD");
     require(!rm->parentList && !rm->tagAngles && !rm->tagPositions && !rm->physicsAsset && !rm->physicsFXShape && !rm->scriptableMoverDef && !rm->proceduralBones && !rm->unknown03 && !rm->unknownVec3 && !rm->unknown04,"Unexpected model dependency");
     require((!material && !rm->materialHandles[0]) || (material && rm->materialHandles[0] && std::string(rm->materialHandles[0]->name)==probe_material_name),"Material reference differs");
-    std::cout<<"{\"schema\":\"iw7.model-roundtrip/1\",\"vertices\":24,\"triangles\":12,\"bones\":1,\"surfaces\":1,\"lods\":1,\"geometry_roundtrip_verified\":true,\"read_existing_supported\":true,\"normal_encoding\":\"H1-1010102-candidate\",\"iw7_normal_encoding_verified\":false,\"material_reference\":"<<(probe_material_name?std::string("\"")+probe_material_name+"\"":"null")<<",\"ff_built\":false,\"pixels_verified\":false,\"ready\":false}\n";
+    std::cout<<"{\"schema\":\"iw7.model-roundtrip/1\",\"vertices\":24,\"triangles\":12,\"bones\":1,\"surfaces\":1,\"lods\":1,\"shadow_cutoff_lod\":6,\"collision_lod\":255,\"geometry_roundtrip_verified\":true,\"read_existing_supported\":true,\"normal_encoding\":\"H1-1010102-candidate\",\"iw7_normal_encoding_verified\":false,\"material_reference\":"<<(probe_material_name?std::string("\"")+probe_material_name+"\"":"null")<<",\"ff_built\":false,\"pixels_verified\":false,\"ready\":false}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
