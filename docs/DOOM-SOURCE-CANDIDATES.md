@@ -150,8 +150,31 @@ Le dry-run a validé l'archive native 3B9F mesurée et les hashes de ses 26 sour
 en distinguant les sources archivées des dépendances inchangées du projet.
 Le parse GSC réel a réussi ; 22 gardes runtime/HTTP passent, dont livraison du
 vrai payload, refus de la route cube, journal frais et fermeture du worker.
-Le jeu attend le GO de coordination. Aucun diagnostic GPU cube n'est attribué
-au casque, et `ready=false` demeure jusqu'aux preuves visuelles/gameplay.
+Le GO de coordination a permis le rendu réel décrit ci-dessous. Aucun diagnostic
+GPU cube n'est attribué au casque, et `ready=false` demeure jusqu'aux preuves
+visuelles/gameplay.
+
+Le premier run `runtime/doom-model-lab/20261007-112529-712-338258f4` échoue sur
+`PairOwnership` absent du contexte client unique sous StrictMode, puis pendant
+cleanup pour la même raison. `manual-recovery.local.json` conserve les identités,
+la clôture exacte après30 secondes UDP à zéro clients et les trois transactions
+restaurées ; la lease est libérée à11:28:12 UTC. Le constructeur partagé est
+corrigé avec valeurs réelles/null, sans coercition de l'objet de paire. Huit tests
+exécutent ce constructeur et les chemins update/cleanup ordinary et dispatch pair.
+
+Le replay `runtime/doom-model-lab/20261007-113022-458-eb383a90` réutilise le FF
+AD570 et l'exécutable archivé3B9F, avec admission14GiB/15GiB. Un GET frais et le
+cache client prouvent la livraison des91036 octets ; heartbeat frais godmode=1,
+inactivity=0, cheats=0 précède les captures. Le scénario capture-only réussit,
+avec zéro assertion gameplay. Inspection réelle des deux BMP1280x720 : le clown
+retail est visible à gauche initialement, puis à droite après échange des modèles
+aux mêmes poses ; le casque est invisible aux deux emplacements. Le résultat
+visuel est négatif. Les trois restaurations sont confirmées, HTTP arrêté,
+Failure/CleanupError null, aucun processus IW7 et leases vides à11:32:52 UTC.
+`doom-runtime.local.json` conserve PixelsVerified/GameplayVerified/Ready=false.
+Les BMPs et `visual-assessment.local.json` restent ignorés. Le prochain diagnostic
+doit mesurer le modèle Doom réel (bounds/surface/material), sans attribuer le
+diagnostic GPU du cube à ce candidat ou affaiblir les gardes source.
 
 La route gratuite publique de l'auteur ExodeCode a fourni le FBX et cinq textures
 PBR, sans compte, paiement ni résolution de CAPTCHA. Les fichiers sont conservés
