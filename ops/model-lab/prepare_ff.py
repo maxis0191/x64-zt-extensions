@@ -8,6 +8,11 @@ from prepare_writer import safe_path, PIN
 MATERIAL='mopw/character_park_clown_zombie_shoes'
 ARTIFACTS=('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.xsb')
 
+def candidate_metadata(data):
+    return (type(data.get('lod0_dist')) in (int, float) and data['lod0_dist'] == 1000000 and
+            data.get('has_lods') is True and type(data.get('shadow_cutoff_lod')) is int and
+            data['shadow_cutoff_lod'] == 6 and type(data.get('collision_lod')) is int and data['collision_lod'] == 255)
+
 def stage(writer_run, output):
     run,output=safe_path(writer_run),safe_path(output)
     if output.exists():
@@ -23,6 +28,9 @@ def stage(writer_run, output):
         roundtrip.get('vertices')!=24 or roundtrip.get('triangles')!=12 or roundtrip.get('bones')!=1 or
         roundtrip.get('surfaces')!=1 or roundtrip.get('lods')!=1 or data.get('Ready') is not False or data.get('FFBuilt') is not False):
         raise ValueError('Exact material-linked measured original roundtrip required')
+    if (not candidate_metadata(data.get('Source',{})) or not candidate_metadata(roundtrip) or
+        data['Source'].get('candidate_variable') != 'lodInfo[0].dist'):
+        raise ValueError('Exact measured one-variable LOD distance and unchanged model metadata required')
     entries=data.get('Artifacts',[])
     if len(entries)!=2 or {e.get('Path') for e in entries}!=set(ARTIFACTS):
         raise ValueError('Exact original XMB/XSB inventory required')
@@ -47,6 +55,7 @@ def stage(writer_run, output):
     plan={'schema':'iw7.model-ff-plan/1','zone':'paris_model_probe','recipient':'cp_zmb',
           'source_pin':PIN,'writer_provenance_sha256':hashlib.sha256(provenance.read_bytes()).hexdigest(),
           'material_reference':MATERIAL,'material_payload_copied':False,'original_model_template_copied':False,
+          'candidate_variable':'lodInfo[0].dist','lod0_dist':1000000,'has_lods':True,'shadow_cutoff_lod':6,'collision_lod':255,
           'expected_inventory':[{'type':'material','name':','+MATERIAL,'recipient_reference':True},
                                 {'type':'xmodelsurfs','name':'paris_model_probe_lod0'},
                                 {'type':'xmodel','name':'paris_model_probe'},

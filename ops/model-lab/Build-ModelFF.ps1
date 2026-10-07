@@ -25,6 +25,8 @@ $sourceNames=@('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.x
 if($plan.schema -cne 'iw7.model-ff-plan/1' -or $plan.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or $plan.ff_built -or $plan.ready -or
     @($plan.source_files.PSObject.Properties).Count -ne 5 -or @($sourceNames | Where-Object {$_ -cnotin $plan.source_files.PSObject.Properties.Name}).Count){throw 'Pinned five-input original FF preparation required.'}
 foreach($name in $sourceNames){$p=Resolve-IW7BasePath $source $name;if((Get-FileHash -LiteralPath $p).Hash -ine $plan.source_files.$name){throw 'Original FF preparation changed.'}}
+if($plan.candidate_variable -cne 'lodInfo[0].dist'){throw 'Exact distance candidate preparation required.'}
+Assert-ModelFFDistanceCandidate $plan
 $provenance=Get-Content -LiteralPath $ToolProvenance -Raw | ConvertFrom-Json
 $tool=Join-Path (Split-Path ([IO.Path]::GetFullPath($ToolProvenance)) -Parent) 'zonetool.exe'
 if($provenance.SourceCommit -cne $plan.source_pin -or $provenance.Repository -cne 'https://github.com/bigmangeekf/x64-zt.git' -or
@@ -53,7 +55,10 @@ $package=Get-AppxPackage Microsoft.WinDbg;$cdb=Join-Path $package.InstallLocatio
 if($package.Version -ne '1.2606.22001.0' -or (Get-FileHash -LiteralPath $cdb).Hash -cne '5F54ABAFCA3AE5638BBF807D402FABB350A64575C1DFA9FBFC7F5732DF5BEE67'){throw 'Known bounded offline diagnostics required.'}
 $reader=$null
 if($ReaderRun){$readerRoot=Assert-IW7LabPath ((Resolve-Path -LiteralPath $ReaderRun).Path) (Join-Path $repo 'runtime');$r=Get-Content -LiteralPath (Join-Path $readerRoot 'writer-provenance.json') -Raw | ConvertFrom-Json
-    $reader=Join-Path $readerRoot 'model-writer.exe';if($r.SourcePin -cne $plan.source_pin -or !$r.Roundtrip.read_existing_supported -or (Get-FileHash -LiteralPath $reader).Hash -ine $r.WriterSHA256){throw 'Measured original reader with existing-dump mode required.'}}
+    $reader=Join-Path $readerRoot 'model-writer.exe';if($r.SourcePin -cne $plan.source_pin -or !$r.Roundtrip.read_existing_supported -or (Get-FileHash -LiteralPath $reader).Hash -ine $r.WriterSHA256){throw 'Measured original reader with existing-dump mode required.'}
+    if($r.Source.candidate_variable -cne 'lodInfo[0].dist'){throw 'Exact distance candidate reader required.'}
+    Assert-ModelFFDistanceCandidate $r.Source
+    Assert-ModelFFDistanceCandidate $r.Roundtrip}
 if($DryRun){[ordered]@{Schema='iw7.model-ff-admission/1';RunRoot=$RunRoot;Inputs=$inputs.Relative;OriginalInputs=$sourceNames;PhysicalBytes=8GB;CommitBytes=11GB;PAKs=@('zone/assetfile1.pak');CPPreload=$false;MaterialRuntimeBound=$false;Reader=$reader;Ready=$false}|ConvertTo-Json -Depth 8;return}
 $lease=Enter-IW7ResourceLease -Scope $work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Original model FF bootstrap/inventory/roundtrip'
 $state=[ordered]@{Schema='iw7.model-ff-build/1';Work=$work;Inputs=$inputs;RetainedLeaseToken=$lease.Token;Restored=$false;StockPreserved=$false;RestorationStatus='Pending';CleanupError=$null;Status='Preparing';SourcePlan=$plan;ToolSHA256=$provenance.BinarySHA256;InventoryVerified=$false;GeometryRoundtripVerified=$false;RecipientReferenceResolved=$false;SymbolsVerified=$false;Ready=$false}
@@ -87,6 +92,7 @@ try{
         $state.GeometryReader=Invoke-IW7LabAssetProcess -Executable $reader -ToolArguments @('--verify-existing',(Join-Path $RunRoot 'roundtrip')) -WorkingDirectory $work -LogDirectory $RunRoot -Phase model-geometry -LeaseToken $lease.Token -CleanupState $cleanup -TimeoutSeconds 30
         if($state.GeometryReader.ExitCode -or (Get-Item -LiteralPath $state.GeometryReader.Stdout).Length -gt 1MB){throw 'FF re-dump differs from original geometry/reference.'}
         $verified=[IO.File]::ReadAllText($state.GeometryReader.Stdout)|ConvertFrom-Json;if(!$verified.geometry_roundtrip_verified -or $verified.ready){throw 'Original geometry reader gate failed.'}
+        Assert-ModelFFDistanceCandidate $verified
         $verified|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $RunRoot 'geometry-roundtrip.json');$state.GeometryRoundtripVerified=$true}
 }catch{
     $state.Failure=$_.Exception.Message

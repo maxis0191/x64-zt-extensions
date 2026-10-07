@@ -13,6 +13,8 @@ if($LASTEXITCODE -or $dirty.Count){throw 'Changed shared tool checkout must be p
 $shadowSource='src/zonetool/zonetool/h1/converter/iw7/assets/xmodel.cpp'
 $required=@('src/zonetool/zonetool/utils/io/assetmanager.hpp','src/zonetool/zonetool/utils/io/filesystem.hpp','src/zonetool/zonetool/utils/memory.hpp','src/zonetool/zonetool/iw7/structs.hpp','src/zonetool/zonetool/iw7/assets/xmodel.cpp','src/zonetool/zonetool/iw7/assets/xsurface.cpp',$shadowSource,'src/zonetool/game/shared.cpp','src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp','src/zonetool/zonetool/iw7/converter/h1/assets/xsurface.cpp')
 if(@($manifest.source_hashes.PSObject.Properties).Count -ne $required.Count -or @($required | Where-Object { $_ -cnotin $manifest.source_hashes.PSObject.Properties.Name }).Count){throw 'Exact writer interface provenance required.'}
+if($manifest.lod0_dist -isnot [long] -and $manifest.lod0_dist -isnot [int] -and $manifest.lod0_dist -isnot [double]){throw 'Explicit numeric LOD distance candidate required.'}
+if($manifest.lod0_dist -ne 1000000 -or $manifest.has_lods -isnot [bool] -or !$manifest.has_lods -or $manifest.candidate_variable -cne 'lodInfo[0].dist'){throw 'Exact single-variable LOD candidate source required.'}
 foreach($entry in $manifest.source_hashes.PSObject.Properties){
     $path=Assert-IW7LabPath (Join-Path $source $entry.Name) $source
     if((Get-FileHash -LiteralPath $path).Hash -ine $entry.Value){throw 'Pinned source interface changed after preparation.'}
@@ -50,6 +52,8 @@ Invoke-IW7ResourceJob -Scope $prepared -Kind Build -PhysicalBytes 2GB -CommitByt
         $roundtrip=($rows -join "`n") | ConvertFrom-Json
         if($roundtrip.schema -cne 'iw7.model-roundtrip/1' -or !$roundtrip.geometry_roundtrip_verified -or $roundtrip.ready -or $roundtrip.ff_built -or $roundtrip.pixels_verified){throw 'Roundtrip status contradiction.'}
         if($roundtrip.shadow_cutoff_lod -ne 6 -or $roundtrip.collision_lod -ne 255){throw 'Measured shadow/collision sentinel roundtrip differs.'}
+        if(($roundtrip.lod0_dist -isnot [long] -and $roundtrip.lod0_dist -isnot [int] -and $roundtrip.lod0_dist -isnot [double]) -or
+            $roundtrip.lod0_dist -ne 1000000 -or $roundtrip.has_lods -isnot [bool] -or !$roundtrip.has_lods){throw 'Measured single-LOD distance or unchanged hasLods differs.'}
         $roundtrip | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $prepared 'geometry-roundtrip.json')
         $assets=@(foreach($name in @('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.xsb')){
             $path=Assert-IW7LabPath (Join-Path $prepared "artifacts/$name") $prepared
