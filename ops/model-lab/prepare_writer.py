@@ -93,6 +93,7 @@ def prepare(output, source, *, check_pin=True, recipient_evidence=None, stock_ro
               'geometry_source_sha256':hashlib.sha256(original_text.encode()).hexdigest(),'compiled':False,
               'geometry_roundtrip_verified':False,'iw7_normal_encoding_verified':False,
               'shadow_cutoff_lod':6,'collision_lod':255,'shadow_sentinel_source':SHADOW_SENTINEL_SOURCE,
+              'lod0_dist':1000000,'has_lods':True,'candidate_variable':'lodInfo[0].dist',
               'material_reference':material,'recipient_evidence_sha256':evidence_hash,'ff_built':False,'pixels_verified':False,'ready':False}
     output.mkdir(parents=True)
     (output/'geometry.source.json').write_text(original_text,encoding='utf-8',newline='\n')

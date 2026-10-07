@@ -25,6 +25,35 @@ finally:
 
 
 class ModelSourceTests(unittest.TestCase):
+    def test_ff_admission_rejects_stale_distance_metadata(self):
+        script = r'''
+param($Repo)
+$ErrorActionPreference='Stop'
+. "$Repo/ops/model-lab/ModelFF.Core.ps1"
+$valid=@{lod0_dist=1000000;has_lods=$true;shadow_cutoff_lod=6;collision_lod=255}
+Assert-ModelFFDistanceCandidate ([pscustomobject]$valid)
+foreach($field in @('lod0_dist','has_lods','shadow_cutoff_lod','collision_lod')){
+    $bad=$valid.Clone();$bad.Remove($field)
+    $refused=$false;try{Assert-ModelFFDistanceCandidate ([pscustomobject]$bad)}catch{$refused=$true}
+    if(!$refused){throw "Missing $field accepted"}
+}
+foreach($value in @('1000000',0,999999,$true,[double]::NaN)){
+    $bad=$valid.Clone();$bad.lod0_dist=$value
+    $refused=$false;try{Assert-ModelFFDistanceCandidate ([pscustomobject]$bad)}catch{$refused=$true}
+    if(!$refused){throw 'Invalid distance accepted'}
+}
+foreach($value in @('true',1,$false)){
+    $bad=$valid.Clone();$bad.has_lods=$value
+    $refused=$false;try{Assert-ModelFFDistanceCandidate ([pscustomobject]$bad)}catch{$refused=$true}
+    if(!$refused){throw 'Invalid hasLods accepted'}
+}
+'''
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            path = Path(folder) / 'admission.ps1'
+            path.write_text(script)
+            result = subprocess.run(['pwsh', '-NoProfile', '-File', str(path), str(ROOT)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     @classmethod
     def setUpClass(cls):
         # Match canonical runtime roots and keep NTFS fixtures on one volume in CI.
@@ -78,6 +107,20 @@ $new=Get-IW7ModelCandidate 1040 '1E677EF4E0649159BFD507D993BA2FC9C12272C6F1C138C
 $proof=[pscustomobject]@{ReaderSHA256=$new.Reader;Geometry=[pscustomobject]@{shadow_cutoff_lod=6;collision_lod=255}}
 Assert-IW7ModelCandidateReader $new $proof
 Assert-IW7ModelCandidateReader $old ([pscustomobject]@{ReaderSHA256=$old.Reader})
+$lod=Get-IW7ModelCandidate 1040 '0EC7544D0197A2166E0F743A3832E630609109C1380DBFE2DC294D7773685063'
+$geometry=[pscustomobject]@{shadow_cutoff_lod=6;collision_lod=255;lod0_dist=1000000;has_lods=$true}
+Assert-IW7ModelCandidateReader $lod ([pscustomobject]@{ReaderSHA256=$lod.Reader;Geometry=$geometry})
+foreach($bad in @($null,0,999999,'1000000',$true,[double]::NaN)){
+    $geometry.lod0_dist=$bad;$refused=$false
+    try{Assert-IW7ModelCandidateReader $lod ([pscustomobject]@{ReaderSHA256=$lod.Reader;Geometry=$geometry})}catch{$refused=$true}
+    if(!$refused){throw 'LOD candidate accepted invalid distance'}
+}
+$geometry.lod0_dist=1000000
+foreach($bad in @($null,$false,'true',1)){
+    $geometry.has_lods=$bad;$refused=$false
+    try{Assert-IW7ModelCandidateReader $lod ([pscustomobject]@{ReaderSHA256=$lod.Reader;Geometry=$geometry})}catch{$refused=$true}
+    if(!$refused){throw 'LOD candidate accepted changed/undefined hasLods'}
+}
 foreach($variant in @('size','hash','reader','shadow','collision')) {
     $refused=$false
     try {
@@ -155,6 +198,9 @@ if(!$refused){throw 'Stale GET accepted'}
             self.assertFalse(manifest['iw7_normal_encoding_verified'])
             self.assertEqual(manifest['shadow_cutoff_lod'], 6)
             self.assertEqual(manifest['collision_lod'], 255)
+            self.assertEqual(manifest['lod0_dist'],1000000)
+            self.assertIs(manifest['has_lods'],True)
+            self.assertEqual(manifest['candidate_variable'],'lodInfo[0].dist')
             converter=prepare_writer.SHADOW_SENTINEL_SOURCE
             self.assertEqual(manifest['shadow_sentinel_source'],converter)
             self.assertIn(converter,manifest['source_hashes'])
@@ -273,12 +319,28 @@ foreach($bad in @($log+'Loading asset "foreign" of type rawfile.',$log.Replace('
             self.assertFalse(refused.exists())
             data['Source']['material_reference']=prepare_ff.MATERIAL
             data['Roundtrip']['material_reference']=prepare_ff.MATERIAL
+            semantic={'lod0_dist':1000000,'has_lods':True,'shadow_cutoff_lod':6,'collision_lod':255}
+            data['Source'].update(semantic,candidate_variable='lodInfo[0].dist')
+            data['Roundtrip'].update(semantic)
+            for scope in ('Source','Roundtrip'):
+                for key,value in (('lod0_dist',None),('lod0_dist',0),('lod0_dist',float('nan')),
+                                  ('lod0_dist','1000000'),('lod0_dist',True),('has_lods',False),
+                                  ('has_lods','true'),('shadow_cutoff_lod',255),('collision_lod',6)):
+                    invalid=copy.deepcopy(data);invalid[scope][key]=value
+                    provenance.write_text(json.dumps(invalid))
+                    rejected=Path(folder)/'bad-candidate'
+                    with self.subTest(scope=scope,key=key,value=value):
+                        with self.assertRaises(ValueError):prepare_ff.stage(run,rejected)
+                        self.assertFalse(rejected.exists())
             provenance.write_text(json.dumps(data))
             target=Path(folder)/'staged'
             plan=prepare_ff.stage(run,target)
             self.assertFalse(plan['ready']);self.assertFalse(plan['ff_built'])
             self.assertFalse(plan['material_payload_copied'])
             self.assertEqual(len(plan['expected_inventory']),5)
+            self.assertEqual(plan['lod0_dist'],1000000)
+            self.assertIs(plan['has_lods'],True)
+            self.assertEqual(plan['candidate_variable'],'lodInfo[0].dist')
             self.assertIn('ignore,paris_model_probe_recipient',(target/'zone_source/paris_model_probe.csv').read_text())
             with self.assertRaises(ValueError):prepare_ff.stage(run,target)
             (run/'artifacts'/entries[0]['Path']).write_bytes(b'changed')

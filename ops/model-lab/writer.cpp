@@ -136,6 +136,9 @@ int main(int argc,char** argv){try{
     model.numBones=1;model.numRootBones=1;model.numsurfs=1;model.scale=1;model.radius=std::sqrt(192.0f);for(float& f:model.bounds.halfSize)f=8;
     model.boneNames=&bone;model.partClassification=&classification;model.baseMat=&base;model.boneInfo=&info;model.invHighMipRadius=&mip;model.materialHandles=&material;
     model.lodInfo[0].numsurfs=1;model.lodInfo[0].modelSurfs=&surfs;model.lodInfo[0].partBits[0]=surf.partBits[0];
+    // One-variable candidate: the loaded invisible baseline has dist=0 while
+    // its buffers/material exist. Keep hasLods and every other model field.
+    model.lodInfo[0].dist=1000000.0f;
     if(!verify_existing){dump_surface(surfs);dump_model(model);}
     zone_memory memory(1024*1024);auto* rs=read_surface(memory);auto* rm=read_model(memory);
     require(std::string(rs->name)==surfs.name && std::string(rm->name)==model.name,"Names roundtrip");
@@ -145,10 +148,11 @@ int main(int argc,char** argv){try{
     require(!memcmp(rm->baseMat,&base,sizeof(base)) && !memcmp(rm->boneInfo,&info,sizeof(info)) && !memcmp(&rm->bounds,&model.bounds,sizeof(model.bounds)),"Rest pose/bone/model bounds differ");
     require(rm->radius==model.radius && rm->scale==1 && rm->partClassification[0]==0 && rm->invHighMipRadius[0]==0,"Scalar model metadata differs");
     require(rm->shadowCutoffLod==6 && rm->collLod==255,"Shadow cutoff or independent collision sentinel differs");
+    require(rm->hasLods==true && rm->lodInfo[0].dist==1000000.0f,"Single-LOD distance candidate or unchanged hasLods differs");
     require(rm->lodInfo[0].numsurfs==1 && rm->lodInfo[0].surfIndex==0 && std::string(rm->lodInfo[0].modelSurfs->name)==surfs.name && !memcmp(rm->lodInfo[0].partBits,model.lodInfo[0].partBits,sizeof(model.lodInfo[0].partBits)),"LOD reference differs");
     for(unsigned i=1;i<6;i++)require(!rm->lodInfo[i].modelSurfs,"Unexpected extra LOD");
     require(!rm->parentList && !rm->tagAngles && !rm->tagPositions && !rm->physicsAsset && !rm->physicsFXShape && !rm->scriptableMoverDef && !rm->proceduralBones && !rm->unknown03 && !rm->unknownVec3 && !rm->unknown04,"Unexpected model dependency");
     require((!material && !rm->materialHandles[0]) || (material && rm->materialHandles[0] && std::string(rm->materialHandles[0]->name)==probe_material_name),"Material reference differs");
-    std::cout<<"{\"schema\":\"iw7.model-roundtrip/1\",\"vertices\":24,\"triangles\":12,\"bones\":1,\"surfaces\":1,\"lods\":1,\"shadow_cutoff_lod\":6,\"collision_lod\":255,\"geometry_roundtrip_verified\":true,\"read_existing_supported\":true,\"normal_encoding\":\"H1-1010102-candidate\",\"iw7_normal_encoding_verified\":false,\"material_reference\":"<<(probe_material_name?std::string("\"")+probe_material_name+"\"":"null")<<",\"ff_built\":false,\"pixels_verified\":false,\"ready\":false}\n";
+    std::cout<<"{\"schema\":\"iw7.model-roundtrip/1\",\"vertices\":24,\"triangles\":12,\"bones\":1,\"surfaces\":1,\"lods\":1,\"shadow_cutoff_lod\":6,\"collision_lod\":255,\"lod0_dist\":1000000,\"has_lods\":true,\"geometry_roundtrip_verified\":true,\"read_existing_supported\":true,\"normal_encoding\":\"H1-1010102-candidate\",\"iw7_normal_encoding_verified\":false,\"material_reference\":"<<(probe_material_name?std::string("\"")+probe_material_name+"\"":"null")<<",\"ff_built\":false,\"pixels_verified\":false,\"ready\":false}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

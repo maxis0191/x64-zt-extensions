@@ -1,4 +1,9 @@
 # No mutations/launch on import. Model wrapper uses existing transactions and NTFS identity.
+function Assert-ModelFFDistanceCandidate($Metadata) {
+    if(($Metadata.lod0_dist -isnot [int] -and $Metadata.lod0_dist -isnot [long] -and $Metadata.lod0_dist -isnot [double]) -or
+        $Metadata.lod0_dist -ne 1000000 -or $Metadata.has_lods -isnot [bool] -or !$Metadata.has_lods -or
+        $Metadata.shadow_cutoff_lod -ne 6 -or $Metadata.collision_lod -ne 255){throw 'Exact single-LOD distance candidate metadata required.'}
+}
 function Write-ModelFFState($State,[string]$Path) { $State | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $Path }
 function Assert-ModelFFVacant([string]$Work) {
     foreach($p in @(Get-CimInstance Win32_Process | Where-Object {$_.Name -match '^(iw7|zonetool).*\.exe$'})) {
