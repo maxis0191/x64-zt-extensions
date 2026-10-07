@@ -67,6 +67,34 @@ if(!$refused -or !(Test-Path "$Temp/game/mods/paris_model_probe/foreign.txt")){t
             result=subprocess.run(['pwsh','-NoProfile','-File',str(script),str(ROOT),folder],capture_output=True,text=True,timeout=30)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
+    def test_measured_ff_reader_pairs_cannot_be_crossed_or_replaced(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "runtime") as folder:
+            script=Path(folder)/'candidate-pairs.ps1'
+            script.write_text(r'''param($Repo)
+$ErrorActionPreference='Stop'
+. "$Repo/ops/model-lab/Model-Runtime.Core.ps1"
+$old=Get-IW7ModelCandidate 1036 'BE3A34FF1AB0F95B1850E0BDE0BA60E519706F796F2BF38134C65A42724893CB'
+$new=Get-IW7ModelCandidate 1040 '1E677EF4E0649159BFD507D993BA2FC9C12272C6F1C138CCD624D678CDBDBEA6'
+$proof=[pscustomobject]@{ReaderSHA256=$new.Reader;Geometry=[pscustomobject]@{shadow_cutoff_lod=6;collision_lod=255}}
+Assert-IW7ModelCandidateReader $new $proof
+Assert-IW7ModelCandidateReader $old ([pscustomobject]@{ReaderSHA256=$old.Reader})
+foreach($variant in @('size','hash','reader','shadow','collision')) {
+    $refused=$false
+    try {
+        switch($variant) {
+            size { Get-IW7ModelCandidate 1036 $new.SHA256 }
+            hash { Get-IW7ModelCandidate 1040 ('A'*64) }
+            reader { $proof.ReaderSHA256=$old.Reader;Assert-IW7ModelCandidateReader $new $proof }
+            shadow { $proof.ReaderSHA256=$new.Reader;$proof.Geometry.shadow_cutoff_lod=255;Assert-IW7ModelCandidateReader $new $proof }
+            collision { $proof.Geometry.shadow_cutoff_lod=6;$proof.Geometry.collision_lod=6;Assert-IW7ModelCandidateReader $new $proof }
+        }
+    } catch {$refused=$true}
+    if(!$refused){throw "Candidate pair accepted invalid $variant"}
+}
+''',encoding='utf-8')
+            result=subprocess.run(['pwsh','-NoProfile','-File',str(script),str(ROOT)],capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
     def test_model_runtime_evidence_does_not_infer_pixels_or_material(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "runtime") as folder:
             script=Path(folder)/'witness.ps1'
