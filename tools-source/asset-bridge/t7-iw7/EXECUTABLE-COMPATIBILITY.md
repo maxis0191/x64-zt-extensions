@@ -3,7 +3,8 @@
 Source reviewed: `fab935826c898806855376662a8a03317b3ad8f1`, 2026-10-12.
 The official candidate is app545990, depot545991, public manifest
 2350066205567669287, build4500243. These identify acquisition metadata;
-no executable has been inspected by this work and compatibility is unproved.
+the initial preparation did not inspect an executable. The first authorized
+static observation is recorded below; runtime compatibility remains unproved.
 
 `main.cpp:447-454` checks only IW6. T7 selects the executable by filename,
 loads it through `LoadLibraryA`, and triggers `post_unpack` through the replaced
@@ -116,3 +117,75 @@ the explicit overlap rejection and synthetic overlap/adjacency regressions.
 Local result: 20/20 tests pass with the existing Capstone; `python -B -S` also
 passes (19 executed, one optional decoder test skipped). This is a portable
 dependency check on this workstation, not a claim that hosted CI executed.
+
+## First official executable observation
+
+The [sanitized receipt](executable-static-observation-20261012.json) records the
+single authorized inspection after durable promotion was explicitly confirmed.
+The read consumed **671,445 bytes** of the4 MiB budget. The source-derived disk
+checks reported9 conflicts and37 indeterminate observations; exit2 triggered the
+reviewed wrapper's throw/exit1, then its finally released admission. A fresh
+postflight found zero leases and the same Main process/UDP owner. No payload
+was loaded or executed, and no second payload read was performed.
+
+The candidate has the expected AMD64/base,13 import DLLs/300 symbols, and the
+SetProcessDPIAware/ExitProcess imports. Only steam_api64.dll from the proposed
+depot DLL set is imported directly. Dynamic loads remain possible. DynamicBase
+is unset; relocation and delay-import directories are absent. These facts
+identify loader inputs; they do not prove runtime ABI or boot compatibility.
+
+Eight source-pattern comparisons differ on disk. The ninth conflict is a
+layout observation: `0x1410654C1` lies in the non-executable `.rdata` section.
+Twenty-five unwind headers were unsupported/invalid for this reader, seven
+instruction boundaries had no independent anchor, and five zone globals were
+in `.data` without complete file backing. Those unknowns remain unknowns, not
+evidence that the retail executable is corrupt or the wrong version.
+
+## Source ordering and the next observation
+
+At the retained pin, the explicit order is:
+
+1. `main.cpp:483-510`: post_start, load_binary, version check (IW6 only),
+   post_load, then an explicit call through the returned game entrypoint.
+2. T7 `load_binary` selects the original dedicated filename.
+   `loader.cpp:34-45` calls LoadLibraryA, binds imports, installs TLS storage,
+   and returns the entrypoint. Microsoft's [LoadLibraryA documentation](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya)
+   states that EXE imports are not automatically resolved, consistent with
+   this manual binding. Mapping an EXE is not this explicit entrypoint call.
+3. `load_tls:179-204` copies the template/index/directory through zt-tlsdll.
+   This function has no explicit game-TLS-callback invocation loop and no
+   game-code decryption routine. Do not infer a completed unpack from it.
+4. After entrypoint execution begins, the first intercepted SetProcessDPIAware
+   call invokes component_loader::post_unpack once. Arxan priority2 precedes
+   the ordinary T7 ZoneTool/scheduler/command components at priority0.
+5. Arxan's precomputed integrity routines inspect/patch memory at that stage.
+   The full pattern expectations used offline come from its alternative scan
+   path (`arxan.cpp:251-252`); the precomputed helpers check local forms at+3.
+   These are runtime expectations, not an authenticated on-disk fingerprint.
+
+This source intentionally chooses a rendezvous after entrypoint execution.
+It does **not** establish which bytes the acquired payload transforms, when it
+does so, or whether its first DPI call guarantees that transformation is done.
+The T7 Arxan component is an integrity/anti-debug patcher here, not a demonstrated
+whole-image decoder. On-disk byte mismatches cannot settle this missing runtime
+fact. Expected-binary provenance is being reviewed separately by the coordinator.
+
+The `.rdata` conflict is stronger than an opcode mismatch but still scoped to
+disk layout. T7 calls load_library, not the alternative load/load_sections path
+that marks copied sections RWX. `utils::hook::copy:397-405` changes protection
+temporarily and restores the prior protection; it does not permanently make a
+non-executable page executable. A runtime explanation therefore needs observed
+mapped sections/page protections and code, not an assumed Arxan exemption.
+
+Smallest proposed runtime witness: an explicitly selected probe at the beginning
+of the existing SetProcessDPIAware stub, **before** component_loader::post_unpack.
+Capture the actual module/base/image bounds, section metadata, VirtualQuery
+protection/state and only the already selected windows/needed metadata. Then
+exit through the existing exit_hook/pre_destroy path without post_unpack or
+normal boot continuation. Never execute a DB function, load a zone or apply a
+failed absolute patch to obtain this observation. Earlier import hooks and
+post_load/entrypoint activity have already happened; this is not a zero-effect
+or complete ABI test. An absent rendezvous is an incomplete experiment, not
+permission to fall back to ordinary boot. Reuse existing native supervision
+and its separately reviewed budget; the static reader's256/256 MiB estimate
+does not cover unknown engine initialization. No new runtime GO is implied.

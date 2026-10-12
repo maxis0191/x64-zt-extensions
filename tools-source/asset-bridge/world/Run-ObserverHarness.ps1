@@ -57,18 +57,21 @@ try {
     $PythonExe=Resolve-WorldObserverPath $PythonExe
     $compiler=Resolve-WorldObserverPath (Join-Path $VCToolsRoot 'bin/Hostx64/x64/cl.exe')
     $policy=Get-MaterialV2CompilerPolicy $compiler
+    $consolePolicy=Get-WorldObserverConsolePolicy
+    $null=Resolve-WorldObserverPath $consolePolicy.Image;Assert-BeaconHash $consolePolicy.Image $consolePolicy.SHA256
     Assert-BeaconHash $compiler $policy.CompilerSHA256
     $null=Resolve-WorldObserverPath $policy.Telemetry;Assert-BeaconHash $policy.Telemetry $policy.TelemetrySHA256
-    foreach($path in @($compiler,$policy.Telemetry,$PythonExe)){
+    foreach($path in @($compiler,$policy.Telemetry,$PythonExe,$consolePolicy.Image)){
         $file=Get-Item -LiteralPath $path
         if($file.PSIsContainer -or $file.Length -lt 1 -or $file.Length -gt 32MB){throw 'Bounded installed native tool required.'}
         $guards.Add([IO.File]::Open($path,'Open','Read','Read'))
         $entries.Add([pscustomobject]@{Path=$path;SHA256=(Get-FileHash -LiteralPath $path).Hash})
     }
+    Assert-BeaconHash $consolePolicy.Image $consolePolicy.SHA256 # now under its read guard
     $arguments=@(Get-WorldObserverCompilerArguments $VCToolsRoot $WindowsSdkRoot $WindowsSdkVersion $PSScriptRoot $RunRoot)
     $b=Get-WorldObserverBudgets
     $plan=[ordered]@{Schema='iw7.world-observer-execution-plan/1';Mode=$(if($Run){'Run'}else{'Plan'});
-        RunRoot=$RunRoot;Compiler=$compiler;CompilerArguments=$arguments;CompilerPolicy=$policy;PythonExe=$PythonExe;
+        RunRoot=$RunRoot;Compiler=$compiler;CompilerArguments=$arguments;CompilerPolicy=$policy;ConsolePolicy=$consolePolicy;PythonExe=$PythonExe;
         SourceAndProviderPins=$entries.ToArray();Budgets=$b;OriginalJobs=1;NativeParallelism=1;
         Fixture=Join-Path $RunRoot 'observer.exe';Driver=Join-Path $PSScriptRoot 'observer_harness_driver.py';
         SyntheticOnly=$true;EngineObserved=$false;HeavyExecutionAuthorizedByPlan=$false}
@@ -86,7 +89,10 @@ try {
     $state=[ordered]@{Schema='iw7.world-observer-run/1';Plan=$plan;Status='Preparing';RetainedLeaseToken=$lease.Token;
         NativeCompiled=$false;NativeHarnessPassed=$false;EngineObserved=$false;JobClosureVerified=$false;
         SourceHashesUnchanged=$false;LeaseReleased=$false;LeaseReleaseState='NotAttempted';CompilerWitness=[ordered]@{CompilerIdentity=$null;Completed=$false};
+        ConsoleWitness=[ordered]@{Identity=$null;Completed=$false};
         JobCleanup=$null;FixturePermit=$null;FixtureStartedMs=$null;FinalBytes=$null;Failure=$null}
+    Assert-WorldObserverConsoleSignature (Get-AuthenticodeSignature -LiteralPath $consolePolicy.Image) $consolePolicy
+    Assert-WorldObserverTime ((Get-MaterialV2MonotonicMs)-$groupStart) 'compile' 0
     Add-Type -LiteralPath "$ProviderRoot/tools-source/asset-bridge/model/BuildJob.cs"
     Assert-WorldObserverTime ((Get-MaterialV2MonotonicMs)-$groupStart) 'compile' 0
     Add-Type -LiteralPath "$ProviderRoot/tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs"
@@ -116,6 +122,8 @@ try {
         $memory=Get-IW7ResourceSnapshot;if($memory.Committed -gt $memory.CommitLimit*0.85){throw 'Commit pressure exceeded85 percent.'}
         $observation=[IW7.MaterialDiagnostics.JobMembers]::Capture($owner)
         Update-MaterialV2CompilerWitness $state.CompilerWitness $observation $identity.PID $policy
+        # Never establish a new console witness after the original root exits.
+        if(!$snapshot.RootExited){Update-WorldObserverConsoleWitness $state.ConsoleWitness $observation $identity $consolePolicy}
         $compilePath=Join-Path $RunRoot 'compile.json'
         if(Test-Path -LiteralPath $compilePath){
             $receipt=Read-BeaconJson $compilePath 64KB
@@ -123,7 +131,7 @@ try {
             $state.NativeCompiled=$true
             if($null -eq $state.FixtureStartedMs){
                 if($snapshot.RootExited){throw 'Driver exited before the fixture gate.'}
-                Assert-WorldObserverAdvance $observation $identity $state.CompilerWitness $receipt $policy
+                Assert-WorldObserverAdvance $observation $identity $state.CompilerWitness $receipt $policy $state.ConsoleWitness $consolePolicy
                 $file=Get-Item -LiteralPath $plan.Fixture
                 if($file.Length -lt 1 -or $file.Length -gt 8MB){throw 'Bounded compiled world fixture required.'}
                 $null=Resolve-WorldObserverPath $plan.Fixture
@@ -136,7 +144,7 @@ try {
                 Write-WorldObserverJson (Join-Path $RunRoot 'fixture-go.json') $state.FixturePermit
             }
             if($snapshot.RootExited -and $snapshot.ActiveProcesses -ne 0){
-                $null=Complete-MaterialV2CompilerTelemetry $owner $snapshot $observation $receipt $state.CompilerWitness $policy
+                $null=Complete-WorldObserverResiduals $owner $snapshot $observation $receipt $state.CompilerWitness $policy $identity $state.ConsoleWitness $consolePolicy
             }
         }
         Assert-WorldObserverPollTime $state $clockStart (Get-MaterialV2MonotonicMs) $groupStart

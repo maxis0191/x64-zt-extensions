@@ -107,23 +107,96 @@ function Assert-WorldObserverCompileReceipt($Receipt,$Witness,$Policy) {
        !$Witness.CompilerIdentity -or ($Receipt.pid -isnot [long] -and $Receipt.pid -isnot [int]) -or
        $Receipt.pid -ne $Witness.CompilerIdentity.PID){throw 'Successful independently witnessed world compiler receipt required.'}
 }
-function Assert-WorldObserverAdvance($Observation,$Root,$Witness,$Receipt,$Policy) {
-    Assert-WorldObserverCompileReceipt $Receipt $Witness $Policy
+function Get-WorldObserverConsolePolicy {
+    # Reviewed Windows 10.0.26100.1 catalog-signed image; updates fail closed.
+    [pscustomobject]@{Image=(Join-Path ([Environment]::SystemDirectory) 'conhost.exe');
+        SHA256='E449BCE01F275CD08F3D4E64BB73B3B43AE845A0DBDB3E6131426E66537705E5';
+        SignerSubject='CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US';
+        SignerThumbprint='BAC13DF18B37E808208A39D3A54CCE975FAC8C1D'}
+}
+function Assert-WorldObserverConsoleSignature($Signature,$Policy) {
+    if($Signature.Path -ine $Policy.Image -or $Signature.Status.ToString() -cne 'Valid' -or
+       !$Signature.SignerCertificate -or $Signature.SignerCertificate.Subject -cne $Policy.SignerSubject -or
+       $Signature.SignerCertificate.Thumbprint -ine $Policy.SignerThumbprint){throw 'Pinned Microsoft Windows console-host signature required.'}
+}
+function Assert-WorldObserverConsoleMember($Member,$Root,$Observation,$Policy) {
+    Assert-MaterialV2MemberIdentity $Member
+    if($Member.Image -ine $Policy.Image -or $Member.ParentPID -ne $Root.PID -or $Member.PID -eq $Root.PID -or
+       (Get-MaterialV2MemberTime $Member.CreatedUtc) -lt (Get-MaterialV2MemberTime $Root.CreatedUtc) -or
+       (Get-MaterialV2MemberTime $Member.CreatedUtc) -gt (Get-MaterialV2MemberTime $Observation.CapturedUtc)){
+        throw 'Exact same-job direct-root console-host identity required.'
+    }
+}
+function Update-WorldObserverConsoleWitness($Evidence,$Observation,$Root,$Policy) {
+    $members=@($Observation.Members|Where-Object Image -IEQ $Policy.Image)
+    if($members.Count -gt 1){throw 'At most one console-host generation is permitted.'}
+    if($members.Count -eq 0){return}
+    $member=$members[0];Assert-WorldObserverConsoleMember $member $Root $Observation $Policy
+    if($Evidence.Identity -and ($Evidence.Identity.PID -ne $member.PID -or
+       $Evidence.Identity.CreatedUtc -cne $member.CreatedUtc -or $Evidence.Identity.Image -ine $member.Image)){
+        throw 'Console-host generation changed.'
+    }
+    if(!$Evidence.Identity){
+        $Evidence.Identity=[pscustomobject]@{PID=$member.PID;Image=$member.Image;CreatedUtc=$member.CreatedUtc;
+            ParentPID=$member.ParentPID;InOriginalJob=$true;Error=$null;ParentError=$null}
+    }
+}
+function Assert-WorldObserverMembers($Observation,$Root,$Witness,$Policy,$ConsoleWitness,$ConsolePolicy,[switch]$RootExited) {
     $members=@($Observation.Members)
-    if($members.Count -notin 1,2 -or $Observation.AssignedCount -ne $members.Count -or
-       $Observation.ListedCount -ne $members.Count){throw 'Complete root/optional-telemetry membership required.'}
+    $maximum=if($RootExited){2}else{3}
+    if($members.Count -lt 1 -or $members.Count -gt $maximum -or $Observation.AssignedCount -ne $members.Count -or
+       $Observation.ListedCount -ne $members.Count){throw 'Complete root/console/telemetry membership required.'}
     $roots=@($members|Where-Object PID -EQ $Root.PID)
-    if($roots.Count -ne 1){throw 'Original root missing from world gate.'}
-    $rootMember=$roots[0];Assert-MaterialV2MemberIdentity $rootMember
-    if($rootMember.Image -ine $Root.Image -or $rootMember.CreatedUtc -cne $Root.CreatedUtc){throw 'Original root generation changed.'}
-    foreach($member in $members|Where-Object PID -NE $Root.PID){
+    if($roots.Count -ne $(if($RootExited){0}else{1})){throw 'Original root presence differs from world gate.'}
+    $seen=[Collections.Generic.HashSet[long]]::new();$consoles=0;$telemetry=0
+    foreach($member in $members){
         Assert-MaterialV2MemberIdentity $member
-        if($member.Image -ine $Policy.Telemetry -or $member.ParentPID -ne $Witness.CompilerIdentity.PID -or
-           (Get-MaterialV2MemberTime $member.CreatedUtc) -lt (Get-MaterialV2MemberTime $Witness.CompilerIdentity.CreatedUtc) -or
-           (Get-MaterialV2MemberTime $member.CreatedUtc) -gt (Get-MaterialV2MemberTime $Observation.CapturedUtc)){
-            throw 'Unrecognized world pre-fixture survivor.'
+        if(!$seen.Add($member.PID)){throw 'Duplicate original-job member identity.'}
+        if($member.PID -eq $Root.PID){
+            if($member.Image -ine $Root.Image -or $member.CreatedUtc -cne $Root.CreatedUtc){throw 'Original root generation changed.'}
+        }elseif($member.Image -ieq $ConsolePolicy.Image){
+            Assert-WorldObserverConsoleMember $member $Root $Observation $ConsolePolicy
+            if(++$consoles -gt 1 -or !$ConsoleWitness.Identity -or $ConsoleWitness.Identity.PID -ne $member.PID -or
+               $ConsoleWitness.Identity.CreatedUtc -cne $member.CreatedUtc -or $ConsoleWitness.Identity.Image -ine $member.Image){
+                throw 'Previously witnessed single console-host generation required.'
+            }
+        }elseif($member.Image -ieq $Policy.Telemetry){
+            if(++$telemetry -gt 1 -or $member.ParentPID -ne $Witness.CompilerIdentity.PID -or
+               (Get-MaterialV2MemberTime $member.CreatedUtc) -lt (Get-MaterialV2MemberTime $Witness.CompilerIdentity.CreatedUtc) -or
+               (Get-MaterialV2MemberTime $member.CreatedUtc) -gt (Get-MaterialV2MemberTime $Observation.CapturedUtc)){
+                throw 'Exact single compiler telemetry child required.'
+            }
+        }else{
+            throw 'Unrecognized world job member.'
         }
     }
+}
+function Assert-WorldObserverAdvance($Observation,$Root,$Witness,$Receipt,$Policy,$ConsoleWitness,$ConsolePolicy) {
+    Assert-WorldObserverCompileReceipt $Receipt $Witness $Policy
+    Assert-WorldObserverMembers $Observation $Root $Witness $Policy $ConsoleWitness $ConsolePolicy
+}
+function Complete-WorldObserverResiduals($Owner,$Snapshot,$Observation,$Receipt,$Witness,$Policy,$Root,$ConsoleWitness,$ConsolePolicy) {
+    if(!$Snapshot.RootExited -or $Snapshot.ActiveProcesses -eq 0 -or $ConsoleWitness.Completed){return $false}
+    if($Snapshot.RootExited -isnot [bool] -or
+       ($Snapshot.RootExitCode -isnot [uint32] -and $Snapshot.RootExitCode -isnot [int] -and $Snapshot.RootExitCode -isnot [long]) -or
+       $Snapshot.RootExitCode -ne 0 -or $Snapshot.ActiveProcesses -ne @($Observation.Members).Count){
+        throw 'Successful original root and complete residual membership required.'
+    }
+    Assert-WorldObserverCompileReceipt $Receipt $Witness $Policy
+    Assert-WorldObserverMembers $Observation $Root $Witness $Policy $ConsoleWitness $ConsolePolicy -RootExited
+    if(@($Observation.Members|Where-Object Image -IEQ $ConsolePolicy.Image).Count -eq 0){
+        # Reuse the existing telemetry closer with the COMPLETE observation.
+        return (Complete-MaterialV2CompilerTelemetry $Owner $Snapshot $Observation $Receipt $Witness $Policy)
+    }
+    Assert-BeaconHash $Policy.Compiler $Policy.CompilerSHA256
+    Assert-BeaconHash $Policy.Telemetry $Policy.TelemetrySHA256
+    Assert-BeaconHash $ConsolePolicy.Image $ConsolePolicy.SHA256
+    $ConsoleWitness.BeforeStop=$Observation;$ConsoleWitness.Cleanup=[ordered]@{}
+    $ConsoleWitness.Action='StopOriginalJobAfterVerifiedRootAndConsoleMembers'
+    if(!(Stop-MaterialV2OwnedPhase $Owner $ConsoleWitness.Cleanup)){throw 'World residual original-job closure remains unconfirmed.'}
+    $ConsoleWitness.Completed=$true
+    # Reused supervisor must subsequently observe fresh original root0/Active0.
+    return $true
 }
 function Assert-WorldObserverClosed($Identity) {
     if($Identity.JobRootExitedAtClose -isnot [bool] -or !$Identity.JobRootExitedAtClose -or

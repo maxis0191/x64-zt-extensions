@@ -590,11 +590,24 @@ The Python driver launches the compiler once, requires its witnessed exit zero,
 then waits for an atomic, token-bound fixture permit from the PowerShell owner.
 The owner keeps the compiled EXE open against writes/deletion and binds its hash
 in that permit. Before permitting the fixture, the same original job may contain
-only the root and, if present, the exact hash/creation/parentage-verified compiler
-telemetry child described by the reviewed policy; any other survivor refuses
-continuation. After the root exits, the existing policy may close that exact
-telemetry child by stopping the original job, then must observe fresh root0 /
-Active0. No PID/name-based cleanup, automatic retry or relaunch is allowed.
+only the root, at most one exact compiler telemetry child, and at most one exact
+System32 console host. The World console policy pins the reviewed Windows image
+SHA256 and Microsoft Windows signer subject/thumbprint. Plan only reads/hashes
+the image; Run additionally requires a valid Authenticode result under its read
+guard before creating the original job. A Windows image/signing update refuses
+the pinned policy until reviewed.
+
+The console host must be witnessed while the root is alive, as its direct child
+in the same original job, with creation between the root's creation and capture.
+Its PID, image and creation generation cannot change. The complete gate rejects
+duplicate identities, a second console/telemetry child, unreadable or foreign
+members, and unknown paths; it never filters out an arbitrary `conhost.exe`.
+After the original root exits successfully, a residual console host must match
+that previous witness. World checks the complete residual set and uses the
+existing original-job stop helper; telemetry-only closure delegates unchanged
+to the existing compiler policy. The reused supervisor still must observe fresh
+root0 / Active0 before acceptance. No PID/name-based cleanup, replacement native
+owner, automatic retry or relaunch is introduced.
 The adapter enforces 90 s for compilation including the permit gate, 10 s from
 fixture permission and 120 s from lease acquisition for the group, within the existing supervisor's
 240 s supported envelope (245 s including its grace). The poll callback checks
@@ -643,15 +656,41 @@ the grouping was corrected before delivery. Review of `d2d97ca` then identified
 two gaps missed by the earlier tests: unguarded non-OS drain exceptions and
 release before final receipt publication/accounting. Both corrections and their
 fault-injection tests are now source-only; no earlier native pass is implied.
-All these checks remain **source,
-mock or inert Plan evidence**. No native C++ result is claimed.
+These adapter checks remain **source, mock or inert Plan evidence**. The first
+separately authorized native attempt is recorded below; its compilation success
+does not qualify the fixture or this subsequent console-policy correction.
+
+### First native attempt and console-policy correction, 2026-10-12
+
+The immutable [failure checkpoint](../tools-source/asset-bridge/world/native-checkpoint-2026-10-12.json)
+records source `ae0d85f6`, the exact Plan/receipt/postflight hashes, and the one
+authorized invocation. Compilation exited zero, but the pre-fixture gate refused
+the observed Python / System32 console-host / compiler-telemetry membership.
+No fixture permit was issued: **0/24 observations**, no engine evidence. The
+original job was stopped and confirmed root-exited / Active0; external postflight
+found no retained lease or known child and confirmed Main unchanged. The frozen
+run receipt is explicitly before release and must not be read as the final
+scheduler state. Raw local diagnostics remain preserved outside tracked source.
+
+Both the original owner and driver already requested `CREATE_NO_WINDOW`; this
+flag was not missing. The source correction described above uses the existing
+member capture, supervisor and stop helpers without rebuilding or altering their
+native owner. Seventy-six additional pure/mock checks replay the measured
+three-member shape with sanitized identifiers, reject spoofed/duplicate/replaced
+members and signatures, and cover console-only, telemetry-only and mixed
+post-root closure, unknown survivors and failed closure. Together with the
+existing 56 adapter and 45 finalization checks, these are **177 pure/mock checks**.
+The installed-tool Plan remains inert, now including the console image pin;
+signature validation is forbidden in its Plan test. The correction has not been
+compiled or run natively and still needs independent review and a new explicit
+coordinated GO. The failed checkpoint is not overwritten by the correction.
 
 An actual inert Plan command (the installed compiler pin is also checked):
 
 ```powershell
 $world = Join-Path (Get-Location) 'tools-source/asset-bridge/world'
 $planArgs = @{
-    RunRoot = Join-Path (Get-Location) 'runtime/world-observer-harness-20261012-p2'
+    RunRoot = Join-Path (Get-Location) 'runtime/world-observer-harness-20261012-conhost'
     VCToolsRoot = 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207'
     WindowsSdkRoot = 'C:/Program Files (x86)/Windows Kits/10'
     WindowsSdkVersion = '10.0.26100.0'
@@ -665,11 +704,13 @@ review and explicit coordinated GO only, the same command with `-Run` performs
 admission and the single native group. An existing output directory is refused;
 retain failed output and choose a new reviewed run identity for any later attempt.
 The harness executable/transcript are never accepted as a real map observation.
-The exact local Plan JSON and command are exported separately under
-`world/.review/observer-harness-20261012-p2/` for coordinator review. This ignored
-review directory contains machine paths; the proposed runtime directory remains
-absent until a separately authorized Run. Saving the review snapshot does not
-change the inert Plan command's behavior.
+The first attempt's local Plan, command and diagnostics are retained under
+`world/.review/observer-harness-20261012-p2/`; its runtime directory is occupied
+by the failed attempt and must not be reused. The corrected source's inert Plan
+is saved separately under `world/.review/observer-harness-conhost-source/` for
+coordinator review. These ignored review directories contain machine paths.
+The new proposed runtime directory remains absent until a separately authorized
+Run. Saving a review snapshot does not change the inert Plan command's behavior.
 
 After coordinated native GO, perform the following sequentially, using current
 reviewed Resource-Scheduler/stock helpers and preserving occupied owner processes.
@@ -684,6 +725,7 @@ The estimates are admission requests, not measured peaks or active reservations.
 The ordinary engine load is larger than the observer's 2 KiB inspection budget;
 the complete process must pass resource admission. Capture only the owned child
 identity and use the existing recovery/timeout discipline. No lease, build,
-process launch, stock copy or native observation was performed for this delivery.
+stock copy or native observation was performed for this source correction.
+The earlier single native compile and refused fixture remain documented above.
 Only a successful real record can advance the root-class finding; collision
 creation/serialization and the original-box test remain subsequent work.

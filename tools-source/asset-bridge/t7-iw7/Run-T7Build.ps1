@@ -32,8 +32,9 @@ try {
     if($plan.PhysicalBytes -ne 4GB -or $plan.CommitBytes -ne 6GB -or $plan.GroupDeadlineSeconds -ne 600 -or
        $plan.OutputLimitBytes -ne 256MB -or $plan.MetadataReserveBytes -ne 1MB -or $plan.CleanupSeconds -ne 5 -or
        $plan.ReusedObjects -ne 410 -or $plan.ReusedProjectLibraries -ne 18 -or $plan.ReusedResources -ne 1){throw 'Fixed minimal build limits differ.'}
-    $names=@('helper','probe','main','zonetool11','xpak','link')
-    if(@($plan.Stages).Count -ne 6 -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact six sequential stages required.'}
+    $reuse=$plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $plan.ReuseCompile
+    $names=@(if($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
+    if(@($plan.Stages).Count -ne $names.Count -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact full-build or retained-compile link stages required.'}
     if(@($plan.Bindings).Count -gt 128 -or @($plan.Inputs).Count -gt 2048 -or
        @($plan.Bindings.Path|Sort-Object -Unique).Count -ne @($plan.Bindings).Count){throw 'Input set bound/uniqueness differs.'}
     foreach($pin in $plan.Bindings) {
@@ -58,8 +59,24 @@ try {
         Assert-H1Path $pin.Path
         if((Get-Item -LiteralPath $pin.Path).Length -ne $pin.Bytes){throw 'Recorded input metadata differs.'}
     }
+    if($reuse) {
+        $prior=Read-H1SmallJson $plan.ReuseCompile.Receipt
+        if($prior.Schema -cne 'iw7.t7-minimal-build/1' -or $prior.Status -cne 'Failed' -or
+           $prior.TreeClosureConfirmed -isnot [bool] -or !$prior.TreeClosureConfirmed -or
+           $prior.LeaseReleased -isnot [bool] -or !$prior.LeaseReleased -or
+           $prior.Quarantined -isnot [bool] -or $prior.Quarantined -or
+           $prior.PlanSHA256 -cne $plan.ReuseCompile.SourcePlanSHA256 -or $plan.ReuseCompile.Checks -ne 51){throw 'Retained compile proof differs.'}
+        foreach($name in 'helper','probe','main','zonetool11','xpak') {
+            $row=@($prior.Stages|Where-Object Name -CEQ $name)
+            if($row.Count -ne 1 -or $row[0].ExitCode -ne 0 -or !$row[0].TreeClosureConfirmed){throw 'Retained sub-stage was not successful and closed.'}
+        }
+        if(@($prior.Stages|Where-Object Name -CEQ 'probe')[0].Checks -ne 51){throw 'Retained name probe differs.'}
+        foreach($required in @($plan.ReuseCompile.Receipt,$plan.ReuseCompile.SourcePlan)) {
+            if(@($plan.Bindings|Where-Object {$_.Path -ceq $required -and $_.IsText}).Count -ne 1){throw 'Retained receipt/plan binding absent.'}
+        }
+    }
     if(!$Run) {
-        [ordered]@{Schema='iw7.t7-minimal-build-check/1';PlanSHA256=$PlanSHA256;Stages=6;
+        [ordered]@{Schema='iw7.t7-minimal-build-check/1';PlanSHA256=$PlanSHA256;Stages=@($plan.Stages).Count;ReusedCompilation=$reuse;
             ExpectedInputs=@($plan.Inputs).Count;MissingExpectedPins=@($plan.MissingExpectedPins).Count;
             NativeTypesLoaded=$false;BinaryInputsHashed=$false;LeaseAcquired=$false;RunRootCreated=$false;Ready=$false}|ConvertTo-Json
         return
@@ -80,6 +97,7 @@ try {
     $launcher=Get-Process -Id $PID;$priority=$launcher.PriorityClass;$launcher.PriorityClass='BelowNormal'
     # No binary contents are read until the one account-wide reservation exists.
     foreach($pin in @($plan.Inputs)+@($plan.Bindings|Where-Object {!$_.IsText})){Open-T7Pin $pin $context}
+    if($reuse){foreach($root in $plan.ReuseCompile.StageRoots){Assert-T7Dependencies $plan $root}}
     $null=[Reflection.Assembly]::LoadFrom($plan.JobAssembly)
     Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
     Add-Type -LiteralPath $plan.ObserverSource
@@ -99,7 +117,7 @@ try {
                else{@($plan.Bindings|Where-Object Path -CEQ $stage.Image)[0]}
         $start=New-T7Start $plan $stage $stageRoot
         Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
-        Invoke-H1OwnedStage $plan $stageState $context $start $image.SHA256 $stageRoot $stageStarted
+        Invoke-T7OwnedStage $plan $stageState $context $start $image.SHA256 $stageRoot $stageStarted
         $stageState.Artifacts=@(Get-H1CompilerArtifacts $plan $context)
         if($stageState.CompilerTelemetry.Completed) {
             foreach($prior in $stageState.CompilerTelemetry.Artifacts) {

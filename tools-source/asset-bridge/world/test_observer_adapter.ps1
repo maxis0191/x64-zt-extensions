@@ -42,10 +42,11 @@ function New-WorldFixture {
     $compiler=[pscustomobject]@{PID=37;ParentPID=36;Image=$policy.Compiler;CreatedUtc='2026-10-12T10:00:00.1000000Z';InOriginalJob=$true;Error=$null;ParentError=$null}
     $telemetry=[pscustomobject]@{PID=38;ParentPID=37;Image=$policy.Telemetry;CreatedUtc='2026-10-12T10:00:00.2000000Z';InOriginalJob=$true;Error=$null;ParentError=$null}
     [pscustomobject]@{Policy=$policy;Root=$root;Witness=@{CompilerIdentity=$compiler};Telemetry=$telemetry;
+        ConsolePolicy=(Get-WorldObserverConsolePolicy);ConsoleWitness=@{Identity=$null;Completed=$false};
         Receipt=[pscustomobject]@{schema='iw7.material-v2-phase-result/1';phase='compile';pid=37;exit_code=0;failure=$null;executable_sha256=$policy.CompilerSHA256};
         Observation=[pscustomobject]@{AssignedCount=2;ListedCount=2;CapturedUtc='2026-10-12T10:00:01.0000000Z';Members=@($rootMember,$telemetry)}}
 }
-function Advance($f){Assert-WorldObserverAdvance $f.Observation $f.Root $f.Witness $f.Receipt $f.Policy}
+function Advance($f){Assert-WorldObserverAdvance $f.Observation $f.Root $f.Witness $f.Receipt $f.Policy $f.ConsoleWitness $f.ConsolePolicy}
 $f=New-WorldFixture;Advance $f
 $f.Observation.Members=@($f.Observation.Members[0]);$f.Observation.AssignedCount=1;$f.Observation.ListedCount=1;Advance $f
 foreach($pair in @(@('Image','C:\other\vctip.exe'),@('ParentPID',99),@('InOriginalJob',$false),@('Error','unreadable'),

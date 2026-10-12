@@ -125,3 +125,130 @@ exact plan. First T7 engine boot/export remains a separate compatibility
 experiment after the acquired dedicated EXE, PE/code windows, stock and original
 job/restoration plan are bound. An official download hash alone cannot prove
 compatibility with the retained fixed T7 addresses.
+
+## Plan C attempt: compilation passes, link closure fails
+
+The coordinator authorized one Plan C invocation on 2026-10-12. It ran in a
+persistent PowerShell 7 host after fresh resource admission, using exactly the
+4/6 GiB lease and reviewed source 86b49fc. The native name fixture produced the
+exact 51-check marker with empty stderr. Helper, main, T7 zonetool and xpak each
+finished with original root exit zero and fresh empty-job closure, respectively
+in approximately 1.50, 3.54, 5.43 and 3.44 seconds. The three translation units
+compiled under /W4 /WX; their actual include sets matched guarded inputs.
+
+The final linker produced a 21,740,032-byte EXE and 136,466,432-byte PDB, but
+original-job emptiness was not reached within its 120-second deadline. The
+attempt is **Failed**, not a qualified candidate. Its create-only receipt is
+`runtime/zt-t7-a/receipt.json`, SHA256
+af6beecf7a8892e16266a7641d2799f665f86fa8ad7c40c61561b782534f7897.
+The group elapsed approximately 140.077 seconds and output before receipt was
+183,749,609 bytes. Final full input revalidation was not reached.
+
+A live CIM observation during the wait showed a single VCTIP process whose
+parent PID matched the registered original linker and whose creation followed
+that linker. No cl/link process remained in that observation. This supports a
+linker telemetry residue as the cause; original-job membership was not captured
+by the Link profile and is not retroactively claimed. Source inspection confirms
+H1 qualifies telemetry only for Stage=Compile, while Stage=Link waits for ordinary
+empty-job closure. NativeJob.TreeExited requires root exit and zero active members.
+
+Failure cleanup stopped only the original owned job and confirmed closure; the
+retained original root exit code was zero. The receipt records lease released
+and no quarantine. Fresh postflight at 11:43:41 UTC found no lease or build/
+telemetry processes and unchanged owner Main process identity. The persistent
+host saved its outcome, verified no AppDomain quarantine, then exited normally.
+E7 EXE/PDB were guarded against writing throughout the attempt; their observed
+size/mtime remained unchanged. No candidate or game was launched; no retry was
+performed. The failed receipt and all artifacts remain separate evidence.
+
+The helper EXE (1,032,192 bytes) is now observed at SHA256
+c5989b285530d036caa105e9456400daeac859e44b008ad94a5a079e3faab1f6
+with those exact 51 source cases. Reuse must bind its source/header/receipt
+identity, rather than rerun a source-identical helper unnecessarily. The next
+source-only change is a narrow Link telemetry policy adapter reusing H1's strict
+identity, artifact, two-capture and original-job closure checks, with no deadline
+increase. Any further native invocation requires a separately reviewed new plan
+and coordinator GO; Plan C remains Failed.
+
+## Link-only correction and Plan D2 preparation
+
+Invoke-T7OwnedStage is a small adapter around the unchanged H1 controller. For
+Link only, it supplies the pinned sibling link.exe identity (SHA256
+a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f)
+to the same strict compiler telemetry policy. The controller's internal Compile
+branch is reused; the receipt retains the actual Link phase label even on error.
+The policy factory override is function-local and cannot broaden the ordinary
+cl.exe factory. VCTIP path/hash, exact root identity/exit zero, bound inputs,
+all four linker artifacts, two matching original-job captures, parent/creation
+checks and a fresh zero-member proof remain required. Unknown residuals still
+fail. There is no new job owner, OS change or timeout increase.
+
+The recovery plan executes only a fresh linker job. It reuses the exact three
+compiled objects, their PDBs and dependency reports, plus the already observed
+51-case helper proof. The prior Plan C SHA, its Failed-but-closed receipt and
+seven byte-identical native source/header/fixture files must agree before reuse
+is prepared. A changed native source, incomplete artifact set, nonzero compile
+exit, missing closure, wrong probe count or quarantine refuses reuse. Full
+expected inputs and reused artifact pins are guarded/rehashed under the new
+lease, and actual prior compiler include sets are checked against that guarded
+set again before link. No old Link result is promoted or relabelled.
+
+The first D read-only check exposed PowerShell's one-element array unwrapping
+in the stage-name count; it stopped before native providers or admission. That
+plan remains preserved. The corrected plan is
+`runtime/t7-build-plan-d2/build-plan.local.json`, SHA256
+daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa.
+Its default check passes with one Link stage, 1,086 expected input pins, zero
+missing pins and no native types, lease, binary hashing or candidate root.
+The new candidate root is `runtime/zt-t7-b`; the original C artifacts remain
+under `runtime/zt-t7-a`. Link stays at 120 seconds, group at 600 seconds,
+admission at 4/6 GiB and output at 256 MiB. E7 preservation anchors remain bound.
+
+Validation: 37 Python source/recipe tests pass, including five reuse regressions;
+three global-deadline regressions still pass. Ten synthetic Link tests exercise
+the actual H1 telemetry functions through the adapter, verifying success only
+after artifact/two-capture proof and rejecting root failure, wrong telemetry
+path, wrong parent, absent job membership, changed generation, changed inputs,
+changed artifacts and unpinned linker identity. The original cl policy remains
+unchanged outside the adapter. All three retained dependency reports also pass
+the new plan's source-only check. These tests perform no native execution or
+reservation. Independent review and a new coordinator GO remain required.
+
+## Plan D2 result: qualified link, candidate not executed
+
+After favorable independent review and an explicit coordinator GO, exactly one
+Link-only D2 invocation ran on 2026-10-12 with source
+ba365d4ba100128094d7de821da95f1516516c88 and the plan SHA above. Fresh admission
+followed the preceding workload's confirmed closure. The linker completed in
+2.753 seconds; the complete guarded group took 13.791 seconds. The original
+linker exited zero. H1 qualified the exact VCTIP child in two original-job
+captures, stopped only that original job, and confirmed root exit zero with
+zero active members afterward. No compile or helper fixture was rerun.
+
+The create-only receipt is `runtime/zt-t7-b/receipt.json`, SHA256
+c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+with Quarantined false. All 1,086 expected inputs, including the E7 preservation
+anchors and reused C artifacts, passed final revalidation. Link output before
+receipt was 158,225,555 bytes. Qualified outputs under `runtime/zt-t7-b/link`:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| zonetool-t7.exe | 21,740,032 | 94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15 |
+| zonetool-t7.pdb | 136,474,624 | b533dd414ebe395885f03dfddb4fb5c43fafdf8f51de33e5ec1b5b3afa1fd5c2 |
+| zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| zonetool-t7.exp | 3,901 | b390095aaa172e81ca1cecd15c10b35c27faf08303157a478bb638ab574a9c8f |
+
+Postflight at 12:08:53 UTC found zero leases, no compiler/linker/ZoneTool/telemetry
+processes and unchanged owner Main identity. The persistent host verified the
+receipt and absence of AppDomain quarantine, saved
+`runtime/t7-build-plan-d2/host-outcome.local.json`, then exited normally. Its
+absence was verified separately. The failed Plan C and frozen E7 artifacts
+remain preserved; C is not relabelled as successful.
+
+This qualifies the build only: CandidateExecuted and Ready remain false.
+Neither the candidate nor the dedicated engine was launched. Fixed-address
+engine compatibility, catalogue/export execution and owner gameplay remain
+unproved. The next authorized work is source-only wiring of a separate bounded
+pre-patch rendezvous probe before `component_loader::post_unpack`; any new
+native build or runtime experiment requires its own reviewed plan and GO.

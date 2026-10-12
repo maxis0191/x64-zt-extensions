@@ -1,7 +1,9 @@
 # BO3 / T7 to IW7: selected static model
 
-Status, 2026-10-12: source reconnaissance and proposed export contract. No BO3
-payload was read, exported, converted, built into an FF or rendered here. The
+Status, 2026-10-12: source reconnaissance, proposed export contract and the one
+dedicated EXE acquired from its exact Steam manifest. No BO3 asset payload was
+exported, converted, built into an FF or rendered here. The acquired EXE has not
+been executed by this chat; static PE inspection is a separate checkpoint. The
 owner stopped H1 work. Its checkpoint is historical and supplies no BO3 proof.
 
 After the owner confirmed download completion, the bounded metadata inventory
@@ -330,8 +332,9 @@ Tool plus closed attempt occupies 112,532,097 bytes, including the receipt.
 The real EXE entry is `UnrankedServer\BlackOps3_UnrankedDedicatedServer.exe`,
 21,737,352 bytes, 21 chunks, SHA1 `9d5fdd6f44defb8d65f8f5256e4eb83d4547f408`.
 The existing owner's `steam_api64.dll` (235,600 bytes) already matches its manifest
-SHA1 exactly; a targeted read verified this without copying it. The executable
-and other dependencies have **not** been acquired. Select them from the manifest
+SHA1 exactly; a targeted read verified this without copying it. At this manifest
+checkpoint the executable and other dependencies had not been acquired. Select
+them from the manifest
 against the T7 loader/import needs; reuse BO3's installed FF/XPAK in place.
 This result proves manifest retrieval, not T7 address or asset compatibility.
 
@@ -358,7 +361,40 @@ successful filelist logging and 21,737,352 uncompressed bytes in the tool's tran
 counter (compressed counter capped at 32 MiB). No FF/XPAK or speculative dependency
 is requested, and the host does not execute the downloaded PE. Forty-seven light
 assertions pass, including literal-list acceptance and regex/extra/empty refusal.
-The acquisition command is prepared; no payload invocation has been performed.
+At this preparation checkpoint no payload invocation had been performed.
+
+### Dedicated executable acquired and preserved
+
+One acquisition ran at source `49225da` with reviewed plan SHA256
+`0df1208fde4ed06d079a7ca0a3b686d632103c94193672d0bad694de258e5417`.
+It retrieved exactly the selected executable: **21,737,352 bytes**, 21 manifest
+chunks, SHA1 `9d5fdd6f44defb8d65f8f5256e4eb83d4547f408`, SHA256
+`3df511d71e3690b14517379783bbfb713f6fe2ed2f2e73b445b4878216686156`.
+The tool reported **16,420,720 compressed bytes** transferred. No other game
+file was requested. The 8,214.70 ms attempt returned root0 / ActiveProcesses0,
+closed normally and released its lease without forced stop or quarantine.
+
+After a fresh audit confirmed no leases or owned tool/host remnants and the
+same Main process generation / UDP27016 owner, the file was moved without
+overwrite from private staging to durable local tool storage. The source is
+absent, the destination is read-only, and length/SHA1/SHA256 matched before and
+after the move. Exact local source/destination paths remain in the private
+promotion receipt; [the sanitized observation](bo3-executable-observation-20261012.json)
+binds acquisition, closure and promotion receipts by hash.
+
+The acquired EXE was never executed by this acquisition host/chat. Its static
+PE inspection, hardcoded T7 address compatibility, engine boot, real catalogue,
+conversion and rendering are separate unproven stages. Additional DLLs remain
+conditional on the real import closure; the matching owner Steam API DLL and
+existing game assets remain in place. No further download or native Run is
+implicit in this successful acquisition.
+
+The [catalogue preparation](CATALOGUE-PLAN.md) records the proposed private
+working directory, exact CLI, existing input identities, resource/closure limits
+and unresolved startup/address gates. It creates no links and authorizes no Run.
+The coordinator subsequently chose an earlier
+[pre-patch diagnostic environment](PREPATCH-ENVIRONMENT.md): two existing binary
+aliases, no zone, and no execution. The catalogue remains a later stage.
 
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is
