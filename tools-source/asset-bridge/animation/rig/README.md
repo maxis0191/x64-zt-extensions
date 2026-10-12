@@ -119,7 +119,10 @@ native compile, both model emissions and independent native reading, before an
 FF log-directory collision stopped the chain. The failed attempt was restored;
 see [the preserved run and correction](RIG-RUN-2026-10-12-A.md).
 The corrected runner uses separate compiler artifacts and phase logs, retaining
-bootstrap errors even without `phase.json`. Its focused checks passed; it has not
-been rerun. Default remains inert Plan, and a new Run needs separate coordinator
-GO. Measured AnimationFF/shared providers and recovered source bytes are unchanged.
+bootstrap errors even without `phase.json`. One separately authorized recipe E
+then passed native reading and FF build/verify/dump, but the strict final reader
+refused two loaded pointer fields. The attempt is failed/restored, with its raw
+outputs preserved; see [attempt B / recipe E](RIG-RUN-2026-10-12-B.md).
+Default remains inert Plan, and a new Run needs separate coordinator GO.
+Measured AnimationFF/shared providers and recovered source bytes are unchanged.
 Every engine weight, cadence, material and rendered-output convention remains open.

@@ -1,0 +1,244 @@
+{
+  "schema": "iw7.original-rig-attempt/1",
+  "captured_utc": "2026-10-12T06:31:13.035504+00:00",
+  "attempt_source_commit": "f8b12016d0abdeba3970e4c5a2153a6c1d75a929",
+  "attempt_label": "B / recipe E",
+  "attempt_count": 1,
+  "attempt_status": "FailedRestored",
+  "retry_executed": false,
+  "recipe_sha256": "bbf878c5dcc17dc94865197b0572df5804e17d6f010793368ce05429107f9b7d",
+  "original_state": {
+    "bytes": 82416,
+    "sha256": "6058170392459e5f30fb048ef560f19154ba3f6c92c524aa46cab869527ab772",
+    "files": 62,
+    "total_bytes": 3953976,
+    "final_counter": 3953976,
+    "max_counter": 3955093,
+    "preserved_byte_exact_during_diagnosis": true
+  },
+  "phases": [
+    {
+      "phase": "compile",
+      "original_root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 0,
+      "receipt_sha256": "e5c8101938bb9302c09a0bf85adec14ccb0b0526310adc99324fd7778427824c"
+    },
+    {
+      "phase": "emit-first",
+      "original_root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 0,
+      "receipt_sha256": "0900197a9eeca73cbf1d02c153e7d62b936edec826fc36782afdc1c5b6b61b15"
+    },
+    {
+      "phase": "emit-second",
+      "original_root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 0,
+      "receipt_sha256": "eb547f88898c6aa0d27d273dacd0e058f4e0dc2288ba39cf60da2b1c8ccb6716"
+    },
+    {
+      "phase": "read-native",
+      "original_root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 0,
+      "receipt_sha256": "6ad85ea9c0b78d29745a840779be827148624b25cf309f85294ea0b13b7c88a4"
+    },
+    {
+      "phase": "build",
+      "original_root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 0,
+      "receipt_sha256": "6060c6a2d6080b2f05b62be95eec78dcef2a8cb1d8cb280ff9d8d7792c0a4afc"
+    },
+    {
+      "phase": "verify",
+      "original_root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 0,
+      "receipt_sha256": "4d1ca36a5aae674e1032a746c0d57ab475af694510e4c6ae914a30dfe3c1f109"
+    },
+    {
+      "phase": "dump",
+      "original_root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 0,
+      "receipt_sha256": "9cf96da3fdc9afce49991d7b2c3c1c82b3f5919c99cf4d4ce9ab65e38f37eca0"
+    },
+    {
+      "phase": "read-ff",
+      "original_root_exit": 1,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "child_exit": 2,
+      "receipt_sha256": "70aeb44af683fcd6d432e23b6199ea87d8e0aa636651a225f9446eaa477a2592"
+    }
+  ],
+  "native_data_verified": true,
+  "native_writer": {
+    "sha256": "3f1e63b526bbb3b0802ec5e124c04a804ee1280cf40f25587568411da2dd42e6",
+    "bytes": 104448
+  },
+  "toolchain": {
+    "files": 5442,
+    "manifest_sha256": "be36e5bd478ce4693bc695f698ab069702fdc792a04742a5a88860abf9513068",
+    "guarded_final_hash_and_identity_proof": true,
+    "whole_sdk_rehashed_after_lease": false
+  },
+  "ff": {
+    "bytes": 1064,
+    "sha256": "ea7ba4be1d5e6f0878431b51e7b9b1ba9d2b10bf74b1ad21da14d55c414e145d",
+    "exact_seven_asset_inventory_verified": true,
+    "assets_csv_sha256": "fa764dc0f975eb3d48339d2353a335d21deee6749484b9d9634065aa97206951",
+    "build_verify_dump_root_zero_active_zero": true,
+    "full_data_roundtrip_verified": false
+  },
+  "output_assets": [
+    {
+      "relative": "native/first/xmodel/paris_doom_skin_two_bone_first_a.xmb",
+      "bytes": 1114,
+      "sha256": "2458357db68c28fb439210de18feb695b8886c739c85170c1804c1fb13d31c9b"
+    },
+    {
+      "relative": "native/first/xsurface/paris_doom_skin_two_bone_first_a_lod0.xsb",
+      "bytes": 730,
+      "sha256": "e6c7357080e18e65f23e93b10ff1711c2745087b11eae84594a5b9f6ed93ed25"
+    },
+    {
+      "relative": "native/second/xmodel/paris_doom_skin_two_bone_second_a.xmb",
+      "bytes": 1116,
+      "sha256": "1c8f305446f19babe972d987dcc6b65d8b2643171123383304bd1e03173f312f"
+    },
+    {
+      "relative": "native/second/xsurface/paris_doom_skin_two_bone_second_a_lod0.xsb",
+      "bytes": 731,
+      "sha256": "edfc1556c4dfaa373f9804a174e44e2ccbc9b734c3a9e14493c172e3ea40be4a"
+    },
+    {
+      "relative": "roundtrip/xanim/paris_original_probe_bend.xab",
+      "bytes": 281,
+      "sha256": "a9cd7a3de12b805f5f3e73e5442980a714e39294912f689992f55e3d65576444"
+    },
+    {
+      "relative": "roundtrip/xmodel/paris_doom_skin_two_bone_first_a.xmb",
+      "bytes": 1114,
+      "sha256": "177d11d0b198678772f021afe9fb95726f3bf48309ca14561e988a195a14b015"
+    },
+    {
+      "relative": "roundtrip/xmodel/paris_doom_skin_two_bone_second_a.xmb",
+      "bytes": 1116,
+      "sha256": "fdb7d49a72ef5897ee2e699d74ef1763e6f4413e686c5b4be7d68150550e98d9"
+    },
+    {
+      "relative": "roundtrip/xsurface/paris_doom_skin_two_bone_first_a_lod0.xsb",
+      "bytes": 730,
+      "sha256": "01840db5a3d748a4e109cb6ae26644adf9ac0104743c23e5f0fa8263e3ce0b9d"
+    },
+    {
+      "relative": "roundtrip/xsurface/paris_doom_skin_two_bone_second_a_lod0.xsb",
+      "bytes": 731,
+      "sha256": "6895eab7d761ce7f77d75e131bbbadc91136aee99ccf6f1553ea8112986e8b66"
+    }
+  ],
+  "failure": {
+    "phase": "read-ff",
+    "original_root_exit": 1,
+    "child_exit": 2,
+    "reader_error": "unexpected native field/padding/dependency",
+    "parent_error": "Exact rig phase receipt and original exit0/Active0 required.",
+    "raw_files_accepted": false,
+    "observed_fields": [
+      {
+        "profile": "first",
+        "strict_refusals": {
+          "xmodel": "unexpected native field/padding/dependency",
+          "xsurface": "unexpected native field/padding/dependency"
+        },
+        "model_offset": 272,
+        "model_field": "lodInfo[0].surfs",
+        "model_pointer_equals_surface_outer_surfs": true,
+        "surface_offset": 88,
+        "surface_header_field": "blendVertsBuffer",
+        "surface_pointer_equals_outer_name": true,
+        "surface_view_is_null": true,
+        "gpu_buffer_semantics_established": false,
+        "xmb_bytes": 1114,
+        "xsb_bytes": 730,
+        "xmb_sha256": "177d11d0b198678772f021afe9fb95726f3bf48309ca14561e988a195a14b015",
+        "xsb_sha256": "01840db5a3d748a4e109cb6ae26644adf9ac0104743c23e5f0fa8263e3ce0b9d"
+      },
+      {
+        "profile": "second",
+        "strict_refusals": {
+          "xmodel": "unexpected native field/padding/dependency",
+          "xsurface": "unexpected native field/padding/dependency"
+        },
+        "model_offset": 272,
+        "model_field": "lodInfo[0].surfs",
+        "model_pointer_equals_surface_outer_surfs": true,
+        "surface_offset": 88,
+        "surface_header_field": "blendVertsBuffer",
+        "surface_pointer_equals_outer_name": true,
+        "surface_view_is_null": true,
+        "gpu_buffer_semantics_established": false,
+        "xmb_bytes": 1116,
+        "xsb_bytes": 731,
+        "xmb_sha256": "fdb7d49a72ef5897ee2e699d74ef1763e6f4413e686c5b4be7d68150550e98d9",
+        "xsb_sha256": "6895eab7d761ce7f77d75e131bbbadc91136aee99ccf6f1553ea8112986e8b66"
+      }
+    ]
+  },
+  "diagnosis": {
+    "receipt_sha256": "e12776f9118c6f7a62e90866ef708bef4fa456109ec8ac1d29f76a7fe99b95ed",
+    "tracked_reader_modified": false,
+    "projection_only_in_memory": true,
+    "two_fields_per_profile_zeroed_only_in_projection": true,
+    "other_semantic_mismatch_found_in_projection": false,
+    "projection_is_acceptance_evidence": false,
+    "gpu_buffer_semantics_established": false,
+    "source_hashes": {
+      "src/zonetool/zonetool/iw7/structs.hpp": "adb62e481a533d27f97829e64d9038b13c5e9cd88e6b4aee8cac339b9492921a",
+      "src/zonetool/zonetool/iw7/assets/xmodel.cpp": "3b512ce71a72ae76a01a5e5b4236162c529557f78f583b8de79ae86a80c0b97a",
+      "src/zonetool/zonetool/iw7/assets/xsurface.cpp": "347622b01c02f0848e2aa4d98597c3b4939022441a6f792053ffc4d94ff8fa03",
+      "src/zonetool/component/iw7/zonetool.cpp": "be37e50690c515fc116f0c6092f8dd361b973aa73f9b56faf32ee457f3c90ed4"
+    }
+  },
+  "admission": {
+    "native_physical_gib": 4,
+    "native_commit_gib": 6,
+    "native_released_before_ff": true,
+    "ff_physical_gib": 8,
+    "ff_commit_gib": 11,
+    "native_lease_snapshot_retained": true,
+    "ff_lease_snapshot_retained": false,
+    "ff_token_not_claimed": true,
+    "rig_leases_after": 0
+  },
+  "restoration": {
+    "restored": true,
+    "stock_preserved": true,
+    "source_inputs_unchanged": true,
+    "all_79_source_metadata_unchanged": true,
+    "all_79_staged_files_absent": true,
+    "all_eight_original_jobs_closed": true,
+    "original_process_identities_absent": true,
+    "execution_input_hashes_unchanged_before_diagnosis": true,
+    "main_identity_and_image_unchanged": true,
+    "postcheck_sha256": "0f1cff8064c26f49ad08c62193ceed7b09857b02a1a50e869ce30174efb86771"
+  },
+  "game_launched": false,
+  "material_binding_verified": false,
+  "engine_weight_direction_verified": false,
+  "engine_playback_verified": false,
+  "notetrack_delivery_verified": false,
+  "ready": false,
+  "next_step": "Independent source audit of the two loaded fields before any acceptance-profile change; no new native Run authorized."
+}
