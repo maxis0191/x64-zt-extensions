@@ -1,9 +1,46 @@
 # Locator Plan F: fixed 512-edge preparation
 
-This checkpoint contains source, pure tests and an inert Plan only. It authorizes
-no Run, snapshot content read, game or ZoneTool launch, attachment or callee walk.
-Run E remains a failed traversal at 64 edges, preserved in its separate
+The original checkpoint below contained source, pure tests and an inert Plan
+only. A later separate GO authorized one Run F, recorded below. Run E remains
+a failed traversal at 64 edges, preserved in its separate
 [receipt](run-e-validation-2026-10-12.json), commit `996a686`.
+
+## Run F: authorized traversal completed
+
+The [sanitized receipt](run-f-validation-2026-10-12.json) records one Run at
+source `8b650d7` and exact Plan SHA256
+`95a02ba6a5a21ec74b4b7aef9f74db481c14b41208d578d49f3e16c206562886`.
+It fully decoded and visited all 500 instructions in the same 2,498-byte range,
+recording 93 edges: 65 calls not followed and 28 direct branches. There is no
+current, pending, refused or unresolved frontier. Status is
+`CandidateRouteNeedsReview`, not first-writer or gameplay acceptance.
+
+The original process exited 0 with job Active=0. Guarded inputs remained
+unchanged; the job closed without quarantine and its reservation was released.
+The independent post-observation found no lease or original process identity,
+and Main's image/hash/creation identity was unchanged. Two output files total
+108,775 bytes, also the maximum observed size. Analysis took 0.047 seconds;
+the supervisor measured 609 ms for its original process lifecycle. No stock
+was staged, no restoration was needed and no game or ZoneTool was launched.
+
+An earlier preflight did not launch F: a supplemental observer incorrectly
+treated two old Python services as possible heavy work. The coordinator
+identified the Main incident recorder and another project's loopback HTTP
+preview, then issued a new unique GO. Their exact identities were verified and
+preserved; no budget changed. Both preflight receipts remain intact. The raw
+post-observation still uses the legacy `ForeignHeavy` label for those two rows,
+each with scheduler `Heavy=false`; the sanitized receipt explains that label
+without rewriting the original evidence. This was one Run, with no automatic
+retry and no subsequent Run authorized.
+
+The one literal +0x58 memory reference remains a read at `0x140a18210`; there
+are no explicit overlapping write candidates. [Report E's static address
+trace](REPORT-E-LAYOUT.md) still identifies possible earlier by-reference call
+boundaries. Completing F's declared traversal does not inspect those callees,
+prove their return behavior, establish the complete logical function, or prove
+live surface identity and the first writer. All such proof flags remain false.
+
+## Original preparation contract
 
 The coordinator requested a fixed 512-edge contract after E fully decoded the
 2,498-byte owner range into 500 instructions but stopped at its 65th edge.
@@ -48,6 +85,7 @@ creation/copy and snapshot hashing trapped. Preparation does not validate runtim
 hashes or obtain fresh full admission. The ignored Plan, command and executor
 receipt are immutable and individually pinned in the preparation receipt.
 
-Next: independent source and exact Plan F review, then a separate explicit GO
-before one Run. First-writer proof, live provenance and gameplay acceptance
-remain false.
+At preparation, the next gate was independent source and exact Plan review,
+then a separate explicit GO before one Run. Those gates led to the result above.
+Next: coordinator review of that retained report and its call boundaries; no
+further Run or callee read without a separately scoped plan and GO.
