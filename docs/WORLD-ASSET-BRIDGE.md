@@ -938,6 +938,10 @@ the shared provider owner for source review; no fourth Run is authorized.
 
 ### Current source candidate: sampled output, existing direct stages
 
+The source-only checkpoint in this section was subsequently exercised once;
+the successful native result is recorded in the next section. Its reviewed Plan
+and provider pins were not changed before execution.
+
 The coordinated architecture decision permits replacing the old strict 2 MiB
 drain cap with an explicitly **sampled threshold**. This removes the need for a
 new native owner or pipe infrastructure. `Run-ObserverHarness.ps1` now uses the
@@ -1013,6 +1017,59 @@ console checks also remain green. The retained third attempt's linker response
 file was inspected read-only to confirm the new direct link preserves its
 options, object and library search paths. No extra linker-flag experiment was
 introduced while separating `/c` and Link.
+
+### Direct-stage native checkpoint: 24/24 synthetic cases passed
+
+The [sanitized fourth-attempt checkpoint](../tools-source/asset-bridge/world/native-checkpoint-2026-10-12-stages.json)
+records **one authorized invocation** of source `916d3fdeb19c642c7f29fc8bc6e2885601b6baa3`
+and Plan `f3c03139ae349a2678964132eeffb74951426a607d9616e0538c33faa721c646`.
+The retained host completed that invocation at `2026-10-12T13:29:34.2707242Z`,
+5.817 seconds after its invocation marker. This includes wrapper/Plan/admission
+time; it is not a measured native memory peak or a standalone stage duration.
+
+All four original jobs exited successfully and closed. Compile and Link each
+qualified their own exact VCTIP child and obtained a fresh original root0/Active0
+snapshot plus an empty member capture. Their shared build clock reached
+2,370.778 ms after Link (Compile's checkpoint was 1,500.087 ms). Fixture and
+independent Check took 277.750 ms and 289.041 ms on their individual stage clocks.
+No alternate compiler flags, console-count relaxation or retry was used.
+
+The actual fixture transcript is **18,177 bytes**, with **24 records** and a
+largest record of **1,254 bytes**. The independent reader accepted all expected
+cases, including two positive observations and 22 deliberate refusals. Fixture
+stderr was the expected 63-byte success marker. Compiler stdout was 33 bytes;
+compiler stderr and both linker streams were empty. The checker emitted 377
+stdout bytes and no stderr. The retained tree contains 11 files / **321,022 bytes**,
+including the 27,271-byte immutable receipt. No sampled output threshold was
+exceeded; this result does not turn the sampled policy into a strict write cap.
+
+The exact fixture EXE is
+`910e2450b052d0a0f868d2cf1550fc56c3ec2a9692b4abaf843925fa557acf7c`;
+the transcript is
+`b4332b0e0cd1cad3b2eddd87ab46880e2290e68a5775ba4dcea09b8cd07b98a8`.
+The stored receipt SHA-256 is
+`3286d12f564eb3d4819415950ce5329d44743ac090248f7847f4d29fdcc352f4`.
+Its status remains `SyntheticHarnessValidatedLeaseHeld` / `BeforeLeaseRelease`.
+The separate returned state, retained-host observation and postflight establish
+the subsequent confirmed release and `SyntheticHarnessPassed` outcome; the
+immutable receipt was not rewritten to predict that release.
+
+Postflight at `13:29:57.6083995Z` verified all 32 bindings unchanged, zero leases,
+no other heavy process, and the same Main process with two clients on `cp_zmb`.
+Main's binary, scripts, configurations and bank fingerprints matched preflight;
+the owner's unrelated Python process was preserved. The original host remained
+alive through the no-quarantine check, then exited normally. At
+`13:31:05.8780027Z`, the slot-release proof confirmed host exit, job closure,
+zero leases and no other heavy process. All four original stage generations and
+both observed VCTIP generations were also verified absent. No restoration was
+needed and no Main/client operation was performed.
+
+The previous three checkpoints remain **Failed / 0 of 24** with their original
+raw receipt hashes unchanged. This new result validates the synthetic observer
+fixture and its independent reader only: `engine_observed=false`; real map
+serialization, collision and owner gameplay remain unvalidated. The unique GO
+is consumed. Next work is coordinated review/integration of this evidence and
+a separately reviewed real-asset plan, not another native invocation here.
 
 The third attempt's exact Plan command is retained below for provenance. Its
 runtime directory is now occupied and cannot be reused. This command describes
