@@ -1,6 +1,7 @@
 # Prepared production-parser -> production-converter observation
 
-**Source-only. No compilation or native execution has occurred for this probe.**
+**One admitted compile/link produced an EXE, but the supervised Compile stage
+failed its deadline. The probe itself has never executed.** See the attempt below.
 The existing full ZoneTool EXE has not been launched or changed. The original
 H1 XMB/XSB fixture and its light checks are described in [README.md](README.md).
 
@@ -64,7 +65,8 @@ observe the real string table. The parser bodies are unchanged. This probes
 those exact production methods and their real serialization/support routines;
 it does not validate the original class vtable, full ZoneTool initialization,
 stock DB fallback, command dispatch or whole-application linkage. Logging alone
-is adapted to `fprintf(stderr, ...)`. Compilation/linkage remain unverified.
+is adapted to `fprintf(stderr, ...)`. The compile/link below produced an EXE;
+runtime assertions and parser/converter execution remain unverified.
 
 ## String and material limits remain explicit
 
@@ -85,7 +87,7 @@ probe would not establish retail-H1 import, FF loading or rendered appearance.
 
 ## Preparation and proposed admitted work
 
-Only the following source preparation and Python tests are authorized now:
+The following commands remain source preparation and Python tests only:
 
 ```powershell
 python -B tools-source/asset-bridge/h1-fixture/test_native_preparation.py `
@@ -195,5 +197,58 @@ failed release, guarded file mutation and receipt-size failure. `Test-H1Plan.ps1
 adds nine assertions against the local plan, including immutable-plan, core,
 provider and same-length source drift, lowered budgets and probe-before-compile
 refusals. These are **source/lifecycle checks, not a new real Job witness**.
-The H1 compiler and probe have still never run. The parent must review the final
-plan hash and grant the relevant native stage before either can execute.
+Those checks did not launch the H1 compiler or probe. The parent must review the
+final plan hash and grant each relevant native stage separately. The single
+Compile GO described below has been consumed; no retry or Probe GO was granted.
+
+## One admitted compile attempt, 2026-10-12
+
+Source `f8ac21e5ff473417345ad07be7eb6f8bddc068f6`, Plan C SHA-256
+`a4564b25a7046568e28b26e6a22b3f84c10780b6478eed319c06bcd6182251f4`.
+The coordinator reviewed that exact plan and authorized **one Compile invocation
+only** with the complete 4/6 GiB reservation, 120-second deadline, 32 MiB output
+budget and five-second cleanup. Current origin resource policy was fetched/read;
+the registry and compiler-related process inventory were empty before launch.
+
+The original `cl.exe` PID 32116 was created at `08:09:58.0787715Z`; the owned
+stage started `08:09:58.0661405Z`. It registered against the shared Build lease
+and generated the EXE/OBJ/PDB. The compiler's original exit code was **0**.
+There were two existing production-reader `strcpy` deprecation warnings C4996,
+with no compile/link error. While the owned tree remained open, `vctip.exe`
+PID 22980 was observed with parent 32116, creation `08:09:59.470631Z` and the
+same MSVC installation. Setting `VCTIP=0` did not prevent this observed child.
+No claim of natural complete-tree closure or successful stage is made.
+
+At the deadline the runner failed with `Stage deadline exceeded.`, requested
+termination through the **original Job owner**, and confirmed its original
+root was exited and the job empty. The final receipt at `08:11:58.3423038Z`
+records `Status=Failed`, `ExitCode=0`, `TerminationRequested=true`,
+`TreeClosureConfirmed=true`, `LeaseReleased=true`, `Quarantined=false`.
+A subsequent fresh registry read showed zero leases; CIM showed none of the
+original launcher/compiler/observed-child PIDs and no compiler/linker/VCTIP/
+PDB-server/ZoneTool process matching the bounded inventory. No process was
+stopped by guessed PID or name. All 54 bound input hashes/lengths still matched.
+
+| Preserved output | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `native_probe.exe` | 1,251,840 | `531787845faabfd20cd4597de10426be3ad710f0b1ffee89b11fcf2cd5a1f30d` |
+| `native_probe.obj` | 3,585,662 | `500f9aa398f00bb89f759dd8b7d18c384bbeb4fe7f3f65512bfff1fe9710d7fc` |
+| `native_probe.pdb` | 13,160,448 | `e082c8839162629daa9133be5b540f2b5abdad02c8050ebd2618fa30f16f34ad` |
+| `stdout.log` | 1,265 | `0c4a6f654fc5df3d19342de044b419428746f68bb03a967e97a53634703d6439` |
+| `stderr.log` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `receipt.json` | 1,005 | `8b3b1fa096358a5ac7b824c3bbfaec1e5e70cdf048e2197f0d1b2db0b77ed009` |
+
+The six stage files total **18,000,220 bytes**, including the receipt. Memory
+numbers remain admission estimates, not measured peaks. All outputs, the Plan C
+and prepared sources remain local. The supplemental local observer's first
+aggregate mistakenly used `Measure-Object` on ordered dictionaries and wrote
+zero; observer B explicitly sums the recorded file sizes and preserves this
+correction. The native runner receipt and file hashes were unchanged.
+
+The retained local observer records the exact absolute launcher and argument
+array for the one invocation (`Run-H1Native.ps1`, Plan C/hash, `-Stage Compile
+-Run`), the compiler argument array, original child tuple, native receipt and
+post-run checks. No retry, Stage Probe, game, full CLI, FF or render test followed.
+The failed Compile receipt deliberately blocks Stage Probe. Next action is a
+source review of compiler ancillary-process handling and a new plan/GO; do not
+edit this receipt to promote the retained EXE into an accepted compile stage.
