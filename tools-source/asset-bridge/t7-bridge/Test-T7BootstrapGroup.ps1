@@ -1,13 +1,16 @@
 # Pure shared-receipt fixtures, original tiny files, fake clock/release/providers.
+param([string]$ReviewedCorePath)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
-. (Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1')
+if(!$ReviewedCorePath){$ReviewedCorePath=Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'}
+if([IO.Path]::GetFileName($ReviewedCorePath) -cne 'H1Native.Core.ps1' -or (Get-Item -LiteralPath $ReviewedCorePath).Length -gt 128KB){throw 'Bounded reviewed core source required.'}
+. $ReviewedCorePath
 . (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
 # Preserve parameter declarations by loading the complete declarations in script scope.
 foreach($spec in @(
     @('Test-T7CatalogueBootstrap.ps1',@('Check','Refuses','Copy-Value','Get-Item','New-Fixture')),
     @('Test-T7CatalogueBootstraps.ps1',@('New-Qualified','Set-QualifiedBytes','New-InputIds')),
-    @('Qualify-T7BootstrapGroup.ps1',@('Assert-QualificationPathSyntax','Assert-T7QualificationGroupPlan','Save-QualificationText','Assert-QualificationPersistentHost',
+    @('Qualify-T7BootstrapGroup.ps1',@('Assert-QualificationPathSyntax','Open-T7QualificationText','Assert-T7QualificationGroupPlan','Save-QualificationText','Assert-QualificationPersistentHost',
         'Complete-QualificationGuards','Publish-QualificationReceipt','Wait-QualificationRetention','Assert-T7QualificationMemory','Open-T7QualificationPass','Invoke-T7QualificationInputs','Publish-T7QualificationItems')))){
     $tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $spec[0]),[ref]$tokens,[ref]$errors)
     if($errors.Count){throw 'Source parse failed.'}
@@ -286,6 +289,50 @@ try{
     $answer=$output|ConvertFrom-Json
     Check ($answer.Status -ceq 'QualificationGroupCheckedPendingGO' -and !$answer.DataFileOpened -and !$answer.LiveProvidersCalled -and !$answer.LeaseAcquired) 'Default group check crossed its source-only boundary.'
     Check (!(Test-Path -LiteralPath $default.RunRoot) -and !(Test-Path -LiteralPath $default.SourceDirectory)) 'Default created input or runtime paths.'
+    # Two independent raw checkouts: each seals its own bytes, without production
+    # normalization or dependence on a historical H1 implementation hash.
+    $rawHashes=@()
+    foreach($ending in 'LF','CRLF'){
+        $copyRepo=Join-Path $root ('source-'+$ending)
+        $qualifierRelative='tools-source/asset-bridge/t7-bridge/Qualify-T7BootstrapGroup.ps1'
+        foreach($relative in @($paths)+@($qualifierRelative)){
+            $destination=Join-Path $copyRepo $relative
+            [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination))|Out-Null
+            $sourcePath=if($relative -ceq $paths[0]){$ReviewedCorePath}else{Join-Path $repo $relative}
+            $sourceBytes=[IO.File]::ReadAllBytes($sourcePath)
+            if($relative -ceq $paths[0]){
+                $sourceText=[Text.UTF8Encoding]::new($false,$true).GetString($sourceBytes).Replace("`r`n","`n")
+                if($ending -ceq 'CRLF'){$sourceText=$sourceText.Replace("`n","`r`n")}
+                $sourceBytes=[Text.UTF8Encoding]::new($false).GetBytes($sourceText)
+            }
+            [IO.File]::WriteAllBytes($destination,$sourceBytes)
+        }
+        $copyPlan=Copy-Value $default;$copyPlan.Runner=Join-Path $copyRepo $qualifierRelative
+        $copyPlan.Script=[pscustomobject]@{Path=$copyPlan.Runner;Bytes=(Get-Item -LiteralPath $copyPlan.Runner).Length;SHA256=(Get-FileHash -LiteralPath $copyPlan.Runner).Hash.ToLowerInvariant()}
+        $copyPlan.RunRoot=Join-Path $copyRepo 'runtime/t7-bootstrap-group-synthetic';$copyPlan.Bindings=@()
+        foreach($relative in $paths){$path=Join-Path $copyRepo $relative;$copyPlan.Bindings+=@([pscustomobject]@{Path=$path;Bytes=(Get-Item -LiteralPath $path).Length;SHA256=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant();IsText=$true})}
+        $rawHashes+=@($copyPlan.Bindings[0].SHA256)
+        $copyPath=Join-Path $copyRepo 'plan.json';Save-QualificationText $copyPath $copyPlan
+        $copyHash=(Get-FileHash -LiteralPath $copyPath).Hash.ToLowerInvariant()
+        $output=& $image -NoProfile -File $copyPlan.Runner -PlanPath $copyPath -PlanSHA256 $copyHash -ScriptSHA256 $copyPlan.Script.SHA256
+        Check ($LASTEXITCODE -eq 0 -and ($output|ConvertFrom-Json).Status -ceq 'QualificationGroupCheckedPendingGO') ('Raw '+$ending+' DEFAULT failed.')
+        Check (!(Test-Path -LiteralPath $copyPlan.RunRoot)) 'DEFAULT created a group root.'
+        # An unpinned helper with observable import code must be refused before
+        # execution. Run in this test host to prove all failed-bootstrap guards
+        # have closed, independently of process exit disposing handles.
+        $marker=Join-Path $copyRepo 'unexpected-core-import.txt';$copyCore=Join-Path $copyRepo $paths[0]
+        [IO.File]::AppendAllText($copyCore,("`n[IO.File]::WriteAllText('"+$marker.Replace("'","''")+"','unexpected')`n"))
+        $copyPlan.Bindings[0].Bytes=(Get-Item -LiteralPath $copyCore).Length # Keep the OLD raw hash.
+        $badPath=Join-Path $copyRepo 'bad-core-plan.json';Save-QualificationText $badPath $copyPlan
+        $badHash=(Get-FileHash -LiteralPath $badPath).Hash.ToLowerInvariant()
+        Refuses {& {
+            function Get-Item($LiteralPath){Microsoft.PowerShell.Management\Get-Item -LiteralPath $LiteralPath}
+            & $copyPlan.Runner -PlanPath $badPath -PlanSHA256 $badHash -ScriptSHA256 $copyPlan.Script.SHA256
+        }} 'Bootstrap text hash differs before H1 import'
+        Check (!(Test-Path -LiteralPath $marker)) 'Unpinned core executed during bootstrap.'
+        foreach($path in @($badPath,$copyPlan.Runner,$copyCore)){$guard=[IO.FileStream]::new($path,'Open','Read','None');$guard.Dispose();$checks++}
+    }
+    Check ($rawHashes.Count -eq 2 -and $rawHashes[0] -cne $rawHashes[1]) 'LF and CRLF did not use distinct exact raw pins.'
     Check (!('IW7ResourceMemoryV1' -as [type]) -and !('IW7HudFileIdentity' -as [type]) -and !('IW7.AnimationProbe.NativeJob' -as [type])) 'Pure tests loaded native support.'
     [ordered]@{Status='Passed';Checks=$checks;OwnerStockRead=$false;NativeTypesLoaded=$false;RealLeaseAcquired=$false;RunInvoked=$false;Fixtures='Shared V3 metadata, original small streaming files, fake release/clock'}|ConvertTo-Json
 }finally{

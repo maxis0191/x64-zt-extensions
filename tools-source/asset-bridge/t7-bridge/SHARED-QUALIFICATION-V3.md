@@ -55,7 +55,11 @@ Every receipt is checked before the runner's `-Run` boundary and before aliases.
 The eight helper pins are H1Native.Core, T7Catalogue.Profile, T7Prepatch.Profile,
 Resource-Scheduler.Core, Resource-Memory, Resource-RecorderOwnedProcess.Core,
 ResourceMemory.cs and HudFileIdentity.cs. The qualifier guards its own script
-and plan separately. Plan and qualifier source are limited to 32 KiB. Default
+and plan separately. A small bounded text bootstrap first verifies the plan's
+supplied SHA256, then its exact **raw H1 pin before importing H1**. Its read/share-read
+guards stay retained; failures close them even when H1 has not been imported.
+It never normalizes line endings or substitutes a historical source hash. Plan
+and qualifier source are limited to 32 KiB; the H1 bootstrap remains <=128 KiB. Default
 validation reads only these local source/plan files; input path validation is
 syntactic. Actual metadata and native IDs are not consulted until an authorized
 `-Run` has passed fresh admission.
@@ -115,7 +119,7 @@ failure at first/middle/last reads, retained guards, release refusal, deadline
 failure and publication invalidation. The existing four catalogue/reader suites
 remain regression checks. No test accesses game stock or acquires a real lease.
 
-Final source checks on 2026-10-12: shared group **190**, bootstrap collections
+Initial source checks on 2026-10-12: shared group **190**, bootstrap collections
 **443**, legacy bootstrap **177**, catalogue **188**, metadata host **97**;
 **1,095 checks passed**. The real qualifier DEFAULT was exercised in a fresh
 PowerShell host against a nonexistent synthetic input directory and real source
@@ -124,6 +128,26 @@ During development, regression checks caught an unintended relaxation of the
 legacy distinct-script check; it was restored before this handoff. Group plan
 timestamp validation also accepts PowerShell's JSON date conversion while still
 requiring explicit valid timestamps. Neither correction changed runtime limits.
+
+An integration DEFAULT then exposed a stale H1 bootstrap constant in the initial
+commit `ab133583`: the local core was 9,760 bytes, SHA256
+`a5657b8aada6a30befc3bd401cd7a6bc755a43e6a48b6f9b7e847dcea84478ad`,
+whereas the current integration core was 11,268 bytes, SHA256
+`55430822f5251ae58008bc7e15c36831e3481e7dae4cf0961254c633f001e3f5`.
+Both were CRLF; the current core also includes reviewed dump-observation/artifact
+support. This was a source-version difference, not merely checkout line endings.
+The separate correction uses the operational plan's guarded raw pin as described
+above. The integration file's Git blob was confirmed equal to `ce18ea57`:
+`48c6889c40fdf2b566ba57a76b2f43247a96c391`.
+
+The corrected group suite passed **207 checks** using that current integration
+core in read-only mode via `-ReviewedCorePath`. Its LF and CRLF source fixtures
+each seal their own different raw hashes, and both real DEFAULT invocations pass.
+An altered unpinned core containing observable import code is rejected before
+import; exclusive reopen checks in the same test host prove plan/script/core
+guards closed without relying on process exit. These fixtures copy only small
+source text; the integration checkout is never changed. No payload/metadata of
+the game, admission or `-Run` was used by the correction.
 
 The prior metadata-only inventory totals 748,135,232 bytes for twenty explicit
 files; eight Q inputs account for 75,726,016, leaving 672,409,216 for qualification.

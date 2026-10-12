@@ -7,12 +7,32 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 if(!$IsWindows -or [IntPtr]::Size -ne 8 -or $PSVersionTable.PSVersion.Major -lt 7){throw 'Windows x64 PowerShell 7 required.'}
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 $core=Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
-# Existing reviewed core, before importing its guard/closure functions.
-if((Get-Item -LiteralPath $core).Length -ne 9760 -or (Get-FileHash -LiteralPath $core).Hash.ToLowerInvariant() -cne 'a5657b8aada6a30befc3bd401cd7a6bc755a43e6a48b6f9b7e847dcea84478ad'){throw 'Reviewed H1 core differs.'}
-. $core
 
 function Assert-QualificationPathSyntax([string]$Path){
     if(![IO.Path]::IsPathFullyQualified($Path) -or [IO.Path]::GetFullPath($Path) -cne $Path -or $Path -match '["\r\n*?]'){throw 'Canonical literal qualification path required.'}
+}
+function Open-T7QualificationText([string]$Path,[string]$SHA256,[int]$Limit,[Nullable[long]]$ExpectedBytes=$null){
+    # Bootstrap only small source/plan text before H1 is trusted. Pins are RAW
+    # checkout bytes; no LF/CRLF normalization or historical helper allowlist.
+    if($Limit -notin @(32KB,128KB) -or $SHA256 -cnotmatch '\A[0-9a-f]{64}\z' -or
+       ($null -ne $ExpectedBytes -and ($ExpectedBytes -le 0 -or $ExpectedBytes -gt $Limit))){throw 'Bounded exact bootstrap text pin required.'}
+    Assert-QualificationPathSyntax $Path
+    for($part=$Path;$part;$part=[IO.Path]::GetDirectoryName($part)){
+        if((Test-Path -LiteralPath $part) -and ([IO.File]::GetAttributes($part) -band [IO.FileAttributes]::ReparsePoint)){throw 'Bootstrap reparse ancestry refused.'}
+    }
+    $metadata=Get-Item -LiteralPath $Path
+    if($metadata.PSIsContainer -or $metadata.Length -le 0 -or $metadata.Length -gt $Limit -or
+       ($null -ne $ExpectedBytes -and $metadata.Length -ne $ExpectedBytes)){throw 'Bootstrap text size differs before open.'}
+    $guard=[IO.FileStream]::new($Path,'Open','Read','Read')
+    try{
+        if($guard.Length -ne $metadata.Length -or $guard.Length -gt $Limit){throw 'Bootstrap guarded text size differs.'}
+        $bytes=[byte[]]::new([int]$guard.Length);$used=0
+        while($used -lt $bytes.Length){$read=$guard.Read($bytes,$used,$bytes.Length-$used);if(!$read){throw 'Short bootstrap text read.'};$used+=$read}
+        if($guard.ReadByte() -ne -1 -or $guard.Length -ne $bytes.Length){throw 'Bootstrap text length changed.'}
+        if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne $SHA256){throw 'Bootstrap text hash differs before H1 import.'}
+        $guard.Position=0
+        [pscustomobject]@{Guard=$guard;Bytes=$bytes}
+    }catch{$guard.Dispose();throw}
 }
 function Assert-T7QualificationGroupPlan($Plan,[string]$Repo,[string]$Runner,[string]$Hash){
     Assert-T7CatalogueFields $Plan @('Schema','Runner','Script','SourceDirectory','RunRoot','Inputs','Bindings','HostImage','Main','PreservedPython','PhysicalBytes','CommitBytes','DeadlineSeconds','RetryAuthorized')
@@ -179,12 +199,14 @@ $sourceGuards=[Collections.Generic.List[object]]::new();$payloadGuards=[Collecti
 $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$sourceGuards;PayloadGuards=$payloadGuards;Host=$null;Rows=[Collections.Generic.List[object]]::new()}
 $state=$null;$plan=$null;$failure=$null;$started=$null;$attempted=$false
 try{
-    foreach($spec in @(@($PlanPath,$PlanSHA256),@($PSCommandPath,$ScriptSHA256))){
-        $size=(Get-Item -LiteralPath $spec[0]).Length
-        if($size -le 0 -or $size -gt 32KB){throw 'Bounded group plan/source text required.'}
-        $sourceGuards.Add((Open-H1Pin ([pscustomobject]@{Path=$spec[0];Bytes=$size;SHA256=$spec[1]})))
-    }
-    $plan=Read-H1SmallJson $PlanPath 32KB
+    $planText=Open-T7QualificationText $PlanPath $PlanSHA256 32KB;$sourceGuards.Add($planText.Guard)
+    $plan=[Text.UTF8Encoding]::new($false,$true).GetString($planText.Bytes)|ConvertFrom-Json -Depth 20
+    $scriptText=Open-T7QualificationText $PSCommandPath $ScriptSHA256 32KB;$sourceGuards.Add($scriptText.Guard)
+    $corePin=@($plan.Bindings|Where-Object {$_.Path -ceq $core -and $_.IsText -is [bool] -and $_.IsText})
+    if($corePin.Count -ne 1 -or ($corePin[0].Bytes -isnot [int] -and $corePin[0].Bytes -isnot [long]) -or
+       $corePin[0].SHA256 -isnot [string]){throw 'One exact H1 source pin required before import.'}
+    $coreText=Open-T7QualificationText $core $corePin[0].SHA256 128KB $corePin[0].Bytes;$sourceGuards.Add($coreText.Guard)
+    . $core # Exact raw plan pin verified and read/share-read guard retained.
     $required=@($core,(Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1'),(Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1'),
         (Join-Path $repo 'ops/Resource-Scheduler.Core.ps1'),(Join-Path $repo 'ops/Resource-Memory.ps1'),
         (Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'),(Join-Path $repo 'ops/hud-lab/HudFileIdentity.cs'))
@@ -192,7 +214,7 @@ try{
     foreach($pin in $plan.Bindings){
         if($pin.Path -isnot [string] -or $pin.Path -cnotin $required -or $pin.IsText -isnot [bool] -or !$pin.IsText -or
            ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 128KB){throw 'Small exact helper source binding required.'}
-        $sourceGuards.Add((Open-H1Pin $pin))
+        if($pin.Path -cne $core){$sourceGuards.Add((Open-H1Pin $pin))}
     }
     . (Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1')
     . (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
