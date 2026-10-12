@@ -14,7 +14,7 @@ import sys
 # source-bound sibling readers, whose complete paths/hashes the runner guards.
 sys.path.insert(0, str(Path(__file__).absolute().parent))
 from read_skin_fixture import SIZES, parse, verify_payloads
-from read_skin_native import read_model, read_surface
+from read_skin_native import Reader, read_model, read_surface
 from verify_clip_rig import read_bounded, verify as verify_clip
 
 PROFILES = ("first", "second")
@@ -35,18 +35,49 @@ def load_inputs(root):
     return files, meta
 
 
+def reader_refusal(error, payload, kind, hypothesis, stage):
+    """Add bounded context after refusal; never normalize or accept a field."""
+    detail = ""
+    if str(error) == "unexpected native field/padding/dependency":
+        try:
+            reader = Reader(payload)
+            if kind == "xmodel":
+                record = reader.array(736, 1)
+                offset, field = 272, "XModel.lodInfo[0].surfs"
+            else:
+                reader.array(56, 1)
+                reader.name(expected=MODELS[hypothesis] + "_lod0")
+                record = reader.array(256, 1)
+                offset, field = 88, "XSurface.blendVertsBuffer (header name)"
+            if any(record[offset:offset + 8]):
+                detail = (f"; observed {field} offset={offset} "
+                          "category=nonzero-8-byte-value; address omitted")
+        except (ValueError, struct.error):
+            # Diagnostic framing must not hide or replace the original refusal.
+            pass
+    return ValueError(f"{stage}/{hypothesis}/{kind}: {str(error)[:160]}{detail}")
+
+
+def read_asset(reader, payload, files, hypothesis, kind, stage):
+    try:
+        return reader(payload, files, hypothesis)
+    except ValueError as error:
+        raise reader_refusal(error, payload, kind, hypothesis, stage) from None
+
+
 def read_stage(files, manifest, pairs, xab, *, ff_roundtrip=False):
     verify_payloads(files, manifest)
     require(set(pairs) == set(PROFILES), "both distinct two-bone model profiles required")
     extracted = dict(files)
     models = {}
     shared_bind = None
+    stage = "ff-redump" if ff_roundtrip else "native-data"
     for hypothesis in PROFILES:
         xmb, xsb = pairs[hypothesis]
         require(isinstance(xmb, bytes) and isinstance(xsb, bytes) and
                 0 < len(xmb) <= 65536 and 0 < len(xsb) <= 65536, "64 KiB per model/surface limit")
-        model, bind = read_model(xmb, files, hypothesis)
-        surface, blend = read_surface(xsb, files, hypothesis)
+        model, bind = read_asset(read_model, xmb, files, hypothesis, "xmodel", stage)
+        surface, blend = read_asset(read_surface, xsb, files, hypothesis, "xsurface", stage)
         require(shared_bind is None or bind == shared_bind, "profile skeleton/bind disagreement")
         shared_bind = bind
         extracted[hypothesis + ".blend.u16.bin"] = blend
@@ -63,7 +94,7 @@ def read_stage(files, manifest, pairs, xab, *, ff_roundtrip=False):
                              "tag-positions.f32.bin", "base-mats.f32.bin"), shared_bind):
         extracted[key] = payload
     cpu = verify_clip(extracted, manifest, xab, ff_roundtrip=ff_roundtrip)
-    return {"stage": "ff-redump" if ff_roundtrip else "native-data", "models": models,
+    return {"stage": stage, "models": models,
             "clip_rig_cpu": cpu, "complete_model_surface_read": True,
             "writer_provenance_verified": False, "ff_provenance_verified": False,
             "material_resolution_verified": False, "runtime_verified": False, "ready": False}

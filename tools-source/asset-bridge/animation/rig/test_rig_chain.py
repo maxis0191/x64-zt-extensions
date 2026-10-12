@@ -1,14 +1,15 @@
 """Plan and independent-read refusals using original synthetic data only."""
 import hashlib
 from pathlib import Path
+import struct
 import tempfile
 import unittest
 
 from plan_rig_chain import (CANDIDATE_SHA, JOB_SHA, PROVIDERS, ZONE, check_base,
                             compose, expected_inventory, fresh_root, inventory, load_json, pinned)
-from read_rig_chain import load_pairs, verify_chain
+from read_rig_chain import load_pairs, reader_refusal, verify_chain
 from test_clip_rig import clip_bytes, meta
-from test_skin_native import synthetic
+from test_skin_native import surface_offsets, synthetic
 
 
 def base_plan():
@@ -97,6 +98,64 @@ class RigChainDataTests(unittest.TestCase):
                     (target / 'xmodel' / (model + '.xmb')).write_bytes(pairs[h][0])
                     (target / 'xsurface' / (model + '_lod0.xsb')).write_bytes(pairs[h][1])
                 self.assertEqual(load_pairs(base, split_profiles=split), pairs)
+
+
+    def test_loaded_model_pointer_still_refused_with_redacted_context(self):
+        files, manifest, pairs = data()
+        value = 0x123456789ABCDEF0
+        for profile in ("first", "second"):
+            bad = dict(pairs)
+            model = bytearray(pairs[profile][0])
+            struct.pack_into("<Q", model, 6 + 272, value)
+            bad[profile] = bytes(model), pairs[profile][1]
+            original = dict(bad)
+            with self.assertRaises(ValueError) as error:
+                verify_chain(files, manifest, pairs, clip_bytes(), bad, clip_bytes(4036))
+            message = str(error.exception)
+            self.assertIn(f"ff-redump/{profile}/xmodel: unexpected native field", message)
+            self.assertIn("XModel.lodInfo[0].surfs offset=272 category=nonzero-8-byte-value", message)
+            self.assertIn("address omitted", message)
+            self.assertNotIn(str(value), message)
+            self.assertNotIn(hex(value)[2:], message.lower())
+            self.assertLess(len(message), 320)
+            self.assertEqual(bad, original)
+
+    def test_surface_field_still_refused_for_native_and_ff_with_no_address(self):
+        files, manifest, pairs = data()
+        value = 0x7ABCDEF123456789
+        bad = dict(pairs)
+        surface = bytearray(pairs["first"][1])
+        offset = surface_offsets(surface)[0]
+        struct.pack_into("<Q", surface, offset + 88, value)
+        bad["first"] = pairs["first"][0], bytes(surface)
+        for ff in (False, True):
+            with self.assertRaises(ValueError) as error:
+                verify_chain(files, manifest, pairs if ff else bad, clip_bytes(),
+                             bad if ff else None, clip_bytes(4036) if ff else None)
+            message = str(error.exception)
+            self.assertIn(("ff-redump" if ff else "native-data") + "/first/xsurface", message)
+            self.assertIn("blendVertsBuffer (header name) offset=88 category=nonzero-8-byte-value", message)
+            self.assertNotIn(str(value), message)
+            self.assertNotIn(hex(value)[2:], message.lower())
+            self.assertLess(len(message), 320)
+        self.assertEqual(bytes(surface), bad["first"][1])
+
+    def test_other_unsupported_field_is_not_mislabeled_as_loaded_field(self):
+        files, manifest, pairs = data()
+        surface = bytearray(pairs["first"][1])
+        struct.pack_into("<Q", surface, surface_offsets(surface)[0] + 48, 1234)
+        bad = {**pairs, "first": (pairs["first"][0], bytes(surface))}
+        with self.assertRaises(ValueError) as error:
+            verify_chain(files, manifest, bad, clip_bytes())
+        self.assertIn("native-data/first/xsurface: unexpected native field", str(error.exception))
+        self.assertNotIn("observed", str(error.exception))
+        self.assertNotIn("offset=88", str(error.exception))
+
+    def test_truncated_diagnostic_framing_preserves_original_refusal(self):
+        error = ValueError("unexpected native field/padding/dependency")
+        for kind in ("xmodel", "xsurface"):
+            message = str(reader_refusal(error, b"\x08\x01", kind, "first", "ff-redump"))
+            self.assertEqual(message, f"ff-redump/first/{kind}: {error}")
 
 
 class RigChainPlanTests(unittest.TestCase):
