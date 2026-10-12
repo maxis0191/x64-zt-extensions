@@ -198,3 +198,12 @@ preceded receipt validation; the retained native PID receipt and process
 observations independently prove the launch. Next: compare the successful Beacon
 bootstrap/stdio and prepare bounded existing-tool diagnostics for review, without
 another native execution until separately authorized.
+
+The subsequent [diagnostic plan](DIAGNOSTIC-PLAN.md) compares the actual successful
+Beacon receipt with this failure and documents a reproduced reader-buffering
+blind spot. Recipient's adapter now uses unbuffered pipes and raw bounded log
+files; the pinned SDK drain is unchanged. Six additional pipe tests preserve
+short live messages, EOF tails and timeout prefixes while refusing truncation or
+read failures. This fixes visibility only. There has been no second native run,
+and it does not establish or fix the native stall. Native-start/capture receipts
+explicitly distinguish observed PID/timing from verified creation/job closure.

@@ -10,10 +10,38 @@ from pathlib import Path
 import subprocess
 import threading
 import time
+from datetime import datetime, timezone
 
 from recipient_contract import EXE_SHA, check_output, command, require, sha, text, validate_requests
 
 SDK_DRAIN_SHA = 'a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d'
+
+
+def capture_streams(process, logs, drain, timeout):
+    """Bounded raw-pipe capture; caller still owns the original process/job.
+
+    On timeout the native writer may remain live. Return that fact and keep
+    already written bytes; never claim stream/job closure or kill a PID here.
+    """
+    exceeded = threading.Event()
+    workers, handles = [], []
+    for name,stream in (('stdout',process.stdout),('stderr',process.stderr)):
+        # The provider flushes each write; raw destinations also preserve the
+        # emitted prefix when timeout exits via os._exit without Python cleanup.
+        handle = (logs/(name+'.log')).open('xb', buffering=0);handles.append(handle)
+        worker = threading.Thread(target=drain,args=(stream,handle,exceeded),daemon=True)
+        worker.start();workers.append(worker)
+    failure = None
+    deadline = time.monotonic()+timeout
+    while process.poll() is None:
+        if exceeded.is_set() or time.monotonic() >= deadline:
+            failure = 'log limit/drain failure' if exceeded.is_set() else 'phase timeout'
+            break
+        time.sleep(.05)
+    if failure is None:
+        for worker in workers: worker.join(2)
+        if exceeded.is_set() or any(worker.is_alive() for worker in workers): failure = 'drain failure or inherited pipe remains open'
+    return failure,workers,handles
 
 
 def run(spec, drain):
@@ -28,29 +56,27 @@ def run(spec, drain):
     logs = Path(spec['logs'])
     require(not logs.exists(), 'Fresh phase log directory required')
     logs.mkdir()
-    exceeded = threading.Event()
-    workers, handles = [], []
-    # No shell or breakaway flag; native process inherits the original outer job.
-    # Keep the unused stdin pipe open: the pinned console spins on EOF.
+    # bufsize=0 yields raw pipe reads: the pinned drain's read(4096) can return
+    # available short output without waiting for 4096 bytes or process exit.
+    # Stdin/CLI/creation flags remain exactly as in failed attempt A.
     process = subprocess.Popen(command(spec['phase'],exe),cwd=work,stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,stderr=subprocess.PIPE,creationflags=0x08000000 if os.name == 'nt' else 0)
-    for name,stream in (('stdout',process.stdout),('stderr',process.stderr)):
-        handle = (logs/(name+'.log')).open('xb');handles.append(handle)
-        worker = threading.Thread(target=drain,args=(stream,handle,exceeded),daemon=True)
-        worker.start();workers.append(worker)
-    failure = None
-    deadline = time.monotonic()+240
-    while process.poll() is None:
-        if exceeded.is_set() or time.monotonic() >= deadline:
-            failure = 'log limit/drain failure' if exceeded.is_set() else 'phase timeout'
-            break
-        time.sleep(.05)
-    if failure is None:
-        for worker in workers: worker.join(2)
-        if exceeded.is_set() or any(worker.is_alive() for worker in workers): failure = 'drain failure or inherited pipe remains open'
+        stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0,
+        creationflags=0x08000000 if os.name == 'nt' else 0)
+    start = {'phase':spec['phase'],'pid':process.pid,'parent_pid':os.getpid(),
+             'image':str(exe),'executable_sha256':EXE_SHA,
+             'spawn_observed_utc':datetime.now(timezone.utc).isoformat(),
+             'creation_time_verified':False,'native_creation_utc':None,
+             'stdin':'pipe-held-open','output_pipe_buffer_size':0,
+             'ownership':'outer original Windows job'}
+    (logs/'native-start.json').write_text(json.dumps(start,indent=2)+'\n',encoding='utf-8')
+    failure,workers,handles = capture_streams(process,logs,drain,spec['timeout'])
     result = {'schema':'iw7.recipient-phase-result/1','phase':spec['phase'],'pid':process.pid,
               'exit_code':process.poll(),'failure':failure,'executable_sha256':EXE_SHA,
-              'ownership':'outer original Windows job','log_limit_each':2097152,'observation':None}
+              'ownership':'outer original Windows job','log_limit_each':2097152,'observation':None,
+              'capture':{'pipe_buffer_size':0,'drain_threads_closed':not any(w.is_alive() for w in workers),
+                         'stdout_bytes_at_receipt':(logs/'stdout.log').stat().st_size,
+                         'stderr_bytes_at_receipt':(logs/'stderr.log').stat().st_size,
+                         'tree_closure_verified':False}}
     if failure is None and process.returncode == 0:
         try: result['observation'] = check_output(spec['phase'],work)
         except (ValueError,OSError) as error: result['failure'] = str(error)
