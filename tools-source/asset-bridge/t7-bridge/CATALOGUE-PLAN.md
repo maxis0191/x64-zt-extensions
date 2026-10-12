@@ -355,3 +355,52 @@ D's trace, receipt and postflight evidence. A/B/D remain Failed and C unconsumed
 The build owner now correlates the exact prepared source and exit return address.
 No automatic retry, new native invocation, binary analysis or added input follows
 from this observation; any subsequent native experiment needs a separate plan/GO.
+
+## Exit-context reader: source-only qualification
+
+The subsequent source investigation could not name `0x140AC00C4` from the
+retained captures. The coordinator authorized a separately versioned, bounded
+context at the first exit_hook. The build owner owns instrumentation and build;
+this adapter only qualifies its provenance and parses the local diagnostics.
+No new native invocation or successful context capture is claimed here.
+
+The new explicit candidate profile is `t7-catalog-exit-context`. Its BuildProfile
+has the same eight trace fields plus
+`ContextSchema=iw7.t7-catalog-exit-context/1`. All four source/base pins, retained
+compile provenance, new main Compile/Link stages and actual candidate-artifact
+checks remain required. Existing ordinary D2 and `t7-catalog-trace` acceptance
+are unchanged. The six original markers retain `iw7.t7-catalog-trace/1` exactly;
+their reader still rejects an incomplete marker, unknown fields or 1,536 bytes.
+
+Only the new profile permits total stderr at most 4,096 bytes and nine lines.
+After the first exit_hook, up to three new lines use `[T7_CATALOG_EXIT]` and the
+context schema, in memory/stack/function order. Every complete line must match
+the exit marker's code, thread and return address. Per-line caps are 1,024 bytes
+for memory and 512 each for stack/function. Duplicate kinds, reordered lines,
+unsupported statuses, mismatched lengths and unrelated stderr are refused.
+
+| Kind | Bounded content | Qualification |
+| --- | --- | --- |
+| memory | 256 requested bytes starting at RA minus 64; 0..256 returned bytes | Exact uppercase hex length; explicit status/error; successful capture requires expected module/allocation, committed readable region and complete window |
+| stack | 0..8 addresses | Exact count and uppercase 16-digit addresses; failed/empty capture has zero addresses |
+| function | 0..12-byte RUNTIME_FUNCTION copy from lookup of RA minus 1 | Exact RVA widths/status; success requires full record containing RA minus 1; incomplete/failed copies expose zero RVAs except explicit complete record_invalid observations |
+
+The context reports Absent, Partial or Observed independently of TraceObserved
+and catalogue qualification. Observed requires all three complete captures with
+status ok; every non-ok status remains explicit in Partial. A recognizable final
+context line cut off before its newline is marked incomplete and does not discard
+earlier complete captures. Malformed completed lines remain refused. The original
+marker parser is unchanged, including the five-event D regression fixture.
+
+Captured bytes are retained only in private bounded stderr/receipt files. No
+runtime memory bytes belong in Git checkpoints, redistributable artifacts or
+public reports. Tests use invented repeated AB bytes only. No global dump,
+unwind-data traversal, .pdata scan or new payload input is introduced by this
+reader. A context alone, including a complete one, cannot make NoCatalogue pass.
+
+491 light/pure checks pass: catalogue153, trace/provenance131, context155 and
+Main52. The runtime owner, admission, source guards, closure, quarantine, Main
+baseline and independent catalogue checks remain intact. The next executable
+plan must bind the actual newly built candidate and its Passed receipt; synthetic
+test identities cannot stand in for those artifacts. A/B/D remain Failed, C
+remains unconsumed and no further build/Run is authorized by this source change.

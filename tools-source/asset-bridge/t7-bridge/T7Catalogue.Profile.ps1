@@ -1,7 +1,7 @@
 # Fixed catalogue adapter. Ownership, pin readers and closure stay in H1Native.Core.
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
 function Get-T7CatalogueMainBaseline($Plan) {
@@ -57,7 +57,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
        $Plan.CandidateSHA256 -cnotmatch '\A[0-9a-f]{64}\z'){throw 'Exact bounded candidate identity required.'}
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
-    if($candidateProfile -ceq 't7-catalog-trace' -and $Plan.TraceStderrLimitBytes -ne 1536){throw 'Exact trace stderr bound required.'}
+    if($candidateProfile -cne 'ordinary-d2') {
+        $limit=if($candidateProfile -ceq 't7-catalog-trace'){1536}else{4096}
+        if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
+    }
     Assert-H1Path $Plan.RunRoot
     if([IO.Path]::GetDirectoryName($Plan.RunRoot) -cne (Join-Path $Repo 'runtime') -or
        [IO.Path]::GetFileName($Plan.RunRoot) -cnotmatch '^t7-catalog-[a-z][a-z0-9-]*$' -or
@@ -124,6 +127,7 @@ function Assert-T7CatalogueTextPin($Pin,$Bindings) {
     if($match.Count -ne 1){throw 'Trace text pin is not guarded.'}
 }
 function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
+    $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     $buildPin=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.BuildPlan -and $_.IsText})
     if($buildPin.Count -ne 1 -or $buildPin[0].SHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or
        $buildPin[0].Bytes -gt 1MB -or $Plan.ExpectedBuildPlanSHA256 -ceq 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'){throw 'Trace requires its own guarded build plan.'}
@@ -132,11 +136,13 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
        $build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1'){throw 'Trace build source/schema differs.'}
     $profile=$build.BuildProfile
     $fields=@('Name','Option','ArgumentCount','TraceSchema','Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
+    if($candidateProfile -ceq 't7-catalog-exit-context'){$fields+=@('ContextSchema')}
     foreach($p in @($profile,$Receipt.BuildProfile)) {
         Assert-T7CatalogueFields $p $fields
-        if($p.Name -cne 't7-catalog-trace' -or $p.Option -cne '-t7-iw7-catalog' -or
+        if($p.Name -cne $candidateProfile -or $p.Option -cne '-t7-iw7-catalog' -or
            ($p.ArgumentCount -isnot [long] -and $p.ArgumentCount -isnot [int]) -or $p.ArgumentCount -ne 3 -or
            $p.TraceSchema -cne 'iw7.t7-catalog-trace/1'){throw 'Exact catalogue trace profile required.'}
+        if($candidateProfile -ceq 't7-catalog-exit-context' -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
     }
     foreach($name in 'Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt') {
         $pin=$profile.$name;$other=$Receipt.BuildProfile.$name
@@ -306,18 +312,147 @@ function ConvertFrom-T7CatalogueTrace([string]$Text) {
     [pscustomobject]@{Outcome=$(if($seen.Contains('enabled')){'TraceObserved'}else{'TracePartial'});Events=@($events.ToArray())}
 }
 function Read-T7CatalogueTrace($Plan,$State,$Context) {
-    if((Get-T7CatalogueCandidateProfile $Plan) -ceq 'ordinary-d2'){return}
+    $profile=Get-T7CatalogueCandidateProfile $Plan
+    if($profile -ceq 'ordinary-d2'){return}
     $State.TraceOutcome='NoTrace'
+    if($profile -ceq 't7-catalog-exit-context'){$State.ExitContextOutcome='Absent';$State.ExitContext=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
     $path=Join-Path $Plan.StageRoot 'stderr.log'
     if(!(Test-Path -LiteralPath $path)){return}
     $State.TraceOutcome='TracePresentUnqualified'
     Assert-H1Path $path
     $size=(Get-Item -LiteralPath $path).Length
-    if($size -ge 1536){throw 'Trace stderr cap exceeded.'}
+    if($profile -ceq 't7-catalog-exit-context' -and $size -gt 0){$State.ExitContextOutcome='PresentUnqualified'}
+    Assert-T7CatalogueTraceSize $profile $size
     $pin=[pscustomobject]@{Path=$path;Bytes=$size;SHA256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}
     $Context.Guards.Add((Open-H1Pin $pin));$State.TraceReport=$pin
-    $result=ConvertFrom-T7CatalogueTrace ([Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($path)))
+    $text=[Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($path))
+    $result=if($profile -ceq 't7-catalog-exit-context'){ConvertFrom-T7CatalogueExitContext $text}else{ConvertFrom-T7CatalogueTrace $text}
     $State.TraceOutcome=$result.Outcome;$State.TraceEvents=$result.Events
+    if($profile -ceq 't7-catalog-exit-context'){$State.ExitContextOutcome=$result.ContextOutcome;$State.ExitContext=$result.Context}
+}
+function Assert-T7CatalogueTraceSize([string]$Profile,[long]$Bytes) {
+    if(($Profile -ceq 't7-catalog-trace' -and $Bytes -ge 1536) -or
+       ($Profile -ceq 't7-catalog-exit-context' -and $Bytes -gt 4096)){throw 'Trace stderr cap exceeded.'}
+}
+function Get-T7CatalogueContextNumber($Match,[string]$Name,[ulong]$Maximum=[uint]::MaxValue) {
+    $value=[ulong]::Parse($Match.Groups[$Name].Value,[Globalization.CultureInfo]::InvariantCulture)
+    if($value -gt $Maximum){throw 'Exit context integer exceeds field width.'}
+    $value
+}
+function ConvertFrom-T7CatalogueExitLine([string]$Line) {
+    $dec='(0|[1-9][0-9]{0,19})';$ptr='[0-9A-Fa-f]{16}'
+    $prefix='\A\[T7_CATALOG_EXIT\] schema=iw7\.t7-catalog-exit-context/1 kind='
+    $head=$prefix+'(?<kind>memory|stack|function) code=(?<code>0|-?[1-9][0-9]{0,9}) tid=(?<tid>'+ $dec +') ra=(?<ra>'+ $ptr +') '
+    $prefixMatch=[regex]::Match($Line,$head)
+    if(!$prefixMatch.Success){throw 'Unknown exit context prefix or correlation fields.'}
+    $kind=$prefixMatch.Groups['kind'].Value
+    $tail=switch($kind) {
+        memory {'status=(?<status>ok|module_missing|module_mismatch|address_invalid|query_failed|region_invalid|read_failed|partial|exception) start=(?<start>'+$ptr+') requested=256 read=(?<read>'+$dec+') module=(?<module>'+$ptr+') allocation=(?<allocation>'+$ptr+') region=(?<region>'+$ptr+') region_size=(?<region_size>'+$dec+') state=(?<state>'+$dec+') protect=(?<protect>'+$dec+') type=(?<type>'+$dec+') error=(?<error>'+$dec+') data=(?<data>-|[0-9A-F]+)\z'}
+        stack {'status=(?<status>ok|empty|invalid_count|exception) count=(?<count>'+$dec+') error=(?<error>'+$dec+') addresses=(?<addresses>-|[0-9A-F]{16}(,[0-9A-F]{16}){0,7})\z'}
+        function {'status=(?<status>ok|not_found|module_mismatch|query_failed|region_invalid|read_failed|partial|record_invalid|exception) image=(?<image>'+$ptr+') record=(?<record>'+$ptr+') read=(?<read>'+$dec+') begin=(?<begin>[0-9A-F]{8}) end=(?<end>[0-9A-F]{8}) unwind=(?<unwind>[0-9A-F]{8}) error=(?<error>'+$dec+')\z'}
+    }
+    $m=[regex]::Match($Line,$head+$tail)
+    if(!$m.Success){throw 'Unknown exit context status or field format.'}
+    $code=[long]$m.Groups['code'].Value
+    if($code -lt [int]::MinValue -or $code -gt [int]::MaxValue){throw 'Exit context code exceeds int32.'}
+    $ra=$m.Groups['ra'].Value;$raValue=[Convert]::ToUInt64($ra,16)
+    $row=[ordered]@{Kind=$kind;Code=$code;ThreadId=(Get-T7CatalogueContextNumber $m 'tid');ReturnAddress=$ra;
+        Status=$m.Groups['status'].Value;Error=(Get-T7CatalogueContextNumber $m 'error')}
+    switch($kind) {
+        memory {
+            foreach($field in 'start','module','allocation','region'){$row[$field]=$m.Groups[$field].Value}
+            $row.Requested=256;$row.ReadBytes=Get-T7CatalogueContextNumber $m 'read' 256
+            $row.RegionSize=Get-T7CatalogueContextNumber $m 'region_size' ([ulong]::MaxValue)
+            foreach($field in 'state','protect','type'){$row[$field]=Get-T7CatalogueContextNumber $m $field}
+            $row.DataHex=$m.Groups['data'].Value
+            if(($row.ReadBytes -eq 0 -and $row.DataHex -cne '-') -or
+               ($row.ReadBytes -gt 0 -and ($row.DataHex -ceq '-' -or $row.DataHex.Length -ne 2*$row.ReadBytes))){throw 'Exit memory data/read mismatch.'}
+            if(($row.Status -ceq 'partial' -and ($row.ReadBytes -eq 0 -or $row.ReadBytes -eq 256)) -or
+               ($row.Status -ceq 'read_failed' -and $row.ReadBytes -notin @(0,256)) -or
+               ($row.Status -cnotin @('ok','partial','read_failed','exception') -and $row.ReadBytes -ne 0)){throw 'Exit memory status/read mismatch.'}
+            if($row.Status -ceq 'ok') {
+                $start=[Convert]::ToUInt64($row.start,16);$region=[Convert]::ToUInt64($row.region,16)
+                if($row.ReadBytes -ne 256 -or $row.Error -ne 0 -or $raValue -lt 64 -or $start -ne $raValue-64 -or
+                   [Convert]::ToUInt64($row.module,16) -ne 0x140000000L -or [Convert]::ToUInt64($row.allocation,16) -ne 0x140000000L -or
+                   $row.state -ne 0x1000 -or ($row.protect -band 0x101) -ne 0 -or $start -lt $region -or
+                   $row.RegionSize -lt 256 -or ([decimal]$start-[decimal]$region) -gt ([decimal]$row.RegionSize-256)){throw 'Successful exit memory capture has inconsistent bounds.'}
+            }
+        }
+        stack {
+            $row.Count=Get-T7CatalogueContextNumber $m 'count' 8
+            $value=$m.Groups['addresses'].Value
+            $row.Addresses=@(if($value -cne '-'){$value.Split(',')})
+            if($row.Addresses.Count -ne $row.Count -or ($row.Count -eq 0 -and $value -cne '-')){throw 'Exit stack address/count mismatch.'}
+            if($row.Status -ceq 'ok' -and ($row.Count -eq 0 -or $row.Error -ne 0)){throw 'Successful exit stack capture is empty or failed.'}
+            if($row.Status -cne 'ok' -and $row.Count -ne 0){throw 'Failed exit stack capture exposes addresses.'}
+        }
+        function {
+            $row.Image=$m.Groups['image'].Value;$row.Record=$m.Groups['record'].Value
+            $row.ReadBytes=Get-T7CatalogueContextNumber $m 'read' 12
+            foreach($field in 'begin','end','unwind'){$row[$field]=[Convert]::ToUInt32($m.Groups[$field].Value,16)}
+            if($row.ReadBytes -ne 12 -and ($row.begin -ne 0 -or $row.end -ne 0 -or $row.unwind -ne 0)){throw 'Incomplete runtime function copy exposes RVAs.'}
+            if(($row.Status -ceq 'partial' -and ($row.ReadBytes -eq 0 -or $row.ReadBytes -eq 12)) -or
+               ($row.Status -cin @('read_failed','record_invalid') -and $row.ReadBytes -notin @(0,12)) -or
+               ($row.Status -cnotin @('ok','partial','read_failed','record_invalid','exception') -and $row.ReadBytes -ne 0)){throw 'Runtime function status/read mismatch.'}
+            if($row.Status -cnotin @('ok','record_invalid') -and ($row.begin -ne 0 -or $row.end -ne 0 -or $row.unwind -ne 0)){throw 'Failed runtime function copy exposes RVAs.'}
+            if($row.Status -ceq 'ok') {
+                $base=[Convert]::ToUInt64($row.Image,16)
+                if($row.ReadBytes -ne 12 -or $row.Error -ne 0 -or $base -ne 0x140000000L -or
+                   [Convert]::ToUInt64($row.Record,16) -eq 0 -or $raValue -eq 0 -or $row.begin -ge $row.end -or
+                   ([decimal]$raValue-1) -lt ([decimal]$base+$row.begin) -or ([decimal]$raValue-1) -ge ([decimal]$base+$row.end)){throw 'Successful runtime function capture does not contain RA-1.'}
+            }
+        }
+    }
+    [pscustomobject]$row
+}
+function ConvertFrom-T7CatalogueExitContext([string]$Text) {
+    Assert-T7CatalogueTraceSize 't7-catalog-exit-context' ([Text.Encoding]::UTF8.GetByteCount($Text))
+    if($Text -cmatch '[^\x20-\x7e\r\n]'){throw 'Exit context stderr must be ASCII without BOM.'}
+    if(!$Text.Length){return [pscustomobject]@{Outcome='NoTrace';Events=@();ContextOutcome='Absent';Context=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}}
+    $complete=$Text.EndsWith("`n")
+    $lines=if($complete){@($Text.Substring(0,$Text.Length-1).Split("`n"))}else{@($Text.Split("`n"))}
+    if($lines.Count -gt 9){throw 'Exit context stderr exceeds nine lines.'}
+    $markers=[Collections.Generic.List[string]]::new();$captures=[Collections.Generic.List[object]]::new()
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $prefix='[T7_CATALOG_EXIT] schema=iw7.t7-catalog-exit-context/1 kind='
+    $exitSeen=$false;$incomplete=$false;$lastKind=-1
+    for($i=0;$i -lt $lines.Count;$i++) {
+        $raw=$lines[$i];$line=$raw -creplace '\r$',''
+        if(!$complete -and $i -eq $lines.Count-1) {
+            if(!$exitSeen -or $captures.Count -ge 3 -or (!$prefix.StartsWith($line,[StringComparison]::Ordinal) -and !$line.StartsWith($prefix,[StringComparison]::Ordinal))){throw 'Unrecognized incomplete exit context line.'}
+            $incomplete=$true
+            if($line.StartsWith($prefix,[StringComparison]::Ordinal)) {
+                $kind=($line.Substring($prefix.Length) -split ' ',2)[0]
+                $possible=@('memory','stack','function'|Where-Object {$_.StartsWith($kind,[StringComparison]::Ordinal)})
+                if(!$possible.Count){throw 'Unknown incomplete exit context kind.'}
+                if($kind -cin @('memory','stack','function')) {
+                    $index=[array]::IndexOf(@('memory','stack','function'),$kind)
+                    $cap=if($kind -ceq 'memory'){1024}else{512}
+                    if($seen.Contains($kind) -or $index -le $lastKind -or $raw.Length -gt $cap){throw 'Duplicate, reordered or oversized incomplete exit context.'}
+                }
+            }
+            continue
+        }
+        if($line.StartsWith('[T7_CATALOG_TRACE] ',[StringComparison]::Ordinal)) {
+            $markers.Add($raw+"`n")
+            if($line -cmatch ' phase=exit_hook '){$exitSeen=$true}
+            continue
+        }
+        $row=ConvertFrom-T7CatalogueExitLine $line
+        $cap=if($row.Kind -ceq 'memory'){1024}else{512}
+        $index=[array]::IndexOf(@('memory','stack','function'),$row.Kind)
+        if(!$exitSeen -or !$seen.Add($row.Kind) -or $index -le $lastKind -or $raw.Length+1 -gt $cap){throw 'Exit context order, duplicate or line bound differs.'}
+        $lastKind=$index;$captures.Add($row)
+    }
+    $trace=ConvertFrom-T7CatalogueTrace ($markers -join '')
+    if($captures.Count -or $incomplete) {
+        $exit=@($trace.Events|Where-Object Phase -CEQ 'exit_hook')
+        if($exit.Count -ne 1){throw 'Exit context has no matching exit_hook.'}
+        foreach($row in $captures){if($row.Code -ne $exit[0].Code -or $row.ThreadId -ne $exit[0].ThreadId -or $row.ReturnAddress -ine $exit[0].ReturnAddress){throw 'Exit context correlation differs from exit_hook.'}}
+    }
+    $outcome=if(!$captures.Count -and !$incomplete){'Absent'}elseif($captures.Count -eq 3 -and !$incomplete -and !@($captures|Where-Object Status -CNE 'ok').Count){'Observed'}else{'Partial'}
+    [pscustomobject]@{Outcome=$trace.Outcome;Events=$trace.Events;ContextOutcome=$outcome;
+        Context=[ordered]@{Captures=@($captures.ToArray());IncompleteTrailingLine=$incomplete}}
 }
 function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
     Assert-H1Path $Plan.WorkingDirectory
@@ -373,8 +508,9 @@ function Enable-T7CatalogueRuntimeProfile($Plan) {
         foreach($name in 'stdout.log','stderr.log') {
             $path=Join-Path $Plan.StageRoot $name
             if((Test-Path -LiteralPath $path) -and (Get-Item -LiteralPath $path).Length -gt 1MB){throw 'Catalogue log cap exceeded.'}
-            if($name -ceq 'stderr.log' -and (Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-catalog-trace' -and
-               (Test-Path -LiteralPath $path) -and (Get-Item -LiteralPath $path).Length -ge 1536){throw 'Trace stderr cap exceeded.'}
+            if($name -ceq 'stderr.log' -and (Test-Path -LiteralPath $path)){
+                Assert-T7CatalogueTraceSize (Get-T7CatalogueCandidateProfile $Plan) (Get-Item -LiteralPath $path).Length
+            }
         }
         Assert-T7CatalogueEngineOutputs $Plan
         Assert-H1Deadline $script:T7CatalogueGroupStarted 200
