@@ -1,0 +1,100 @@
+{
+  "schema": "iw7.world-clipmap-harness-plan/1",
+  "status": "source-plan-awaiting-coordinator-adapter-review-and-native-go",
+  "heavy_execution_authorized": false,
+  "native_compiled": false,
+  "native_harness_run": false,
+  "engine_observed": false,
+  "data_origin": "compiled-in original synthetic buffers only; no retail inputs",
+  "scope": "standalone observer harness only; no ZoneTool candidate or map registration",
+  "ownership": {
+    "leases": 1,
+    "original_jobs": 1,
+    "native_parallelism": 1,
+    "root": "source-bound coordinator driver, pending review",
+    "descendants": [
+      "one x64 MSVC compilation/link",
+      "one exact compiled fixture launch"
+    ],
+    "native_job_factory": "IW7.CommunityBuild.BuildJob.Prepare",
+    "supervisor": [
+      "Start-MaterialV2OwnedPhase",
+      "Wait-MaterialV2OwnedPhase",
+      "Stop-MaterialV2OwnedPhase"
+    ],
+    "compiler_policy": "StopOriginalJobAfterVerifiedCompilerAndTelemetry",
+    "advance_gate": "witnessed compiler exit0; original job has only root and optional exact reviewed compiler telemetry",
+    "release_gate": "fresh original root exit0 and Active0; otherwise preserve diagnostics and retain lease if closure unconfirmed",
+    "automatic_retry": false,
+    "terminate_by_pid_or_name": false
+  },
+  "budgets": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "new_output_bytes": 67108864,
+    "log_bytes_per_stream": 2097152,
+    "accepted_transcript_bytes": 131072,
+    "read_bytes": 2048,
+    "record_bytes": 4096,
+    "compile_seconds": 90,
+    "fixture_seconds": 10,
+    "group_seconds": 120,
+    "existing_supervisor_envelope_seconds": 240,
+    "drain_seconds": 2,
+    "cleanup_seconds": 15,
+    "native_peaks_measured": false
+  },
+  "compiler": {
+    "architecture": "x64",
+    "flags": [
+      "/nologo",
+      "/std:c++20",
+      "/EHsc",
+      "/MD",
+      "/O1",
+      "/W4",
+      "/D_CRT_SECURE_NO_WARNINGS"
+    ],
+    "link_flags": [
+      "/INCREMENTAL:NO",
+      "bcrypt.lib"
+    ],
+    "multiprocess": false,
+    "explicit_inputs": [
+      "MSVC include",
+      "Windows SDK ucrt/shared/um include",
+      "MSVC lib/x64",
+      "Windows SDK ucrt/um lib/x64"
+    ],
+    "remove_child_environment_keys": [
+      "CL",
+      "_CL_"
+    ],
+    "copy_sdk_or_rebuild_dependencies": false,
+    "output": "fresh owned runtime directory; exact EXE SHA256 checked before fixture launch"
+  },
+  "source_sha256": {
+    "tools-source/asset-bridge/world/world_clipmap_observer.hpp": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
+    "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
+    "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
+    "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa"
+  },
+  "provider_sha256": {
+    "ops/Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
+    "tools-source/asset-bridge/model/BuildJob.cs": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
+    "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1": "70b26a3cc7c20f70825dff7212e9cd5f7bf25602645ed00a95a70ac3f5b2c874",
+    "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1": "fc024337fdb18c8a759cd6346ad90fe1fb2086d790e4804ade583c30e69d25d6",
+    "tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs": "c8fce6094104eae70442a081654f403739f5315d531c35385021759b74c2abda",
+    "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d"
+  },
+  "qualification_gates": [
+    "fresh review of adapter bound to listed helpers; plan does not implement a launcher",
+    "atomic full-group resource admission before native helper type loading or compile",
+    "input/provider/tool read guards and exact hashes; no alteration to shared providers",
+    "one compiler exit0 and same-job compiler/telemetry identity witness",
+    "one fixture exit0; 24 actual observation records plus measured summary; synthetic signatures false",
+    "independent bounded JSON reader accepts retained raw stdout",
+    "final source integrity, byte accounting and fresh original job closure before lease release"
+  ],
+  "next_separate_witness": "real matching first CLIPMAP root/fixup; unknown today; collision serializer is subsequent work"
+}

@@ -524,11 +524,32 @@ This command is a future coordinated test recipe, **not executed evidence**.
 and `after` code with original synthetic buffers and a tiny newly reserved mapping
 owned by its standalone process. It refuses an occupied fixture address. It is
 prepared to check successful metadata flow, thread-error restoration, duplicate
-callbacks, eleven pre-inspection refusals, missing post-fixup state, propagation
-of an original exception and an unrelated asset. No retail file is an input.
+and nested callbacks, eleven pre-inspection refusals, three post-identity/count
+refusals, missing post-fixup state, propagation of an original exception and an
+unrelated asset. A first-name mismatch consumes the attempt even if a later
+callback matches. Every refusal still checks one original call and the relevant
+result/exception. No retail file is an input.
 Fixture seeding bypasses engine signature checks explicitly and leaves
 `signature_checked: false`; its records cannot establish an engine observation.
 **The harness has not been compiled or run.**
+
+The harness now captures the real emitter's bytes through a process-owned pipe,
+without changing the observer header. Each normal case checks one complete line
+and no second emission, then replays the exact bytes for an independent JSON
+reader. It directly tests an exact 2,048-byte read, refusal of the next byte and
+an oversized request, address overflow, and charging a failed requested read.
+Canaries surround a 4,096-byte formatting buffer. Maximum-width fields and a
+deliberately impossible oversized diagnostic test normal output and the fallback.
+The latter is fixture-only; production refusal tokens remain constant and short.
+A broken emitter that blocks is stopped by the outer job deadline.
+
+`world/check_observer_harness.py` reads at most 128 KiB, requires the 24 expected
+records and final measured summary, rejects duplicate JSON keys, checks the
+actual per-record 4 KiB and requested-read 2 KiB bounds, and preserves the
+synthetic evidence labels. Its five Python tests passed on original JSON data,
+including 4,096/4,097-byte boundary cases. **That validates the reader only**;
+the C++ cases and real transcript remain pending. The compile/run plan and exact
+provider bindings are in `world/observer-harness-plan.json`.
 
 `world/verify_observer_patch.py` verifies the exact pin/source/header hashes and
 applies/reverses the prepared patch against two temporary source files. This
@@ -539,7 +560,40 @@ safety proof.
 
 ```powershell
 python -B "$world/verify_observer_patch.py" --source-repo "<absolute-path-to-pinned-zonetool-source>"
+# Only after the admitted native run has produced this transcript:
+python -B "$world/check_observer_harness.py" "<owned-run-root>/harness.stdout.log"
 ```
+
+The proposed standalone group uses **one original Windows job for its root,
+compiler/linker and subsequent fixture**, and one 4 GiB RAM / 6 GiB commit lease.
+It reuses `model/BuildJob.cs`, the `surfaces/MaterialV2.Core.ps1` start/wait/stop
+functions, `MaterialV2.JobMembers.cs`, the reviewed compiler-witness/telemetry
+policy, and the existing bounded log drain. No replacement job/process manager
+is introduced here. The final source-bound coordinator adapter is still to be
+reviewed before GO; this JSON plan does not execute it or authorize a lease.
+
+Compile one TU using the existing x64 MSVC/Windows SDK, `/std:c++20 /EHsc /MD /O1
+/W4 /D_CRT_SECURE_NO_WARNINGS`, explicit include/lib paths, `/INCREMENTAL:NO`,
+and `bcrypt.lib`; no `/MP`, dependency rebuild or SDK copy. Pin compiler, Python,
+provider and input hashes under read guards. Keep `CL` and `_CL_` out of the
+child's compiler environment. The candidate EXE/object and all logs belong to a
+fresh owned runtime directory. Use the fixture's actual compiled EXE hash for
+its single launch; its input is entirely compiled-in original synthetic data.
+
+The root launches the compiler once, requires its witnessed exit zero, then
+launches the fixture once. Before the fixture, the same original job may contain
+only the root and, if present, the exact hash/creation/parentage-verified compiler
+telemetry child described by the reviewed policy; any other survivor refuses
+continuation. After the root exits, the existing policy may close that exact
+telemetry child by stopping the original job, then must observe fresh root0 /
+Active0. No PID/name-based cleanup, automatic retry or relaunch is allowed.
+The plan budgets 90 s for compilation, 10 s for the fixture and 120 s for the
+group, within the existing supervisor's 240 s supported envelope; the adapter
+must enforce the stricter group deadline in its poll callback. Keep the existing
+2 s drain and 15 s cleanup bounds. A failed/ambiguous job closure retains the
+lease and diagnostics. The full group, receipts included, is capped at 64 MiB;
+each compiler/fixture log stream is capped at 2 MiB and the accepted fixture
+transcript at 128 KiB. These are proposed limits, not measured resource usage.
 
 After coordinated native GO, perform the following sequentially, using current
 reviewed Resource-Scheduler/stock helpers and preserving occupied owner processes.
