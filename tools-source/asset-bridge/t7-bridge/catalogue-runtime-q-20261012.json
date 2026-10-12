@@ -275,7 +275,7 @@
     "new_probe_added": false,
     "speculative_dependency_added": false
   },
-  "next_action": "Q is fully closed. Analysis owner 51 alone interprets its retained MSG; coordinator decides any later work. No ninth input, metadata lookup, R or export is authorized by this closed two-phase delegation.",
+  "next_action": "Q and its exclusive MSG interpretation are complete. The coordinator owns any subsequent source/review/GO decisions; this closed delegation permits no further qualification, Run or export.",
   "distinct_authorization": {
     "scope": "CorePostGfx A once, then Q once after complete qualification closure; zero runtime retries.",
     "source_preparation_correction_authorized": true,
@@ -322,5 +322,21 @@
     "postflight_tool_chunk": "8a9452",
     "helper_incident": false
   },
-  "analysis_pending": true
+  "analysis_pending": false,
+  "analysis_owner_followup": {
+    "category": "missing-zone",
+    "requested_zone": "en_core_common",
+    "message_complete": true,
+    "message_ascii_bytes": 44,
+    "same_thread_before_exit": true,
+    "entry_point_return_observed": false,
+    "initialization_complete_observed": false,
+    "catalogue_marker_observed": false,
+    "changed_from_previous_named_failure": "core_post_gfx",
+    "name_observed_in_actual_capture_not_inferred": true,
+    "dependency_closure_or_bootstrap_compatibility_proven": false,
+    "new_payload_content_or_hash_read_for_interpretation": false,
+    "next_qualification_or_Run_performed": false,
+    "separate_coordinator_metadata_scope": "Analysis owner separately reported metadata-only inventory of twelve explicitly chosen names for a future V3 set; that work is outside the closed Q delegation and does not prove a dependency list."
+  }
 }

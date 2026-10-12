@@ -1572,5 +1572,11 @@ exit and absence proofs. Guard disposal evidence remains the pinned runner's
 finalization before wrapper return, not an independently observed guard counter.
 
 Analysis owner 51 was asked to interpret only the retained MSG after full closure.
-That interpretation is pending in this checkpoint. Q ends the delegated runtime
-work: no ninth input, new metadata, R or export follows this authorization.
+The complete 44-byte ASCII message names missing zone `en_core_common`, correlated
+on the same thread before exit. The name is observed in the capture, not inferred.
+The entry-point return, initialization-complete and catalogue markers are absent.
+The first named failure has changed from P's `core_post_gfx`; dependency closure
+and compatibility remain unproven. Q ends the delegated runtime work: no ninth
+input, new metadata, R or export follows this authorization. The coordinator's
+separate metadata-only inventory for an explicitly chosen future V3 set is outside
+this closed delegation and does not establish a dependency list.
