@@ -28,6 +28,9 @@ try {
             $events.Add('Admit');[pscustomobject]@{Token='mock-token'}
         }
         function Exit-IW7ResourceLease {param($Token)
+            $receipt=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+            $actualBytes=Measure-MaterialV2OutputFiles @(Get-ChildItem -LiteralPath $fixtureRun -File -Recurse -Force) $fixtureWork $receipt.Inputs
+            if($receipt.FinalObservedBytes -ne $actualBytes -or $receipt.OutputAccountingStatus -ne 'Converged' -or $receipt.OutputBudgetError){throw 'Lease release preceded complete serialized-state accounting'}
             $events.Add('Release');if($case -eq 'ReleaseFailure'){throw 'Mock release failure'}
         }
         function Assert-BeaconCandidate {param($Root,$ArtifactSHA256)
@@ -96,6 +99,8 @@ try {
         try{$null=Invoke-SoundFFTransaction $plan $fixturePlanPath (Get-FileHash -LiteralPath $fixturePlanPath).Hash}catch{$failed=$true}
         if(!(Test-Path -LiteralPath $statePath)){throw "Missing state in $case"}
         $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+        $actualBytes=Measure-MaterialV2OutputFiles @(Get-ChildItem -LiteralPath $fixtureRun -File -Recurse -Force) $fixtureWork $state.Inputs
+        if($state.FinalObservedBytes -ne $actualBytes -or $state.MaxObservedBytes -lt $actualBytes -or $state.OutputAccountingStatus -ne 'Converged'){throw "Last state write missing from counters in $case"}
         $quarantine=$case -in 'FactoryFailure','UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure','PostRestoreDrift','ReleaseFailure'
         if($failed -ne ($case -ne 'Success')){throw "Wrong overall outcome in $case : $($state.Failure) / $($state.CleanupError)"}
         if($state.Quarantined -ne $quarantine){throw "Wrong quarantine in $case : $($state.CleanupError)"}

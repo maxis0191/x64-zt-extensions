@@ -100,14 +100,39 @@ function Initialize-SoundFFNativeTypes([string]$Repo) {
     Add-Type -LiteralPath (Join-Path $Repo 'tools-source/asset-bridge/model/BuildJob.cs')
     Add-Type -LiteralPath (Join-Path $Repo 'ops/hud-lab/HudFileIdentity.cs')
 }
-function Measure-SoundFFOutputs($Context) {
+function Measure-SoundFFOutputs($Context,[switch]$RecordBudgetFailure) {
     $items=@(Get-ChildItem -LiteralPath $Context.Plan.RunRoot -Recurse -Force)
     if(@($items|Where-Object {$_.Attributes -band [IO.FileAttributes]::ReparsePoint}).Count){throw 'Redirected output refused.'}
     $files=@($items|Where-Object {!$_.PSIsContainer})
     $bytes=Measure-MaterialV2OutputFiles $files $Context.Plan.Work $Context.State.Inputs
-    Assert-BeaconOutputBudget $bytes;$Context.State.MaxObservedBytes=[math]::Max($Context.State.MaxObservedBytes,$bytes)
-    foreach($file in $files){if($file.Name -in 'stdout.log','stderr.log' -and $file.Length -gt 2MB){throw 'Sound phase log exceeded 2 MiB.'}}
-    $Context.State.FinalObservedBytes=$bytes
+    # Keep the measured excess as evidence even when enforcing the stop cap.
+    $Context.State.MaxObservedBytes=[math]::Max($Context.State.MaxObservedBytes,$bytes)
+    $Context.State.FinalObservedBytes=$bytes;$Context.State.OutputBudgetError=$null
+    try{
+        Assert-BeaconOutputBudget $bytes
+        foreach($file in $files){if($file.Name -in 'stdout.log','stderr.log' -and $file.Length -gt 2MB){throw 'Sound phase log exceeded 2 MiB.'}}
+    }catch{
+        $Context.State.OutputBudgetError=$_.Exception.Message
+        if(!$RecordBudgetFailure){throw}
+    }
+}
+function Save-SoundFFFinalState($Context,[switch]$Diagnostic) {
+    if(!(Test-Path -LiteralPath $Context.Plan.RunRoot)){return}
+    # Same bounded write/measure convergence as Save-AnimationFinalState. Count
+    # the serialized counters and error strings themselves, including UTF-8.
+    $Context.State.OutputAccountingStatus='Converged'
+    for($pass=0;$pass -lt 4;$pass++){
+        Save-SoundFFState $Context
+        $previousFinal=$Context.State.FinalObservedBytes;$previousMax=$Context.State.MaxObservedBytes
+        $previousError=$Context.State.OutputBudgetError
+        Measure-SoundFFOutputs $Context -RecordBudgetFailure
+        if($Context.State.FinalObservedBytes -eq $previousFinal -and $Context.State.MaxObservedBytes -eq $previousMax -and
+            $Context.State.OutputBudgetError -ceq $previousError){
+            if($Context.State.OutputBudgetError -and !$Diagnostic){throw $Context.State.OutputBudgetError}
+            return
+        }
+    }
+    throw 'Final sound receipt byte accounting did not converge.'
 }
 function Invoke-SoundFFPhase($Context,$Spec) {
     $plan=$Context.Plan;$state=$Context.State
@@ -176,20 +201,37 @@ function Complete-SoundFFTransaction($Context) {
             }
             $state.Restored=$true;$state.StockPreserved=$true;$state.RestorationStatus='Confirmed'
         }else{$state.Restored=$true;$state.StockPreserved=$true;$state.RestorationStatus='NotStaged'}
-        if(Test-Path -LiteralPath $Context.Plan.RunRoot){Measure-SoundFFOutputs $Context};Save-SoundFFState $Context
+        # Dispose the final proof guards before the final receipt so finally
+        # cannot add an uncounted ReadGuardsReleased change after lease release.
+        foreach($guard in $Context.Guards){$guard.Dispose()};$Context.Guards.Clear();$state.ReadGuardsReleased=$true
+        Save-SoundFFFinalState $Context
         if($Context.Lease){Exit-IW7ResourceLease -Token $Context.Lease.Token;$state.RetainedLeaseToken=$null;$Context.Lease=$null}
+        # The only normal change after release is token -> null (smaller JSON).
+        # Recount it too; no further normal state write follows this convergence.
+        Save-SoundFFFinalState $Context
     }catch{
         $state.Quarantined=$true;$state.Status='Failed';$state.CleanupError=$_.Exception.Message;$state.SourceHashesUnchanged=$false
         if($state.RestorationStatus -ceq 'FilesRestoredPendingSourceProof'){$state.RestorationStatus='FilesRestoredUnverified'}
         elseif($state.RestorationStatus -cne 'Confirmed'){$state.RestorationStatus='DeferredQuarantine'}
     }
-    finally{foreach($guard in $Context.Guards){$guard.Dispose()};$Context.Guards.Clear();$state.ReadGuardsReleased=$true;Save-SoundFFState $Context}
+    finally{foreach($guard in $Context.Guards){$guard.Dispose()};$Context.Guards.Clear();$state.ReadGuardsReleased=$true}
+    if($state.Status -ceq 'Failed'){
+        try{Save-SoundFFFinalState $Context -Diagnostic}catch{
+            # Files may still grow when job closure is unknown. Preserve a
+            # bounded attempt and explicitly retract the final byte claim.
+            $state.OutputAccountingStatus='Unconfirmed';$state.FinalObservedBytes=$null
+            $state.OutputAccountingError=$_.Exception.Message
+            Save-SoundFFState $Context
+        }
+    }
 }
 function Invoke-SoundFFTransaction($Plan,[string]$PlanPath,[string]$PlanSHA256) {
     $state=[ordered]@{Schema='iw7.original-sound-ff-result/1';Status='Preparing';Work=$Plan.Work;Inputs=@();Phases=@();Artifacts=@();Reader=$null;
         Transaction=$null;Restored=$false;StockPreserved=$false;RestorationStatus='Pending';JobClosureVerified=$false;JobDisposeCompleted=$false;
         SourceHashesUnchanged=$false;ReadGuardsReleased=$false;Quarantined=$false;RetainedLeaseToken=$null;Failure=$null;CleanupError=$null;
-        MaxObservedBytes=0L;FinalObservedBytes=$null;JobCleanup=$null;Ready=$false;PlaybackVerified=$false}
+        MaxObservedBytes=0L;FinalObservedBytes=$null;OutputAccountingStatus='Pending';OutputAccountingError=$null;OutputBudgetError=$null;
+        OutputAccountingScope='RunRoot file lengths after state write; only verified staged hardlinks excluded; snapshot, not continuous disk maximum';
+        JobCleanup=$null;Ready=$false;PlaybackVerified=$false}
     $c=[pscustomobject]@{Plan=$Plan;PlanPath=$PlanPath;PlanSHA256=$PlanSHA256;State=$state;StatePath=(Join-Path $Plan.RunRoot 'state.local.json');
         Lease=$null;Owner=$null;Closed=$true;Saved=$false;InputsGuarded=$false;Guards=[Collections.Generic.List[IDisposable]]::new()}
     try {

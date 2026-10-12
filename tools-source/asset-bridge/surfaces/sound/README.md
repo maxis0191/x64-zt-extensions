@@ -401,6 +401,7 @@ pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/Build-SoundFF.ps1
 pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_plan.ps1 -PlanPath <execution.json>
 pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1
 pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_deadlines.ps1
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_accounting.ps1
 ```
 
 Fourteen cycle tests execute the production orchestration with tiny original
@@ -419,6 +420,42 @@ The supervisor now marks closure unknown before calling the factory. A dedicated
 cycle case runs the real phase function with a throwing factory and requires
 quarantine, retained lease and no restoration/release without positive closure
 evidence. A factory exception alone never proves that no process was created.
+
+A second independent-review correction covers final receipt size. Previously,
+the output measurement preceded `state.local.json` writes, including a last
+unchecked write in `finally`. The sound runner now adapts the existing animation
+runner's four-pass write/measure convergence. Final guards are disposed before
+this convergence, which must establish exact serialized byte counters within
+64 MiB before lease release. After release the only normal state change is the
+retained token becoming null (a smaller JSON value); that write is converged and
+counted as well. `finally` no longer writes a normal receipt.
+
+Failures get a separate bounded convergence after their error text and guard
+status are final. `OutputBudgetError` records a crossed total/log limit and the
+measured excess is retained; diagnostic accounting does not authorize release.
+The cap is an observed stop limit, not a filesystem quota: preserve over-limit
+evidence instead of deleting it. If final accounting cannot converge or the
+filesystem cannot be measured, the best-effort failure receipt uses
+`OutputAccountingStatus=Unconfirmed` and `FinalObservedBytes=null`; it makes no
+exact final-size claim. A persistent write error can prevent that diagnostic
+receipt too and is propagated. A failure after a successful lease release keeps
+the token null and reports failure, never inventing a retained reservation.
+
+For a converged receipt, `FinalObservedBytes` is the last file-length snapshot
+after the last successful state write, with only identity-verified staged hard
+links excluded. `MaxObservedBytes` is the highest sampled total, including the
+observed state writes; it is not a continuously monitored filesystem maximum.
+No file immutability or future-size guarantee follows from that snapshot.
+Nine accounting tests use real files and serialized UTF-8 receipts. Two keep an
+unchanged payload below 64 MiB and cross that actual threshold only through
+normal/error autoserialization; the normal overflow blocks even a release attempt.
+The remaining cases cover normal and phase-failure final writes, release errors,
+write failures before/after release, persistent write failure and nonconvergence.
+The nine-pass worst failure path is four normal attempts, four diagnostic
+attempts and one explicitly unconfirmed best-effort write. No large memory
+buffer, native type/process, real lease or stock is used. All fourteen transaction
+cases also compare the final receipt with actual file lengths and check the
+same equality before any mocked release.
 
 No shared provider was modified and no SAB/FF native invocation took place here.
 SAB/FF byte validation, in-game sound playback and owner acceptance remain pending;
