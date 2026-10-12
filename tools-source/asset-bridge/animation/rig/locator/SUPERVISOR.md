@@ -1,4 +1,4 @@
-# Locator supervisor: source and Plan validation only
+# Locator supervisor: bounded static analysis
 
 `Run-Locator.ps1 -PlanPath <absolute-json> -PlanSHA256 <digest>` defaults to
 Plan. It verifies its source, Python and fixed provider pins, lists runtime and
@@ -6,6 +6,13 @@ reference metadata, and prints the exact command. Plan does not load the native
 job/file-identity/memory types, enter the scheduler, query CIM, create the run
 directory or hash retail reference content. `-Run` requires a separate reviewed
 GO. No Run or reference-code scan has happened during this preparation.
+
+That sentence records the original preparation checkpoint. The subsequent
+separately authorized [Run B](run-b-validation-2026-10-12.json) completed as
+`CandidateRouteNeedsReview`: original root exit zero / job Active=0, final guarded
+source proof true, reservation released, and Main unchanged. It established
+only a static candidate route. The new targeted phase requires a new reviewed
+Plan and its own GO; Run B is not reusable authorization.
 
 ## Fixed resource and source contract
 
