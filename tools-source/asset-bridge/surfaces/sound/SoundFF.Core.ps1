@@ -179,6 +179,11 @@ function Assert-SoundFFDumpOnlyInputs($Plan) {
     }
     Assert-SoundFFReadback $f.State.Reader $f.State.Artifacts
 }
+function Assert-SoundFFJobSource($HashInputs,[string]$SoundRoot) {
+    $pin=@($HashInputs|Where-Object Path -IEQ (Join-Path $SoundRoot 'SoundBuildJob.cs'))
+    if($pin.Count -ne 1){throw 'Exact sound-local job source pin required.'}
+    Assert-SoundFFPin $pin[0]
+}
 function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     $dumpOnly=$Plan.Profile -ceq 'DumpOnly'
     $standard=$Plan.Profile -ceq 'StandardMod';$qualifiedC=$dumpOnly -or $standard
@@ -235,6 +240,7 @@ function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     $required=@('read_sab.py','read_flac.py','sound_ff_phase.py','sab_contract.json','sab_ff_helpers.json','SoundFF.Core.ps1','Build-SoundFF.ps1')|ForEach-Object {Join-Path $SoundRoot $_}
     Assert-SoundFFHelperSources $SoundRoot $Plan.SharedRepo $Plan.HashInputs
     foreach($path in $required){if(@($Plan.HashInputs|Where-Object Path -IEQ $path).Count -ne 1){throw 'Required sound source pin missing.'}}
+    Assert-SoundFFJobSource $Plan.HashInputs $SoundRoot
 }
 function Get-SoundFFStageSource($Plan,[string]$Relative,[string]$SoundRoot=$PSScriptRoot) {
     if($Plan.Profile -ceq 'StandardMod' -and $Relative -cin @('soundbank/community_original_sound_v1.all.json','zone_source/mod.csv')){
@@ -276,7 +282,7 @@ function Save-SoundFFState($Context) {
     if(Test-Path -LiteralPath $Context.Plan.RunRoot){[IO.File]::WriteAllText($Context.StatePath,($Context.State|ConvertTo-Json -Depth 25))}
 }
 function Get-SoundFFFileId([string]$Path) {[IW7HudFileIdentity]::Read($Path)}
-function New-SoundFFJob([string]$Python,[string]$Arguments,[string]$Work) {[IW7.CommunityBuild.BuildJob]::Prepare($Python,$Arguments,$Work)}
+function New-SoundFFJob([string]$Python,[string]$Arguments,[string]$Work) {[IW7.SoundFFTelemetryV1.BuildJob]::Prepare($Python,$Arguments,$Work)}
 function Assert-SoundFFReadback($Read,$Artifacts) {
     if($Read.schema -cne 'iw7.original-sound-sab-read/1' -or $Read.status -cne 'SABBytesVerified' -or
         $Read.loaded.pcm_sha256 -cne '72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9'){throw 'Independent SAB receipt differs.'}
@@ -299,7 +305,7 @@ function Import-SoundFFHelpers([string]$Repo) {
     }
 }
 function Initialize-SoundFFNativeTypes([string]$Repo) {
-    Add-Type -LiteralPath (Join-Path $Repo 'tools-source/asset-bridge/model/BuildJob.cs')
+    Add-Type -LiteralPath (Join-Path $PSScriptRoot 'SoundBuildJob.cs')
     Add-Type -LiteralPath (Join-Path $Repo 'ops/hud-lab/HudFileIdentity.cs')
 }
 function Measure-SoundFFOutputs($Context,[switch]$RecordBudgetFailure) {
@@ -336,8 +342,34 @@ function Save-SoundFFFinalState($Context,[switch]$Diagnostic) {
     }
     throw 'Final sound receipt byte accounting did not converge.'
 }
+function Record-SoundFFJobCommitPeak($Context) {
+    $memory=$Context.State.JobMemory
+    if(!$Context.Owner -or !$memory -or !$memory.Phases.Count){return}
+    $record=$memory.Phases[-1]
+    if($record.Status -cne 'NotQueried'){return}
+    $record.JobClosedAtQuery=[bool]$Context.Closed
+    try {
+        $value=$Context.Owner.PeakJobCommitBytes
+        if($value -isnot [uint64]){throw 'Expected an unsigned 64-bit JobObject peak.'}
+        $record.PeakJobCommitBytes=$value;$record.Status='Captured'
+        if($null -eq $memory.MaxObservedPhaseJobCommitBytes -or $value -gt $memory.MaxObservedPhaseJobCommitBytes){
+            $memory.MaxObservedPhaseJobCommitBytes=$value
+        }
+    }catch{
+        # Telemetry cannot replace the original closure/exit decision. Missing
+        # data stays null; a query error is not a zero-byte measurement.
+        $record.Status='Unavailable';$record.Error=$_.Exception.Message
+        if($record.Error.Length -gt 512){$record.Error=$record.Error.Substring(0,512)}
+    }
+}
 function Invoke-SoundFFPhase($Context,$Spec) {
     $plan=$Context.Plan;$state=$Context.State
+    if(!$state.JobMemory){
+        $state.JobMemory=[ordered]@{Source='JobObjectExtendedLimitInformation.PeakJobMemoryUsed';
+            Scope='Phase JobObjects only';SupervisorIncluded=$false;SupervisorPeakCommitBytes=$null;
+            TransactionPeakCovered=$false;MaxObservedPhaseJobCommitBytes=$null;Phases=@()}
+    }
+    $state.JobMemory.Phases+=,[ordered]@{Phase=$Spec.phase;PeakJobCommitBytes=$null;Status='NotQueried';JobClosedAtQuery=$false;Error=$null}
     $specPath=Join-Path $plan.RunRoot ($Spec.phase+'-spec.json')
     [IO.File]::WriteAllText($specPath,($Spec|ConvertTo-Json -Depth 10));$specHash=(Get-FileHash -LiteralPath $specPath).Hash
     $Context.Guards.Add([IO.File]::Open($specPath,'Open','Read','Read'))
@@ -357,7 +389,9 @@ function Invoke-SoundFFPhase($Context,$Spec) {
         Measure-SoundFFOutputs $Context
         $memory=Get-IW7ResourceSnapshot;if($memory.Committed -gt $memory.CommitLimit*.85){throw 'Commit pressure stop.'}
     }
-    $Context.Closed=$true;$Context.Owner.Dispose();$Context.Owner=$null
+    $Context.Closed=$true
+    Record-SoundFFJobCommitPeak $Context
+    $Context.Owner.Dispose();$Context.Owner=$null
     Assert-MaterialV2PhaseResult (Read-BeaconJson (Join-Path $Spec.logs 'phase.json') 16384) $Spec.phase $Spec.sha256 $identity
     $receipt=Read-BeaconJson (Join-Path $Spec.logs 'sound-phase.json') 16384
     if($receipt.schema -cne 'iw7.original-sound-ff-phase/1' -or $receipt.phase -cne $Spec.phase -or $receipt.verified -isnot [bool] -or !$receipt.verified -or
@@ -373,7 +407,9 @@ function Complete-SoundFFTransaction($Context) {
     $state=$Context.State;$intact=$true;$disposed=$true
     try {
         if($Context.Owner){
-            if(!$Context.Closed){$state.JobCleanup=[ordered]@{};$Context.Closed=Stop-MaterialV2OwnedPhase $Context.Owner $state.JobCleanup}
+            try {
+                if(!$Context.Closed){$state.JobCleanup=[ordered]@{};$Context.Closed=Stop-MaterialV2OwnedPhase $Context.Owner $state.JobCleanup}
+            }finally{Record-SoundFFJobCommitPeak $Context}
             try{$Context.Owner.Dispose();$Context.Owner=$null}catch{$disposed=$false;$state.CleanupError=$_.Exception.Message}
         }
         foreach($pin in (Get-SoundFFRuntimePins $Context.Plan $Context.Lease)){try{Assert-SoundFFPin $pin}catch{$intact=$false;$state.CleanupError=$_.Exception.Message}}

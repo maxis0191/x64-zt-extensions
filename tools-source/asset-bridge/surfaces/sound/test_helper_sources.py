@@ -20,6 +20,22 @@ def fixture(root, newline):
 
 
 class HelperSourceTests(unittest.TestCase):
+    def test_sound_job_is_only_namespace_and_counter_delta_from_shared_base(self):
+        base = (REPO / "tools-source/asset-bridge/model/BuildJob.cs").read_bytes().replace(b"\r\n", b"\n")
+        self.assertEqual(sha(base), "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387")
+        source = Path(__file__).with_name("SoundBuildJob.cs").read_text(encoding="utf-8")
+        declaration = '    [DllImport("kernel32.dll", SetLastError=true)] static extern bool QueryInformationJobObject(IntPtr job,int cls,out ExtendedLimits info,int size,out uint returned);\n'
+        self.assertEqual(source.count(declaration), 1)
+        start = source.index("    // Class 9: JOBOBJECT_EXTENDED_LIMIT_INFORMATION.PeakJobMemoryUsed.\n")
+        end = source.index("    static void Fail()", start)
+        self.assertEqual(len(source[start:end].splitlines()), 9)
+        restored = (source[:start] + source[end:]).replace(declaration, "").replace(
+            "namespace IW7.SoundFFTelemetryV1 {", "namespace IW7.CommunityBuild {")
+        self.assertEqual(restored.encode(), base)
+        # This consumer uses exact bytes, unlike the sound portable manifest.
+        material = json.loads(Path(__file__).parents[1].joinpath("material_v2_helpers.json").read_bytes())
+        self.assertEqual(material["tools-source/asset-bridge/model/BuildJob.cs"], sha(base))
+
     def test_lf_crlf_same_source_but_distinct_exact_runtime_pins(self):
         for newline in (b"\n", b"\r\n"):
             with self.subTest(newline=newline), tempfile.TemporaryDirectory() as temp:
