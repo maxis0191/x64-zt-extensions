@@ -493,5 +493,8 @@ c1b532dc3d61f0408f3ec4202e93fdf2d6394b0209ed3b2b9d2cdaaed7098276.
 There was no quarantine because closure, disposal, source integrity and
 restoration were proven; that does not make the failed readback successful.
 The original state, artifacts and logs remain unchanged. `Ready` and
-`PlaybackVerified` remain false. The next work is read-only checksum diagnosis;
-another native attempt requires separate reviewed source and a new explicit GO.
+`PlaybackVerified` remain false. The source-only diagnosis, private writer patch,
+uncompiled native probe and incremental build proposal are recorded in
+[`native-checksum/README.md`](native-checksum/README.md). Six source-model tests
+pass; a corrected native artifact has not been built or run. Another native
+attempt requires separate reviewed source and a new explicit GO.

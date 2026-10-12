@@ -1,0 +1,47 @@
+{
+  "schema": "iw7.original-sound-native-checksum-source/1",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "existing_tool_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "source_files": {
+    "src/common/utils/bit_buffer.hpp": {
+      "bytes": 6827,
+      "raw_sha256": "ad636f83fd5f8ba2bc9c3fb76269dde9d145ff2d6f2eb5c4e6dcf5854a0f0fef",
+      "git_lf_sha256": "0e09a477543c6b93b5c005325acbd78dcb5721f29b37fab7f2c06a9b3dab0e59"
+    },
+    "src/common/utils/bit_buffer.cpp": {
+      "bytes": 1333,
+      "raw_sha256": "070dd89de995c2d9f073ae48de2d01429ff1927745b87ba6d12ba89f431f06fb",
+      "git_lf_sha256": "ef2109a5d848de8070cb014f500e69b5fa33c91556fe81f386f7b14455db26c5"
+    },
+    "src/zonetool/zonetool/iw7/assets/sound_bank.cpp": {
+      "bytes": 114901,
+      "raw_sha256": "46bc9e333cc9985ad3358e68a44adbc9b8469feabdbfe946aeb4eff8c1a068b5",
+      "git_lf_sha256": "12222be055cb422d9d07d17766c9f22882597e03819eeae5c500137439f71246"
+    }
+  },
+  "patch": {
+    "path": "zonetool-fab9358-bytewise-source-md5.patch",
+    "bytes": 387,
+    "sha256": "e5ed9043e097fd2bcb68336ccea728f92f01925d441d8cb6ca554f86f4a52bdd",
+    "changed_lines": 1,
+    "patched_header_lf_sha256": "0f23132d5ee04c8f313ca0e4fccc62b1ee77d7ffdc4bab41384a1df182eee1eb"
+  },
+  "original_streaminfo_hex": "1000100000170b00200b0bb800f00000bb8024fe5af1473ea8f4be33912348210c78",
+  "streaminfo_bytes": 34,
+  "md5_start_bit": 144,
+  "md5_total_bits": 128,
+  "expected_pcm_md5": "24fe5af1473ea8f4be33912348210c78",
+  "observed_sab_source_checksum": "78000000000000000000000000000000",
+  "sab_source_checksum_offset": 110592,
+  "sab_source_checksum_bytes": 16,
+  "sab_payload_offset": 4096,
+  "sab_payload_bytes": 96348,
+  "original_flac_sha256": "9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb",
+  "original_pcm_sha256": "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9",
+  "retained_sabl_sha256": "42a0ce040adeb0ced4b4661fd7bd1ae9f1081be6604b1c97b105fa8fdfe098b1",
+  "native_build_performed": false,
+  "native_fixture_run": false,
+  "retained_sab_modified": false,
+  "reader_tolerance_changed": false,
+  "ready": false
+}
