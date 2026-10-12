@@ -61,7 +61,7 @@ The 2D presentation is a proposed fixture choice, not measured engine behavior.
 ## Source-only commands
 
 Use Python 3.12 or later. All commands below are light Python/source operations;
-there is no `Run` option or native process launcher.
+these preparation entry points never call the separately gated codec observer.
 
 ```powershell
 $sound = 'tools-source/asset-bridge/surfaces/sound'
@@ -141,3 +141,66 @@ this fixture. A later protected private recipient test must prove lookup, audibl
 playback, stop/retrigger, language routing, cache/join lifecycle and restoration.
 No game/native GO is included in this source checkpoint. Material C is unchanged.
 Commits are handed to the parent for central private PR/CI/merge and common docs.
+
+## Existing third-party codec observer: source/Plan only
+
+`Invoke-SoundCodec.ps1 -PlanPath <plan.json> -PlanSHA256 <sha256>` checks the
+reviewed JSON, exact argument array, required source/input pins and absent run
+root, then returns the plan. This default path imports no scheduler, loads no
+native class, takes no reservation and starts no codec. `-Run` is reserved for
+the central unique GO after earlier queued heavy work is closed. There has been
+no native codec execution at this checkpoint.
+
+The planned codec is the already installed FFmpeg
+`8.1.2-full_build-www.gyan.dev`, 242496512 bytes, SHA256
+ad8f211bc894755e0061c55ab280ae00e8d3d4f15a8cc4372b24cfa247b5942e.
+Its installed README and embedded version string were read without running it.
+No install, copy, new framework or ZoneTool rebuild is needed. The exact retained
+B FLAC and original WAV remain the inputs; source C has identical audio bytes.
+
+Only this narrow one-second decode receives the approved Analysis estimate of
+512 MiB RAM / 1 GiB commit; no other profile is reduced. The existing shared
+scheduler admits it exclusively. The unchanged `BuildJob.cs` creates a suspended,
+BelowNormal, non-breakaway, kill-on-close job around a tiny Python worker. The
+worker calls pinned FFmpeg without a shell and reuses the unchanged SDK
+`copy_bounded` function with an explicit 32768-byte limit for each log.
+All reviewed input/source files and the plan have read handles denying write and
+delete sharing during execution. The codec executable is used in place.
+
+Arguments explicitly select FLAC input, PCM16 WAV output, one decoder/encoder
+thread, the local-file protocol and overwrite refusal. No sample-rate, channel
+count or duration conversion is requested. The worker checks native exit 0 and
+both pipe EOFs, then the Python standard-library WAV reader checks mono16/48k,
+48000 frames, exactly 96000 PCM bytes, the expected SHA256 and equality with the
+original. The parent checks the output file against the worker's size/hash.
+This future evidence would qualify codec decoding only; no SAB/FF/delivery or
+audible acceptance is inferred, and original preparation manifests are not edited.
+
+The outer monotonic deadline is 10 seconds from Resume, including registration,
+pipe drain and readback. Logs are capped at 32 KiB each, worker receipt at 16 KiB,
+successful WAV at 128 KiB and all temporary outputs at 1 MiB. The 100 ms watchdog
+refuses WAV growth beyond 256 KiB. FFmpeg `-fs 131072` is a secondary stop request,
+not an exact hard file-size cap. Commit pressure above the shared 85% threshold
+also stops the run. On failure, only the original job is stopped; cleanup must
+observe its exited root and Active0 within five seconds. No captured PID is killed.
+
+Acceptance requires worker/native success, EOF, original root exit 0, Active0,
+output match and final source integrity. Reservation release follows closure and
+integrity; incomplete proof retains the lease and evidence. Errors preserve their
+fresh run directory and never retry. No stock, owner client or Main file is touched.
+
+Eleven new mocked worker tests cover native nonzero exit, log flood/truncation,
+deadline, inherited open pipe, PCM/metadata corruption, argument/hash drift and
+existing output. They use fake processes and do not execute FFmpeg. Six actual
+default-Plan controls pass, including required-pin/hash/argument/root refusal and
+absence of native classes or generated run root. PowerShell syntax passes too.
+
+```powershell
+python -B tools-source/asset-bridge/surfaces/sound/test_codec_worker.py
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_codec_plan.ps1 -PlanPath <reviewed-plan.json> -PlanSHA256 <sha256>
+```
+
+The prior standalone WAV comparison and provisional codec plans remain ignored
+historical preparation. The execution plan pins this worker and the shared drain,
+owner, scheduler and memory sources; it replaces the provisional second verifier
+process with the same bounded WAV/sample checks inside the owned Python root.
