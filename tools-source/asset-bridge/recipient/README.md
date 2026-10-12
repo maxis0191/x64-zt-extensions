@@ -436,3 +436,36 @@ the budget callback, including 1 ms deadline crossings, and require the exact
 deadline error. Slow calls within both limits, exact boundaries and the existing
 normal/multi-observation drain cases still pass. Python capture, reader, native
 command, PAK scope and provider pins are unchanged by this correction.
+
+### E2 result: exact pak69 fatal captured in normal mode, restored
+
+One separately authorized execution of `4acad77`, recorded in the
+[sanitized E2 evidence](native-validation-e2-2026-10-12.json), passed fresh 8/11
+admission, guarded content requalification and the unchanged four-PAK staging.
+Normal-mode automatic capture returned the exact body:
+
+```text
+Could not find asset file assetfile69.pak
+```
+
+The original parent/child identities were verified before and after. Three
+controls supplied 76 total text bytes, without truncation, saturation, reader
+error or interaction. The fatal record was written about 5.34 seconds after
+native creation, followed by the failed phase receipt and `fatal-stop.request`.
+The stdout hash and 1,665 bytes match D, ending at `global_cp` with 15 of 25
+expected zone messages. E2 has its own captured body; D remains body-unknown.
+
+The original owner stopped its job and confirmed root exit 2 with zero members.
+Root exit 2 is not a native exit code. Status is Failed with DiagnosticOnly=false;
+no reference CSV was accepted and the utility phase never ran. All 79 managed
+paths were removed, source metadata/identities matched, restoration and stock
+preservation passed, no owned process/lease remained and owner/Main identities
+were unchanged. Final generated output was 1,223,303 bytes. Ready, references,
+script bytes and package closure remain false. No retry or profile expansion
+was performed during E2. The corrected timing-boundary acceptance remains
+source-tested; this fatal-stop outcome is not a native deadline-success witness.
+
+Next authorized work is source and metadata investigation of the single observed
+pak69, followed by a separately named explicit 4+1 profile and its budget/tests.
+No retail hashing without admission, no stock copy and no further native run are
+authorized by E2's exhausted GO.

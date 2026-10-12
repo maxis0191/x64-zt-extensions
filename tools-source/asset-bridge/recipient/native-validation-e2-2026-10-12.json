@@ -1,0 +1,259 @@
+{
+  "schema": "iw7.recipient-native-validation/1",
+  "attempt": "E2",
+  "date": "2026-10-12",
+  "status": "normal-reference-fatal-body-captured-confirmed-restored",
+  "source_commit": "4acad7728f0950b963283b84fa33b9fb539517b1",
+  "origin_main": "c2396bf9ad7cb184717c9fa8cc90436c1b55c016",
+  "plan_sha256": "B3653912354EC15F1DA368677E9F4E92873B6A13375D0ECF7CF474E8FE460774",
+  "spec_sha256": "6C1F0C513188BCF30297ACAF602750534CE1CB181F51DCEC25526CD7E1925E30",
+  "command_sha256": "867FB7DD541066B52CDE6A82F89DDFDF4FE236CFABB0702664F356D744468A82",
+  "native_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "authorized_invocations": 1,
+  "actual_invocations": 1,
+  "phases": [
+    "references"
+  ],
+  "diagnostic_only": false,
+  "utility_invoked": false,
+  "admission": {
+    "physical_bytes": 8589934592,
+    "commit_bytes": 11811160064,
+    "preflight_utc": "2026-10-12T07:03:54.5379742Z",
+    "physical_available": 17094029312,
+    "committed": 23736262656,
+    "commit_limit": 47564615680,
+    "physical_reserve": 0,
+    "commit_reserve": 9512923136,
+    "preflight_allowed": true,
+    "prior_leases": 0,
+    "other_heavy_count": 0,
+    "atomic_lease_and_pre_staging_hash_gate_passed": true,
+    "gate_evidence": "Exact committed control flow reached the registered original job after guarded SHA-256 verification and staging checks."
+  },
+  "stock": {
+    "baseline_entries": 72,
+    "supplemental_entries": 4,
+    "supplemental_expected": [
+      {
+        "relative": "zone/assetfile17.pak",
+        "bytes": 104595492,
+        "expected_sha256": "6F5C0D1937B5A707D4E1FB3009F68A827714D9E4A72FF2D6570B57DBF6B0F058",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      },
+      {
+        "relative": "zone/assetfile19.pak",
+        "bytes": 418201636,
+        "expected_sha256": "064B6D23CFCEC2BAEDF1A5589FCD602FB1CFBDBB2040D88D21CB8A8CA7779B0D",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      },
+      {
+        "relative": "zone/assetfile37.pak",
+        "bytes": 53477412,
+        "expected_sha256": "839C1DA30E43B9C5C78CC457D3FA3EF61BD85AE818C81A2D2D0B30FF187FB349",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      },
+      {
+        "relative": "zone/assetfile53.pak",
+        "bytes": 3817508,
+        "expected_sha256": "B0C4AC18F4F9965A396B74CE8FBE2118D6FD6F68D92E7295AD29BC7BC2FBF773",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      }
+    ],
+    "hardlinks": 78,
+    "copies": 1,
+    "copy_bytes": 77,
+    "managed_paths": 79,
+    "source_metadata_matches_after_restore": true,
+    "remaining_managed_paths": 0,
+    "fresh_full_content_hash_after_restore": false
+  },
+  "execution": {
+    "started_utc": "2026-10-12T07:04:02.7769478Z",
+    "completed_utc": "2026-10-12T07:04:17.4532259Z",
+    "shell_exit_code": 1,
+    "original_parent_pid": 23164,
+    "original_parent_created_utc": "2026-10-12T07:04:08.3956581Z",
+    "native_pid": 24448,
+    "native_created_utc": "2026-10-12T07:04:08.5201951Z",
+    "resource_registered": true,
+    "source_zone_order_observed": [
+      "techsets_global_core_mp",
+      "techsets_common_core_mp",
+      "code_post_gfx",
+      "patch_code_post_gfx",
+      "techsets_global",
+      "global",
+      "patch_global",
+      "techsets_common",
+      "common",
+      "patch_common",
+      "techsets_global_mp",
+      "global_mp",
+      "patch_global_mp",
+      "techsets_global_cp",
+      "global_cp"
+    ],
+    "expected_zone_count": 25,
+    "last_stdout": "[ INFO ][ zonetool::iw7::load_zone ]: Loading zone \"global_cp\"...",
+    "stdout_bytes": 1665,
+    "stderr_bytes": 0,
+    "phase_receipt": {
+      "schema": "iw7.recipient-phase-result/1",
+      "phase": "references",
+      "pid": 24448,
+      "exit_code": null,
+      "failure": "fatal-text observer captured fatal window",
+      "executable_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+      "ownership": "outer original Windows job",
+      "log_limit_each": 2097152,
+      "observation": null,
+      "capture": {
+        "pipe_buffer_size": 0,
+        "drain_threads_closed": false,
+        "stdout_bytes_at_receipt": 1665,
+        "stderr_bytes_at_receipt": 0,
+        "tree_closure_verified": false
+      }
+    },
+    "reference_csv_present": false,
+    "native_exit_code": null
+  },
+  "fatal_observation": {
+    "fatal_window_observed": true,
+    "identity_verified_after": true,
+    "hwnd": 246481798,
+    "title": "Fatal Error",
+    "window_class": "#32770",
+    "body": "Could not find asset file assetfile69.pak",
+    "controls": [
+      {
+        "hwnd": 202245468,
+        "class": "Button",
+        "text": "",
+        "buffer_saturated": false,
+        "error": null
+      },
+      {
+        "hwnd": 47188122,
+        "class": "Static",
+        "text": "",
+        "buffer_saturated": false,
+        "error": null
+      },
+      {
+        "hwnd": 261622108,
+        "class": "Static",
+        "text": "Could not find asset file assetfile69.pak",
+        "buffer_saturated": false,
+        "error": null
+      }
+    ],
+    "text_bytes": 76,
+    "text_truncated": false,
+    "errors": [],
+    "control_limit": 8,
+    "text_limit": 16384,
+    "message_timeout_ms": 200,
+    "whole_capture_deadline_guaranteed": false,
+    "direct_job_membership_queried": false,
+    "interaction_performed": false,
+    "record_written_utc": "2026-10-12T07:04:13.8605602Z",
+    "native_age_at_record_write_seconds": 5.3403651,
+    "stop_marker": "fatal-stop.request",
+    "diagnostic_marker_present": false,
+    "snapshot_taken": false,
+    "debugger_attached": false
+  },
+  "closure": {
+    "status": "Failed",
+    "failure": "Fatal-text capture failed reference phase; original job stop required.",
+    "original_root_exited": true,
+    "original_job_active": 0,
+    "original_root_exit_code": 2,
+    "restored": true,
+    "stock_preserved": true,
+    "restoration_status": "Confirmed",
+    "cleanup_error": null,
+    "retained_lease_token": null,
+    "remaining_owned_processes": 0,
+    "remaining_leases": 0,
+    "owner_inventory_unchanged": true,
+    "main_pid": 27784,
+    "final_generated_bytes": 1223303
+  },
+  "acceptance": {
+    "references_verified": false,
+    "script_bytes_verified": false,
+    "closure_complete": false,
+    "ready": false,
+    "runtime_verified": false,
+    "outer_native_executed_field": null,
+    "timely_successful_wait_acceptance_exercised": false
+  },
+  "artifacts": [
+    {
+      "Relative": "state.local.json",
+      "Bytes": 110677,
+      "SHA256": "DDEB0723E52427526A93889D183AC6918ADC445E3613D02A553706C26FD968A2",
+      "WrittenUtc": "2026-10-12T07:04:17.3575284Z"
+    },
+    {
+      "Relative": "backup/recovery.local.json",
+      "Bytes": 8547,
+      "SHA256": "6CEA0BE5E8B3FF3BB1301108CBCACF4EAB3B998D6354324895C40B365AD5C21C",
+      "WrittenUtc": "2026-10-12T07:04:16.8798183Z"
+    },
+    {
+      "Relative": "references/native-start.json",
+      "Bytes": 544,
+      "SHA256": "93E4B05AA4272D40AEABE56F70812AC04C84A7274709F547C7E11497FB59E413",
+      "WrittenUtc": "2026-10-12T07:04:08.5249682Z"
+    },
+    {
+      "Relative": "references/fatal-dialog.json",
+      "Bytes": 1346,
+      "SHA256": "867E858ECD4BFFDE50A04E62488E42B73F528177E0E01B51A081BC030DBBB280",
+      "WrittenUtc": "2026-10-12T07:04:13.8605602Z"
+    },
+    {
+      "Relative": "references/phase.json",
+      "Bytes": 561,
+      "SHA256": "A0F90DC4E9F472AC011F2F7C70A846FB363AE952B3C967466505DB6F01A5C4BF",
+      "WrittenUtc": "2026-10-12T07:04:13.8615691Z"
+    },
+    {
+      "Relative": "references/stdout.log",
+      "Bytes": 1665,
+      "SHA256": "E526B4CB699748543651293F89814C010462FE7610BEB18D7FDCC2CE69B6C9A1",
+      "WrittenUtc": "2026-10-12T07:04:13.5726419Z"
+    },
+    {
+      "Relative": "references/stderr.log",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "WrittenUtc": "2026-10-12T07:04:08.5259681Z"
+    },
+    {
+      "Relative": "fatal-stop.request",
+      "Bytes": 63,
+      "SHA256": "B2A962796AA3B7B5579FA313C00AA63492C18DA5726B041182C34E60F6416DDB",
+      "WrittenUtc": "2026-10-12T07:04:13.8615691Z"
+    }
+  ],
+  "final_observation_sha256": "F2BC5A22839939A2D74D78C8335842ACD4483B69E780270F650B6F09B119561D",
+  "conclusions": [
+    "The normal reference phase captured the exact assetfile69.pak fatal with verified original identities and no truncation, saturation, reader error or interaction.",
+    "The failed phase and fatal record precede the automatic stop marker in the committed control flow. Original-job closure and restoration were verified separately after stop.",
+    "Stdout is byte-identical to D and ends at global_cp; E2 supplies its own newly captured fatal body. D remains an original body-unknown failure.",
+    "All four admitted supplemental PAKs passed the existing guarded content gate and identical staged/source identity checks. This is not a complete stock inventory.",
+    "No script extraction, second native invocation, PAK addition, pool/loader change or automatic promotion followed.",
+    "Root exit 2 is not a native exit code. NativeExecuted remains null because marker handling precedes normal phase-result acceptance; the reader proves actual original native startup.",
+    "The corrected slow-call deadline acceptance path was source-tested; this fatal-stop run does not establish a real timing-boundary success test.",
+    "Post-stop metadata investigation is separate from the run. A retained assetfile69.pak does not imply present content qualification or authorization to expand the profile."
+  ]
+}

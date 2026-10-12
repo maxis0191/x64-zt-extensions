@@ -349,6 +349,16 @@ owned by the same caller. This is no waiver for slow or blocked calls: late
 closure is failure, and hard preemption is not claimed. The changed Core hash
 requires a separate E2 plan, corrective review and GO. PAKs remain unchanged.
 
+E2 subsequently received one distinct GO and completed with the exact captured
+body `Could not find asset file assetfile69.pak`, verified original identity and
+no text truncation/read error. It remains a failed normal reference attempt.
+The [E2 record](native-validation-e2-2026-10-12.json) preserves fatal and phase
+receipts, automatic original-job stop, independently confirmed closure and
+restoration, all 79 paths removed, owner/Main unchanged and zero leases. No
+utility phase, retry or PAK expansion occurred. E2's GO is exhausted. A future
+explicit 4+1 profile must use distinct metadata/budget and receive its own review
+and admission; the old four-PAK observation is not rewritten as a five-PAK proof.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256
