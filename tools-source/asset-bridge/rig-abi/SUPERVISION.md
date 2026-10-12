@@ -86,12 +86,21 @@ transaction and its own locator binding, and is currently absent.
 
 ## Future GO input and current verification
 
-The private spec schema is `iw7.rig-watch-fixture-plan/1` with fields `Mode`
+The private spec schema is `iw7.rig-watch-fixture-plan/2` with fields `Mode`
 (`fixture` only), `Nonce` (32 lowercase hex), `RunRoot` (fresh below this checkout's
-runtime), `ProviderRoot`, `PythonExe`, `PythonSHA256`, and `CdbExe`. It contains
+runtime), `ProviderRoot`, `PythonExe`, `PythonSHA256`, `CdbExe`, and `SourceBindings`. It contains
 paths/pins only, never serialized callbacks or arbitrary debugger commands.
 The runner takes `-SpecPath` and `-SpecSHA256`; **omit `-Run` for Plan**.
 The provider root must include the current source-bound rig member observer.
+`SourceBindings` binds exactly seven reviewed basename-to-SHA256 pairs:
+`Run-WatchFixture.ps1`, `Watchpoint.Core.ps1`, `WatchpointDeadline.cs`, `capture.py`,
+`cdb_transport.py`, `debug_fixture.py`, and `fixture-providers.json`. The hashes
+must come from the reviewed revision and are part of the immutable SpecSHA256.
+Plan and Run compare them before any provider import or Add-Type. Run additionally
+holds read-only file guards from that comparison through transaction cleanup,
+closing the edit window before imports; it never blesses current local hashes as
+new approval. The old v1 spec is refused and its prior Plan is preserved for the
+review record, not upgraded or executed automatically.
 There is no game, client, Main, locator address, build toolchain or installation
 in this qualification recipe. Keep the 10/14 estimate; no admission was measured.
 
@@ -116,6 +125,14 @@ include valid stdout combined with a failed stderr worker, writer failures at
 queue/read/write/flush boundaries, hostile formatting, and a failed error handler.
 The prior Plan is preserved unchanged pending the complete independent verdict;
 its old source bindings do not describe this corrective revision.
+
+The second review finding was that the previous runner recalculated its seven
+local hashes without comparing them with reviewed input, so an unchanged
+SpecSHA256 could accept edits between Plan and Run. Spec v2 fixes that binding.
+`Test-WatchSourceBindings.ps1` invokes only extracted pure source/path validators:
+each of seven synthetic source mutations is refused with an unchanged spec hash,
+incomplete maps fail, all imports follow binding, and held guards reject a later
+edit. No actual Plan has been regenerated pending the complete review verdict.
 
 Source corrections include the documented `r $t0` destination syntax and the
 positive `$bp3` acknowledgement. Actual command quoting, console/pipe behavior,

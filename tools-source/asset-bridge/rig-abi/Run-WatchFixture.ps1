@@ -29,13 +29,41 @@ function Write-WatchJson([string]$Path,$Value) {
     [IO.File]::WriteAllText($temporary,$raw,[Text.UTF8Encoding]::new($false))
     [IO.File]::Move($temporary,$Path,$true)
 }
+function Get-ReviewedWatchSourceBindings($Expected,[string]$Root,$Guards,[switch]$Hold) {
+    $names=@('Run-WatchFixture.ps1','Watchpoint.Core.ps1','WatchpointDeadline.cs','capture.py',
+        'cdb_transport.py','debug_fixture.py','fixture-providers.json')
+    $properties=@($Expected.PSObject.Properties)
+    if(!$Expected -or $properties.Count -ne $names.Count -or
+       @($properties|Where-Object {$_.Name -cnotin $names}).Count){throw 'Spec must bind exactly seven reviewed rig-abi sources.'}
+    $result=[ordered]@{};$firstGuard=$Guards.Count
+    try{
+        foreach($name in $names){
+            $hash=$Expected.$name
+            if($hash -isnot [string] -or $hash -cnotmatch '^[a-f0-9]{64}$'){throw "Reviewed source hash required: $name"}
+            $path=Assert-WatchPath (Join-Path $Root $name)
+            if($Hold){$Guards.Add([IO.File]::Open($path,'Open','Read','Read'))}
+            $item=Get-Item -LiteralPath $path -Force
+            if($item.PSIsContainer -or $item.Length -gt 1MB -or (Get-FileHash -LiteralPath $path).Hash -ine $hash){
+                throw "Reviewed source changed before import: $name"
+            }
+            $result[$path]=$hash
+        }
+        return $result
+    }catch{
+        for($index=$Guards.Count-1;$index -ge $firstGuard;$index--){$Guards[$index].Dispose();$Guards.RemoveAt($index)}
+        throw
+    }
+}
 $SpecPath=Assert-WatchPath $SpecPath
 if((Get-Item -LiteralPath $SpecPath -Force).Length -gt 16384){throw 'Spec exceeds 16 KiB.'}
 if((Get-FileHash -LiteralPath $SpecPath).Hash -ine $SpecSHA256){throw 'Spec binding differs.'}
 $spec=Read-WatchJson $SpecPath
-if($spec.Schema -cne 'iw7.rig-watch-fixture-plan/1' -or $spec.Mode -cne 'fixture' -or $spec.Nonce -cnotmatch '^[a-f0-9]{32}$'){
+if($spec.Schema -cne 'iw7.rig-watch-fixture-plan/2' -or $spec.Mode -cne 'fixture' -or $spec.Nonce -cnotmatch '^[a-f0-9]{32}$'){
     throw 'Only the explicit original-job fixture recipe is supported; retail mode is unavailable.'
 }
+$sourceGuards=[Collections.Generic.List[IDisposable]]::new();$state=$null
+try{
+$reviewedSources=Get-ReviewedWatchSourceBindings $spec.SourceBindings $PSScriptRoot $sourceGuards -Hold:$Run
 $runRoot=Assert-WatchPath $spec.RunRoot -New
 $runtime=[IO.Path]::GetFullPath((Join-Path $repo 'runtime')).TrimEnd('\')+'\'
 if(!$runRoot.StartsWith($runtime,[StringComparison]::OrdinalIgnoreCase)){throw 'Fresh root must stay within this checkout runtime.'}
@@ -46,18 +74,17 @@ $providerPins=Get-Content -LiteralPath "$PSScriptRoot/fixture-providers.json" -R
 $pins=[ordered]@{$SpecPath=$SpecSHA256}
 foreach($relative in $providerPins.Keys){
     $path=Assert-WatchPath (Join-Path $provider $relative)
+    if($Run){$sourceGuards.Add([IO.File]::Open($path,'Open','Read','Read'))}
     if((Get-FileHash -LiteralPath $path).Hash -ine $providerPins[$relative]){throw "Source provider changed: $relative"}
     $pins[$path]=$providerPins[$relative]
 }
-foreach($name in @('Run-WatchFixture.ps1','Watchpoint.Core.ps1','WatchpointDeadline.cs','capture.py','cdb_transport.py','debug_fixture.py','fixture-providers.json')){
-    $path=Assert-WatchPath (Join-Path $PSScriptRoot $name);$pins[$path]=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()
-}
+foreach($path in $reviewedSources.Keys){$pins[$path]=$reviewedSources[$path]}
 $pins[$python]=$spec.PythonSHA256
 $pins[$cdb]='5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67'
 $pins[(Join-Path (Split-Path $cdb) 'dbgeng.dll')]='4352756685e7325288e54abb3281e768637987517be8575ec4450e4b4421842f'
 $pins[(Join-Path (Split-Path $cdb) 'dbghelp.dll')]='ea639fc67cc1430b66b71ef63a2ec72ea92879cca7e665bb10ae33c4468094f9'
 if(!$Run){
-    [ordered]@{Schema='iw7.rig-watch-fixture-source-plan/1';RunRoot=$runRoot;SourceBindings=$pins;PhysicalBytes=10GB;CommitBytes=14GB;
+    [ordered]@{Schema='iw7.rig-watch-fixture-source-plan/2';RunRoot=$runRoot;SourceBindings=$pins;PhysicalBytes=10GB;CommitBytes=14GB;
         OverallMilliseconds=240000;ArmedMilliseconds=10000;CleanupMilliseconds=30000;OutputBytes=1MB;
         Mode='fixture';Ready=$false;NativeExecuted=$false;NativeTypesLoaded=$false;LeaseAcquired=$false;
         Next='Independent source review, then separate GO for owned CDB syntax/protocol qualification.'}|ConvertTo-Json -Depth 8
@@ -72,7 +99,7 @@ foreach($path in @((Join-Path $provider 'sdk/modding/BeaconFF.Core.ps1'),"$PSScr
 }
 . (Join-Path $provider 'ops/Resource-Scheduler.Core.ps1')
 $state=New-RigWatchState $spec.Nonce
-$state.Context.Guards=[Collections.Generic.List[IDisposable]]::new()
+$state.Context.Guards=$sourceGuards
 $state.Context.Baselines=[Collections.Generic.List[object]]::new()
 $state.Context.Transport=$null;$state.Context.SpecPath=$null
 $hooks=[ordered]@{
@@ -186,3 +213,8 @@ $result=Invoke-RigWatchTransaction $hooks $state
     LeaseReleased=$result.LeaseReleased;Quarantined=$result.Quarantined;FixtureOnly=$true;RetailRuntimeReady=$false;
     StatePath=(Join-Path $runRoot 'state.local.json');Failure=$result.Failure;CleanupFailure=$result.CleanupFailure}|ConvertTo-Json
 if(!$result.DiagnosticCaptured){exit 2}
+}finally{
+    # Before admission, no native owner can exist. After admission the original
+    # transaction owns these same guards through restoration or quarantine.
+    if(!$state -or !$state.Lease){foreach($guard in $sourceGuards){$guard.Dispose()}}
+}
