@@ -190,3 +190,36 @@ this fresh readback; the historical files themselves were preserved.
 No reservation is held now. Parent authorization, resource admission and the
 aggregate future-data ceiling remain in force; these estimates do not lift the
 active heavy-work gate or establish owner gameplay acceptance.
+
+## Prepared native fixture of the real converter
+
+`prepare_native_fixture.py` now prepares `native_fixture.cpp` and a generated
+`native_production.inc` in a fresh ignored directory. It applies the pinned patch
+to one temporary source file, verifies its final hash, and extracts the exact
+`ValidateH1BlendVerts`, `PackIW7BlendVerts` and complete `convert` bodies. The
+three conversion macros are copied verbatim from the pinned header. Real H1/IW7
+struct headers and allocator declarations/templates are hashed and read in place;
+no SDK/header tree is copied. The generated source totals 14,941 bytes.
+
+The test plans literal 1..4-influence words, all malformed bone offsets, negative
+counts, unsupported groups, count overflow, null data, empty rigid input and both
+subdivision-count branches through the actual `convert()` function. It checks
+refusal before output allocation. Actual ABI sizes/static assertions are enabled.
+Only allocation/free are a bounded fixture adapter. Lightmap/selfVisibility
+helpers throw if invoked; the subdivision flag fixture uses a motion vertex to
+avoid claiming unrelated codec coverage. No dump, FF, D3D, animation or game is
+linked or run. A future passing fixture does not replace the full ZoneTool build.
+
+```powershell
+python -B tools-source/asset-bridge/model/prepare_native_fixture.py `
+  --source-repo <absolute-existing-pinned-owner-fork> `
+  --output <absolute-fresh-native-fixture-directory>
+```
+
+The preparation receipt records the exact MSVC C++20 arguments (including both
+existing include roots and explicit OBJ/EXE output paths). It never invokes them.
+After parent GO, recheck the recorded source/header hashes, use the existing x64
+compiler environment and the admitted native-job wrapper, then compile and run
+the resulting exact fixture. Budget up to 4/6 GiB physical/commit and <=10 MiB
+generated build files. The current checkpoint proves source preparation and
+overwrite refusal only: **no native compile or execution has occurred**.
