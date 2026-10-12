@@ -26,4 +26,24 @@ foreach($pair in @(@('schema','iw7.beacon-tool-phase/1'),@('phase','write'),@('f
 Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('b'*64) $identity}
 Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) ([pscustomobject]@{ExitCode=1;JobActiveAtClose=0})}
 Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) ([pscustomobject]@{ExitCode=0;JobActiveAtClose=1})}
-'PASS: two parses, native4/6 and FF8/11 budgets, compiler/quoting contract, 14 refusals; no Add-Type, lease or native process.'
+# SourceId semantics are the existing ModelFF contract, not a new stock schema.
+$entry=[pscustomobject]@{Relative='one.ff'}
+Set-MaterialV2SourceIdentity $entry 'volume:file'
+if($entry.SourceId -cne 'volume:file'){throw 'Fresh source identity lost.'}
+Set-MaterialV2SourceIdentity $entry 'volume:file'
+Refuse {Set-MaterialV2SourceIdentity $entry 'volume:other'}
+if($entry.SourceId -cne 'volume:file'){throw 'Conflicting bound identity was overwritten.'}
+Refuse {Set-MaterialV2SourceIdentity ([pscustomobject]@{SourceId=''}) 'volume:file'}
+Refuse {Set-MaterialV2SourceIdentity ([pscustomobject]@{}) ''}
+$repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+. "$repo/sdk/modding/BeaconFF.Core.ps1"
+$work='C:\material-v2-pure-fixture\work'
+$files=@([pscustomobject]@{FullName="$work\stock.ff";Length=900000000L},
+    [pscustomobject]@{FullName="$work\copied.dll";Length=1024L},
+    [pscustomobject]@{FullName="$work\main\fileSysCheck.cfg";Length=77L},
+    [pscustomobject]@{FullName='C:\material-v2-pure-fixture\mod.ff';Length=42L})
+$inputs=@([pscustomobject]@{Relative='stock.ff';Mode='HardLink'},
+    [pscustomobject]@{Relative='copied.dll';Mode='Copy'},
+    [pscustomobject]@{Relative='main/fileSysCheck.cfg';Mode='Copy'})
+if((Measure-MaterialV2OutputFiles $files $work $inputs) -ne 1143L){throw 'Copied inputs were hidden from generated output budget.'}
+'PASS: two parses, native4/6 and FF8/11 budgets, compiler/quoting contract, 17 refusals, source identity and copy accounting; no Add-Type, lease or native process.'

@@ -365,6 +365,43 @@ No Add-Type, native compilation, FF execution, resource lease, download or game
 was performed. The first native GO run must still validate process closure,
 stock restoration, exact output semantics and independently rendered pixels.
 
+### Next stock binding integration: source-only seams
+
+The coordinator integrated this adapter into `modding-asset-authoring` at
+`8afa6ef`; its seven helper files match the pinned hashes. Use that provider for
+the next material run. The older `voice-acceptance-integration` BaseClient helper
+has evolved and must not be accepted by relaxing the pin.
+
+The coordinator reports a content-matched replacement stock:71 of72 baseline
+inputs in the retained `spaceland-doom/runtime/doom-server`, plus an existing
+external TLS file. Animation owns the shared baseline/reviewed-stock binding
+helper. Wait for its reviewed commit and actual API; no parallel binding schema
+or copied validator is introduced here. The intended stock modes are63HardLink
+and9Copy. These are coordinator observations, not a new material build result.
+
+The adapter's integration points are:
+
+1. Replace the old `StockRoot`/historical receipt path-reconstruction block with
+   the shared helper call. Preserve its real current Sources, identities, hashes
+   and modes, including the external TLS source. Retain the historical receipt
+   unchanged as baseline evidence; do not manufacture a successful transaction.
+2. Add the committed helper and exact baseline/reviewed bindings to the existing
+   hash/read guards, then refresh the binding at the helper's required execution
+   point. Populate the existing collision set from the returned relative paths.
+3. At native staging, compare any existing ModelFF `SourceId` with the freshly
+   observed guarded identity instead of overwriting it. Material/writer inputs
+   without a prebound identity receive the newly observed one as before.
+4. Exclude only `HardLink` entries from generated-byte accounting. All copied
+   stock, including the mutable sentinel, counts toward the64MiB output bound.
+   Continue using the existing transaction and ModelFF restoration checks.
+
+Points3/4 are prepared independently of the incoming helper contract. Pure tests
+cover matching/new/conflicting source IDs and mixed copied/linked accounting;
+no native identity class is loaded. The legacy stock acquisition block remains
+strictly unchanged until the helper is committed. No stock files, native process,
+lease, Add-Type or build are touched. The next material FF remains sequenced after
+the animation FF and requires the central GO.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual

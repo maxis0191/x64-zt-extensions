@@ -89,7 +89,7 @@ $statePath=Join-Path $RunRoot 'state.local.json'
 $lease=$null;$owner=$null;$closed=$true;$saved=$false;$sourceIntact=$true
 function Save-MaterialState {if(Test-Path -LiteralPath $RunRoot){$state|ConvertTo-Json -Depth 25|Set-Content -LiteralPath $statePath -Encoding utf8}}
 function Measure-MaterialOutput([switch]$Final) {
-    $bytes=Measure-BeaconOutputFiles @(Get-ChildItem -LiteralPath $RunRoot -File -Recurse -Force) $work $state.Inputs.Relative
+    $bytes=Measure-MaterialV2OutputFiles @(Get-ChildItem -LiteralPath $RunRoot -File -Recurse -Force) $work $state.Inputs
     $state.MaxObservedBytes=[math]::Max($state.MaxObservedBytes,$bytes)
     if($Final){$state.FinalObservedBytes=$bytes}
     Assert-BeaconOutputBudget $bytes
@@ -159,7 +159,7 @@ try {
         $file=Get-Item -LiteralPath $entry.Source
         $state.Inputs+=,[pscustomobject]@{Relative=$entry.Relative;Source=$entry.Source;Mode='HardLink';Bytes=$file.Length;ModifiedUtc=$file.LastWriteTimeUtc.ToString('o');Attributes=[int]$file.Attributes}
     }
-    foreach($entry in $state.Inputs){$guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'));$entry|Add-Member NoteProperty SourceId ([IW7HudFileIdentity]::Read($entry.Source))}
+    foreach($entry in $state.Inputs){$guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'));Set-MaterialV2SourceIdentity $entry ([IW7HudFileIdentity]::Read($entry.Source))}
     foreach($entry in $stage){Assert-BeaconHash $entry.Source $entry.SHA256}
     [IO.Directory]::CreateDirectory($work)|Out-Null
     $state.Transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$work;MutableFiles=@($state.Inputs.Relative)+@('zone/'+$source.zone+'.ff');ProfileDirectory='unused';ProfileDirectories=@()}) (Join-Path $RunRoot 'backup')

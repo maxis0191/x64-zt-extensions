@@ -3,6 +3,19 @@ function Get-MaterialV2Budgets {
     # Current RESOURCE-WORKFLOW native minimum, even for a single small writer.
     [ordered]@{WriterPhysicalBytes=4GB;WriterCommitBytes=6GB;FFPhysicalBytes=8GB;FFCommitBytes=11GB}
 }
+function Measure-MaterialV2OutputFiles($Files,[string]$Work,$Inputs) {
+    # Only hard links reuse existing storage. Copied stock is new output too.
+    $linked=@($Inputs|Where-Object Mode -CEQ 'HardLink'|ForEach-Object Relative)
+    Measure-BeaconOutputFiles $Files $Work $linked
+}
+function Set-MaterialV2SourceIdentity($Entry,[string]$Observed) {
+    # ModelFF's existing SourceId field may already be supplied by the stock
+    # binding. Compare it under the native read guard; never silently replace it.
+    if(!$Observed){throw 'Fresh native source identity required.'}
+    if($Entry.PSObject.Properties['SourceId']){
+        if($Entry.SourceId -isnot [string] -or !$Entry.SourceId -or $Entry.SourceId -cne $Observed){throw 'Bound stock source identity changed.'}
+    }else{$Entry|Add-Member NoteProperty SourceId $Observed}
+}
 function ConvertTo-MaterialV2Arguments($Arguments) {
     (@(foreach($arg in $Arguments){
         if($arg -isnot [string] -or !$arg -or $arg -match '["\x00-\x1f]' -or $arg.EndsWith('\')){throw 'Unsupported literal phase argument.'}
