@@ -1,6 +1,7 @@
 $ErrorActionPreference='Stop'
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))
 . "$PSScriptRoot/SoundFF.Core.ps1"
+$actualPhase=(Get-Command Invoke-SoundFFPhase).ScriptBlock
 # The real file transaction and pure contracts are reused. Process/NTFS identity,
 # native class initialization, stock and admission are explicit local mocks.
 foreach($relative in 'ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1','tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1'){
@@ -9,7 +10,7 @@ foreach($relative in 'ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1',
 $temp=[IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('iw7-sound-cycle-'+[guid]::NewGuid().ToString('N'))))
 [IO.Directory]::CreateDirectory($temp)|Out-Null
 try {
-    foreach($case in 'Success','BuildFailure','VerifyFailure','DumpFailure','ReadFailure','ReadClaimFailure','ReadArtifactFailure','UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure','PostRestoreDrift','ReleaseFailure'){
+    foreach($case in 'Success','FactoryFailure','BuildFailure','VerifyFailure','DumpFailure','ReadFailure','ReadClaimFailure','ReadArtifactFailure','UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure','PostRestoreDrift','ReleaseFailure'){
         $caseRoot=Join-Path $temp $case;[IO.Directory]::CreateDirectory($caseRoot)|Out-Null
         $fixtureSource=Join-Path $caseRoot 'source';[IO.Directory]::CreateDirectory($fixtureSource)|Out-Null
         $fixtureRun=Join-Path $caseRoot 'run';$fixtureWork=Join-Path $fixtureRun 'work'
@@ -19,7 +20,7 @@ try {
         $events=[Collections.Generic.List[string]]::new();$statePath=Join-Path $fixtureRun 'state.local.json'
         $plan=[pscustomobject]@{RunRoot=$fixtureRun;Work=$fixtureWork;SharedRepo=$repo;Python=$fixtureExe;CandidateRoot=$caseRoot;CandidateReceiptSHA256='mock';
             StockInputs=@();HashInputs=@((Get-SoundFFPin $fixtureData));MutableOutputs=@('zone/sdk_original_sound_v1.ff','zone/sdk_original_sound_v1.sabl','zone/sdk_original_sound_v1.sabs');
-            Review=[pscustomobject]@{source=$fixtureSource;source_stage_relatives=@('original.txt');phase_specs=@('build','verify','dump','read'|ForEach-Object {[pscustomobject]@{phase=$_}})}}
+            Review=[pscustomobject]@{source=$fixtureSource;source_stage_relatives=@('original.txt');phase_adapter=(Join-Path $PSScriptRoot 'sound_ff_phase.py');phase_specs=@('build','verify','dump','read'|ForEach-Object {[pscustomobject]@{phase=$_}})}}
         function Import-SoundFFHelpers {}
         function Initialize-SoundFFNativeTypes {param($Repo);$events.Add('TypesMock')}
         function Enter-IW7ResourceLease {param($Scope,$Kind,$PhysicalBytes,$CommitBytes,$Owner)
@@ -62,7 +63,11 @@ try {
         function Stop-MaterialV2OwnedPhase {param($Owner,$Evidence)
             $events.Add('Stop');$Evidence.Closed=($case -ne 'UnknownClosure');$Evidence.Closed
         }
+        function New-SoundFFJob {param($Python,$Arguments,$Work)
+            $events.Add('Factory');throw 'Injected factory exception without returned owner'
+        }
         function Invoke-SoundFFPhase {param($Context,$Spec)
+            if($case -eq 'FactoryFailure'){& $actualPhase $Context $Spec;return}
             $events.Add($Spec.phase)
             $Context.State.Phases+=,[ordered]@{Phase=$Spec.phase;Mock=$true}
             if($Spec.phase -eq 'build'){
@@ -91,7 +96,7 @@ try {
         try{$null=Invoke-SoundFFTransaction $plan $fixturePlanPath (Get-FileHash -LiteralPath $fixturePlanPath).Hash}catch{$failed=$true}
         if(!(Test-Path -LiteralPath $statePath)){throw "Missing state in $case"}
         $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
-        $quarantine=$case -in 'UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure','PostRestoreDrift','ReleaseFailure'
+        $quarantine=$case -in 'FactoryFailure','UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure','PostRestoreDrift','ReleaseFailure'
         if($failed -ne ($case -ne 'Success')){throw "Wrong overall outcome in $case : $($state.Failure) / $($state.CleanupError)"}
         if($state.Quarantined -ne $quarantine){throw "Wrong quarantine in $case : $($state.CleanupError)"}
         if($quarantine -and (!$state.RetainedLeaseToken -or $state.SourceHashesUnchanged)){throw "False integrity/release in $case"}
@@ -104,7 +109,8 @@ try {
             foreach($relative in @('original.txt','zonetool.exe')+$plan.MutableOutputs){if(Test-Path -LiteralPath (Join-Path $fixtureWork $relative)){throw 'Actual fixture target not restored/unlinked'}}
             if($events.IndexOf('Release') -lt $events.LastIndexOf('Content')){throw 'Release preceded final source proof'}
         }
-        if($case -in 'UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure' -and $events.Contains('Restore')){throw 'Unproven state restored files'}
+        if($case -in 'FactoryFailure','UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure' -and $events.Contains('Restore')){throw 'Unproven state restored files'}
+        if($case -eq 'FactoryFailure' -and (!$events.Contains('Factory') -or $events.Contains('Stop') -or $state.JobClosureVerified -or $state.Restored -or $state.Failure -notlike '*factory exception*')){throw 'Factory exception did not preserve unknown closure'}
         if($case -ne 'ReleaseFailure' -and $quarantine -and $events.Contains('Release')){throw 'Quarantined lease release attempted'}
         if($case -eq 'PostRestoreDrift' -and $state.RestorationStatus -ne 'FilesRestoredUnverified'){throw 'Post-restore uncertainty not recorded'}
         if((Get-FileHash -LiteralPath $fixtureData).Hash -ne $plan.HashInputs[0].SHA256){throw 'Original fixture changed'}
@@ -112,7 +118,7 @@ try {
         Set-Item -Path Function:Restore-IW7BaseTransaction -Value $actualRestore
     }
     if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7HudFileIdentity' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Unexpected native class loaded'}
-    '13 actual transaction-flow cases passed with mock ownership/admission and real tiny-file backup/restore; no native process or stock.'
+    '14 actual transaction-flow cases passed with mock ownership/admission and real tiny-file backup/restore, including real phase factory failure; no native process or stock.'
 } finally {
     # Delete only the verified test root's own files, then its empty directories.
     $resolved=[IO.Path]::GetFullPath($temp)

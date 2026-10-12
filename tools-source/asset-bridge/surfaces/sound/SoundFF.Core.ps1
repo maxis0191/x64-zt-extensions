@@ -115,7 +115,10 @@ function Invoke-SoundFFPhase($Context,$Spec) {
     [IO.File]::WriteAllText($specPath,($Spec|ConvertTo-Json -Depth 10));$specHash=(Get-FileHash -LiteralPath $specPath).Hash
     $Context.Guards.Add([IO.File]::Open($specPath,'Open','Read','Read'))
     $arguments=ConvertTo-MaterialV2Arguments @('-B',$plan.Review.phase_adapter,'--spec',$specPath,'--spec-sha256',$specHash,'--shared-repo',$plan.SharedRepo)
-    $Context.Owner=New-SoundFFJob $plan.Python $arguments $plan.Work;$Context.Closed=$false
+    # A throwing factory can have created a process without returning its owner.
+    # Only positive original-job evidence can establish closure from this point.
+    $Context.Closed=$false
+    $Context.Owner=New-SoundFFJob $plan.Python $arguments $plan.Work
     $identity=Get-BeaconJobIdentity $Context.Owner $plan.Python $Spec.phase;$identity.SpecSHA256=$specHash;$identity.NativeExecutableSHA256=$Spec.sha256
     $state.Phases+=,$identity;Save-SoundFFState $Context
     $started=Start-MaterialV2OwnedPhase $Context.Owner $Context.Lease.Token

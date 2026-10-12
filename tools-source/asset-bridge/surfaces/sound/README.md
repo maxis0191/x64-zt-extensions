@@ -403,7 +403,7 @@ pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_tra
 pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_deadlines.ps1
 ```
 
-Thirteen cycle tests execute the production orchestration with tiny original
+Fourteen cycle tests execute the production orchestration with tiny original
 files and real hard-link/file-transaction operations, while mocking admission,
 native ownership, NTFS identity and phases. Eleven clock tests inject slow
 getters, stop/dispose, saves and receipts. Twelve default-Plan/identity cases
@@ -412,6 +412,13 @@ These tests never launch ZoneTool or touch stock. The earlier one-asset fixture
 expectation was corrected before native work: the pinned native builder always
 adds a zone-branding rawfile alongside the soundbank. Its absence is now a
 negative reader case. No native success is inferred from these synthetic tests.
+
+Independent review also identified a pre-launch boundary defect: if job creation
+threw without returning an owner, the previous closed state could remain true.
+The supervisor now marks closure unknown before calling the factory. A dedicated
+cycle case runs the real phase function with a throwing factory and requires
+quarantine, retained lease and no restoration/release without positive closure
+evidence. A factory exception alone never proves that no process was created.
 
 No shared provider was modified and no SAB/FF native invocation took place here.
 SAB/FF byte validation, in-game sound playback and owner acceptance remain pending;
