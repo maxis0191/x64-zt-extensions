@@ -1,0 +1,24 @@
+{
+  "schema": "iw7.asset-bridge.original-collision-test-plan/1",
+  "runtime_ready": false,
+  "provenance": "Hand-authored original coordinates; no retail geometry",
+  "kind": "one static convex box",
+  "units": "authoring units; IW7-to-Havok scale must be established before native use",
+  "minimum": [-64, -64, -8],
+  "maximum": [64, 64, 0],
+  "vertices": [
+    [-64, -64, -8], [64, -64, -8], [64, 64, -8], [-64, 64, -8],
+    [-64, -64, 0], [64, -64, 0], [64, 64, 0], [-64, 64, 0]
+  ],
+  "geometric_expectations_before_native_margin_or_scale": [
+    {"name": "floor_hit", "from": [0, 0, 32], "to": [0, 0, -32], "hit": true, "fraction": 0.5, "normal": [0, 0, 1]},
+    {"name": "outside_miss", "from": [96, 0, 32], "to": [96, 0, -32], "hit": false},
+    {"name": "side_hit", "from": [-96, 0, -4], "to": [96, 0, -4], "hit": true, "fraction": 0.16666666666666666, "normal": [-1, 0, 0]}
+  ],
+  "native_prerequisites": [
+    "Prove shape builder, allocator, class registry, serializer and loader ABIs",
+    "Resolve the world root container and shape/filter/material/content tag schema",
+    "Declare and verify unit scale and convex margin behavior",
+    "Obtain coordinated native GO and use a private temporary physics world"
+  ]
+}

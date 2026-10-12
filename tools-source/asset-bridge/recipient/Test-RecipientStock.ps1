@@ -74,4 +74,50 @@ $baseline[1].Bytes=101
 Refuses {Get-RecipientStockBudget $baseline $valid} 'Same identity with inconsistent bytes'
 $baseline[1].Bytes=100;$baseline[1].ExpectedSHA256='F'*64
 Refuses {Get-RecipientStockBudget $baseline $valid} 'Same identity with inconsistent content'
+$baseline[1].ExpectedSHA256='A'*64
+# Explicit 4+1 v2 receipt: invented fixture bytes/hashes, no retail file read.
+$reviewFive=@($review)+@([pscustomobject]@{RelativePath='assetfile69.pak';Length=386465828;SHA256=('5'*64);Operation='NTFSHardLinkImmutableStock'})
+$five=Clone-Fixture;$five.Schema='iw7.recipient-stock-observation/2';$five.Profile='observed-cp-paks-17-19-37-53-69'
+$five|Add-Member NoteProperty AdditionalDependencyEvidenceSHA256 '867E858ECD4BFFDE50A04E62488E42B73F528177E0E01B51A081BC030DBBB280'
+$five.Inputs+=,[pscustomobject]@{Relative='zone/assetfile69.pak';Source=($root+'\assetfile69.pak');Mode='HardLink';Bytes=386465828;
+    ModifiedUtc='2026-09-29T21:46:16Z';Attributes=32;SourceId='AAAAAAAA:0000000000000004';SHA256=('5'*64);ReviewedStockRelative='assetfile69.pak'}
+function Clone-Five {$five|ConvertTo-Json -Depth 8|ConvertFrom-Json}
+function Bind-Five($observation) {Get-RecipientSupplementalStockInputs $observation $reviewFive $root $reviewHash}
+$validFive=@(Bind-Five (Clone-Five));$budgetFive=Get-RecipientStockBudget $baseline $validFive
+Check ($validFive.Count -eq 5 -and $validFive[4].Relative -ceq 'zone/assetfile69.pak' -and $validFive[4].Mode -ceq 'HardLink') 'Explicit fifth observed PAK only'
+Check (@($validFive|Where-Object StockProfileId -CNE $five.Profile).Count -eq 0) 'Named v2 profile retained on every input'
+Check ($budgetFive.SupplementalProfile -ceq $five.Profile -and $budgetFive.SupplementalLogicalBytes -eq 966557876 -and $budgetFive.SupplementalLimitBytes -eq 966557876) 'V2 has its exact distinct observed byte ceiling'
+Check ($budgetFive.AdditionalBytesBeyondFourPAKs -eq 386465828 -and $budgetFive.SupplementalCopiedBytes -eq 0) 'Increment is explicit with zero PAK payload copies'
+Check ($budgetFive.UniqueHashReadBytes -eq 966558053 -and $budgetFive.UniqueHashReadFiles -eq 7 -and $budgetFive.StockHardLinks -eq 7 -and $budgetFive.StockCopiedBytes -eq 77) 'Five-PAK identity-deduplicated fixture budget'
+Check (!$budgetFive.ContentVerified -and !$budgetFive.AdditionalResidentBytesMeasured) 'V2 metadata cannot claim fresh bytes or peak memory'
+foreach($mutation in @(
+    {param($x) $x.Profile='observed-cp-paks-17-19-37-53'},
+    {param($x) $x.Schema='iw7.recipient-stock-observation/1'},
+    {param($x) $x.Profile='observed-cp-paks-17-19-37-53-69-70'},
+    {param($x) $x.AdditionalDependencyEvidenceSHA256=$null},
+    {param($x) $x.AdditionalDependencyEvidenceSHA256='0'*64},
+    {param($x) $x.Inputs=@($x.Inputs[0..3])},
+    {param($x) $x.Inputs+=,$x.Inputs[4]},
+    {param($x) $x.Inputs[4]=$x.Inputs[3]},
+    {param($x) $x.Inputs[4].Relative='zone/assetfile70.pak'},
+    {param($x) $x.Inputs[4].Source='C:\other\assetfile69.pak'},
+    {param($x) $x.Inputs[4].Mode='Copy'},
+    {param($x) $x.Inputs[4].Bytes--},
+    {param($x) $x.Inputs[4].SHA256='F'*64},
+    {param($x) $x.Inputs[4].Attributes=1024},
+    {param($x) $x.Inputs[4].SourceId='unknown'}
+)){
+    $bad=Clone-Five;& $mutation $bad
+    Refuses {Bind-Five $bad} ('V2 refuses mutation: '+$mutation.ToString().Trim())
+}
+Refuses {Get-RecipientSupplementalStockInputs (Clone-Five) $review $root $reviewHash} 'V2 cannot use a reviewed set missing pak69'
+$bad=Clone-Fixture;$bad.Schema='iw7.recipient-stock-observation/2'
+Refuses {Bind-Fixture $bad} 'Old four-PAK observation cannot masquerade as schema2'
+$badBudget=$validFive|ConvertTo-Json -Depth 6|ConvertFrom-Json
+$badBudget[4].StockProfileId='observed-cp-paks-17-19-37-53'
+Refuses {Get-RecipientStockBudget $baseline $badBudget} 'Mixed profile identities cannot choose a budget'
+$badBudget=$validFive|ConvertTo-Json -Depth 6|ConvertFrom-Json;$badBudget[4].Bytes--
+Refuses {Get-RecipientStockBudget $baseline $badBudget} 'Named five-PAK budget refuses changed logical size'
+$oldAgain=@(Bind-Fixture (Clone-Fixture));$oldBudget=Get-RecipientStockBudget $baseline $oldAgain
+Check ($oldAgain.Count -eq 4 -and $oldBudget.SupplementalLimitBytes -eq 600MB -and $oldBudget.SupplementalLogicalBytes -eq 580092048 -and $oldBudget.AdditionalBytesBeyondFourPAKs -eq 0) 'Original profile scope and 600 MiB budget remain unchanged'
 "$checks supplemental stock checks passed; no stock content read or native execution."

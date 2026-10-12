@@ -276,3 +276,222 @@ creation, stock preparation, client launch or any action on Main. The next gate
 is a separately reviewed/admitted existing-ZoneTool SAB/FF plan with bounded
 independent bank readback; the small codec budget does not apply to that stage.
 The coordinator owns the private PR, exact-head CI, merge and common documentation.
+
+## Independent original-bank reader and next native review plan
+
+`read_sab.py` is now implemented for the single approved original chime; it does
+not import the PCM encoder, source preparer, native writer or bank builder. It
+shares the separately implemented, previously reviewed `read_flac.py` decoder.
+`sab_contract.json` binds the five original source files and their exact names,
+sizes, hashes, sample metadata and alias/asset IDs. Noninteger JSON counts,
+booleans in integer fields, unknown/duplicate keys and nonfinite numbers fail.
+
+The reader bounds each file to 256 KiB and all reads, including final rechecks,
+to 2 MiB. It rejects linked paths, missing/truncated files, surplus bytes, every
+unexpected header/entry/reserved field, invalid offsets, padding and text. This
+is deliberately a one-entry SABL and empty SABS reader; other banks are refused.
+For this source it expects 114816-byte SABL and 4096-byte SABS. The SAB asset ID
+must match the original alias's File hash. It verifies the complete seek/frame
+payload, frame/header CRCs, sample count, PCM SHA256/equality to the original WAV,
+payload MD5 and source PCM MD5. Source hashes are reread before returning success;
+these are sequential snapshots, not durable locks or protection from concurrent
+writers. A future supervisor must hold the reviewed inputs throughout native work.
+
+The writer's `checksumChecksum` is checked only as its expected 16-byte `0xCC`
+placeholder. `checksum_checksum_verified` stays false. A one-alias native index
+would have value 0 / next 65535, but this is only an expectation: the native CSV
+dump does not expose the index, so `native_alias_index_verified` stays false.
+
+With both `--dump` and `--inventory`, the reader additionally checks exactly two
+inventory callbacks (the soundbank and native zone-branding rawfile), one alias
+row with all 53 columns in order, exact
+text/enums and decimal numeric values, and the complete dumped FLAC bytes against
+the pinned writer's known header rewrite plus original payload. Numeric formatting
+such as 0.500000 is accepted without accepting changed values or NaN. This writer
+sets the dumped STREAMINFO min/max block size to 1024, unknown frame lengths to
+zero and MD5 to zero, while the original frames use 4096-sample blocks. The reader
+reports that rewrite and never claims the standalone dumped FLAC was validated.
+PCM verification reconstructs the approved original metadata around unchanged SAB
+payload, then decodes it; it does not silently repair a native dump on disk.
+Native FF alias-index/storage correctness and audible acceptance remain separate.
+
+```powershell
+python -B tools-source/asset-bridge/surfaces/sound/read_sab.py --source <original-source-B> --banks <work/zone> --contract tools-source/asset-bridge/surfaces/sound/sab_contract.json --dump <work/dump/sdk_original_sound_v1> --inventory <verify/stdout.log>
+python -B tools-source/asset-bridge/surfaces/sound/test_sab.py
+python -B tools-source/asset-bridge/surfaces/sound/test_sab_ff.py
+```
+
+Eighteen reader tests use only generated original PCM and hand-packed synthetic
+SAB fixtures, with mutations of all 21 header and 17 entry fields, offsets,
+padding, names, checksums, seek/frame bytes, source/dump aliases, inventory,
+JSON types and final-read drift. Ten phase/Plan tests use fake runners and
+candidate metadata. Their fixture trees each remain below 1 MiB; no retail bank,
+tool, job, reservation or stock staging is involved. A successful fixture is a
+parser test, not native SAB evidence.
+
+`prepare_sab_ff.py` produces a source review plan using the existing E7 candidate
+receipt and reviewed historical stock plan, with exact four phase specs and
+source/helper hashes. It binds the completed codec checkpoint to the same source
+FLAC/PCM without repeating FFmpeg. It does not create the proposed RunRoot or stage stock.
+The native estimate remains **8 GiB RAM / 11 GiB commit**, distinct from the
+completed codec test. Native binary hashing under guards and fresh stock identity
+and content checks are explicitly pending. The preparation rereads all small
+inputs and creates only an optional new plan file, refusing overwrite.
+
+`sound_ff_phase.py` is a sound-local adapter around the unchanged
+`material_v2_phase.py` runner. Its pinned shared dependencies are listed in
+`sab_ff_helpers.json`. The wrapper restricts verbs/zone/arguments/typed timeouts,
+catches every drain `BaseException`, records bounded exception types and requires
+two explicit normal returns in addition to the existing native receipt. It emits
+a separate sound receipt without editing the shared provider's receipt. Failure
+inside the shared runner can exit before that extra receipt exists; the outer
+original job owner must treat any nonzero exit or missing receipt as failure.
+
+## Checkout identities and transactional native gate
+
+`sab_ff_helpers.json` explicitly uses `utf8-crlf-to-lf-only/1` for the sixteen
+reviewed helper source identities. Only CRLF becomes LF; BOM, whitespace, final
+newline, lone CR and every other byte remain significant. All sixteen canonical
+sources were compared byte-for-byte with Git and the coordinator checkout.
+MaterialV2.Core.ps1 was 9284 bytes/LF locally and 9424 bytes/CRLF centrally; both
+matched the same 9284-byte Git blob. No provider was edited to resolve this.
+Six portability tests cover both newline styles, genuine source mutations,
+strict normalization and import of the unchanged runner/SDK drain. Review-plan
+`input_pins` and execution `HashInputs` still record exact checkout byte lengths
+and SHA256. Newline conversion after preparing a plan invalidates that plan.
+
+`Prepare-SoundFF.ps1` now binds the read-only review plan, previously reviewed
+stock receipts, current source bytes and existing E7 candidate provenance into a
+new execution plan. It reads metadata without staging or hashing retail stock.
+`Build-SoundFF.ps1` defaults to validation and printing that plan: no RunRoot,
+native type, job or reservation is created. Explicit `-Run` is implemented but
+is not authorized by either plan. A separate central GO after independent review
+of the complete cycle and fresh **8 GiB RAM / 11 GiB commit** admission is required.
+
+The sound-local supervisor reuses existing admission, suspended original job,
+BelowNormal priority, Resume/identity registration, monotonic wait/stop helpers,
+NTFS identity checks, and file-level backup/restoration. It binds exactly four
+phases: build, verify, dump, independent read. It holds exact source hashes and
+read guards across those phases. Native phases retain the 240-second timeout,
+the independent read uses 30 seconds, and the outer decision allows five more
+seconds. Fresh monotonic decisions cover slow getters, callback saves and the
+final dispose/receipt/hash/save path. Root exit allows two seconds for remaining
+job processes; failure cleanup allows fifteen seconds and never kills by PID.
+
+The reviewed stock profile has 71 hard links and one 77-byte sentinel copy.
+Adding four original inputs and the existing tool yields 77 staged inputs.
+All 80 transaction entries include the FF, SABL and SABS. A successful build
+preserves three bounded, hash-checked copies outside the restored work directory;
+reader bank hashes must match those artifacts and all three are rechecked after
+restoration. Output accounting excludes only known staged hard links, includes
+artifacts/logs/dumps/backups, stops at 64 MiB and limits each pipe log to 2 MiB.
+
+Restoration requires proven original-job closure and disposal, unchanged source
+identities/content, and a vacant owned work directory. The source guards are
+released only after job disposal so owned hard links can be removed, then fresh
+guards and full source/artifact checks precede lease release. Unknown closure,
+failed disposal, source drift or incomplete restoration retains evidence and
+the reservation, marks quarantine, and makes no source-integrity claim. Read
+guards cannot survive a terminated supervisor, so quarantine does not imply
+durable file locks. No automatic retry or broad directory removal is provided.
+
+```powershell
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/Prepare-SoundFF.ps1 -ReviewPlanPath <review.json> -ReviewPlanSHA256 <sha> -StockParametersPath <reviewed-parameters.json> -StockParametersSHA256 <sha> -OutputPath <fresh-execution.json>
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/Build-SoundFF.ps1 -PlanPath <execution.json> -PlanSHA256 <sha>
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_plan.ps1 -PlanPath <execution.json>
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_deadlines.ps1
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_accounting.ps1
+```
+
+Fourteen cycle tests execute the production orchestration with tiny original
+files and real hard-link/file-transaction operations, while mocking admission,
+native ownership, NTFS identity and phases. Eleven clock tests inject slow
+getters, stop/dispose, saves and receipts. Twelve default-Plan/identity cases
+check source-only behavior, altered plans, LF/CRLF and exact runtime hashes.
+These tests never launch ZoneTool or touch stock. The earlier one-asset fixture
+expectation was corrected before native work: the pinned native builder always
+adds a zone-branding rawfile alongside the soundbank. Its absence is now a
+negative reader case. No native success is inferred from these synthetic tests.
+
+Independent review also identified a pre-launch boundary defect: if job creation
+threw without returning an owner, the previous closed state could remain true.
+The supervisor now marks closure unknown before calling the factory. A dedicated
+cycle case runs the real phase function with a throwing factory and requires
+quarantine, retained lease and no restoration/release without positive closure
+evidence. A factory exception alone never proves that no process was created.
+
+A second independent-review correction covers final receipt size. Previously,
+the output measurement preceded `state.local.json` writes, including a last
+unchecked write in `finally`. The sound runner now adapts the existing animation
+runner's four-pass write/measure convergence. Final guards are disposed before
+this convergence, which must establish exact serialized byte counters within
+64 MiB before lease release. After release the only normal state change is the
+retained token becoming null (a smaller JSON value); that write is converged and
+counted as well. `finally` no longer writes a normal receipt.
+
+Failures get a separate bounded convergence after their error text and guard
+status are final. `OutputBudgetError` records a crossed total/log limit and the
+measured excess is retained; diagnostic accounting does not authorize release.
+The cap is an observed stop limit, not a filesystem quota: preserve over-limit
+evidence instead of deleting it. If final accounting cannot converge or the
+filesystem cannot be measured, the best-effort failure receipt uses
+`OutputAccountingStatus=Unconfirmed` and `FinalObservedBytes=null`; it makes no
+exact final-size claim. A persistent write error can prevent that diagnostic
+receipt too and is propagated. A failure after a successful lease release keeps
+the token null and reports failure, never inventing a retained reservation.
+
+For a converged receipt, `FinalObservedBytes` is the last file-length snapshot
+after the last successful state write, with only identity-verified staged hard
+links excluded. `MaxObservedBytes` is the highest sampled total, including the
+observed state writes; it is not a continuously monitored filesystem maximum.
+No file immutability or future-size guarantee follows from that snapshot.
+Nine accounting tests use real files and serialized UTF-8 receipts. Two keep an
+unchanged payload below 64 MiB and cross that actual threshold only through
+normal/error autoserialization; the normal overflow blocks even a release attempt.
+The remaining cases cover normal and phase-failure final writes, release errors,
+write failures before/after release, persistent write failure and nonconvergence.
+The nine-pass worst failure path is four normal attempts, four diagnostic
+attempts and one explicitly unconfirmed best-effort write. No large memory
+buffer, native type/process, real lease or stock is used. All fourteen transaction
+cases also compare the final receipt with actual file lengths and check the
+same equality before any mocked release.
+
+No shared provider was modified and no SAB/FF native invocation took place here.
+SAB/FF byte validation, in-game sound playback and owner acceptance remain pending;
+`Ready` and `PlaybackVerified` remain false. The coordinator owns the private PR,
+exact-head CI, merge and common documentation for this source delivery.
+
+## First native SAB/FF attempt: failed independent read, closed and restored
+
+On 2026-10-12 the coordinator authorized exactly one run of execution plan E
+(SHA256 1306c1751ce2321cc2cf6a9308c1e59fd5e82401d2b875a19890418ba51b76ae)
+from source `286a6a8470fbdd21c869e0032c21b76269e396a9`. Fresh admission used the
+complete 8 GiB RAM / 11 GiB commit scenario. There was no retry. The sanitized
+`sab-ff-checkpoint-2026-10-12.json` records the exact state, phase, log and artifact
+hashes without machine paths, process identifiers or raw logs.
+
+Build, verify and dump returned zero with explicit normal pipe completion. The
+independent reader returned one at `read_sab.py:190`: `SAB PCM checksum mismatch`.
+The source-checksum field at SABL offset 110592 is
+`78000000000000000000000000000000`; the original FLAC STREAMINFO and original PCM
+MD5 are both `24fe5af1473ea8f4be33912348210c78`. The reader reached this check after
+its loaded-bank layout, seek/frame equality, reconstructed PCM and payload-MD5
+checks. Full independent bank/readback validation failed; later checks were not
+completed. No checksum was rewritten or accepted by exception.
+
+The retained FF is 544 bytes, SABL 114816 and SABS 4096. All four original jobs
+were observed root-exited/Active0 and disposed. The 77 managed inputs and 80-entry
+transaction completed restoration with unchanged source hashes; guards and the
+lease were released. At 07:52:30 UTC the registry was empty and all four phase
+roots were absent. The pre-existing `vctip.exe` created at 07:38:02.967002 UTC
+remained untouched and is explicitly outside this job-closure proof.
+
+Final accounting converged to 1402412 bytes, equal to the measured directory;
+the sampled peak was 1521907 bytes. The final state SHA256 is
+c1b532dc3d61f0408f3ec4202e93fdf2d6394b0209ed3b2b9d2cdaaed7098276.
+There was no quarantine because closure, disposal, source integrity and
+restoration were proven; that does not make the failed readback successful.
+The original state, artifacts and logs remain unchanged. `Ready` and
+`PlaybackVerified` remain false. The next work is read-only checksum diagnosis;
+another native attempt requires separate reviewed source and a new explicit GO.

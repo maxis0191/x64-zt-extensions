@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -198,6 +199,121 @@ class DialogTests(unittest.TestCase):
             with self.subTest(changes=changes),mock.patch.object(phase.subprocess,'Popen') as launch:
                 with self.assertRaises(ValueError): phase.run(spec,None)
                 launch.assert_not_called()
+
+
+class PhaseExit(BaseException):
+    pass
+
+
+class PhaseDialogTests(unittest.TestCase):
+    """Exercise real phase policy/persistence with fake process/capture/Win32."""
+    def setUp(self):
+        self.temporary=tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root=Path(self.temporary.name)
+        self.work=self.root/'work';self.work.mkdir()
+        self.logs=self.root/'references';self.exe=self.work/'zonetool.exe'
+        self.spec={'schema':'iw7.recipient-phase/1','phase':'references','timeout':240,
+                   'sha256':phase.EXE_SHA,'exe':str(self.exe),'cwd':str(self.work),'logs':str(self.logs)}
+        self.api=FakeWin32();self.api.child['image']=str(self.exe)
+        self.process=SimpleNamespace(pid=900,returncode=None,stdin=mock.Mock())
+        self.process.poll=lambda:self.process.returncode
+        self.receipts_before_exit=False;self.calls=[]
+
+    def exercise(self, *, diagnostic=False, invalid_identity=False, expected_failure=False,
+                 fake_native_exit=0, save_error=False):
+        if diagnostic: self.spec.update(diagnostic_mode='fatal-text',timeout=45)
+        actual_stat=Path.stat
+        def fixture_stat(path,*args,**kwargs):
+            if path==self.exe: return SimpleNamespace(st_size=21696512)
+            return actual_stat(path,*args,**kwargs)
+        def make_probe(process,image,digest):
+            self.assertIs(process,self.process)
+            probe=dialog.FatalDialogProbe(self.api,2,900,image,digest,r'C:\python.exe',digest=lambda path:phase.EXE_SHA)
+            if invalid_identity: self.api.child['created_filetime']+=1
+            return probe
+        def capture(process,logs,drain,timeout,observe):
+            self.assertEqual(timeout,45 if diagnostic else 240)
+            (logs/'stdout.log').write_bytes(b'fixture log\n');(logs/'stderr.log').write_bytes(b'')
+            self.calls.append(observe is not None)
+            failure=observe() if observe else None
+            self.process.returncode=fake_native_exit
+            return failure,[],[]
+        def exiting(code):
+            self.assertEqual(code,2)
+            marker='diagnostic-stop.request' if diagnostic else 'fatal-stop.request'
+            record=json.loads((self.logs/'fatal-dialog.json').read_text(encoding='utf-8'))
+            receipt=json.loads((self.logs/'phase.json').read_text(encoding='utf-8'))
+            self.assertTrue((self.root/marker).is_file())
+            self.assertTrue(receipt['failure']);self.assertIsNone(receipt['observation'])
+            self.receipts_before_exit=True
+            raise PhaseExit(record)
+        with mock.patch.object(Path,'stat',fixture_stat),mock.patch.object(phase,'sha',return_value=phase.EXE_SHA),\
+             mock.patch.object(phase,'text',return_value='fixture'),mock.patch.object(phase,'validate_requests'),\
+             mock.patch.object(phase.subprocess,'Popen',return_value=self.process) as launch,\
+             mock.patch.object(phase,'capture_streams',side_effect=capture),\
+             mock.patch.object(dialog,'make_probe',side_effect=make_probe),\
+             mock.patch.object(phase,'check_output',return_value={'closure_complete':False,'package_ready':False}) as verify,\
+             mock.patch.object(phase.os,'_exit',side_effect=exiting) as exit_process:
+            if save_error:
+                with mock.patch.object(dialog,'save_record',side_effect=OSError('fixture write refused')):
+                    with self.assertRaises(OSError): phase.run(self.spec,None)
+                verify.assert_not_called();exit_process.assert_not_called()
+                self.assertFalse((self.root/'fatal-stop.request').exists())
+                self.assertFalse((self.logs/'phase.json').exists())
+            elif expected_failure:
+                with self.assertRaises(PhaseExit): phase.run(self.spec,None)
+                self.assertTrue(self.receipts_before_exit);verify.assert_not_called()
+            else:
+                self.assertEqual(phase.run(self.spec,None),0)
+                verify.assert_called_once_with(self.spec['phase'],self.work);exit_process.assert_not_called()
+                self.process.stdin.close.assert_called_once()
+                self.assertFalse((self.logs/'fatal-dialog.json').exists())
+                self.assertFalse((self.root/'fatal-stop.request').exists())
+                self.assertFalse((self.root/'diagnostic-stop.request').exists())
+            launch.assert_called_once()
+        self.assertEqual(self.calls,[self.spec['phase']=='references'])
+
+    def test_normal_success_without_fatal_accepts_reference_observation(self):
+        self.api.title='Loading'
+        self.exercise()
+        receipt=json.loads((self.logs/'phase.json').read_text(encoding='utf-8'))
+        self.assertIsNone(receipt['failure']);self.assertIsNotNone(receipt['observation'])
+        self.assertEqual(self.api.reads,[])
+
+    def test_normal_fatal_saves_body_receipt_and_owned_stop_even_with_zero_exit(self):
+        self.exercise(expected_failure=True)
+        record=json.loads((self.logs/'fatal-dialog.json').read_text(encoding='utf-8'))
+        self.assertTrue(record['identity_verified_after'])
+        self.assertEqual(record['controls'][0]['text'],'Could not load fixture asset.')
+        self.assertEqual(self.api.reads,[20])
+        self.assertFalse((self.root/'diagnostic-stop.request').exists())
+
+    def test_diagnostic_fatal_remains_diagnostic_only(self):
+        self.exercise(diagnostic=True,expected_failure=True)
+        self.assertFalse((self.root/'fatal-stop.request').exists())
+        self.assertEqual(self.api.reads,[20])
+
+    def test_diagnostic_without_fatal_cannot_accept_zero_exit(self):
+        self.api.title='Loading'
+        self.exercise(diagnostic=True,expected_failure=True)
+        record=json.loads((self.logs/'fatal-dialog.json').read_text(encoding='utf-8'))
+        self.assertFalse(record['fatal_window_observed']);self.assertFalse(record['identity_verified_after'])
+
+    def test_normal_invalid_identity_fails_without_reading_unattributed_body(self):
+        self.exercise(invalid_identity=True,expected_failure=True,fake_native_exit=None)
+        record=json.loads((self.logs/'fatal-dialog.json').read_text(encoding='utf-8'))
+        self.assertFalse(record['identity_verified_after']);self.assertEqual(record['errors'],['OSError'])
+        self.assertEqual(self.api.reads,[])
+        self.assertNotIn('controls',record)
+
+    def test_script_phase_retains_existing_success_without_dialog_probe(self):
+        self.spec['phase']='script'
+        self.exercise()
+        self.assertEqual(self.api.reads,[])
+
+    def test_normal_fatal_evidence_write_failure_cannot_validate_output(self):
+        self.exercise(save_error=True)
 
 
 if __name__=='__main__': unittest.main()

@@ -1,0 +1,110 @@
+$ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'Locator.Supervisor.Core.ps1')
+$script:checks=0
+function Check($Condition,[string]$Message){$script:checks++;if(!$Condition){throw $Message}}
+$originalRegister=${function:Register-LocatorOriginalProcess}
+$originalMeasure=${function:Measure-LocatorOutput}
+$originalSave=${function:Save-LocatorState}
+foreach($name in 'Locator.Supervisor.Core.ps1','Run-Locator.ps1'){
+    $tokens=$null;$errors=$null
+    [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $name),[ref]$tokens,[ref]$errors)|Out-Null
+    Check (!$errors.Count) "Parser: $name"
+}
+function Get-LocatorClock {$script:clock}
+function Start-Sleep {param($Milliseconds) $script:clock+=$Milliseconds}
+function New-LocatorJob {
+    param($Python,$Arguments,$Work)
+    $script:events.Add('prepare')
+    if($script:case -ceq 'factory'){throw 'factory failed without a returned owner'}
+    $job=[pscustomobject]@{PID=1234;Image=$Python;CreatedUtc='2026-10-12T00:00:00.0000000Z';Priority=16384;
+        Exited=$true;Active=0;ExitCode=0;Disposed=$false;Resumed=$false;Stopped=$false}
+    if($script:case -ceq 'nonzero'){$job.ExitCode=2}
+    if($script:case -ceq 'identity'){$job.Image='C:\foreign.exe'}
+    if($script:case -ceq 'cim-running'){$job.Exited=$false;$job.Active=1}
+    if($script:case -ceq 'descendant'){$job.Active=1}
+    $job|Add-Member ScriptMethod Resume {$script:events.Add('resume');$this.Resumed=$true;if($script:case -ceq 'resume'){throw 'resume failure'}}
+    $job|Add-Member ScriptMethod Stop {
+        $script:events.Add('stop');$this.Stopped=$true
+        if($script:case -ceq 'stop-failure'){throw 'unknown closure'}
+        if($script:case -ceq 'stop-deadline'){$script:clock+=15000;$this.Active=1;return}
+        $this.Exited=$true;$this.Active=0
+    }
+    $job|Add-Member ScriptMethod Dispose {$script:events.Add('dispose');$this.Disposed=$true}
+    $script:lastJob=$job;$job
+}
+function Register-LocatorOriginalProcess {
+    param($Lease,$Identity)
+    $script:events.Add('register')
+    Check ($script:lastJob.Resumed) 'Resume must precede CIM registration'
+    if($script:case -ceq 'slow-cim'){$script:clock+=60000}
+    if($script:case -cin 'fast-exit','cim-running'){throw 'CIM unavailable'}
+}
+function Test-LocatorRunningBudget {
+    param($Plan,$State)
+    $script:events.Add('budget')
+    if($script:case -cin 'output','memory','stop-failure','stop-deadline'){throw 'resource/output refusal'}
+    if($script:case -cin 'slow-poll','descendant'){$script:clock+=60000}
+}
+function Save-LocatorState {param($State,$Root) $script:events.Add('save');if($script:case -ceq 'slow-save'){$script:clock+=60000}}
+function Assert-LocatorGuards {param($Context) $script:events.Add('source-proof');if($script:case -ceq 'source'){throw 'source proof differs'}}
+function Exit-IW7ResourceLease {param($Token) $script:events.Add('release');if($script:case -ceq 'release'){throw 'release refused'}}
+$plan=[pscustomobject]@{RunRoot='C:\fixture';Python=[pscustomobject]@{Path='C:\python.exe'};Script='C:\locator.py';
+    References=[pscustomobject]@{text=[pscustomobject]@{Path='C:\text.bin'};rdata=[pscustomobject]@{Path='C:\rdata.bin'};pdata=[pscustomobject]@{Path='C:\pdata.bin'}}}
+foreach($script:case in 'success','fast-exit','nonzero','factory','resume','identity','cim-running','slow-cim',
+    'slow-poll','slow-save','output','memory','descendant','stop-failure','stop-deadline','source','release'){
+    $script:clock=1000L;$script:events=[Collections.Generic.List[string]]::new();$script:lastJob=$null
+    $guard=[pscustomobject]@{Disposed=$false};$guard|Add-Member ScriptMethod Dispose {$this.Disposed=$true}
+    $guards=[Collections.Generic.List[object]]::new();$guards.Add($guard)
+    $context=@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token='synthetic';Scope='c:\fixture'};Guards=$guards;Baselines=@()}
+    $state=[ordered]@{Status='Running';RetainedLeaseToken='synthetic';MaxObservedBytes=0L;SourcesUnchanged=$false;CleanupError=$null;Failure=$null}
+    try{Invoke-LocatorOwnedProcess $plan $state $context}catch{$state.Failure=$_.Exception.Message}
+    Complete-LocatorOwnership $state $context
+    $quarantine=$script:case -cin 'factory','stop-failure','stop-deadline','source','release'
+    Check ($state.Quarantined -eq $quarantine) "Quarantine outcome: $script:case"
+    Check (($null -ne $context.Lease) -eq $quarantine) "Retained lease: $script:case"
+    Check ($guard.Disposed -eq !$quarantine) "Guard lifetime: $script:case"
+    if(!$quarantine){Check ($context.Closed -and $state.Closure.RootExited -and $state.Closure.Active -eq 0) "Fresh original closure: $script:case"}
+    if($script:case -cin 'success','fast-exit'){Check (!$state.Failure) "Successful owned close: $script:case"}
+    elseif($script:case -cnotin 'source','release'){Check ([bool]$state.Failure) "Expected process failure: $script:case"}
+    if($script:case -cin 'slow-cim','slow-poll','slow-save','descendant'){Check ($script:events.Contains('stop')) 'Fresh deadline after blocking call requires exact-job stop'}
+    if($quarantine){Check (!$script:lastJob -or !$script:lastJob.Disposed) 'Quarantine retains original owner handle';[AppDomain]::CurrentDomain.SetData('IW7.Locator.Quarantine.synthetic',$null)}
+}
+# Exercise the actual registration predicate with current scheduler boundaries mocked.
+function Invoke-IW7ResourceLock {param($Body) & $Body}
+function Read-IW7ResourceState {[pscustomobject]@{Leases=@([pscustomobject]@{Token='s';Kind='Analysis';Scope='c:\s';Processes=@();Phase='Pending'})}}
+function Get-IW7ResourceProcesses {[pscustomobject]@{PID=123;Image='C:\foreign.exe';CreatedUtc='different'}}
+function Test-IW7ResourceIdentity {param($Record,$Process) $Record.PID -eq $Process.PID -and $Record.Image -ceq $Process.Image -and $Record.CreatedUtc -ceq $Process.CreatedUtc}
+function Save-IW7ResourceState {throw 'A mismatched/reused PID must never be persisted'}
+$rejected=$false
+try{& $originalRegister ([pscustomobject]@{Token='s';Scope='c:\s'}) ([pscustomobject]@{PID=123;Image='C:\python.exe';CreatedUtc='original'})}catch{$rejected=$_.Exception.Message -like 'CIM identity absent*'}
+Check $rejected 'Actual registration rejects PID reuse before persistence'
+$report=[pscustomobject]@{schema='iw7.rig-first-write-static/1';status='candidate-route-requires-review';file_read_bytes=25162848;report_limit_bytes=3MB;
+    reference_hashes_verified=$true;actual_first_writer_established=$false;live_breakpoint_established=$false;reference_live_provenance=$false;
+    process_attached=$false;game_or_zonetool_launched=$false;acceptance_changed=$false;decoded_instructions=10;text_scans=2;linear_opcode_search_bytes=42270720}
+Assert-LocatorReport $report;Check $true 'Source-bound read-only candidate report accepted within budget'
+foreach($bad in @(@('actual_first_writer_established','false'),@('reference_hashes_verified','true'),@('decoded_instructions',128001))){
+    $old=$report.($bad[0]);$report.($bad[0])=$bad[1];$blocked=$false
+    try{Assert-LocatorReport $report}catch{$blocked=$true}
+    Check $blocked 'Nonboolean proof/counter overrun refused';$report.($bad[0])=$old
+}
+# Real file guards, without native types, protect a synthetic source file.
+$temp=Join-Path ([IO.Path]::GetTempPath()) ('iw7-locator-test-'+[guid]::NewGuid().ToString('N'))
+$null=New-Item -ItemType Directory -Path $temp
+try{
+    $file=Join-Path $temp 'source.txt';[IO.File]::WriteAllText($file,'original')
+    $context=@{Guards=[Collections.Generic.List[IDisposable]]::new();Baselines=[Collections.Generic.List[object]]::new()}
+    Add-LocatorGuard ([pscustomobject]@{Path=$file;SHA256=(Get-FileHash -LiteralPath $file).Hash.ToLowerInvariant();Bytes=8}) $context
+    $blocked=$false;try{[IO.File]::WriteAllText($file,'changed')}catch{$blocked=$true}
+    Check $blocked 'Read-sharing guard denies a concurrent write'
+    foreach($guard in $context.Guards){$guard.Dispose()}
+    Check ([IO.File]::ReadAllText($file) -ceq 'original') 'Guarded original bytes preserved'
+    [IO.File]::WriteAllBytes((Join-Path $temp 'oversized.bin'),[byte[]]::new(4MB+1))
+    [IO.File]::SetAttributes((Join-Path $temp 'oversized.bin'),[IO.FileAttributes]::Hidden)
+    $blocked=$false;try{& $originalMeasure $temp|Out-Null}catch{$blocked=$true}
+    Check $blocked 'Combined hidden/ordinary output ceiling refuses excess'
+}finally{
+    $resolved=[IO.Path]::GetFullPath($temp);$parent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+    if(!$resolved.StartsWith($parent,[StringComparison]::OrdinalIgnoreCase) -or (Split-Path $resolved -Leaf) -notlike 'iw7-locator-test-*'){throw 'Unexpected synthetic test cleanup root'}
+    Remove-Item -LiteralPath $resolved -Recurse -Force
+}
+[pscustomobject]@{Checks=$script:checks;NativeProcessStarted=$false;RealLeaseAcquired=$false;Outcome='Passed'}|ConvertTo-Json

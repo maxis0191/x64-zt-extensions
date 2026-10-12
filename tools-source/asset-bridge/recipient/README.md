@@ -73,7 +73,7 @@ The spec is a local JSON object with these mandatory fields:
 | `StockRoot` | Canonical absolute retained stock root |
 | `StockReceipt`, `StockReceiptSHA256` | Original 72-entry completed receipt, SHA `4cf67ebe1645c6c0761b9a24cb4e4630edee9c5d737742c704d624fe60cb3850` |
 | `StockBindingReceipt`, `StockBindingReceiptSHA256` | Explicit current durable `iw7.ff-stock-observation/1` and measured hash |
-| `RecipientStockBindingReceipt`, `RecipientStockBindingReceiptSHA256` | Separate four-PAK `iw7.recipient-stock-observation/1` metadata receipt and measured hash; required after C |
+| `RecipientStockBindingReceipt`, `RecipientStockBindingReceiptSHA256` | Explicit separate PAK metadata receipt and measured hash: original four-PAK schema `/1`, or observed 4+1 schema `/2` after E2; never auto-expanded |
 | `ReviewedStockManifest`, `ReviewedStockManifestSHA256` | Reviewed content manifest, SHA `9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4` |
 | `CandidateRoot`, `CandidateArtifactSHA256` | Existing E7 fulltool directory and final artifact hash |
 | `PythonExe`, `PythonExeSHA256` | Absolute interpreter path and measured hash |
@@ -100,10 +100,12 @@ references-only run records `ReferencesObservedScriptNotRun` and leaves
 
 The common binding preserves historical 63-link/9-copy provenance separately
 from the baseline's 71 stock hardlinks and one 77-byte mutable sentinel copy.
-The post-C [supplemental Recipient profile](STOCK-PROFILE.md) adds only four
-previously observed PAKs as hardlinks. It does not alter the common FF binding.
-The combined stock has 75 hardlinks and one sentinel copy; candidate/requests
-bring the transaction to 79 paths. `StockBudget` records the distinct logical
+The post-C [supplemental Recipient profile](STOCK-PROFILE.md) adds four
+previously observed PAKs as hardlinks; the separate post-E2 profile adds only
+pak69 to that exact list. Neither changes the common FF binding. The original
+profile has 75 stock hardlinks and one sentinel copy, totaling 79 transaction
+paths with candidate/requests. The 4+1 profile has 76 stock hardlinks and one
+sentinel copy, totaling 80 transaction paths. `StockBudget` records the distinct logical
 and deduplicated hash-read bytes. Supplemental content is not read during Plan.
 Before staging, the admitted operation holds all source guards, checks observed
 NTFS identities, hashes deduplicated physical stock content, then verifies
@@ -370,3 +372,142 @@ Next source-only correction: reuse the existing bounded fatal-body reader in
 normal references mode while preserving normal success when no fatal exists.
 D's failure record will not be rewritten as a body-capture result. A new plan,
 review and GO are required before any further native execution.
+
+## Post-D source correction: fatal text during normal references
+
+The existing `recipient_dialog.py` reader is now invoked every 250 ms during
+the normal references phase as well as the explicit diagnostic. Its implementation
+and limits are unchanged: original parent/child handles and identities, one fatal
+capture, at most eight controls, 16 KiB text, 200 ms per WM_GETTEXT, a 64 KiB
+record and no UI interaction. The plan explicitly declares
+`FatalTextCapturePhases=['references']`; script export is unchanged.
+
+Normal mode still validates and accepts a successful reference observation when
+no fatal or reader failure is observed. On a fatal or an identity/reader error,
+it saves `references/fatal-dialog.json` and a failed `references/phase.json`
+before emitting `fatal-stop.request`. The existing original PowerShell job owner
+checks this marker in its budget loop and stops its original job. The reader
+never terminates a process, follows a replacement PID or clicks a dialog.
+A native zero exit does not override the captured failure. Missing/unattributable
+body text stays missing, with the reader error recorded. Evidence-write failure
+also cannot reach reference validation; ordinary outer failure cleanup applies.
+
+`FatalTextDiagnostic` and `DiagnosticOnly` remain distinct: the forced diagnostic
+still uses 45/50/60 seconds, always fails qualification, writes its existing
+`diagnostic-stop.request`, and cannot accept a no-fatal zero exit. Normal mode
+keeps 240/245/600 seconds and may succeed. Normal fatal status is Failed, not a
+diagnostic-only success. Both modes require original tree closure and restoration.
+
+143 light checks pass: 37 Python contract/dialog fixtures, 25 unchanged-provider
+stream fixtures, 42 PowerShell source/contract checks and 39 supplemental-stock
+checks. New full-phase fixtures use fake process/capture/Win32 dependencies and
+real tiny receipt files to exercise normal success, normal fatal even with zero
+exit, diagnostic fatal/no-fatal, invalid identity, persistence failure and
+unchanged script success. They verify both receipts and the appropriate marker
+exist before the intercepted failure exit. No real native execution validates
+this post-D wiring yet. PAK scope, native E7/CLI, loader, provider pins, resource
+budgets and D's original evidence remain unchanged.
+
+## E2 review correction: fresh closure deadline checks
+
+Independent review of the unexecuted E plan found a real acceptance defect in
+`Wait-RecipientPhase`: it read elapsed time before `Owner.ExitCode` and `Save`,
+then returned for Active=0 without checking the time those calls consumed.
+A slow getter or persistence callback could therefore qualify closure after
+the 245-second phase or five-second drain limit. The new slow-getter fixture
+reproduced that defect against the previous implementation; E was not launched.
+
+The loop now reads the same monotonic Stopwatch before an iteration and after
+each original-handle getter, Save and budget callback. The drain clock starts
+at the first confirmed root-exit observation, before querying Active. Both
+deadlines are checked using fresh time after Save and before any successful
+return. Observation timestamps follow the completed ExitCode read. An empty
+job returned after either deadline is rejected; a still-populated job fails
+at the drain limit. Empty closure exactly at the inclusive limits remains valid.
+The original owner still performs stop, verified closure, restoration and
+quarantine on failure; none of those mechanisms or limits is weakened.
+
+This change rejects late results; it does not preempt a blocked getter or I/O
+callback or establish a hard wall-clock completion bound for Stop/restoration.
+Such a late result cannot be accepted as timely closure. Corrective review and
+a new exact E2 plan/GO remain mandatory before native execution.
+
+65 PowerShell source/contract fixtures and 39 stock fixtures pass. Added fixtures
+advance a fake monotonic clock inside Exited/Active/ExitCode getters, Save and
+the budget callback, including 1 ms deadline crossings, and require the exact
+deadline error. Slow calls within both limits, exact boundaries and the existing
+normal/multi-observation drain cases still pass. Python capture, reader, native
+command, PAK scope and provider pins are unchanged by this correction.
+
+### E2 result: exact pak69 fatal captured in normal mode, restored
+
+One separately authorized execution of `4acad77`, recorded in the
+[sanitized E2 evidence](native-validation-e2-2026-10-12.json), passed fresh 8/11
+admission, guarded content requalification and the unchanged four-PAK staging.
+Normal-mode automatic capture returned the exact body:
+
+```text
+Could not find asset file assetfile69.pak
+```
+
+The original parent/child identities were verified before and after. Three
+controls supplied 76 total text bytes, without truncation, saturation, reader
+error or interaction. The fatal record was written about 5.34 seconds after
+native creation, followed by the failed phase receipt and `fatal-stop.request`.
+The stdout hash and 1,665 bytes match D, ending at `global_cp` with 15 of 25
+expected zone messages. E2 has its own captured body; D remains body-unknown.
+
+The original owner stopped its job and confirmed root exit 2 with zero members.
+Root exit 2 is not a native exit code. Status is Failed with DiagnosticOnly=false;
+no reference CSV was accepted and the utility phase never ran. All 79 managed
+paths were removed, source metadata/identities matched, restoration and stock
+preservation passed, no owned process/lease remained and owner/Main identities
+were unchanged. Final generated output was 1,223,303 bytes. Ready, references,
+script bytes and package closure remain false. No retry or profile expansion
+was performed during E2. The corrected timing-boundary acceptance remains
+source-tested; this fatal-stop outcome is not a native deadline-success witness.
+
+Next authorized work is source and metadata investigation of the single observed
+pak69, followed by a separately named explicit 4+1 profile and its budget/tests.
+No retail hashing without admission, no stock copy and no further native run are
+authorized by E2's exhausted GO.
+
+The source-only [explicit 4+1 profile](STOCK-PROFILE.md#explicit-41-profile-after-e2)
+is now prepared with a new schema/name, E2 fatal-evidence pin and exact
+966,557,876-byte supplemental logical ceiling. The original four-PAK receipt and
+600 MiB ceiling remain unchanged. A fresh metadata-only observation and two
+identical Plan outputs exist locally; no five-PAK staging or native run occurred.
+65 stock fixtures plus 65 source/contract fixtures pass. A separate corrective
+review, complete admission/content verification and GO remain required.
+
+### F result: pak101 fatal, five-PAK transaction restored
+
+The [F record](native-validation-f-2026-10-12.json) retains one authorized
+references-only execution of `a8c16c0`, exact plan/command pins and fresh 8/11
+admission. The five-PAK profile passed guarded content requalification and
+source/target identity checks. Normal fatal capture then returned:
+
+```text
+Could not find asset file assetfile101.pak
+```
+
+Original identities were verified before/after; three controls contained 77
+total text bytes without truncation, saturation, error or interaction. The
+fatal record was written about 5.34 seconds after native creation. Stdout remains
+1,665 bytes, byte-identical to E2/D and ending at `global_cp`; no new completed
+zone or qualified reference is inferred from the new missing-file request.
+
+Automatic stop confirmed original root exit 2 and zero job members. Independent
+checks confirmed all 80 managed paths removed, source identities/metadata
+preserved, restoration/source preservation, no remaining owned process or lease,
+and unchanged owner/Main identities. Final generated output was 1,225,406 bytes.
+Status remains Failed, DiagnosticOnly=false. No script export, retry, dependency
+addition or promotion followed. Binder and package qualification remain separate
+unpassed gates. F's single-execution GO is exhausted.
+
+Next: investigate existing source/index evidence and metadata for the complete
+CP asset-PAK requirement, rather than automatically adding a sixth PAK. If a
+complete dependency index cannot be established from retained evidence, assess
+an explicit inventory of existing Doom `assetfile*.pak`, separately from image
+PAKs, with measured logical/identity counts and a newly reviewed I/O budget.
+No retail hashing or native execution is authorized during that investigation.

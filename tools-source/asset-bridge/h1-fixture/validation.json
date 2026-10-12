@@ -1,0 +1,28 @@
+{
+  "schema": "iw7.h1-original-fixture-validation/1",
+  "date": "2026-10-12",
+  "status": "light-tests-pass-native-unexecuted",
+  "native_parser_executed": false,
+  "native_converter_executed": false,
+  "full_material_included": false,
+  "retail_h1_compatibility": false,
+  "files": {
+    "xmodel/paris_h1_original_cube.xmb": {
+      "bytes": 932,
+      "sha256": "49c8c9cca648ee4a21b05ccc4e92588ec1b889de932e680dfe3af2db3b055339"
+    },
+    "xsurface/paris_h1_original_cube_lod0.xsb": {
+      "bytes": 1328,
+      "sha256": "17aedd6d7343cbc48495623be5828efc26022918bdf3e47f57d397eb10d717d2"
+    }
+  },
+  "tests_passed": 12,
+  "truncated_prefixes_rejected": 2260,
+  "source_files_verified": 12,
+  "generated_files": 3,
+  "generated_total_bytes": 5307,
+  "existing_output_refused": true,
+  "existing_output_unchanged": true,
+  "geometry_uv_frames_checked": 12,
+  "record_type_mutations_rejected": 44
+}

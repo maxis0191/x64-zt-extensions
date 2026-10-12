@@ -330,6 +330,53 @@ change must enable the existing identity-bound body reader during normal
 references mode, retaining successful results only when no fatal is detected.
 Keep DiagnosticOnly separate; do not broaden PAKs before exact fatal evidence.
 
+That source correction is prepared. Normal references now use the same existing
+bounded reader, preserving normal success when it sees no fatal/reader error.
+A failure saves dialog and phase receipts before `fatal-stop.request`; the
+original owner stops the job. Forced diagnostics retain their distinct marker
+and unconditional qualification failure. The reader implementation and PAK set
+are unchanged. 143 light checks pass; the new wiring has no native-run evidence.
+Review the source before generating the next exact plan. A separate GO is still
+required before execution; do not reuse D's exhausted command/plan approval.
+
+Review of the resulting E plan found stale elapsed-time acceptance in
+`Wait-RecipientPhase`. E remains unexecuted. E2 refreshes the monotonic clock
+after original-handle getters, Save and budget checks, and checks both phase
+and post-root-observation drain deadlines before accepting an empty job. New
+mock slow-call cases reproduce the old bug and reject overruns after correction;
+65 source/contract plus 39 stock fixtures pass. Stop/closure/quarantine remain
+owned by the same caller. This is no waiver for slow or blocked calls: late
+closure is failure, and hard preemption is not claimed. The changed Core hash
+requires a separate E2 plan, corrective review and GO. PAKs remain unchanged.
+
+E2 subsequently received one distinct GO and completed with the exact captured
+body `Could not find asset file assetfile69.pak`, verified original identity and
+no text truncation/read error. It remains a failed normal reference attempt.
+The [E2 record](native-validation-e2-2026-10-12.json) preserves fatal and phase
+receipts, automatic original-job stop, independently confirmed closure and
+restoration, all 79 paths removed, owner/Main unchanged and zero leases. No
+utility phase, retry or PAK expansion occurred. E2's GO is exhausted. A future
+explicit 4+1 profile must use distinct metadata/budget and receive its own review
+and admission; the old four-PAK observation is not rewritten as a five-PAK proof.
+
+That explicit 4+1 source profile is prepared. It selects only 17/19/37/53/69,
+requires observation schema `/2`, the separate profile name and E2 fatal hash,
+and pins its exact logical limit to 966,557,876 bytes. Original schema `/1`
+retains its four inputs and 600 MiB limit. No filename wildcard, inferred profile,
+stock copy, new retail hash, native run or automatic retry is introduced. The
+fresh observation uses metadata plus historical expected content hashes; the
+next admitted operation must verify actual content under guards. 65 stock and
+65 source/contract checks pass. Plan remains NO GO pending separate review.
+
+The resulting F plan received one separate GO and failed on the exact captured
+`assetfile101.pak` request. [F's evidence](native-validation-f-2026-10-12.json)
+confirms restoration of all 80 paths, preserved sources/Main and released
+resources. It supplies no qualified references. No sixth PAK or retry was added.
+The next authorized work is source/index and metadata investigation of the full
+CP asset-PAK scope, with assetfile/imagefile families kept distinct, actual
+counts/logical sizes/identities and a new explicit I/O budget. No retail hashes
+or native process may be launched under F's exhausted GO.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256
