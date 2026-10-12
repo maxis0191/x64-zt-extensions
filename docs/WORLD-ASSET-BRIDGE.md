@@ -438,3 +438,122 @@ installed or run in this source-only pass.
 ```powershell
 python -B "$world/inspect_world_consumer.py" --reference-root "<absolute-path-to-retained-references>"
 ```
+
+## Prepared single-CLIPMAP observer: source candidate only
+
+`world/world_clipmap_observer.hpp` now implements the bounded observation;
+`world/zonetool-fab9358-world-observer.patch` includes that new header and the
+private ZoneTool integration against the exact retained pin. The shared checkout
+was not edited. The patch touches `iw7/zonetool.cpp` and adds
+`iw7/common/world_clipmap_observer.hpp` only. No native compilation or execution
+has occurred, and the **real world root class remains unknown**.
+
+The source hook remains `db_add_xasset_stub`, installed at `0x140A76520` by the
+existing code. Its existing `dump_asset` call stays in place. Immediately after
+it, the new `forward` wrapper surrounds the original detour invocation:
+
+1. `before` is `noexcept` and claims the first type-22 callback only after explicit
+   arming. Its inspection can succeed or refuse; both paths return to `forward`.
+2. `forward` has one unconditional `invoke()` expression. The integration has
+   one `db_add_xasset_hook.invoke<XAssetHeader>` call site inside that callback.
+3. On normal return, `after` is `noexcept` and receives the returned asset pointer.
+   An original C++ exception is recorded and rethrown without retry. Observer
+   refusals never skip or repeat the original call. Existing errors outside the
+   observer, including the earlier legacy `dump_asset`, are not swallowed.
+
+The observer uses `ReadProcessMemory` on its own process, checked address
+addition and fixed storage; it never writes the observed asset/blob. It preserves
+`GetLastError` and `errno` around observer work. SHA-256 uses Windows CNG and
+`bcrypt.lib` from the already installed Windows SDK; no additional SDK/download
+is required. Three exact code signatures and the CLIPMAP dispatch-table entry
+must match the audited preferred-address profile before arming. This partial
+code guard supplements, and does not replace, the coordinator's binary/build
+identity verification. A relocated or changed profile is refused, not guessed.
+
+There is one attempt per process, with no rearm or search over further CLIPMAPs.
+The first selected callback must have the exact requested name. A mismatch consumes
+the observation and records a refusal while normal registration proceeds. Other
+asset types incur no asset reads. An atomic claim excludes nested/concurrent
+callbacks from taking a second observation.
+
+### Read and output boundaries
+
+- All guarded inspection reads, including signature guards, share a **2,048-byte
+  requested-byte budget**. Failed or partial reads consume their requested
+  amount. The present longest accepted path requests at most 1,160 bytes.
+- The guard reads 580 code bytes plus an eight-byte dispatch entry. Asset/name
+  pointers and the declared payload size are read separately. A declared blob
+  above 512 MiB is refused; it is never copied or hashed in full.
+- The 64-byte HKX header is checked **before** reading the 192-byte section
+  table. Only the observed version/platform/three-section layout is supported.
+  All section/root bounds are checked against the declared blob extent. At most
+  128 bytes are read for the root class, with bounded NUL termination and a
+  restricted ASCII identifier alphabet.
+- After normal registration, the returned asset must retain the same blob and
+  size. The loaded flag and global root must match the precomputed contents
+  pointer. Two scalar array counts are read only if the captured class is exactly
+  `HavokPhysicsShapeList`, with an in-data extent check and count bounds. Unknown
+  root names are still reported, without assuming their array layout.
+- Exactly one `WORLD_CLIPMAP_OBSERVATION` JSON record is attempted, bounded to
+  **4,096 bytes including prefix/newline**. A small refusal record replaces an
+  oversized result. Short stdout writes are not retried. The digest covers only
+  the pre-fixup header, section table and class name; it is not a geometry hash.
+  Ordinary pre-existing ZoneTool console messages are outside this observer
+  metadata limit.
+- No geometry arrays, shape tags, name arrays, Havok object graph or full map
+  payload are read. A refused observation does not make malformed data safe for
+  the engine: the engine's normal call is deliberately preserved. Malformed
+  inputs belong only in the synthetic harness, not in a native map load.
+
+The prepared CLI mode is deliberately exclusive, requiring exactly:
+
+```text
+<candidate-zonetool> -headless -world-clipmap-observe <allowlisted-Zombies-map> <exact-clipmap-asset-name>
+```
+
+The requested map is checked by the existing five-map allowlist. Dump, CSV dump
+and verify modes are disabled; existing synchronous source-zone loading is used.
+The process waits for the database, checks the observation outcome and exits.
+No new asset-capture/file-write command is added. The exact CLIPMAP name must be
+provided from a trusted inventory; an inferred filename is not an accepted match.
+This command is a future coordinated test recipe, **not executed evidence**.
+
+### Prepared harness and remaining validation
+
+`world/test_world_clipmap_observer.cpp` exercises the same `forward`, `before`
+and `after` code with original synthetic buffers and a tiny newly reserved mapping
+owned by its standalone process. It refuses an occupied fixture address. It is
+prepared to check successful metadata flow, thread-error restoration, duplicate
+callbacks, eleven pre-inspection refusals, missing post-fixup state, propagation
+of an original exception and an unrelated asset. No retail file is an input.
+Fixture seeding bypasses engine signature checks explicitly and leaves
+`signature_checked: false`; its records cannot establish an engine observation.
+**The harness has not been compiled or run.**
+
+`world/verify_observer_patch.py` verifies the exact pin/source/header hashes and
+applies/reverses the prepared patch against two temporary source files. This
+passed, including exact restored bytes and a single syntactic original-call
+site. Its receipt is `observer_source_candidate` in the existing Havok audit.
+This source check is not a C++ compiler, a forward-once runtime test, or a memory
+safety proof.
+
+```powershell
+python -B "$world/verify_observer_patch.py" --source-repo "<absolute-path-to-pinned-zonetool-source>"
+```
+
+After coordinated native GO, perform the following sequentially, using current
+reviewed Resource-Scheduler/stock helpers and preserving occupied owner processes.
+The estimates are admission requests, not measured peaks or active reservations.
+
+| Stage | Proposed resource/time budget | Required result before proceeding |
+| --- | --- | --- |
+| Compile/run the standalone original-data harness | One compiler, `/MP` disabled; standard one-node build reservation **4 GiB RAM / 6 GiB commit**; at most 64 MiB fresh scratch; build deadline 90 s and fixture deadline 10 s | Actual C++ cases pass; every observer record parses and is at most 4 KiB; read counts are at most 2 KiB; outputs retain `signature_checked: false` and are labeled synthetic. |
+| Compile/link private ZoneTool candidate | Reuse the pinned checkout's existing dependency artifacts read-only; rebuild the affected TU and link in an owned candidate output; **4 GiB RAM / 6 GiB commit**, one node, at most 1 GiB incremental scratch, deadline 10 min | Compiler/linker success, reviewed final diff and exact binary/patch/header hashes. Do not recompile all dependencies, copy the SDK or modify the shared provider to bypass an error. |
+| One offline normal map registration | One headless candidate process, no client/server/gameplay; proposed **8 GiB RAM / 12 GiB commit**, deadline 180 s, at most 16 MiB logs; reuse existing stock | One genuine matching CLIPMAP record, `signature_checked: true`, bounded metadata, actual root name, loaded-flag change and matching root relation. Preserve failure diagnostics; no automatic retry or broader extraction. |
+
+The ordinary engine load is larger than the observer's 2 KiB inspection budget;
+the complete process must pass resource admission. Capture only the owned child
+identity and use the existing recovery/timeout discipline. No lease, build,
+process launch, stock copy or native observation was performed for this delivery.
+Only a successful real record can advance the root-class finding; collision
+creation/serialization and the original-box test remain subsequent work.

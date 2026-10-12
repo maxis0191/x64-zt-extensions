@@ -1,0 +1,352 @@
+#pragma once
+// Source candidate only. No native build or observation has validated this file.
+// Copy into zonetool/iw7/common only in a coordinated private candidate build.
+#include <Windows.h>
+#include <bcrypt.h>
+#pragma comment(lib, "bcrypt.lib")
+#include <array>
+#include <atomic>
+#include <cerrno>
+#include <cstdarg>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <limits>
+#include <string_view>
+#include <utility>
+
+namespace zonetool::iw7::world_clip_observer
+{
+    constexpr std::size_t read_limit = 2048;
+    constexpr std::size_t output_limit = 4096;
+    constexpr std::uint32_t blob_limit = 512u * 1024u * 1024u;
+    static_assert(sizeof(std::uintptr_t) == 8, "Only the audited x64 layout is supported");
+
+    struct preserve_thread_errors
+    {
+        DWORD win = GetLastError();
+        int crt = errno;
+        ~preserve_thread_errors() noexcept { errno = crt; SetLastError(win); }
+    };
+
+    struct section
+    {
+        std::uint32_t start{}, data{}, global{}, virtual_{}, exports{}, imports{}, end{};
+    };
+    struct observation
+    {
+        std::size_t reads{};
+        char expected[128]{};
+        char root_class[128]{};
+        char digest[65]{};
+        const char* refusal = nullptr; // constant diagnostic tokens only
+        bool signature_ok{}, pre_ok{}, post_ok{}, relation{}, counts_read{}, original_threw{};
+        std::uintptr_t blob{}, expected_root{};
+        std::uint32_t size{}, flags_before{}, flags_after{}, root_section{}, root_offset{};
+        std::array<section, 3> sections{};
+        std::int32_t name_count{}, tag_count{};
+    };
+
+    // 0 unused, 1 armed, 2 claimed by one DB callback, 3 complete, 4 configuring.
+    inline std::atomic<int> phase{0};
+    inline std::atomic<bool> emitted{false};
+    inline observation record{};
+    struct ticket { bool selected = false; };
+
+    inline bool fail(const char* reason) noexcept
+    {
+        if (!record.refusal) record.refusal = reason;
+        return false;
+    }
+
+    inline bool read(std::uintptr_t address, void* output, std::size_t count) noexcept
+    {
+        if (!address || count > read_limit - record.reads ||
+            address > (std::numeric_limits<std::uintptr_t>::max)() - count)
+            return fail("read_budget_or_address");
+        record.reads += count; // charge requested bytes even on a failed/partial read
+        SIZE_T actual = 0;
+        if (!ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<const void*>(address),
+            output, count, &actual) || actual != count) return fail("unreadable_memory");
+        return true;
+    }
+
+    template <class T> inline bool field(std::uintptr_t base, std::size_t offset, T& value) noexcept
+    {
+        if (!base || base > (std::numeric_limits<std::uintptr_t>::max)() - offset) return fail("address_overflow");
+        return read(base + offset, &value, sizeof(value));
+    }
+
+    inline std::uint32_t u32(const unsigned char* data) noexcept
+    {
+        std::uint32_t value; std::memcpy(&value, data, sizeof(value)); return value;
+    }
+
+    inline bool inside(std::uint32_t offset, std::size_t count) noexcept
+    {
+        return offset <= record.size && count <= record.size - offset;
+    }
+
+    inline bool identifier(char value) noexcept
+    {
+        return (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z') ||
+            (value >= '0' && value <= '9') || value == '_' || value == ':';
+    }
+
+    inline void digest(const unsigned char* bytes, std::size_t size, char (&out)[65]) noexcept
+    {
+        BCRYPT_ALG_HANDLE algorithm{};
+        BCRYPT_HASH_HANDLE handle{};
+        unsigned char object[1024]{};
+        unsigned char hash[32]{};
+        if (size > read_limit || BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) < 0)
+        { fail("digest_provider"); return; }
+        DWORD object_size{}, returned{};
+        auto status = BCryptGetProperty(algorithm, BCRYPT_OBJECT_LENGTH,
+            reinterpret_cast<PUCHAR>(&object_size), sizeof(object_size), &returned, 0);
+        if (status >= 0 && (returned != sizeof(object_size) || !object_size || object_size > sizeof(object)))
+        { BCryptCloseAlgorithmProvider(algorithm, 0); fail("digest_object_size"); return; }
+        if (status >= 0) status = BCryptCreateHash(algorithm, &handle, object, object_size, nullptr, 0, 0);
+        if (status >= 0) status = BCryptHashData(handle, const_cast<unsigned char*>(bytes), static_cast<ULONG>(size), 0);
+        if (status >= 0) status = BCryptFinishHash(handle, hash, sizeof(hash), 0);
+        if (handle) BCryptDestroyHash(handle);
+        BCryptCloseAlgorithmProvider(algorithm, 0);
+        if (status < 0) { fail("digest_failure"); return; }
+        constexpr char hex[] = "0123456789abcdef";
+        for (std::size_t i = 0; i < sizeof(hash); ++i)
+        {
+            out[2 * i] = hex[hash[i] >> 4]; out[2 * i + 1] = hex[hash[i] & 15];
+        }
+        out[64] = 0;
+    }
+
+    inline bool signature(std::uintptr_t address, std::size_t size, const char* expected)
+    {
+        std::array<unsigned char, 432> bytes{};
+        char actual[65]{};
+        if (size > bytes.size() || !read(address, bytes.data(), size)) return false;
+        digest(bytes.data(), size, actual);
+        return !record.refusal && std::strcmp(actual, expected) == 0 ? true : fail("signature_mismatch");
+    }
+
+    inline void append(char* out, std::size_t& used, const char* format, ...) noexcept
+    {
+        if (used >= output_limit) return;
+        va_list args; va_start(args, format);
+        const int count = std::vsnprintf(out + used, output_limit - used, format, args);
+        va_end(args);
+        used = count < 0 || static_cast<std::size_t>(count) >= output_limit - used ?
+            output_limit : used + static_cast<std::size_t>(count);
+    }
+
+    inline void emit() noexcept
+    {
+        if (emitted.exchange(true)) return;
+        char out[output_limit]{};
+        std::size_t used = 0;
+        append(out, used, "WORLD_CLIPMAP_OBSERVATION {\"schema\":\"iw7.world-clipmap-observer/1\","
+            "\"status\":\"%s\",\"reason\":\"%s\",\"asset\":\"%s\",\"reads\":%llu,"
+            "\"signature_checked\":%s,\"blob_bytes\":%u,\"root_class\":\"%s\","
+            "\"root_section\":%u,\"root_offset\":%u,\"metadata_sha256\":\"%s\","
+            "\"flags_before\":%u,\"flags_after\":%u,\"root_relation\":%s,"
+            "\"counts_read\":%s,\"name_count\":%d,\"tag_count\":%d,\"original_threw\":%s,\"sections\":[",
+            record.post_ok ? "observed" : "refused", record.refusal ? record.refusal : "none",
+            record.expected, static_cast<unsigned long long>(record.reads), record.signature_ok ? "true" : "false",
+            record.size, record.root_class, record.root_section, record.root_offset, record.digest,
+            record.flags_before, record.flags_after, record.relation ? "true" : "false",
+            record.counts_read ? "true" : "false", record.name_count, record.tag_count,
+            record.original_threw ? "true" : "false");
+        for (std::size_t i = 0; i < 3; ++i)
+        {
+            const auto& s = record.sections[i];
+            append(out, used, "%s{\"start\":%u,\"data_end\":%u,\"global\":%u,\"virtual\":%u,"
+                "\"exports\":%u,\"imports\":%u,\"end\":%u}", i ? "," : "", s.start,
+                s.data, s.global, s.virtual_, s.exports, s.imports, s.end);
+        }
+        append(out, used, "],\"runtime_ready\":false,\"collision_validated\":false}\n");
+        if (used >= output_limit)
+        {
+            constexpr char fallback[] = "WORLD_CLIPMAP_OBSERVATION {\"status\":\"refused\",\"reason\":\"metadata_budget\",\"runtime_ready\":false}\n";
+            std::fwrite(fallback, 1, sizeof(fallback) - 1, stdout);
+        }
+        else std::fwrite(out, 1, used, stdout);
+        std::fflush(stdout);
+        phase.store(3, std::memory_order_release);
+    }
+
+    inline bool arm(std::string_view expected) noexcept
+    {
+        preserve_thread_errors preserve;
+        int unused = 0;
+        if (!phase.compare_exchange_strong(unused, 4)) return false; // never rearm
+        try
+        {
+            bool safe = !expected.empty() && expected.size() < sizeof(record.expected) &&
+                expected.find("..") == std::string_view::npos;
+            if (!safe) { fail("invalid_requested_asset"); emit(); return false; }
+            for (char c : expected) safe = safe && ((identifier(c) && c != ':') || c == '/' || c == '.' || c == '-');
+            if (!safe) { fail("invalid_requested_asset"); emit(); return false; }
+            std::memcpy(record.expected, expected.data(), expected.size());
+            // Fixed preferred-address profile: reject a relocated/different engine, never guess.
+            if (!signature(0x14054BEB0, 5, "bed2f0bc5652a6ae9482680e20b96d1081ce233d4826c278fead39ea071ec3c1") ||
+                !signature(0x140571D50, 432, "12d99ba73e2078af560f1096c03c84b0a994c457fe7238cd79bb1793bcba35b6") ||
+                !signature(0x140572C30, 143, "926f1458422a1f58ac65243b9f53f3fe6f4ccaccc8fed23039496267f1f7f0db"))
+            { emit(); return false; }
+            std::uintptr_t handler{};
+            if (!read(0x1414672D0 + 22 * 8, &handler, sizeof(handler)) || handler != 0x1403B72F0)
+            { fail("dispatch_mismatch"); emit(); return false; }
+            record.signature_ok = true;
+            phase.store(1, std::memory_order_release);
+            return true;
+        }
+        catch (...) { fail("arm_exception"); emit(); return false; }
+    }
+
+    inline bool inspect_before(const void* header_slot)
+    {
+        std::uintptr_t asset{}, name{};
+        if (!read(reinterpret_cast<std::uintptr_t>(header_slot), &asset, sizeof(asset)) ||
+            !field(asset, 0, name)) return false;
+        bool matched = false;
+        for (std::size_t i = 0; i < sizeof(record.expected); ++i)
+        {
+            char c{};
+            if (!field(name, i, c)) return false;
+            if (c != record.expected[i]) return fail("first_clipmap_name_mismatch");
+            if (!c) { matched = true; break; }
+        }
+        if (!matched) return fail("asset_name_limit");
+        if (!field(asset, 0xF8, record.size) || !field(asset, 0x100, record.blob)) return false;
+        if (record.size < 256 || record.size > blob_limit || !record.blob ||
+            record.blob > (std::numeric_limits<std::uintptr_t>::max)() - record.size)
+            return fail("blob_extent");
+        std::array<unsigned char, 384> metadata{}; // header + 3 sections + <=128-byte class name
+        if (!read(record.blob, metadata.data(), 64)) return false;
+        const auto* h = metadata.data();
+        if (u32(h) != 0x57E0E057 || u32(h + 4) != 0x10C0C010 || u32(h + 12) != 11 ||
+            h[16] != 8 || h[17] != 1 || h[18] != 0 || h[19] != 1 || u32(h + 20) != 3 ||
+            std::memcmp(h + 40, "hk_2014.2.5-r1", 15) != 0) return fail("unsupported_header");
+        record.flags_before = u32(h + 56);
+        if (record.flags_before & 1) return fail("already_fixed_up");
+        if (!read(record.blob + 64, metadata.data() + 64, 192)) return false;
+        const char* tags[] = {"__classnames__", "__types__", "__data__"};
+        std::uint32_t previous = 256;
+        for (std::size_t i = 0; i < 3; ++i)
+        {
+            const auto* p = h + 64 + i * 64;
+            if (std::memcmp(p, tags[i], std::strlen(tags[i]) + 1)) return fail("section_tag");
+            auto& s = record.sections[i];
+            s = {u32(p + 20), u32(p + 24), u32(p + 28), u32(p + 32), u32(p + 36), u32(p + 40), u32(p + 44)};
+            if (s.start < previous || !inside(s.start, s.end) || s.data > s.global ||
+                s.global > s.virtual_ || s.virtual_ > s.exports || s.exports > s.imports || s.imports > s.end)
+                return fail("section_bounds");
+            previous = s.start + s.end;
+        }
+        record.root_section = u32(h + 24); record.root_offset = u32(h + 28);
+        const auto class_section = u32(h + 32), class_offset = u32(h + 36);
+        if (record.root_section >= 3 || class_section != 0 ||
+            record.root_offset >= record.sections[record.root_section].data ||
+            class_offset >= record.sections[0].data) return fail("root_bounds");
+        const auto& roots = record.sections[record.root_section];
+        record.expected_root = record.blob + roots.start + record.root_offset;
+        const auto available = record.sections[0].data - class_offset;
+        const auto class_address = record.blob + record.sections[0].start + class_offset;
+        for (std::size_t i = 0; i < sizeof(record.root_class) && i < available; ++i)
+        {
+            char c{};
+            if (!field(class_address, i, c)) return false;
+            if (!c)
+            {
+                if (!i) return fail("empty_root_class");
+                digest(metadata.data(), 256 + i + 1, record.digest);
+                record.pre_ok = !record.refusal;
+                return record.pre_ok;
+            }
+            if (!identifier(c) || i + 1 == sizeof(record.root_class)) return fail("root_class_limit_or_charset");
+            record.root_class[i] = c; metadata[256 + i] = static_cast<unsigned char>(c);
+        }
+        return fail("root_class_termination");
+    }
+
+    inline ticket before(int type, const void* header_slot) noexcept
+    {
+        preserve_thread_errors preserve;
+        int armed = 1;
+        if (type != 22 || !phase.compare_exchange_strong(armed, 2, std::memory_order_acq_rel)) return {};
+        try { inspect_before(header_slot); }
+        catch (...) { fail("before_exception"); }
+        return {true}; // refusals still return to the one normal original call
+    }
+
+    inline void after(ticket token, std::uintptr_t registered_asset) noexcept
+    {
+        preserve_thread_errors preserve;
+        if (!token.selected) return;
+        try
+        {
+            if (record.pre_ok)
+            {
+                std::uintptr_t blob{}, stored_root{};
+                std::uint32_t size{};
+                if (field(registered_asset, 0xF8, size) && field(registered_asset, 0x100, blob))
+                {
+                    if (size != record.size || blob != record.blob) fail("post_asset_identity");
+                    else if (field(blob, 56, record.flags_after) && read(0x144BDF458, &stored_root, sizeof(stored_root)))
+                    {
+                        record.relation = stored_root == record.expected_root;
+                        if (!(record.flags_after & 1) || !record.relation) fail("post_fixup_relation");
+                        else
+                        {
+                            // Unknown root classes are reported without assuming their array layout.
+                            if (std::strcmp(record.root_class, "HavokPhysicsShapeList") == 0)
+                            {
+                                const auto& s = record.sections[record.root_section];
+                                if (s.data - record.root_offset < 0x74) fail("post_root_extent");
+                                else
+                                {
+                                    record.counts_read = field(stored_root, 0x28, record.name_count) &&
+                                        field(stored_root, 0x70, record.tag_count);
+                                    if (record.counts_read && (record.name_count < 0 || record.tag_count < 0 ||
+                                        record.name_count > 1000000 || record.tag_count > 1000000)) fail("post_count_bounds");
+                                }
+                            }
+                            record.post_ok = !record.refusal;
+                        }
+                    }
+                }
+            }
+        }
+        catch (...) { fail("after_exception"); }
+        emit();
+    }
+
+    inline void original_exception(ticket token) noexcept
+    {
+        preserve_thread_errors preserve;
+        if (!token.selected) return;
+        record.original_threw = true; fail("original_exception"); emit();
+    }
+
+    inline bool finish() noexcept
+    {
+        preserve_thread_errors preserve;
+        int armed = 1;
+        if (phase.compare_exchange_strong(armed, 4)) { fail("no_clipmap_observed"); emit(); }
+        return phase.load(std::memory_order_acquire) == 3 && record.post_ok;
+    }
+
+    template <class Invoke, class Pointer> inline auto forward(int type, const void* header_slot,
+        Invoke&& invoke, Pointer&& pointer) -> decltype(invoke())
+    {
+        using result_type = decltype(invoke());
+        static_assert(noexcept(pointer(std::declval<const result_type&>())), "Result pointer accessor must not throw");
+        const auto token = before(type, header_slot);
+        try
+        {
+            const auto result = invoke(); // the only original call, including observer refusals
+            after(token, pointer(result));
+            return result;
+        }
+        catch (...) { original_exception(token); throw; } // never retry or swallow original exceptions
+    }
+}

@@ -316,5 +316,20 @@
     "creator_identified": false,
     "serializer_identified": false,
     "native_executed": false
+  },
+  "observer_source_candidate": {
+    "schema": "iw7.asset-bridge.world-observer-source/1",
+    "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+    "base_lf_sha256": "5abd5c9b0c4a71e665c052cd51db0003c089fdb40f88380baaa4b59a2f8c6a78",
+    "patched_lf_sha256": "4cf249e16b1f03cab452c197a75b6cd104bb070a6f1ec7ac1fd160ac4d493b08",
+    "header_lf_sha256": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
+    "patch_sha256": "f53eec4a12eb49f8a7c1b45ffd41fb2563b75f811142254020e4658c1ea59ce2",
+    "apply_reverse": true,
+    "original_syntactic_call_sites": 1,
+    "read_budget_bytes": 2048,
+    "metadata_budget_bytes": 4096,
+    "native_compiled": false,
+    "native_harness_run": false,
+    "engine_observed": false
   }
 }
