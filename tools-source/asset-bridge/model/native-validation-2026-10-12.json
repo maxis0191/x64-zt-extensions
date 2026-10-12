@@ -1,0 +1,168 @@
+{
+  "schema": "iw7.asset-bridge.native-execution/1",
+  "date": "2026-10-12",
+  "private_main_ref": "24d5c4f799b295cced57abea845fa1c39c753f09",
+  "execution_checkout_head": "405993c7fbc39a27ce7da7f9d53d46e81729681f",
+  "production_lf_sha256": "f0910695382533abf9aed8a0c03f2f0da9d9af1ce2baee0efb5e78d252218a15",
+  "prepared_source_sha256": "17e0bbdf891235ae54a025c169324aeb519e8861e589ecd370e080f123a2934a",
+  "production_include_sha256": "cdbe626ec3b0298bd11bc497a076a07095425e02dbe6be5cb38780f23f8aaad8",
+  "runner_sha256": "c1e7986f58e210e7684792316a8a155dc7ab33c3ef2af5373f9e205fb59b1684",
+  "resource_helpers_sha256": {
+    "Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
+    "Resource-Memory.ps1": "6a708d2e7fa9803628bfbf5c670068d63d22a2d2cfc157994afa82d56ac9c241",
+    "Resource-RecorderOwnedProcess.Core.ps1": "23d6f589a6f973f6d9c56a2ff3dcb66c4df6a0aa9fe0a7125048dd9061f93c54"
+  },
+  "admission": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "ram_reserve_bytes": 0,
+    "commit_reserve_bytes": 9512923136,
+    "before_snapshot": {
+      "PhysicalTotal": 34142842880,
+      "PhysicalAvailable": 15794847744,
+      "Committed": 24215838720,
+      "CommitLimit": 47564615680,
+      "PagesInputPerSecond": null,
+      "PagesOutputPerSecond": null,
+      "CapturedUtc": "2026-10-12T02:03:01.9288882Z",
+      "Source": "GetPerformanceInfo"
+    }
+  },
+  "processes": [
+    {
+      "phase": "attempt1-compile",
+      "pid": 19868,
+      "creation_utc": "2026-10-12T02:03:02.3081287Z",
+      "priority": "BelowNormal",
+      "exit_code": 0,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619",
+      "original_handle_exit_confirmed": true
+    },
+    {
+      "phase": "attempt1-link",
+      "pid": 3848,
+      "creation_utc": "2026-10-12T02:03:03.1774841Z",
+      "priority": "BelowNormal",
+      "exit_code": 0,
+      "executable_sha256": "a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f",
+      "original_handle_exit_confirmed": true
+    },
+    {
+      "phase": "attempt1-fixture",
+      "pid": 33408,
+      "creation_utc": "2026-10-12T02:03:03.2630755Z",
+      "priority": "BelowNormal",
+      "exit_code": 0,
+      "executable_sha256": "a88052927daec4a4c343076368d2946e660771a2c6db802acdf6fd7abcce3d65",
+      "original_handle_exit_confirmed": true
+    }
+  ],
+  "fixture_assertions": 52,
+  "native_compile_passed": true,
+  "native_fixture_passed": true,
+  "attempts": 1,
+  "failed_attempts": 0,
+  "compiler_warning": {
+    "code": "C4244",
+    "fixture_line": 144,
+    "reason": "initializer list int 0/1 to unsigned char",
+    "warning_free_build": false,
+    "source_changed_after_run": false
+  },
+  "compile_policy": {
+    "compiler": "MSVC 14.44.35207 x64",
+    "compile_flags": [
+      "/c",
+      "/std:c++20",
+      "/EHsc",
+      "/W4",
+      "/MT"
+    ],
+    "multiprocess_compilation": false,
+    "separate_link": true,
+    "link_incremental": false,
+    "parallel_processes": false
+  },
+  "release": {
+    "released": true,
+    "original_children_exited": true,
+    "remaining_leases": 0,
+    "snapshot": {
+      "PhysicalTotal": 34142842880,
+      "PhysicalAvailable": 15763402752,
+      "Committed": 24248414208,
+      "CommitLimit": 47564615680,
+      "PagesInputPerSecond": null,
+      "PagesOutputPerSecond": null,
+      "CapturedUtc": "2026-10-12T02:03:03.5125170Z",
+      "Source": "GetPerformanceInfo"
+    }
+  },
+  "artifacts": {
+    "admission.local.json": {
+      "bytes": 857,
+      "sha256": "ecaedae56f86937f4a74e289f1d04b24d7b03c9d6166ed823dc379d45897cd01"
+    },
+    "after.local.json": {
+      "bytes": 594,
+      "sha256": "f760f484d6d8d1ecb076a150953817ff5d059c39ec823d1ba455535b7b0cc5c9"
+    },
+    "attempt1-compile.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1-compile.stdout.log": {
+      "bytes": 317,
+      "sha256": "420f24ff0ef58a964e623af1b5a7ab9b37395550c5de3267d820dcee99489250"
+    },
+    "attempt1-fixture.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1-fixture.stdout.log": {
+      "bytes": 166,
+      "sha256": "a4cee9ff9fd0d8e2fcf6c36f4ee8cebcce561b251ba077f1ef483974df108d87"
+    },
+    "attempt1-link.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1-link.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1.exe": {
+      "bytes": 320512,
+      "sha256": "a88052927daec4a4c343076368d2946e660771a2c6db802acdf6fd7abcce3d65"
+    },
+    "attempt1.obj": {
+      "bytes": 374912,
+      "sha256": "ac9e386db07d8a1bf1e6d96c468e8fe0afc3186509235aa2b5333eda596341d6"
+    },
+    "before.local.json": {
+      "bytes": 594,
+      "sha256": "0609ff9f759c5f6c93eb81591da48eb1b2bf1c9e171a34ac41f6b644511d184c"
+    },
+    "processes.local.json": {
+      "bytes": 3257,
+      "sha256": "2d54cb054fd36d9e7274a17b39a0e6667c48750fef9cf4d68c537d860a868a31"
+    },
+    "result.local.json": {
+      "bytes": 3646,
+      "sha256": "7cbd4d6db1bf143765577fa98989c3751302c2fa12aa219abaa8813e5998e411"
+    }
+  },
+  "execution_directory_bytes": 704855,
+  "limits": {
+    "full_zonetool_build": false,
+    "native_tool_allocator_verified": false,
+    "arbitrary_dump_safety": false,
+    "optional_codecs_verified": false,
+    "ff_emission_or_loading": false,
+    "weight_direction_engine_verified": false,
+    "render_or_game_run": false,
+    "main_client_bank_config_modified": false,
+    "owner_acceptance": false,
+    "second_heavy_group_started": false
+  }
+}
