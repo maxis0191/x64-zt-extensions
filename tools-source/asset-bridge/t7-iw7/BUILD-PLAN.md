@@ -622,3 +622,22 @@ native source/E7 command records and 45 PowerShell checks (32 profile, 3 deadlin
 10 Link telemetry). The current SDK header confirms the declared lookup API;
 no dependency, compiler option or common provider changed. These checks loaded
 no native diagnostic type, launched no child and acquired no heavy lease.
+
+### Exact exit-context build plan A, awaiting review/GO
+
+Source commit 55dde1dd60ff925efa9326312deb12b0f6c2e56b produced
+`runtime/t7-exit-context-build-plan-a/build-plan.local.json` (298,652 bytes),
+SHA256 0cd2c2f3bdc22021a045d53bec19988b912c8d3db095e02eef061ebfa201880b.
+Its default source/metadata check passes with 1,083 inputs and no missing pin.
+The entire Inputs array equals the trace A array. Its 413-object Link response
+differs from trace A on exactly line 22, the newly compiled main.obj; the other
+412 references are identical. No dependency or common provider was added.
+
+Wiring is 13,796 bytes / 4f86d6c5189a26978827d97ce86c022a1978437555dcfa579554a3039f5c209b;
+prepared main is 22,194 bytes / 5f64c43ca9306cfa0ee561fbe94592a4f0cedcc9382456d11772653695c3fae3.
+The two D2 base-proof pins and the retained C compilation chain are unchanged.
+The future `runtime/zt-t7-exit-context-a` output root is absent. This preparation
+loaded no native diagnostic type, hashed no binary and acquired no lease. It
+created neither an EXE nor a Passed build receipt. The coordinator and catalogue
+parser owner received this exact source/plan for review; the build still needs
+its own GO, and any later real catalogue run requires a separate reviewed plan.
