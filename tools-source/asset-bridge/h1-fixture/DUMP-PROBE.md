@@ -1,9 +1,9 @@
 # Original H1 fixture: exact IW7 dump preparation
 
-2026-10-12: **source and light tests only**. No new compiler, DLL emission,
-native executable, resource lease, FF builder, retail stock read or game run.
-Compile B and its separate 111-check Probe remain the earlier native checkpoint.
-This preparation does not turn that checkpoint into a dump witness.
+2026-10-12: the source/light preparation below was followed by one separately
+authorized **Compile A, passed**. The dump executable has not run. Compile B and
+its separate 111-check Probe remain the earlier parser/converter checkpoint.
+Neither compilation nor that earlier checkpoint is a native dump witness.
 
 ## Production fragments and adapters
 
@@ -86,7 +86,8 @@ Plan SHA-256:
 adapter, reader, source contract and prepared fragments as well as the existing
 compiler/job/scheduler/observer inputs. Read-only `Run-H1Native.ps1` verification
 passed all 68 bindings. Its proposed `runtime/h1-dump-observation-20261012-a`
-root does not exist; no Compile or Probe stage has been started.
+root was absent at this preparation checkpoint. The separately authorized
+Compile A below subsequently created its compile stage; Probe remains absent.
 
 | Stage | Reservation | Deadline | Acceptance |
 | --- | --- | --- | --- |
@@ -137,3 +138,44 @@ dump to pass a reader. A changed binding needs corresponding source/reader/Plan
 evidence. Reuse the current dedicated/FF tools with separate admission, then
 build, verify, re-dump and independently read the actual FF output as in the rig
 workflow. Game/appearance acceptance remains a later, separate boundary.
+
+## Authorized Compile A, 2026-10-12 09:43 UTC
+
+The coordinator independently reviewed source commit
+`65b31627fe15cefa46cdadf9d1f5f485cf8d0730`, then authorized exactly one Compile
+phase of the Plan above. Fresh preflight verified all 9 prepared files, 24
+production sources and 68 bindings, clean source, absent output and zero leases.
+Main retained its existing identity/hash. The current origin/main resource
+workflow was fetched and read before admission.
+
+The exact planned `Run-H1Native.ps1` invocation with `-Stage Compile -Run`
+passed with exit 0. Admission started `2026-10-12T09:43:05.8431723Z`;
+acceptance took 3,196.0946 ms and the receipt finished at
+`2026-10-12T09:43:09.2505238Z`. Reservations stayed 4 GiB physical / 6 GiB
+commit, 120 s, 32 MiB output and 5 s cleanup. These are budgets, not measured peaks.
+
+The original compiler PID 14784 was created at `09:43:05.9507343Z`. Its exit
+was 0. Two captures at `09:43:08.8643618Z` and `09:43:08.9352827Z` identified
+only vctip PID 32148, creation `09:43:07.4982677Z`, parent 14784, in the
+original job. The existing reviewed closure terminated only that job, observed
+root exit 0 / ActiveProcesses 0, captured an empty member list, then independently
+polled root exit 0 / ActiveProcesses 0 again at `09:43:08.9542653Z`.
+Tree closure and lease release passed; no quarantine or retry occurred.
+
+Compile receipt: 6,229 bytes, SHA-256
+`f0438da3dca9dbf13ba18e1d60a94c2520bde098cdddc56a91dc6bfba9e6e9a0`.
+Executable: 1,331,200 bytes, SHA-256
+`15aeb2e9da13a96e1b61045ee4c4f275113ff680af945ce48c0b764f0d7080d6`.
+Six compile files total **19,024,147 bytes**. Stdout is 1,248 bytes with the
+two existing production `strcpy` C4996 warnings; stderr is empty. All OBJ/PDB/log
+hashes and sanitized closure evidence are in
+[dump-compile-observation-2026-10-12.json](dump-compile-observation-2026-10-12.json).
+
+At `09:43:23.6223220Z`, a fresh inventory found zero leases and no probe,
+compiler, linker, telemetry, ZoneTool or CDB residue. Main was the sole game
+process, PID 27784 / creation `00:52:28.7133740Z`; its image hash was rechecked
+unchanged. Read-only Probe Plan verification subsequently passed all 68 bindings
+and the successful Compile receipt without loading types or acquiring a lease.
+The Probe directory is absent. **No Probe, native dump/readback, FF or game test
+was authorized or run.** The unique Compile GO is consumed; a separate Probe
+GO is still required. This source/evidence belongs to the tranche after PR154.

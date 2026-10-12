@@ -114,6 +114,8 @@ extraction, game, download, retail data read or shared-source modification occur
 for this fixture. Main's original process identity and image hash stayed unchanged.
 The coordinating branch owns the private integration/CI/merge workflow.
 
-The next source-only candidate is [DUMP-PROBE.md](DUMP-PROBE.md): exact IW7 dump
+The next candidate is [DUMP-PROBE.md](DUMP-PROBE.md): exact IW7 dump
 fragments, independent bounded readback, 68-binding two-stage Plan, dependency
-handoff to existing Beacon/rig tooling. No dump/FF/render result is claimed.
+handoff to existing Beacon/rig tooling. Its separately authorized Compile A
+passed and closed/released its job/lease; its executable has not run. No native
+dump, FF or render result is claimed.

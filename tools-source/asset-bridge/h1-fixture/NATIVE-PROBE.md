@@ -414,7 +414,7 @@ contract/validation JSONs remain dated preparation evidence. No existing Failed
 receipt or acceptance boundary was rewritten. A next export/integration step
 requires a distinct source plan and authorization; this witness grants none.
 
-The separate [DUMP-PROBE.md](DUMP-PROBE.md) now supplies that next source-only
+The separate [DUMP-PROBE.md](DUMP-PROBE.md) now supplies that next
 profile and an independent reader. Its fixture-only string bridge leaves token
-0 unresolved. The prepared B bytes and receipts are preserved; no new native
-stage has run under the dump Plan.
+0 unresolved. The prepared B bytes and receipts are preserved. One separately
+authorized Compile passed under the dump Plan; its Probe remains unexecuted.
