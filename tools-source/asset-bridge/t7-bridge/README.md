@@ -389,6 +389,10 @@ conditional on the real import closure; the matching owner Steam API DLL and
 existing game assets remain in place. No further download or native Run is
 implicit in this successful acquisition.
 
+The [catalogue preparation](CATALOGUE-PLAN.md) records the proposed private
+working directory, exact CLI, existing input identities, resource/closure limits
+and unresolved startup/address gates. It creates no links and authorizes no Run.
+
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is
 not a per-file filter. Evaluate an existing compatible selective downloader
