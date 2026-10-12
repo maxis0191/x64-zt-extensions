@@ -45,8 +45,8 @@ try {
     }
     if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]) -or ('IW7HudFileIdentity' -as [type])){throw 'Fresh PowerShell host required.'}
     . $scheduler
-    $before=Assert-T7PrepatchMain $plan.PreservedMain
-    $state=[ordered]@{Schema='iw7.t7-catalogue-run/1';Status='Running';PlanSHA256=$PlanSHA256;CandidateProfile=$candidateProfile;Stage='Catalogue';
+    $before=Assert-T7CatalogueMain $plan
+    $state=[ordered]@{Schema='iw7.t7-catalogue-run/1';Status='Running';PlanSHA256=$PlanSHA256;CandidateProfile=$candidateProfile;MainBaseline=(Get-T7CatalogueMainBaseline $plan);Stage='Catalogue';
         DeadlineSeconds=120;MaxObservedOutputBytes=0L;Identity=$null;ExitCode=$null;TreeClosureConfirmed=$true;
         LeaseReleased=$false;Quarantined=$false;TerminationRequested=$false;CatalogueOutcome='NoCatalogue';
         CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;EngineOutputsValidated=$false;Aliases=@();InputFileIds=@()}
@@ -75,6 +75,7 @@ try {
     Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     Test-H1Budget $plan $state
     if(Test-Path -LiteralPath (Join-Path $plan.RunRoot 'stop.request')){throw 'Coordinator stop requested before launch.'}
+    $state.MainBeforeLaunch=Assert-T7CatalogueMain $plan
     Invoke-H1OwnedStage $plan $state $context (New-T7CatalogueStart $plan) $plan.CandidateSHA256 $plan.StageRoot
 }catch{
     $failure=$_
@@ -95,13 +96,16 @@ try {
             foreach($item in $plan.InputMetadata){Assert-T7CatalogueMetadata $item}
             foreach($item in @($state.InputFileIds)+@($state.Aliases)){if((Get-T7CatalogueFileId $item.Path) -cne $item.FileId){throw 'Original/alias file ID changed.'}}
             $state.InputsReverified=$true;$state.OriginalInputMetadataUnchanged=$true;$state.AliasesRetained=$true
-            $state.MainAfter=Assert-T7PrepatchMain $plan.PreservedMain
             Test-H1Budget $plan $state
             if(!$failure -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
             if(!$failure -and (Get-T7CatalogueCandidateProfile $plan) -ceq 't7-catalog-trace' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
     if($state){Complete-H1Stage $context $state}
+    if($state -and $attempted -and $context.Closed) {
+        try{$state.MainAfter=Assert-T7CatalogueMain $plan}
+        catch{if(!$failure){$failure=$_};$state.MainAfterError=$_.Exception.Message;$state.Status='Failed'}
+    }
     if($state -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
         # After forced closure, inspect only bounded diagnostics, never hash payloads.
         try{Read-T7CatalogueTrace $plan $state $context}catch{$state.TraceError=$_.Exception.Message}
