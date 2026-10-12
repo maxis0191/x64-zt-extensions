@@ -1,0 +1,34 @@
+{
+  "schema": "iw7.animation-frequency-header-observations/1",
+  "observed_date": "2026-10-12",
+  "retained_source": "rhino-animclass/runtime/rhino-packs-build-20261003-164037-424/work/dump/paris_rhino/xanim",
+  "identification": "Existing Rhino asset inventory and bounded direct directory inspection",
+  "method": "Read 142-byte ARRAY envelope plus XAnimParts header only from each file; no asset copied, decoded or executed",
+  "total_bytes_read": 284,
+  "observations": [
+    {
+      "asset": "alien_queen_idle.xab",
+      "file_bytes": 15085,
+      "prefix_sha256": "12467f0da73466268fc96d90e661aa2fbf8e8d363c1c375f76a352aab725b330",
+      "numframes": 60,
+      "framerate": 30.0,
+      "frequency": 0.5,
+      "flags": 3,
+      "loop": true
+    },
+    {
+      "asset": "alien_drone_attack_jump_level_l45hand.xab",
+      "file_bytes": 18253,
+      "prefix_sha256": "ce12001dc6c85bde54288d0618949be1f4c026d1161d8ffaf3d525ff7ef065dd",
+      "numframes": 14,
+      "framerate": 30.0,
+      "frequency": 2.142857074737549,
+      "flags": 2,
+      "loop": false
+    }
+  ],
+  "candidate_relation": "float32(framerate / numframes)",
+  "original_probe_candidate": {"numframes": 30, "framerate": 30, "frequency": 1, "flags": 1},
+  "runtime_verified": false,
+  "limitations": "Two retained headers both have delta bit set. Correlation does not establish new no-delta clip duration, looping endpoint treatment, interpolation or event timing. Prefix hashes identify observations, not complete asset contents."
+}

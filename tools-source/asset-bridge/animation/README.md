@@ -48,3 +48,8 @@ not a binary XModel writer. See `fixtures/two-bone.skeleton.json` for the
 
 The next decisive experiment and dependency map are in
 [ANIMATION-AI-BRIDGE.md](../../../../docs/ANIMATION-AI-BRIDGE.md).
+
+The next source tranche now prepares an original four-key `tag_probe` clip,
+the **actual pinned ZoneTool dump method** and a native writer/independent narrow
+reader. See [PROBE-WRITER.md](PROBE-WRITER.md). Its native build and emission have
+not run; the passing synthetic readback does not upgrade the preflight claims.
