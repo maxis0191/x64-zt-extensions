@@ -374,7 +374,8 @@ function ConvertFrom-T7CatalogueExitLine([string]$Line) {
                 $start=[Convert]::ToUInt64($row.start,16);$region=[Convert]::ToUInt64($row.region,16)
                 if($row.ReadBytes -ne 256 -or $row.Error -ne 0 -or $raValue -lt 64 -or $start -ne $raValue-64 -or
                    [Convert]::ToUInt64($row.module,16) -ne 0x140000000L -or [Convert]::ToUInt64($row.allocation,16) -ne 0x140000000L -or
-                   $row.state -ne 0x1000 -or ($row.protect -band 0x101) -ne 0 -or $start -lt $region -or
+                   $row.state -ne 0x1000 -or ($row.protect -band 0x100) -ne 0 -or
+                   ($row.protect -band 0xFF) -eq 1 -or ($row.protect -band 0xFF) -eq 0 -or $start -lt $region -or
                    $row.RegionSize -lt 256 -or ([decimal]$start-[decimal]$region) -gt ([decimal]$row.RegionSize-256)){throw 'Successful exit memory capture has inconsistent bounds.'}
             }
         }

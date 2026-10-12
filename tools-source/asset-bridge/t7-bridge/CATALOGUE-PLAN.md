@@ -398,7 +398,7 @@ public reports. Tests use invented repeated AB bytes only. No global dump,
 unwind-data traversal, .pdata scan or new payload input is introduced by this
 reader. A context alone, including a complete one, cannot make NoCatalogue pass.
 
-491 light/pure checks pass: catalogue153, trace/provenance131, context155 and
+497 light/pure checks pass: catalogue153, trace/provenance131, context161 and
 Main52. The runtime owner, admission, source guards, closure, quarantine, Main
 baseline and independent catalogue checks remain intact. The next executable
 plan must bind the actual newly built candidate and its Passed receipt; synthetic

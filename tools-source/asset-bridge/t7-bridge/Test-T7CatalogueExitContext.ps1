@@ -71,6 +71,7 @@ try {
         $memory.Replace('allocation=0000000140000000','allocation=0000000140001000'),$memory.Replace('region_size=4096','region_size=255'),
         $memory.Replace('region=0000000140AC0000','region=0000000140AC0085'),$memory.Replace('state=4096','state=8192'),
         $memory.Replace('protect=32','protect=1'),$memory.Replace('protect=32','protect=288'),$memory.Replace('error=0','error=1'),
+        $memory.Replace('protect=32','protect=0'),$memory.Replace('protect=32','protect=512'),$memory.Replace('protect=32','protect=1024'),
         $memory.Replace('data=AB','data=ab'),$memory.Replace('region_size=4096','region_size=18446744073709551616'),
         $memory.Replace('type=131072','type=4294967296'),$memory.Replace('state=4096','state=04096'),
         (Memory-Line 'partial' 0),(Memory-Line 'partial' 256),(Memory-Line 'read_failed' 2),(Memory-Line 'query_failed' 1)
