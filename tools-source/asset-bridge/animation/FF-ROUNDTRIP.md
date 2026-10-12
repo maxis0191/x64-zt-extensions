@@ -55,8 +55,10 @@ still cannot prove an FF build or any rendered playback.
 
 ## Existing dependencies, kept in place
 
-The ignored `runtime/animation-ff-plan.local.json` binds concrete local paths.
-There is no new execution wrapper in this tranche.
+The original ignored `runtime/animation-ff-plan.local.json` retains the
+preparation snapshot. The subsequent source-only adapter has its own
+`runtime/animation-ff-executable-plan.local.json` and
+`runtime/animation-ff-arguments.local.json`; it does not change previous evidence.
 
 | Dependency | Exact reused contract |
 | --- | --- |
@@ -77,13 +79,59 @@ then verify exact restoration before lease release. No source attributes change.
 
 `Build-BeaconFF.ps1` cannot run unchanged: it pins the Beacon receipt, five source
 paths, five-asset inventory, zone name and B77B geometry reader. The smallest
-future execution adaptation changes only those profile-specific points to the
+execution adaptation changes only those profile-specific points to the
 two inputs/two inventory rows, animation zone and this Python reader. Reuse the
 existing candidate proof, owned-job, bounded pipe adapter, stock transaction,
 source guards and restoration logic. Keep that specialization inside animation
 ownership or have the coordinator apply it; do not edit another author's live
 SDK files or build a generic exporter/framework. Re-pin any changed shared helper
 before GO instead of silently using its old hash.
+
+## Executable specialization, not yet run
+
+[Build-AnimationFF.ps1](Build-AnimationFF.ps1) defaults to a read-only plan.
+It imports only parsed function definitions from the three pure shared cores;
+no `Add-Type`, reservation, staging or child launch occurs in plan mode. An actual
+local plan bound the original 281-byte XAB, completed stock receipt, all 72 stock
+entries, and final full candidate successfully. Its proposed run directory did
+not exist afterward; the BuildJob and NTFS helper types stayed unloaded.
+
+`-Run` additionally requires all nine provider/transitive hashes, the final
+candidate artifact hash, the reviewed existing BuildJob source hash and Python
+hash, in a fresh PowerShell host. The resource scheduler alone loads its memory
+query during admission; the job and NTFS helpers compile only after the complete
+8/11 GiB reservation. Sources stay guarded against write/delete until owned-tree
+closure. The exact suspended root is recorded and registered before Resume.
+Failed native factory return, unknown job closure or refused restoration retains
+the reservation. Unknown closure also retains guards and any returned owner in
+an AppDomain quarantine record; it never triggers stock restoration.
+
+[animation_tool_phase.py](animation_tool_phase.py) imports the hash-bound existing
+`beacon_tool_phase.py` and replaces only its command factory for this fixed zone
+and exact reader flags. Pipe caps, phase timeout, process launch and phase receipt
+remain the shared implementation. No other author's files were changed.
+The PowerShell wrapper reuses `Assert-BeaconCandidate`, job identity/output budget
+helpers, Base transaction save/restore and `Complete-ModelFFRestore`. Its own
+checks are the original receipt/CSV, exact two-row inventory and FF reader result.
+
+Light verification for this source tranche: 49 Python tests and 46 PowerShell
+checks passed. Refusals cover changed/missing pins, wrong source/receipt shape,
+stock duplicates/escape/size, inventory extras/unresolved rows, unsupported command
+arguments, and wrong reader scope. Simulated restoration tests prove the shared
+restore coordinator runs source-final proof before release and retains the lease
+on either restoration or source-final failure; an unclosed tree does neither.
+These are pure tests, not a native FF result. Independent review and a separate
+coordinator GO remain pending.
+
+Example using the local reviewed argument file (its hashes must be refreshed and
+reviewed whenever an imported provider changes):
+
+```powershell
+$parameters=Get-Content runtime/animation-ff-arguments.local.json -Raw | ConvertFrom-Json -AsHashtable
+& ./tools-source/asset-bridge/animation/Build-AnimationFF.ps1 @parameters
+# Only after independent review and the separate coordinator GO:
+# & ./tools-source/asset-bridge/animation/Build-AnimationFF.ps1 @parameters -Run
+```
 
 ## Complete proposed admission and bounds
 
