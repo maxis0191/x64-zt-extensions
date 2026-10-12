@@ -271,7 +271,7 @@ locator and three real process samples independently prove native launch.
 Next: prepare the bounded identity-checked dialog text reader before requesting
 a separate short diagnostic attempt. B's single-run authorization is exhausted.
 
-## Recipient C: prepared source only, automatic fatal-text probe
+## Recipient C: automatic fatal-text probe
 
 `-FatalTextDiagnostic` is an explicit references-only mode. It preserves E7,
 native CLI, stdin PIPE, the 72-entry stock and original job owner; it changes no
@@ -305,5 +305,31 @@ closure still retains the original quarantine safeguards.
 19 fake Win32 fixtures and 25 pipe/writer fixtures cover identity reuse,
 ownership changes, timeouts, buffer saturation, Unicode byte bounds, control limits and automatic
 failure signaling. They spawn no process and do not validate a real C dialog.
-Source/plan preparation is authorized; C has no execution GO and the next heavy
-slot belongs to the coordinator's strict GSC work.
+The subsequently authorized C attempt and its limits are recorded below.
+
+### C result: missing asset-file request, restored
+
+The [sanitized C record](native-validation-c-2026-10-12.json) preserves one
+execution of `79735fe` after fresh atomic 8/11 admission. The reader captured:
+
+```text
+Could not find asset file assetfile17.pak
+```
+
+The fatal record was written about 4.08 seconds after native creation. It contains
+three controls, verified original parent/child identity and no text truncation,
+buffer saturation, read error or interaction. Stdout remained the same 1,449-byte
+sequence as B, ending at `global_mp` loading. The message identifies an unresolved
+file request; it does not establish whether the file exists in retained stock.
+
+The automatic stop completed with original root exit 2 and zero job members.
+Status remains `DiagnosticFailed`, with no accepted references. Restoration and
+stock preservation passed; all 75 staged paths were removed, no owned process or
+lease remained, and Main plus the owner IW7 process inventory retained identical
+PID/image/UTC creation ticks. Original receipts remain unchanged. Final retained
+output was 1,216,572 bytes. No retry, utility phase, pool/zone workaround, dump or
+debugger was used. C's single-execution authorization is exhausted.
+
+Next: inspect the pinned file-search path and current pak17 identity/metadata,
+then prepare the smallest separately reviewed staging correction. Further native
+execution requires a new GO; the next slots remain GSC then rig.

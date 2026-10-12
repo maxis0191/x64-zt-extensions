@@ -239,7 +239,7 @@ E7 and HWND ownership before and after; read at most eight child controls and
 should be ready before launch so useful text can be captured promptly. This
 preparation is not permission to rerun B, add a dump or enlarge the budget.
 
-### C implementation prepared for review, not executed
+### C implementation and subsequent diagnostic result
 
 The new `-FatalTextDiagnostic` plan selects references only and automatically
 polls at 250 ms from the existing Python phase. The native E7 executable,
@@ -284,8 +284,8 @@ truncated; no extra message or larger read is attempted. Fake short, boundary
 and over-reported responses prove propagation and a single message per control.
 
 19 fake-reader tests, 25 pipe/writer checks, 11 contract tests, 35 PowerShell
-checks and 13 pure B-observer identity checks pass. These are source fixtures,
-not a real Win32 dialog or C lifecycle test. No C process or lease was started.
+checks and 13 pure B-observer identity checks pass. Those source fixtures were
+followed by the separately authorized real attempt recorded below.
 
 API contracts were checked against Microsoft's primary documentation:
 [GetWindowTextW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowtextw)
@@ -297,6 +297,21 @@ can stop enumeration by returning false.
 [NtQueryInformationProcess](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess)
 documents the parent field but is an internal API subject to change; an unavailable
 or incompatible result fails the reader rather than weakening identity checks.
+
+The [C evidence](native-validation-c-2026-10-12.json) records one execution of
+`79735fe`, fresh 8/11 admission and a successful bounded body read:
+`Could not find asset file assetfile17.pak`. The dialog identity was verified and
+the body was not truncated. The record was written about 4.08 seconds after
+native creation; automatic original-job stop/restoration followed. Original root
+exit 2 and zero members, source preservation, no remaining owned process/lease,
+all 75 staged paths removed and unchanged owner/Main identities were confirmed.
+The result remains DiagnosticFailed, with no references or package acceptance.
+
+The immediate missing-file request is now known. The next source-only action is
+to resolve the pinned search path, find pak17 in retained Doom/base stock, and
+prove the staging omission before proposing a minimal guarded hardlink addition.
+Do not alter pools, skip `global_mp`, copy the full retail installation or rerun
+without a separate review/GO. C's original evidence is immutable.
 
 ## Existing tools and exact constraints
 
