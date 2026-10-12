@@ -8,11 +8,14 @@ from bisect import bisect_right
 import hashlib
 import json
 from pathlib import Path
+import re
 import struct
 import sys
 import time
 
-from capstone import Cs, CS_ARCH_X86, CS_MODE_64, CS_OP_IMM, CS_OP_MEM, CS_OP_REG
+from capstone import (Cs, CS_ARCH_X86, CS_MODE_64, CS_OP_IMM, CS_OP_MEM, CS_OP_REG,
+                      CS_GRP_JUMP, CS_GRP_CALL, CS_GRP_RET, CS_GRP_IRET,
+                      CS_GRP_INT, CS_GRP_BRANCH_RELATIVE)
 from capstone.x86_const import X86_REG_ECX, X86_REG_RCX
 
 IMAGE = 0x140000000
@@ -43,7 +46,7 @@ class Locator:
         require(len(code) <= REFERENCES["text"][0], "text bound")
         require(len(pdata) % 12 == 0 and len(pdata) <= REFERENCES["pdata"][0], "pdata bound")
         self.code, self.base, self.image = code, base, image
-        self.started, self.decoded, self.scans = time.monotonic(), 0, 0
+        self.started, self.decoded, self.scans, self.search_bytes = time.monotonic(), 0, 0, 0
         self.functions, self.rejected = {}, []
         self.ranges = sorted((image + a, image + b, u) for a, b, u in struct.iter_unpack("<III", pdata) if a < b)
         self.starts = [a for a, _, _ in self.ranges]
@@ -75,20 +78,17 @@ class Locator:
     def direct_edges(self, target):
         self.scans += 1
         bounded(self.scans <= 1 + LIMITS["functions"], "text scan count bound")
+        self.search_bytes += len(self.code)
         found = []
-        for opcode in (b"\xe8", b"\xe9"):
-            position = 0
-            while True:
-                position = self.code.find(opcode, position)
-                if position < 0:
-                    break
-                self.check()
-                if position + 5 <= len(self.code):
-                    relative = struct.unpack_from("<i", self.code, position + 1)[0]
-                    if self.base + position + 5 + relative == target:
-                        found.append(self.base + position)
-                        bounded(len(found) <= LIMITS["edge_candidates"], "direct edge bound")
-                position += 1
+        # One linear opcode search, not separate full E8 and E9 passes.
+        for match in re.finditer(b"[\xe8\xe9]", self.code):
+            position = match.start()
+            self.check()
+            if position + 5 <= len(self.code):
+                relative = struct.unpack_from("<i", self.code, position + 1)[0]
+                if self.base + position + 5 + relative == target:
+                    found.append(self.base + position)
+                    bounded(len(found) <= LIMITS["edge_candidates"], "direct edge bound")
         return sorted(found)
 
     def function(self, address):
@@ -101,6 +101,7 @@ class Locator:
             for ins in self.disassembler.disasm(payload, start):
                 self.check()
                 require(ins.address == next_address, "instruction gap")
+                bounded(self.decoded < LIMITS["instructions"], "instruction bound")
                 instructions.append(ins)
                 self.decoded += 1
                 next_address += ins.size
@@ -120,17 +121,20 @@ class Locator:
 
     @staticmethod
     def type_seven(instructions, edge_address):
+        control_groups = {CS_GRP_JUMP, CS_GRP_CALL, CS_GRP_RET, CS_GRP_IRET,
+                          CS_GRP_INT, CS_GRP_BRANCH_RELATIVE}
         evidence = None
         for ins in instructions:
             if ins.address == edge_address:
                 if evidence is not None and any(
-                    other.mnemonic.startswith("j") and other.operands and
-                    other.operands[0].type == CS_OP_IMM and
-                    evidence < other.operands[0].imm <= edge_address
+                    (CS_GRP_JUMP in other.groups or CS_GRP_BRANCH_RELATIVE in other.groups) and
+                    CS_GRP_CALL not in other.groups and
+                    (not other.operands or other.operands[0].type != CS_OP_IMM or
+                     evidence < other.operands[0].imm <= edge_address)
                     for other in instructions):
                     return None
                 return evidence
-            if ins.mnemonic in ("call", "jmp") or ins.mnemonic.startswith("j"):
+            if control_groups.intersection(ins.groups):
                 evidence = None
             _, writes = ins.regs_access()
             if any(ins.reg_name(reg) in ("rcx", "ecx", "cx", "cl", "ch") for reg in writes):
@@ -176,6 +180,7 @@ class Locator:
         return {"registration_raw_edges": len(edges), "registration": registered,
                 "reverse_routes": routes, "functions": self.report_functions(), "rejected": self.rejected,
                 "decoded_instructions": self.decoded, "text_scans": self.scans,
+                "linear_opcode_search_bytes": self.search_bytes,
                 "elapsed_seconds": round(time.monotonic() - self.started, 6),
                 "actual_first_writer_established": False, "live_breakpoint_established": False}
 
@@ -224,6 +229,7 @@ def main():
     except (ValueError, RuntimeError) as error:
         result.update(status="bounded-refusal", error=str(error), functions=locator.report_functions(),
                       decoded_instructions=locator.decoded, text_scans=locator.scans,
+                      linear_opcode_search_bytes=locator.search_bytes,
                       actual_first_writer_established=False, live_breakpoint_established=False)
         code = 2
     payload = (json.dumps(result, indent=2, allow_nan=False) + "\n").encode()

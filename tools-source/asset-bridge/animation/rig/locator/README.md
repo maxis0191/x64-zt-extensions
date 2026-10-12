@@ -61,12 +61,23 @@ the phase rather than widening the scan. No resource reservation has been made.
 The prepared [static locator](locate_static.py) reads exactly 25,162,848 input
 bytes across text, rdata and pdata, once each, and verifies their hashes. Rdata
 is identity-bound but is not searched in this first pass. At most 17 scans of
-the existing text buffer inspect 359,301,120 bytes cumulatively in memory;
-there is no repeated file IO. It decodes at most 16 unwind-owned windows.
-Eight synthetic tests cover real versus embedded-immediate edges, argument
+the existing text buffer account for 359,301,120 linear opcode-search bytes;
+decoding each candidate also reads its four-byte displacement. There is no
+repeated file IO. It decodes at most 16 unwind-owned windows.
+Eleven synthetic tests cover real versus embedded-immediate edges, argument
 clobbers and branch bypasses, ambiguous unwind entries, hard caps and the
-difference between an offset match and a proved writer. All eight passed.
+difference between an offset match and a proved writer. All eleven passed.
 This tool has not been executed against the retained code.
+
+Independent review of the first source revision found three missed cases:
+LOOP-family control flow could bypass the type assignment, separate E8/E9 loops
+performed twice the declared number of passes, and the final decoded instruction
+could exceed its cap. The correction uses decoder control-flow groups (including
+relative branches), one combined opcode search and a pre-acceptance instruction
+limit. LOOP/LOOPE/LOOPNE/JRCXZ/JECXZ and exact-limit regressions now pass. The
+earlier command manifest is obsolete because its source pin changed; the new
+supervisor Plan must bind this corrected revision. Neither revision has scanned
+retail code or established a first writer.
 
 The first invocation implements the registration anchor and three reverse
 levels, retaining bounded instructions, call sites and unproved +0x58 store

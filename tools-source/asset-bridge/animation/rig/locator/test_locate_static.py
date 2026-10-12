@@ -2,6 +2,7 @@
 import struct
 import time
 import unittest
+from unittest.mock import patch
 from locate_static import Locator, IMAGE, TEXT, LIMITS
 
 
@@ -51,6 +52,30 @@ class LocatorTests(unittest.TestCase):
         for pdata in (b"", unwind(TEXT, 8) + unwind(TEXT + 1, 6)):
             with self.assertRaisesRegex(ValueError, "unwind ownership"):
                 Locator(b"\x90" * 8, pdata).owner(TEXT + 2)
+
+    def test_loop_family_and_counter_zero_branch_cannot_bypass_assignment(self):
+        target = TEXT + 0x1000
+        for branch in (b"\xe2\x05", b"\xe1\x05", b"\xe0\x05", b"\xe3\x05", b"\x67\xe3\x05"):
+            prefix = branch + b"\xb9\x07\0\0\0"
+            code = prefix + call(TEXT + len(prefix), target) + b"\xc3"
+            locator = Locator(code, unwind(TEXT, len(code)))
+            _, instructions = locator.edge(TEXT + len(prefix), target)
+            self.assertIsNone(locator.type_seven(instructions, TEXT + len(prefix)), branch.hex())
+
+    def test_both_edge_opcodes_share_one_linear_search(self):
+        target = TEXT + 0x1000
+        code = call(TEXT, target) + b"\xe9" + struct.pack("<i", target - TEXT - 10)
+        locator = Locator(code, unwind(TEXT, len(code)))
+        self.assertEqual(locator.direct_edges(target), [TEXT, TEXT + 5])
+        self.assertEqual(locator.scans, 1)
+        self.assertEqual(locator.search_bytes, len(code))
+
+    def test_last_instruction_cannot_cross_the_instruction_limit(self):
+        locator = Locator(b"\x90" * 4, unwind(TEXT, 4))
+        with patch.dict(LIMITS, instructions=3):
+            with self.assertRaisesRegex(RuntimeError, "instruction bound"):
+                locator.function(TEXT)
+        self.assertEqual(locator.decoded, 3)
 
     def test_function_and_deadline_caps_stop_not_skip(self):
         locator = Locator(b"\x90" * 8193, unwind(TEXT, 8193))
