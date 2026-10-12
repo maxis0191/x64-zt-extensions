@@ -26,6 +26,42 @@ The caller must keep the source allocation/database stable through copying.
 Sequential header checks cannot prove an atomic pixel snapshot or prevent an
 unmap between a readability check and memcpy. No race-free claim is made.
 
+## Engine lifetime: source findings and proposed scope (2026-10-12)
+
+The current [postload exporter](https://github.com/bigmangeekf/iw7-paris-server/blob/894895ec654025b3799595c5272062f3f1829b49/tools-source/asset-bridge/t7-iw7/native_export.inc#L65-L106)
+loads synchronously, waits, then selects the model and borrowed mesh/material
+pointers. Its "same stable DB scope" comment is a **caller precondition**, not an
+implemented retention mechanism. At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
+[startup calls the CLI before its Com_Frame loop](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/component/t7/zonetool.cpp#L12-L22),
+and [load_zone requests no explicit zone release](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/zonetool.cpp#L399-L440).
+This bounds caller control flow; it does not establish the runtime thread identity,
+exclude DB workers or retain delayed/temporary image allocations.
+
+[wait_for_database only polls readiness](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/zonetool.cpp#L94-L106).
+The [exposed DB functions](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/functions.hpp#L11-L17)
+provide no usable retain/release or lock API. Scheduler/capture mutexes protect
+their own containers, not engine allocations. Readability checks and repeated
+metadata reads neither pin pages nor make pixel copying atomic.
+
+The minimal proposed correction reuses the existing
+[DB_Add callback](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/zonetool.cpp#L351-L379).
+It already dumps assets synchronously before forwarding; IMAGE skips the original
+DB_Add entirely, so normal image registration/retention cannot be assumed.
+For the one exact XModel, borrow pointers only within this callback: select the
+LOD, serialize geometry and copy the single admissible image before returning.
+Retain only owned bytes, strings and scalars afterward. Refuse missing/nonresident
+dependencies, an unsupported image profile or repeated capture, without a postload
+fallback. Add no hook, worker or purported DB mutex, and perform no reentrant load,
+wait or waiting DB lookup inside the callback.
+
+This is a concrete placement to test, **not an observed dependency-lifetime
+guarantee**: the source does not expose the loader's allocation lifecycle or prove
+that every referenced material/image is ready and unchanged there. The finish-load
+callback shown in the same source is no substitute for that evidence. Catalogue
+bootstrap remains the priority; next observe the selected dependencies in the
+existing callback. Do not implement `/2` before that first real observation.
+No new infrastructure or exhaustive theoretical lifetime proof is required.
+
 ## Explicit v1 profile
 
 Single T7 `MAPTYPE_2D=1`, depth 1, width/height 1..4096; output DDS Texture2D=3,
@@ -70,9 +106,9 @@ check when the adapter is first integrated.
 
 ## Finite integration into a later selected export
 
-After selection, follow only that model's single material and its explicitly
-selected image pointers; do not enumerate the DB, dump a zone or enable XPAK.
-In the existing stable DB scope call:
+After the callback observation above supports integration, follow only that
+model's single material and its explicitly selected image pointers; do not
+enumerate the DB, dump a zone or enable XPAK. Within the reviewed callback scope:
 
 ```cpp
 auto copied = zonetool::t7::resident_image::copy(source_image,
@@ -274,6 +310,6 @@ the original-job receipt supplies execution evidence that a transcript alone can
 This establishes standalone compilation and synthetic copy/validation behavior.
 It does not establish a stable engine DB scope, an atomic snapshot, SEH protection,
 real T7 image residency, DirectXTex import, material completeness or rendered
-quality. The next work is a reviewed bounded selected-image capture/publication
-integration using the existing exporter and stable DB scope. No further native
-invocation is authorized by this checkpoint.
+quality. After catalogue bootstrap, the next work is the callback dependency
+observation described above, before a reviewed selected-image publication
+extension. No further native invocation is authorized by this checkpoint.
