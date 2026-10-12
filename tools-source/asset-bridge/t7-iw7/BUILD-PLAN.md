@@ -463,3 +463,24 @@ Local source validation on 2026-10-12 passes 58 Python tests against the retaine
 native source and explicit E7 path, plus 37 PowerShell checks (24 profile,
 3 deadline, 10 Link telemetry). The deadline/telemetry fixtures use the existing
 providers with synthetic native observations: no native types, children or lease.
+
+### Exact catalogue trace build plan A, awaiting review/GO
+
+Source commit 6c9b781d45a24747a66c24a6d803478b77215f6a produced
+`runtime/t7-catalog-trace-build-plan-a/build-plan.local.json`, SHA256
+0a6af99207b0b35bdf689a7378af3e1760bfd06e2da870fc1e1c9e5164462d31.
+Default-check passes with 1,083 expected inputs and no missing pins. Wiring is
+5,485 bytes / 247f4ed5f2734ddf0f36dcaf7d9ffe548e4a53c8977440d9306aeb419a039b56;
+prepared main is 14,426 bytes / 6d06778290f1d8befb3184cc7ff7de7f82d7acb02ebef9f72e0a91cdf2056bb1.
+The D2 base plan/receipt text pins are 296,330/7,136 bytes respectively, with
+the unchanged hashes above. Comparing all 413 object references in both Link
+response files finds exactly one changed row, line 22: the fresh main.obj.
+The other 412 paths are identical. intrin.h, cwchar and cstdio already belong to
+the expected input set; this requires no toolchain copy or dependency download.
+
+The future output root `runtime/zt-t7-catalog-trace-a` remains absent. This
+preparation loaded no native type, acquired no lease and hashed no binary.
+No new EXE, dependencies.json, Passed build receipt or catalogue exists yet.
+The coordinator and catalogue launcher owner received this exact plan and its
+source pins for independent review and later qualification. A new build receipt
+and explicit runtime plan/GO remain separate requirements.
