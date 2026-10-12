@@ -874,6 +874,64 @@ profile review. Do not run the historical command below as a test of this
 proposal. BO3 and its witness retain scheduling priority; no fourth World Run is
 authorized by this document.
 
+### Bounded-reader compatibility result, 2026-10-12
+
+The follow-up source audit found **no compatible World-only connection** between
+the existing strict drain and the qualified direct-tool stages. The reader is
+usable; the missing capability is at the native launch/handle boundary:
+
+- `sdk/modding/beacon_tool_phase.py::copy_bounded` reads a stream in 4096-byte
+  blocks, writes only the remaining allowance and flags excess bytes. World's
+  existing `guarded_drain` additionally records arbitrary reader/writer/flush
+  exceptions. This strictly limits the persisted destination stream to 2 MiB;
+  it does not limit how many bytes a tool tries to emit.
+- `Probe-NativeJob.cs::Start` takes output **paths**, calls `OpenLog` with
+  `CREATE_NEW`, and places those file handles directly in both `STARTUPINFO`
+  and the three-handle inheritance list. It exposes no reader stream, pipe
+  handle, drain callback or log-cap parameter. Its use of `CreateProcessW`
+  does not inspect `ProcessStartInfo.RedirectStandardOutput` or
+  `RedirectStandardError`; setting those properties in a World profile cannot
+  attach the Python reader.
+- `Invoke-H1OwnedStage` calls precisely that `Start` overload. Wrapping `cl.exe`
+  or `link.exe` in the existing Python `Popen` driver would restore the pipes,
+  but make Python the original root. The real `Assert-H1CompilerRoot` rejects
+  that root for both tool identities. Relabeling Python as the compiler would
+  also break the required VCTIP-to-original-tool parent relation. This is not
+  reuse of the qualified direct Compile/Link stages.
+
+Reading or truncating a direct log after creation would only bound a later copy;
+the original file could already exceed 2 MiB. Polling its size has the same
+overshoot gap. Neither is substituted for strict capture. No wrapper, new
+supervisor, shared-policy relaxation or partial launch adapter was added.
+
+The inspected native source has SHA-256
+`ddefa72ff2b98286cd585d1178c13e67dcd646bbcf39d51365660901366c5ca8`,
+matching the source pin in the successful original native-owner witness; that
+receipt also pins the same DLL hash recorded above. Thus this conclusion is
+about the qualified provider's source, not an unrelated current implementation.
+
+If the strict cap and direct-tool identities are both retained, the minimum
+shared capability needed is bounded redirected output in that native owner:
+pipe-backed standard handles without changing atomic original-job creation,
+retained drain state with byte/error/overflow reporting, and a bounded drain
+completion check after descendant closure. H1 must be able to request and check
+that capability before accepting a stage; its default T7 behavior need not
+change. This requires provider-owner work and a newly qualified DLL, not merely
+a World argument change. Its implementation and native fault-injection witness
+are outside this World-only change and have not been performed. Reusing the
+Python reader unchanged would require exposing its input streams to another
+runtime and adding coordination, which is not the smaller route.
+
+Source verification completed: **3 existing bounded-reader tests, 15 existing
+World driver/reader tests and 10 existing T7 Link policy cases passed**. Four
+additional pure calls to the actual H1 root validator accepted direct `cl.exe`
+and `link.exe` identities and rejected the Python-root alternative for each.
+They used synthetic identities only: no native type import, native launch or
+lease. No new test framework was added. The three World failure checkpoints are
+byte-for-byte unchanged in Git, and the result remains **0/24 native World
+fixtures**. The concrete next step is to route this bounded-output capability to
+the shared provider owner for source review; no fourth Run is authorized.
+
 The third attempt's exact Plan command is retained below for provenance. Its
 runtime directory is now occupied and cannot be reused:
 
