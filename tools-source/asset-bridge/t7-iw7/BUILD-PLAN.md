@@ -337,7 +337,7 @@ preserved. No second invocation or candidate execution occurred. The helper
 owner was notified for a source-only include correction; a new plan and review/GO
 are required before any further build. Qualified D2 remains separate and intact.
 
-## Diagnostic Plan B: one-line include correction, not executed
+## Diagnostic Plan B preparation: one-line include correction
 
 Helper commit d1858afa1b665eee05322bcf3316dae58d969873 changes only the include
 to `<json.hpp>`, matching the native tree's existing dependency. Its 16,281-byte
@@ -352,3 +352,41 @@ private paths are rebound in the text bindings. The candidate root
 `runtime/zt-t7-prepatch-b` remains absent. A and its failed evidence are preserved.
 This is preparation only; targeted review, fresh admission and a new coordinator
 GO remain required before the single proposed invocation.
+
+## Diagnostic Plan B result: instrumented build qualified, no runtime probe
+
+Following independent delta review and a new explicit coordinator GO, one B
+invocation ran on 2026-10-12. Fresh admission at 12:37:39 UTC found no competing
+lease/build and unchanged Main identity. Main compiled under /W4 /WX in 5.001
+seconds and Link completed in 2.825 seconds. Each original root exited zero;
+the retained H1 policy qualified telemetry, closed its original job and observed
+zero active members afterward. Total group time was 20.969 seconds. The reused
+two translation units and 51-case name helper were not rebuilt or rerun.
+
+Receipt `runtime/zt-t7-prepatch-b/receipt.json`, SHA256
+a72aceb8828fe5afde79f53d8ab0c4beef711674500e5144997039580a2805d4, records
+Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased, with no
+quarantine. The expected inputs and source bindings passed full postvalidation;
+the new actual compiler dependency report passed the guarded-set check. The
+receipt carries the reviewed BuildProfile and its exact Helper/Wiring/PreparedMain
+pins. Output before receipt was 164,022,183 bytes. Qualified files under
+`runtime/zt-t7-prepatch-b/link`:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| zonetool-t7.exe | 21,776,384 | 6e304990711282a696a4096ed9482d1430ce2783d67f5bc4983235d18e333526 |
+| zonetool-t7.pdb | 136,998,912 | 102b027f6ec37e3ea5d2e81bbc6f812c11afad85aea40caae5f08feddbf215c2 |
+| zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| zonetool-t7.exp | 3,919 | e30af1a45c774a703ba2713c758ae422a9aae861d7e29da4830a845c59f616df |
+
+Postflight at 12:39:21 UTC found zero leases/build/telemetry processes and
+unchanged Main identity. The persistent host verified the exact receipt and
+absence of AppDomain quarantine, saved its outcome, then exited; its absence
+was verified separately. Failed A/C and qualified D2 remain preserved.
+
+CandidateExecuted and Ready remain false: neither this candidate nor the engine
+was launched. The qualified receipt, EXE pin and BuildProfile were handed to the
+existing diagnostic-launcher workstream for source/metadata preparation only.
+Its separate reviewed launch plan and coordinator GO must precede any runtime
+capture. Compilation proves neither reaching SetProcessDPIAware nor fixed-address
+compatibility, successful catalogue/export, or owner gameplay acceptance.
