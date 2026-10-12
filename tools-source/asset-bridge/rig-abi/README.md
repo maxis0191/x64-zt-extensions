@@ -226,13 +226,16 @@ For future reviewed contexts, the generator interface is `capture.py emit
 `capture.py report --context <same-context.json> --log <bounded-cdb.log>`.
 Keep outputs in ignored runtime; emitting files never grants native GO.
 
-Current checks: 19 synthetic tests pass, including malformed PE/PDB tables,
+Current checks: 20 synthetic tests pass, including malformed PE/PDB tables,
 bounded reads, mismatched symbol ages, context/address injection, unresolved
 gates, one-hit continuity, replay/truncation refusal and name-value categories.
 The initial test run exposed prompt echoes being mistaken for refusal output;
 the parser was corrected to match actual refusal lines and that regression passes.
 Source review also corrected nested breakpoint-string escaping; its roundtrip
 test preserves the inner printf escape, without claiming actual CDB validation.
+The documented `r` destination syntax is now `r $t0 = ...`, with `@$t0` retained
+only in expressions. The destination correction has a source regression test;
+it has not been executed in CDB. See [Microsoft pseudo-register syntax](https://learn.microsoft.com/en-us/windows-hardware/drivers/debuggercmds/pseudo-register-syntax).
 PE/PDB matching above is a separate current read-only check. CDB has not executed
 these fragments. No engine write, rendering, semantic acceptance or gameplay
 result is claimed.

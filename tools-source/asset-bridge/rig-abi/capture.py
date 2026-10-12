@@ -117,8 +117,8 @@ def emit(context):
     # Two parsers: the outer breakpoint string must preserve the inner printf
     # escape. Escape backslashes first, then quotes (C-style command string).
     quoted_hit = hit.replace("\\", "\\\\").replace('"', '\\"')
-    body = (f"r @$t0 = 0x{xs:x}; r @$t1 = 0x{ms:x}; "
-            f"r @$t2 = poi(@$t0+0x58); r @$t3 = poi(@$t1); "
+    body = (f"r $t0 = 0x{xs:x}; r $t1 = 0x{ms:x}; "
+            f"r $t2 = poi(@$t0+0x58); r $t3 = poi(@$t1); "
             f'.printf "{prefix}ARM pid=%I64x tid=%I64x rip=%I64x xs=%I64x ms=%I64x '
             'old=%I64x name_before=%I64x\\n", '
             '@$tpid, @$tid, @rip, @$t0, @$t1, @$t2, @$t3; '

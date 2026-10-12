@@ -37,6 +37,11 @@ def witness(new=0x40000, now=0x40000):
 
 
 class CaptureTests(unittest.TestCase):
+    def test_register_destinations_use_documented_r_syntax(self):
+        arm = capture.emit(context())["arm.cdb"]
+        self.assertIn("r $t0 =", arm)
+        self.assertNotIn("r @$", arm)
+
     def test_checked_in_context_cannot_emit(self):
         template = capture.load_context(Path(__file__).with_name("context.template.json"))
         with self.assertRaises(ValueError):
