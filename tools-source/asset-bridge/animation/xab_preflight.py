@@ -255,7 +255,13 @@ def main(argv=None):
     try:
         report = inspect(bounded_read(args.xab), args.game)
         if args.skeleton:
-            skeleton = json.loads(bounded_read(args.skeleton))
+            # Python's integer digit guard raises plain ValueError, not
+            # JSONDecodeError. Catch it only around JSON parsing so an unrelated
+            # implementation ValueError is not disguised as malformed input.
+            try:
+                skeleton = json.loads(bounded_read(args.skeleton))
+            except ValueError as exc:
+                raise Invalid('invalid skeleton JSON: ' + str(exc)) from exc
             report['skeleton_binding'] = bind_skeleton(report, skeleton)
         print(json.dumps({'status': 'envelope-pass', **report}, indent=2, allow_nan=False))
         return 0

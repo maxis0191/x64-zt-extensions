@@ -279,6 +279,19 @@ class PreflightTests(unittest.TestCase):
             self.assertEqual(run.returncode, 2)
             self.assertEqual(json.loads(run.stdout)['status'], 'invalid')
 
+    def test_cli_hostile_integer_json_is_structured_invalid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source, rig = Path(tmp) / 'probe.xab', Path(tmp) / 'rig.json'
+            source.write_bytes(synthetic())
+            rig.write_text('{"num_client_bones":' + '9' * 5000 + '}')
+            cmd = [sys.executable, '-B', '-X', 'int_max_str_digits=4300',
+                   str(Path(preflight.__file__)), str(source), '--game', 'iw7', '--skeleton', str(rig)]
+            run = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            self.assertEqual(run.returncode, 2, run.stdout + run.stderr)
+            self.assertEqual(json.loads(run.stdout)['status'], 'invalid')
+            self.assertIn('invalid skeleton JSON', json.loads(run.stdout)['error'])
+            self.assertNotIn('Traceback', run.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()
