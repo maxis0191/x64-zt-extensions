@@ -6,6 +6,7 @@ from pathlib import Path
 import random
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import trigger_bridge as bridge
 
@@ -165,6 +166,46 @@ class TriggerBridgeTest(unittest.TestCase):
                 bridge.write_conversion('relative.json', output_path)
             with self.assertRaises(ValueError):
                 bridge.write_conversion(input_path, folder / 'misleading.ents.data')
+
+    def test_windows_aliases_refused_before_io(self):
+        names = ('existing.bin:review.json', 'existing.bin::$DATA',
+                 'NUL.json', 'con', 'PrN.txt', 'AUX.json', 'COM1.json', 'LPT9.json',
+                 'COM\u00b9.json', 'LPT\u00b2.json', 'COM\u00b3.json', 'CONIN$.json', 'CONOUT$.json',
+                 'CLOCK$.json', 'CON .json', 'review.json.', 'review.json ',
+                 'folder.\\review.json', 'folder \\review.json', 'a?b.json', 'a\x00b.json')
+        paths = [str(ROOT / name) for name in names]
+        paths.extend((r'\\?\C:\temp\review.json', r'\\.\C:\temp\review.json',
+                      r'\\server\share\review.json'))
+        for path in paths:
+            for exists in (True, False):
+                with self.subTest(path=path, input=exists), \
+                     patch.object(Path, 'lstat', side_effect=AssertionError('I/O before rejection')), \
+                     patch.object(Path, 'stat', side_effect=AssertionError('I/O before rejection')), \
+                     patch.object(Path, 'open', side_effect=AssertionError('I/O before rejection')):
+                    with self.assertRaises(ValueError):
+                        bridge.checked_path(path, exists)
+                    with self.assertRaises(ValueError):
+                        bridge.write_conversion(path, ROOT / 'unused.json')
+                    with self.assertRaises(ValueError):
+                        bridge.write_conversion(ROOT / 'unused.json', path)
+
+    def test_ntfs_ads_does_not_mutate_existing_file(self):
+        with tempfile.TemporaryDirectory(prefix='.trigger-test-', dir=ROOT) as temporary:
+            folder = Path(temporary).resolve()
+            self.assertEqual(folder.parent, ROOT)
+            input_path, host = folder / 'in.json', folder / 'existing.bin'
+            input_path.write_text(json.dumps(original()))
+            host.write_bytes(b'untouched original host file')
+            before = host.read_bytes()
+            ads = Path(str(host) + ':review.json')
+            with self.assertRaisesRegex(ValueError, 'ADS'):
+                bridge.write_conversion(input_path, ads)
+            self.assertEqual(host.read_bytes(), before)
+            self.assertFalse(ads.exists())
+            # Invalid input spellings must be rejected before opening a stream.
+            with self.assertRaisesRegex(ValueError, 'ADS'):
+                bridge.write_conversion(ads, folder / 'out.json')
+            self.assertFalse((folder / 'out.json').exists())
 
 
 if __name__ == '__main__':

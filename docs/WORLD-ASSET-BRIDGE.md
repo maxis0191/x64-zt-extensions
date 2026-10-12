@@ -120,6 +120,10 @@ Validation is deliberately narrow and bounded:
   regular input and a new `.json` output. Traversal and link/reparse ancestry
   are refused; existing output is never overwritten. This is cooperative
   local tooling, not a hostile-filesystem race sandbox.
+  On Windows only ordinary local drive-letter paths are supported. Both paths
+  are checked lexically before filesystem I/O: alternate streams (`:` outside
+  the drive), reserved device names, device/UNC namespaces, control/invalid
+  filename characters and components ending in a dot or space are refused.
 
 `fixtures/original-trigger.json` is handcrafted original data: one axis-aligned
 box centered at `(12.5, -4, 8)`, half extents `(16, 8, 4)`, one model/hull and
@@ -197,3 +201,15 @@ occurred. The first coordinated native step for this limited patch is compiling
 the pinned converter and exercising supported/refused trigger flags after the
 parent chat grants native GO. The broader original-map blocker remains world
 collision authoring plus the unresolved world dependencies above.
+
+### Independent-review correction: NTFS streams
+
+Review of the first commit (`b9a1f083`) found that exclusive creation (`xb`)
+still allowed `existing.bin:review.json`: NTFS can create a named stream on an
+existing host file. The original create-only assertion was therefore too broad.
+The path guard now rejects ADS and Windows filename/device aliases before any
+filesystem I/O, for input and output alike. Twelve tests pass after correction,
+including a temporary existing host file whose bytes remain unchanged and whose
+named output stream remains absent. Mocked filesystem calls also establish
+that all enumerated invalid spellings are rejected before access. No retail or
+provider file was involved in the reproduction tests.

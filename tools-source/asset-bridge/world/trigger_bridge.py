@@ -7,7 +7,8 @@ import argparse
 import hashlib
 import json
 import math
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+import re
 import stat
 import struct
 
@@ -144,9 +145,30 @@ def parse(data):
         raise ValueError('Invalid/beyond-depth JSON input') from error
 
 
-def checked_path(value, exists):
+def lexical_path(value):
+    # Validate the Windows spelling before any filesystem call: 'xb' does not
+    # prevent creation of an alternate stream on an existing NTFS file.
+    windows = PureWindowsPath(value)
+    require(not windows.drive or re.fullmatch(r'[A-Za-z]:', windows.drive),
+            'Only ordinary local drive paths supported; device/UNC namespaces refused')
+    reserved = {'CON', 'PRN', 'AUX', 'NUL', 'CLOCK$', 'CONIN$', 'CONOUT$'}
+    reserved.update(prefix + digit for prefix in ('COM', 'LPT') for digit in '123456789\u00b9\u00b2\u00b3')
+    for component in windows.parts:
+        if component == windows.anchor:
+            continue
+        require(component not in ('.', '..') and not component.endswith(('.', ' ')),
+                'Trailing dot/space or traversal filename aliases refused')
+        require(not any(ord(char) < 32 or char in ':<>"|?*' for char in component),
+                'ADS, control characters and Windows filename aliases refused')
+        require(component.split('.')[0].rstrip(' ').upper() not in reserved,
+                'Reserved Windows device names refused')
     path = Path(value)
     require(path.is_absolute() and '..' not in path.parts, 'Absolute nontraversing paths required')
+    return path
+
+
+def checked_path(value, exists):
+    path = lexical_path(value)
     for part in (path, *path.parents) if exists else path.parents:
         info = part.lstat()
         require(not stat.S_ISLNK(info.st_mode) and not (getattr(info, 'st_file_attributes', 0) & 0x400),
@@ -159,6 +181,8 @@ def checked_path(value, exists):
 
 
 def write_conversion(input_path, output_path):
+    # Reject either invalid spelling before even querying the other path.
+    input_path, output_path = lexical_path(input_path), lexical_path(output_path)
     source = checked_path(input_path, True)
     destination = checked_path(output_path, False)
     require(destination.suffix == '.json', 'Fresh .json output required; this is not a native asset writer')
