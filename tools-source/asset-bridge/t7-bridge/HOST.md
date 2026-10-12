@@ -100,6 +100,54 @@ code**, then an **independent process/scheduler absence witness**. Neither proof
 is inferred by this helper or replaced by its sidecar. Native exit 0 and a safely
 closed host do not establish catalogue success, compatibility or owner acceptance.
 
+## Explicit closure of a failed incident
+
+A terminated engine can have a closed native tree and released lease without
+having completed input revalidation. `-Finish` still refuses that receipt. After
+review of the specific failure, use the separate `-CloseIncident` action in the
+**same retained host**, with the same five contract parameters and the exact
+SHA-256 of its small, preserved `Failed` receipt:
+
+```powershell
+& $entry @parameters -CloseIncident -IncidentReceiptSHA256 $reviewedFailedReceiptSHA256
+```
+
+This action requires `Status=Failed`, boolean `InputsReverified=false`, confirmed
+tree closure and lease release, and no receipt or in-memory native quarantine.
+It reuses the normal checks for intact source guards, host start/return/attempt
+proofs, native lifetime, exact original/alias mappings, Main, preserved processes,
+metadata and actual file IDs. Remaining leases, native/root/ambiguous/heavy
+processes, clients, observed direct children of the original host/native PID or
+unavailable process ancestry refuse closure. No native owner is adopted or killed.
+
+Only the bounded receipt JSON is newly hashed and guarded. No game input or
+generated opaque output is read, hashed, accepted or deleted. The original receipt
+keeps its failure status and `InputsReverified=false`; fresh metadata observations
+are not a substitute for payload revalidation or a successful catalogue.
+
+Two create-new sidecars sit outside the RunRoot:
+
+- `.host-incident-preflight.json` records the failed receipt pin and closure checks
+  before any wrapper guard is disposed.
+- `.host-incident-postflight.json` records actual wrapper handle closure and closure
+  of the temporary receipt guard. Native/runner handle disposal is explicitly
+  source-plus-receipt evidence, not a fresh enumeration of the inaccessible owner.
+
+Only after all its own guards are closed and the second proof is published does
+the retained state become `Phase=IncidentClosed`, `IncidentCanExit=true`.
+Normal `CanExit` stays false, and the runner error and normal closure error remain.
+The action does not exit the host. The operator must record a separately approved
+real incident exit (for example, code 2), followed by an independent absence
+witness. Neither an existing sidecar nor an absent PID fabricates that exit code.
+
+Publication starts a single incident closure attempt. Any publication or disposal
+failure leaves `IncidentCanExit=false` and `Phase=IncidentFailed`, including a
+failure after guards have already closed or a sidecar has appeared. Both actions
+then refuse re-entry; retain the host and evidence for separate diagnosis. Earlier
+validation refusals keep all wrapper guards open. No automatic retry, relaunch,
+source-function replacement, lease deletion or receipt rewrite is provided.
+Existing incident sidecars also block reuse of the RunRoot by a fresh invocation.
+
 ## Source-only validation evidence
 
 `Test-T7CatalogueHost.ps1` uses synthetic small text fixtures and fault injection.
@@ -120,3 +168,13 @@ of any future collection policy. Disposal failure keeps `CanExit` false even
 after postflight publication. Its default-entry integration uses
 a stub runner that rejects runtime. No game, native type or resource lease starts.
 Actual host/engine execution remains a future, separately approved validation.
+
+`Test-T7CatalogueHostIncident.ps1` uses real small JSON receipts, immutable text
+guards and create-new sidecars with synthetic process/metadata/file-ID providers.
+It verifies failed closure for varying input counts, receipt preservation, the
+unchanged normal refusal, identity/quarantine/lease/process/metadata refusals,
+partial publication and disposal failures, and actual entry parameter binding.
+Receipt hashing is constrained to the synthetic receipt; no game payload, native
+runtime provider, admission or engine execution is used. These tests do not
+retroactively change the frozen failed catalogue20 receipt or its separately
+reviewed incident recovery.

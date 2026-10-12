@@ -5,7 +5,10 @@ param(
     [Parameter(Mandatory)][string]$RunRoot,[Parameter(Mandatory)][string]$HostContractPath,
     [Parameter(Mandatory)][string]$HostContractSHA256,
     [Parameter(Mandatory,ParameterSetName='Run')][switch]$Run,
-    [Parameter(Mandatory,ParameterSetName='Finish')][switch]$Finish
+    [Parameter(Mandatory,ParameterSetName='Finish')][switch]$Finish,
+    [Parameter(Mandatory,ParameterSetName='CloseIncident')][switch]$CloseIncident,
+    [Parameter(Mandatory,ParameterSetName='CloseIncident')]
+    [ValidatePattern('\A[0-9a-f]{64}\z')][string]$IncidentReceiptSHA256
 )
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 if(!$IsWindows -or [IntPtr]::Size -ne 8 -or $PSVersionTable.PSVersion.Major -lt 7){throw 'Windows x64 PowerShell 7 required.'}
@@ -13,18 +16,20 @@ $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 . (Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1')
 . (Join-Path $PSScriptRoot 'T7CatalogueHost.Core.ps1')
 $existing=[AppDomain]::CurrentDomain.GetData('IW7.T7CatalogueHost')
-if($Finish){
+if($Finish -or $CloseIncident){
     if(!$existing -or $existing.PlanPath -cne $PlanPath -or $existing.PlanSHA256 -cne $PlanSHA256 -or
        $existing.RunRoot -cne $RunRoot -or $existing.ContractPath -cne $HostContractPath -or
-       $existing.ContractSHA256 -cne $HostContractSHA256){throw 'Finish requires the original in-memory host contract.'}
+       $existing.ContractSHA256 -cne $HostContractSHA256){throw 'Closure requires the original in-memory host contract.'}
     . (Join-Path $repo 'ops/Resource-Scheduler.Core.ps1')
     . (Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1')
     . (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
-    Complete-T7CatalogueHost $existing
+    if($CloseIncident){Complete-T7CatalogueHostIncident $existing $IncidentReceiptSHA256}
+    else{Complete-T7CatalogueHost $existing}
     return
 }
 if($existing){throw 'Host already consumed; no Run re-entry or retry.'}
-foreach($suffix in @('.host-start.json','.host-return.json','.host-postflight.json')){
+foreach($suffix in @('.host-start.json','.host-return.json','.host-postflight.json',
+    '.host-incident-preflight.json','.host-incident-postflight.json')){
     if(Test-Path -LiteralPath ($RunRoot+$suffix)){throw 'Host evidence already exists; no RunRoot retry.'}
 }
 $hostState=Open-T7CatalogueHostInputs $PlanPath $PlanSHA256 $RunRoot $HostContractPath $HostContractSHA256 $PSCommandPath $repo
