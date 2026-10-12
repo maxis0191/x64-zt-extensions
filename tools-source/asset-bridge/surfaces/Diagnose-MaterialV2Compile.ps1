@@ -33,16 +33,17 @@ $shared=$parameters.SharedRepo
 . "$shared/ops/Resource-Scheduler.Core.ps1"
 . "$shared/sdk/modding/BeaconFF.Core.ps1"
 . "$PSScriptRoot/MaterialV2.Core.ps1"
+. "$PSScriptRoot/MaterialV2.Compiler.ps1"
 $RunRoot=$basePlan.RunRoot
 $reader=Join-Path $PSScriptRoot 'MaterialV2.JobMembers.cs'
-$hashes=@($basePlan.HashInputs)+@([pscustomobject]@{Path=$reader;SHA256=(Get-FileHash -LiteralPath $reader).Hash},
-    [pscustomobject]@{Path=$parameterFile;SHA256=$ParametersSHA256})
+$hashes=@($basePlan.HashInputs)+@([pscustomobject]@{Path=$parameterFile;SHA256=$ParametersSHA256})
+$compilerPolicy=$basePlan.CompilerClosure
 $python=(Get-Command python -ErrorAction Stop).Source
 if(@($hashes|Where-Object Path -IEQ $python).Count -ne 1){throw 'Exact planned Python source binding required.'}
 $plan=[ordered]@{Schema='iw7.material-v2-compile-diagnostic-plan/1';RunRoot=$RunRoot;Phases=@('compile');
     PhysicalBytes=$basePlan.WriterPhysicalBytes;CommitBytes=$basePlan.WriterCommitBytes;TimeoutSeconds=240;OuterDeadlineSeconds=245;
     DrainMilliseconds=2000;CleanupMilliseconds=15000;MemberLogBytes=2MB;NativeLogBytesPerStream=2MB;NewOutputStopBytes=64MB;
-    Compiler=$basePlan.Compiler;CompilerArguments=$basePlan.CompilerArguments;Python=$python;HashInputs=$hashes;
+    Compiler=$basePlan.Compiler;CompilerArguments=$basePlan.CompilerArguments;CompilerClosure=$compilerPolicy;Python=$python;HashInputs=$hashes;
     WriterExecution=$false;FFExecution=$false;StockStaging=$false;MainChanges=$false;Ready=$false}
 if(!$Run){$plan|ConvertTo-Json -Depth 25;return}
 if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7.MaterialDiagnostics.JobMembers' -as [type])){throw 'Fresh diagnostic PowerShell host required.'}
@@ -75,6 +76,7 @@ try {
     $owner=[IW7.CommunityBuild.BuildJob]::Prepare($python,$argsText,$writerRoot);$closed=$false
     $identity=Get-BeaconJobIdentity $owner $python 'compile';$state.Phase=$identity
     $identity.SpecSHA256=$specHash;$identity.NativeExecutableSHA256=$compilerHash
+    $identity.CompilerCompletion=[ordered]@{CompilerIdentity=$null;Completed=$false}
     Save-MaterialJobObservation $owner $null 'SuspendedBeforeResume' $memberStream $state
     Save-DiagnosticState
     $started=Start-MaterialV2OwnedPhase $owner $lease.Token
@@ -82,6 +84,12 @@ try {
     Wait-MaterialV2OwnedPhase $owner $identity $started.StartedMonotonicMs 240 {
         param($snapshot,$changed)
         Save-MaterialJobObservation $owner $snapshot 'SupervisionPoll' $memberStream $state
+        $observation=$state.LastJobObservation.Job
+        Update-MaterialV2CompilerWitness $identity.CompilerCompletion $observation $identity.PID $compilerPolicy
+        if($snapshot.RootExited -and $snapshot.ActiveProcesses -ne 0){
+            $receipt=Read-BeaconJson (Join-Path $logs 'phase.json')
+            $null=Complete-MaterialV2CompilerTelemetry $owner $snapshot $observation $receipt $identity.CompilerCompletion $compilerPolicy
+        }
         if($changed){Save-DiagnosticState}
         if(Test-Path -LiteralPath (Join-Path $RunRoot 'stop.request')){throw 'Coordinator requested owned stop.'}
         Assert-DiagnosticOutputs

@@ -27,6 +27,7 @@ foreach($entry in $pins.PSObject.Properties){
 . "$SharedRepo/sdk/modding/BeaconFF.Core.ps1"
 . "$SharedRepo/tools-source/asset-bridge/common/StockBinding.Core.ps1"
 . "$PSScriptRoot/MaterialV2.Core.ps1"
+. "$PSScriptRoot/MaterialV2.Compiler.ps1"
 $RunRoot=Resolve-IW7BasePath (Join-Path $repo 'runtime') ([IO.Path]::GetRelativePath((Join-Path $repo 'runtime'),[IO.Path]::GetFullPath($RunRoot)))
 if(Test-Path -LiteralPath $RunRoot){throw 'Fresh material-v2 run directory required.'}
 foreach($name in @('PreparedRoot','OriginalWriterRoot','CheckerRoot','ZTSource','CandidateRoot','SharedRepo','StockRoot','VCToolsRoot','WindowsSdkRoot')){
@@ -50,6 +51,11 @@ $sourceArgs=@('source','--prepared',$PreparedRoot,'--writer',$OriginalWriterRoot
 $source=Invoke-MaterialCheck $sourceArgs
 $compiler=Resolve-IW7BasePath $VCToolsRoot 'bin/Hostx64/x64/cl.exe'
 if(!(Test-Path -LiteralPath $compiler -PathType Leaf)){throw 'Installed MSVC x64 compiler required.'}
+$compilerPolicy=Get-MaterialV2CompilerPolicy $compiler
+Assert-BeaconHash $compiler $compilerPolicy.CompilerSHA256
+$null=Resolve-IW7BasePath (Split-Path $compilerPolicy.Telemetry) (Split-Path $compilerPolicy.Telemetry -Leaf)
+Assert-BeaconHash $compilerPolicy.Telemetry $compilerPolicy.TelemetrySHA256
+$hashInputs.Add([pscustomobject]@{Path=$compilerPolicy.Telemetry;SHA256=$compilerPolicy.TelemetrySHA256})
 $writerRoot=Join-Path $RunRoot 'writer';$writer=Join-Path $writerRoot 'material-v2-writer.exe'
 $work=Join-Path $RunRoot 'work';$dump=Join-Path $work ('dump/'+$source.zone)
 $compileArgs=@(Get-MaterialV2CompilerArguments $VCToolsRoot $WindowsSdkRoot $WindowsSdkVersion $ZTSource $PreparedRoot $writerRoot)
@@ -66,7 +72,7 @@ foreach($entry in $inputs){$null=$seen.Add($entry.Relative)}
 foreach($entry in $source.source_files.PSObject.Properties){$hashInputs.Add([pscustomobject]@{Path=(Resolve-IW7BasePath $PreparedRoot $entry.Name);SHA256=$entry.Value.sha256})}
 foreach($entry in $source.writer_interface_hashes.PSObject.Properties){$hashInputs.Add([pscustomobject]@{Path=(Resolve-IW7BasePath $ZTSource $entry.Name);SHA256=$entry.Value})}
 foreach($path in @($StockReceipt,$StockBindingReceipt,$ReviewedStockManifest,$compiler,$python,(Join-Path $PreparedRoot 'material-v2-plan.json'))+
-    @(Get-ChildItem -LiteralPath $PSScriptRoot -File|Where-Object Extension -in '.py','.ps1','.json'|ForEach-Object FullName)){
+    @(Get-ChildItem -LiteralPath $PSScriptRoot -File|Where-Object Extension -in '.py','.ps1','.json','.cs'|ForEach-Object FullName)){
     $hashInputs.Add([pscustomobject]@{Path=$path;SHA256=(Get-FileHash -LiteralPath $path).Hash})
 }
 $budgets=Get-MaterialV2Budgets
@@ -74,13 +80,15 @@ $plan=[ordered]@{Schema='iw7.material-v2-execution-plan/1';RunRoot=$RunRoot;Sour
     StockRoot=$StockRoot;StockBindingReceipt=$StockBindingReceipt;StockBindingReceiptSHA256=$StockBindingReceiptSHA256;
     StockReceiptSHA256=$StockReceiptSHA256;ReviewedStockManifestSHA256=$ReviewedStockManifestSHA256;
     StockContentAndIdentityRecheckPending=$true;StagingCopyBytes=[long](@($inputs|Where-Object Mode -CEQ Copy)|Measure-Object Bytes -Sum).Sum;
-    Compiler=$compiler;CompilerArguments=$compileArgs;HashInputs=$hashInputs.ToArray();SharedHelperPins=$pins;
+    Compiler=$compiler;CompilerArguments=$compileArgs;CompilerClosure=$compilerPolicy;HashInputs=$hashInputs.ToArray();SharedHelperPins=$pins;
     Phases=@('compile','write','build','verify','dump','read');WriterPhysicalBytes=$budgets.WriterPhysicalBytes;WriterCommitBytes=$budgets.WriterCommitBytes;
     FFPhysicalBytes=$budgets.FFPhysicalBytes;FFCommitBytes=$budgets.FFCommitBytes;LogBytesPerStream=2MB;NewOutputStopBytes=64MB;
     OriginalDiffuse=$source.image;RecipientNormal='park_clown_zombie_shoes_n_3e46d100_packed_nog';CPPreload=$false;
     HeavyExecutionAuthorizedByThisPlan=$false;Ready=$false}
 if(!$Run){$plan|ConvertTo-Json -Depth 20;return}
-if('IW7.CommunityBuild.BuildJob' -as [type]){throw 'Fresh PowerShell host required for source-bound BuildJob.'}
+if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7.MaterialDiagnostics.JobMembers' -as [type])){
+    throw 'Fresh PowerShell host required for source-bound job and observer.'
+}
 $candidate=Assert-BeaconCandidate $CandidateRoot $source.builder.receipt_sha256
 if($candidate.SHA256 -ine $source.builder.executable_sha256){throw 'Exact final full-tool executable required.'}
 $state=[ordered]@{Schema='iw7.material-v2-build/1';Work=$work;Inputs=$inputs;Plan=$plan;Status='Preparing';Phases=@();
@@ -109,11 +117,20 @@ function Invoke-MaterialPhase([string]$Phase,[string]$Exe,[string]$Hash,$Argumen
     $script:owner=[IW7.CommunityBuild.BuildJob]::Prepare($python,$argsText,$Cwd);$script:closed=$false
     $identity=Get-BeaconJobIdentity $owner $python $Phase
     $identity.SpecSHA256=$specHash;$identity.NativeExecutableSHA256=$Hash
+    if($Phase -ceq 'compile'){$identity.CompilerCompletion=[ordered]@{CompilerIdentity=$null;Completed=$false}}
     $state.Phases+=,$identity;Save-MaterialState
     $resumed=Start-MaterialV2OwnedPhase $owner $lease.Token
     $identity.StartedUtc=$resumed.StartedUtc;$identity.SchedulerAttached=$resumed.SchedulerAttached;Save-MaterialState
     Wait-MaterialV2OwnedPhase $owner $identity $resumed.StartedMonotonicMs $spec.timeout {
         param($snapshot,$changed)
+        if($Phase -ceq 'compile'){
+            $observation=[IW7.MaterialDiagnostics.JobMembers]::Capture($owner)
+            Update-MaterialV2CompilerWitness $identity.CompilerCompletion $observation $identity.PID $compilerPolicy
+            if($snapshot.RootExited -and $snapshot.ActiveProcesses -ne 0){
+                $receipt=Read-BeaconJson (Join-Path $logs 'phase.json')
+                $null=Complete-MaterialV2CompilerTelemetry $owner $snapshot $observation $receipt $identity.CompilerCompletion $compilerPolicy
+            }
+        }
         if($changed){Save-MaterialState}
         if(Test-Path -LiteralPath (Join-Path $RunRoot 'stop.request')){throw 'Coordinator requested owned stop.'}
         Measure-MaterialOutput
@@ -131,6 +148,7 @@ try {
     foreach($entry in $hashInputs){$guards.Add([IO.File]::Open($entry.Path,'Open','Read','Read'));Assert-BeaconHash $entry.Path $entry.SHA256}
     $null=Invoke-MaterialCheck $sourceArgs
     Add-Type -LiteralPath "$SharedRepo/tools-source/asset-bridge/model/BuildJob.cs"
+    Add-Type -LiteralPath "$PSScriptRoot/MaterialV2.JobMembers.cs"
     Add-Type -LiteralPath "$SharedRepo/ops/hud-lab/HudFileIdentity.cs"
     Save-MaterialState
     $null=Invoke-MaterialPhase compile $compiler (Get-FileHash -LiteralPath $compiler).Hash $compileArgs $writerRoot

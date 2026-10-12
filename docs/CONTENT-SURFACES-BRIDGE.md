@@ -635,6 +635,58 @@ post-compile telemetry closure policy. Failed material A/B and failed diagnostic
 remain separate, unchanged records; a source correction needs its own reviewed,
 newly admitted native witness.
 
+### Source correction: close only witnessed compiler telemetry
+
+Research did not establish a reliable per-compilation environment opt-out for the
+direct cl.exe invocation. The installed official VsDevCmd.bat (SHA256
+C004278E64444BF3524360F960511B5CE7B1D0306910F08A4EBCF1C42FF9BD6D)
+checks VSCMD_SKIP_SENDTELEMETRY only around its Send-VsDevShellTelemetry call;
+this adapter never invokes that setup script. Microsoft's
+[Build Tools opt-out documentation](https://learn.microsoft.com/en-us/visualstudio/ide/visual-studio-experience-improvement-program#registry-settings)
+uses machine registry settings. Those settings are outside this local correction
+and do not establish that no uploader process is created.
+[Microsoft BuildXL](https://github.com/microsoft/BuildXL/blob/953d3f340a1c4e40eedb985a3d7eb95ae204cb79/Public/Sdk/Experimental/Msvc/VisualCpp/visualCpp.dsc#L47-L52)
+explicitly treats vctip as a surviving compiler telemetry child without meaningful
+build outputs. Its own breakaway policy is not adopted here: our child stays
+inside the original non-breakaway job.
+
+The local MaterialV2.Compiler.ps1 implements the separately authorized alternative.
+For the compile phase only, it records the live compiler image, PID, creation time
+and direct parentage to the original Python root through the native observer.
+Before accepting post-compile cleanup, the original root must be observed exited0,
+the native receipt must be compile/exit0 with the pinned compiler hash and the
+independently witnessed compiler PID, and the exact original job must list one
+remaining member. That member must be the pinned sibling vctip image, with complete
+native identity, original-job membership, direct parentage to the witnessed
+compiler and a consistent creation timestamp. Merely naming vctip or reusing a
+PID is insufficient. Unobserved compilers, missing/error metadata, another
+descendant, nonzero/unknown exit, multiple members and changed image hashes refuse
+accepted cleanup.
+
+Both compiler and vctip are hash-bound read-guarded source inputs. The full builder
+now also binds/loads the local observer under its existing writer admission;
+the diagnostic shares the same policy. Only after all checks does the existing
+Stop-MaterialV2OwnedPhase stop the original job and confirm its closure. Supervision
+then continues and must observe a fresh root-exit0/Active0 sample; the ordinary
+native-receipt gate still runs before phase acceptance. Evidence records the
+compiler witness, final member list, accepted-cleanup action and cleanup result.
+There is no process termination by collected PID, job breakaway, global process
+stop, registry change or environment mutation.
+
+The4/6GiB writer and8/11GiB FF budgets,245/35-second phase limits,2000ms drain,
+15000ms cleanup, output caps and reservation-retention conditions remain unchanged.
+Time consumed by exact-job cleanup remains subject to the existing drain/phase
+decision; a late or unconfirmed close cannot pass. Failed A/B/diagnostic-A states
+are not rewritten or reclassified.
+
+Source verification passes62 targeted compiler-closure checks,23 observer/source
+checks, the existing PowerShell drain/registration suite and55 Python tests. The
+new Python fixture confirms CL and VSCMD_SKIP_SENDTELEMETRY values are forwarded
+unchanged in a copied child environment, only PATH is locally prepended as before,
+and the parent environment stays identical. This is **not** evidence that either
+variable disables vctip. No corrected native compile/FF execution has occurred;
+the source correction requires independent review and a fresh explicit GO.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual

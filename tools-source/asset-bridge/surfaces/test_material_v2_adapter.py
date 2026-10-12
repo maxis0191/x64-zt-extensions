@@ -160,6 +160,24 @@ class MaterialV2AdapterTests(unittest.TestCase):
             self.assertEqual(result["phase"], "write")
             self.assertEqual(result["executable_sha256"], spec["sha256"])
 
+    def test_compile_environment_is_a_scoped_copy_without_unproved_telemetry_override(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = self.spec(Path(tmp))
+            spec.update(phase="compile", timeout=240)
+            inherited = {"PATH": "parent-path", "CL": "/parent-option",
+                         "VSCMD_SKIP_SENDTELEMETRY": "parent-value"}
+            process = mock.Mock(pid=37, returncode=0, stdout=io.BytesIO(), stderr=io.BytesIO())
+            process.poll.return_value = 0
+            with mock.patch.dict(phase.os.environ, inherited, clear=True), \
+                    mock.patch.object(phase.subprocess, "Popen", return_value=process) as launch:
+                self.assertEqual(phase.run(spec, lambda s,d,e: None), 0)
+                env = launch.call_args.kwargs["env"]
+                self.assertIsNot(env, phase.os.environ)
+                self.assertEqual(env["CL"], inherited["CL"])
+                self.assertEqual(env["VSCMD_SKIP_SENDTELEMETRY"], inherited["VSCMD_SKIP_SENDTELEMETRY"])
+                self.assertEqual(env["PATH"], str(Path(spec["exe"]).parent) + phase.os.pathsep + inherited["PATH"])
+                self.assertEqual(dict(phase.os.environ), inherited)
+
     def test_tampered_executable_never_starts_even_mock_process(self):
         with tempfile.TemporaryDirectory() as tmp:
             spec = self.spec(Path(tmp))
