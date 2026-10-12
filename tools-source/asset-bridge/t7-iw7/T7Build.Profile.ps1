@@ -1,6 +1,15 @@
 # Only the fixed T7 artifact/deadline profile. Original-job ownership, compiler
 # telemetry qualification, process identity, stop and quarantine remain H1 code.
+$script:T7H1Deadline=${function:Assert-H1Deadline}
+function Assert-H1Deadline($Started,[int]$Seconds) {
+    # Also covers H1's own check immediately before native creation/start and
+    # its checks after expensive observations. Never restart the group clock.
+    & $script:T7H1Deadline $script:T7GroupStarted 600
+    & $script:T7H1Deadline $Started $Seconds
+}
+
 function Open-T7Pin($Pin,$Context) {
+    Assert-H1Deadline $script:T7GroupStarted 600
     Assert-H1Path $Pin.Path
     if($Pin.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or $Pin.Bytes -le 0 -or $Pin.Bytes -gt 256MB){throw 'Invalid T7 input/artifact pin.'}
     $stream=[IO.FileStream]::new($Pin.Path,'Open','Read','Read')
@@ -24,6 +33,7 @@ $script:T7H1Budget=${function:Test-H1Budget}
 function Test-H1Budget($Plan,$State) {
     Assert-H1Deadline $script:T7GroupStarted $Plan.GroupDeadlineSeconds
     & $script:T7H1Budget $Plan $State
+    Assert-H1Deadline $script:T7GroupStarted $Plan.GroupDeadlineSeconds
 }
 
 function Get-H1CompilerArtifacts($Plan,$Context) {
@@ -36,6 +46,7 @@ function Get-H1CompilerArtifacts($Plan,$Context) {
         $limit=if($script:T7CurrentStage.Stage -ceq 'Link'){192MB}else{32MB}
         if($item.Length -le 0 -or $item.Length -gt $limit){throw 'T7 stage artifact absent/oversized.'}
         $pin=[pscustomobject]@{Path=$path;Bytes=$item.Length;SHA256=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()}
+        Assert-H1Deadline $script:T7GroupStarted $Plan.GroupDeadlineSeconds
         Open-T7Pin $pin $Context
         $pin
     }

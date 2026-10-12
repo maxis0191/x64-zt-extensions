@@ -81,8 +81,11 @@ try {
     # No binary contents are read until the one account-wide reservation exists.
     foreach($pin in @($plan.Inputs)+@($plan.Bindings|Where-Object {!$_.IsText})){Open-T7Pin $pin $context}
     $null=[Reflection.Assembly]::LoadFrom($plan.JobAssembly)
+    Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
     Add-Type -LiteralPath $plan.ObserverSource
+    Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
     foreach($stage in $plan.Stages) {
+        Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
         if(!$context.Closed){throw 'Previous original job not closed.'}
         $script:T7CurrentStage=$stage
         $stageRoot=Join-Path $plan.RunRoot $stage.Name
@@ -95,6 +98,7 @@ try {
         $image=if($stage.Stage -ceq 'Probe'){@($state.Stages[0].Artifacts|Where-Object Path -CEQ $stage.Image)[0]}
                else{@($plan.Bindings|Where-Object Path -CEQ $stage.Image)[0]}
         $start=New-T7Start $plan $stage $stageRoot
+        Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
         Invoke-H1OwnedStage $plan $stageState $context $start $image.SHA256 $stageRoot $stageStarted
         $stageState.Artifacts=@(Get-H1CompilerArtifacts $plan $context)
         if($stageState.CompilerTelemetry.Completed) {
@@ -116,21 +120,46 @@ try {
         $state.MaxObservedOutputBytes=[math]::Max($state.MaxObservedOutputBytes,$stageState.MaxObservedOutputBytes)
     }
     foreach($pin in $plan.Inputs){Open-T7Pin $pin $context}
-    foreach($pin in $plan.Bindings){$guard=Open-H1Pin $pin;try{}finally{$guard.Dispose()}}
+    foreach($pin in $plan.Bindings){$guard=Open-H1Pin $pin;try{}finally{$guard.Dispose()};Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds}
     Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
     $state.ElapsedMs=(Get-H1Clock)-$script:T7GroupStarted
-    $state.InputsReverified=$true;$state.CandidateExecuted=$false;$state.Status='Passed'
+    $state.InputsReverified=$true;$state.CandidateExecuted=$false
 }catch{
     $failure=$_
     if($state){$state.Status='Failed';$state.Error=$_.Exception.Message}
 }finally{
     if($state){Complete-H1Stage $context $state}
     if($launcher -and $null -ne $priority){try{$launcher.PriorityClass=$priority}catch{if(!$failure){$failure=$_};$state.Status='Failed'}}
+    if($context.Closed -and !$context.Lease){foreach($guard in $guards){$guard.Dispose()};$guards.Clear()}
     if($state -and $created) {
+        try {
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            if(!$failure -and $context.Closed -and !$context.Lease){$state.Status='Passed'}
+        }catch{
+            if(!$failure){$failure=$_}
+            if($state.Status -cne 'Quarantined'){$state.Status='Failed'}
+            $state.GroupDeadlineError=$_.Exception.Message
+        }
+        $state.ElapsedMs=(Get-H1Clock)-$script:T7GroupStarted
         $state.FinishedUtc=[datetime]::UtcNow.ToString('o')
         try{Write-H1Receipt $plan $state $plan.RunRoot}catch{if(!$failure){$failure=$_};Write-Warning $_.Exception.Message}
+        if(!$failure) {
+            try{Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds}
+            catch {
+                $failure=$_;$state.Status='Failed';$state.GroupDeadlineError=$_.Exception.Message
+                $state.ElapsedMs=(Get-H1Clock)-$script:T7GroupStarted
+                # A slow publication must not leave a canonical Passed receipt.
+                # Preserve the late attempt, then publish failure diagnostics.
+                try {
+                    $receipt=Join-Path $plan.RunRoot 'receipt.json'
+                    $late=Join-Path $plan.RunRoot 'receipt.deadline-exceeded.json'
+                    Assert-H1Path $receipt;Assert-H1Path $late
+                    [IO.File]::Move($receipt,$late)
+                    Write-H1Receipt $plan $state $plan.RunRoot
+                }catch{Write-Warning ('Late receipt failure: '+$_.Exception.Message)}
+            }
+        }
     }
-    if($context.Closed -and !$context.Lease){foreach($guard in $guards){$guard.Dispose()};$guards.Clear()}
 }
 if($failure){throw $failure}
 if(!$state.LeaseReleased -or $state.Status -cne 'Passed'){throw 'Build did not close and release successfully.'}

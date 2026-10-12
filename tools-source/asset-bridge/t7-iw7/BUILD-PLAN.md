@@ -76,16 +76,42 @@ each compilation must be contained in the guarded input/binding set; an extra
 include refuses acceptance. The plan is an expected dependency closure until
 this actual compiler evidence exists, not a claim that T7 has been compiled.
 
-Plan B is `runtime/t7-build-plan-b/build-plan.local.json`, SHA256
-3ae75e8139c60f30b8ac37c55be731cef3297444cec752a8cce8850a173f6352.
+Plan B remains preserved at `runtime/t7-build-plan-b/build-plan.local.json`,
+SHA256 3ae75e8139c60f30b8ac37c55be731cef3297444cec752a8cce8850a173f6352,
+but is superseded by the deadline correction below. Plan C is
+`runtime/t7-build-plan-c/build-plan.local.json`, SHA256
+422e79898fa2b16defc8193182fe146e2db5d73aeb4516c2bd2aaf87c409c4de.
 Its default check passed with 1,073 expected input pins, no missing pins,
 no native types, no lease and no candidate root. The 32 Python source/command
 tests pass against the pinned tlogs; PowerShell parsing also passes. The five
 new tests cover ordered 410-object reuse, PCH/precision separation, macro line
 integrity and rejection of altered command contracts. The prior 27 source tests
 cover catalogue/export rules. No native name-helper/three-TU/link result is
-claimed here; the conversion owner is checking whether an exactly qualified
-51-case helper already exists before the coordinator approves execution.
+claimed here. The conversion owner confirms no exactly qualified 51-case helper
+exists; the helper compile/probe stages therefore remain necessary.
+
+## Review correction: the 600-second boundary
+
+The lifecycle reviewer reproduced two gaps in Plan B: provider loading could
+cross 600 seconds before a stage started, and finalization at 599 seconds could
+finish at 602 seconds while retaining Passed. The profile now applies the one
+original group clock to H1's own stage checks as well as its polling budget.
+The runner explicitly checks after LoadFrom/Add-Type and immediately before each
+stage, and checks final cleanup, lease release, priority restoration and guard
+release before assigning Passed. No second time window is started. Existing
+five-second failure cleanup and quarantine are unchanged and still execute
+after the group deadline.
+
+A late receipt publication is also rejected: its attempt is retained under
+`receipt.deadline-exceeded.json` and the canonical receipt records failure.
+`Test-T7BuildDeadline.ps1` executes the real H1 stage function and the actual
+runner finally block with an injected clock and fake finalization/receipt
+functions. Three regressions pass: no owner creation/start at 600001 ms;
+599000-to-602000 finalization still cleans up but cannot publish Passed; and a
+late receipt cannot remain a canonical Passed result. These tests start no
+native process, load no native provider and acquire no lease. They create only
+tiny ignored receipt fixtures. Plan C has new source/provider bindings; neither
+Plan A nor Plan B is authorized for execution.
 
 Next: independent source/command/deadline review, then a coordinator GO for this
 exact plan. First T7 engine boot/export remains a separate compatibility
