@@ -142,6 +142,9 @@ def prepare(zt_root, output, wav=None, attest_original=False, write_source=False
         require(result["errors"] == 0, "existing content preflight refused prepared source")
         require(len(result["findings"]) == 1 and result["findings"][0]["code"] == "sab_build_and_playback",
                 "unexpected content preflight findings")
+        inspected = (alias_path, "soundbank/" + BANK + ".json", "sound_assets/" + SAMPLE + ".flac")
+        expected_preflight = {name: report["source_files"][name] for name in inspected}
+        require(result["files"] == expected_preflight, "preflight bytes differ from prepared inventory")
         preflight = encoded(result)
         report["source_files"]["content-preflight.json"] = {"bytes": len(preflight), "sha256": digest(preflight)}
         manifest = encoded(report)
@@ -149,6 +152,14 @@ def prepare(zt_root, output, wav=None, attest_original=False, write_source=False
                 "total prepared source exceeds 512 KiB")
         with (output / "content-preflight.json").open("xb") as stream:
             stream.write(preflight)
+        # Re-read every prepared file, including those outside the Inspector's
+        # dependency subset, before publishing a success manifest. Never rewrite
+        # the expected inventory to legitimize a changed file.
+        final_inputs = Inputs(output)
+        for name, expected in report["source_files"].items():
+            actual = final_inputs.read(name, CAP)
+            require(len(actual) == expected["bytes"] and digest(actual) == expected["sha256"],
+                    "prepared file changed before manifest: " + name)
         # A final manifest is evidence of all source checks completing. A failed
         # partial directory is retained and cannot be overwritten or reused.
         with (output / "sound-source.json").open("xb") as stream:

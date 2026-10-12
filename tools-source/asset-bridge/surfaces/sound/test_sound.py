@@ -175,6 +175,44 @@ class SoundTests(unittest.TestCase):
                 prep.prepare(root, out, write_source=True)
             self.assertFalse(out.exists())
 
+    def test_alias_mutation_before_preflight_refuses_success_manifest(self):
+        fields = prep.parse_json((prep.SURFACES / "source_contract.json").read_bytes())["alias_csv_fields"]
+        original_inspector = prep.Inspector
+        with tempfile.TemporaryDirectory() as root, patch.object(prep, "contract", return_value=(fields, {})):
+            out = Path(root) / "source"
+
+            class MutatingInspector(original_inspector):
+                def soundbank(self, name):
+                    path = out / ("sound/" + prep.BANK + ".aliases.csv")
+                    path.write_bytes(path.read_bytes().replace(b",0.5,0.5,", b",0.2,0.2,"))
+                    return super().soundbank(name)
+
+            with patch.object(prep, "Inspector", MutatingInspector), self.assertRaisesRegex(ValueError, "preflight bytes"):
+                prep.prepare(root, out, write_source=True)
+            self.assertFalse((out / "sound-source.json").exists())
+            self.assertIn(b",0.2,0.2,", (out / ("sound/" + prep.BANK + ".aliases.csv")).read_bytes())
+
+    def test_uninspected_file_mutation_refuses_success_manifest(self):
+        fields = prep.parse_json((prep.SURFACES / "source_contract.json").read_bytes())["alias_csv_fields"]
+        original_inspector = prep.Inspector
+        for relative in ("original/source.wav", "pcm-readback.json", "zone_source/" + prep.ZONE + ".csv",
+                         "sound/" + prep.BANK + ".aliases.csv", "soundbank/" + prep.BANK + ".json",
+                         "sound_assets/" + prep.SAMPLE + ".flac"):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as root, patch.object(prep, "contract", return_value=(fields, {})):
+                out = Path(root) / "source"
+
+                class MutatingInspector(original_inspector):
+                    def soundbank(self, name):
+                        result = super().soundbank(name)
+                        path = out / relative
+                        path.write_bytes(path.read_bytes() + b"changed")
+                        return result
+
+                with patch.object(prep, "Inspector", MutatingInspector), self.assertRaisesRegex(ValueError, "prepared file changed"):
+                    prep.prepare(root, out, write_source=True)
+                self.assertFalse((out / "sound-source.json").exists())
+                self.assertTrue((out / relative).read_bytes().endswith(b"changed"))
+
 
 if __name__ == "__main__":
     unittest.main()

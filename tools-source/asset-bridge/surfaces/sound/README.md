@@ -75,8 +75,12 @@ python -B "$sound/test_sound.py"
 `--wav <original.wav> --attest-original` optionally replaces the generated input.
 The output must not exist and no root/input path may use symlinks or junctions.
 Preparation uses exclusive new files and preserves any partial failure directory;
-no overwrite/cleanup/retry is implicit. The final manifest is written only after
-all source checks pass. Prepared output is capped at 512 KiB, decoder input at
+no overwrite/cleanup/retry is implicit. The Inspector's three observed files must
+match the expected inventory, then all seven prepared files are reread and hashed
+before publishing the final manifest. A drift refuses success and retains the
+partial directory without that manifest. These sequential checks are a preparation
+checkpoint, not persistent file locks; later native use must rehash/read-guard its
+inputs. Prepared output is capped at 512 KiB, decoder input at
 200000 bytes, and sample count at two seconds. Source artifacts stay in ignored
 runtime storage; no WAV, FLAC, SAB or FF binary belongs in Git.
 
@@ -89,20 +93,21 @@ finding. `native_sab_built`, `ff_built`, `external_decoder_verified`, `delivered
 
 ## Measured source checkpoint: 2026-10-12
 
-Eighteen Python tests pass, including malformed formats, CRC/MD5/seek corruption,
+Twenty Python tests pass, including malformed formats, CRC/MD5/seek corruption,
 signed extremes, partial final blocks, maximum size, missing source pins,
 attestation, unchanged output refusal and Plan without writes. The Python stdlib
 WAV reader independently confirms the generated input parameters and samples.
 A real Plan and source preparation against the four pinned local files also
 pass; none of those checks compile or invoke native ZoneTool code.
 
-Retained corrected source: `runtime/content-surfaces/original-sound-source-b`.
+Retained current source: `runtime/content-surfaces/original-sound-source-c`.
 It contains eight files totaling 199125 bytes. The standalone Python decoder
 reads 48000 samples in 12 frames. Existing content preflight: 0 errors / 1 pending.
 
 | Evidence | Bytes | SHA256 |
 | --- | --- | --- |
 | Source manifest B | 3158 | 06a2bf8650ba235e176746efe29b00f383e26144cd24ff5dd1774c28f9d71a01 |
+| Source manifest C, final integrity checks | 3158 | 627ea10517bfe0f4cbfa6ca8d0c4b5b6b90024179fd776f917656c7ca4e5b5a7 |
 | Original WAV | 96044 | 299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4 |
 | Prepared FLAC | 96394 | 9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb |
 | Decoded PCM | 96000 | 72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9 |
@@ -116,6 +121,18 @@ bank-local tables. Its CSV SHA256 is
 a1db885270d7ca0e4cfe46ad7eb37ca6334544a73798740d8498fa2532ab7c65.
 This was a source-review correction, with no native run or audio failure. A is
 superseded for future native preparation; neither A nor B has native acceptance.
+
+Independent source review then reproduced a preparation integrity gap: changing
+alias volume from 0.5 to 0.2 between writing and Inspector allowed publication
+using stale buffer hashes. The correction compares Inspector's observed inventory
+to the expected bytes and rereads every prepared file before the success manifest.
+Regressions mutate the alias before preflight and each of the six initial files
+after preflight, including the original WAV outside the Inspector's dependency
+set; all preserve partial evidence and refuse a success manifest. Fresh source C
+passes those gates. Its seven payload/report files are byte-identical to retained
+B, including FLAC, WAV and alias; only the manifest's adapter source hashes change.
+The explicitly planned codec check can still target those exact hash-bound B bytes.
+No source preparation has codec-native, SAB, FF or audible acceptance yet.
 
 Next coordinated gate: first decode this exact FLAC with a reviewed independent
 codec, then separately admit existing ZoneTool bank/FF creation and inspect SAB
