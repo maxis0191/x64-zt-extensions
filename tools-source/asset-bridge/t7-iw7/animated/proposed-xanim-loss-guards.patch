@@ -1,0 +1,50 @@
+--- a/src/zonetool/zonetool/t7/converter/iw7/assets/xanim.cpp
++++ b/src/zonetool/zonetool/t7/converter/iw7/assets/xanim.cpp
+@@ -14,6 +14,39 @@
+ 		{
+ 			zonetool::iw7::XAnimParts* convert(XAnimParts* asset, utils::memory::allocator& allocator)
+ 			{
++				// Review-only fail-before-cast guards; not a full clip verifier.
++				if (!asset) return nullptr;
++				if (asset->dataByteCount > 65535u || asset->dataShortCount > 65535u
++					|| asset->dataIntCount > 65535u || asset->randomDataIntCount > 65535u)
++				{
++					ZONETOOL_ERROR("T7 animation counter would narrow to uint16\n");
++					return nullptr;
++				}
++				for (auto i = 0; i < 10; ++i)
++				{
++					if (asset->boneCount[i] > 255u)
++					{
++						ZONETOOL_ERROR("T7 animation bone counter would narrow to uint8\n");
++						return nullptr;
++					}
++				}
++				if (asset->bLoopSync || asset->bDelta || asset->bDelta3D || asset->bLeftHandGripIK
++					|| asset->bHasBoneMask || asset->bExtraChannel || asset->extraChannelDataCount
++					|| asset->extraChannelData || asset->streamedFileSize || asset->assetType
++					|| asset->numIKPitchLayers || asset->numIKPitchBones || asset->ikPitchLayers || asset->ikPitchBones
++					|| asset->notifyCount || asset->startupNotifyCount || asset->shutdownNotifyCount
++					|| asset->notify || asset->startupNotify || asset->shutdownNotify || asset->deltaPart
++					|| asset->primedLength != 0.f || asset->loopEntryTime != 0.f)
++				{
++					ZONETOOL_ERROR("unsupported T7 animation metadata/channel loss\n");
++					return nullptr;
++				}
++				if (!asset->dataShortCount && asset->randomDataShortCount)
++				{
++					ZONETOOL_ERROR("T7 random short stream would be omitted\n");
++					return nullptr;
++				}
++
+ 				const auto new_asset = allocator.allocate<zonetool::iw7::XAnimParts>();
+ 
+ 				REINTERPRET_CAST_SAFE(name);
+@@ -141,6 +174,7 @@
+ 			{
+ 				utils::memory::allocator allocator;
+ 				const auto converted_asset = convert(asset, allocator);
++				if (!converted_asset) return;
+ 				zonetool::iw7::xanim_parts::dump(converted_asset);
+ 			}
+ 		}

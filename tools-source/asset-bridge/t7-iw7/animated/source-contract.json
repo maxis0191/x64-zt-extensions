@@ -1,0 +1,28 @@
+{
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "scope": "retained source text only; no native binary or donor read",
+  "files": [
+    {
+      "path": "src/zonetool/zonetool/t7/structs.hpp",
+      "sha256_raw_bytes": "f1f46442ba69a384c8a6201b4a424a6b1fbf14b5fb08515ac9e356a5574b2a6e"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/converter/iw7/assets/xmodel_mesh.cpp",
+      "sha256_raw_bytes": "1424cd3919e2fe86240257aa1633e6f4c87e42c13b70e7300f95eef3e1f7a9c6"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/converter/iw7/assets/xanim.cpp",
+      "sha256_raw_bytes": "5dc9086745e73c07b3f39bf3a819e905b664ca048324616b9048ce9d4bb7e682"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/converter/iw7/assets/xmodel.cpp",
+      "sha256_raw_bytes": "dea97c0121ddaaa5710e11192c19b37bf7f258e583ce791288e01db833e5d1ff"
+    },
+    {
+      "path": "src/zonetool/game/shared.cpp",
+      "sha256_raw_bytes": "de421b87b65d230622e77c6bca1da2d2435ddf646b2ab9c506cc55c043301d41"
+    }
+  ],
+  "patches_applied": false,
+  "patches_compiled": false
+}

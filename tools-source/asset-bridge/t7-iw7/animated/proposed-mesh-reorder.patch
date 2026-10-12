@@ -1,0 +1,64 @@
+--- a/src/zonetool/zonetool/t7/converter/iw7/assets/xmodel_mesh.cpp
++++ b/src/zonetool/zonetool/t7/converter/iw7/assets/xmodel_mesh.cpp
+@@ -148,6 +148,7 @@
+ 						new_surf->triIndices = reinterpret_cast<zonetool::iw7::Face*>(indices);
+ 
+ 						std::vector<GfxStreamWeight*> weights_arr[4];
++						std::vector<unsigned short> vertex_groups[4];
+ 						if ((surf->flags & XSURFACE_FLAG_SKINNED) != 0)
+ 						{
+ 							// calc counts
+@@ -174,8 +175,53 @@
+ 
+ 								new_surf->blendVertCounts[idx]++;
+ 								weights_arr[idx].push_back(weight);
++								vertex_groups[idx].push_back(static_cast<unsigned short>(j));
+ 							}
+ 
+ 							GenerateIW7BlendVerts(new_surf, allocator, weights_arr);
++
++							// Review-only proposal: preserve vertex/weight correspondence.
++							std::vector<unsigned short> new_to_old;
++							new_to_old.reserve(surf->vertCount);
++							for (const auto& group : vertex_groups)
++								new_to_old.insert(new_to_old.end(), group.begin(), group.end());
++							bool needs_reorder = false;
++							for (auto j = 0u; j < surf->vertCount; ++j)
++								needs_reorder |= new_to_old[j] != j;
++							if (needs_reorder)
++							{
++								// No unknown flags, streamed storage, rigid lists or collision
++								// index/range data may be permuted by this bounded proposal.
++								bool supported = asset->shared && asset->shared == surf->shared
++									&& asset->shared->flags == 0 && surf->flags == XSURFACE_FLAG_SKINNED
++									&& surf->vertListCount == 0 && surf->vertList == nullptr;
++								for (auto word = 8; word < 12; ++word)
++									supported &= surf->partBits[word] == 0 && asset->partBits[word] == 0;
++								for (auto j = 0u; j < surf->triCount; ++j)
++									supported &= indices[j].Index1 < surf->vertCount
++										&& indices[j].Index2 < surf->vertCount && indices[j].Index3 < surf->vertCount;
++								if (!supported)
++								{
++									ZONETOOL_ERROR("unsupported T7 skinned vertex permutation profile\n");
++									return nullptr;
++								}
++								std::vector<unsigned short> old_to_new(surf->vertCount);
++								const auto old_vertices = new_surf->verts0.packedVerts0;
++								new_surf->verts0.packedVerts0 = allocator.allocate_array<zonetool::iw7::GfxPackedVertex>(surf->vertCount);
++								for (auto j = 0u; j < surf->vertCount; ++j)
++								{
++									old_to_new[new_to_old[j]] = static_cast<unsigned short>(j);
++									// Whole converted vertex: xyz, color, UV, normal, tangent,
++									// selfVisibility and other declared fields travel together.
++									new_surf->verts0.packedVerts0[j] = old_vertices[new_to_old[j]];
++								}
++								new_surf->triIndices = allocator.allocate_array<zonetool::iw7::Face>(surf->triCount);
++								for (auto j = 0u; j < surf->triCount; ++j)
++								{
++									new_surf->triIndices[j].v1 = old_to_new[indices[j].Index1];
++									new_surf->triIndices[j].v2 = old_to_new[indices[j].Index2];
++									new_surf->triIndices[j].v3 = old_to_new[indices[j].Index3];
++								}
++							}
+ 						}
+ 					}
