@@ -1,0 +1,2 @@
+# Unified-diff context has a mandatory space prefix. Check resulting C++ with git apply --whitespace=error-all.
+zonetool-fab9358-flac-dump.patch -whitespace

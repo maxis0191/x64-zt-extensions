@@ -45,7 +45,8 @@ function Assert-ChecksumBuildSdkTools($Plan,$SealedPaths) {
     }
 }
 function Assert-ChecksumBuildPlan($Plan,$Seal,$SealState) {
-    if($Plan.schema -cne 'iw7.sound-checksum-build-plan/1' -or $Plan.sealed -isnot [bool] -or !$Plan.sealed -or
+    $flac=$Plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'
+    if($Plan.schema -cnotin @('iw7.sound-checksum-build-plan/1','iw7.sound-flac-dump-build-plan/1') -or $Plan.sealed -isnot [bool] -or !$Plan.sealed -or
         $Plan.physical_bytes -ne 4GB -or $Plan.commit_bytes -ne 6GB -or $Plan.stop_bytes -ne 512MB -or $Plan.planning_ceiling_bytes -ne 768MB -or
         $Plan.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
         $Plan.gsc_provider_revision -cne 'eabe74ab65d8ce2a943b54d24b15a60749a0cf2a' -or
@@ -71,8 +72,10 @@ function Assert-ChecksumBuildPlan($Plan,$Seal,$SealState) {
         $Plan.environment.TEMP -ine (Join-Path $Plan.candidate 'tmp') -or $Plan.environment.TMP -cne $Plan.environment.TEMP){throw 'Fixed private native environment required.'}
     $order=@('probe-original-compile','probe-original-link','probe-original-run','probe-patched-compile','probe-patched-link','probe-patched-run',
         'compile-loadedsound','compile-loadedsound1','compile-loadedsound2','compile-loadedsound3','compile-sound_bank','compile-common-bit-buffer','archive-common','link-candidate')
-    if(@($Plan.commands).Count -ne 14){throw 'Fourteen exact native phases required.'}
-    for($i=0;$i -lt 14;$i++){if($Plan.commands[$i].phase -cne $order[$i]){throw 'Native phase order differs.'}}
+    if($flac){$order=@($order[0..5])+@('probe-flac-compile','probe-flac-link','probe-flac-run')+@($order[6..13])}
+    elseif($Plan.Contains('flac')){throw 'FLAC extension cannot use historical schema.'}
+    if(@($Plan.commands).Count -ne $order.Count){throw 'Exact native phase count required.'}
+    for($i=0;$i -lt $order.Count;$i++){if($Plan.commands[$i].phase -cne $order[$i]){throw 'Native phase order differs.'}}
     $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase);$bytes=0L
     foreach($entry in $Seal.Inputs){
         if(![IO.Path]::IsPathFullyQualified($entry.Path) -or !$seen.Add([IO.Path]::GetFullPath($entry.Path)) -or
@@ -82,8 +85,10 @@ function Assert-ChecksumBuildPlan($Plan,$Seal,$SealState) {
     }
     if($bytes -ne $Seal.TotalBytes -or $bytes -gt 2GB){throw 'Sealed byte accounting differs.'}
     Assert-ChecksumBuildSdkTools $Plan $seen
+    if($flac){Assert-FlacBuildExtension $Plan $Seal}
     $responses=@($Plan.response_pins|Where-Object {$null -ne $_})
-    if($responses.Count -notin 0,12){throw 'Zero or twelve reviewed response sources required.'}
+    $counts=if($flac){@(14)}else{@(0,12)}
+    if($responses.Count -notin $counts){throw 'Exact reviewed response source count required.'}
     if($responses.Count){
         $responsePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         foreach($pin in $responses){
@@ -197,6 +202,10 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
         ReviewedResponseSources=@($Plan.response_pins|Where-Object {$null -ne $_}).Count;
         ReviewedSdkTools=@($Plan.sdk_tools|Where-Object {$null -ne $_}).Count;
         TreeClosed=$true;LeaseReleased=$false;RetainedLeaseToken=$null;Ready=$false;SABFFVerified=$false}
+    if($Plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'){
+        $record.DeferredArtifactRoles=@('candidate_exe','probe_original','probe_patched','probe_flac')
+        $record.DeferredArtifactProofPending=$true;$record.FinalArtifactsVerified=$false
+    }
     $c=@{Plan=$Plan;Record=$record;Started=(Get-ChecksumBuildClock);LastPressurePoll=0L;
         InputGuards=[Collections.Generic.List[IDisposable]]::new();GuardedInputs=[Collections.Generic.List[object]]::new()}
     $lease=$null;$owner=$null;$closed=$true;$startedNative=$false;$postProofRequired=$false;$sourceProofFailed=$false
@@ -207,11 +216,15 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
         $record.RetainedLeaseToken=$lease.Token
         [IO.Directory]::CreateDirectory($Plan.candidate)|Out-Null
         Open-ChecksumBuildInputs $c $Seal
+        if($Plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'){Open-FlacBuildSdkInputs $c}
         Initialize-ChecksumBuildTypes $Plan
         $null=Assert-ChecksumBuildBudget $c
         $context=@{PlanSHA256=$PlanSHA256;RunID=$record.RunID;LeaseToken=$lease.Token;LeaseOwnerPID=$PID;OriginalIdentity=$null;
             AcceptedReceipt=$null;SealedPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase);SealedByPath=@{}}
         foreach($entry in $Seal.Inputs){$path=[IO.Path]::GetFullPath($entry.Path);[void]$context.SealedPaths.Add($path);$context.SealedByPath[$path]=$entry}
+        if($Plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'){
+            foreach($pin in $Plan.flac.sources){[void]$context.SealedPaths.Add([IO.Path]::GetFullPath($pin.path))}
+        }
         $saved=[Environment]::GetEnvironmentVariables('Process')
         try {
             foreach($name in @($saved.Keys)){[Environment]::SetEnvironmentVariable($name,$null,'Process')}
@@ -249,6 +262,7 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
             if($s.Length -ne $a.bytes -or (Get-ChecksumBuildHash $s $c) -cne $a.sha256){throw 'Closed-job final artifact proof differs.'}
         }
         $record.FinalArtifactsVerified=$true;$record.Artifacts=$context.AcceptedReceipt.artifacts
+        if($Plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'){$record.DeferredArtifactProofPending=$false}
         $record.Success=$true
     }catch{$record.Failure=$_.Exception.Message;$record.Success=$false}
     finally {

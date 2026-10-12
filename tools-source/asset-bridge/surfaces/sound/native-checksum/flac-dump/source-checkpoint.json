@@ -1,0 +1,79 @@
+{
+  "schema": "iw7.flac-dump-source-checkpoint/1",
+  "date_utc": "2026-10-12",
+  "reviewed_proposal_commit": "1d262ef077f29200081fcca3556d58a89aa8295b",
+  "upstream_pin_unchanged": "fab935826c898806855376662a8a03317b3ad8f1",
+  "patch_apply_check_passed": true,
+  "native_checkout_modified": false,
+  "pure_python_tests": 10,
+  "synthetic_header_cases": 103,
+  "accepted_header_cases": 49,
+  "refused_header_cases": 54,
+  "pure_tests_do_not_execute_cpp": true,
+  "source_overlay": "runtime/content-surfaces/original-sound-flac-dump-source-b",
+  "overlay_manifest": {
+    "bytes": 1610,
+    "sha256": "d7b08e9c16b6e7df77b359a7bee109a951b6089d8781f358ae68d5d1ad7aa3a8"
+  },
+  "prepared_source_files": {
+    "sound_bank.cpp": {
+      "bytes": 113219,
+      "sha256": "8142eead0fe7cbdb6a0b17cc106efa4d02f0652e9955657f220ce1b82d66c95e"
+    },
+    "sound_flac_metadata.hpp": {
+      "bytes": 6337,
+      "sha256": "2226b5a9fa8afc241f843a5a1dc8da38574eb0c931a43f4d66a1b5eae0a19eca"
+    },
+    "flac_dump_probe.cpp": {
+      "bytes": 2037,
+      "sha256": "320c2a3cb9617411fa6fe648f6ade946869879ace50a08bb73ff796aa019b5a8"
+    },
+    "flac_dump_cases.hpp": {
+      "bytes": 10402,
+      "sha256": "fbf0e8c03c850af01b45c46a03bf183b8ce5355c294b2618493ca72a75673cb3"
+    }
+  },
+  "owned_source_files": {
+    "sound_flac_metadata.hpp": {
+      "bytes": 6337,
+      "sha256": "2226b5a9fa8afc241f843a5a1dc8da38574eb0c931a43f4d66a1b5eae0a19eca"
+    },
+    "zonetool-fab9358-flac-dump.patch": {
+      "bytes": 5572,
+      "sha256": "4887a6631e7739455648d3cfe08a27f29c7fb63e85f658210208ef315ce52531"
+    },
+    "flac_dump_probe.cpp": {
+      "bytes": 2037,
+      "sha256": "320c2a3cb9617411fa6fe648f6ade946869879ace50a08bb73ff796aa019b5a8"
+    },
+    "flac_dump_vectors.py": {
+      "bytes": 7456,
+      "sha256": "0c1e6b58db9fff119e28da9f9a6cbb74b72c8c9da014096013e1ebd625e20eb5"
+    },
+    "prepare_flac_dump_source.py": {
+      "bytes": 5419,
+      "sha256": "5fa791f90cd43cf49caca5b42c875d261caf7e978ca3d3cdad6a8bcf326ebc46"
+    },
+    "test_flac_dump_source.py": {
+      "bytes": 5991,
+      "sha256": "77f996a2c4375da23e993a3ce831139726c0217f51b750a1a20ec83852e44aac"
+    }
+  },
+  "future_recipe_stages": 17,
+  "new_executable_build_profile_implemented": false,
+  "executable_plan_created": false,
+  "native_compile_performed": false,
+  "native_probe_executed": false,
+  "native_dump_executed": false,
+  "native_io_failure_paths_tested": false,
+  "payload_read_or_hashed": false,
+  "strict_reader_modified": false,
+  "retained_f_artifacts_modified": false,
+  "shared_providers_modified": false,
+  "previous_main_stopped_preflights_invalidated_by_coordinator": true,
+  "main_mutated": false,
+  "full_flac_conformance_verified": false,
+  "playback_verified": false,
+  "ready": false,
+  "earlier_source_only_overlay_preserved": "runtime/content-surfaces/original-sound-flac-dump-source-a"
+}

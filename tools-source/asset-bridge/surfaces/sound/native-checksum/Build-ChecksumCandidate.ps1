@@ -38,12 +38,25 @@ try {
     foreach($path in @($PSCommandPath,$core,$receipt)){$null=Open-ChecksumBootstrap $path 256KB}
     if($PlanSHA256 -cnotmatch '^[a-f0-9]{64}$' -or (Get-ChecksumBootstrapHash $planStream) -cne $PlanSHA256){throw 'Reviewed sound build Plan changed.'}
     $plan=Read-ChecksumBootstrapJson $planStream
-    if($plan.schema -cne 'iw7.sound-checksum-build-plan/1' -or @($plan.source_pins).Count -gt 64 -or @($plan.providers).Count -ne 6){throw 'Bounded exact sound Plan required.'}
-    foreach($pin in @($plan.source_pins)+@($plan.providers)){$null=Open-ChecksumBootstrap $pin.path 1MB}
-    foreach($path in @($PSCommandPath,$core,$receipt,$plan.scheduler,$plan.worker,(Join-Path $PSScriptRoot 'build_contract.py'))){
+    if($plan.schema -cnotin @('iw7.sound-checksum-build-plan/1','iw7.sound-flac-dump-build-plan/1') -or @($plan.source_pins).Count -gt 64 -or @($plan.providers).Count -ne 6){throw 'Bounded exact sound Plan required.'}
+    $flac=$plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'
+    $deferredSdk=@('C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\rc.exe',
+        'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\rcdll.dll')
+    $bootstrapPins=@(@($plan.source_pins)+@($plan.providers)|Where-Object {!$flac -or $_.path -notin $deferredSdk})
+    if($flac){
+        foreach($pin in $bootstrapPins){
+            if([IO.Path]::GetExtension($pin.path).ToLowerInvariant() -notin @('.ps1','.cs','.py','.cpp','.hpp','.h','.json','.rsp')){
+                throw 'FLAC Plan bootstrap accepts source/metadata only; binary tools require admission.'
+            }
+        }
+    }
+    foreach($pin in $bootstrapPins){$null=Open-ChecksumBootstrap $pin.path 1MB}
+    $required=@($PSCommandPath,$core,$receipt,$plan.scheduler,$plan.worker,(Join-Path $PSScriptRoot 'build_contract.py'))
+    if($flac){$required+=@((Join-Path $PSScriptRoot 'FlacBuild.Profile.ps1'),(Join-Path $PSScriptRoot 'flac_build_profile.py'),(Join-Path $PSScriptRoot 'response_revision.py'))}
+    foreach($path in $required){
         if(@($plan.source_pins|Where-Object path -IEQ $path).Count -ne 1){throw 'Entry/core/worker/scheduler not bound by source pins.'}
     }
-    foreach($pin in @($plan.source_pins)+@($plan.providers)){
+    foreach($pin in $bootstrapPins){
         $stream=$bootstrap.Files[[IO.Path]::GetFullPath($pin.path)]
         if($stream.Length -ne $pin.bytes -or (Get-ChecksumBootstrapHash $stream) -cne $pin.sha256){throw 'Guarded build source/provider changed.'}
     }
@@ -52,11 +65,12 @@ try {
         (Get-ChecksumBootstrapHash $stateStream) -cne $plan.seal_result_sha256){throw 'Input seal or final lifecycle changed.'}
     $seal=Read-ChecksumBootstrapJson $sealStream;$sealState=Read-ChecksumBootstrapJson $stateStream
     . $core
+    if($flac){. (Join-Path $PSScriptRoot 'FlacBuild.Profile.ps1')}
     Assert-ChecksumBuildPlan $plan $seal $sealState
     if(Test-Path -LiteralPath $plan.candidate){throw 'Fresh candidate required; prior evidence must be preserved.'}
     if(!$Build){
         [ordered]@{Status='PlanOnly';PlanSHA256=$PlanSHA256;Files=$seal.FileCount;InputBytes=$seal.TotalBytes;
-            Commands=14;PhysicalBytes=4GB;CommitBytes=6GB;StopBytes=512MB;PlanningCeilingBytes=768MB;
+            Commands=@($plan.commands).Count;PhysicalBytes=4GB;CommitBytes=6GB;StopBytes=512MB;PlanningCeilingBytes=768MB;
             ReviewedResponseSources=@($plan.response_pins|Where-Object {$null -ne $_}).Count;
             ReviewedSdkTools=@($plan.sdk_tools|Where-Object {$null -ne $_}).Count;
             NativeStarted=$false;NativeTypesLoaded=$false;AdmissionRequested=$false;Ready=$false}|ConvertTo-Json

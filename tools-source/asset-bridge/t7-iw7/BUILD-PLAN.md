@@ -968,3 +968,9 @@ syntax and linkage, but does not establish live installation, message capture,
 the cause of ExitProcess, catalogue generation or gameplay. The next action is
 a separately reviewed runtime plan using these actual artifact identities,
 followed only by its own explicit coordinator GO.
+
+The later, separately authorized runtime I produced a complete message capture
+and naturally exited without a catalogue. [The I analysis](MESSAGE-I-ANALYSIS.md)
+records the named startup-zone resolution failure, the narrow metadata finding
+and proposed guarded input qualification. This does not change the build result
+or establish catalogue/gameplay compatibility. No native rebuild was proposed.

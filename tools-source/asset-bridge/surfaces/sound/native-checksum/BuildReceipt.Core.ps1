@@ -1,6 +1,8 @@
 # Sound-specific receipt adapter. The original v6 closure collector is unchanged.
 function Assert-ChecksumReceipt($Receipt,$Plan,$Context,[scriptblock]$ReadFile,[scriptblock]$CheckClock) {
-    if($Receipt.schema -cne 'iw7.sound-checksum-build-receipt/1' -or $Receipt.status -cne 'NativeBuildAndCppProbesPassed' -or
+    $flac=$Plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'
+    $schema=if($flac){'iw7.sound-flac-dump-build-receipt/1'}else{'iw7.sound-checksum-build-receipt/1'}
+    if($Receipt.schema -cne $schema -or $Receipt.status -cne 'NativeBuildAndCppProbesPassed' -or
         $Receipt.plan_sha256 -cne $Context.PlanSHA256 -or $Receipt.seal_sha256 -cne $Plan.seal_sha256 -or
         $Receipt.run_id -cne $Context.RunID -or $Receipt.lease_token -cne $Context.LeaseToken -or
         !(Test-AuditResidualUInt32 $Receipt.lease_owner_pid) -or !(Test-AuditResidualUInt32 $Receipt.root_pid) -or
@@ -9,29 +11,37 @@ function Assert-ChecksumReceipt($Receipt,$Plan,$Context,[scriptblock]$ReadFile,[
         $Receipt.sab_ff_tested -isnot [bool] -or $Receipt.sab_ff_tested -or $Receipt.ready -isnot [bool] -or $Receipt.ready){
         throw 'Fresh source-bound sound build receipt required.'
     }
-    if(@($Receipt.steps).Count -ne 14 -or @($Plan.commands).Count -ne 14 -or $Receipt.includes.Count -ne 8 -or
-        $Receipt.probes.Count -ne 2 -or $Receipt.common_members.Count -ne 13){throw 'Complete ordered sound build evidence required.'}
+    $steps=if($flac){17}else{14};$includes=if($flac){9}else{8};$probes=if($flac){3}else{2}
+    if($flac -and ($Receipt.flac_header_probe_verified -isnot [bool] -or !$Receipt.flac_header_probe_verified)){throw 'Native FLAC header probe missing.'}
+    if(@($Receipt.steps).Count -ne $steps -or @($Plan.commands).Count -ne $steps -or $Receipt.includes.Count -ne $includes -or
+        $Receipt.probes.Count -ne $probes -or $Receipt.common_members.Count -ne 13){throw 'Complete ordered sound build evidence required.'}
     $artifacts=@{candidate_exe='bin/zonetool-sound-md5.exe';candidate_pdb='bin/zonetool-sound-md5.pdb';
         common_library='common/common.lib';probe_original='probe/original.exe';probe_patched='probe/patched.exe'}
-    if($Receipt.artifacts.Count -ne 5){throw 'Exact final build artifact inventory required.'}
+    if($flac){$artifacts.probe_flac='probe/flac-header.exe'}
+    if($Receipt.artifacts.Count -ne $artifacts.Count){throw 'Exact final build artifact inventory required.'}
     foreach($role in $artifacts.Keys){
         $item=$Receipt.artifacts[$role];Assert-AuditDigest $item.sha256
         if($item.relative -cne $artifacts[$role] -or ($item.bytes -isnot [int] -and $item.bytes -isnot [long]) -or
             $item.bytes -le 0 -or $item.bytes -gt 256MB){throw 'Bounded typed artifact declaration required.'}
         # Large PDB/library verification occurs after positive original-job closure,
         # while admission and source guards remain held, outside the 2-second drain.
-        if($role -in 'candidate_exe','probe_original','probe_patched'){
+        # FLAC17 leaves room for the unchanged provider's compiler/residual reads:
+        # 29 traces + build-receipt + compiler + optional vctip = at most 32.
+        # All six artifact files, including the four EXEs, are verified by the
+        # mandatory post-closure pass under admission before supervisor success.
+        if(!$flac -and $role -in 'candidate_exe','probe_original','probe_patched'){
             $file=& $ReadFile (Join-Path $Plan.output $item.relative) 32MB $false
             if($file.SHA256 -cne $item.sha256 -or $file.Bytes -ne $item.bytes){throw 'Fresh native output bytes differ.'}
         }
         & $CheckClock
     }
-    for($i=0;$i -lt 14;$i++){
+    for($i=0;$i -lt $steps;$i++){
         $step=$Receipt.steps[$i];$command=$Plan.commands[$i]
         if($step.name -cne $command.phase -or !(Test-AuditResidualInteger $step.exit_code) -or $step.exit_code -ne 0 -or $step.normal_eof -isnot [bool] -or !$step.normal_eof){throw 'Ordered successful native phase required.'}
         $phase=if($command.kind -ceq 'probe_run'){'read'}else{'compile'}
         $expected=if($command.phase -ceq 'probe-original-run'){$Receipt.artifacts.probe_original.sha256}
-            elseif($command.phase -ceq 'probe-patched-run'){$Receipt.artifacts.probe_patched.sha256}else{$command.executable_sha256}
+            elseif($command.phase -ceq 'probe-patched-run'){$Receipt.artifacts.probe_patched.sha256}
+            elseif($command.phase -ceq 'probe-flac-run'){$Receipt.artifacts.probe_flac.sha256}else{$command.executable_sha256}
         Assert-AuditDigest $step.receipt_sha256;Assert-AuditDigest $step.stdout_sha256;Assert-AuditDigest $step.stderr_sha256
         if($step.native_phase -cne $phase -or $step.executable_sha256 -cne $expected){throw 'Native executable binding differs.'}
         $logs=Join-Path $Plan.output ('logs/'+$command.phase)
@@ -45,6 +55,9 @@ function Assert-ChecksumReceipt($Receipt,$Plan,$Context,[scriptblock]$ReadFile,[
             $probeFile=& $ReadFile (Join-Path $logs 'stdout.log') 4096 $true
             if($probeFile.SHA256 -cne $step.stdout_sha256){throw 'Actual C++ probe output hash differs.'}
             $probe=$probeFile.Json;$original=$command.phase -ceq 'probe-original-run'
+            if($command.phase -ceq 'probe-flac-run'){
+                Assert-FlacHeaderProbe $probe
+            }else{
             $digest=if($original){'78000000000000000000000000000000'}else{'24fe5af1473ea8f4be33912348210c78'}
             if($probe.Count -ne 7 -or $probe.source_checksum -cne $digest -or
                 $probe.matches_original_md5 -isnot [bool] -or $probe.matches_original_md5 -ne (!$original)){
@@ -56,11 +69,13 @@ function Assert-ChecksumReceipt($Receipt,$Plan,$Context,[scriptblock]$ReadFile,[
             foreach($name in 'native_ff_tested','ready'){
                 if($probe[$name] -isnot [bool] -or $probe[$name]){throw 'Probe cannot promote SAB or runtime.'}
             }
+            }
             Assert-AuditSameJson $probe $Receipt.probes[$command.phase] 'actual C++ probe and build report'
         }
         if($command.kind.EndsWith('compile')){
             $include=$Receipt.includes[$command.phase]
             $expectedHeader=if($command.phase -ceq 'probe-original-compile'){$Plan.original_header}else{$Plan.patched_header}
+            if($command.phase -ceq 'probe-flac-compile'){$expectedHeader=Join-Path $Plan.flac.overlay 'sound_flac_metadata.hpp'}
             if($include.expected_header -ine $expectedHeader -or $include.report_sha256 -cne $step.stdout_sha256 -or
                 @($include.paths).Count -lt 1 -or @($include.paths).Count -gt 2048 -or $expectedHeader.ToLowerInvariant() -cnotin $include.paths){
                 throw 'Exact native include report required.'
@@ -70,8 +85,17 @@ function Assert-ChecksumReceipt($Receipt,$Plan,$Context,[scriptblock]$ReadFile,[
             }
             $other=if($command.phase -ceq 'probe-original-compile'){$Plan.patched_header}else{$Plan.original_header}
             if($other -iin $include.paths){throw 'Wrong original/patched header consumed.'}
+            if($flac -and $command.phase -in 'probe-flac-compile','compile-sound_bank'){
+                $required=@('sound_flac_metadata.hpp')
+                if($command.phase -ceq 'probe-flac-compile'){
+                    $required+='flac_dump_cases.hpp'
+                    if($Plan.patched_header -iin $include.paths){throw 'Unrelated checksum header in FLAC probe.'}
+                }
+                foreach($name in $required){if((Join-Path $Plan.flac.overlay $name).ToLowerInvariant() -cnotin $include.paths){throw 'Actual FLAC include missing.'}}
+            }
             $includeFile=& $ReadFile (Join-Path $logs 'stdout.log') 2MB $false
             if($includeFile.SHA256 -cne $include.report_sha256){throw 'Compiler include report bytes differ.'}
+            if($flac){Assert-FlacIncludeBytes $includeFile $include.paths $CheckClock}
         }
         & $CheckClock
     }

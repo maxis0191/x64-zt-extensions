@@ -13,7 +13,7 @@ import threading
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_contract import (COMMON_MEMBERS, ORDER, compare_archive, include_report, json_bytes, reviewed_responses, reviewed_sdk_tools,
-                            key, probe_result, require, sha, validate_plan)
+                            key, probe_result, require, sha, validate_plan, is_flac, build_order)
 
 
 def bounded(path, limit):
@@ -105,6 +105,11 @@ def run(plan, plan_sha):
     require(run_id and len(run_id) == 32 and token and owner and owner.isdecimal(), "owned build generation missing")
     inputs = verify_seal(plan)
     response_sources = reviewed_responses(plan, inputs)
+    include_inputs = dict(inputs)
+    if is_flac(plan):
+        import flac_build_profile as flac
+        include_inputs.update(flac.validate_extension(plan, inputs))
+        flac.verify_responses(plan, bounded, inputs)
     verify_sdk_tools(plan, inputs)
     for path in [plan["original_common_library"], plan["original_header"], plan["patched_header"],
                  plan["shared_original_header"], *plan["common_objects"].values()]:
@@ -120,6 +125,9 @@ def run(plan, plan_sha):
                "plan_sha256": plan_sha, "seal_sha256": plan["seal_sha256"], "steps": [],
                "probes": {}, "includes": {}, "common_members": {}, "artifacts": {},
                "native_cpp_probes_verified": False, "sab_ff_tested": False, "ready": False}
+    if is_flac(plan):
+        receipt["schema"] = flac.RECEIPT
+        receipt["flac_header_probe_verified"] = False
     try:
         # Fully declared native environment, including neutralized CL/_CL_ and
         # LINK/_LINK_. No personal variables are serialized or sent to tools.
@@ -130,7 +138,7 @@ def run(plan, plan_sha):
         compare_archive(bounded(plan["original_common_library"], 8 * 1024 * 1024), originals)
         for command in plan["commands"]:
             name, exe = command["phase"], Path(command["executable"])
-            require(name == ORDER[len(receipt["steps"])], "native step order changed")
+            require(name == build_order(plan)[len(receipt["steps"])], "native step order changed")
             if command["kind"] == "probe_run":
                 expected = sha(bounded(exe, 8 * 1024 * 1024))
             else:
@@ -149,25 +157,37 @@ def run(plan, plan_sha):
             receipt["steps"].append(step)
             stdout = root / "logs" / name / "stdout.log"
             if command["kind"] == "probe_run":
-                receipt["probes"][name] = probe_result(bounded(stdout, 4096), name == "probe-original-run")
+                receipt["probes"][name] = (flac.probe_result(bounded(stdout, 4096)) if name == "probe-flac-run"
+                                           else probe_result(bounded(stdout, 4096), name == "probe-original-run"))
             if command["kind"].endswith("compile"):
                 expected_header = plan["original_header"] if name == "probe-original-compile" else plan["patched_header"]
                 forbidden = plan["patched_header"] if name == "probe-original-compile" else plan["original_header"]
+                if name == "probe-flac-compile":
+                    expected_header = str(Path(plan["flac"]["overlay"]) / "sound_flac_metadata.hpp")
                 raw = bounded(stdout, 2 * 1024 * 1024)
-                observed = include_report(raw, inputs, expected_header, forbidden)
+                observed = include_report(raw, include_inputs, expected_header, forbidden)
                 require(key(plan["shared_original_header"]) not in observed, "compiler used shared unpatched common header")
+                if is_flac(plan) and name in ("compile-sound_bank", "probe-flac-compile"):
+                    for header in (["sound_flac_metadata.hpp", "flac_dump_cases.hpp"] if name == "probe-flac-compile"
+                                   else ["sound_flac_metadata.hpp"]):
+                        require(key(Path(plan["flac"]["overlay"]) / header) in observed, "actual FLAC include missing")
+                    if name == "probe-flac-compile":
+                        require(key(plan["patched_header"]) not in observed, "unrelated checksum header in FLAC probe")
                 receipt["includes"][name] = {"expected_header": expected_header, "paths": observed,
                                                "report_sha256": step["stdout_sha256"]}
             if name == "archive-common":
                 replacement = dict(originals)
                 replacement["bit_buffer.obj"] = bounded(root / "common/bit_buffer.obj", 4 * 1024 * 1024)
                 receipt["common_members"] = compare_archive(bounded(root / "common/common.lib", 8 * 1024 * 1024), replacement)
-        require(len(receipt["steps"]) == 14 and len(receipt["includes"]) == 8 and len(receipt["probes"]) == 2,
+        require(len(receipt["steps"]) == len(build_order(plan)) and len(receipt["includes"]) == (9 if is_flac(plan) else 8)
+                and len(receipt["probes"]) == (3 if is_flac(plan) else 2),
                 "complete native build/probe evidence required")
         artifacts = {
             "candidate_exe": "bin/zonetool-sound-md5.exe", "candidate_pdb": "bin/zonetool-sound-md5.pdb",
             "common_library": "common/common.lib", "probe_original": "probe/original.exe",
             "probe_patched": "probe/patched.exe"}
+        if is_flac(plan):
+            artifacts["probe_flac"] = "probe/flac-header.exe"
         for role, relative in artifacts.items():
             path = root / relative
             require(path.is_file() and path.stat().st_size <= 256 * 1024 * 1024, "bounded expected build artifact required")
@@ -176,6 +196,8 @@ def run(plan, plan_sha):
                 digest = hashlib.file_digest(stream, "sha256").hexdigest()
             receipt["artifacts"][role] = {"relative": relative, "bytes": path.stat().st_size, "sha256": digest}
         receipt["native_cpp_probes_verified"] = True
+        if is_flac(plan):
+            receipt["flac_header_probe_verified"] = True
         receipt["status"] = "NativeBuildAndCppProbesPassed"
         write_new(root / "build-receipt.json", receipt)
         return 0
