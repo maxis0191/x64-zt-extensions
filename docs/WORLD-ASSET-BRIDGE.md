@@ -767,6 +767,113 @@ The next source review must account for phase boundaries and the observed nested
 compiler/linker roles before any new exact Plan and separate GO. Merely increasing
 the global console count would not establish the expected role identities.
 
+### Proposed reuse of qualified T7/H1 stages, 2026-10-12
+
+This is a **source/diagnostic proposal only**, not an executable Plan or a fourth
+Run. The third failure and release checkpoint above remain authoritative. No
+native provider, driver, launch flag, member count or budget was changed for this
+proposal, and no heavy reservation is retained for it.
+
+The complete observed third-attempt graph was:
+
+```text
+retained PowerShell host
+  Python original job root
+    conhost (Python parent)
+    cl.exe (direct DETACHED_PROCESS request)
+      vctip.exe (compiler parent)
+      link.exe (implicit child created by cl.exe)
+        conhost (linker parent)
+```
+
+The direct launch request does not describe how `cl.exe` creates its own linker.
+The live graph was refused before either tool had completed. A larger global
+console count would still mix live build descendants with post-exit residuals;
+it would also leave compiler-owned and linker-owned VCTIP generations in one
+continuing Python job. The failure does not establish a toolchain build failure.
+
+The smallest reuse candidate is a World-specific profile around the already
+qualified `Invoke-H1OwnedStage` lifecycle and existing
+`IW7.AnimationProbe.NativeJob` DLL, with explicit `/c` and a direct link stage.
+Reuse the function-scoped linker identity adaptation in
+`T7Build.Profile.ps1::Invoke-T7OwnedStage`; do not broaden the shared compiler
+policy globally or import the complete T7 runner and its larger budgets.
+
+| Proposed stage | Original process and required boundary |
+| --- | --- |
+| Compile | Pinned `cl.exe`, `/c`, one World TU, no `/MP`. Require root exit0 and original-job Active0 before using its object/dependency report. |
+| Link | Pinned `link.exe`, only the frozen object and required pinned libraries. Require root exit0 and original-job Active0 before accepting the fixture EXE. |
+| Fixture | Exact newly hashed EXE, compiled-in synthetic data, no child launch requested. Require exit0 and empty original job; retain both streams. |
+| Check | Pinned Python plus the existing `check_observer_harness.py`, reading the frozen fixture transcript. Require exit0, empty original job and the existing exact 24-record contract. |
+
+This explicitly changes ownership from one continuing Python job to four
+**sequential original jobs under one lease**, with at most one active job. The
+checker is included rather than becoming an unowned process. Keep each original
+owner and its identity until closure; update scheduler registration only after
+the previous stage is closed. This lifecycle change needs a new reviewed Plan.
+
+For each tool independently, H1 first requires its original root to have exited
+successfully. If descendants remain, the only qualified successful cleanup is
+one exact pinned VCTIP, parented to that stage's original tool PID, with matching
+creation/image/job identity in two captures. Reverify inputs and freeze output
+artifacts before stopping that original job, then require fresh root0/Active0
+and an empty member capture. Unknown, extra or ambiguous residuals fail the
+stage. No global live-console counter or termination by process name is needed;
+a console that remains after tool exit is not silently exempted. A failed stage
+may recover its owned job, but recovery never qualifies the stage as passed.
+
+Read-only evidence was checked against retained T7 receipts and current provider
+bytes. `zt-t7-a` is **Failed overall**, but its three `/c` production TU stages
+each record exit0, tree closure and verified compiler-owned VCTIP cleanup; its
+helper and 51-case probe also closed successfully. The separate `zt-t7-b` D2
+receipt is **Passed** for direct Link, with linker-owned VCTIP observed twice,
+root0/Active0, input revalidation and lease release. That candidate was not
+executed. None of these results validates the World fixture's 24 cases.
+
+| Retained evidence | SHA-256 |
+| --- | --- |
+| T7 C receipt (`zt-t7-a/receipt.json`, partial stage evidence only) | `af6beecf7a8892e16266a7641d2799f665f86fa8ad7c40c61561b782534f7897` |
+| T7 D2 receipt (`zt-t7-b/receipt.json`) | `c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2` |
+| D2 installed-tool Plan | `daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa` |
+| Existing qualified `Probe-NativeJob.dll` | `5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8` |
+
+The five D2-bound source providers (T7 profile, H1 core/compiler/member observer,
+and MaterialV2 compiler policy) and the DLL still matched their D2 bindings at
+inspection. A future Plan must bind and read-guard exact bytes again; a provider
+name or another chat's successful result alone is insufficient.
+
+Two compatibility differences prevent a blind replacement:
+
+- `Complete-H1Stage` releases its lease before the T7 receipt is published.
+  Reuse stage ownership/closure, but retain World's immutable
+  `BeforeLeaseRelease` receipt, output accounting, read guard and single release
+  attempt. Preserve the retained-host quarantine path on ambiguous closure,
+  publication or release. Never overwrite a live owner when advancing stages.
+- `NativeJob.OpenLog` gives tools direct create-only file handles; H1 polls total
+  output every 100 ms. This does **not** implement World's existing strict
+  2 MiB drain cap per stream. Adding a sampled 2 MiB check cannot prove that the
+  files never exceeded 2 MiB between polls. There is no verified bounded-log
+  parameter in this DLL. Resolve that contract separately in source review
+  before an executable Plan: either retain strict bounded capture with an
+  explicitly reviewed provider change, or explicitly revise the contract to
+  sampled enforcement. Neither change is implemented or authorized here, and
+  rebuilding a native owner is not part of this proposal.
+
+Keep World admission at 4 GiB RAM / 6 GiB commit, 64 MiB total output with the
+existing metadata reserve, 128 KiB accepted transcript and 120 s total group
+deadline. Compile **plus** Link share one 90 s window; do not grant 90 s each.
+Fixture keeps 10 s; a proposed Check stage gets at most 5 s within the same group.
+Imports, cleanup and finalization remain accounted for. H1's existing original
+job cleanup is bounded at 5 s; document that narrower bound if reused instead of
+silently inheriting T7's overall timing. The 2 s pipe-drain bound is relevant
+only if bounded capture is retained; direct files must not be described as a
+verified drain replacement.
+
+Next action is a source-only decision on that log contract and a narrow World
+profile review. Do not run the historical command below as a test of this
+proposal. BO3 and its witness retain scheduling priority; no fourth World Run is
+authorized by this document.
+
 The third attempt's exact Plan command is retained below for provenance. Its
 runtime directory is now occupied and cannot be reused:
 
