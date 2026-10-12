@@ -71,3 +71,31 @@ function New-T7Start($Plan,$Stage,[string]$StageRoot) {
     foreach($argument in $Stage.Arguments){$start.ArgumentList.Add([string]$argument)}
     $start
 }
+
+function Invoke-T7OwnedStage($Plan,$State,$Context,$Start,[string]$ImageSHA256,[string]$StageRoot,[double]$Started) {
+    if($State.Stage -cne 'Link') {
+        Invoke-H1OwnedStage $Plan $State $Context $Start $ImageSHA256 $StageRoot $Started
+        return
+    }
+    # The original H1 controller already qualifies a single VCTIP child after
+    # root0 using exact handles, two member captures, pinned inputs/artifacts
+    # and a fresh empty-job observation. Apply that same branch to this linker;
+    # do not reinterpret the old failed Link run or accept a generic residual.
+    $link=Join-Path (Split-Path $Plan.Compiler -Parent) 'link.exe'
+    $pin=@($Plan.Bindings|Where-Object Path -IEQ $link)
+    $expected='a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f'
+    if($Start.FileName -ine $link -or $pin.Count -ne 1 -or $pin[0].SHA256 -cne $expected -or
+       $ImageSHA256 -cne $expected){throw 'Exact reviewed MSVC linker identity required.'}
+    $linkPolicy=Get-MaterialV2CompilerPolicy $Plan.Compiler
+    $linkPolicy.Compiler=$link;$linkPolicy.CompilerSHA256=$expected
+    # Function scope only. H1 still checks all fields through its unchanged
+    # policy consumers; the original cl.exe factory is restored on return.
+    function Get-MaterialV2CompilerPolicy([string]$Compiler) {
+        if($Compiler -ine $linkPolicy.Compiler){throw 'Unexpected linker policy request.'}
+        $linkPolicy
+    }
+    $adapted=$Plan.PSObject.Copy();$adapted.Compiler=$link
+    $State.Stage='Compile';$State.ClosurePolicy='H1 exact tool/VCTIP original-job policy'
+    try {Invoke-H1OwnedStage $adapted $State $Context $Start $ImageSHA256 $StageRoot $Started}
+    finally {$State.Stage='Link'}
+}

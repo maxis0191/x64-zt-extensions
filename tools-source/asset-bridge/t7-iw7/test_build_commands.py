@@ -1,4 +1,6 @@
 import os
+import hashlib
+import json
 from pathlib import Path, PureWindowsPath
 import unittest
 import prepare_build as p
@@ -12,6 +14,59 @@ class RecipeTests(unittest.TestCase):
     def test_dependency_parser_refuses_ambiguous_records(self):
         with self.assertRaises(ValueError): p.read_records('unowned.hpp\n')
         with self.assertRaises(ValueError): p.read_records('^C:\\a.cpp\na.hpp\n^c:\\A.cpp\nb.hpp\n')
+
+
+class ReuseTests(unittest.TestCase):
+    def fixture(self):
+        run=PureWindowsPath(r'C:\fresh'); old=PureWindowsPath(r'C:\old'); prepared=old/'prepared'
+        payloads={name:b'unchanged source' for name in ('prepared/main.cpp','prepared/zonetool.cpp',
+            'prepared/common/xpak.cpp','prepared/common/xpak.hpp','prepared/t7_iw7_resident_model.hpp',
+            'prepared/t7_asset_name.hpp','prepared/test_t7_asset_name.cpp')}
+        payloads['link.rsp']=('flags\n'+'\n'.join(p.quote(run/obj[:-4]/obj) for _,obj,_ in p.UNITS)+'\n').encode()
+        prior={'Schema':'iw7.t7-minimal-build-plan/1','RunRoot':str(old),'PreparedRoot':str(prepared),
+               'Bindings':[{'Path':str(prepared/n.removeprefix('prepared/')),'Bytes':len(raw),'SHA256':hashlib.sha256(raw).hexdigest()}
+                           for n,raw in payloads.items() if n.startswith('prepared/')]}
+        prior_raw=json.dumps(prior).encode()
+        stages=[{'Name':n,'ExitCode':0,'TreeClosureConfirmed':True} for n in ('helper','probe','main','zonetool11','xpak','link')]
+        stages[1]['Checks']=51
+        required={'helper':['native_probe.obj','native_probe.exe','native_probe.pdb','dependencies.json'],
+                  **{obj[:-4]:[obj,'compile.pdb','dependencies.json'] for _,obj,_ in p.UNITS}}
+        for s in stages:
+            if s['Name'] in required:
+                s['Artifacts']=[{'Path':str(old/s['Name']/n),'Bytes':1024,'SHA256':'1'*64} for n in required[s['Name']]]
+        receipt={'Schema':'iw7.t7-minimal-build/1','PlanSHA256':hashlib.sha256(prior_raw).hexdigest(),
+                 'Status':'Failed','TreeClosureConfirmed':True,'LeaseReleased':True,'Quarantined':False,'Stages':stages}
+        return prior_raw,receipt,payloads,run
+
+    def test_reuses_only_exact_prior_objects_and_preserves_failed_status(self):
+        prior,r,payloads,run=self.fixture()
+        reuse,pins,text=p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
+        self.assertEqual((len(pins),len(text),reuse['Checks'],reuse['OriginalStatus']),(13,7,51,'Failed'))
+        response=payloads['link.rsp'].decode()
+        self.assertNotIn('C:\\fresh',response)
+        self.assertEqual(response.count('C:\\old'),3)
+        self.assertEqual(r['Status'],'Failed')
+
+    def test_changed_native_source_prevents_reuse(self):
+        prior,r,payloads,run=self.fixture();payloads['prepared/zonetool.cpp']=b'changed source'
+        with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
+
+    def test_unclosed_or_failed_compile_prevents_reuse(self):
+        for field,value in (('TreeClosureConfirmed',False),('ExitCode',1)):
+            prior,r,payloads,run=self.fixture();r['Stages'][2][field]=value
+            with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
+
+    def test_missing_pdb_or_wrong_probe_prevents_reuse(self):
+        prior,r,payloads,run=self.fixture();r['Stages'][2]['Artifacts'].pop()
+        with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
+        prior,r,payloads,run=self.fixture();r['Stages'][1]['Checks']=50
+        with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
+
+    def test_wrong_prior_plan_or_quarantine_prevents_reuse(self):
+        prior,r,payloads,run=self.fixture();r['PlanSHA256']='0'*64
+        with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
+        prior,r,payloads,run=self.fixture();r['Quarantined']=True
+        with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
 
 
 @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE') and os.environ.get('IW7_T7_E7_BUILD'),

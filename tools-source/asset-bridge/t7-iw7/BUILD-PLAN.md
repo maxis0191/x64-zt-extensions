@@ -169,3 +169,47 @@ source-only change is a narrow Link telemetry policy adapter reusing H1's strict
 identity, artifact, two-capture and original-job closure checks, with no deadline
 increase. Any further native invocation requires a separately reviewed new plan
 and coordinator GO; Plan C remains Failed.
+
+## Link-only correction and Plan D2 (not executed)
+
+Invoke-T7OwnedStage is a small adapter around the unchanged H1 controller. For
+Link only, it supplies the pinned sibling link.exe identity (SHA256
+a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f)
+to the same strict compiler telemetry policy. The controller's internal Compile
+branch is reused; the receipt retains the actual Link phase label even on error.
+The policy factory override is function-local and cannot broaden the ordinary
+cl.exe factory. VCTIP path/hash, exact root identity/exit zero, bound inputs,
+all four linker artifacts, two matching original-job captures, parent/creation
+checks and a fresh zero-member proof remain required. Unknown residuals still
+fail. There is no new job owner, OS change or timeout increase.
+
+The recovery plan executes only a fresh linker job. It reuses the exact three
+compiled objects, their PDBs and dependency reports, plus the already observed
+51-case helper proof. The prior Plan C SHA, its Failed-but-closed receipt and
+seven byte-identical native source/header/fixture files must agree before reuse
+is prepared. A changed native source, incomplete artifact set, nonzero compile
+exit, missing closure, wrong probe count or quarantine refuses reuse. Full
+expected inputs and reused artifact pins are guarded/rehashed under the new
+lease, and actual prior compiler include sets are checked against that guarded
+set again before link. No old Link result is promoted or relabelled.
+
+The first D read-only check exposed PowerShell's one-element array unwrapping
+in the stage-name count; it stopped before native providers or admission. That
+plan remains preserved. The corrected plan is
+`runtime/t7-build-plan-d2/build-plan.local.json`, SHA256
+daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa.
+Its default check passes with one Link stage, 1,086 expected input pins, zero
+missing pins and no native types, lease, binary hashing or candidate root.
+The new candidate root is `runtime/zt-t7-b`; the original C artifacts remain
+under `runtime/zt-t7-a`. Link stays at 120 seconds, group at 600 seconds,
+admission at 4/6 GiB and output at 256 MiB. E7 preservation anchors remain bound.
+
+Validation: 37 Python source/recipe tests pass, including five reuse regressions;
+three global-deadline regressions still pass. Ten synthetic Link tests exercise
+the actual H1 telemetry functions through the adapter, verifying success only
+after artifact/two-capture proof and rejecting root failure, wrong telemetry
+path, wrong parent, absent job membership, changed generation, changed inputs,
+changed artifacts and unpinned linker identity. The original cl policy remains
+unchanged outside the adapter. All three retained dependency reports also pass
+the new plan's source-only check. These tests perform no native execution or
+reservation. Independent review and a new coordinator GO remain required.

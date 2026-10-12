@@ -113,6 +113,51 @@ def read_records(text):
     return records
 
 
+def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run):
+    """Bind successful sub-stages of the retained failed group, never relabel it."""
+    prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
+    require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
+            receipt['Schema'] == 'iw7.t7-minimal-build/1' and
+            receipt['PlanSHA256'] == hashlib.sha256(prior_plan_raw).hexdigest() and
+            receipt['Status'] == 'Failed' and receipt['TreeClosureConfirmed'] is True and
+            receipt['LeaseReleased'] is True and receipt['Quarantined'] is False,
+            'Exact failed, closed prior group required')
+    stages = receipt['Stages']
+    require([s['Name'] for s in stages] == ['helper','probe','main','zonetool11','xpak','link'], 'Prior six-stage identity differs')
+    require(all(s['ExitCode'] == 0 and s['TreeClosureConfirmed'] is True for s in stages[:5]) and
+            stages[1]['Checks'] == 51, 'Successful closed compilation and exact 51-check probe required')
+    prior_bindings = {key(p['Path']):p for p in prior['Bindings']}
+    prepared = PureWindowsPath(prior['PreparedRoot']); old_root = PureWindowsPath(prior['RunRoot'])
+    old_text = []
+    for name, raw in payloads.items():
+        if not name.startswith('prepared/'): continue
+        path = prepared/name.removeprefix('prepared/')
+        pin = prior_bindings.get(key(path))
+        require(pin and pin['Bytes'] == len(raw) and pin['SHA256'] == hashlib.sha256(raw).hexdigest(),
+                'Native source/header/fixture differs from compiled prior stage')
+        old_text.append(pin)
+    inputs = []
+    required = {'helper':['native_probe.obj','native_probe.exe','native_probe.pdb','dependencies.json'],
+                **{obj[:-4]:[obj,'compile.pdb','dependencies.json'] for _,obj,_ in UNITS}}
+    for stage in stages:
+        if stage['Name'] not in required: continue
+        expected = {key(old_root/stage['Name']/name) for name in required[stage['Name']]}
+        require({key(p['Path']) for p in stage['Artifacts']} == expected, 'Prior artifact inventory differs')
+        for pin in stage['Artifacts']:
+            require(type(pin['Bytes']) is int and 0 < pin['Bytes'] <= 32*1024**2 and
+                    re.fullmatch('[0-9a-f]{64}',pin['SHA256']), 'Prior artifact pin invalid')
+            inputs.append(pin)
+    response = payloads['link.rsp'].decode()
+    for _, obj, _ in UNITS:
+        source = quote(PureWindowsPath(run)/obj[:-4]/obj)
+        require(response.splitlines().count(source) == 1, 'One new object path required before reuse')
+        response = response.replace(source+'\n', quote(old_root/obj[:-4]/obj)+'\n')
+    payloads['link.rsp'] = response.encode()
+    return {'OriginalStatus':'Failed','SourcePlanSHA256':receipt['PlanSHA256'],
+            'ReceiptSHA256':hashlib.sha256(receipt_raw).hexdigest(),'Checks':51,
+            'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in UNITS]}, inputs, old_text
+
+
 def prepare(args):
     source, e7, output, run, adapter, providers, job = [path_checked(getattr(args, n)) for n in
         ('source', 'e7', 'output', 'run', 'adapter', 'providers', 'job')]
@@ -220,6 +265,19 @@ def prepare(args):
     stages.append({'Name':'link','Stage':'Link','Image':str(compiler_dir/'link.exe'),
                    'Arguments':['@'+str(output/'link.rsp')],'DeadlineSeconds':120,
                    'Artifacts':['zonetool-t7.exe','zonetool-t7.pdb','zonetool-t7.lib','zonetool-t7.exp']})
+    reuse = None
+    require(bool(args.reuse_plan) == bool(args.reuse_compile_receipt), 'Both prior plan and receipt required')
+    if args.reuse_plan:
+        reuse, reused_inputs, reused_text = reuse_compilation(read(args.reuse_plan,2*1024**2),
+            read(args.reuse_compile_receipt,128*1024), payloads, run)
+        reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
+                      'Receipt':str(path_checked(args.reuse_compile_receipt))})
+        for pin in reused_inputs:
+            require(path_checked(pin['Path']).stat().st_size == pin['Bytes'], 'Reused artifact size differs')
+        for pin in reused_text:
+            read(pin['Path'],256*1024,pin['SHA256'])
+        inputs += reused_inputs
+        stages = stages[-1:]
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -239,7 +297,7 @@ def prepare(args):
         'Profile':str(HERE/'T7Build.Profile.ps1'), **{k:str(providers/v) for k,v in roles.items()},
         'Compiler':str(compiler_dir/'cl.exe'),'JobAssembly':str(job),'Bindings':list(bindings.values()),
         'Inputs':inputs,'MissingExpectedPins':missing,'InputPinsComplete':not missing,'Environment':environment,
-        'Stages':stages,'PhysicalBytes':4*1024**3,'CommitBytes':6*1024**3,'GroupDeadlineSeconds':600,
+        'Stages':stages,'ReuseCompile':reuse,'PhysicalBytes':4*1024**3,'CommitBytes':6*1024**3,'GroupDeadlineSeconds':600,
         'OutputLimitBytes':256*1024**2,'MetadataReserveBytes':1024**2,'CleanupSeconds':5,
         'ReusedObjects':410,'ReusedProjectLibraries':18,'ReusedResources':1,'NativeExecuted':False,
         'ToolchainFullyHermetic':False,'Ready':False}
@@ -259,4 +317,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for n in ('source','e7','output','run','adapter','providers','job','seed-seal'): parser.add_argument('--'+n,type=Path,required=True)
     parser.add_argument('--extra-pins',type=Path)
+    parser.add_argument('--reuse-plan',type=Path)
+    parser.add_argument('--reuse-compile-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))
