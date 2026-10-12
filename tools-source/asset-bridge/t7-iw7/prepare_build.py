@@ -190,12 +190,13 @@ def prepare(args):
     payloads, replaced = command_payloads(cl, link, source, output/'prepared', run)
     _, patched = prepare_cli.render(source)
     prepatch_helper = getattr(args, 'prepatch_helper', None)
-    catalog_callers = getattr(args, 'catalog_callers', False)
+    catalog_message = getattr(args, 'catalog_message', False)
+    catalog_callers = bool(getattr(args, 'catalog_callers', False) or catalog_message)
     catalog_exit = bool(getattr(args, 'catalog_exit', False) or catalog_callers)
     catalog_trace = bool(getattr(args, 'catalog_trace', False) or catalog_exit)
     require(sum(map(bool, (prepatch_helper, getattr(args, 'catalog_trace', False),
-                          getattr(args, 'catalog_exit', False), catalog_callers))) <= 1,
-            'Pre-patch, catalogue trace, exit-context and caller profiles are exclusive')
+                          getattr(args, 'catalog_exit', False), getattr(args, 'catalog_callers', False), catalog_message))) <= 1,
+            'Pre-patch, catalogue trace, exit-context, caller and message profiles are exclusive')
     require(bool(getattr(args, 'ordinary_plan', None)) == catalog_trace and
             bool(getattr(args, 'ordinary_receipt', None)) == catalog_trace,
             'Catalogue trace requires both ordinary D2 text proofs')
@@ -310,7 +311,8 @@ def prepare(args):
                 read(args.ordinary_plan,2*1024**2,prepare_catalog_trace.BASE_PLAN_SHA),
                 read(args.ordinary_receipt,128*1024,prepare_catalog_trace.BASE_RECEIPT_SHA),
                 prior_raw, prior_receipt_raw, payloads)
-            wire = (prepare_catalog_trace.wire_callers_main if catalog_callers else
+            wire = (prepare_catalog_trace.wire_message_main if catalog_message else
+                    prepare_catalog_trace.wire_callers_main if catalog_callers else
                     prepare_catalog_trace.wire_exit_main if catalog_exit else prepare_catalog_trace.wire_main)
             payloads['prepared/main.cpp'] = wire(payloads['prepared/main.cpp'].decode()).encode()
         reuse, reused_inputs, reused_text = reuse_compilation(prior_raw,
@@ -345,12 +347,14 @@ def prepare(args):
                            ('Wiring',HERE/'prepare_prepatch.py'),('PreparedMain',output/'prepared/main.cpp')]:
             profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     elif catalog_trace:
-        profile = {'Name':(prepare_catalog_trace.CALLERS_NAME if catalog_callers else
+        profile = {'Name':(prepare_catalog_trace.MESSAGE_NAME if catalog_message else
+                          prepare_catalog_trace.CALLERS_NAME if catalog_callers else
                           prepare_catalog_trace.EXIT_NAME if catalog_exit else prepare_catalog_trace.NAME),
                    'Option':prepare_catalog_trace.OPTION,'ArgumentCount':3,
                    'TraceSchema':prepare_catalog_trace.SCHEMA}
         if catalog_exit: profile['ContextSchema'] = prepare_catalog_trace.EXIT_SCHEMA
         if catalog_callers: profile['CallerSchema'] = prepare_catalog_trace.CALLERS_SCHEMA
+        if catalog_message: profile['MessageSchema'] = prepare_catalog_trace.MESSAGE_SCHEMA
         for name, path in [('Wiring',HERE/'prepare_catalog_trace.py'),('PreparedMain',output/'prepared/main.cpp'),
                            ('BaseBuildPlan',args.ordinary_plan),('BaseBuildReceipt',args.ordinary_receipt)]:
             profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
@@ -386,6 +390,7 @@ if __name__ == '__main__':
     parser.add_argument('--catalog-trace',action='store_true')
     parser.add_argument('--catalog-exit',action='store_true')
     parser.add_argument('--catalog-callers',action='store_true')
+    parser.add_argument('--catalog-message',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

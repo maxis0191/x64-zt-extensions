@@ -592,3 +592,142 @@ files and were handed to worker 51 after complete closure. No decoding occurred
 in this adapter chat. A/B/D/E/F remain Failed and C remains unconsumed. No retry,
 extra zone input, expanded capture or further native invocation is authorized
 by this checkpoint.
+
+## Message reader: source-only qualification after F
+
+The coordinator authorized a fifth profile, `t7-catalog-message`, following
+worker 51's bounded caller analysis and a separate review of the producer
+design. This adapter owns the reader, provenance checks and pure tests only.
+There is no message build, candidate, runtime plan or native invocation in
+this source checkpoint. The producer's fixed callsite and signature safeguards
+are its responsibility; this reader does not patch or read engine memory.
+
+BuildProfile has exactly eleven fields: the ten caller fields plus
+`MessageSchema=iw7.t7-catalog-message/1`, with Name `t7-catalog-message`.
+The same option/argc, guarded Wiring/PreparedMain/base pins, actual main/Link
+receipt and candidate provenance checks remain required. No extra runtime
+argument or configurable callsite is introduced. Ordinary D2, trace /1,
+EXIT /1 and CALLER /1 retain their existing readers and exact profile fields.
+Run-T7Catalogue and shared ownership/resource helpers are unchanged.
+
+Only this profile admits two additional `[T7_CATALOG_MSG]` records under the
+fixed schema, for at most fourteen lines and 8,192 bytes of stderr. The closed
+grammar permits one install and one buffer record, with canonical decimal
+uint32 thread/error fields. Install status is restricted to the agreed set;
+installed requires error 0. A complete installation record must follow
+before_post_unpack and precede after_post_unpack when that marker exists.
+Its thread is independent of the eventual exit winner.
+
+A buffer requires a preceding successful installation. It may arrive during
+post_unpack, before after_post_unpack. A same-thread buffer must precede its
+exit_hook. A missing exit marker or a different exit thread retains useful
+diagnostics as uncorrelated Partial rather than fabricating an association.
+Duplicate records, unknown fields/schema/statuses and invalid order are refused.
+Recognizable final MSG lines truncated before their newline remain incomplete;
+an ambiguous short prefix first remains eligible for the legacy EXIT/CALLER
+reader at its current stage. Completed installation without its preceding
+boundary is refused; a truncated installation cannot become Observed.
+
+The buffer requests at most 384 bytes. Read cannot exceed requested, and length
+cannot exceed read. With nul 1, length is strictly smaller than read; with nul
+0, length equals read. Exactly twice length uppercase hex characters represent
+the bytes before the first NUL, or `-` for zero length. An aligned `00` byte in
+the serialized payload is refused. Bytes remain opaque and private: the reader
+does not assume an encoding, turn them into text, or publish their contents.
+
+| MessageOutcome | Required evidence |
+| --- | --- |
+| Absent | No MSG record or recognizable incomplete MSG line |
+| Partial | Refused installation, missing/incomplete buffer, capture error, missing exit or different exit thread |
+| Prefix | Installed, full bounded read without NUL, same-thread buffer before exit_hook |
+| Observed | Installed, status ok, full bounded read with NUL, same-thread buffer before exit_hook |
+
+A NUL on partial, read_failed or exception never upgrades the outcome. The RPM
+false-with-full-count case remains read_failed. The serializer's impossible
+count clamp is read_failed/error 13 with all counts zero. Pre-read refusals
+have zero counts, nul 0 and no payload. Exception may preserve bounded useful
+bytes but remains Partial. Prefix is not a complete message, and neither Prefix
+nor Observed establishes catalogue success or an engine-error cause.
+
+All 1,029 pure/light checks pass: catalogue/lifecycle 188, trace/provenance 209,
+EXIT 161, Main 52, callers 209 and message 210. They cover both legal buffer
+positions, independent installation thread, competing exit winner, every
+installation refusal and capture state, NUL/count mismatches, truncation,
+duplicate/order refusals and a complete fourteen-line envelope with maximum
+caller payloads and a 384-byte message prefix. Tests contain only invented
+opaque bytes and synthetic text. The finalizer still reports NoCatalogue as
+Failed for Observed, Prefix and Partial messages; forced closure inspects only
+bounded diagnostics after release, without rehashing stock.
+
+The next gate is independent source review of both producer and reader. A real
+Passed build and separately reviewed exact runtime plan are still required
+before any new native invocation. Captured hex or decoded message text must
+remain in ignored private evidence, never Git checkpoints or public artifacts.
+
+## Plan G: preflight refused after the Main generation changed
+
+Following independent source/build/plan review, the coordinator authorized one
+native invocation of Plan G
+`047ee1aa5df8f514e598b837b835639d843dfc36ae64f69dfff9cb2138c7a4d3`
+(10,750 bytes). It binds the actual message candidate, 21,750,272 bytes with
+SHA256 `57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a`,
+from Passed build receipt
+`4001a1ed0a320bea393bed3e5ca4f17c8a9c0c1feb3ec43f6b4fc0761ccb3ae6`.
+The preparation snapshot at 16:18:48 UTC had observed Main Stopped and an
+allowed 6/8 GiB budget; that snapshot was explicitly not runtime admission.
+
+The fresh preflight passed default text/metadata validation, then refused
+`Stopped Main baseline differs or is ambiguous.` before creating a persistent
+host, taking a runtime lease or invoking Run. At 16:23:17.5341169 UTC, a new
+`iw7-paris-voice.exe` process with PID 19932 and creation time
+16:21:08.1996220 UTC matched the preserved absolute image path and owned UDP
+27016 on `0.0.0.0`. The old PID 27784 was not observed. The start actor and
+occupied state were not established; no inference about them is needed to
+honor the failed baseline guard.
+
+G remains **unconsumed / PreflightRefused**, with zero native invocations,
+no attempt marker and no runtime receipt. There is no G message or catalogue
+result to interpret. No payload was read/hashed, no alias was created, and the
+plan, observed Main process, bank and network were not modified. Both the
+coordinator and build owner were informed. The
+[sanitized refusal checkpoint](catalogue-preflight-g-20261012.json) pins the
+small private observation without publishing machine-specific paths.
+
+Continuing under a different Main baseline requires a separately sealed plan,
+review and exact GO binding the new process identity. Do not silently relabel
+the existing G plan as Running, reuse its prior preparation as admission, or
+stop the observed Main process to satisfy the plan. No further invocation is
+authorized by this refusal checkpoint.
+
+## Plan H: Running baseline prepared, commit headroom refused
+
+H is a separately sealed preparation, 10,774 bytes with SHA256
+`1ebd9196d18f6f2182ab4a2544eac68c704776e8dcb15fe48a44c19c3a494433`.
+It reuses G's message candidate/build receipt, source bindings, zone, arguments
+and 6/8 GiB, 200/120/5-second limits. The existing parameterized Running helper
+needs no source change. At 16:27:42.6037227 UTC on 2026-10-12, PID 19932,
+created at 16:21:08.1996220 UTC, matched the expected image path and owned UDP
+27016. This establishes the process generation and endpoint, not its binary
+contents, start actor or occupied state.
+
+The preparation snapshot at 16:27:43.5288340 UTC refused the unchanged budget:
+commit was 43,075,686,400 / 47,564,615,680 bytes (90.56%), physical usage 77.4%,
+and HighWater true. Physical reserve remained zero and commit reserve remained
+9,512,923,136 bytes. Zero leases/heavy workloads and the preserved Python
+generation were observed. This dated preparation check is **not runtime
+admission**. Default validation returned PlanCheckedPendingGO; the 52 light
+Main checks passed during preparation.
+
+The sealed G-to-H delta has seven intentional field changes for the new paths
+and Running identity. Its eighth textual difference only removes a trailing
+zero from the candidate metadata timestamp; equality at 100 ns precision was
+verified. All other fields and bindings are unchanged. The
+[sanitized H checkpoint](catalogue-preparation-h-20261012.json) retains the
+plan, delta and snapshot pins without private absolute paths or payloads.
+
+H has **zero invocations**, no persistent host, runtime lease, attempt marker,
+runtime receipt or captured message. No GO H has been given. G remains
+unconsumed; its authorization does not transfer. Preserve H and the candidate,
+without repeated measurements, reduced safeguards or changes to processes or
+pagefile. A distinct exact GO and a fresh admitted preflight are still required
+before a future invocation. This checkpoint only records existing evidence.

@@ -95,4 +95,18 @@ $fixture=New-CallersFixture;$fixture.BuildProfile.Name='t7-catalog-exit-context'
 $fixture=New-CallersFixture;$fixture.BuildProfile.PreparedMain.SHA256=('b'*64);Must-Refuse $fixture
 $fixture=New-CallersFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
 $fixture=New-CallersFixture;$fixture.BuildProfile|Add-Member -NotePropertyName TargetAddresses -NotePropertyValue @('0x140584FD8');Must-Refuse $fixture
+function New-MessageFixture {
+    $fixture=New-CallersFixture
+    $fixture.BuildProfile.Name='t7-catalog-message'
+    $fixture.BuildProfile|Add-Member -NotePropertyName MessageSchema -NotePropertyValue 'iw7.t7-catalog-message/1'
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-MessageFixture) $PSScriptRoot)){throw 'Qualified message profile refused.'};$checks++
+$fixture=New-MessageFixture;$fixture.BuildProfile.MessageSchema='iw7.t7-catalog-message/2';Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.BuildProfile.CallerSchema='iw7.t7-catalog-callers/2';Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.BuildProfile.PSObject.Properties.Remove('MessageSchema');Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.BuildProfile.Name='t7-catalog-callers';Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.BuildProfile.PreparedMain.SHA256=('b'*64);Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.BuildProfile|Add-Member -NotePropertyName MessageBytes -NotePropertyValue 4096;Must-Refuse $fixture
 "T7_BUILD_PROFILE_CHECKS=$checks"

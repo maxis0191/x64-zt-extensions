@@ -856,3 +856,115 @@ and Ready remain false. Compilation proves C++/SEH syntax and linkage; it does
 not prove real caller captures, the cause of ExitProcess, catalogue generation
 or gameplay. The next action is a separately reviewed runtime plan using these
 actual artefact identities, followed only by its own explicit coordinator GO.
+
+### Message diagnostic: source-only implementation after F
+
+[The F analysis](CALLER-F-ANALYSIS.md) records the verified 644 captured code
+bytes, two complete functions, one partial region and the exact observed callsite.
+It supplies the concrete ABI, installation/readback/rollback guards, publication
+ordering, one-shot and error-count contract for the message observer. F remains
+NoCatalogue; no missing dependency or fatal-function name has been established.
+
+The new preparation selector `--catalog-message` is exclusive with the four
+earlier selectors. BuildProfile has exactly eleven fields: Name
+`t7-catalog-message`, Option `-t7-iw7-catalog`, ArgumentCount 3, the unchanged
+TraceSchema/ContextSchema/CallerSchema, MessageSchema
+`iw7.t7-catalog-message/1`, and Wiring/PreparedMain/BaseBuildPlan/BaseBuildReceipt.
+It still rebuilds only main and Link, reusing the other 412 object references
+and the qualified ordinary D2/C proofs. Runtime argv is unchanged.
+
+The three existing wire schemas and generated sources retain their exact built
+identities. Only the new profile forwards the already observed five-byte call
+through a fixed ABI-preserving wrapper. Forwarding occurs before any diagnostic
+API and is never caught. Afterward, at most 384 stack-buffer bytes are read, and
+only the prefix before NUL is serialized. Original return value, LastError,
+cleanup and exit remain. Installation and buffer observation each publish at
+most one new line. Actual maximum-width formats, including CRLF, total at most
+7,994 bytes/fourteen lines, within the unchanged 8,192-byte stderr contract.
+
+Source validation passes 94 Python tests with retained source/E7 bindings and
+61 PowerShell checks (48 profile, 3 deadline, 10 Link telemetry). The retained
+SHA-256 helper's uppercase encoding and SDK stack-bound API were checked in
+source; both headers already belong to the qualified input set. No native type,
+build child, lease, executable/PDB read or hash was used by this preparation.
+No C++ compilation or actual message capture is claimed. The coordinator owns
+independent review, integration, and the distinct future build/runtime GO gates.
+
+### Exact message build plan A, awaiting review and GO
+
+Source ff488654f9f7f0a0d7752ca2ffc669839e8deea0 produced
+`runtime/t7-message-build-plan-a/build-plan.local.json` (298,664 bytes), SHA256
+0b1d6f29cb6b02f81d78e2d11f46bbc3679a635a943cca232b7be72d0643a28a.
+Its default source/metadata validation passes with 1,083 inputs and no missing
+pin. BuildProfile has exactly the eleven fields specified above.
+
+| Text binding | Bytes | SHA256 |
+| --- | ---: | --- |
+| Wiring | 31,337 | 25284eabad7d3818c302700234f93f767f8d47c9fd403473a7a82b2670550e46 |
+| PreparedMain | 38,500 | a601ef1449eaa4c3ec2c85ea561ed4cc5c1aa75769a4ad1def002d348a971e68 |
+| Ordinary D2 plan | 296,330 | daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa |
+| Ordinary D2 receipt | 7,136 | c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2 |
+
+Inputs equal callers A exactly. The 413-object Link response changes only its
+21st object (main.obj, response-file line 22); 412 objects are reused. Stages
+remain main and Link with the existing 4/6 GiB, 120/600-second and 256 MiB limits.
+No dependency or common provider was added. The future `runtime/zt-t7-message-a`
+root is absent. NativeTypesLoaded, BinaryInputsHashed, LeaseAcquired and
+RunRootCreated are false. There is no message candidate or build receipt yet.
+
+The coordinator and runtime parser owner received the exact source, plan and
+pins for review. No build, engine execution, new payload read or binary/PDB hash
+occurred during preparation. Build and runtime still need distinct GO decisions.
+
+### Message build A: Passed and fully closed, candidate unexecuted
+
+Independent review accepted source ff488654 and the exact plan above. The
+coordinator reported 205 Python tests and 48 profile checks passing, then
+authorized one native build after the other heavy groups fully closed. Fresh
+preflight at 16:12:39.0276108 UTC on 2026-10-12 admitted the unchanged 4/6 GiB
+estimates with zero leases/heavy processes, Main stopped and the exact Python
+PID 23352 generation preserved. A fresh persistent PowerShell host PID 32292,
+created at 16:12:44.7579490 UTC, made the single invocation. Its outer process
+was PID 24976. Run returned without error at 16:13:49.4840838 UTC.
+
+Main compiled in 3.963 seconds and Link completed in 3.535 seconds. Original
+roots cl PID 35196 and link PID 14468 both exited zero. The existing H1 policy
+verified each root's exit and exact VCTIP residual (3300 and 35072), then closed
+each job with zero active members. Artifact identities were generated and
+reverified under the lease. Native source dependencies identify the reviewed
+PreparedMain, with MSVC-normalized casing. Final input revalidation passed.
+The group took 27.121 seconds and observed at most 177,638,923 output bytes,
+below the unchanged 256 MiB cap.
+
+Receipt `runtime/zt-t7-message-a/receipt.json` is 14,510 bytes, SHA256
+4001a1ed0a320bea393bed3e5ca4f17c8a9c0c1feb3ec43f6b4fc0761ccb3ae6.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+Quarantined false and the exact reviewed eleven-field BuildProfile. The receipt
+provides these artifact identities under `runtime/zt-t7-message-a`:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| main/main.obj | 572,842 | 489f95b984c457bf16b86469db33dcc79979f376c2a4796b6eccadb33ed3b358 |
+| main/compile.pdb | 1,732,608 | 523344d519cb21ca798ada41a387a46343d1252da58494092d0d2513a29412dd |
+| main/dependencies.json | 62,096 | 3aadc4c1fea5223bce0dab21b852344d610e1e1ee582799710e26d1a12eecff1 |
+| link/zonetool-t7.exe | 21,750,272 | 57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a |
+| link/zonetool-t7.pdb | 136,458,240 | d510fd16d84cc7eb63e4d2f7a8a07213bdfef2553d7b3e20ce43a9a9d99b34dd |
+| link/zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| link/zonetool-t7.exp | 3,917 | f19aa04d8f8e160f624788af585949e7493f2e2711020de9eb990a124c3b6323 |
+
+Postflight at 16:14:35.3436262 UTC found zero leases/build/telemetry processes,
+Main still stopped and Python's exact identity unchanged. The retained host
+verified the exact receipt and absence of AppDomain quarantine, saved its
+outcome and exited zero. Session 38482 closed with exit code zero. Independent
+observation at 16:15:06.7597234 UTC confirmed host 32292, outer 24976, both tool
+roots and both VCTIP residuals absent. The preflight, postflight, host outcome
+and independent host-exit records remain under `runtime/t7-message-build-plan-a`.
+
+The coordinator and runtime parser owner received the actual artifact pins and
+complete closure proof. No binary was reread or hashed after lease release.
+There was one invocation, no retry and no candidate/engine execution.
+CandidateExecuted and Ready remain false. Compilation establishes C++/SEH
+syntax and linkage, but does not establish live installation, message capture,
+the cause of ExitProcess, catalogue generation or gameplay. The next action is
+a separately reviewed runtime plan using these actual artifact identities,
+followed only by its own explicit coordinator GO.
