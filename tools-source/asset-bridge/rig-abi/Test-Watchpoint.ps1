@@ -85,6 +85,44 @@ RunCase 'drain failure is fatal' {$script:hooks.Poll={param($s) [pscustomobject]
 RunCase 'slow seal misses armed deadline' {$script:hooks.Seal={param($s) $script:tick+=10001L;[pscustomobject]@{Nonce=$s.Nonce;SHA256=('a'*64);Bytes=1;WitnessParsed=$true}}} {
     param($s) Check (!$s.DiagnosticCaptured -and $s.Failure -like '*deadline*') 'Slow seal accepted'
 }
+RunCase 'late stopped confirmation cannot extend global deadline' {
+    $script:hooks.Poll={param($s)
+        $script:poll++
+        if($script:poll -eq 1){$script:tick=239995L}
+        [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=42;Status=$(if($script:poll -eq 1){'ArmedStopped'}else{'CaptureStopped'});IdentityChecked=$true;BreakpointChecked=$true}
+    }
+    $script:hooks.Delay={$script:tick+=1L}
+} {
+    param($s)
+    Check ($s.DiagnosticCaptured -and $s.DueMs -eq 240000L -and $script:watch.Due -eq 240000L) 'Ten seconds extended remaining global budget'
+    Check ($s.Closed -and $s.Restored -and $s.LeaseReleased) 'Timely last-window capture failed cleanup'
+}
+RunCase 'stopped confirmation at global deadline never continues' {
+    $script:hooks.Poll={param($s) $script:tick=240000L;[pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=42;Status='ArmedStopped';IdentityChecked=$true;BreakpointChecked=$true}}
+} {
+    param($s)
+    Check (!$s.Continued -and !$s.DiagnosticCaptured -and !$script:calls.Contains('Continue') -and !$script:calls.Contains('Tighten')) 'Expired stopped confirmation continued'
+    Check ($s.Failure -like '*deadline*' -and $s.Closed -and $s.LeaseReleased) 'Expired confirmation did not close owned job'
+}
+RunCase 'slow checkpoint after tightening prevents continuation' {
+    $script:delayedCheckpoint=$false
+    $script:hooks.Save={param($s)
+        if(!$script:delayedCheckpoint -and $script:calls.Contains('Tighten')){
+            $script:delayedCheckpoint=$true;$script:tick+=10000L
+        }
+    }
+} {
+    param($s)
+    Check ($script:delayedCheckpoint -and !$s.Continued -and !$script:calls.Contains('Continue') -and !$s.DiagnosticCaptured) 'Late armed checkpoint allowed continuation'
+    Check ($s.Failure -like '*deadline*' -and $s.Closed -and $s.Restored -and $s.LeaseReleased) 'Late armed checkpoint escaped closure'
+}
+RunCase 'slow continuation callback cannot yield accepted capture' {
+    $script:hooks.Continue={param($s) $script:calls.Add('Continue');$script:tick+=10001L}
+} {
+    param($s)
+    Check ($s.Continued -and !$s.DiagnosticCaptured -and !$s.Capture -and $s.Failure -like '*deadline*') 'Late continuation became capture'
+    Check ($s.Closed -and $s.Restored -and $s.LeaseReleased -and $script:job.StopCount -eq 1) 'Late continuation did not close original job once'
+}
 RunCase 'slow exit getter misses cleanup deadline despite Active0' {$script:slowExit=30001L} {
     param($s) Check ($s.Quarantined -and !$s.Restored -and !$s.LeaseReleased -and !$s.DiagnosticCaptured) 'Late Active0 accepted'
 }

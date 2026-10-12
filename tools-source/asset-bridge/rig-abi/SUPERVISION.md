@@ -32,8 +32,14 @@ EOF, failed drains, output overflow, refusal and unsolicited continuation fail.
 Debugger stop recovery uses original-job termination and does not depend on a
 responsive stdin, Ctrl+C broadcast, or a guessed descendant PID.
 
-`Test-Watchpoint.ps1` exercises 19 simulated transactions, including slow exit
+`Test-Watchpoint.ps1` exercises 23 simulated transactions, including slow exit
 getters/saves/seals/releases, factory errors, stop failures, EOF and quarantine.
+Four boundary cases cover a stopped confirmation with five milliseconds left,
+confirmation exactly at the global deadline, an expired checkpoint between
+tightening and continuation, and a continuation callback returning too late.
+The ten-second interval begins after the stopped identity/breakpoint confirmation;
+before that, the original 240-second deadline remains in force. Tightening uses
+the earlier deadline, and does not add ten seconds to the remaining global budget.
 It does not load the new C# type or run CDB, Python fixture, game or Win32 owner.
 The deadline thread is source-reviewed only, uncompiled and unqualified here.
 Concrete transport is now provided below. Actual fixture qualification remains
