@@ -35,6 +35,14 @@ Assert-Check ($cs -match 'RootExited\(\) && ActiveProcesses\(\) == 0') 'Root-onl
 $runner=Get-Content -LiteralPath $runnerPath -Raw
 Assert-Check ($runner -notmatch 'ReadToEndAsync|\.Kill\(|\.WaitForExit\(') 'No pipe drain or root-only termination fallback'
 Assert-Check ($runner.IndexOf('$lease=Enter-IW7ResourceLease') -lt $runner.IndexOf('Add-Type -Path')) 'Helper compilation must remain inside admission'
+foreach($witness in @('NativeJob-WitnessNode.ps1','Run-NativeJobWitness.ps1')){
+    $witnessErrors=$null;$witnessTokens=$null
+    $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $witness),[ref]$witnessTokens,[ref]$witnessErrors)
+    Assert-Check (!$witnessErrors.Count) "Witness script syntax: $witnessErrors"
+}
+$liveSource=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Run-NativeJobWitness.ps1') -Raw
+Assert-Check ($liveSource.IndexOf('$lease=Enter-IW7ResourceLease') -lt $liveSource.IndexOf('Add-Type -Path')) 'Witness helper compile must follow resource admission'
+Assert-Check ($liveSource -notmatch 'writer_probe\.cpp|cl\.exe|MSBuild|Run-NativeProbe\.ps1\s+-') 'Witness cannot rebuild the proved writer'
 
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 $testRoot=Join-Path $repo ('runtime/probe-source-tests-'+[guid]::NewGuid().ToString('N'))

@@ -85,3 +85,10 @@ leaves no executable running; forced launcher exit triggers kill-on-close; and
 an unconfirmed native closure preserves its lease. Then validate file-backed
 diagnostics and the normal writer path. Preserve original handles/identities,
 logs and final directory accounting. No part of that next witness ran here.
+
+The [prepared native witness command](NATIVE-JOB-WITNESS.md) now provides the
+normal/root-exit/kill-on-close tree cases, foreign witness and final accounting
+without rebuilding the original writer. It remains unexecuted. The lightweight
+suite is now 32 checks after adding both fixture scripts' syntax and admission
+ordering checks. The helper's hash encoding uses BitConverter for PowerShell
+7.0 / .NET Core 3.1 compatibility; this does not expand the native evidence.
