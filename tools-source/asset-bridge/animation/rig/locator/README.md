@@ -68,7 +68,9 @@ The subsequent [targeted Plan C](TARGETED.md) prepares one seeded continuation
 walk from `0x140a17970`, with zero global opcode scans and no called targets
 followed. Its later single Run C produced a preserved bounded refusal.
 [Plan D](TARGETED-D.md) now prepares only the per-record callee `0x140a17e70`,
-with precise refusal frontiers; that separate Plan has not been run.
+with precise refusal frontiers; its single Run refused at the 2 KiB owner bound
+before decoding. [Plan E](TARGETED-E.md) prepares fixed 16 KiB per-range / 32 KiB
+total / 8,192-instruction limits for the same entry. It has not been run.
 
 ## Original bounded static preparation (before Run B)
 

@@ -93,7 +93,8 @@ $targetPlan=[pscustomobject]@{Schema='iw7.rig-locator-supervisor-plan/2';Phase='
 Assert-LocatorTargetedPlan $targetPlan;Check $true 'Exact targeted Plan accepted without side effects'
 $arguments=Get-LocatorArguments $targetPlan
 Check ($arguments.EndsWith('"--entry" "0x140a17970"') -and $arguments.Contains('"C:\targeted.py"')) 'Targeted fixed argv selected'
-foreach($bad in @(@('fragments',9),@('instructions','2048'),@('text_scans',1),@('seconds',11),@('external_callees_followed',1))){
+foreach($bad in @(@('fragments',9),@('instructions','8192'),@('fragment_bytes',16385),@('decoded_bytes',32769),
+    @('text_scans',1),@('seconds',11),@('external_callees_followed',1))){
     $old=$targetPlan.TargetedLimits.($bad[0]);$targetPlan.TargetedLimits.($bad[0])=$bad[1];$blocked=$false
     try{Assert-LocatorTargetedPlan $targetPlan}catch{$blocked=$true}
     Check $blocked 'Targeted Plan refuses widened or untyped bound';$targetPlan.TargetedLimits.($bad[0])=$old
@@ -116,7 +117,7 @@ foreach($key in $fields.Keys){$targetReport|Add-Member NoteProperty $key $fields
 Assert-LocatorReport $targetReport -Targeted $true;Check $true 'Targeted typed report accepted'
 foreach($bad in @(@('entry','0x140a17971'),@('text_scans',1),@('external_callees_followed',1),@('elapsed_seconds',10.01),
     @('complete_logical_function_established',$true),@('continuation_same_function_established','false'),
-    @('fragment_count',9),@('control_edge_count',65),@('decoded_bytes',8193),@('decoded_instructions',2049),
+    @('fragment_count',9),@('control_edge_count',65),@('decoded_bytes',32769),@('decoded_instructions',8193),
     @('root_entries','1'),@('visited_instructions',2))){
     $old=$targetReport.($bad[0]);$targetReport.($bad[0])=$bad[1];$blocked=$false
     try{Assert-LocatorReport $targetReport -Targeted $true}catch{$blocked=$true}
@@ -136,6 +137,10 @@ foreach($field in 'refused_frontiers','pending_frontiers'){
 $targetReport.fragments[0].decode_complete=$false;$blocked=$false
 try{Assert-LocatorReport $targetReport -Targeted $true}catch{$blocked=$true}
 Check $blocked 'Partially decoded fragment prevents route acceptance';$targetReport.fragments[0].decode_complete=$true
+$targetReport.fragments[0].bytes=16385;$targetReport.decoded_bytes=16385;$blocked=$false
+try{Assert-LocatorReport $targetReport -Targeted $true}catch{$blocked=$true}
+Check $blocked 'New per-fragment byte ceiling is enforced even within the total byte budget'
+$targetReport.fragments[0].bytes=1;$targetReport.decoded_bytes=1
 $targetReport.entry='0x140a17e70';Assert-LocatorReport $targetReport -Targeted $true -ExpectedEntry '0x140a17e70'
 Check $true 'Report must match the second entry when that exact Plan selected it';$targetReport.entry='0x140a17970'
 foreach($mode in $true,$false){

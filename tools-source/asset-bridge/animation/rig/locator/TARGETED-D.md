@@ -22,6 +22,10 @@ was released. Main was unchanged. The two preserved output files total 3,350
 bytes; the earlier longer state accounts for the 3,358-byte maximum.
 No retry, stock modification, extra callee or debugger attachment occurred.
 
+The separately prepared [Plan E](TARGETED-E.md) reassesses the fixed owner-range
+and instruction bounds and records actual owner sizes in future outcomes. It
+has not been run and does not change D's preserved evidence.
+
 ## Candidate from the existing report only
 
 C's entry `0x140a17970` branches either to an adjacent body at `0x140a179de`

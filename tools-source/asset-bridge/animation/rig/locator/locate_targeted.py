@@ -14,8 +14,8 @@ from capstone import (Cs, CS_ARCH_X86, CS_MODE_64, CS_OP_IMM, CS_OP_MEM,
 
 IMAGE, TEXT = 0x140000000, 0x140001000
 ALLOWED_ENTRIES = (0x140a17970, 0x140a17e70)
-LIMITS = {"root_entries": 1, "fragments": 8, "fragment_bytes": 2048,
-          "decoded_bytes": 8192, "instructions": 2048, "control_edges": 64,
+LIMITS = {"root_entries": 1, "fragments": 8, "fragment_bytes": 16384,
+          "decoded_bytes": 32768, "instructions": 8192, "control_edges": 64,
           "seconds": 10, "text_scans": 0, "external_callees_followed": 0}
 REFERENCES = {
     "text": (21135360, "5f2953f04a8d5f2a53d1e5a5e076de8f29d5b5303ca652f2420fec8d2a6a9138"),
@@ -87,6 +87,12 @@ class TargetedLocator:
         if len(owners) != 1:
             raise FrontierRefusal("ambiguous-pdata-owner", owners)
         start, end, unwind = owners[0]
+        # Record metadata before any range/count/byte/decode gate can refuse.
+        # This does not read code from a rejected owner or guess a boundary.
+        if self.current_frontier is not None:
+            self.current_frontier["selected_owner"] = {
+                "start": hex(start), "end": hex(end), "bytes": end - start,
+                "unwind_rva": hex(unwind)}
         if not self.base <= start < end <= self.base + len(self.code):
             raise FrontierRefusal("pdata-range-outside-retained-text", owners)
         overlaps = self.intersections(start, end)
@@ -121,7 +127,7 @@ class TargetedLocator:
     def frontier(self, address, source=None, kind="entry"):
         record = {"address": hex(address), "source": None if source is None else hex(source),
                   "edge_type": kind, "source_mnemonic": None, "source_fragment": None,
-                  "target_relation": "entry"}
+                  "target_relation": "entry", "selected_owner": None}
         if source is not None:
             start, ins = self.instructions[source]
             end = self.fragments[start]["end"]
@@ -136,7 +142,7 @@ class TargetedLocator:
         bounded(len(self.refusals) < 1 + self.limits["control_edges"], "refused frontier bound")
         self.refusals.append({**self.current_frontier, "reason": error.reason,
                               "owner_count": len(owners),
-                              "owner_ranges": [{"start": hex(a), "end": hex(b), "unwind_rva": hex(u)}
+                              "owner_ranges": [{"start": hex(a), "end": hex(b), "bytes": b - a, "unwind_rva": hex(u)}
                                                for a, b, u in owners[:8]],
                               "owner_ranges_truncated": len(owners) > 8,
                               "target_decoded_from_guessed_boundary": False})

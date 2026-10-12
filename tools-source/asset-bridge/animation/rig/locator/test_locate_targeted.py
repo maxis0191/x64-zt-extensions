@@ -200,6 +200,48 @@ class TargetedTests(unittest.TestCase):
         self.assertEqual(report["current_frontier"]["address"], hex(TEXT + 0x20))
         self.assertFalse(report["frontier_queue_exhausted"])
 
+    def test_larger_owned_fragment_is_decoded_and_its_actual_size_retained(self):
+        payload = b"\x0f\x1f\x00" * 1000 + b"\xc3"
+        result = fixture([(0, payload)]).analyze(TEXT)
+        self.assertEqual(result["fragments"][0]["bytes"], 3001)
+        self.assertEqual(result["decoded_bytes"], 3001)
+        self.assertEqual(result["decoded_instructions"], 1001)
+        self.assertEqual(result["text_scans"], 0)
+
+    def test_new_fragment_ceiling_refuses_with_actual_owner_metadata_before_decode(self):
+        payload = b"\x90" * 16384 + b"\xc3"
+        locator = fixture([(0, payload)])
+        with self.assertRaisesRegex(RuntimeError, "fragment byte bound"):
+            locator.analyze(TEXT)
+        report = locator.report(TEXT)
+        owner = report["current_frontier"]["selected_owner"]
+        self.assertEqual(owner, {"start": hex(TEXT), "end": hex(TEXT + 16385),
+                                "bytes": 16385, "unwind_rva": "0x0"})
+        self.assertEqual(report["decoded_instructions"], 0)
+        self.assertEqual(report["decoded_bytes"], 0)
+
+    def test_new_instruction_ceiling_is_exact_and_owner_size_survives(self):
+        locator = fixture([(0, b"\x90" * 8192 + b"\xc3")])
+        with self.assertRaisesRegex(RuntimeError, "instruction bound"):
+            locator.analyze(TEXT)
+        report = locator.report(TEXT)
+        self.assertEqual(report["decoded_instructions"], 8192)
+        self.assertEqual(report["current_frontier"]["selected_owner"]["bytes"], 8193)
+        self.assertFalse(report["fragments"][0]["decode_complete"])
+
+    def test_new_total_byte_ceiling_refuses_next_range_without_expanding_budget(self):
+        nop = b"\x0f\x1f\x44\x00\x00" * 3275
+        first = nop + relative(0xe9, TEXT + len(nop), TEXT + 0x4000)
+        second = nop + relative(0xe9, TEXT + 0x4000 + len(nop), TEXT + 0x8000)
+        locator = fixture([(0, first), (0x4000, second), (0x8000, b"\x90" * 15 + b"\xc3")])
+        with self.assertRaisesRegex(RuntimeError, "decoded byte bound"):
+            locator.analyze(TEXT)
+        report = locator.report(TEXT)
+        self.assertEqual(report["decoded_bytes"], 32760)
+        self.assertEqual(report["fragment_count"], 2)
+        self.assertEqual(report["current_frontier"]["selected_owner"]["bytes"], 16)
+        self.assertLess(report["decoded_instructions"], 8192)
+
 
 if __name__ == "__main__":
     unittest.main()
