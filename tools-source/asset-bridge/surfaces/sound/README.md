@@ -165,7 +165,7 @@ BelowNormal, non-breakaway, kill-on-close job around a tiny Python worker. The
 worker calls pinned FFmpeg without a shell and reuses the unchanged SDK
 `copy_bounded` function with an explicit 32768-byte limit for each log.
 All reviewed input/source files and the plan have read handles denying write and
-delete sharing during execution. The codec executable is used in place.
+delete sharing until finalization. The codec executable is used in place.
 
 Arguments explicitly select FLAC input, PCM16 WAV output, one decoder/encoder
 thread, the local-file protocol and overwrite refusal. No sample-rate, channel
@@ -173,6 +173,10 @@ count or duration conversion is requested. The worker checks native exit 0 and
 both pipe EOFs, then the Python standard-library WAV reader checks mono16/48k,
 48000 frames, exactly 96000 PCM bytes, the expected SHA256 and equality with the
 original. The parent checks the output file against the worker's size/hash.
+Each pipe also needs an explicit completion event from the pinned drain's normal
+return. A local wrapper catches every `BaseException`, records only its type
+(at most 128 characters), and sets the shared failure event. Dead threads alone
+never establish EOF. The PowerShell receipt check requires both normal returns.
 This future evidence would qualify codec decoding only; no SAB/FF/delivery or
 audible acceptance is inferred, and original preparation manifests are not edited.
 
@@ -185,18 +189,36 @@ also stops the run. On failure, only the original job is stopped; cleanup must
 observe its exited root and Active0 within five seconds. No captured PID is killed.
 
 Acceptance requires worker/native success, EOF, original root exit 0, Active0,
-output match and final source integrity. Reservation release follows closure and
-integrity; incomplete proof retains the lease and evidence. Errors preserve their
-fresh run directory and never retry. No stock, owner client or Main file is touched.
+output match and final source integrity. Reservation release follows closure,
+successful disposal of the original job owner, and integrity. Finalization attempts
+job disposal before releasing read guards. Kill-on-close requests termination but
+does not establish descendant closure if the original observation failed.
+`InputHashesMatch` reports the final hash snapshot; `InputsUnchanged` cannot be
+true without proven closure and successful job disposal. Uncertain closure or
+disposal keeps `Quarantined=true`, `InputsUnchanged=false`, the lease and evidence.
+Read guards are then released and `ReadGuardsReleased=true` reports that fact;
+they cannot protect inputs after supervisor exit. Quarantine therefore requires
+central investigation, not an assumed surviving file lock or an automatic retry.
+No PID-only termination or unbounded wait is added. Errors preserve their fresh
+run directory. No stock, owner client or Main file is touched.
 
-Eleven new mocked worker tests cover native nonzero exit, log flood/truncation,
+Sixteen mocked worker tests cover native nonzero exit, log flood/truncation,
 deadline, inherited open pipe, PCM/metadata corruption, argument/hash drift and
-existing output. They use fake processes and do not execute FFmpeg. Six actual
+existing output, plus read `ValueError`/`SystemExit`/`KeyboardInterrupt`, unformattable
+and long exception types, write/flush failures, provider-caught `OSError`, and a
+dead thread with no normal-return event. They use fake processes and do not
+execute FFmpeg. Five cases execute the actual PowerShell finalization body with
+mock owners/guards/leases: success, unknown closure, disposal failure, changed
+input and release failure. They verify disposal-before-guard-release, quarantine,
+the distinction between matching hashes and qualified integrity, and retained
+leases. These are control-flow tests, not native closure or lock-lifetime evidence.
+Six actual
 default-Plan controls pass, including required-pin/hash/argument/root refusal and
 absence of native classes or generated run root. PowerShell syntax passes too.
 
 ```powershell
 python -B tools-source/asset-bridge/surfaces/sound/test_codec_worker.py
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_codec_cleanup.ps1
 pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_codec_plan.ps1 -PlanPath <reviewed-plan.json> -PlanSHA256 <sha256>
 ```
 
@@ -204,3 +226,10 @@ The prior standalone WAV comparison and provisional codec plans remain ignored
 historical preparation. The execution plan pins this worker and the shared drain,
 owner, scheduler and memory sources; it replaces the provisional second verifier
 process with the same bounded WAV/sample checks inside the owned Python root.
+
+Independent review of commit `58d78d0` reproduced a false EOF from an unhandled
+drain-thread `ValueError` and identified overly broad integrity wording after
+uncertain job closure. Both corrections above are local to this sound adapter;
+the shared drain, job and scheduler remain unchanged. The prior execution plan
+is retained as evidence and no longer matches the corrected source pins. A fresh
+reviewed plan and central GO remain required; no codec has run at this checkpoint.

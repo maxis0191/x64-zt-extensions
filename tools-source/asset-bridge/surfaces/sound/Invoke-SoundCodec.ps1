@@ -43,7 +43,8 @@ if(!$Run){$plan|ConvertTo-Json -Depth 12;return}
 if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Fresh execution host required.'}
 $guards=[Collections.Generic.List[IO.FileStream]]::new();$lease=$null;$owner=$null;$closed=$true;$intact=$true;$created=$false
 $state=[ordered]@{Schema='iw7.original-sound-codec-result/1';Status='Preparing';PlanSHA256=$PlanSHA256;RetainedLeaseToken=$null;
-    Reservation=$null;Root=$null;Worker=$null;Cleanup=$null;InputsUnchanged=$false;JobClosed=$false;Failure=$null;
+    Reservation=$null;Root=$null;Worker=$null;Cleanup=$null;InputHashesMatch=$false;InputsUnchanged=$false;JobClosed=$false;Failure=$null;
+    JobDisposeCompleted=$false;ReadGuardsReleased=$false;Quarantined=$false;
     ExternalDecoderVerified=$false;Ready=$false;PlaybackVerified=$false}
 function Save-CodecState {if($created){[IO.File]::WriteAllText((Join-Path $plan.RunRoot 'state.local.json'),($state|ConvertTo-Json -Depth 15))}}
 function Measure-CodecOutputs {
@@ -96,6 +97,10 @@ try {
        $r.pcm_bytes -ne 96000 -or $r.samples -ne 48000 -or $r.channels -ne 1 -or $r.bits_per_sample -ne 16 -or $r.sample_rate -ne 48000 -or
        $r.pcm_sha256 -cne '72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9' -or
        $r.codec_sha256 -cne 'ad8f211bc894755e0061c55ab280ae00e8d3d4f15a8cc4372b24cfa247b5942e'){throw 'Independent codec receipt did not pass.'}
+    foreach($name in 'stdout','stderr'){
+        $drain=$r.drains.$name
+        if($drain.normal_return -isnot [bool] -or !$drain.normal_return -or $null -ne $drain.exception_type){throw 'Explicit normal pipe completion missing.'}
+    }
     $guards.Add([IO.File]::Open($output,'Open','Read','Read'))
     if((Get-Item -LiteralPath $output).Length -gt 131072 -or (Get-Item -LiteralPath $output).Length -ne $r.wav_bytes -or
        (Get-FileHash -LiteralPath $output).Hash -ine $r.wav_sha256){throw 'Decoded output changed after worker readback.'}
@@ -115,20 +120,28 @@ finally {
             }
         }catch{$state.Cleanup.Error=$_.Exception.Message}
     }
-    if($owner){$owner.Dispose()}
+    # Kill-on-close is requested before releasing input guards. Dispose is not
+    # evidence that every descendant exited; keep the original closure verdict.
+    try{if($owner){$owner.Dispose()};$state.JobDisposeCompleted=$true}
+    catch{$state.Status='Failed';$state.Failure='Original job dispose failed: '+$_.Exception.GetType().Name}
     foreach($entry in $plan.HashInputs){try{Assert-CodecHash $entry}catch{$intact=$false;$state.Failure=$_.Exception.Message}}
     try{if((Get-FileHash -LiteralPath $PlanPath).Hash -ine $PlanSHA256){$intact=$false}}
     catch{$intact=$false;$state.Failure=$_.Exception.Message}
-    $state.InputsUnchanged=$intact;$state.JobClosed=$closed
-    if(!$intact -or !$closed){$state.Status='Failed'}
+    $state.InputHashesMatch=$intact;$state.JobClosed=$closed
+    $state.InputsUnchanged=($intact -and $closed -and $state.JobDisposeCompleted)
+    $state.Quarantined=(!$state.InputsUnchanged)
+    if($state.Quarantined){$state.Status='Failed'}
     Save-CodecState
     try{
         if($created){Measure-CodecOutputs}
-        if($lease -and $closed -and $intact){Exit-IW7ResourceLease -Token $lease.Token;$state.RetainedLeaseToken=$null}
-    }catch{$state.Status='Failed';$state.Failure=$_.Exception.Message;throw}
+        if($lease -and $state.InputsUnchanged){Exit-IW7ResourceLease -Token $lease.Token;$state.RetainedLeaseToken=$null}
+    }catch{$state.Status='Failed';$state.Failure=$_.Exception.Message;$state.Quarantined=$true;throw}
     finally{
         foreach($guard in $guards){$guard.Dispose()}
-        $state.ExternalDecoderVerified=($state.Status -ceq 'ThirdPartyPCMVerified' -and $closed -and $intact -and !$state.RetainedLeaseToken)
+        # These handles cannot survive supervisor exit. Unknown closure retains
+        # a quarantine/lease, never a promise of continuing input protection.
+        $state.ReadGuardsReleased=$true
+        $state.ExternalDecoderVerified=($state.Status -ceq 'ThirdPartyPCMVerified' -and $state.InputsUnchanged -and !$state.Quarantined -and !$state.RetainedLeaseToken)
         Save-CodecState
     }
     Save-CodecState

@@ -67,6 +67,8 @@ class CodecTests(unittest.TestCase):
             result, launch, run = self.run_mock(root)
             self.assertTrue(result["pcm_verified"])
             self.assertTrue(result["pipes_eof"])
+            self.assertTrue(all(item["normal_return"] and item["exception_type"] is None
+                                for item in result["drains"].values()))
             self.assertEqual(result["native_exit_code"], 0)
             self.assertFalse(result["ready"])
             self.assertNotIn("shell", launch.call_args.kwargs)
@@ -86,6 +88,91 @@ class CodecTests(unittest.TestCase):
             self.assertEqual((run / "stderr.log").stat().st_size, 32768)
             self.assertFalse(result["pcm_verified"])
 
+    def test_read_baseexceptions_fail_capture_without_formatting(self):
+        class Unformattable(ValueError):
+            def __str__(self):
+                raise AssertionError("exception text must not be formatted")
+
+        for error in (ValueError("read failed"), SystemExit(7), KeyboardInterrupt(),
+                      Unformattable(), type("X" * 200, (BaseException,), {})()):
+            with self.subTest(error_type=type(error).__name__), tempfile.TemporaryDirectory() as root:
+                process = FakeProcess()
+                process.stderr.read = lambda _count, error=error: (_ for _ in ()).throw(error)
+                with patch.object(worker.threading, "excepthook") as escaped:
+                    result, _, _ = self.run_mock(root, process)
+                escaped.assert_not_called()
+                self.assertIn("log failure", result["failure"])
+                self.assertFalse(result["pipes_eof"])
+                self.assertFalse(result["pcm_verified"])
+                self.assertFalse(result["drains"]["stderr"]["normal_return"])
+                self.assertEqual(result["drains"]["stderr"]["exception_type"], type(error).__name__[:128])
+
+    def output_failure(self, method):
+        original_open = Path.open
+
+        class BrokenOutput:
+            def __init__(self, raw):
+                self.raw = raw
+
+            def write(self, data):
+                if method == "write":
+                    raise ValueError("output write failed")
+                return self.raw.write(data)
+
+            def flush(self):
+                if method == "flush":
+                    raise ValueError("output flush failed")
+                return self.raw.flush()
+
+            def close(self):
+                self.raw.close()
+
+        def open_output(path, *args, **kwargs):
+            raw = original_open(path, *args, **kwargs)
+            return BrokenOutput(raw) if path.name == "stderr.log" and args == ("xb",) else raw
+
+        with tempfile.TemporaryDirectory() as root, patch.object(Path, "open", open_output), \
+                patch.object(worker.threading, "excepthook") as escaped:
+            result, _, run = self.run_mock(root)
+            escaped.assert_not_called()
+            self.assertIn("log failure", result["failure"])
+            self.assertFalse(result["pipes_eof"])
+            self.assertFalse(result["pcm_verified"])
+            self.assertEqual(result["drains"]["stderr"], {"normal_return": False, "exception_type": "ValueError"})
+            self.assertLessEqual((run / "stderr.log").stat().st_size, 32768)
+
+    def test_output_write_exception_refused(self):
+        self.output_failure("write")
+
+    def test_output_flush_exception_refused(self):
+        self.output_failure("flush")
+
+    def test_provider_caught_oserror_cannot_qualify_normal_eof(self):
+        with tempfile.TemporaryDirectory() as root:
+            process = FakeProcess()
+            process.stderr.read = lambda _: (_ for _ in ()).throw(OSError("pipe failed"))
+            result, _, _ = self.run_mock(root, process)
+            self.assertFalse(result["pipes_eof"])
+            self.assertFalse(result["pcm_verified"])
+            self.assertEqual(result["drains"]["stderr"], {"normal_return": False, "exception_type": None})
+
+    def test_dead_thread_without_normal_return_refused(self):
+        class NeverRan:
+            def __init__(self, **kwargs):
+                pass
+            def start(self):
+                pass
+            def join(self, timeout):
+                pass
+            def is_alive(self):
+                return False
+        with tempfile.TemporaryDirectory() as root, patch.object(worker.threading, "Thread", NeverRan):
+            result, _, _ = self.run_mock(root)
+            self.assertIn("EOF", result["failure"])
+            self.assertFalse(result["pipes_eof"])
+            self.assertFalse(result["pcm_verified"])
+            self.assertFalse(any(item["normal_return"] for item in result["drains"].values()))
+
     def test_changed_pcm_refused(self):
         with tempfile.TemporaryDirectory() as root:
             result, _, _ = self.run_mock(root, corrupt=True)
@@ -102,7 +189,7 @@ class CodecTests(unittest.TestCase):
         held_streams = []
         class OpenPipe:
             def __init__(self, **kwargs):
-                held_streams.append(kwargs["args"][1])
+                held_streams.append(kwargs["args"][2])
             def start(self):
                 pass
             def join(self, timeout):

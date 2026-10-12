@@ -52,6 +52,20 @@ def read_wave(path):
     return raw, pcm
 
 
+def guarded_drain(drain, source, destination, failed, completed, status):
+    """A dead thread is not EOF; require the pinned drain's normal return."""
+    try:
+        drain(source, destination, failed, 32768)
+    except BaseException as error:
+        # Do not format the exception: __str__ can fail or produce unbounded text.
+        status["exception_type"] = type(error).__name__[:128]
+        failed.set()
+    else:
+        # The unchanged provider catches OSError and sets failed before returning.
+        if not failed.is_set():
+            completed.set()
+
+
 def decode(plan, copy_bounded):
     root = Path(plan["RunRoot"])
     output = root / "decoded.wav"
@@ -60,10 +74,13 @@ def decode(plan, copy_bounded):
     for path, sha in ((plan["Codec"], CODEC_SHA), (plan["InputFLAC"], FLAC_SHA), (plan["OriginalWAV"], WAV_SHA)):
         check(file_hash(path) == sha, "pinned codec/audio changed")
     exceeded = threading.Event()
-    streams, workers = [], []
+    streams, workers, completions = [], [], []
+    drain_status = {name: {"normal_return": False, "exception_type": None}
+                    for name in ("stdout", "stderr")}
     result = {"schema": "iw7.original-sound-codec-worker/1", "codec_sha256": CODEC_SHA,
               "native_exit_code": None, "pipes_eof": False, "failure": None,
-              "pcm_verified": False, "playback_verified": False, "ready": False}
+              "pcm_verified": False, "playback_verified": False, "ready": False,
+              "drains": drain_status}
     # Outer shared job owns this root and descendants. Never detach or kill by PID.
     process = subprocess.Popen([plan["Codec"], *plan["CodecArguments"]], cwd=root,
                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -74,7 +91,11 @@ def decode(plan, copy_bounded):
         for name, source in (("stdout", process.stdout), ("stderr", process.stderr)):
             destination = (root / (name + ".log")).open("xb")
             streams.append(destination)
-            thread = threading.Thread(target=copy_bounded, args=(source, destination, exceeded, 32768), daemon=True)
+            completed = threading.Event()
+            completions.append((name, completed))
+            thread = threading.Thread(target=guarded_drain,
+                                      args=(copy_bounded, source, destination, exceeded, completed, drain_status[name]),
+                                      daemon=True)
             thread.start()
             workers.append(thread)
         while process.poll() is None:
@@ -84,7 +105,8 @@ def decode(plan, copy_bounded):
         for thread in workers:
             thread.join(max(0, deadline - time.monotonic()))
         result["native_exit_code"] = process.returncode
-        check(time.monotonic() < deadline and not exceeded.is_set() and not any(t.is_alive() for t in workers),
+        check(time.monotonic() < deadline and not exceeded.is_set() and not any(t.is_alive() for t in workers)
+              and len(completions) == 2 and all(event.is_set() for _, event in completions),
               "codec EOF/deadline/log failure")
         result["pipes_eof"] = True
         check(process.returncode == 0, "codec exit nonzero")
@@ -97,6 +119,8 @@ def decode(plan, copy_bounded):
     except Exception as error:
         result["failure"] = str(error)
     finally:
+        for name, completed in completions:
+            drain_status[name]["normal_return"] = completed.is_set()
         for destination, thread in zip(streams, workers):
             if not thread.is_alive():
                 destination.close()
