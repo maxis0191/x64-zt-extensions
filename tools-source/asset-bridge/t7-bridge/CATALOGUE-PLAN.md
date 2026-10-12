@@ -1364,3 +1364,30 @@ analysis owner inspected only that file's metadata: 1,158,208 bytes, no reparse,
 and no payload content or hash read. The coordinator subsequently requested
 source preparation for one qualification and possible seven-input P, subject to
 review and a distinct GO; the old batch and O remain closed.
+
+## EnCorePostGfx A and possible P: source preparation only
+
+The separate preparation request covers only the newly named 1,158,208-byte
+`en_core_post_gfx.ff`. The fixed CoreGfx A template now has only changed data
+literals and its size comment: all 367 variable occurrences, 73 command
+occurrences, 1,990 nonliteral tokens and five lifecycle functions are unchanged.
+Default source-only validation and captured launch-argument wiring pass without
+payload access, live admission, native types, lease or Run. The prior 54 pure
+lifecycle checks remain evidence for the identical functions and were not rerun.
+
+The [preparation checkpoint](catalogue-en-core-post-gfx-preparation-p-20261012.json)
+pins the qualification, exact literal diff, source manifest, launch, wiring and
+proposal. The proposed delegation is limited to this one qualification followed
+by one P, at most two heavy stages and zero retries, under independent review and
+a distinct coordinator GO. Each stage requires fresh 6/8 GiB admission and full
+closure, actual PTY exit and independent absence before the next stage. Any
+refusal, changed error/identity/source or uncertain closure stops the delegation.
+
+P is projected at seven bootstraps / 75,458,816 bytes, 43 bindings (31 text and
+12 binary), 11 metadata rows, 22 original/alias IDs and a 203,268,248-byte output
+limit. Its Plan and dispatch do not yet exist: the new hash and qualified ID stay
+unknown until a successful, fully closed qualification. V2 and existing budgets
+remain unchanged. The successful O closure helper is frozen as a reference;
+future adaptation may change only specified data literals, with exact AST/diff
+comparison and no identifier renaming. No next dependency, export or automatic
+continuation follows P, regardless of its result.
