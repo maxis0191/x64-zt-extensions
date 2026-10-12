@@ -125,3 +125,47 @@ exact plan. First T7 engine boot/export remains a separate compatibility
 experiment after the acquired dedicated EXE, PE/code windows, stock and original
 job/restoration plan are bound. An official download hash alone cannot prove
 compatibility with the retained fixed T7 addresses.
+
+## Plan C attempt: compilation passes, link closure fails
+
+The coordinator authorized one Plan C invocation on 2026-10-12. It ran in a
+persistent PowerShell 7 host after fresh resource admission, using exactly the
+4/6 GiB lease and reviewed source 86b49fc. The native name fixture produced the
+exact 51-check marker with empty stderr. Helper, main, T7 zonetool and xpak each
+finished with original root exit zero and fresh empty-job closure, respectively
+in approximately 1.50, 3.54, 5.43 and 3.44 seconds. The three translation units
+compiled under /W4 /WX; their actual include sets matched guarded inputs.
+
+The final linker produced a 21,740,032-byte EXE and 136,466,432-byte PDB, but
+original-job emptiness was not reached within its 120-second deadline. The
+attempt is **Failed**, not a qualified candidate. Its create-only receipt is
+`runtime/zt-t7-a/receipt.json`, SHA256
+af6beecf7a8892e16266a7641d2799f665f86fa8ad7c40c61561b782534f7897.
+The group elapsed approximately 140.077 seconds and output before receipt was
+183,749,609 bytes. Final full input revalidation was not reached.
+
+A live CIM observation during the wait showed a single VCTIP process whose
+parent PID matched the registered original linker and whose creation followed
+that linker. No cl/link process remained in that observation. This supports a
+linker telemetry residue as the cause; original-job membership was not captured
+by the Link profile and is not retroactively claimed. Source inspection confirms
+H1 qualifies telemetry only for Stage=Compile, while Stage=Link waits for ordinary
+empty-job closure. NativeJob.TreeExited requires root exit and zero active members.
+
+Failure cleanup stopped only the original owned job and confirmed closure; the
+retained original root exit code was zero. The receipt records lease released
+and no quarantine. Fresh postflight at 11:43:41 UTC found no lease or build/
+telemetry processes and unchanged owner Main process identity. The persistent
+host saved its outcome, verified no AppDomain quarantine, then exited normally.
+E7 EXE/PDB were guarded against writing throughout the attempt; their observed
+size/mtime remained unchanged. No candidate or game was launched; no retry was
+performed. The failed receipt and all artifacts remain separate evidence.
+
+The helper EXE (1,032,192 bytes) is now observed at SHA256
+c5989b285530d036caa105e9456400daeac859e44b008ad94a5a079e3faab1f6
+with those exact 51 source cases. Reuse must bind its source/header/receipt
+identity, rather than rerun a source-identical helper unnecessarily. The next
+source-only change is a narrow Link telemetry policy adapter reusing H1's strict
+identity, artifact, two-capture and original-job closure checks, with no deadline
+increase. Any further native invocation requires a separately reviewed new plan
+and coordinator GO; Plan C remains Failed.
