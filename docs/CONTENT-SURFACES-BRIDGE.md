@@ -376,14 +376,19 @@ The coordinator reports a content-matched replacement stock:71 of72 baseline
 inputs in the retained `spaceland-doom/runtime/doom-server`, plus an existing
 external TLS file. Animation owns the shared baseline/reviewed-stock binding
 helper. Wait for its reviewed commit and actual API; no parallel binding schema
-or copied validator is introduced here. The intended stock modes are63HardLink
-and9Copy. These are coordinator observations, not a new material build result.
+or copied validator is introduced here. The baseline observation records
+63HardLink/9Copy in `BaselineMode`; operational `Mode` remains71HardLink plus
+the single77-byte sentinel Copy. Do not copy roughly56MiB merely to reproduce the
+baseline's storage choices. These are coordinator observations, not a new
+material build result.
 
 The adapter's integration points are:
 
 1. Replace the old `StockRoot`/historical receipt path-reconstruction block with
    the shared helper call. Preserve its real current Sources, identities, hashes
-   and modes, including the external TLS source. Retain the historical receipt
+   and operational modes, including the external TLS source; retain `BaselineMode`
+   separately as provenance. The read-only source sentinel stays intact; only its
+   owned copy may have ReadOnly cleared if the tool needs it. Retain the historical receipt
    unchanged as baseline evidence; do not manufacture a successful transaction.
 2. Add the committed helper and exact baseline/reviewed bindings to the existing
    hash/read guards, then refresh the binding at the helper's required execution
@@ -393,6 +398,8 @@ The adapter's integration points are:
    without a prebound identity receive the newly observed one as before.
 4. Exclude only `HardLink` entries from generated-byte accounting. All copied
    stock, including the mutable sentinel, counts toward the64MiB output bound.
+   This uses operational `Mode`, never `BaselineMode`; only77copied bytes are
+   currently expected, but an actual extra copy cannot escape accounting.
    Continue using the existing transaction and ModelFF restoration checks.
 
 Points3/4 are prepared independently of the incoming helper contract. Pure tests

@@ -42,8 +42,9 @@ $files=@([pscustomobject]@{FullName="$work\stock.ff";Length=900000000L},
     [pscustomobject]@{FullName="$work\copied.dll";Length=1024L},
     [pscustomobject]@{FullName="$work\main\fileSysCheck.cfg";Length=77L},
     [pscustomobject]@{FullName='C:\material-v2-pure-fixture\mod.ff';Length=42L})
-$inputs=@([pscustomobject]@{Relative='stock.ff';Mode='HardLink'},
-    [pscustomobject]@{Relative='copied.dll';Mode='Copy'},
-    [pscustomobject]@{Relative='main/fileSysCheck.cfg';Mode='Copy'})
+# Baseline storage modes are provenance only; accounting follows actual staging.
+$inputs=@([pscustomobject]@{Relative='stock.ff';Mode='HardLink';BaselineMode='Copy'},
+    [pscustomobject]@{Relative='copied.dll';Mode='Copy';BaselineMode='HardLink'},
+    [pscustomobject]@{Relative='main/fileSysCheck.cfg';Mode='Copy';BaselineMode='Copy'})
 if((Measure-MaterialV2OutputFiles $files $work $inputs) -ne 1143L){throw 'Copied inputs were hidden from generated output budget.'}
 'PASS: two parses, native4/6 and FF8/11 budgets, compiler/quoting contract, 17 refusals, source identity and copy accounting; no Add-Type, lease or native process.'
