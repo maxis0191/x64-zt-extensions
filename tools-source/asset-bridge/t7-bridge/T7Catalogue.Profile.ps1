@@ -65,10 +65,26 @@ function Get-T7CatalogueBootstrapLimits($Plan) {
         default {throw 'Explicit qualified collection policy required for byte limits.'}
     }
 }
+function Get-T7CatalogueSharedQualification($Plan) {
+    if(!$Plan.PSObject.Properties['SharedQualification']){return}
+    if((Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV3'){throw 'Shared qualification requires explicit V3.'}
+    $shared=$Plan.SharedQualification
+    Assert-T7CatalogueFields $shared @('Script','Plan','Receipt')
+    foreach($name in 'Script','Plan','Receipt'){
+        $pin=$shared.$name;Assert-T7CatalogueFields $pin @('Path','Bytes','SHA256')
+        if($pin.Path -isnot [string] -or !(Test-T7CatalogueInteger $pin.Bytes 32KB) -or $pin.Bytes -le 0 -or
+           $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '\A[0-9a-f]{64}\z'){throw 'Bounded shared qualification text pins required.'}
+        Assert-H1Path $pin.Path
+    }
+    if([IO.Path]::GetFileName($shared.Script.Path) -cne 'Qualify-T7BootstrapGroup.ps1' -or
+       @(@($shared.Script.Path,$shared.Plan.Path,$shared.Receipt.Path)|Sort-Object -Unique).Count -ne 3){throw 'Distinct shared qualifier script/plan/receipt required.'}
+    $shared
+}
 function Get-T7CatalogueBootstraps($Plan) {
     $single=[bool]$Plan.PSObject.Properties['Bootstrap']
     $plural=[bool]$Plan.PSObject.Properties['Bootstraps']
     $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -cne 'Legacy'
+    $shared=Get-T7CatalogueSharedQualification $Plan
     if($single -and $plural){throw 'Mixed bootstrap schemas are forbidden.'}
     if($qualified -and ($single -or !$plural)){throw 'Qualified collection requires only Bootstraps.'}
     if(!$single -and !$plural){return}
@@ -86,6 +102,12 @@ function Get-T7CatalogueBootstraps($Plan) {
         foreach($path in @($Plan.Zone.Path,$Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.JobAssembly,
             $Plan.Image,$Plan.RunRoot,$Plan.WorkingDirectory,$Plan.StageRoot,[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)){
             $null=$paths.Add($path)
+        }
+        $sharedCount=0
+        if($shared){
+            foreach($path in @($shared.Script.Path,$shared.Plan.Path,$shared.Receipt.Path)){
+                if(!$paths.Add($path) -or $path.StartsWith($Plan.RunRoot.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Distinct shared paths outside catalogue run root required.'}
+            }
         }
         foreach($bootstrap in $items){
             Assert-T7CatalogueFields $bootstrap @('Path','Bytes','SHA256','FileId','RelativePath','HashProvenance','QualificationReceipt','QualificationScript')
@@ -114,13 +136,19 @@ function Get-T7CatalogueBootstraps($Plan) {
                     throw 'Bounded qualified receipt/script text pins required.'
                 }
             }
-            foreach($path in @($bootstrap.Path,$bootstrap.QualificationReceipt.Path,$bootstrap.QualificationScript.Path)){
+            $itemPaths=@($bootstrap.Path,$bootstrap.QualificationReceipt.Path)
+            if($shared -and $bootstrap.QualificationScript.Path -ceq $shared.Script.Path){
+                if($bootstrap.QualificationScript.Bytes -ne $shared.Script.Bytes -or $bootstrap.QualificationScript.SHA256 -cne $shared.Script.SHA256){throw 'Exact shared qualifier script pin required.'}
+                $sharedCount++
+            }else{$itemPaths+=@($bootstrap.QualificationScript.Path)}
+            foreach($path in $itemPaths){
                 Assert-H1Path $path
                 if(!$paths.Add($path) -or $path.StartsWith($Plan.RunRoot.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)){
                     throw 'Distinct qualified source/text paths outside the run root required.'
                 }
             }
         }
+        if($shared -and !$sharedCount){throw 'Shared qualification must select explicit members.'}
         return $items # No partial collection may escape before every item validates.
     }
     $specs=@(@{Name='en_core_pre_gfx.ff';Bytes=832L},@{Name='core_pre_gfx.ff';Bytes=22351168L})
@@ -167,7 +195,68 @@ function Assert-T7CatalogueBootstrapBindings($Plan) {
         Assert-T7CatalogueFields $metadata[0] @('Path','Bytes','Attributes','CreationUtc','LastWriteUtc')
         Assert-T7CatalogueMetadata $metadata[0]
     }
-    if(@($qualificationPaths|Sort-Object -Unique).Count -ne 2*$bootstraps.Count){throw 'Distinct per-item bootstrap receipts and scripts required.'}
+    $shared=Get-T7CatalogueSharedQualification $Plan
+    $scriptCount=@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count
+    $textCount=if($shared){$bootstraps.Count+$scriptCount}else{2*$bootstraps.Count}
+    if(@($qualificationPaths|Sort-Object -Unique).Count -ne $textCount){throw 'Distinct per-item bootstrap receipts and scripts required.'}
+    if($shared){foreach($name in 'Plan','Receipt'){Assert-T7CatalogueTextPin $shared.$name $Plan.Bindings}}
+}
+function Assert-T7QualificationLifecycle($Receipt) {
+    foreach($name in 'DataFileOpened','PayloadHashed','LeaseAcquired','LeaseReleased','GuardsClosed','TreeClosureConfirmed',
+        'MetadataAndIdentityReverifiedUnderGuard','HashReverifiedUnderGuard','PreservedPythonIdentityUnchanged'){
+        if(!$Receipt.PSObject.Properties[$name] -or $Receipt.$name -isnot [bool] -or !$Receipt.$name){throw 'Bootstrap qualification lifecycle proof missing.'}
+    }
+    foreach($name in 'Quarantined','HeaderSemanticsKnown','HeaderPrefixCaptured','ContentCompatibilityProven','DepotVerified',
+        'EngineLookupPathProven','NativeEngineExecuted','NativeJobCreated','PayloadCopiedToDisk','PayloadHashesReadAfterRelease','Ready'){
+        if(!$Receipt.PSObject.Properties[$name] -or $Receipt.$name -isnot [bool] -or $Receipt.$name){throw 'Bootstrap qualification overclaims its scope.'}
+    }
+    foreach($name in 'NoProfile','NoExit','DirectFileLaunch','ExactArgumentsVerified'){
+        if(!$Receipt.Host.Contract.PSObject.Properties[$name] -or $Receipt.Host.Contract.$name -isnot [bool] -or !$Receipt.Host.Contract.$name){throw 'Qualified persistent bootstrap host required.'}
+    }
+}
+function Assert-T7CatalogueSharedReceipt($Plan,$Receipt,$Bootstrap) {
+    $shared=Get-T7CatalogueSharedQualification $Plan
+    if(!$shared -or $Bootstrap.QualificationScript.Path -cne $shared.Script.Path){
+        if($Receipt.PSObject.Properties['QualificationGroup']){throw 'Unexpected shared qualification membership.'}
+        return
+    }
+    $members=@(Get-T7CatalogueBootstraps $Plan|Where-Object {$_.QualificationScript.Path -ceq $shared.Script.Path})
+    $groupPlan=Read-H1SmallJson $shared.Plan.Path 32KB
+    $group=Read-H1SmallJson $shared.Receipt.Path 32KB
+    Assert-T7CatalogueFields $groupPlan @('Schema','Runner','Script','SourceDirectory','RunRoot','Inputs','Bindings','HostImage','Main','PreservedPython','PhysicalBytes','CommitBytes','DeadlineSeconds','RetryAuthorized')
+    if($groupPlan.Schema -cne 'iw7.t7-bootstrap-group-plan/1' -or $groupPlan.Script.Path -cne $shared.Script.Path -or
+       $groupPlan.Script.Bytes -ne $shared.Script.Bytes -or $groupPlan.Script.SHA256 -cne $shared.Script.SHA256 -or
+       $groupPlan.Runner -cne $shared.Script.Path -or $groupPlan.PhysicalBytes -ne 6GB -or $groupPlan.CommitBytes -ne 8GB -or
+       $groupPlan.DeadlineSeconds -ne 200 -or $groupPlan.RetryAuthorized -isnot [bool] -or $groupPlan.RetryAuthorized -or
+       $groupPlan.SourceDirectory -cne [IO.Path]::GetDirectoryName($members[0].Path) -or
+       $shared.Receipt.Path -cne (Join-Path $groupPlan.RunRoot 'group-receipt.json') -or
+       $groupPlan.Inputs -isnot [array] -or $groupPlan.Inputs.Count -ne $members.Count -or
+       $group.Schema -cne 'iw7.t7-bootstrap-group-qualification/1' -or $group.Status -cne 'IdentityAndHashObservedCompatibilityUnknown' -or
+       $group.PlanSHA256 -cne $shared.Plan.SHA256 -or $group.ScriptSHA256 -cne $shared.Script.SHA256 -or
+       $group.GroupComplete -isnot [bool] -or !$group.GroupComplete -or $group.Items -isnot [array] -or $group.Items.Count -ne $members.Count -or
+       $group.PSObject.Properties['Error'] -or $group.PSObject.Properties['CleanupError'] -or $group.PSObject.Properties['FinalizationError']){throw 'Complete closed shared qualification required.'}
+    Assert-T7QualificationLifecycle $group
+    if(!$Receipt.PSObject.Properties['QualificationGroup']){throw 'Shared qualification membership missing.'}
+    $membership=$Receipt.QualificationGroup
+    Assert-T7CatalogueFields $membership @('PlanSHA256','InputCount','InputIndex')
+    if($membership.PlanSHA256 -cne $shared.Plan.SHA256 -or !(Test-T7CatalogueInteger $membership.InputCount 32) -or
+       $membership.InputCount -ne $members.Count -or !(Test-T7CatalogueInteger $membership.InputIndex ($members.Count-1))){throw 'Shared qualification membership differs.'}
+    for($i=0;$i -lt $members.Count;$i++){
+        $member=$members[$i];$declared=$groupPlan.Inputs[$i];$row=$group.Items[$i]
+        Assert-T7CatalogueFields $declared @('Name','Path','Bytes','FileId','Attributes','CreationUtc','LastWriteUtc')
+        Assert-T7CatalogueFields $row @('Path','Bytes','SHA256','FileId','QualificationReceipt')
+        Assert-T7CatalogueFields $row.QualificationReceipt @('Path','Bytes','SHA256')
+        $metadata=@($Plan.InputMetadata|Where-Object Path -CEQ $member.Path)[0]
+        if($declared.Name -cne [IO.Path]::GetFileName($member.Path) -or $declared.Path -cne $member.Path -or $declared.Bytes -ne $member.Bytes -or
+           $declared.FileId -cne $member.FileId -or $declared.Attributes -cne $metadata.Attributes -or
+           ([datetimeoffset]$declared.CreationUtc).UtcDateTime.Ticks -ne ([datetimeoffset]$metadata.CreationUtc).UtcDateTime.Ticks -or
+           ([datetimeoffset]$declared.LastWriteUtc).UtcDateTime.Ticks -ne ([datetimeoffset]$metadata.LastWriteUtc).UtcDateTime.Ticks -or
+           $row.Path -cne $member.Path -or $row.Bytes -ne $member.Bytes -or $row.SHA256 -cne $member.SHA256 -or $row.FileId -cne $member.FileId -or
+           $member.QualificationReceipt.Path -cne (Join-Path $groupPlan.RunRoot ($declared.Name+'.receipt.json')) -or
+           $row.QualificationReceipt.Path -cne $member.QualificationReceipt.Path -or $row.QualificationReceipt.Bytes -ne $member.QualificationReceipt.Bytes -or
+           $row.QualificationReceipt.SHA256 -cne $member.QualificationReceipt.SHA256){throw 'Shared qualification input/receipt identity differs.'}
+    }
+    if($members[$membership.InputIndex].Path -cne $Bootstrap.Path){throw 'Shared qualification index points to another input.'}
 }
 function Assert-T7CatalogueBootstrapReceipt($Plan,$Receipt,[string]$BootstrapPath) {
     $items=@(Get-T7CatalogueBootstraps $Plan)
@@ -183,17 +272,8 @@ function Assert-T7CatalogueBootstrapReceipt($Plan,$Receipt,[string]$BootstrapPat
        $Receipt.GuardedReadBytesPerPass -ne $bootstrap.Bytes -or $Receipt.GuardedReadPasses -ne 2 -or
        $Receipt.PSObject.Properties['Error'] -or $Receipt.PSObject.Properties['CleanupError'] -or
        $Receipt.PSObject.Properties['FinalizationError']){throw 'Closed successful bootstrap qualification required.'}
-    foreach($name in 'DataFileOpened','PayloadHashed','LeaseAcquired','LeaseReleased','GuardsClosed','TreeClosureConfirmed',
-        'MetadataAndIdentityReverifiedUnderGuard','HashReverifiedUnderGuard','PreservedPythonIdentityUnchanged'){
-        if(!$Receipt.PSObject.Properties[$name] -or $Receipt.$name -isnot [bool] -or !$Receipt.$name){throw 'Bootstrap qualification lifecycle proof missing.'}
-    }
-    foreach($name in 'Quarantined','HeaderSemanticsKnown','HeaderPrefixCaptured','ContentCompatibilityProven','DepotVerified',
-        'EngineLookupPathProven','NativeEngineExecuted','NativeJobCreated','PayloadCopiedToDisk','PayloadHashesReadAfterRelease','Ready'){
-        if(!$Receipt.PSObject.Properties[$name] -or $Receipt.$name -isnot [bool] -or $Receipt.$name){throw 'Bootstrap qualification overclaims its scope.'}
-    }
-    foreach($name in 'NoProfile','NoExit','DirectFileLaunch','ExactArgumentsVerified'){
-        if(!$Receipt.Host.Contract.PSObject.Properties[$name] -or $Receipt.Host.Contract.$name -isnot [bool] -or !$Receipt.Host.Contract.$name){throw 'Qualified persistent bootstrap host required.'}
-    }
+    Assert-T7QualificationLifecycle $Receipt
+    Assert-T7CatalogueSharedReceipt $Plan $Receipt $bootstrap
     $metadata=@($Plan.InputMetadata|Where-Object Path -CEQ $bootstrap.Path)[0]
     Assert-T7CatalogueFields $Receipt.Input @('Path','Bytes','Attributes','CreationUtc','LastWriteUtc')
     if($Receipt.Input.Path -cne $bootstrap.Path){throw 'Qualification input path differs.'}
@@ -248,9 +328,12 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $expectedOutputBytes=$fixedBytes+$bootstrapBytes
     if($qualified){
         $limits=Get-T7CatalogueBootstrapLimits $Plan
+        $shared=Get-T7CatalogueSharedQualification $Plan
+        $bindingCount=22+3*$bootstraps.Count
+        if($shared){$bindingCount=24+2*$bootstraps.Count+@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count}
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
            !(Test-T7CatalogueInteger $Plan.OutputLimitBytes (106059160L+64MB+$limits.TotalBytes)) -or
-           @($Plan.Bindings).Count -ne 22+3*$bootstraps.Count){throw 'Exact qualified collection budget/binding count required.'}
+           @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
     }
     if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
        $Plan.EngineOutputProfile -cne 'ObservedStartupA' -or
@@ -286,7 +369,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     foreach($dir in @($Plan.WorkingDirectory,$Plan.StageRoot,(Join-Path $Plan.RunRoot 'temp'))) {
         if(@([IO.Directory]::EnumerateFileSystemEntries($dir)).Count){throw 'Prepared work/evidence/temp must be empty.'}
     }
-    $bindingLimit=if($qualified){22+3*$limits.ItemCount}else{32}
+    $bindingLimit=if($qualified){22+3*$limits.ItemCount+$(if($shared){2}else{0})}else{32}
     if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
     $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
