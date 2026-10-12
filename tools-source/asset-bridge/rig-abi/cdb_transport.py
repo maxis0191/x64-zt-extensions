@@ -43,6 +43,51 @@ def atomic_json(path, value):
     temporary.replace(path)
 
 
+def error_description(error):
+    # Preserve ordinary exception text without calling custom __str__/__repr__.
+    parts = [part[:512] for part in BaseException.args.__get__(error)[:2] if type(part) is str]
+    return (type(error).__name__ + (": " + "; ".join(parts) if parts else ""))[:512]
+
+
+def failed_event(spec, error, root_pid, *, debugger_pid=None, workers=None, phase="bootstrap", byte_count=0, pipe_failure=None, job_evidence=None):
+    immediate = {"Type": type(error).__name__, "Message": error_description(error)}
+    initial = immediate
+    for item in job_evidence or ():
+        query = item.get("query", {})
+        if query.get("ApiSucceeded") is False or (query.get("ApiSucceeded") is True and query.get("InAnyJob") is False):
+            initial = {"Type": "IsProcessInJobAPIFailure" if query["ApiSucceeded"] is False else "IsProcessInJobNonmember",
+                       "Role": item["role"], "Query": query}
+            break
+    return {"schema": "iw7.rig-watch-transport/1", "Nonce": spec["nonce"], "FixtureOnly": True,
+            "RootPID": root_pid, "DebuggerPID": debugger_pid, "Status": "Failed", "Healthy": False,
+            "Bytes": byte_count, "Workers": workers, "PipeFailure": pipe_failure,
+            "Phase": phase, "Error": initial["Type"] + ": " + error_description(error),
+            "InitialFailure": initial, "ImmediateFailure": immediate,
+            "JobEvidence": job_evidence}
+
+
+def retain_failure(root, spec, error, root_pid, **details):
+    """Keep the first bound failure; a bootstrap wrapper must not replace it."""
+    path = root / "transport.json"
+    if path.exists():
+        previous = json.loads(capture.bounded(path, 16384), object_pairs_hook=capture.unique_pairs)
+        if (previous.get("schema") == "iw7.rig-watch-transport/1" and previous.get("Status") == "Failed" and
+                previous.get("Nonce") == spec["nonce"] and previous.get("RootPID") == root_pid and
+                previous.get("FixtureOnly") is True):
+            return previous
+    evidence = []
+    for name, role in (("transport-job.json", "transport"), ("fixture-job.json", "fixture")):
+        candidate = root / name
+        if candidate.exists():
+            item = json.loads(capture.bounded(candidate, 4096), object_pairs_hook=capture.unique_pairs)
+            capture.require(item.get("schema") == "iw7.rig-watch-self-job/1" and item.get("nonce") == spec["nonce"] and
+                            item.get("role") == role, "foreign job evidence refused")
+            evidence.append(item)
+    event = failed_event(spec, error, root_pid, job_evidence=evidence, **details)
+    atomic_json(path, event)
+    return event
+
+
 def fixture_command(spec, root):
     capture.require(spec.get("mode") == "fixture", "retail mode unavailable: locator binding required")
     return [spec["cdb"], "-sins", "-y", str(root / "symbols"), "-netsyms:no", "-nosqm", "-noshell",
@@ -247,21 +292,42 @@ class FixtureProtocol:
         return dict(self.state)
 
 
-def assert_job():
+def query_job_membership(kernel, ffi=ctypes):
+    """Self-query only. NULL JobHandle means any job, never our specific owner."""
+    kernel.GetCurrentProcess.argtypes = []
+    kernel.GetCurrentProcess.restype = ffi.c_void_p
+    kernel.IsProcessInJob.argtypes = [ffi.c_void_p, ffi.c_void_p, ffi.POINTER(ffi.c_int)]
+    kernel.IsProcessInJob.restype = ffi.c_int
+    handle_bytes, bool_bytes = ffi.sizeof(ffi.c_void_p), ffi.sizeof(ffi.c_int)
+    if handle_bytes != 8 or bool_bytes != 4:
+        raise RuntimeError("Explicit Windows x64 HANDLE/BOOL layout required")
+    member = ffi.c_int(0)
+    process = kernel.GetCurrentProcess()
+    ffi.set_last_error(0)
+    result = int(kernel.IsProcessInJob(process, None, ffi.byref(member)))
+    last_error = int(ffi.get_last_error())
+    return {"ApiReturn": result, "ApiSucceeded": result != 0, "LastError": last_error,
+            "LastErrorMeaningful": result == 0, "MemberValue": int(member.value),
+            "MemberValid": result != 0, "InAnyJob": bool(member.value) if result else None,
+            "HandleBytes": handle_bytes, "BOOLBytes": bool_bytes, "SpecificOriginalJobProven": False}
+
+
+def assert_job(spec, root):
     capture.require(os.name == "nt", "Windows original-job host required")
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel.GetCurrentProcess.restype = ctypes.c_void_p
-    kernel.IsProcessInJob.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]
-    member = ctypes.c_int()
-    capture.require(kernel.IsProcessInJob(kernel.GetCurrentProcess(), None, ctypes.byref(member)) and member.value,
-                    "outer job missing; standalone transport refused")
+    job = query_job_membership(kernel)
+    atomic_json(root / "transport-job.json", {"schema": "iw7.rig-watch-self-job/1", "nonce": spec["nonce"],
+                                             "pid": os.getpid(), "role": "transport", "query": job})
+    capture.require(job["ApiSucceeded"] and job["InAnyJob"] is True,
+                    f"Outer job guard refused: ApiReturn={job['ApiReturn']} LastError={job['LastError']} "
+                    f"MemberValue={job['MemberValue']} MemberValid={job['MemberValid']}")
 
 
 def run(spec, root):
-    assert_job()
     capture.require(spec.get("mode") == "fixture", "retail mode remains unavailable")
     capture.require(re.fullmatch(r"[a-f0-9]{32}", spec["nonce"]), "nonce")
     capture.require(re.fullmatch(r"[A-Za-z0-9_-]{8,128}", spec["lease_token"]), "lease token")
+    assert_job(spec, root)
     capture.require(spec["cdb_sha256"] == CDB_SHA and digest(spec["cdb"]) == CDB_SHA, "CDB pin changed")
     capture.require(digest(spec["python"]) == spec["python_sha256"] and
                     digest(Path(__file__).with_name("debug_fixture.py")) == spec["fixture_sha256"], "fixture/python pins changed")
@@ -300,9 +366,8 @@ def run(spec, root):
             time.sleep(0.025)
         raise ValueError("transport local deadline; original owner must close job")
     except Exception as exc:
-        atomic_json(root / "transport.json", {"schema": "iw7.rig-watch-transport/1", "Nonce": spec["nonce"],
-                    "Status": "Failed", "Healthy": False, "Bytes": sum(map(len, io.raw.values())),
-                    "Workers": io.worker_status(), "PipeFailure": io.error, "Error": str(exc)[:512]})
+        retain_failure(root, spec, exc, os.getpid(), debugger_pid=process.pid, workers=io.worker_status(),
+                       phase=protocol.phase, byte_count=sum(map(len, io.raw.values())), pipe_failure=io.error)
         raise
     finally:
         # No kill(), detach, process-name enumeration or private replacement job.
@@ -329,12 +394,13 @@ def main():
     except Exception as exc:
         if args.run_fixture and isinstance(spec, dict) and spec.get("mode") == "fixture":
             try:
+                retain_failure(args.spec.parent, spec, exc, os.getpid())
                 atomic_json(args.spec.parent / "bootstrap-error.json", {
                     "schema": "iw7.rig-watch-bootstrap-error/1", "Nonce": spec.get("nonce"),
-                    "RootPID": os.getpid(), "Error": str(exc)[:512]})
-            except OSError:
+                    "RootPID": os.getpid(), "FixtureOnly": True, "Error": error_description(exc)})
+            except (OSError, ValueError):
                 pass  # Original root exit remains a failure, even if evidence I/O fails.
-        parser.exit(2, "refused: " + str(exc)[:512] + "\n")
+        parser.exit(2, "refused: " + error_description(exc) + "\n")
 
 
 if __name__ == "__main__":

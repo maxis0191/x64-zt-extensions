@@ -4,11 +4,11 @@ This narrow runner requests four non-default recipient references, followed by
 one compiled `scripts/engine/utility` export. It does **not** complete a mod
 package. Source preparation and synthetic tests were performed on 2026-10-12;
 the first authorized native attempt subsequently timed out before producing
-reference results. A separately authorized references-only B probe exposed live
-logs and a Fatal Error window, then stopped with confirmed restoration. Effective
-reference resolution and compiled retail bytes remain
-unobserved by this runner. Coordinator adoption/admission is required before
-each `-Run`; there is no automatic retry. See the failed-attempt record below.
+reference results. The later H run verified all four requested stock references
+after loading all 25 zones, then confirmed restoration. Compiled retail script
+bytes remain unobserved by this runner. Coordinator adoption/admission is required
+before each `-Run`; there is no automatic retry. See the historical attempts below
+and the [next script Plan and Beacon evidence boundaries](SCRIPT-PLAN.md).
 
 ## Confirmed retained native API
 
@@ -49,7 +49,9 @@ with the exact donor, pack, module, path, `dumped` status, size and SHA256. The
 native exporter indexes `ScriptFile::name`, rejects ambiguous pointers with the
 same requested name, compares the dump to loaded bytes and hashes the result.
 The Python verifier independently checks name, lengths, exact size and streaming
-SHA256. No second copy of a potentially large export is made.
+SHA256 using one original descriptor with stable before/after file metadata.
+Manifest parsing and hashing also use one bounded byte snapshot. No second copy
+of a potentially large export is made; see [reader limits](SCRIPT-PLAN.md#bounded-output-reader).
 
 The serialization contains the 22-byte ASCII name, NUL, three little-endian
 signed int32 lengths (`compressedLen`, `len`, `bytecodeLen`), compressed buffer
@@ -548,3 +550,44 @@ bytes, serialized asset content, package closure, binder qualification and
 gameplay remain unproven. `ClosureComplete`, `Ready` and `RuntimeVerified` stay
 false. H's single-execution GO is exhausted; no utility phase or retry followed.
 The coordinator owns the next separate gate and central GitHub integration.
+
+## I: references verified, utility index empty, restoration confirmed
+
+Source correction: "index empty" here means the **requested-name match map** is
+empty. `available=0` does not count all loaded ScriptFiles. The original I record
+is retained; [the source analysis](SCRIPT-INDEX-ANALYSIS.md) binds this correction
+and the next proposed name-only witness without another native execution.
+
+After independent reader/Plan review, the coordinator authorized exactly one
+two-phase invocation of source `da643954`. The [I record](native-validation-i-2026-10-12.json)
+retains the actual result: references again passed 4/4 with the same 265-byte CSV,
+then the script process printed `ENEMY_SCRIPT_INDEX map=cp_zmb available=0`.
+Its one-row manifest reports utility `missing_asset`, size 0, no hash; no
+`utility.gscbin` was produced. The native C++ exception is `0xE06D7363` with message
+`Enemy script dump incomplete; inspect scriptfile-manifest.csv and the errors above`.
+This is not evidence that utility is absent from the game; the index construction
+and effective load mode still need source investigation.
+
+Both logs contain all 25 planned zone markers in order: 20 load messages and
+five already-loaded messages. The first independent post-run observation listed
+only the 20 load messages; its immutable supplement records all 25. The failed
+script phase is not accepted by this independent log count. Its capture receipt
+has `failure=null`, but native exit 3,765,269,347, root exit 1 and no observation;
+the outer runner correctly rejects it. The reference native/root exits are 0.
+
+Both original jobs reached zero members, with closed stdout/stderr drains.
+All 107 managed paths were removed and all source identity/size/time/attribute
+observations matched. Restoration and stock preservation passed, zero owned
+process or lease remained, and owner/Main identities were unchanged. Invocation
+time was 30.8595525 seconds; final generated output was 1,273,958 bytes.
+
+The retained 186-byte headless error and 189-byte stderr say a minidump was written,
+but no dump exists under the documented output path. Source inspection shows the
+C++ headless handler terminates before the dump-writing call; that text is not a
+dump witness. No fatal-dialog observer was added to the script phase.
+
+`ReferencesVerified=true`; `ScriptBytesVerified`, imports, asset/script closure,
+package readiness and runtime acceptance remain false/unobserved. I's GO is
+exhausted. Next authorized work is source plus these small logs only: inspect
+where and when the script index is populated and compare reference/script load
+paths. No retry, retail reread or automatic stock expansion is authorized.

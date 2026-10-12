@@ -114,6 +114,7 @@ $state=New-RigWatchFixtureState $spec.Nonce
 $state.Context.Guards=$sourceGuards
 $state.Context.Baselines=[Collections.Generic.List[object]]::new()
 $state.Context.Transport=$null;$state.Context.SpecPath=$null
+$state.Context.TransportFailure=$null
 $hooks=[ordered]@{
     Now={[Environment]::TickCount64}
     Acquire={param($s,$physical,$commit)
@@ -154,7 +155,7 @@ $hooks=[ordered]@{
         $path=Join-Path $runRoot 'transport.json'
         if(!(Test-Path -LiteralPath $path)){return [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=0;Status='Loading'}}
         $event=Read-WatchJson $path
-        if($event.schema -cne 'iw7.rig-watch-transport/1' -or $event.FixtureOnly -ne $true -or $event.RootPID -ne $s.Identity.PID){throw 'Transport identity differs.'}
+        Assert-RigWatchFixtureTransportEvent $event $s
         Assert-RigWatchWorkers $event.Workers
         if($event.Status -cin @('ArmedStopped','CaptureStopped')){
             $observation=[IW7.AnimationRig.JobMembers]::Capture($s.Owner)
@@ -200,6 +201,7 @@ $hooks=[ordered]@{
             $record=[ordered]@{};foreach($key in $s.Keys){if($key -notin @('Owner','Deadline','Context')){$record[$key]=$s[$key]}}
             $record['SourceBindings']=$pins;$record['FixtureOnly']=$true;$record['StockMutated']=$false
             $record['LastMembership']=$s.Context.LastMembership
+            $record['TransportFailure']=$s.Context.TransportFailure
             if($s.Deadline){$record['DeadlineStop']=@{Attempted=$s.Deadline.StopAttempted;Completed=$s.Deadline.StopCompleted;ObservedMs=$s.Deadline.StopObservedMs;Failure=$s.Deadline.StopFailure}}
             Write-WatchJson (Join-Path $runRoot 'state.local.json') $record
         }

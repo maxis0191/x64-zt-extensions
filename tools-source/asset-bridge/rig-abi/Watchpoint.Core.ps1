@@ -42,6 +42,14 @@ function Assert-RigWatchWorkers($Workers) {
         }
     }
 }
+function Assert-RigWatchFixtureTransportEvent($Event,$State) {
+    if($Event.schema -cne 'iw7.rig-watch-transport/1' -or $Event.FixtureOnly -isnot [bool] -or !$Event.FixtureOnly -or
+       $Event.RootPID -ne $State.Identity.PID -or $Event.Nonce -cne $State.Nonce){throw 'Transport identity differs.'}
+    if($Event.Status -ceq 'Failed'){
+        $State.Context.TransportFailure=$Event
+        throw ('Fixture transport failed: '+[string]$Event.Error)
+    }
+}
 function Invoke-RigWatchFixtureTransaction($Hooks,$State) {
     # Fixed fixture-only envelope; no generic/retail budget parameter or fallback.
     if($State.Schema -cne 'iw7.rig-watch-fixture-transaction/1' -or $State.Mode -cne 'fixture' -or

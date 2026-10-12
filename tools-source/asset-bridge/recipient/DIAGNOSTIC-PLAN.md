@@ -395,6 +395,14 @@ diagnostic run is authorized by H's exhausted GO.
 
 ## Existing tools and exact constraints
 
+The later [I two-phase run](native-validation-i-2026-10-12.json) also verified
+references, then failed script export with `ENEMY_SCRIPT_INDEX map=cp_zmb available=0`
+and utility `missing_asset`. Both original jobs closed, all 107 paths were
+restored and no lease remained. Its headless exception text is retained; the
+minidump wording does not prove a dump, and none exists in its documented output
+directory. The next authorized investigation reads source and small logs only,
+to compare indexing/loading paths. It is not another native diagnostic or retry.
+
 `iw7_capture.py` SHA256
 `d2ec79aec62573dee8b24530cfeddb06b9410338b1b70332d2afba3d8dd7162d`
 already opens a process handle, checks image/hash/creation time, and writes a new

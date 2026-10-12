@@ -331,5 +331,21 @@
     "native_compiled": false,
     "native_harness_run": false,
     "engine_observed": false
+  },
+  "observer_harness_source": {
+    "schema": "iw7.world-clipmap-harness-source/1",
+    "plan_sha256": "3520e7d2db673bd3b3aca61435da6a0fbfa35f7f9b81a357c5ae58c98ab95da5",
+    "source_sha256": {
+      "tools-source/asset-bridge/world/world_clipmap_observer.hpp": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
+      "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
+      "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
+      "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa"
+    },
+    "reader_original_json_tests_passed": 5,
+    "expected_native_records": 24,
+    "native_compiled": false,
+    "native_harness_run": false,
+    "engine_observed": false,
+    "coordinator_execution_adapter_review_pending": true
   }
 }
