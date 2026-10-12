@@ -689,3 +689,91 @@ syntax and linkage, not actual memory/stack capture behavior, the cause of the
 engine exit, catalogue generation or gameplay. No candidate or engine was
 launched by this build. The separate runtime parser correction does not change
 this qualified build; future runtime acceptance must bind its own reviewed plan.
+
+### E caller diagnostic: source-only preparation
+
+Runtime E captured ExitProcess with return address 0x140AC00C4 after post_unpack,
+but no catalogue. The subsequent INT3 is not evidence of execution or anti-debug
+failure. The retained source has no exact symbol for the three engine callers.
+No exit suppression, bootstrap fix, renamed function or offset correction is
+justified by this evidence. The coordinator authorized a finite main-only source
+diagnostic on 2026-10-12; build and runtime each require a separate GO.
+
+The preparation selector `--catalog-callers` is exclusive with the pre-patch,
+trace and exit-context selectors. Runtime argv remains `-t7-iw7-catalog <zone>`.
+BuildProfile has exactly ten fields: Name `t7-catalog-callers`, Option,
+ArgumentCount 3, TraceSchema `iw7.t7-catalog-trace/1`, ContextSchema
+`iw7.t7-catalog-exit-context/1`, CallerSchema `iw7.t7-catalog-callers/1`, plus
+Wiring, PreparedMain, BaseBuildPlan and BaseBuildReceipt. The four text pins,
+ordinary D2 proof and retained C compilation chain follow the existing profile.
+Only main is recompiled; Link reuses the other 412 object references. No provider,
+native supervisor, command, stock or shared source tree changes.
+
+The trace /1 and exit-context /1 generators retain their exact previously built
+identities. The new overlay adds a cstring include (already in the sealed input
+set), a POD-only guarded reader and a finite emitter. The existing bit-64 first
+winner, code, TID, exit RA, eight-frame stack and original LastError restoration
+are reused. After all three EXIT records, before original cleanup/exit, exactly
+three CALLER records are independently captured and immediately flushed:
+
+| Index | Fixed target return address |
+| --- | --- |
+| 0 | 0x140584FD8 |
+| 1 | 0x1401DA015 |
+| 2 | 0x140526D02 |
+
+Each target must occur in the already captured current-thread stack. `frame` is
+the zero-based first matching index; unavailable stack or absent target emits an
+explicit refusal with frame -1 and no lookup/read. The named module must be at
+0x140000000. RA-1 must lie in its readable committed allocation. Lookup uses
+RA-1, requires the same image base, and copies only the 12-byte RUNTIME_FUNCTION
+from a readable region in the same allocation. Begin <= RA-1 < End is mandatory.
+UnwindData remains metadata and is never dereferenced.
+
+If the entire function fits in 512 bytes and the RA-1 region contains it, capture
+the whole function. Otherwise intersect [RA-448, RA+64), [Begin, End), and the
+readable region containing RA-1. The intersection must contain RA-1 and have
+length 1..512. `scope=full` means the requested window covers the entire function;
+`window` means a bounded subset. Scope alone does not imply that the read passed.
+No region is traversed and no image/stack scan or additional stack capture occurs.
+The three new records read at most 1,536 code bytes and 36 record bytes in total,
+in addition to the unchanged EXIT /1 observations.
+
+The exact wire format is the single fprintf literal in CALLERS_SUPPORT. Fields
+in order are schema, code, tid, exit_ra, index, ra, status, frame, module, image,
+record, record_read, begin, end, unwind, start, requested, read, scope, allocation,
+region, region_size, state, protect, type, error, data. Prefix is
+`[T7_CATALOG_CALLER]`; pointers are uppercase hex16, RVAs uppercase hex8, other
+numbers decimal, and data uppercase hex2*read or `-`. LF may become CRLF.
+
+Statuses are ok, absent, stack_unavailable, module_missing, module_mismatch,
+query_failed, region_invalid, not_found, record_partial, record_read_failed,
+record_invalid, partial, read_failed, exception. Zero-initialized metadata can
+remain populated up to the failed operation. Before code selection, start,
+requested and read are zero and scope is none. Record partial has 1..11 bytes;
+record_read_failed has zero or 12; both clear all RVAs. record_invalid can retain
+a complete non-containing record. region_invalid after lookup can retain a valid
+record. The record's query region is checked internally but is not emitted.
+
+Code ok requires read=requested, partial requires 0<read<requested, and a failed
+RPM can report read_failed with zero or requested bytes. Exception zeroes RVAs
+while preserving any other bounded metadata/code already obtained. A separate
+serialization clamp also protects partial SEH outcomes: requested>512 or
+read>requested resets start/requested/read to zero and scope to none, with
+read_failed/error=ERROR_INVALID_DATA (13). An overlarge record count is reset to
+zero with zero RVAs and record_invalid. Errors in one target do not suppress the
+next target. The original cleanup and process exit remain unchanged.
+
+The maximum-width test evaluates the actual fprintf formats, including CRLF,
+maximum signed code/DWORD/SIZE_T values, longest states and 512 code bytes per
+caller. It bounds each CALLER line at 1,546 bytes and all 12 possible lines
+(six TRACE, three EXIT, three CALLER) at 6,911 bytes, within the 8,192-byte stderr
+contract. Raw bytes stay in ignored runtime evidence; committed evidence retains
+only metadata, statuses and pins. Observed capture never implies a catalogue.
+
+Source validation passes 77 Python tests with the retained source and E7 command
+records, plus 53 PowerShell checks (40 profile, 3 deadline, 10 Link telemetry).
+The initial test invocations lacked the retained E7 environment/provider
+arguments; the complete invocations above passed after those were supplied.
+No native diagnostic type, build child or lease was created. These source and
+synthetic tests do not establish C++ compilation or actual caller capture.

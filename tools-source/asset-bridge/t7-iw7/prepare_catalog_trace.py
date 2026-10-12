@@ -9,6 +9,8 @@ OPTION = '-t7-iw7-catalog'
 SCHEMA = 'iw7.t7-catalog-trace/1'
 EXIT_NAME = 't7-catalog-exit-context'
 EXIT_SCHEMA = 'iw7.t7-catalog-exit-context/1'
+CALLERS_NAME = 't7-catalog-callers'
+CALLERS_SCHEMA = 'iw7.t7-catalog-callers/1'
 BASE_PLAN_SHA = 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'
 BASE_RECEIPT_SHA = 'c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'
 
@@ -203,6 +205,131 @@ namespace
 '''
 
 
+CALLERS_SUPPORT = r'''
+	struct catalog_caller_context
+	{
+		const char* status;
+		int frame;
+		HMODULE module;
+		DWORD64 image;
+		PRUNTIME_FUNCTION address;
+		RUNTIME_FUNCTION record;
+		SIZE_T record_copied;
+		uintptr_t start;
+		SIZE_T requested;
+		SIZE_T copied;
+		const char* scope;
+		MEMORY_BASIC_INFORMATION region;
+		DWORD error;
+		unsigned char bytes[512];
+	};
+
+	void catalog_caller_read(const uintptr_t target, const catalog_exit_stack& stack, catalog_caller_context& out)
+	{
+		out.status = "exception";
+		out.frame = -1;
+		out.scope = "none";
+		__try
+		{
+			if (std::strcmp(stack.status, "ok") != 0 || stack.count == 0 || stack.count > 8)
+			{ out.status = "stack_unavailable"; return; }
+			for (USHORT i = 0; i < stack.count; ++i)
+			{
+				if (reinterpret_cast<uintptr_t>(stack.frames[i]) == target) { out.frame = i; break; }
+			}
+			if (out.frame < 0) { out.status = "absent"; return; }
+			out.module = GetModuleHandleW(L"BlackOps3_UnrankedDedicatedServer.exe");
+			if (!out.module) { out.error = GetLastError(); out.status = "module_missing"; return; }
+			if (reinterpret_cast<uintptr_t>(out.module) != 0x140000000ULL || target <= 0x140000000ULL)
+			{ out.status = "module_mismatch"; return; }
+			if (VirtualQuery(reinterpret_cast<void*>(target - 1), &out.region, sizeof(out.region)) != sizeof(out.region))
+			{ out.error = GetLastError(); out.status = "query_failed"; return; }
+			if (out.region.AllocationBase != out.module) { out.status = "module_mismatch"; return; }
+			if (!catalog_exit_readable(out.region, target - 1, 1)) { out.status = "region_invalid"; return; }
+			out.address = RtlLookupFunctionEntry(target - 1, &out.image, nullptr);
+			if (!out.address) { out.status = "not_found"; return; }
+			if (out.image != reinterpret_cast<uintptr_t>(out.module)) { out.status = "module_mismatch"; return; }
+			MEMORY_BASIC_INFORMATION record_region{};
+			if (VirtualQuery(out.address, &record_region, sizeof(record_region)) != sizeof(record_region))
+			{ out.error = GetLastError(); out.status = "query_failed"; return; }
+			if (record_region.AllocationBase != out.module) { out.status = "module_mismatch"; return; }
+			if (!catalog_exit_readable(record_region, reinterpret_cast<uintptr_t>(out.address), sizeof(out.record)))
+			{ out.status = "region_invalid"; return; }
+			const auto record_ok = ReadProcessMemory(GetCurrentProcess(), out.address, &out.record, sizeof(out.record), &out.record_copied);
+			if (!record_ok) out.error = GetLastError();
+			if (out.record_copied > sizeof(out.record)) { out.record_copied = 0; out.error = ERROR_INVALID_DATA; }
+			if (!record_ok || out.record_copied != sizeof(out.record))
+			{
+				out.record = {};
+				out.status = out.record_copied && out.record_copied < sizeof(out.record) ? "record_partial" : "record_read_failed";
+				return;
+			}
+			const auto rva = target - 1 - out.image;
+			if (!(out.record.BeginAddress <= rva && rva < out.record.EndAddress))
+			{ out.status = "record_invalid"; return; }
+			const auto begin = static_cast<uintptr_t>(out.image + out.record.BeginAddress);
+			const auto end = static_cast<uintptr_t>(out.image + out.record.EndAddress);
+			const auto region_begin = reinterpret_cast<uintptr_t>(out.region.BaseAddress);
+			if (out.region.RegionSize > ~uintptr_t(0) - region_begin || target > ~uintptr_t(0) - 64)
+			{ out.status = "region_invalid"; return; }
+			const auto region_end = region_begin + out.region.RegionSize;
+			uintptr_t start = begin;
+			uintptr_t stop = end;
+			if (end - begin > sizeof(out.bytes) || !catalog_exit_readable(out.region, begin, end - begin))
+			{
+				start = target - 448;
+				stop = target + 64;
+				if (start < begin) start = begin;
+				if (start < region_begin) start = region_begin;
+				if (stop > end) stop = end;
+				if (stop > region_end) stop = region_end;
+			}
+			if (!(start <= target - 1 && target - 1 < stop) || stop - start > sizeof(out.bytes) ||
+				!catalog_exit_readable(out.region, start, stop - start))
+			{ out.status = "region_invalid"; return; }
+			out.start = start;
+			out.requested = stop - start;
+			out.scope = start == begin && stop == end ? "full" : "window";
+			const auto ok = ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(out.start), out.bytes, out.requested, &out.copied);
+			if (!ok) out.error = GetLastError();
+			if (out.copied > out.requested) { out.copied = 0; out.error = ERROR_INVALID_DATA; out.status = "read_failed"; return; }
+			out.status = ok && out.copied == out.requested ? "ok" :
+				(out.copied && out.copied < out.requested ? "partial" : "read_failed");
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) { out.record = {}; out.error = GetExceptionCode(); out.status = "exception"; }
+	}
+
+	void catalog_callers_capture(const int code, const DWORD tid, void* exit_caller, const catalog_exit_stack& stack)
+	{
+		constexpr uintptr_t targets[3] = {0x140584FD8ULL, 0x1401DA015ULL, 0x140526D02ULL};
+		constexpr char hex[] = "0123456789ABCDEF";
+		for (unsigned index = 0; index < 3; ++index)
+		{
+			catalog_caller_context out{};
+			catalog_caller_read(targets[index], stack, out);
+			// Guard serialization independently of a partially completed API/SEH path.
+			if (out.record_copied > 12) { out.record_copied = 0; out.record = {}; out.status = "record_invalid"; }
+			if (out.requested > 512 || out.copied > out.requested)
+			{ out.requested = 0; out.copied = 0; out.start = 0; out.scope = "none"; out.status = "read_failed"; out.error = ERROR_INVALID_DATA; }
+			char data[1025] = "-";
+			if (out.copied)
+			{
+				for (SIZE_T i = 0; i < out.copied; ++i)
+				{ data[2 * i] = hex[out.bytes[i] >> 4]; data[2 * i + 1] = hex[out.bytes[i] & 15]; }
+				data[2 * out.copied] = '\0';
+			}
+			std::fprintf(stderr, "[T7_CATALOG_CALLER] schema=iw7.t7-catalog-callers/1 code=%d tid=%lu exit_ra=%p index=%u ra=%p status=%s frame=%d module=%p image=%p record=%p record_read=%zu begin=%08lX end=%08lX unwind=%08lX start=%p requested=%zu read=%zu scope=%s allocation=%p region=%p region_size=%llu state=%lu protect=%lu type=%lu error=%lu data=%s\n",
+				code, tid, exit_caller, index, reinterpret_cast<void*>(targets[index]), out.status, out.frame, static_cast<void*>(out.module),
+				reinterpret_cast<void*>(out.image), static_cast<void*>(out.address), out.record_copied,
+				out.record.BeginAddress, out.record.EndAddress, out.record.UnwindData, reinterpret_cast<void*>(out.start),
+				out.requested, out.copied, out.scope, out.region.AllocationBase, out.region.BaseAddress,
+				static_cast<unsigned long long>(out.region.RegionSize), out.region.State, out.region.Protect, out.region.Type, out.error, data);
+			std::fflush(stderr);
+		}
+	}
+'''
+
+
 def wire_main(source):
     once = prepare_cli.helper.once
     source = once(source, '#include <std_include.hpp>', '#include <std_include.hpp>\n#include <intrin.h>\n#include <cwchar>\n#include <cstdio>')
@@ -230,6 +357,15 @@ def wire_exit_main(source):
     source = prepare_cli.helper.once(source, SUPPORT, SUPPORT+'\n'+EXIT_SUPPORT)
     return prepare_cli.helper.once(source, '\t\tcatalog_trace_once(32, "exit_hook", code, _ReturnAddress());',
                                    '\t\tcatalog_exit_once(code, _ReturnAddress());')
+
+
+def wire_callers_main(source):
+    """Add only the three E caller observations to the existing first winner."""
+    source = wire_exit_main(source)
+    source = prepare_cli.helper.once(source, '#include <cstdio>', '#include <cstdio>\n#include <cstring>')
+    source = prepare_cli.helper.once(source, '\tvoid catalog_exit_once(', CALLERS_SUPPORT+'\n\tvoid catalog_exit_once(')
+    return prepare_cli.helper.once(source, '\t\tSetLastError(saved_error);',
+        '\t\tcatalog_callers_capture(code, tid, caller, stack);\n\t\tSetLastError(saved_error);')
 
 
 def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads):
