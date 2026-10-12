@@ -6,7 +6,8 @@ param([Parameter(Mandatory)][string]$Plan,
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 
-function Read-SteamSnapshot([string]$Path,[ValidateRange(1,33554432)][int]$Limit,$Guards) {
+function Read-SteamSnapshot([string]$Path,[ValidateRange(1,67108864)][int]$Limit,$Guards,[switch]$Allow64MiB) {
+    if($Limit -gt 32MB -and !$Allow64MiB){throw 'Snapshot above 32 MiB requires explicit 64 MiB opt-in.'}
     Assert-H1Path $Path
     $stream=[IO.FileStream]::new($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
     $retained=$false

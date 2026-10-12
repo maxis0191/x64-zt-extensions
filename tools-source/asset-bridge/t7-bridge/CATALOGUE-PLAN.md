@@ -1123,3 +1123,54 @@ validity of the three earlier files or an exhaustive dependency list. No new
 asset path or metadata was consulted. The smallest proposed next decision is
 an exact metadata observation of `core_patch.ff`, then bounded qualification
 only if separately authorized. No dependency is inferred from name symmetry.
+
+## CorePatchA preparation: explicit 64/128 MiB policy
+
+The separately authorized exact metadata observation found `core_patch.ff`
+at 45,217,664 bytes, with ordinary file/ancestors. Metadata and an OS file ID
+were observed; content/header/hash were not read. It exceeds the original
+32 MiB reader limit by itself. Added to the three qualified files it would
+total 68,194,304 bytes, exceeding even a 64 MiB aggregate by 1,085,440 bytes.
+Preparation stopped on that old boundary before a qualification script or
+payload read. This refusal is retained in the
+[sanitized CorePatchA preparation checkpoint](catalogue-core-patch-preparation-m-20261012.json).
+
+A distinct source authorization then set 64 MiB **per file** and 128 MiB
+**aggregate**, still one through eight explicitly named/qualified files.
+`QualifiedCollectionV2` makes that choice explicit. V1 remains at 32/32 MiB;
+the exact legacy J/K rules remain unchanged. Names, paths, receipts, IDs,
+remaining-cap arithmetic and validation-before-alias requirements are shared.
+The 6/8 GiB reservation, deadlines, stderr cap and execution/closure paths
+are unchanged. The four-file output ceiling would be 196,003,736 bytes;
+the policy maxima are 262,027,160 for the current candidate or 307,385,752
+for a 64 MiB candidate.
+
+The existing `Read-SteamSnapshot` range now permits at most 64 MiB, with an
+explicit `Allow64MiB` switch required above 32 MiB. Without that switch the
+old limit refuses before path validation, opening a stream or allocating its
+buffer. CorePatchA passes the switch explicitly and retains the existing
+snapshot/hash/guard implementation. Its two exact 45,217,664-byte passes
+would read 90,435,328 bytes in total. All five qualification lifecycle
+functions are byte-for-byte identical to the predecessor.
+
+All 1,585 source checks pass: 311 collection, 68 reader and 1,206 remaining
+catalogue checks. The 54 separate qualification lifecycle checks also pass.
+Boundary fixtures cover the actual four-file arithmetic, exact 64/128 MiB
+limits, V1's unchanged refusal, and rejection before a reader path/stream or
+partial collection can escape. No large fixture allocation, retail content,
+native support or real lease is used. CorePatchA default returns
+`QualificationScriptCheckedPendingGO`; the future persistent-host command's
+actual arguments were captured without launching that host. Its scope,
+attempt marker and result receipt are absent.
+
+A small delegation protocol was proposed, not activated: at most three more
+dependencies named by complete correlated MSG failures, one qualification and
+one catalogue each, no retry and complete closure between stages. A new error
+category, repeated/ambiguous name, limit/admission/identity failure or any
+uncertain lifecycle stops the batch. It introduces no discovery engine or
+scheduler. A separate coordinator acceptance would be needed to delegate
+those stages; source authorization alone does not authorize them.
+
+CorePatchA awaits targeted review and a distinct qualification GO. Plan M
+does not yet exist: it can use the fourth file only after qualification has
+fully closed with a real hash/identity. No runtime compatibility is claimed.

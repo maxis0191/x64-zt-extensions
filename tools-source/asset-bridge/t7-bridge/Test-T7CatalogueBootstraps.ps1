@@ -40,11 +40,11 @@ function New-Pair {
     $script:ids=@{};$script:ids[$first.Path]=$first.FileId;$script:ids[$second.Path]=$second.FileId
     $f
 }
-function New-Qualified([int]$Count=3) {
+function New-Qualified([int]$Count=3,[string]$Policy='QualifiedCollectionV1') {
     $f=New-Fixture;$template=Copy-Value $f.Plan.Bootstrap;$metadata=Copy-Value $f.Plan.InputMetadata[-1]
     $f.Plan.InputMetadata=@($f.Plan.InputMetadata[0..3]);$f.Plan.Bindings=@($f.Plan.Bindings[0..4])
     $f.Plan.PSObject.Properties.Remove('Bootstrap')
-    $f.Plan|Add-Member NoteProperty BootstrapPolicy 'QualifiedCollectionV1'
+    $f.Plan|Add-Member NoteProperty BootstrapPolicy $Policy
     $f.Plan|Add-Member NoteProperty Bootstraps @()
     $f|Add-Member NoteProperty Receipts @()
     $f.Plan.OutputLimitBytes=106059160L+$f.Plan.CandidateBytes
@@ -188,6 +188,32 @@ try {
     $f=New-Qualified 1;Set-QualifiedBytes $f 0 32MB;Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
     $f=New-Qualified 8;Set-QualifiedBytes $f 7 (32MB-7000);Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
     $f.Plan.Bootstraps[7].Bytes++;Refuses {Get-T7CatalogueBootstraps $f.Plan} 'aggregate'
+    foreach($count in 1,3,8){
+        $f=New-Qualified $count 'QualifiedCollectionV2'
+        Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+        Assert-T7CatalogueDistinctInputIds $f.Plan @(New-InputIds $f);$checks++
+        Check (@(Get-T7CatalogueBootstraps $f.Plan).Count -eq $count) 'V2 item count differs.'
+    }
+    $f=New-Qualified 4 'QualifiedCollectionV2';$sizes=@(832,22351168,624640,45217664)
+    for($i=0;$i -lt 4;$i++){Set-QualifiedBytes $f $i $sizes[$i]}
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    for($i=0;$i -lt 4;$i++){Assert-T7CatalogueBootstrapReceipt $f.Plan $f.Receipts[$i] $f.Plan.Bootstraps[$i].Path;$checks++}
+    Check ($f.Plan.OutputLimitBytes -eq 196003736) 'Four-file V2 exact budget differs.'
+    $f.Plan.BootstrapPolicy='QualifiedCollectionV1';Refuses {Get-T7CatalogueBootstraps $f.Plan} 'bytes'
+    $f=New-Qualified 8 'QualifiedCollectionV2';Set-QualifiedBytes $f 0 64MB;Set-QualifiedBytes $f 1 (64MB-6000)
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    Check ($f.Plan.OutputLimitBytes -eq 262027160) 'Exact V2 aggregate ceiling differs.'
+    $f.Plan.Bootstraps[-1].Bytes++;$script:partialItems=[Collections.Generic.List[object]]::new()
+    Refuses {Get-T7CatalogueBootstraps $f.Plan|ForEach-Object {$script:partialItems.Add($_)}} 'aggregate'
+    Check ($script:partialItems.Count -eq 0) 'Late V2 aggregate excess leaked a partial item.'
+    $f=New-Qualified 1 'QualifiedCollectionV2';Set-QualifiedBytes $f 0 64MB
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    $f.Plan.Bootstraps[0].Bytes++;Refuses {Get-T7CatalogueBootstraps $f.Plan} 'bytes'
+    $f=New-Qualified 2 'QualifiedCollectionV2';Set-QualifiedBytes $f 0 64MB;Set-QualifiedBytes $f 1 64MB
+    $f.Plan.CandidateBytes=64MB;$f.Plan.Bindings[0].Bytes=64MB;$f.Plan.InputMetadata[0].Bytes=64MB
+    $script:provider[$f.Plan.CandidateSource].Length=64MB;$f.Plan.OutputLimitBytes=307385752L
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    $f.Plan.OutputLimitBytes++;Refuses {Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner'} 'budget|Fixed catalogue'
     foreach($case in 'name-path','identity','receipt','script','text-source','text-base','run-root','foreign-parent','alias-case','alias-traversal','hash','provenance','text-size','extra-field'){
         $f=New-Qualified;$b=$f.Plan.Bootstraps[-1]
         switch($case){
