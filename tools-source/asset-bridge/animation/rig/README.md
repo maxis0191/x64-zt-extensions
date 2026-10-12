@@ -1,0 +1,111 @@
+# Original two-bone rig and four-key clip binding
+
+This is a source-only recovery and CPU checkpoint. The original ribbon contains
+8 vertices, 6 triangles, one surface, `tag_origin` and child `tag_probe`. Its
+channel order matches the passed `paris_original_probe_bend` clip. No compiler,
+native writer, FF builder, stock transaction or game ran for this rig tranche.
+The existing animation FF result remains separate.
+
+## Reused original sources
+
+The twelve files in [recovered-source.json](recovered-source.json) were recovered
+byte-for-byte from retained `doom-source-pipeline/ops/doom-source`: the real-header
+native writer, complete independent XMB/XSB reader, CPU oracle, input/source
+preparers and 69 existing tests. No historical file was edited and no native
+process wrapper was imported. Source comments describing the initial unbuilt
+checkpoint are preserved as part of that history.
+
+Names remain `paris_doom_skin_two_bone_first_a` and
+`paris_doom_skin_two_bone_second_a`, each with `_lod0` surfaces. These are original
+procedural geometry, not a Doom asset or the one-bone Beacon. Keeping their exact
+names preserves correspondence with the October 7 native artifacts already read
+by the model workstream. Its recorded native evidence is not a new native
+execution here, nor an FF or rendered-skinning pass.
+
+The writer references the existing material name
+`mopw/character_park_clown_zombie_shoes`; it emits no material or retail bytes.
+Resolution on a future map/FF remains required. An original material substitution
+needs a reviewed new profile/name and independent reader expectation, with the
+material owner's dependency closure. Do not silently alter the retained profiles
+or copy a guessed donor asset.
+
+## Geometry, bind and weight contract
+
+Coordinates are Z-up engine units. The ribbon lies at X=0, spans Y=-4..4 and
+Z=0..16. Root global bind is identity at (0,0,0); child global bind is identity
+at (0,0,8). Parent distance is byte 1. The local child quaternion is int16
+(0,0,0,32767), translation (0,0,8); both positive global `baseMat` records have
+identity quaternion and `transWeight=2`. The oracle computes inverse binds for
+skinning; inverse binds are not stored in the model's `baseMat`.
+
+| Vertex rows in serialized order | Child weight | Purpose |
+| --- | ---: | --- |
+| Z=0, Y=-4/+4 | 0 | Root-weighted control stays still |
+| Z=16, Y=-4/+4 | 1 | Child-only points establish pivot/rotation |
+| Z=4, Y=-4/+4 | 0.25 | Asymmetric dual weights |
+| Z=12, Y=-4/+4 | 0.75 | Opposite asymmetry detects reversed weight convention |
+
+The surface has four mono and four dual vertices, 48 blend bytes, no rigid list,
+zero client bones and no optional GPU/reactive/subdivision/collision streams.
+Pinned converters establish raw IW7 bone IDs, two/four ushort words per mono/dual
+vertex and byte-range weights in ushorts. They do not establish which dual bone
+receives the stored weight. The profiles keep bone order and geometry identical
+while storing 64/191 under opposite explicit hypotheses. CPU success does not
+choose an engine convention.
+
+`skin_native_abi.hpp` binds the writer to actual pinned ZoneTool types:
+XModel=736, XModelSurfs=56, XSurface=256, GfxPackedVertex=32, Face=6,
+DObjAnimMat=32 and XBlendInfo=2 bytes. `read_skin_native.py` independently reads
+all records, pointers as presence markers, exact streams and EOF. It rejects
+unsupported pointers/flags/dependencies and blob aliases. Synthetic tests do not
+stand in for a new writer execution.
+
+Flags 0x86, partBits C0000000, normal/tangent words E0080000/200FFE00,
+selfVisibility 01FE0100, planar bounds and negative tangent handedness remain
+engine/shader/culling checks. The format contract uses ZoneTool pin
+`fab935826c898806855376662a8a03317b3ad8f1`; do not substitute H1 structs or rename
+H1 files. Eleven physical source hashes were rechecked during preparation and
+are retained in [validation-2026-10-12.json](validation-2026-10-12.json).
+
+## Current lightweight evidence
+
+[verify_clip_rig.py](verify_clip_rig.py) imports no writer. It consumes the
+independently verified input bundle and exact-profile XAB reader, then computes
+matrix skinning from the four decoded quaternions. A separate closed-form
+rotation about Z=8 supplies ideal positions, including the negative bend.
+The CLI requires the measured native or B redump hash; synthetic test bytes
+cannot masquerade as that evidence.
+
+With the real B redump, both hypotheses pass their corresponding CPU
+interpretation. Neutral frames 0/30 reproduce bind geometry; root-weighted
+points stay fixed. Maximum combined packed-quaternion/weight error is
+**0.0042607866 units**, versus **2.1605451221 units** for opposite weight
+interpretation. This assumes normalized quaternions and linear blend skinning;
+it does not prove interpolation, engine weight direction or visible deformation.
+The note remains data at 0.5, not a delivered gameplay event.
+
+79 light tests pass: the recovered 69 and ten new tests for four-key binding,
+negative pose, explicit note remapping, channel/geometry/parent/weight mutations,
+neutral bind, retained hashes, byte limits and exact recovery provenance. Real
+source preparation generated and re-read only raw inputs, C++ source/header
+and JSON receipts. From the repository root:
+
+```powershell
+python -B -m unittest discover -s tools-source/asset-bridge/animation/rig -v
+```
+
+Explicit absolute local path arguments keep preparation separate from native work:
+
+```powershell
+python -B tools-source/asset-bridge/animation/rig/prepare_skin_fixture.py --source $PinnedZoneTool --output $FreshInputDirectory
+python -B tools-source/asset-bridge/animation/rig/read_skin_fixture.py --input $FreshInputDirectory
+python -B tools-source/asset-bridge/animation/rig/prepare_skin_writer.py --inputs $FreshInputDirectory --source $PinnedZoneTool --output $FreshPreparedSourceDirectory
+python -B tools-source/asset-bridge/animation/rig/prepare_skin_writer.py --verify-prepared --inputs $FreshInputDirectory --source $PinnedZoneTool --output $FreshPreparedSourceDirectory
+python -B tools-source/asset-bridge/animation/rig/verify_clip_rig.py --inputs $FreshInputDirectory --xab $ActualBRedump --ff-roundtrip
+```
+
+Preparers refuse existing output directories and modified/unpinned source,
+generate no XMB/XSB/FF and never invoke a compiler. Do not use retained historical
+native launch scripts. Future native/FF/runtime work requires separate coordinator
+GO and current resource/ownership/restoration helpers. The next recipe and real
+GSC route are in [RUNTIME-CONTRACT.md](RUNTIME-CONTRACT.md).
