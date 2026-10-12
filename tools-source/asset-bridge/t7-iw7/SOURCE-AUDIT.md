@@ -111,10 +111,12 @@ or owner gameplay acceptance is claimed.
 `boot_contract.py` validates an option implemented only in the prepared patch:
 `-t7-iw7-model <zone> <exact-model-name> <lod>`. The target is fixed to IW7.
 The first profile permits one exact model, one explicit LOD 0..5 and resident
-rigid geometry only. Asset names retain case and slash-separated components;
-the restricted first profile rejects absolute paths, traversal, commas, unsafe
-Windows device names, empty components and non-ASCII names. These restrictions
-do not claim that every legitimate retail name follows this subset.
+rigid geometry only. Asset names retain case, both slash spellings, internal
+spaces and legitimate dots, up to 255 ASCII bytes. The shared rule rejects
+absolute paths, traversal, ADS, unsafe Windows device aliases (including
+extensions), empty components and trailing dots/spaces. The export route also
+rejects a leading comma, the engine's referenced-asset marker. Zone names remain
+flat tokens of at most 64 bytes. No input name is sanitized or renamed.
 
 Boot mode is selected from executable presence. `main.cpp:512-541` checks H1,
 H2, S1, IW6 and IW7 before T7. A future isolated T7 run must reject competing
@@ -141,7 +143,7 @@ profile must prohibit or explicitly bind that input and check every output
 ancestor for reparse points. Existing serializers open files with `wb`; an
 absent private output root and an exact expected output list are mandatory.
 
-The five pure boot tests use invented names and exercise target/argument,
+The six pure boot tests use invented names and exercise target/argument,
 path and scalar refusals. They do not qualify the command in a native binary.
 
 ## Prepared CLI patch, still uncompiled
@@ -150,9 +152,10 @@ path and scalar refusals. They do not qualify the command in a native binary.
 `zonetool-fab9358-t7-resident-cli.patch`. It never applies the patch. Three
 translation units change: main, T7 ZoneTool and the existing T7 XPAK helper;
 the fourth file adds the helper's declaration. No process supervisor is added.
-The external `t7_iw7_resident_model.hpp` is owned by the conversion chat and must
-be pinned and copied into the private prepared-source include path before a
-future build. `cli-source-contract.json` records that source dependency.
+The external `t7_iw7_resident_model.hpp` and `t7_asset_name.hpp` are owned by the
+conversion chat and must be pinned and copied together into the private
+prepared-source include path before a future build. `cli-source-contract.json`
+records both source dependencies.
 
 The patch rejects a missing T7 engine before the old missing-engine dialog and
 rejects competing engine mode before `main_internal`. Its exact four-argument
@@ -187,7 +190,7 @@ called a verified source zone. `export_contract.py` checks receipt structure
 against the request; it does not independently verify those file bytes or job
 closure.
 
-Validation: 15 pure/source tests, exact preparer check and read-only
+Validation after the correction below: 18 pure/source tests, exact preparer check and read-only
 `git apply --check` pass. The first patch-generation attempt was rejected by
 Git because upstream `xpak.hpp` has no final newline; the preparer now emits
 the proper unified-diff no-newline marker and preserves those original bytes.
@@ -197,3 +200,21 @@ Coordination update: the owner confirmed BO3 download completion; the
 conversion chat owns the bounded metadata inventory and dedicated-engine
 acquisition plan. This chat did not rescan that installation. Its source CLI
 preparation does not imply that the required dedicated engine is present.
+
+## Shared name-validation correction
+
+The independent review of the conversion adapter found that ASCII validation
+alone could admit traversal names when the public selector was used without
+this CLI's path guard. Commit `4de21ed` preserved the initial CLI checkpoint;
+the correction now delegates native asset-name checks to the selector's public
+`resident_iw7::asset_name` and shared `checked_asset_name` helper. It validates
+both source model and selected mesh inside the selector as well as at export.
+The Python receipt/request policy matches that rule and preserves the exact
+engine name; only receipt **relative-path separators** use forward slash to
+match C++ `generic_string`. A backslash spelling is not silently renamed.
+
+The conversion owner supplies this boundary fix in
+`cf1949658fa374bcd14db79865247243fca7c34c`, plus 51 C++ cases on the actual helper.
+Those 51 cases remain source-only and unexecuted. They require the next admitted
+native qualification along with the three minimal T7 translation units; no
+stock export is authorized by their presence.

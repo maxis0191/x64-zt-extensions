@@ -7,60 +7,74 @@
       "lf_sha256": "f8d22fb8e084b60e159b14ac9523e6e6a93bd904339b90b173f024409fdd6073"
     },
     "SOURCE-AUDIT.md": {
-      "lf_bytes": 12188,
-      "lf_sha256": "7298af96a70123c356035c15fdc8991dc7adfa2e2e5ecf75893914bc7e2b50e2"
+      "lf_bytes": 13474,
+      "lf_sha256": "6d0050cc2f9d4ffaa09a657f2f51359df96c2217eff87a5ca817a060ab0cc109"
     },
     "source-inventory.json": {
       "lf_bytes": 3133,
       "lf_sha256": "e0a8a99fed0d76f2db0df5d87d0c6a2bd63cd20399504b6ae04bf31588607b84"
     },
     "boot_contract.py": {
-      "lf_bytes": 3174,
-      "lf_sha256": "5fdfde605db82bd85960515c57439b26153252b8000ffa0f7f51d723d32e2072"
+      "lf_bytes": 3439,
+      "lf_sha256": "cc1323778270b51c05587fde63641327c8dd4b5b9d02f041dd07332439c68d99"
     },
     "test_boot_contract.py": {
-      "lf_bytes": 2175,
-      "lf_sha256": "cd7901843e60665683b8fbe0d1580f95696e278ef308ed89cec8b54439ad3ef4"
+      "lf_bytes": 2443,
+      "lf_sha256": "a2e47486742a978b90a574397e66f2b8c1c86c943d329b1174be50e2bf48beb3"
     },
     "native_cli.inc": {
       "lf_bytes": 1136,
       "lf_sha256": "d1e30d1c6195d63696f2755faff03a3ece48e3afcb0a6d082fd6b42da9a89934"
     },
     "native_export.inc": {
-      "lf_bytes": 9354,
-      "lf_sha256": "8136b4c3fba2ebfb70d7bc8c52a0cf6023b623eef5f4c0670bb8cc93535f5112"
+      "lf_bytes": 8842,
+      "lf_sha256": "47ec8d625b8225c4acc4b072c4957e094673c2eadd87ba7beb31438a30f8d775"
     },
     "prepare_cli.py": {
       "lf_bytes": 4585,
       "lf_sha256": "dc089d79578ea51d00e2f05f88ff1d0dfba8ea5820c04beb03266b44acfdd142"
     },
     "test_cli_patch.py": {
-      "lf_bytes": 2750,
-      "lf_sha256": "df5ab4c4944614fed115b42b6afa3385edc31af17aaaa58c6b25e6a58bc24cef"
+      "lf_bytes": 2987,
+      "lf_sha256": "14d2eb87d7072601f23a915adf6aa5aa33ab73db1ff7e57a2ed90bc565094c69"
     },
     "export_contract.py": {
-      "lf_bytes": 3061,
-      "lf_sha256": "2110372d49273b4a3c9617e9db82768d660ef80b4bd03f3351cdf8c3a7f5ad26"
+      "lf_bytes": 3097,
+      "lf_sha256": "9c142d23c5f261e3ae282a141d10e2d032c738fe09b98c58b9077be59ebbe261"
     },
     "test_export_contract.py": {
-      "lf_bytes": 2439,
-      "lf_sha256": "77c9934e45ecf7e1d5100b3913fdf1164115a90b31bec4e5155a1334f736b822"
+      "lf_bytes": 2890,
+      "lf_sha256": "19f5b4bc5d671380d1c87504ad03c50375c258bb70e70a6995a9f671093eb651"
     },
     "zonetool-fab9358-t7-resident-cli.patch": {
-      "lf_bytes": 13372,
-      "lf_sha256": "11f5042603761eefa444ba1e49e2be3ce23e2cb1d444cc9bae46bb2aeafb21f5"
+      "lf_bytes": 12848,
+      "lf_sha256": "e4d72215674d3ed9f84d9e532327ac3bf461961fe8782cf904df156793d982e2"
     }
   },
   "external_adapter": {
     "repository_path": "tools-source/asset-bridge/t7-bridge/t7_iw7_resident_model.hpp",
     "profile": "t7-iw7-resident-static-v1",
-    "lf_bytes": 13275,
-    "lf_sha256": "e045e9de8b5232b2a9d0765c013c288fb4aae44b9c4c7f16419ef3ada37cd985",
-    "compile_verified": false
+    "lf_bytes": 13444,
+    "lf_sha256": "6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777",
+    "compile_verified": false,
+    "source_commit": "cf1949658fa374bcd14db79865247243fca7c34c",
+    "required_sibling": {
+      "name": "t7_asset_name.hpp",
+      "lf_bytes": 1945,
+      "lf_sha256": "171a3834a1e4c2321347850d350d9683eee4dec7715f3fdc95d5cb12c4adee65"
+    },
+    "native_boundary_fixture": {
+      "name": "test_t7_asset_name.cpp",
+      "lf_bytes": 2170,
+      "lf_sha256": "b77aee23860f07c9dee92063a1b322d7964da77880990cdd6dc9064f8bb4ddfc",
+      "expected_checks": 51,
+      "compiled": false,
+      "executed": false
+    }
   },
   "patched_source_lf_sha256": {
     "src/zonetool/main.cpp": "78f4a60419375be3e22e7ac16f5867f03c49d4002ae794f8906d9e7d457503f5",
-    "src/zonetool/zonetool/t7/zonetool.cpp": "6cb9df04439de69c69b90b3d09d08a487c86eccedda5f99ac94422c14cc2b5c4",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "1ddd4b6c6b7749e9dfb66aedaa18128250e57753127bcd441351c7d994af1d77",
     "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
     "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
   },
@@ -86,7 +100,7 @@
   "reused_resource_inputs": 1,
   "full_or_incremental_build_invoked": false,
   "binary_input_contents_read": false,
-  "python_tests_passed": 15,
+  "python_tests_passed": 18,
   "python_tests_use_only_source_and_invented_records": true,
   "git_apply_check_passed": true,
   "native_patch_applied": false,

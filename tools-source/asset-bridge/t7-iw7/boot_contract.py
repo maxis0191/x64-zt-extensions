@@ -7,7 +7,8 @@ FIELDS = {'schema', 'target', 'profile', 'zone', 'model', 'lod'}
 PROFILE = 'resident-rigid-one-lod'
 PROPOSED_OPTION = '-t7-iw7-model'
 SOURCE_ENGINE = 'BlackOps3_UnrankedDedicatedServer.exe'
-RESERVED = {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}
+RESERVED = {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$', 'CLOCK$',
+            *(f'COM{i}' for i in range(10)), *(f'LPT{i}' for i in range(10))}
 
 
 def require(value, message):
@@ -15,11 +16,16 @@ def require(value, message):
 
 
 def safe_name(value, *, zone=False):
-    require(type(value) is str and 1 <= len(value) <= (64 if zone else 128), 'Name length/type refused')
-    require(re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_/-]*', value) is not None, 'Exact portable ASCII name required')
-    parts = value.split('/')
-    require(len(parts) <= (1 if zone else 8) and all(parts), 'Name path depth/empty segment refused')
-    require(all(len(part) <= 64 and part.upper() not in RESERVED for part in parts), 'Unsafe name segment refused')
+    require(type(value) is str and 1 <= len(value) <= (64 if zone else 255), 'Name length/type refused')
+    require(all(0x20 <= ord(c) < 0x7f and c not in ':<>"|?*' for c in value), 'Exact portable ASCII name required')
+    if zone:
+        require(re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]*', value) is not None, 'Flat zone token required')
+    else:
+        require(not value.startswith(','), 'Referenced-asset alias refused')
+    parts = re.split(r'[/\\]', value)
+    for part in parts:
+        require(part and part not in ('.', '..') and part[-1] not in '. ', 'Unsafe path segment')
+        require(part.split('.', 1)[0].rstrip(' ').upper() not in RESERVED, 'Windows device alias refused')
     return value
 
 

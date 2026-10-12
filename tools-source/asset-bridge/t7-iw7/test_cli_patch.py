@@ -26,6 +26,11 @@ class NativeGuardSourceTests(unittest.TestCase):
         self.assertIn('write_enemy_reference_output(root / "manifest.json", bytes)', source)
         self.assertIn('FILE_FLAG_OPEN_REPARSE_POINT', source)
 
+    def test_native_asset_names_use_common_adapter_rule(self):
+        source = (p.HERE/'native_export.inc').read_text()
+        self.assertIn('resident_iw7::asset_name(text)', source)
+        self.assertNotIn('lower == "con"', source)
+
 
 @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'), 'Retained native source not supplied')
 class RetainedPatchTests(unittest.TestCase):

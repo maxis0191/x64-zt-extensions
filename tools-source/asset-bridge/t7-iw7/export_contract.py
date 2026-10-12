@@ -27,8 +27,8 @@ def validate_export(value, request):
     for key in ('zonetool_xpak_helper_reads_allowed', 'engine_io_verified', 'dependency_payloads_verified', 'asset_zone_ownership_verified',
                 'serialized_parse_verified', 'runtime_verified', 'ready'):
         require(value[key] is False, 'Receipt must preserve unqualified claims')
-    for role, path, limit in (('model', 'xmodel/'+request['model']+'.xmb', 1024**2),
-                              ('mesh', 'xsurface/'+mesh+'.xsb', 16*1024**2)):
+    for role, path, limit in (('model', 'xmodel/'+request['model'].replace('\\','/')+'.xmb', 1024**2),
+                              ('mesh', 'xsurface/'+mesh.replace('\\','/')+'.xsb', 16*1024**2)):
         artifact = value[role]
         require(type(artifact) is dict and set(artifact) == {'relative_path', 'bytes', 'sha256'}, 'Exact artifact fields required')
         require(artifact['relative_path'] == path and type(artifact['bytes']) is int and

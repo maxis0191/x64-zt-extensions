@@ -18,8 +18,8 @@ class BootContractTests(unittest.TestCase):
             with self.assertRaises(ValueError): b.parse_proposed_arguments(args)
 
     def test_path_alias_traversal_and_device_names_refuse(self):
-        for name in ('../fixture', '/fixture', 'a//b', 'a/', 'C:/fixture', 'a\\b', ',fixture',
-                     'a\n', 'a\0', 'é', 'CON', 'a/lPt9', 'a.' , 'with space'):
+        for name in ('../fixture', '/fixture', 'a//b', 'a/', 'C:/fixture', '\\fixture', ',fixture',
+                     'a\n', 'a\0', 'é', 'CON', 'a/lPt9', 'a.', 'a/nul.bin', 'COM1 .x', 'a/CONIN$'):
             with self.assertRaises(ValueError): b.make_request('fixture_zone', name, 0)
 
     def test_scalar_types_bounds_and_canonical_lod(self):
@@ -27,8 +27,12 @@ class BootContractTests(unittest.TestCase):
             with self.assertRaises(ValueError): b.make_request('fixture_zone', 'fixture', lod)
         for text in ('00', '+1', '1 ', '-1', '6'):
             with self.assertRaises(ValueError): b.parse_proposed_arguments([b.PROPOSED_OPTION, 'fixture_zone', 'fixture', text])
-        for name in ('x'*129, 'x'*65, '/'.join(['a']*9)):
+        for name in ('x'*256, 'fixture/../other'):
             with self.assertRaises(ValueError): b.make_request('fixture_zone', name, 0)
+
+    def test_legitimate_spelling_and_separators_are_preserved(self):
+        for name in ('fixture/Model.v1', r'fixture\Model.v1', 'fixture/model name', 'x'*255):
+            self.assertEqual(b.make_request('fixture_zone', name, 0)['model'], name)
 
     def test_extra_fields_wrong_target_profile_or_nested_zone_refuse(self):
         value = b.make_request('fixture_zone', 'fixture', 0)

@@ -18,6 +18,13 @@ def fixture():
 
 
 class ExportContractTests(unittest.TestCase):
+    def test_backslash_identity_uses_generic_relative_path(self):
+        request, report = fixture()
+        request['model'] = r'fixture\model'
+        report.update(source_model=request['model'], output_model_name=request['model'],
+                      output_mesh_name=r'fixture\mesh', output_root_key=b.command_review(request)['private_output_root_key'])
+        self.assertTrue(e.validate_export(report, request)['receipt_contract_verified'])
+
     def test_invented_receipt_only_qualifies_contract(self):
         request, report = fixture()
         result = e.validate_export(report, request)

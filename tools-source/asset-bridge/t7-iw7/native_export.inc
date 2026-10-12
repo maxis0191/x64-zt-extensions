@@ -2,33 +2,27 @@
 // header and an external pinned original-job/stock/deadline/output Plan.
 static std::string resident_export_name(const char* text, bool zone = false)
 {
+    if (!zone)
+    {
+        auto value = resident_iw7::asset_name(text);
+        if (value.front() == ',') throw std::runtime_error("Referenced-asset alias is not an export identity");
+        return value;
+    }
     if (!text) throw std::runtime_error("Null export name");
-    const size_t limit = zone ? 64 : 128;
+    const size_t limit = 64;
     std::string value;
     for (size_t i = 0; i <= limit; ++i)
     {
         const auto c = text[i];
         if (!c) break;
         if (i == limit || !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-            (c >= '0' && c <= '9') || c == '_' || c == '-' || (!zone && c == '/')))
+            (c >= '0' && c <= '9') || c == '_' || c == '-'))
             throw std::runtime_error("Export name outside reviewed portable subset");
         value += c;
     }
     if (value.empty() || value.front() == '-' || value.front() == '/')
         throw std::runtime_error("Empty/relative export name refused");
-    const auto parts = utils::string::split(value, '/');
-    if (parts.size() > (zone ? 1u : 8u)) throw std::runtime_error("Export name depth exceeded");
-    for (const auto& part : parts)
-    {
-        const auto lower = utils::string::to_lower(part);
-        if (part.empty() || part.size() > 64 || lower == "con" || lower == "prn" ||
-            lower == "aux" || lower == "nul" ||
-            (lower.size() == 4 && (lower.starts_with("com") || lower.starts_with("lpt")) &&
-                lower[3] >= '1' && lower[3] <= '9'))
-            throw std::runtime_error("Unsafe export name component");
-    }
-    if (value.back() == '/' || value.find("//") != std::string::npos)
-        throw std::runtime_error("Empty export name component");
+    (void)resident_iw7::checked_asset_name(value);
     return value;
 }
 
