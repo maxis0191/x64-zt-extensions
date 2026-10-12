@@ -12,7 +12,7 @@
 #include <string>
 #include <system_error>
 #include <vector>
-#include <nlohmann/json.hpp>
+#include <json.hpp>
 #include <utils/flags.hpp>
 
 namespace zonetool::iw7
