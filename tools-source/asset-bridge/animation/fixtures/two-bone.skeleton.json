@@ -1,0 +1,8 @@
+{
+  "schema": "iw7.skeleton-binding/1",
+  "num_client_bones": 0,
+  "bones": [
+    {"name": "tag_origin", "parent": null},
+    {"name": "tag_probe", "parent": 0}
+  ]
+}
