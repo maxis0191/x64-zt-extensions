@@ -1225,3 +1225,47 @@ The analysis owner then confirmed M's complete correlated 41-byte message names
 path is an ordinary 768-byte file; only metadata and an OS file ID were read.
 Five declared inputs would total 68,195,072 bytes. These observations satisfy the
 batch's name/metadata bounds for dependency two; they prove no content validity.
+
+## EnCoreGfxA and catalogue N: second cycle closed
+
+The accepted batch qualified the single 768-byte `en_core_gfx.ff` input with
+unchanged lifecycle functions, 54 passing pure checks, source-only default and
+captured exact host arguments. Two guarded passes completed at 19:32:13 UTC.
+The receipt proves stable identity/hash only. Guards and lease closed without
+quarantine; PTY 34106 exited 0 (`0062b2`) and the independent 19:32:56 UTC witness
+confirmed host/parent absence and unchanged protected processes.
+
+Plan N contains five qualified bootstraps totaling 68,195,072 bytes, 37 bindings,
+nine metadata rows and an output ceiling of 196,004,504 bytes. Its default and
+actual argument capture passed before publication. Admission passed at 56.91%
+commit with the unchanged 6/8 GiB budget. Its single native invocation exited
+naturally 0 after 3,000.16 ms, finalizing `Failed / NoCatalogue` at 19:34:56 UTC.
+The receipt revalidated all inputs under the lease and confirmed tree closure,
+release and no quarantine. Same-host postflight checked nine metadata rows and
+eighteen file IDs. PTY 8109 actually exited 0 (`a2a705`); the independent
+19:36:13 UTC witness found host, parent and root absent, zero client/heavy/lease
+counts and unchanged Main/Python state. No payload hash was read after release.
+
+The first closure helper invocation refused because a prefix replacement for
+attempt globals also altered the Main/Metadata function names. The original
+helper and refusal are retained. Restoring those two names, inspecting the full
+diff and checking exact command names allowed the same host's postflight to
+pass. No native or qualification invocation was repeated. Future adaptations
+must replace full global variable names and inspect the complete diff.
+
+The [N checkpoint](catalogue-runtime-n-20261012.json) records phases three and
+four. The analysis owner alone interprets the retained MSG; one further
+named dependency cycle remains possible only under all existing batch limits.
+
+The analysis owner subsequently decoded N's complete correlated 38-byte MSG:
+its new missing startup zone is `core_gfx`. Exact-path metadata found an ordinary
+6,105,536-byte file, giving a hypothetical six-file total of 74,300,608 bytes.
+No content, header or payload hash was read; the file is not qualified.
+
+The coordinator then revoked continuation of the batch after phase four because
+of the repeated closure-helper substitution defects. This explicit stop takes
+precedence over the unused third dependency cycle. No CoreGfx qualification
+script or next Plan was prepared, and phases five/six were not invoked. Retain
+all evidence and return the next policy decision to the coordinator. The helper
+incident is distinct from N's natural exit and absent catalogue. Do not rename
+global prefixes in closure helpers or repeat N.
