@@ -131,6 +131,7 @@ exec server_spaceland.cfg
 exec server_modules.cfg
 set net_ip 127.0.0.1
 set g_password "$password"
+set sv_lanOnly 1
 set fs_game ""
 set g_inactivity 0
 set sv_cheats 0
@@ -163,7 +164,7 @@ set sv_mapRotationCurrent ""
     $dumpsBefore=@()
     if (Test-Path -LiteralPath $dumpDirectory) { $dumpsBefore=@(Get-ChildItem -LiteralPath $dumpDirectory -Filter '*.zip' -File | ForEach-Object FullName) }
     $debugArguments=if ($Debugger) { ' -paris-debugger' } else { '' }
-    $args="-dedicated -allow_root_io -noupdate -nosteam -cpMode -stdout -paris-server-test -paris-isolated-lab$debugArguments +set net_ip 127.0.0.1 +set net_port $ServerPort +exec server_agent_test.cfg +map_rotate"
+    $args="-dedicated -allow_root_io -noupdate -nosteam -cpMode -stdout -paris-server-test -paris-isolated-lab$debugArguments +set sv_lanOnly 1 +set net_ip 127.0.0.1 +set net_port $ServerPort +exec server_agent_test.cfg +map_rotate"
     $server=[IW7LabProcess]::StartOwned($serverExe,$args,$CandidateRoot,$serverLog,(Join-Path $output 'server.stderr.log'),$desktop)
     $p=Get-Process -Id $server.Id
     try { $serverIdentity=[pscustomobject]@{PID=$server.Id;Image=$serverExe;CreatedUtc=$p.StartTime.ToUniversalTime().ToString('o');SHA256=$manifest.SHA256;Stdout=$serverLog;DesktopName=$desktop} } finally {$p.Dispose()}
