@@ -15,6 +15,60 @@ from datetime import datetime, timezone
 from recipient_contract import EXE_SHA, check_output, command, require, sha, text, validate_requests
 
 SDK_DRAIN_SHA = 'a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d'
+LOG_LIMIT = 2*1024*1024
+
+
+class BoundedLogWriter:
+    """Make the pinned drain's write-all assumption explicit for raw files.
+
+    At most 16 writes per <=4096-byte drain chunk. Count actual accepted bytes,
+    including a prefix preceding failure; never report a partial write complete.
+    OSError is deliberate: the unchanged provider converts it to failed capture.
+    """
+    MAX_WRITE_CALLS = 16
+
+    def __init__(self, raw, limit=LOG_LIMIT):
+        self.raw = raw
+        self.limit = limit
+        self.bytes_written = 0
+        self.failed = False
+
+    def write(self, data):
+        if self.failed:
+            raise OSError('Recipient log writer already failed')
+        requested = len(data)
+        try:
+            if requested > 4096 or self.bytes_written+requested > self.limit:
+                raise OSError('Recipient log chunk or total byte bound exceeded')
+            view = memoryview(data)
+            offset = 0
+            for _ in range(self.MAX_WRITE_CALLS):
+                if offset == requested:
+                    return requested
+                count = self.raw.write(view[offset:])
+                if type(count) is not int or count <= 0 or count > requested-offset:
+                    raise OSError('Recipient raw log write made invalid or zero progress')
+                offset += count
+                self.bytes_written += count
+            if offset == requested:
+                return requested
+            raise OSError('Recipient raw log write retry bound exceeded')
+        except OSError:
+            self.failed = True
+            raise
+
+    def flush(self):
+        try:
+            self.raw.flush()
+        except OSError:
+            self.failed = True
+            raise
+
+    def fileno(self):
+        return self.raw.fileno()
+
+    def close(self):
+        self.raw.close()
 
 
 def capture_streams(process, logs, drain, timeout):
@@ -28,7 +82,7 @@ def capture_streams(process, logs, drain, timeout):
     for name,stream in (('stdout',process.stdout),('stderr',process.stderr)):
         # The provider flushes each write; raw destinations also preserve the
         # emitted prefix when timeout exits via os._exit without Python cleanup.
-        handle = (logs/(name+'.log')).open('xb', buffering=0);handles.append(handle)
+        handle = BoundedLogWriter((logs/(name+'.log')).open('xb', buffering=0));handles.append(handle)
         worker = threading.Thread(target=drain,args=(stream,handle,exceeded),daemon=True)
         worker.start();workers.append(worker)
     failure = None
@@ -41,6 +95,8 @@ def capture_streams(process, logs, drain, timeout):
     if failure is None:
         for worker in workers: worker.join(2)
         if exceeded.is_set() or any(worker.is_alive() for worker in workers): failure = 'drain failure or inherited pipe remains open'
+    if failure is None and any(h.failed or h.bytes_written != os.fstat(h.fileno()).st_size for h in handles):
+        failure = 'log byte accounting differs from retained file'
     return failure,workers,handles
 
 

@@ -1,8 +1,8 @@
 # Recipient timeout: targeted observation plan, not executed
 
 The first attempt and restoration are fixed in `0007825`. No further ZoneTool,
-debugger, dump or capture process has been started. The coordinator sequences
-Material compiler diagnostics and the corrected Aurora candidate first. A new
+debugger, dump or capture process has been started. The coordinator controls
+the next native slot. A new
 diagnostic run requires reviewed source changes, a fresh plan and a separate GO.
 The original `cb3d9ac` commit and failed outputs remain preserved. The only
 implemented follow-up changes are Recipient's pipe visibility and honest capture
@@ -67,16 +67,30 @@ this makes pipe reads unbuffered and permits short results. See the official
 [Python 3.12 Popen documentation](https://docs.python.org/3.12/library/subprocess.html#subprocess.Popen).
 The `read1` proxy remains only a comparison fixture; it is not the implementation.
 
-Six bounded anonymous-pipe checks pass against the actual unchanged provider:
+Sixteen transport/writer checks pass against the actual unchanged provider:
 live short stdout/stderr, EOF with a short tail, exact 2 MiB prefix/truncation,
 timeout prefix preservation with no invented closure, read failure, and source
-wiring. Eleven contract tests and 29 PowerShell checks also pass. No process was
+wiring. They also reproduce the reviewed raw-write defect and cover bounded
+write-all, zero/None/invalid returns, partial-prefix errors, flush errors and
+real-file counters. Eleven contract tests and 29 PowerShell checks also pass. No process was
 spawned by these stream fixtures. `native-start.json` will record the observed
 PID/parent/image/hash promptly; its observation timestamp is explicitly **not**
 verified process creation time. Future identity-gated diagnostics must obtain
 and check actual creation time before reading a process. Phase receipts report
 stream byte counts and whether drain threads actually closed, separately from
 the outer job's closure proof.
+
+The review of `4867081` found that raw `FileIO.write` could accept fewer bytes
+than requested while the provider counted the entire chunk. The unchanged
+provider demonstrably reports ten bytes after an injected five-byte write.
+Recipient now wraps raw destinations in a local `BoundedLogWriter`: a chunk of
+at most 4,096 bytes gets at most 16 progress-making writes, within the 2 MiB total.
+Zero, None, invalid returns, exhausted retries and I/O errors raise `OSError`,
+which the pinned provider converts to failed capture. The adapter counts actual
+accepted bytes, including a failed prefix; success additionally requires that
+count to match the retained file size. Receipt counts still come from file sizes.
+The provider's completed-chunk counter is not reported as retained bytes after
+failure. This corrects log integrity, not the unresolved native stall.
 
 ```powershell
 python -B tools-source/asset-bridge/recipient/check_drain_visibility.py --sdk-drain $reviewedSdkDrain
@@ -90,11 +104,12 @@ python -B tools-source/asset-bridge/recipient/check_recipient_streams.py --sdk-d
    references-only diagnostic mode. Use the same E7, 72-entry binding, work layout,
    stdin pipe, native flags and original job owner. Never reuse failed run-a.
    The original two-phase production runner remains preserved for comparison.
-2. Admit the complete diagnostic group once. Conservative proposal: 10 GiB RAM /
-   14 GiB commit, covering the original 8/11 plus the existing 2/3 diagnostic
-   estimate. Native deadlines stay 240/245 seconds and output stays 256 MiB.
-   Diagnostic outputs count against that same group; do not nest a competing
-   resource lease or borrow another chat's reservation.
+2. Prefer the existing **8 GiB RAM / 11 GiB commit** group with corrected live
+   logs and light observations first. It does not include a snapshot or debugger.
+   A future full-capture variant remains preparation only: proposed 10/14 covers
+   8/11 plus the existing 2/3 diagnostic estimate and requires separate review/GO.
+   Native deadlines stay 240/245 seconds and output stays 256 MiB. Do not nest a
+   competing lease or borrow another chat's reservation.
 3. At native launch bind PID, executable path, creation time and E7 hash to the
    original child/parent relationship and job. At 10 and 30 seconds capture CPU,
    memory and IO deltas plus individual thread state/wait reason through the
@@ -104,7 +119,10 @@ python -B tools-source/asset-bridge/recipient/check_recipient_streams.py --sdk-d
    check before and after. Do not click, close or focus a window. This is a main
    window observation, not enumeration of every possible dialog. Handle zero
    must not be reported as proof that no window exists.
-5. If still unresolved at 45 seconds, take **one** stack-oriented live snapshot
+5. At 45 seconds assess the newly visible logs and light observations. If these
+   locate the wait, full capture may be unnecessary. A snapshot is allowed only
+   in the separately reviewed/admitted full-capture variant, never implicitly
+   under the first 8/11 group. That variant takes **one** stack-oriented snapshot
    using existing `ops/iw7_capture.py`, identity-bound as below. Its mask is
    `0x1820`; retain that mask and do not request a full-memory dump. A snapshot is
    needed here only if logs/window/thread observations still cannot localize the

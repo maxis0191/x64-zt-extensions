@@ -4,16 +4,103 @@ import ast
 import hashlib
 import importlib.util
 import inspect
+import io
 import os
 from pathlib import Path
 import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 
 import recipient_phase as phase
 
 DRAIN = None
+
+
+class ScriptedSink:
+    def __init__(self, actions):
+        self.actions = iter(actions)
+        self.data = bytearray()
+        self.calls = 0
+
+    def write(self, data):
+        self.calls += 1
+        action = next(self.actions,len(data))
+        if isinstance(action,BaseException): raise action
+        if type(action) is int and 0 < action <= len(data): self.data.extend(data[:action])
+        return action
+
+    def flush(self): pass
+
+
+class WriteAllTests(unittest.TestCase):
+    def test_unwrapped_provider_reproduces_reviewed_short_write_defect(self):
+        sink=ScriptedSink([5]);failed=threading.Event()
+        count=DRAIN(io.BytesIO(b'0123456789'),sink,failed)
+        self.assertEqual((count,len(sink.data)),(10,5))
+        self.assertFalse(failed.is_set())
+
+    def invoke(self, data, actions):
+        sink = ScriptedSink(actions)
+        writer = phase.BoundedLogWriter(sink)
+        failed = threading.Event()
+        complete_bytes = DRAIN(io.BytesIO(data),writer,failed)
+        self.assertEqual(writer.bytes_written,len(sink.data))
+        return sink,writer,failed.is_set(),complete_bytes
+
+    def test_partial_writes_complete_before_provider_counts_chunk(self):
+        sink,writer,failed,count = self.invoke(b'0123456789',[5,2,3])
+        self.assertFalse(failed);self.assertFalse(writer.failed)
+        self.assertEqual(bytes(sink.data),b'0123456789')
+        self.assertEqual((count,writer.bytes_written,sink.calls),(10,10,3))
+
+    def test_zero_and_none_fail_without_inflating_retained_count(self):
+        for invalid in (0,None):
+            for prefix in (0,5):
+                actions=([prefix] if prefix else [])+[invalid]
+                with self.subTest(invalid=invalid,prefix=prefix):
+                    sink,writer,failed,count=self.invoke(b'0123456789',actions)
+                    self.assertTrue(failed);self.assertTrue(writer.failed)
+                    self.assertEqual(bytes(sink.data),b'0123456789'[:prefix])
+                    self.assertEqual((count,writer.bytes_written),(0,prefix))
+
+    def test_error_after_completed_chunk_and_partial_prefix_is_failed(self):
+        data=b'a'*4096+b'0123456789'
+        sink,writer,failed,count=self.invoke(data,[4096,5,OSError('injected disk error')])
+        self.assertTrue(failed);self.assertTrue(writer.failed)
+        self.assertEqual(bytes(sink.data),data[:4101])
+        # SDK counts completed chunks; receipt/adapter count retained bytes.
+        self.assertEqual((count,writer.bytes_written),(4096,4101))
+
+    def test_small_progress_retry_count_is_bounded(self):
+        sink,writer,failed,count=self.invoke(b'x'*32,[1]*32)
+        self.assertTrue(failed)
+        self.assertEqual((sink.calls,writer.bytes_written,count),(16,16,0))
+
+    def test_invalid_counts_fail_and_failed_writer_cannot_continue(self):
+        for invalid in (-1,11,True,1.5,'5'):
+            with self.subTest(invalid=invalid):
+                sink,writer,failed,count=self.invoke(b'0123456789',[invalid])
+                self.assertTrue(failed);self.assertEqual(count,0)
+                with self.assertRaises(OSError): writer.write(b'x')
+                self.assertEqual(sink.calls,1)
+
+    def test_writer_enforces_chunk_and_total_bounds_before_writing(self):
+        for data,limit in ((b'x'*4097,2097152),(b'abc',2)):
+            sink=ScriptedSink([]);writer=phase.BoundedLogWriter(sink,limit=limit)
+            with self.assertRaises(OSError): writer.write(data)
+            self.assertTrue(writer.failed)
+            self.assertEqual((sink.calls,writer.bytes_written),(0,0))
+
+    def test_flush_error_preserves_actual_written_count_and_fails(self):
+        sink=ScriptedSink([])
+        def failed_flush(): raise OSError('injected flush failure')
+        sink.flush=failed_flush
+        writer=phase.BoundedLogWriter(sink);failed=threading.Event()
+        count=DRAIN(io.BytesIO(b'prefix'),writer,failed)
+        self.assertTrue(failed.is_set());self.assertTrue(writer.failed)
+        self.assertEqual((count,writer.bytes_written,len(sink.data)),(0,6,6))
 
 
 class PipeProcess:
@@ -140,6 +227,42 @@ class StreamTests(unittest.TestCase):
         failure,_,_ = self.complete()
         self.assertEqual(failure,'log limit/drain failure')
         self.process.stdout = open(os.devnull,'rb')
+
+    def test_real_file_partial_writes_keep_counts_and_bytes_equal(self):
+        original = phase.BoundedLogWriter
+        class PartialFile:
+            def __init__(self,raw): self.raw=raw
+            def write(self,data): return self.raw.write(data[:3])
+            def flush(self): self.raw.flush()
+            def fileno(self): return self.raw.fileno()
+            def close(self): self.raw.close()
+        with mock.patch.object(phase,'BoundedLogWriter',lambda raw:original(PartialFile(raw))):
+            self.start()
+            self.process.write(0,b'0123456789');self.process.finish()
+            failure,_,handles=self.complete()
+        self.assertIsNone(failure)
+        self.assertEqual(handles[0].bytes_written,10)
+        self.assertEqual((self.logs/'stdout.log').read_bytes(),b'0123456789')
+
+    def test_real_file_error_after_prefix_is_failed_with_exact_retained_count(self):
+        original=phase.BoundedLogWriter
+        class FailedFile:
+            def __init__(self,raw): self.raw=raw;self.calls=0
+            def write(self,data):
+                self.calls+=1
+                if self.calls==1: return self.raw.write(data[:5])
+                raise OSError('injected raw file error after prefix')
+            def flush(self): self.raw.flush()
+            def fileno(self): return self.raw.fileno()
+            def close(self): self.raw.close()
+        with mock.patch.object(phase,'BoundedLogWriter',lambda raw:original(FailedFile(raw))):
+            self.start()
+            self.process.write(0,b'0123456789')
+            failure,_,handles=self.complete()
+        self.assertEqual(failure,'log limit/drain failure')
+        self.assertEqual((self.logs/'stdout.log').read_bytes(),b'01234')
+        self.assertEqual(handles[0].bytes_written,5)
+        self.assertEqual((self.logs/'stdout.log').stat().st_size,5)
 
 
 if __name__ == '__main__':

@@ -202,8 +202,14 @@ another native execution until separately authorized.
 The subsequent [diagnostic plan](DIAGNOSTIC-PLAN.md) compares the actual successful
 Beacon receipt with this failure and documents a reproduced reader-buffering
 blind spot. Recipient's adapter now uses unbuffered pipes and raw bounded log
-files; the pinned SDK drain is unchanged. Six additional pipe tests preserve
-short live messages, EOF tails and timeout prefixes while refusing truncation or
-read failures. This fixes visibility only. There has been no second native run,
+files; the pinned SDK drain is unchanged. Review of `4867081` exposed a raw
+short-write defect. A local bounded write-all adapter now counts actual accepted
+bytes and refuses non-progress or write errors; successful counts must match the
+retained files. Sixteen transport/writer tests cover short live messages, EOF,
+caps, timeout prefixes, partial/zero/None writes and errors after a saved prefix.
+This fixes visibility/integrity only. There has been no second native run,
 and it does not establish or fix the native stall. Native-start/capture receipts
 explicitly distinguish observed PID/timing from verified creation/job closure.
+The next proposed native observation uses the existing 8/11 GiB group and light
+diagnostics first. Full snapshot/CDB capture at 10/14 remains an unexecuted plan
+requiring separate review and authorization.
