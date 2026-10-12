@@ -1,5 +1,10 @@
 # Original PCM sound source adapter
 
+Latest checkpoint, 2026-10-12: the single authorized FFmpeg decode passed against
+the retained original source B. PCM and the complete resulting WAV match the
+original exactly. See the final section and `codec-checkpoint-2026-10-12.json`.
+SAB/FF creation, delivery and audible game acceptance remain unverified.
+
 This source-only adapter prepares an original short WAV, lossless FLAC sample,
 one IW7 alias and a bank/zone source inventory. It does not build a sound bank,
 fastfile or executable, launch a codec/game, or prove audible playback.
@@ -233,3 +238,41 @@ uncertain job closure. Both corrections above are local to this sound adapter;
 the shared drain, job and scheduler remain unchanged. The prior execution plan
 is retained as evidence and no longer matches the corrected source pins. A fresh
 reviewed plan and central GO remain required; no codec has run at this checkpoint.
+
+## Authorized native codec checkpoint, 2026-10-12
+
+After independent review closed the drain-exception and uncertain-closure findings,
+the central coordinator authorized one FFmpeg run on source commit
+`b31695be7a39cc1aa05bd748e6b2cc72d7ce8e58`. The reviewed v2 execution plan SHA256 was
+6430949bbfe3b55d08bb547e2fe01313853101f77e76e2af2041f35a26270541.
+Current `origin/main:docs/RESOURCE-WORKFLOW.md` was fetched/read first. The fresh
+registry had no lease, and the complete 512 MiB RAM / 1 GiB commit scenario passed
+admission without changing any other workload estimate. No retry was performed.
+
+The installed FFmpeg 8.1.2 returned zero and decoded the original FLAC into mono
+PCM16 at 48000 Hz: 48000 samples, 96000 PCM bytes, SHA256
+72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9.
+The entire 96044-byte WAV also matched the original byte for byte, SHA256
+299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4.
+Both pipe workers reported explicit normal return with no exception and EOF.
+The owned Python root was observed exited with code zero and job Active0 after
+467 ms from Resume. Its scheduler identity was attached successfully; no Stop
+or failure cleanup was required. Original job disposal completed, all read
+guards were released, and the state recorded no quarantine or retained lease.
+All 14 reviewed files still matched size, attributes, timestamp and SHA256 after
+the run. At 06:22:51 UTC the fresh registry was empty and neither run process
+remained. This is measured codec and job evidence, not a lifetime guarantee.
+
+The five retained output files total 101950 bytes: WAV 96044, state 1897, worker
+receipt 805, stderr 3204, stdout zero. Their hashes and the result boundaries are
+recorded in the sanitized checkpoint JSON. Local evidence remains in
+`runtime/content-surfaces/original-sound-codec-check-b`; no raw log, local process
+identity or machine path is included in the tracked receipt. The historical
+source manifests and reviewed execution plans were preserved unchanged.
+
+`ExternalDecoderVerified=true` now applies to this exact original FLAC. `Ready`
+and `PlaybackVerified` remain false. This authorization did not include SAB/FF
+creation, stock preparation, client launch or any action on Main. The next gate
+is a separately reviewed/admitted existing-ZoneTool SAB/FF plan with bounded
+independent bank readback; the small codec budget does not apply to that stage.
+The coordinator owns the private PR, exact-head CI, merge and common documentation.
