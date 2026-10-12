@@ -592,3 +592,74 @@ files and were handed to worker 51 after complete closure. No decoding occurred
 in this adapter chat. A/B/D/E/F remain Failed and C remains unconsumed. No retry,
 extra zone input, expanded capture or further native invocation is authorized
 by this checkpoint.
+
+## Message reader: source-only qualification after F
+
+The coordinator authorized a fifth profile, `t7-catalog-message`, following
+worker 51's bounded caller analysis and a separate review of the producer
+design. This adapter owns the reader, provenance checks and pure tests only.
+There is no message build, candidate, runtime plan or native invocation in
+this source checkpoint. The producer's fixed callsite and signature safeguards
+are its responsibility; this reader does not patch or read engine memory.
+
+BuildProfile has exactly eleven fields: the ten caller fields plus
+`MessageSchema=iw7.t7-catalog-message/1`, with Name `t7-catalog-message`.
+The same option/argc, guarded Wiring/PreparedMain/base pins, actual main/Link
+receipt and candidate provenance checks remain required. No extra runtime
+argument or configurable callsite is introduced. Ordinary D2, trace /1,
+EXIT /1 and CALLER /1 retain their existing readers and exact profile fields.
+Run-T7Catalogue and shared ownership/resource helpers are unchanged.
+
+Only this profile admits two additional `[T7_CATALOG_MSG]` records under the
+fixed schema, for at most fourteen lines and 8,192 bytes of stderr. The closed
+grammar permits one install and one buffer record, with canonical decimal
+uint32 thread/error fields. Install status is restricted to the agreed set;
+installed requires error 0. A complete installation record must follow
+before_post_unpack and precede after_post_unpack when that marker exists.
+Its thread is independent of the eventual exit winner.
+
+A buffer requires a preceding successful installation. It may arrive during
+post_unpack, before after_post_unpack. A same-thread buffer must precede its
+exit_hook. A missing exit marker or a different exit thread retains useful
+diagnostics as uncorrelated Partial rather than fabricating an association.
+Duplicate records, unknown fields/schema/statuses and invalid order are refused.
+Recognizable final MSG lines truncated before their newline remain incomplete;
+an ambiguous short prefix first remains eligible for the legacy EXIT/CALLER
+reader at its current stage. Completed installation without its preceding
+boundary is refused; a truncated installation cannot become Observed.
+
+The buffer requests at most 384 bytes. Read cannot exceed requested, and length
+cannot exceed read. With nul 1, length is strictly smaller than read; with nul
+0, length equals read. Exactly twice length uppercase hex characters represent
+the bytes before the first NUL, or `-` for zero length. An aligned `00` byte in
+the serialized payload is refused. Bytes remain opaque and private: the reader
+does not assume an encoding, turn them into text, or publish their contents.
+
+| MessageOutcome | Required evidence |
+| --- | --- |
+| Absent | No MSG record or recognizable incomplete MSG line |
+| Partial | Refused installation, missing/incomplete buffer, capture error, missing exit or different exit thread |
+| Prefix | Installed, full bounded read without NUL, same-thread buffer before exit_hook |
+| Observed | Installed, status ok, full bounded read with NUL, same-thread buffer before exit_hook |
+
+A NUL on partial, read_failed or exception never upgrades the outcome. The RPM
+false-with-full-count case remains read_failed. The serializer's impossible
+count clamp is read_failed/error 13 with all counts zero. Pre-read refusals
+have zero counts, nul 0 and no payload. Exception may preserve bounded useful
+bytes but remains Partial. Prefix is not a complete message, and neither Prefix
+nor Observed establishes catalogue success or an engine-error cause.
+
+All 1,029 pure/light checks pass: catalogue/lifecycle 188, trace/provenance 209,
+EXIT 161, Main 52, callers 209 and message 210. They cover both legal buffer
+positions, independent installation thread, competing exit winner, every
+installation refusal and capture state, NUL/count mismatches, truncation,
+duplicate/order refusals and a complete fourteen-line envelope with maximum
+caller payloads and a 384-byte message prefix. Tests contain only invented
+opaque bytes and synthetic text. The finalizer still reports NoCatalogue as
+Failed for Observed, Prefix and Partial messages; forced closure inspects only
+bounded diagnostics after release, without rehashing stock.
+
+The next gate is independent source review of both producer and reader. A real
+Passed build and separately reviewed exact runtime plan are still required
+before any new native invocation. Captured hex or decoded message text must
+remain in ignored private evidence, never Git checkpoints or public artifacts.

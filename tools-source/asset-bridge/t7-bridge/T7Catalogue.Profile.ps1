@@ -1,7 +1,7 @@
 # Fixed catalogue adapter. Ownership, pin readers and closure stay in H1Native.Core.
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
 function Get-T7CatalogueMainBaseline($Plan) {
@@ -58,7 +58,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
     if($candidateProfile -cne 'ordinary-d2') {
-        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192}}
+        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192}}
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
@@ -136,15 +136,17 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
        $build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1'){throw 'Trace build source/schema differs.'}
     $profile=$build.BuildProfile
     $fields=@('Name','Option','ArgumentCount','TraceSchema','Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
-    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers')){$fields+=@('ContextSchema')}
-    if($candidateProfile -ceq 't7-catalog-callers'){$fields+=@('CallerSchema')}
+    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')){$fields+=@('ContextSchema')}
+    if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message')){$fields+=@('CallerSchema')}
+    if($candidateProfile -ceq 't7-catalog-message'){$fields+=@('MessageSchema')}
     foreach($p in @($profile,$Receipt.BuildProfile)) {
         Assert-T7CatalogueFields $p $fields
         if($p.Name -cne $candidateProfile -or $p.Option -cne '-t7-iw7-catalog' -or
            ($p.ArgumentCount -isnot [long] -and $p.ArgumentCount -isnot [int]) -or $p.ArgumentCount -ne 3 -or
            $p.TraceSchema -cne 'iw7.t7-catalog-trace/1'){throw 'Exact catalogue trace profile required.'}
-        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
-        if($candidateProfile -ceq 't7-catalog-callers' -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
+        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
+        if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message') -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
+        if($candidateProfile -ceq 't7-catalog-message' -and $p.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
     }
     foreach($name in 'Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt') {
         $pin=$profile.$name;$other=$Receipt.BuildProfile.$name
@@ -317,33 +319,38 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $profile=Get-T7CatalogueCandidateProfile $Plan
     if($profile -ceq 'ordinary-d2'){return}
     $State.TraceOutcome='NoTrace'
-    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers')
+    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')
+    $hasCallers=$profile -cin @('t7-catalog-callers','t7-catalog-message')
     if($hasContext){$State.ExitContextOutcome='Absent';$State.ExitContext=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
-    if($profile -ceq 't7-catalog-callers'){$State.CallersOutcome='Absent';$State.Callers=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
+    if($hasCallers){$State.CallersOutcome='Absent';$State.Callers=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
+    if($profile -ceq 't7-catalog-message'){$State.MessageOutcome='Absent';$State.Message=[ordered]@{Captures=@();IncompleteTrailingLine=$false;ExitCorrelated=$false}}
     $path=Join-Path $Plan.StageRoot 'stderr.log'
     if(!(Test-Path -LiteralPath $path)){return}
     $State.TraceOutcome='TracePresentUnqualified'
     Assert-H1Path $path
     $size=(Get-Item -LiteralPath $path).Length
     if($hasContext -and $size -gt 0){$State.ExitContextOutcome='PresentUnqualified'}
-    if($profile -ceq 't7-catalog-callers' -and $size -gt 0){$State.CallersOutcome='PresentUnqualified'}
+    if($hasCallers -and $size -gt 0){$State.CallersOutcome='PresentUnqualified'}
+    if($profile -ceq 't7-catalog-message' -and $size -gt 0){$State.MessageOutcome='PresentUnqualified'}
     Assert-T7CatalogueTraceSize $profile $size
     $pin=[pscustomobject]@{Path=$path;Bytes=$size;SHA256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}
     $Context.Guards.Add((Open-H1Pin $pin));$State.TraceReport=$pin
     $text=[Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($path))
     $result=switch($profile){
+        't7-catalog-message'{ConvertFrom-T7CatalogueMessage $text}
         't7-catalog-callers'{ConvertFrom-T7CatalogueCallers $text}
         't7-catalog-exit-context'{ConvertFrom-T7CatalogueExitContext $text}
         default{ConvertFrom-T7CatalogueTrace $text}
     }
     $State.TraceOutcome=$result.Outcome;$State.TraceEvents=$result.Events
     if($hasContext){$State.ExitContextOutcome=$result.ContextOutcome;$State.ExitContext=$result.Context}
-    if($profile -ceq 't7-catalog-callers'){$State.CallersOutcome=$result.CallersOutcome;$State.Callers=$result.Callers}
+    if($hasCallers){$State.CallersOutcome=$result.CallersOutcome;$State.Callers=$result.Callers}
+    if($profile -ceq 't7-catalog-message'){$State.MessageOutcome=$result.MessageOutcome;$State.Message=$result.Message}
 }
 function Assert-T7CatalogueTraceSize([string]$Profile,[long]$Bytes) {
     if(($Profile -ceq 't7-catalog-trace' -and $Bytes -ge 1536) -or
        ($Profile -ceq 't7-catalog-exit-context' -and $Bytes -gt 4096) -or
-       ($Profile -ceq 't7-catalog-callers' -and $Bytes -gt 8192)){throw 'Trace stderr cap exceeded.'}
+       ($Profile -cin @('t7-catalog-callers','t7-catalog-message') -and $Bytes -gt 8192)){throw 'Trace stderr cap exceeded.'}
 }
 function Get-T7CatalogueContextNumber($Match,[string]$Name,[ulong]$Maximum=[uint]::MaxValue) {
     $value=[ulong]::Parse($Match.Groups[$Name].Value,[Globalization.CultureInfo]::InvariantCulture)
@@ -587,6 +594,116 @@ function ConvertFrom-T7CatalogueCallers([string]$Text) {
     $outcome=if(!$captures.Count -and !$incomplete){'Absent'}elseif($captures.Count -eq 3 -and !$incomplete -and !@($captures|Where-Object Status -CNE 'ok').Count){'Observed'}else{'Partial'}
     [pscustomobject]@{Outcome=$context.Outcome;Events=$context.Events;ContextOutcome=$context.ContextOutcome;Context=$context.Context;
         CallersOutcome=$outcome;Callers=[ordered]@{Captures=@($captures.ToArray());IncompleteTrailingLine=$incomplete}}
+}
+function ConvertFrom-T7CatalogueMessageLine([string]$Line) {
+    $dec='(0|[1-9][0-9]{0,9})';$count='(0|[1-9][0-9]{0,2})'
+    $head='\A\[T7_CATALOG_MSG\] schema=iw7\.t7-catalog-message/1 kind=(?<kind>install|buffer) tid=(?<tid>'+$dec+') status='
+    $install='(?<status>installed|module_missing|module_mismatch|query_failed|region_invalid|read_failed|signature_mismatch|call_mismatch|wrapper_far|compare_mismatch|rolled_back|rollback_failed|exception) error=(?<error>'+$dec+')\z'
+    $buffer='(?<status>ok|prefix|partial|argument_invalid|stack_invalid|query_failed|region_invalid|read_failed|exception) '+
+        'requested=(?<requested>'+$count+') read=(?<read>'+$count+') length=(?<length>'+$count+') nul=(?<nul>[01]) error=(?<error>'+$dec+') data=(?<data>-|[0-9A-F]+)\z'
+    $m=[regex]::Match($Line,$head+$install)
+    if(!$m.Success -or $m.Groups['kind'].Value -cne 'install') {
+        $m=[regex]::Match($Line,$head+$buffer)
+        if(!$m.Success -or $m.Groups['kind'].Value -cne 'buffer'){throw 'Unknown message record or field format.'}
+    }
+    $row=[ordered]@{Kind=$m.Groups['kind'].Value;ThreadId=(Get-T7CatalogueContextNumber $m 'tid');
+        Status=$m.Groups['status'].Value;Error=(Get-T7CatalogueContextNumber $m 'error')}
+    if($row.Kind -ceq 'install') {
+        if($row.Status -ceq 'installed' -and $row.Error -ne 0){throw 'Successful message installation has an error.'}
+        return [pscustomobject]$row
+    }
+    $row.Requested=Get-T7CatalogueContextNumber $m 'requested' 384
+    $row.ReadBytes=Get-T7CatalogueContextNumber $m 'read' 384
+    $row.Length=Get-T7CatalogueContextNumber $m 'length' 384
+    $row.NulTerminated=$m.Groups['nul'].Value -ceq '1';$row.DataHex=$m.Groups['data'].Value
+    if($row.ReadBytes -gt $row.Requested -or $row.Length -gt $row.ReadBytes -or
+       ($row.NulTerminated -and $row.Length -ge $row.ReadBytes) -or
+       (!$row.NulTerminated -and $row.Length -ne $row.ReadBytes) -or
+       ($row.Length -eq 0 -and $row.DataHex -cne '-') -or
+       ($row.Length -gt 0 -and ($row.DataHex -ceq '-' -or $row.DataHex.Length -ne 2*$row.Length))){throw 'Message counts, NUL or payload length differ.'}
+    # The terminator is excluded by the producer. Keep bytes private and opaque;
+    # checking aligned zero bytes does not assume a text encoding.
+    if($row.Length -gt 0){for($i=0;$i -lt $row.DataHex.Length;$i+=2){if($row.DataHex.Substring($i,2) -ceq '00'){throw 'Message payload includes a NUL or bytes after it.'}}}
+    switch($row.Status) {
+        ok {if($row.Requested -eq 0 -or $row.ReadBytes -ne $row.Requested -or !$row.NulTerminated -or $row.Error -ne 0){throw 'Complete message capture has inconsistent status.'}}
+        prefix {if($row.Requested -eq 0 -or $row.ReadBytes -ne $row.Requested -or $row.NulTerminated -or $row.Error -ne 0){throw 'Message prefix has inconsistent status.'}}
+        partial {if($row.ReadBytes -eq 0 -or $row.ReadBytes -ge $row.Requested){throw 'Partial message capture has inconsistent counts.'}}
+        read_failed {
+            if($row.ReadBytes -notin @(0,$row.Requested) -or ($row.Requested -eq 0 -and $row.Error -ne 13)){throw 'Failed message copy differs from the bounded RPM/clamp contract.'}
+        }
+        exception {} # Bounded counts already checked; a NUL never upgrades SEH.
+        default {if($row.Requested -ne 0 -or $row.ReadBytes -ne 0 -or $row.Length -ne 0 -or $row.NulTerminated){throw 'Message pre-read refusal exposes a copy.'}}
+    }
+    [pscustomobject]$row
+}
+function ConvertFrom-T7CatalogueMessage([string]$Text) {
+    Assert-T7CatalogueTraceSize 't7-catalog-message' ([Text.Encoding]::UTF8.GetByteCount($Text))
+    if($Text -cmatch '[^\x20-\x7e\r\n]'){throw 'Message stderr must be ASCII without BOM.'}
+    $complete=$Text.EndsWith("`n")
+    $lines=@(if($Text.Length){if($complete){$Text.Substring(0,$Text.Length-1).Split("`n")}else{$Text.Split("`n")}})
+    if($lines.Count -gt 14){throw 'Message stderr exceeds fourteen lines.'}
+    $prefix='[T7_CATALOG_MSG] schema=iw7.t7-catalog-message/1 kind='
+    $legacy=[Text.StringBuilder]::new();$captures=[Collections.Generic.List[object]]::new()
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $positions=@{};$tracePositions=@{};$incomplete=$false
+    for($i=0;$i -lt $lines.Count;$i++) {
+        $raw=$lines[$i];$line=$raw -creplace '\r$','';$lastIncomplete=!$complete -and $i -eq $lines.Count-1
+        $isMessage=$line.StartsWith('[T7_CATALOG_MSG]',[StringComparison]::Ordinal)
+        $couldBeMessage=$lastIncomplete -and $line.Length -gt 0 -and
+            ($prefix.StartsWith($line,[StringComparison]::Ordinal) -or $line.StartsWith($prefix,[StringComparison]::Ordinal))
+        if($couldBeMessage -and !$isMessage) {
+            # An ambiguous short prefix can still belong to EXIT/CALLER /1.
+            $legacyAccepts=$false
+            try{$null=ConvertFrom-T7CatalogueCallers ($legacy.ToString()+$raw);$legacyAccepts=$true}catch{}
+            if($legacyAccepts){$couldBeMessage=$false}
+        }
+        if($lastIncomplete -and ($isMessage -or $couldBeMessage)) {
+            if(!$couldBeMessage -or $captures.Count -ge 2 -or $raw.Length -gt 1024){throw 'Unrecognized or excess incomplete message record.'}
+            if($line.StartsWith($prefix,[StringComparison]::Ordinal)) {
+                $kind=($line.Substring($prefix.Length) -split ' ',2)[0]
+                $possible=@('install','buffer'|Where-Object {$_.StartsWith($kind,[StringComparison]::Ordinal)})
+                if(!$possible.Count){throw 'Unknown incomplete message kind.'}
+                if($kind -cin @('install','buffer')) {
+                    $cap=if($kind -ceq 'install'){256}else{1024}
+                    if($seen.Contains($kind) -or $raw.Length -gt $cap){throw 'Duplicate or oversized incomplete message record.'}
+                    if($kind -ceq 'buffer' -and (!$seen.Contains('install') -or $captures[0].Status -cne 'installed')){throw 'Incomplete message buffer requires a preceding successful installation.'}
+                }
+            }
+            $incomplete=$true;continue
+        }
+        if($isMessage) {
+            $row=ConvertFrom-T7CatalogueMessageLine $line
+            $cap=if($row.Kind -ceq 'install'){256}else{1024}
+            if(!$seen.Add($row.Kind) -or $raw.Length+1 -gt $cap){throw 'Message one-shot or line cap differs.'}
+            $positions[$row.Kind]=$i;$captures.Add($row);continue
+        }
+        [void]$legacy.Append($raw);if(!$lastIncomplete){[void]$legacy.Append("`n")}
+        $phase=[regex]::Match($line,'\A\[T7_CATALOG_TRACE\] .* phase=(before_post_unpack|after_post_unpack|exit_hook) ')
+        if($phase.Success){$tracePositions[$phase.Groups[1].Value]=$i}
+    }
+    $previous=ConvertFrom-T7CatalogueCallers $legacy.ToString()
+    $installation=@($captures|Where-Object Kind -CEQ 'install');$buffer=@($captures|Where-Object Kind -CEQ 'buffer')
+    $installBoundaryObserved=$false;$correlated=$false;$correlation='NoBuffer'
+    if($installation.Count) {
+        if(!$tracePositions.ContainsKey('before_post_unpack')){throw 'Message installation lacks before_post_unpack.'}
+        if($positions.install -le $tracePositions.before_post_unpack){throw 'Message installation precedes before_post_unpack.'}
+        $installBoundaryObserved=$true
+        if($tracePositions.ContainsKey('after_post_unpack') -and $positions.install -ge $tracePositions.after_post_unpack){throw 'Message installation follows after_post_unpack.'}
+    }
+    if($buffer.Count) {
+        if($installation.Count -ne 1 -or $installation[0].Status -cne 'installed' -or $positions.buffer -le $positions.install){throw 'Message buffer requires a preceding successful installation.'}
+        $exit=@($previous.Events|Where-Object Phase -CEQ 'exit_hook')
+        if(!$exit.Count){$correlation='NoExitHook'}
+        elseif($buffer[0].ThreadId -ne $exit[0].ThreadId){$correlation='DifferentThread'}
+        elseif($positions.buffer -ge $tracePositions.exit_hook){throw 'Message buffer follows exit_hook on its own thread.'}
+        else{$correlated=$true;$correlation='SameThreadBeforeExit'}
+    }
+    $outcome=if(!$captures.Count -and !$incomplete){'Absent'}elseif($incomplete -or !$buffer.Count -or !$correlated -or !$installBoundaryObserved){'Partial'}
+        elseif($buffer[0].Status -ceq 'ok'){'Observed'}elseif($buffer[0].Status -ceq 'prefix'){'Prefix'}else{'Partial'}
+    [pscustomobject]@{Outcome=$previous.Outcome;Events=$previous.Events;ContextOutcome=$previous.ContextOutcome;Context=$previous.Context;
+        CallersOutcome=$previous.CallersOutcome;Callers=$previous.Callers;MessageOutcome=$outcome;
+        Message=[ordered]@{Captures=@($captures.ToArray());IncompleteTrailingLine=$incomplete;InstallBoundaryObserved=$installBoundaryObserved;
+            ExitCorrelated=$correlated;Correlation=$correlation}}
 }
 function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
     Assert-H1Path $Plan.WorkingDirectory
