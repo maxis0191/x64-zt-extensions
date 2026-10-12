@@ -405,3 +405,34 @@ unchanged script success. They verify both receipts and the appropriate marker
 exist before the intercepted failure exit. No real native execution validates
 this post-D wiring yet. PAK scope, native E7/CLI, loader, provider pins, resource
 budgets and D's original evidence remain unchanged.
+
+## E2 review correction: fresh closure deadline checks
+
+Independent review of the unexecuted E plan found a real acceptance defect in
+`Wait-RecipientPhase`: it read elapsed time before `Owner.ExitCode` and `Save`,
+then returned for Active=0 without checking the time those calls consumed.
+A slow getter or persistence callback could therefore qualify closure after
+the 245-second phase or five-second drain limit. The new slow-getter fixture
+reproduced that defect against the previous implementation; E was not launched.
+
+The loop now reads the same monotonic Stopwatch before an iteration and after
+each original-handle getter, Save and budget callback. The drain clock starts
+at the first confirmed root-exit observation, before querying Active. Both
+deadlines are checked using fresh time after Save and before any successful
+return. Observation timestamps follow the completed ExitCode read. An empty
+job returned after either deadline is rejected; a still-populated job fails
+at the drain limit. Empty closure exactly at the inclusive limits remains valid.
+The original owner still performs stop, verified closure, restoration and
+quarantine on failure; none of those mechanisms or limits is weakened.
+
+This change rejects late results; it does not preempt a blocked getter or I/O
+callback or establish a hard wall-clock completion bound for Stop/restoration.
+Such a late result cannot be accepted as timely closure. Corrective review and
+a new exact E2 plan/GO remain mandatory before native execution.
+
+65 PowerShell source/contract fixtures and 39 stock fixtures pass. Added fixtures
+advance a fake monotonic clock inside Exited/Active/ExitCode getters, Save and
+the budget callback, including 1 ms deadline crossings, and require the exact
+deadline error. Slow calls within both limits, exact boundaries and the existing
+normal/multi-observation drain cases still pass. Python capture, reader, native
+command, PAK scope and provider pins are unchanged by this correction.

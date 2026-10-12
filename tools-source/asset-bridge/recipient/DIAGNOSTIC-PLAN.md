@@ -339,6 +339,16 @@ are unchanged. 143 light checks pass; the new wiring has no native-run evidence.
 Review the source before generating the next exact plan. A separate GO is still
 required before execution; do not reuse D's exhausted command/plan approval.
 
+Review of the resulting E plan found stale elapsed-time acceptance in
+`Wait-RecipientPhase`. E remains unexecuted. E2 refreshes the monotonic clock
+after original-handle getters, Save and budget checks, and checks both phase
+and post-root-observation drain deadlines before accepting an empty job. New
+mock slow-call cases reproduce the old bug and reject overruns after correction;
+65 source/contract plus 39 stock fixtures pass. Stop/closure/quarantine remain
+owned by the same caller. This is no waiver for slow or blocked calls: late
+closure is failure, and hard preemption is not claimed. The changed Core hash
+requires a separate E2 plan, corrective review and GO. PAKs remain unchanged.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256

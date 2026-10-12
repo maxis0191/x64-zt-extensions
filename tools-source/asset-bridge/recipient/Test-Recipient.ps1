@@ -3,6 +3,7 @@ $ErrorActionPreference='Stop'
 $checks=0
 function Check([bool]$Value,[string]$Name){if(!$Value){throw $Name};$script:checks++}
 function Refuses([scriptblock]$Action,[string]$Name){$failed=$false;try{& $Action|Out-Null}catch{$failed=$true};Check $failed $Name}
+function RefusesWithMessage([scriptblock]$Action,[string]$Message,[string]$Name){$failure=$null;try{& $Action|Out-Null}catch{$failure=$_.Exception.Message};Check ($failure -ceq $Message) $Name}
 foreach($name in @('Recipient.Core.ps1','Run-RecipientClosure.ps1')){
     $errors=$null;$tokens=$null
     $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $name),[ref]$tokens,[ref]$errors)
@@ -67,6 +68,47 @@ Refuses {Wait-RecipientPhase $fake $identity 2 5 {$script:tick} {} {} {$script:t
 Check ($script:tick -eq 3 -and $identity.PostRootExitObservations.Count -eq 0) 'Outer deadline applies before root exit'
 $script:tick=246;$fake=[pscustomobject]@{Exited=$true;Active=0;ExitCode=0};$identity=@{PostRootExitObservations=@()}
 Refuses {Wait-RecipientPhase $fake $identity 245 5 {$script:tick} {} {} {throw 'Unexpected wait'}} 'Late closure still exceeds outer deadline'
+# Getters and persistence advance a fake monotonic clock; no real sleep/process.
+# An empty job must not be accepted using a timestamp from before these calls.
+foreach($case in @(
+    @{Name='ExitCode crosses phase deadline';Start=244.0;Slow='ExitCode';Advance=1.001},
+    @{Name='Save crosses phase deadline';Start=244.0;Slow='Save';Advance=1.001},
+    @{Name='ExitCode crosses drain deadline';Start=10.0;Slow='ExitCode';Advance=5.001},
+    @{Name='Save crosses drain deadline';Start=10.0;Slow='Save';Advance=5.001},
+    @{Name='Active getter crosses drain deadline';Start=10.0;Slow='Active';Advance=5.001},
+    @{Name='Exited getter crosses phase deadline';Start=244.0;Slow='Exited';Advance=1.001}
+)){
+    $script:tick=$case.Start;$script:slow=$case.Slow;$script:advance=$case.Advance
+    $script:saves=0;$script:exitReads=0;$script:activeReads=0
+    $fake=[pscustomobject]@{}
+    $fake|Add-Member ScriptProperty Exited {if($script:slow -ceq 'Exited'){$script:tick+=$script:advance};$true}
+    $fake|Add-Member ScriptProperty Active {$script:activeReads++;if($script:slow -ceq 'Active'){$script:tick+=$script:advance};0}
+    $fake|Add-Member ScriptProperty ExitCode {$script:exitReads++;if($script:slow -ceq 'ExitCode'){$script:tick+=$script:advance};0}
+    $identity=@{PostRootExitObservations=@()}
+    $message=if($case.Name.Contains('phase deadline')){'Recipient phase deadline exceeded.'}else{'Original job closure exceeded the post-root-exit drain deadline.'}
+    RefusesWithMessage {Wait-RecipientPhase $fake $identity 245 5 {$script:tick} {throw 'Unexpected budget call'} {
+        $script:saves++;if($script:slow -ceq 'Save'){$script:tick+=$script:advance}
+    } {throw 'Unexpected delay'}} $message $case.Name
+    Check ($script:tick -eq ($case.Start+$case.Advance)) ($case.Name+' really advanced elapsed time')
+    if($case.Slow -ceq 'Exited'){Check ($script:activeReads -eq 0) 'Late root getter refuses before Active query'}
+    if($case.Slow -ceq 'Active'){Check ($script:exitReads -eq 0) 'Late Active getter refuses before ExitCode query'}
+    if($case.Slow -ceq 'ExitCode'){Check ($script:saves -eq 0) 'Late ExitCode getter refuses before Save'}
+    if($case.Slow -ceq 'Save'){Check ($script:saves -eq 1) 'Late Save ran once but cannot authorize closure'}
+}
+$script:tick=240.0;$script:saves=0
+$fake=[pscustomobject]@{Exited=$true}
+$fake|Add-Member ScriptProperty Active {$script:tick+=0.5;0}
+$fake|Add-Member ScriptProperty ExitCode {$script:tick+=0.5;0}
+$identity=@{PostRootExitObservations=@()}
+Wait-RecipientPhase $fake $identity 245 5 {$script:tick} {throw 'Unexpected budget call'} {$script:saves++;$script:tick+=1} {throw 'Unexpected delay'}
+Check ($script:tick -eq 242 -and $script:saves -eq 1) 'Slow calls within both limits still permit closure'
+Check ($identity.PostRootExitObservations[0].PhaseSeconds -eq 241 -and $identity.PostRootExitObservations[0].DrainSeconds -eq 1) 'Observation timestamp follows the completed ExitCode read'
+$script:tick=240.0;$fake=[pscustomobject]@{Exited=$true;Active=0;ExitCode=0};$identity=@{PostRootExitObservations=@()}
+Wait-RecipientPhase $fake $identity 245 5 {$script:tick} {} {$script:tick+=5} {throw 'Unexpected delay'}
+Check ($script:tick -eq 245) 'Confirmed empty job at both exact inclusive limits succeeds'
+$script:tick=244.0;$script:delays=0;$fake=[pscustomobject]@{Exited=$false;Active=1};$identity=@{PostRootExitObservations=@()}
+RefusesWithMessage {Wait-RecipientPhase $fake $identity 245 5 {$script:tick} {$script:tick+=1.001} {} {$script:delays++}} 'Recipient phase deadline exceeded.' 'Slow budget check crosses phase deadline'
+Check ($script:delays -eq 0) 'Fresh budget deadline check refuses before another delay'
 # Exercise the real budget function with only in-memory dependency doubles.
 $runner=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-RecipientClosure.ps1'),[ref]$tokens,[ref]$errors)
 $budgetFunction=$runner.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Assert-RecipientBudget'},$false)

@@ -30,17 +30,29 @@ function Wait-RecipientPhase($Owner,$Identity,[double]$OuterSeconds,[double]$Dra
     [scriptblock]$Delay={Start-Sleep -Milliseconds 100}) {
     # Only query the original handles. The caller owns stop/disposal on failure.
     $drainStart=$null
+    # Elapsed reads the caller's monotonic Stopwatch. Re-sample after every
+    # potentially blocking getter/callback; never accept from a pre-call time.
+    $checkTime={
+        $now=[double](& $Elapsed)
+        if($now -gt $OuterSeconds){throw 'Recipient phase deadline exceeded.'}
+        if($null -ne $drainStart -and $now-$drainStart -gt $DrainSeconds){throw 'Original job closure exceeded the post-root-exit drain deadline.'}
+        $now
+    }
     while($true){
-        $rootExited=$Owner.Exited;$active=$Owner.Active;$seconds=[double](& $Elapsed)
-        if($seconds -gt $OuterSeconds){throw 'Recipient phase deadline exceeded.'}
+        $null=& $checkTime
+        $rootExited=$Owner.Exited;$seconds=& $checkTime
+        if($rootExited -and $null -eq $drainStart){$drainStart=$seconds}
+        $active=$Owner.Active;$seconds=& $checkTime
         if($rootExited){
-            if($null -eq $drainStart){$drainStart=$seconds}
-            $Identity.PostRootExitObservations+=,@{PhaseSeconds=$seconds;DrainSeconds=($seconds-$drainStart);Active=$active;RootExitCode=$Owner.ExitCode}
+            $exitCode=$Owner.ExitCode;$seconds=& $checkTime
+            $Identity.PostRootExitObservations+=,@{PhaseSeconds=$seconds;DrainSeconds=($seconds-$drainStart);Active=$active;RootExitCode=$exitCode}
             & $Save
+            $seconds=& $checkTime
             if($active -eq 0){return}
             if($seconds-$drainStart -ge $DrainSeconds){throw 'Original job did not drain within five seconds after root exit.'}
         }
         & $BudgetCheck
+        $null=& $checkTime
         & $Delay
     }
 }
