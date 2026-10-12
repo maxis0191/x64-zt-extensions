@@ -1492,3 +1492,91 @@ The first named failure changed from O's `en_core_post_gfx`; this does not prove
 complete dependency closure or compatibility of previous bootstraps. No path or
 metadata for the newly named dependency was consulted, and no new qualification
 or Run followed. Further action remains the coordinator's decision.
+
+## CorePostGfx A and possible Q: prepared for a bounded delegation
+
+After P, the coordinator separately authorized analysis owner 51 to read only
+`core_post_gfx.ff` metadata, then authorized source preparation here. The recorded
+file is 267,200 bytes without a reparse component. Its payload hash and qualified
+identity remain unknown; preparation reads the pinned metadata JSON, not the
+game payload.
+
+CorePostGfx A reuses the exact EnCorePostGfx qualification skeleton with only
+data literals and the size comment changed. All 367 variable occurrences,
+73 command occurrences, 1,990 nonliteral tokens and five lifecycle functions
+are unchanged. Default source-only validation and captured host arguments pass;
+the inherited 54 lifecycle checks were not rerun for byte-identical functions.
+No live preflight, lease, payload read, qualification or native Run occurred.
+
+The [CorePostGfx/Q preparation checkpoint](catalogue-core-post-gfx-preparation-q-20261012.json)
+pins the source, literal diff, manifest, launch, wiring and proposed delegation.
+It proposes exactly one CorePostGfx A qualification and one Q, zero runtime
+retries, unchanged V2 and full fresh 6/8 GiB admission for each phase. Qualification
+must close completely, with actual PTY exit and independent absence, before Q
+is formed from its real hash and identity. The corrected P preparation is the
+reference: its redundant old-text-binding loop remains removed, while the
+unchanged runner default validates every declared text binding under the
+existing 1 MiB ceiling.
+
+Q is projected at eight inputs / 75,726,016 bytes, 46 bindings (33 text and
+13 binary), 12 metadata rows, 24 original/alias IDs and a 203,535,448-byte output
+limit. The Plan and dispatch are not materialized with invented values. If the
+coordinator accepts the proposal, only actually measured data substitutions may
+proceed under exact full-diff, AST, variable/command, pin and receipt-coherence
+checks, published before runtime. The successful P closure helper remains the
+frozen reference with unchanged N globals and L locals; actual identity binding
+must change exactly three literals.
+
+No runtime GO has been given yet. The old two-phase and P-only GOs stay closed.
+Any refusal, runtime error, source/identity drift or uncertain closure stops the
+proposed delegation. Q consumes the eighth V2 slot and ends this proposal even
+if another name is reported: no ninth input, next metadata, R or export follows.
+
+## CorePostGfx A and Q: accepted delegation consumed and fully closed
+
+The coordinator accepted the exact proposal and source from `06290cee`, with
+one qualification, one Q and zero runtime retries. Fresh 6/8 GiB admission
+preceded each phase. CorePostGfx A qualified the 267,200-byte input with observed
+SHA-256 `96a4f312a4d03b1201bd1bb7bb43187343bc6399c1ee58b2d98f4f93e8b0ee8d`.
+Two guarded passes read 534,400 bytes total and reverified metadata and identity.
+This proves neither depot provenance nor content compatibility. The host closed
+with observed guard counts zero, actual PTY 21195 exit 0 (`824cd3`) and independent
+absence of host 23860 and parent 2264 at 20:41:46 UTC. No payload was hashed after
+lease release.
+
+The first Q preparation script refused before creating its outputs: its broad
+`t7-catalog-p` substitution also changed the prefix of `t7-catalog-plan` into
+`t7-catalog-qlan`. The refused script and full correction diff are retained.
+Under the existing source-correction authorization, a separate corrected script
+restored the plan prefix and delimited attempt-path substitutions. Qualification
+was not repeated, and the runner, runtime gates and V2 policy were unchanged.
+All 43 prior bindings, seven bootstraps and 11 metadata rows remained identical.
+Default validation and captured arguments passed for 33 text bindings and eight
+receipts. The [qualification and preparation checkpoint](catalogue-core-post-gfx-qualified-q-preparation-20261012.json)
+records this source incident separately from runtime.
+
+The unique Q Run finished at 20:46:13 UTC as `Failed / NoCatalogue`, with natural
+native exit 0 and 3,122.89 ms reported elapsed. Input revalidation, tree closure
+and lease release passed; termination and quarantine were false. The closure
+helper changed exactly the three observed identity literals, preserving all
+140 variable occurrences, 32 commands and 850 nonliteral tokens. Its diff and
+hash were published before one invocation in the same host; no draft helper ran.
+
+Same-host postflight verified 12 metadata rows and 24 original/alias IDs, with
+no root, quarantine, heavy process or lease. PTY 74844 actually exited 0
+(`c21424`). The independent 20:50:08 UTC witness confirmed host 33364, parent
+23084 and native 34560 absent, zero clients/heavy processes/leases, unchanged
+stopped Main/UDP baseline and preserved Python identity. The
+[Q runtime checkpoint](catalogue-runtime-q-20261012.json) records these separate
+exit and absence proofs. Guard disposal evidence remains the pinned runner's
+finalization before wrapper return, not an independently observed guard counter.
+
+Analysis owner 51 was asked to interpret only the retained MSG after full closure.
+The complete 44-byte ASCII message names missing zone `en_core_common`, correlated
+on the same thread before exit. The name is observed in the capture, not inferred.
+The entry-point return, initialization-complete and catalogue markers are absent.
+The first named failure has changed from P's `core_post_gfx`; dependency closure
+and compatibility remain unproven. Q ends the delegated runtime work: no ninth
+input, new metadata, R or export follows this authorization. The coordinator's
+separate metadata-only inventory for an explicitly chosen future V3 set is outside
+this closed delegation and does not establish a dependency list.

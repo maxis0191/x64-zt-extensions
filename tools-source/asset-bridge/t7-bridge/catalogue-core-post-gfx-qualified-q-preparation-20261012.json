@@ -1,0 +1,260 @@
+{
+  "schema": "iw7.t7-core-post-gfx-qualified-q-preparation/1",
+  "date": "2026-10-12",
+  "status": "QualificationClosedQPreparationValidated",
+  "authorization": {
+    "distinct_two_phase_GO": true,
+    "protocol": {
+      "name": "t7-core-post-gfx-q-delegation-proposal.local.json",
+      "bytes": 9644,
+      "sha256": "9447d5c9beb9d4506262fb588e9d92c4f2f186bb54838c5bc33fbdf994b7f17b"
+    },
+    "independent_review": "Favorable, relayed by coordinator",
+    "qualification_max": 1,
+    "catalogue_max": 1,
+    "runtime_retry_max": 0,
+    "literal_only_acceptance_delegated": true,
+    "routine_source_preparation_corrections_authorized": true,
+    "previous_batch_stopped": true
+  },
+  "qualification": {
+    "script": {
+      "name": "Qualify-T7CorePostGfxA.local.ps1",
+      "bytes": 13340,
+      "sha256": "51fcf3b50e57d056343169764f128a8fac81a1fe3f80a295fe2ada029a005f00"
+    },
+    "receipt": {
+      "name": "t7-core-post-gfx-qualification-a.local.json",
+      "bytes": 4427,
+      "sha256": "f59633132336185fb2407b1a570fafdb20135aa158492726139ed3be0eb00f87"
+    },
+    "input_name": "core_post_gfx.ff",
+    "input_bytes": 267200,
+    "sha256": "96a4f312a4d03b1201bd1bb7bb43187343bc6399c1ee58b2d98f4f93e8b0ee8d",
+    "hash_provenance": "ObservedUnderLeaseNotDepotVerified",
+    "status": "IdentityAndHashObservedCompatibilityUnknown",
+    "started_utc": "2026-10-12T20:40:45.9231945Z",
+    "finished_utc": "2026-10-12T20:40:48.0289986Z",
+    "host_pid": 23860,
+    "host_created_utc": "2026-10-12T20:40:45.3487569Z",
+    "parent_pid": 2264,
+    "guarded_passes": 2,
+    "guarded_bytes_per_pass": 267200,
+    "guarded_bytes_total": 534400,
+    "metadata_and_identity_reverified": true,
+    "hash_reverified_under_guards": true,
+    "tree_closed": true,
+    "guards_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "native_engine_executed": false,
+    "content_compatibility_proven": false,
+    "depot_verified": false,
+    "header_captured": false,
+    "payload_copied_to_disk": false,
+    "payload_hashes_read_after_release": false
+  },
+  "closure": {
+    "same_host_evidence": {
+      "name": "t7-core-post-gfx-a-host-closure.local.json",
+      "bytes": 808,
+      "sha256": "6e82a2b84642a4a6278014b4084516f65968b2f2bd6c0b6a27c19e53df1199b4"
+    },
+    "independent_absence_evidence": {
+      "name": "t7-core-post-gfx-a-host-absence.local.json",
+      "bytes": 841,
+      "sha256": "3e6db3b95977ae882bfb56b103bf5dceb47816243318c2ffa9ea0d92ee215543"
+    },
+    "same_host_utc": "2026-10-12T20:41:25.7623439Z",
+    "source_guard_count": 0,
+    "payload_guard_count": 0,
+    "metadata_and_id_equal": true,
+    "session_id": 21195,
+    "actual_exit_code": 0,
+    "actual_exit_tool_chunk": "824cd3",
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T20:41:46.5435779Z",
+    "host_and_parent_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "client_count": 0,
+    "main_baseline": "Stopped",
+    "udp27016_absent": true,
+    "preserved_python_identity_unchanged": true
+  },
+  "preflight": {
+    "evidence": {
+      "name": "t7-core-post-gfx-a-preflight.local.json",
+      "bytes": 1436,
+      "sha256": "5926525eeb746aefa7edca71a6a89f0d7a5dadfac1e2c13e4d860055289b0acf"
+    },
+    "allowed": true,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "fresh_resource_workflow_read": true,
+    "scheduler_drift": false,
+    "initial_commit_used_percent": 58.58,
+    "initial_physical_used_percent": 58.8
+  },
+  "Q_preparation_correction": {
+    "evidence": {
+      "name": "t7-catalog-q-preparation-correction.local.json",
+      "bytes": 1432,
+      "sha256": "64707f0edf8ca403e91a8e40d2890de382990f7434dd8dde00d6cb59467d7158"
+    },
+    "original_script": {
+      "name": "Prepare-T7CatalogueQ.local.ps1",
+      "bytes": 9454,
+      "sha256": "8730b62647794d2af11e663fb595e5ab79d21f567dd69a4fabe7ea3c4b71b886"
+    },
+    "corrected_script": {
+      "name": "Prepare-T7CatalogueQCorrected.local.ps1",
+      "bytes": 9712,
+      "sha256": "88101433fe8441ccf380427e667c5c6f8b439736fc8a9bca8a0830099b25c140"
+    },
+    "full_diff": {
+      "name": "t7-catalog-q-preparation-correction.local.patch",
+      "bytes": 6987,
+      "sha256": "6a4fe739ec8cf5694d64f0a4c4c6a0aab970d9290e5b45d135ca518bf0c82251"
+    },
+    "refusal_tool_chunk": "4d7f4c",
+    "error": "Get-Item could not find t7-catalog-qlan-p.local.json",
+    "cause": "Generator substitution catalog-p also matched the start of catalog-plan.",
+    "correction": "Restore the plan prefix and delimit attempt-path substitutions; keep variables, functions and commands unchanged.",
+    "original_evidence_preserved": true,
+    "all_outputs_absent_before_correction": true,
+    "native_runtime_failure": false,
+    "qualification_repeated": false,
+    "operational_source_changed": false,
+    "runtime_gate_changed": false,
+    "runtime_retry": false,
+    "corrected_generation_tool_chunk": "4bbb9e"
+  },
+  "Q_preparation": {
+    "plan": {
+      "name": "t7-catalog-plan-q.local.json",
+      "bytes": 27295,
+      "sha256": "b15ad65ee9a781d844a2cf5336fefaf058184e1c3632f9890d8ccaf0e02f97c3"
+    },
+    "dispatch": {
+      "name": "Invoke-T7CatalogueQ.local.ps1",
+      "bytes": 3999,
+      "sha256": "2feb93fe4a8cf9b308458d222abe00db01334a045f63d906e80d540333061dc8"
+    },
+    "review": {
+      "name": "t7-catalog-q-dispatch-review.local.json",
+      "bytes": 5366,
+      "sha256": "9e58b90d59f7adf5e69471bfcb478b0e1763817397590623b85721d1b5a842b1"
+    },
+    "source_preparation": {
+      "name": "t7-catalog-q-source-preparation.local.json",
+      "bytes": 3004,
+      "sha256": "e3ac9df2ab2ae02c926e3f37b84bb933e17354a13fd5e9b20fbf9885e77a9ac0"
+    },
+    "full_plan_diff": {
+      "name": "t7-catalog-p-to-q-plan.local.patch",
+      "bytes": 5734,
+      "sha256": "82324f050db867fda182520ed305fa422d2f32ad920377862b946f5fa420eed7"
+    },
+    "semantic_review": {
+      "name": "t7-catalog-q-plan-diff-review.local.json",
+      "bytes": 944,
+      "sha256": "92814b12f9dbbcb34ec28d8d0835dea3e141fcc72ef9fa52d4a9c19bccc0a6b2"
+    },
+    "changed_top_level_fields": [
+      "RunRoot",
+      "WorkingDirectory",
+      "StageRoot",
+      "Image",
+      "OutputLimitBytes",
+      "InputMetadata",
+      "Bindings",
+      "MainBaselineObservation",
+      "Bootstraps"
+    ],
+    "existing_bindings_unchanged": 43,
+    "existing_text_bindings_unchanged": 31,
+    "existing_bootstraps_unchanged": 7,
+    "existing_metadata_unchanged": 11,
+    "added_bindings": 3,
+    "added_text_bindings": 2,
+    "added_binary_bindings": 1,
+    "added_metadata": 1,
+    "added_qualified_input": 1,
+    "added_output_limit_bytes": 267200,
+    "new_item_matches_actual_closed_qualification": true,
+    "exact_script_comparisons": [
+      {
+        "reference": {
+          "name": "Invoke-T7CatalogueP.local.ps1",
+          "bytes": 3999,
+          "sha256": "af5a25b6b63d0a5e0709df3dac1734cc0eb2400a425ff8631d9f58d69746e4ab"
+        },
+        "prepared": {
+          "name": "Invoke-T7CatalogueQ.local.ps1",
+          "bytes": 3999,
+          "sha256": "2feb93fe4a8cf9b308458d222abe00db01334a045f63d906e80d540333061dc8"
+        },
+        "literal_diff": {
+          "name": "Invoke-T7CatalogueQ.local.ps1.literal-diff.patch",
+          "bytes": 5161,
+          "sha256": "355415b739cc06b00c4a2f8dc60963273dd14f26f7dfa55f6d5347459c5d1724"
+        },
+        "variables_unchanged": 78,
+        "commands_unchanged": 13,
+        "nonliteral_tokens_unchanged": 464
+      },
+      {
+        "reference": {
+          "name": "Finish-T7CatalogueP.bound.local.ps1",
+          "bytes": 5598,
+          "sha256": "995142494cf9195ec2bec901ad3c61e9ffbe28528111f9ee7a149c06492d98cf"
+        },
+        "prepared": {
+          "name": "Finish-T7CatalogueQ.pending-identities.local.ps1",
+          "bytes": 5598,
+          "sha256": "e37f072eaf5ce4b136f92016d3fe76dbc6c8adb75e5d939d1d8983a4cab3bf25"
+        },
+        "literal_diff": {
+          "name": "Finish-T7CatalogueQ.pending-identities.local.ps1.literal-diff.patch",
+          "bytes": 6878,
+          "sha256": "e77074b88bb9c376c1a1a3b76cb029c3b9cb766c947a74cdc1cdc15c26e898e3"
+        },
+        "variables_unchanged": 140,
+        "commands_unchanged": 32,
+        "nonliteral_tokens_unchanged": 850
+      }
+    ],
+    "default_status": "PlanCheckedPendingGO",
+    "default_and_arguments_tool_chunk": "c0f0db",
+    "semantic_diff_tool_chunk": "57f307",
+    "text_bindings_validated": 33,
+    "receipts_validated": 8,
+    "native_types_loaded_by_validation": false,
+    "binary_inputs_hashed_by_validation": false,
+    "lease_acquired_by_validation": false,
+    "Run_invoked_by_validation": false,
+    "policy": "QualifiedCollectionV2",
+    "bootstrap_count": 8,
+    "bootstrap_bytes": 75726016,
+    "bindings": 46,
+    "text_bindings": 33,
+    "binary_bindings": 13,
+    "metadata_rows": 12,
+    "original_and_alias_ids": 24,
+    "output_limit_bytes": 203535448,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "operational_source_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+    "V3_adopted": false
+  },
+  "limits": {
+    "qualification_invocations": 1,
+    "runtime_Q_evidence": "catalogue-runtime-q-20261012.json",
+    "ready": false,
+    "compatibility_proven": false,
+    "no_ninth_input_or_R_authorized": true,
+    "no_export_authorized": true
+  },
+  "next_action": "Read the separate Q runtime checkpoint for its unique consumed Run, complete closure and exclusive analysis. This two-phase delegation authorizes no further runtime."
+}
