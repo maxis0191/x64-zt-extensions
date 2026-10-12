@@ -1,0 +1,460 @@
+{
+  "schema": "iw7.sound-checksum-build-checkpoint/1",
+  "date_utc": "2026-10-12",
+  "source_commit": "e42d3ed480efc409fdcc1f950b1ac39e00014935",
+  "plan": "E",
+  "plan_sha256": "65e4ddc10524e6f6d2e3a596c8a480ca95be7be336555c30a41404597350f2e4",
+  "host_command": "E",
+  "host_command_bytes": 1083,
+  "host_command_sha256": "ff58ac47d7c873fbf07244f0368a80174d6809beaa74582e72558ccca9ce22d7",
+  "persistent_ps7_host": true,
+  "invocations": 1,
+  "retry_attempted": false,
+  "status": "FailedFinalLink",
+  "native_commands_attempted": 14,
+  "successful_native_steps": 13,
+  "first_failed_phase": "link-candidate",
+  "linker_exit_code": 1158,
+  "native_error": "LINK : fatal error LNK1158: cannot run 'rc.exe'",
+  "supervisor_secondary_error": "Missing build-receipt.json during residual completion qualification after native root exit 1",
+  "residual_success_qualification_granted": false,
+  "cleanup_original_job_stop_requested": true,
+  "original_root_exit_code": 1,
+  "elapsed_ms": 262797,
+  "physical_budget_bytes": 4294967296,
+  "commit_budget_bytes": 6442450944,
+  "input_file_count": 1410,
+  "reviewed_response_sources": 12,
+  "proof_bytes_read": 2207024770,
+  "inputs_verified_before": true,
+  "inputs_verified_after": true,
+  "input_guards_opened": 1410,
+  "input_guards_disposed": 1410,
+  "original_job_active_at_close": 0,
+  "tree_closed": true,
+  "lease_released": true,
+  "retained_lease_token": null,
+  "quarantine_root_absent_before_host_exit": true,
+  "persistent_host_closed_after_confirmation": true,
+  "postflight_utc": "2026-10-12T10:54:51.9880569Z",
+  "fresh_registry_empty": true,
+  "fresh_heavy_processes_empty": true,
+  "host_and_native_processes_absent": true,
+  "main_udp_process_identity_unchanged": true,
+  "postflight_source_provider_pins_unchanged": true,
+  "output_bytes": 92224870,
+  "peak_observed_output_bytes": 92224870,
+  "output_file_count": 63,
+  "native_probes_executed": 2,
+  "original_probe": {
+    "source_checksum": "78000000000000000000000000000000",
+    "matches_original_md5": false,
+    "field_matches": true,
+    "payload_unchanged": true,
+    "outside_field_unchanged": true,
+    "native_ff_tested": false,
+    "ready": false
+  },
+  "patched_probe": {
+    "source_checksum": "24fe5af1473ea8f4be33912348210c78",
+    "matches_original_md5": true,
+    "field_matches": true,
+    "payload_unchanged": true,
+    "outside_field_unchanged": true,
+    "native_ff_tested": false,
+    "ready": false
+  },
+  "native_cpp_checksum_fix_validated": true,
+  "synthetic_probe_only": true,
+  "candidate_built": false,
+  "build_receipt_present": false,
+  "sab_ff_validated": false,
+  "playback_validated": false,
+  "ready": false,
+  "phases": [
+    {
+      "phase": "probe-original-compile",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "probe-original-link",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f"
+    },
+    {
+      "phase": "probe-original-run",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "f83a38e3cece1ce34f1d85f43d20e27e6539b7c69da24e9f688050e01ea9aca3"
+    },
+    {
+      "phase": "probe-patched-compile",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "probe-patched-link",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f"
+    },
+    {
+      "phase": "probe-patched-run",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "f0372ca81d718d6fab15c885c8f5585c73045114654fe1cfea7966eb7fe2190a"
+    },
+    {
+      "phase": "compile-loadedsound",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "compile-loadedsound1",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "compile-loadedsound2",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "compile-loadedsound3",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "compile-sound_bank",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "compile-common-bit-buffer",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+    },
+    {
+      "phase": "archive-common",
+      "exit_code": 0,
+      "failure": null,
+      "executable_sha256": "fde148a275981855689c45f932dda56b10dc9289a0290826a0fb93478da34929"
+    },
+    {
+      "phase": "link-candidate",
+      "exit_code": 1158,
+      "failure": null,
+      "executable_sha256": "a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f"
+    }
+  ],
+  "files": [
+    {
+      "relative": "bin/zonetool-sound-md5.exp",
+      "bytes": 3924
+    },
+    {
+      "relative": "bin/zonetool-sound-md5.lib",
+      "bytes": 7068
+    },
+    {
+      "relative": "bin/zonetool-sound-md5.pdb",
+      "bytes": 55801305
+    },
+    {
+      "relative": "common/bit_buffer.obj",
+      "bytes": 71674
+    },
+    {
+      "relative": "common/common-compile.pdb",
+      "bytes": 266240
+    },
+    {
+      "relative": "common/common.lib",
+      "bytes": 3965694,
+      "sha256": "654985da2bfbf6c54b2216f431d4c07662ebd4f54e7e903e7b62c3ae6238f6e9"
+    },
+    {
+      "relative": "logs/archive-common/phase.json",
+      "bytes": 297,
+      "sha256": "108591d869962446b7ee46e6faa3c16a52d0f97221fbbfb3fc03a2e67bd88e67"
+    },
+    {
+      "relative": "logs/archive-common/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/archive-common/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/compile-common-bit-buffer/phase.json",
+      "bytes": 297,
+      "sha256": "2bedb4ce6ce90aec3dbb31b42597a5e209edb1704bf2027857612b973252764a"
+    },
+    {
+      "relative": "logs/compile-common-bit-buffer/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/compile-common-bit-buffer/stdout.log",
+      "bytes": 12120,
+      "sha256": "8cb5a788dd5144f9e53ddc41de351dfe41fafe623d695877bae7791b0e91e69c"
+    },
+    {
+      "relative": "logs/compile-loadedsound/phase.json",
+      "bytes": 297,
+      "sha256": "45ddca218df1b5389e9ed1ac416122b3a26d3df0211f990e4140b96430f43523"
+    },
+    {
+      "relative": "logs/compile-loadedsound/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/compile-loadedsound/stdout.log",
+      "bytes": 95189,
+      "sha256": "618000c7b3c036eb22c06a39a3edb4f49869f9356eb8b4c81857e02f5ace700f"
+    },
+    {
+      "relative": "logs/compile-loadedsound1/phase.json",
+      "bytes": 297,
+      "sha256": "7ad2d9dc50416faa151ae4f4ad04b7d804ce254e91198405cc5ae48b735ed4e4"
+    },
+    {
+      "relative": "logs/compile-loadedsound1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/compile-loadedsound1/stdout.log",
+      "bytes": 83598,
+      "sha256": "107298bc5af7f842e4c6f01f120ec58879745425ae9dc05b53a202eceda2dd3a"
+    },
+    {
+      "relative": "logs/compile-loadedsound2/phase.json",
+      "bytes": 297,
+      "sha256": "578a0e06feee9281e3b511fca5eea8e4d415afc045eba78ba9e2689f6cc30688"
+    },
+    {
+      "relative": "logs/compile-loadedsound2/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/compile-loadedsound2/stdout.log",
+      "bytes": 82998,
+      "sha256": "d0530e027d31580da07e95b0a21dee31055217e6ab75483bbb30225efde44308"
+    },
+    {
+      "relative": "logs/compile-loadedsound3/phase.json",
+      "bytes": 297,
+      "sha256": "2a17dcd1a39f844be8653da6213aab4d4c4c1a8580e4670c9a21b0c2dbf918cf"
+    },
+    {
+      "relative": "logs/compile-loadedsound3/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/compile-loadedsound3/stdout.log",
+      "bytes": 83280,
+      "sha256": "c0cf18d4940793dc6a90b26b281199c98c755855614c9ca03e27e65cda7c94c1"
+    },
+    {
+      "relative": "logs/compile-sound_bank/phase.json",
+      "bytes": 297,
+      "sha256": "6ec7188701c1069e353eed5da9862dd3bfec5e6c26a043738b98fef4980c0ee7"
+    },
+    {
+      "relative": "logs/compile-sound_bank/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/compile-sound_bank/stdout.log",
+      "bytes": 85383,
+      "sha256": "f92d913381130ebc976b0f8ae9fef284f70e19804f9c5b59e51c460676877908"
+    },
+    {
+      "relative": "logs/link-candidate/phase.json",
+      "bytes": 300,
+      "sha256": "15805c0c71d514f28895696fa098bdc7780b539fec3f18a0660025c01d156a59"
+    },
+    {
+      "relative": "logs/link-candidate/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/link-candidate/stdout.log",
+      "bytes": 331,
+      "sha256": "1d25e927f275878eb144fc3c7d94ebd476567d73ca9b9e5c3ab2921a3dd65d7a"
+    },
+    {
+      "relative": "logs/probe-original-compile/phase.json",
+      "bytes": 297,
+      "sha256": "bdcbb25e8bdda0ee1e6776dc14f7c467f0ff124aad89693a7e33a08c5a31a8e4"
+    },
+    {
+      "relative": "logs/probe-original-compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-original-compile/stdout.log",
+      "bytes": 20708,
+      "sha256": "847b11f196f3df9f93d63d3d0f0ab9b4d6042bd5a2eca62d969a696d76cacc5c"
+    },
+    {
+      "relative": "logs/probe-original-link/phase.json",
+      "bytes": 297,
+      "sha256": "2ea757509246766511d478389ea1b680280f24b461a22974d2d1d20a28e83d8e"
+    },
+    {
+      "relative": "logs/probe-original-link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-original-link/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-original-run/phase.json",
+      "bytes": 294,
+      "sha256": "bf8c1a6be675c469440c324acb0ad8d85864f7793ff351df79a872a224ad1fed"
+    },
+    {
+      "relative": "logs/probe-original-run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-original-run/stdout.log",
+      "bytes": 201,
+      "sha256": "207af5172901ebc179e0103bb158f089033cfc2f20b852629844edcdb404c8a2"
+    },
+    {
+      "relative": "logs/probe-patched-compile/phase.json",
+      "bytes": 297,
+      "sha256": "f3fe6ff91f2534d2ba225a6157d17cf45b7193e8e44ae416d75b642dc63c389c"
+    },
+    {
+      "relative": "logs/probe-patched-compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-patched-compile/stdout.log",
+      "bytes": 20746,
+      "sha256": "85e96c0bdf085f9f945986beebb38ed49f8c7fa64d0a7feb46410afe63cca86b"
+    },
+    {
+      "relative": "logs/probe-patched-link/phase.json",
+      "bytes": 297,
+      "sha256": "ea6617a8aaf75b7ebc2484dff2685d80b0fd9daa20b3316e5e1846c0aae2d2c1"
+    },
+    {
+      "relative": "logs/probe-patched-link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-patched-link/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-patched-run/phase.json",
+      "bytes": 294,
+      "sha256": "e1ad26b2fbdb128b36fca98cfa48cc7a3dcc28ca6baec5c2f8751318b6e9c4b3"
+    },
+    {
+      "relative": "logs/probe-patched-run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "logs/probe-patched-run/stdout.log",
+      "bytes": 200,
+      "sha256": "80fe6424c50a3e525f7b46f09598fbcb19b71639aeeb22e38f22b71e684faade"
+    },
+    {
+      "relative": "obj/loadedsound.obj",
+      "bytes": 980536
+    },
+    {
+      "relative": "obj/loadedsound1.obj",
+      "bytes": 930110
+    },
+    {
+      "relative": "obj/loadedsound2.obj",
+      "bytes": 879168
+    },
+    {
+      "relative": "obj/loadedsound3.obj",
+      "bytes": 932426
+    },
+    {
+      "relative": "obj/sound-compile.pdb",
+      "bytes": 6197248
+    },
+    {
+      "relative": "obj/sound_bank.obj",
+      "bytes": 7319077
+    },
+    {
+      "relative": "probe/original-compile.pdb",
+      "bytes": 512000
+    },
+    {
+      "relative": "probe/original.exe",
+      "bytes": 278016,
+      "sha256": "f83a38e3cece1ce34f1d85f43d20e27e6539b7c69da24e9f688050e01ea9aca3"
+    },
+    {
+      "relative": "probe/original.obj",
+      "bytes": 456350
+    },
+    {
+      "relative": "probe/original.pdb",
+      "bytes": 5943296
+    },
+    {
+      "relative": "probe/patched-compile.pdb",
+      "bytes": 512000
+    },
+    {
+      "relative": "probe/patched.exe",
+      "bytes": 278016,
+      "sha256": "f0372ca81d718d6fab15c885c8f5585c73045114654fe1cfea7966eb7fe2190a"
+    },
+    {
+      "relative": "probe/patched.obj",
+      "bytes": 455225
+    },
+    {
+      "relative": "probe/patched.pdb",
+      "bytes": 5943296
+    },
+    {
+      "relative": "supervisor-state.json",
+      "bytes": 3292,
+      "sha256": "8c3068bbb196a75686e70d9145a1f91eb1b69c2f2632e67687119c19302d6be0"
+    }
+  ]
+}

@@ -1,10 +1,13 @@
 # Native source-checksum correction proposal
 
-This is a private source patch, not a rebuilt ZoneTool. The one authorized native
-build attempt stopped at its first compiler invocation with MSVC D8004. No C++
-probe, linker, librarian, FFmpeg or ZoneTool ran for this correction. The failed
-first SAB/FF attempt remains unchanged. The independent reader still rejects its
-checksum. Playback and `Ready` remain false.
+The private patch passes both actual C++ checksum probes in
+[Build E](BUILD-E-RESULT.md): the original reproduces `7800...`, and the corrected
+header preserves the expected sixteen MD5 bytes. Thirteen native steps passed,
+but the final link failed with LNK1158 because `rc.exe` was absent from the fixed
+PATH. No final ZoneTool executable exists. The job closed, its lease was released,
+and the persistent host exited after its quarantine check. The earlier D8004
+attempt and failed first SAB/FF output remain unchanged. Playback and `Ready`
+remain false; native SAB/FF validation is still pending.
 
 The subsequent [Seal C checkpoint](INPUT-SEALING.md) qualifies the retained input
 bytes. The [private executable Build Plan C](BUILD-PLAN.md) records the closed
@@ -12,10 +15,11 @@ failed native attempt, source/mock verification and the response-file correction
 needed before another review/GO. The earlier preparation descriptions below are
 historical proposal evidence.
 
-The [response-file revision and future Plan E](RESPONSE-REVISION.md) attach each
-macro to `/D`, preserve all existing flags and use a fresh private output path.
-Only source/default-Plan tests have run for this revision; native execution is
-still separately gated.
+The [response-file revision used by Plan E](RESPONSE-REVISION.md) attaches each
+macro to `/D`, preserves all existing flags and uses a fresh private output path.
+Its successful compilation evidence and failed final link are recorded above.
+The remaining preparation descriptions below are retained historical proposals,
+not instructions to repeat execution.
 
 ## Observed defect and source boundary
 
