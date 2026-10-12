@@ -1,0 +1,139 @@
+{
+  "schema": "iw7.sound-dump-only-checkpoint/1",
+  "status": "NativeDumpOnlyBytesVerified",
+  "execution_source_commit": "8b83d6b2e7128216b2f59f2bc880b2c3c3476782",
+  "execution_plan": {
+    "bytes": 55830,
+    "sha256": "3eccd8a2a8a6691164a979a7971fe1d5a732e1c019187d67934fc0b55a2bade7"
+  },
+  "execution_command": {
+    "bytes": 2327,
+    "sha256": "bea02e7b7981ddd6658ba41fad311802e96c860e99b02d2b201745dbe32c3e86"
+  },
+  "authorized_runs": 1,
+  "actual_runs": 1,
+  "retry_count": 0,
+  "started_utc": "2026-10-12T18:22:55.7983563Z",
+  "returned_utc": "2026-10-12T18:23:13.9650685Z",
+  "qualified_candidate_c": {
+    "receipt_sha256": "dfe3d7d1ed0d9b3c4ad334fc64d1f3f277508c468df034f05cffd2505f3944f4",
+    "bytes": 21705728,
+    "sha256": "cef411cf9b4de69be02cb4017aabd964e9143e340e211188daa6b6bab366493a",
+    "state_sha256": "99c5c35fe43ad90bb192db8902dc718402fb901dd2cc6f6689d790e82a5ba149"
+  },
+  "physical_estimate_bytes": 8589934592,
+  "commit_estimate_bytes": 11811160064,
+  "output_stop_bytes": 67108864,
+  "phase_order": [
+    "dump",
+    "read"
+  ],
+  "phases": [
+    {
+      "phase": "dump",
+      "root_exit_code": 0,
+      "job_active_at_close": 0,
+      "root_exited": true,
+      "explicit_normal_pipe_returns": true,
+      "native_executable_sha256": "cef411cf9b4de69be02cb4017aabd964e9143e340e211188daa6b6bab366493a",
+      "post_receipt_decision_ms": 4953
+    },
+    {
+      "phase": "read",
+      "root_exit_code": 0,
+      "job_active_at_close": 0,
+      "root_exited": true,
+      "explicit_normal_pipe_returns": true,
+      "native_executable_sha256": "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a",
+      "post_receipt_decision_ms": 406
+    }
+  ],
+  "preserved_f": {
+    "artifacts": [
+      {
+        "relative": "zone/sdk_original_sound_v1.ff",
+        "bytes": 544,
+        "sha256": "13e878aeec2c545d5e6c8c02a6b75eb6061fd1bec14c9199450ef6a45e135900"
+      },
+      {
+        "relative": "zone/sdk_original_sound_v1.sabl",
+        "bytes": 114816,
+        "sha256": "e0ce851bc7264a03d06e6ca2a44d15d424f1f4c01957ab0dda915879ca4d0110"
+      },
+      {
+        "relative": "zone/sdk_original_sound_v1.sabs",
+        "bytes": 4096,
+        "sha256": "e490efefe70da393fd7830102637f3e0df12f6b6b0945e8c54cada2a6fef3b6f"
+      }
+    ],
+    "state_sha256": "d0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9",
+    "plan_sha256": "3d90a5746a8ee698fb08715e270f2855f261b318393257f91a9e7f59e3ad39d5",
+    "inventory_provenance": "PreservedBuildF",
+    "verify_rerun": false,
+    "rebuilt": false
+  },
+  "dumped_flac": {
+    "min_block_size": 4096,
+    "streaminfo_md5_zero": true,
+    "frame_size_fields_zero": true,
+    "max_block_size": 4096,
+    "bytes": 96394,
+    "seek_and_frame_bytes_preserved": true,
+    "identity_provenance": "Actual dump hash captured after readback and revalidated during final source/restoration proof under original admission.",
+    "sha256": "1f20e4e3d2ea9160c833ba2f188950908573c9bf677e63e10edf639efd40c725"
+  },
+  "lifecycle": {
+    "quarantined": false,
+    "read_guards_released": true,
+    "job_dispose_completed": true,
+    "cleanup_error": null,
+    "failure": null,
+    "restoration_status": "Confirmed",
+    "retained_lease": null,
+    "status": "SoundDumpOnlyBytesVerified",
+    "job_closure_verified": true,
+    "source_hashes_unchanged": true,
+    "restored": true,
+    "stock_preserved": true
+  },
+  "accounting": {
+    "scope": "RunRoot file lengths after state write; only verified staged hardlinks excluded; snapshot, not continuous disk maximum",
+    "status": "Converged",
+    "maximum_observed_bytes": 1276800,
+    "final_observed_bytes": 1276770
+  },
+  "evidence": {
+    "reader": {
+      "bytes": 1535,
+      "sha256": "1f23d77a6f94e950ce1d0253b31f576fc7b1dc6f7654c89dbf19b93988b08491"
+    },
+    "host_exit": {
+      "bytes": 1007,
+      "sha256": "a4c96b8c2f021ac401d1ea713e1b020d11353f5d19b9842465f702080dbb3af7"
+    },
+    "state": {
+      "bytes": 62517,
+      "sha256": "761ef1246010482d9451e1feae1b7e0f2e75bcd0ea678a1ce70f294184d669df"
+    }
+  },
+  "postflight": {
+    "observed_utc": "2026-10-12T18:24:43.5596373Z",
+    "post_release_payload_reads": 0,
+    "main_and_owner_games": 0,
+    "host_and_children_absent": true,
+    "udp27016": 0,
+    "leases": 0,
+    "heavy_processes": 0,
+    "unrelated_python_original_identity_preserved": true,
+    "actual_host_exit_code": 0
+  },
+  "strict_external_codec_executed": false,
+  "pcm_verified_by_external_codec": false,
+  "standalone_flac_conformance_verified": false,
+  "native_alias_index_verified": false,
+  "checksum_checksum_verified": false,
+  "playback_verified": false,
+  "ready": false,
+  "previous_native_dump_f_codec_failure_retracted": false,
+  "next_action": "Review a separate strict NativeDumpOnlyC codec profile/Plan bound to these observed dump/state identities; no real codec run before distinct coordinator GO."
+}

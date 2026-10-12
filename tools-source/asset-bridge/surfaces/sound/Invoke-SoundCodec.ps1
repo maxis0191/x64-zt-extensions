@@ -31,7 +31,7 @@ function Assert-CodecKnownPin($Plan,[string]$Path,[long]$Bytes,[string]$SHA256) 
     if($pins.Count -ne 1 -or $pins[0].Bytes -ne $Bytes -or $pins[0].SHA256 -ine $SHA256){throw 'Closed profile input pin differs.'}
 }
 function Get-CodecProfile($Plan) {
-    if($Plan.InputProfile -isnot [string] -or $Plan.InputProfile -cnotin @('OriginalSource','NativeDumpF')){throw 'Explicit closed codec profile required.'}
+    if($Plan.InputProfile -isnot [string] -or $Plan.InputProfile -cnotin @('OriginalSource','NativeDumpF','NativeDumpOnlyC')){throw 'Explicit closed codec profile required.'}
     $source=Join-Path $Plan.SharedRepo 'runtime/content-surfaces/original-sound-source-b'
     if($Plan.OriginalWAV -ine (Join-Path $source 'original/source.wav') -or
        $Plan.SourceManifest -ine (Join-Path $source 'sound-source.json')){throw 'Original fixture binding differs.'}
@@ -44,19 +44,64 @@ function Get-CodecProfile($Plan) {
         $hash='9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb'
         if($Plan.NativeDumpState){throw 'Original profile cannot adopt a dump state.'}
         $status='ThirdPartyPCMVerified'
-    }else{
+    }elseif($Plan.InputProfile -ceq 'NativeDumpF'){
         $dumpRoot=Join-Path $Plan.SharedRepo 'runtime/content-surfaces/original-sound-sab-ff-b'
         $inputPath=Join-Path $dumpRoot 'work/dump/sdk_original_sound_v1/sound_assets/community/original_chime_v1.flac'
         $hash='a4e9276568dfeaf42d39deefe243b1efc2b9095b2f558bcb3512b98c417154d9'
         if($Plan.NativeDumpState -ine (Join-Path $dumpRoot 'state.local.json')){throw 'Exact completed F state required.'}
         Assert-CodecKnownPin $Plan $Plan.NativeDumpState 65117 'd0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9'
         $status='DumpDecodedByFFmpeg'
+    }else{
+        # Observed successful DumpOnly A receipt; no payload hashing in Plan mode.
+        $hash='1f20e4e3d2ea9160c833ba2f188950908573c9bf677e63e10edf639efd40c725';$dumpStateSHA='761ef1246010482d9451e1feae1b7e0f2e75bcd0ea678a1ce70f294184d669df';$dumpStateBytes=62517
+        $dumpRoot=Join-Path $Plan.SharedRepo 'runtime/content-surfaces/original-sound-dump-only-a'
+        $inputPath=Join-Path $dumpRoot 'work/dump/sdk_original_sound_v1/sound_assets/community/original_chime_v1.flac'
+        if($Plan.NativeDumpState -ine (Join-Path $dumpRoot 'state.local.json')){throw 'Exact qualified DumpOnly state required.'}
+        Assert-CodecKnownPin $Plan $Plan.NativeDumpState $dumpStateBytes $dumpStateSHA
+        $status='DumpDecodedByFFmpeg'
     }
     if($Plan.InputFLAC -ine $inputPath){throw 'Profile FLAC path differs.'}
     Assert-CodecKnownPin $Plan $inputPath 96394 $hash
     [pscustomobject]@{Name=$Plan.InputProfile;InputSHA256=$hash;SuccessStatus=$status}
 }
+function Assert-CodecDumpOnlyEvidence($Plan) {
+    # Existing caller owns admission, retained guards and exact state/input hashes.
+    $e=Get-Content -LiteralPath $Plan.NativeDumpState -Raw|ConvertFrom-Json
+    if($e.Schema -cne 'iw7.original-sound-ff-result/1' -or $e.Profile -cne 'DumpOnly' -or $e.Status -cne 'SoundDumpOnlyBytesVerified' -or
+        $e.Work -ine (Join-Path (Split-Path $Plan.NativeDumpState) 'work') -or $e.RetainedLeaseToken -or $e.Failure -or $e.CleanupError -or
+        $e.RestorationStatus -cne 'Confirmed' -or $e.OutputAccountingStatus -cne 'Converged' -or $e.OutputBudgetError -or $e.OutputAccountingError){throw 'Qualified DumpOnly lifecycle required.'}
+    foreach($flag in 'Restored','StockPreserved','JobClosureVerified','JobDisposeCompleted','SourceHashesUnchanged','ReadGuardsReleased'){
+        if($e.$flag -isnot [bool] -or !$e.$flag){throw 'DumpOnly closure proof missing.'}
+    }
+    foreach($flag in 'Quarantined','Ready','PlaybackVerified'){
+        if($e.$flag -isnot [bool] -or $e.$flag){throw 'DumpOnly exclusion differs.'}
+    }
+    if(($e.Phases.Phase -join ',') -cne 'dump,read' -or
+        $e.Phases[0].NativeExecutableSHA256 -cne 'cef411cf9b4de69be02cb4017aabd964e9143e340e211188daa6b6bab366493a' -or
+        $e.Phases[1].NativeExecutableSHA256 -ine '4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a'){throw 'Qualified C dump/read phases required.'}
+    foreach($phase in $e.Phases){
+        if(($phase.ExitCode -isnot [int] -and $phase.ExitCode -isnot [long]) -or $phase.ExitCode -ne 0 -or $phase.JobActiveAtClose -ne 0 -or
+            $phase.JobRootExitedAtClose -isnot [bool] -or !$phase.JobRootExitedAtClose -or $phase.SoundReceipt.verified -isnot [bool] -or !$phase.SoundReceipt.verified -or
+            $phase.SoundReceipt.explicit_normal_pipe_returns -isnot [bool] -or !$phase.SoundReceipt.explicit_normal_pipe_returns -or @($phase.SoundReceipt.drain_exception_types).Count){throw 'Dump/read did not close normally.'}
+    }
+    if($e.Reader.dump_profile -cne 'DumpOnlyC' -or $e.Reader.dump_streaminfo_block_size -ne 4096 -or
+        $e.Reader.inventory_provenance -cne 'PreservedBuildF' -or
+        $e.ImmutableFF.PlanSHA256 -ine '3d90a5746a8ee698fb08715e270f2855f261b318393257f91a9e7f59e3ad39d5' -or
+        $e.ImmutableFF.StateSHA256 -ine 'd0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9'){throw 'Exact preserved F/4096 reader scope required.'}
+    foreach($flag in 'dump_seek_frame_bytes_verified','dump_streaminfo_rewritten','dump_alias_values_verified','inventory_verified'){
+        if($e.Reader.$flag -isnot [bool] -or !$e.Reader.$flag){throw 'DumpOnly byte reader incomplete.'}
+    }
+    foreach($flag in 'dump_standalone_flac_validated','native_alias_index_verified','checksum_checksum_verified','playback_verified','ready'){
+        if($e.Reader.$flag -isnot [bool] -or $e.Reader.$flag){throw 'DumpOnly reader overclaims.'}
+    }
+    $pin=@($Plan.HashInputs|Where-Object Path -IEQ $Plan.InputFLAC)
+    if($pin.Count -ne 1 -or $e.DumpFlac.Path -ine $Plan.InputFLAC -or $e.DumpFlac.Bytes -ne 96394 -or
+        $e.DumpFlac.SHA256 -ine $pin[0].SHA256 -or $e.DumpFlac.Bytes -ne $pin[0].Bytes -or
+        $e.DumpFlac.Attributes -ne $pin[0].Attributes -or
+        ([datetimeoffset]$e.DumpFlac.ModifiedUtc).UtcTicks -ne ([datetimeoffset]$pin[0].ModifiedUtc).UtcTicks){throw 'Observed guarded dump identity differs.'}
+}
 function Assert-CodecDumpEvidence($Plan) {
+    if($Plan.InputProfile -ceq 'NativeDumpOnlyC'){Assert-CodecDumpOnlyEvidence $Plan;return}
     if($Plan.InputProfile -cne 'NativeDumpF'){return}
     # Called only after admission, retained guards and the exact state hash.
     $e=Get-Content -LiteralPath $Plan.NativeDumpState -Raw|ConvertFrom-Json
@@ -91,7 +136,7 @@ $jobSource=Join-Path $repo 'tools-source/asset-bridge/model/BuildJob.cs'
 $required=@($PSCommandPath,$worker,$plan.Codec,$plan.Python,$plan.InputFLAC,$plan.OriginalWAV,$plan.SourceManifest,
     $scheduler,$jobSource,(Join-Path $repo 'ops/Resource-Memory.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'),
     (Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'sdk/modding/beacon_tool_phase.py'))
-if($plan.InputProfile -ceq 'NativeDumpF'){$required+=,$plan.NativeDumpState}
+if($plan.InputProfile -cin @('NativeDumpF','NativeDumpOnlyC')){$required+=,$plan.NativeDumpState}
 $readme=Join-Path (Split-Path (Split-Path $plan.Codec)) 'README.txt'
 $allowed=@($required)+@($readme)
 if(@($plan.HashInputs).Count -gt $allowed.Count -or @($plan.HashInputs|Group-Object {$_.Path.ToLowerInvariant()}|Where-Object Count -NE 1).Count){throw 'Duplicate or extra codec pins refused.'}
@@ -236,7 +281,7 @@ finally {
         $state.ReadGuardsReleased=$true
         $qualified=($state.Status -ceq $profile.SuccessStatus -and $state.InputsUnchanged -and !$state.Quarantined -and !$state.RetainedLeaseToken)
         $state.ExternalDecoderVerified=($qualified -and $profile.Name -ceq 'OriginalSource')
-        $state.DumpDecodedByFFmpeg=($qualified -and $profile.Name -ceq 'NativeDumpF')
+        $state.DumpDecodedByFFmpeg=($qualified -and $profile.Name -cin @('NativeDumpF','NativeDumpOnlyC'))
         Save-CodecState
     }
     Save-CodecState
