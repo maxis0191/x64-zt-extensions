@@ -1531,3 +1531,46 @@ No runtime GO has been given yet. The old two-phase and P-only GOs stay closed.
 Any refusal, runtime error, source/identity drift or uncertain closure stops the
 proposed delegation. Q consumes the eighth V2 slot and ends this proposal even
 if another name is reported: no ninth input, next metadata, R or export follows.
+
+## CorePostGfx A and Q: accepted delegation consumed and fully closed
+
+The coordinator accepted the exact proposal and source from `06290cee`, with
+one qualification, one Q and zero runtime retries. Fresh 6/8 GiB admission
+preceded each phase. CorePostGfx A qualified the 267,200-byte input with observed
+SHA-256 `96a4f312a4d03b1201bd1bb7bb43187343bc6399c1ee58b2d98f4f93e8b0ee8d`.
+Two guarded passes read 534,400 bytes total and reverified metadata and identity.
+This proves neither depot provenance nor content compatibility. The host closed
+with observed guard counts zero, actual PTY 21195 exit 0 (`824cd3`) and independent
+absence of host 23860 and parent 2264 at 20:41:46 UTC. No payload was hashed after
+lease release.
+
+The first Q preparation script refused before creating its outputs: its broad
+`t7-catalog-p` substitution also changed the prefix of `t7-catalog-plan` into
+`t7-catalog-qlan`. The refused script and full correction diff are retained.
+Under the existing source-correction authorization, a separate corrected script
+restored the plan prefix and delimited attempt-path substitutions. Qualification
+was not repeated, and the runner, runtime gates and V2 policy were unchanged.
+All 43 prior bindings, seven bootstraps and 11 metadata rows remained identical.
+Default validation and captured arguments passed for 33 text bindings and eight
+receipts. The [qualification and preparation checkpoint](catalogue-core-post-gfx-qualified-q-preparation-20261012.json)
+records this source incident separately from runtime.
+
+The unique Q Run finished at 20:46:13 UTC as `Failed / NoCatalogue`, with natural
+native exit 0 and 3,122.89 ms reported elapsed. Input revalidation, tree closure
+and lease release passed; termination and quarantine were false. The closure
+helper changed exactly the three observed identity literals, preserving all
+140 variable occurrences, 32 commands and 850 nonliteral tokens. Its diff and
+hash were published before one invocation in the same host; no draft helper ran.
+
+Same-host postflight verified 12 metadata rows and 24 original/alias IDs, with
+no root, quarantine, heavy process or lease. PTY 74844 actually exited 0
+(`c21424`). The independent 20:50:08 UTC witness confirmed host 33364, parent
+23084 and native 34560 absent, zero clients/heavy processes/leases, unchanged
+stopped Main/UDP baseline and preserved Python identity. The
+[Q runtime checkpoint](catalogue-runtime-q-20261012.json) records these separate
+exit and absence proofs. Guard disposal evidence remains the pinned runner's
+finalization before wrapper return, not an independently observed guard counter.
+
+Analysis owner 51 was asked to interpret only the retained MSG after full closure.
+That interpretation is pending in this checkpoint. Q ends the delegated runtime
+work: no ninth input, new metadata, R or export follows this authorization.
