@@ -574,6 +574,9 @@ adapter: its default Plan mode verifies installed tools and source/provider pins
 without creating output, taking a resource snapshot, loading native helper types,
 reserving resources or starting a child. `-Run` is the future coordinated native
 entry point; source delivery does not authorize using it.
+World-owned PowerShell sources explicitly use LF through the local
+`.gitattributes`, preserving their exact hash pins after checkout. All ten world
+source pins were also checked against Git's checkout-filtered committed bytes.
 
 Compile one TU using the existing x64 MSVC/Windows SDK, `/std:c++20 /EHsc /MD /O1
 /W4 /D_CRT_SECURE_NO_WARNINGS`, explicit include/lib paths, `/INCREMENTAL:NO`,
