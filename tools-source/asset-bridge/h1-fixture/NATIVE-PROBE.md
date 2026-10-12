@@ -1,7 +1,9 @@
 # Prepared production-parser -> production-converter observation
 
-**One admitted compile/link produced an EXE, but the supervised Compile stage
-failed its deadline. The probe itself has never executed.** See the attempt below.
+**Compile B and a separately admitted Probe passed, with 111 native checks and
+confirmed original-tree closure/lease release. Compile A remains Failed.**
+The result covers extracted production methods with the declaration adapter;
+it does not validate the full CLI, complete materials, FF, rendering or retail imports.
 The existing full ZoneTool EXE has not been launched or changed. The original
 H1 XMB/XSB fixture and its light checks are described in [README.md](README.md).
 
@@ -16,7 +18,7 @@ must match. The local patch is an exact LF copy of the model owner's
 `zonetool-fab9358-h1-xsurface.patch`, SHA-256
 `e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0`.
 
-The future native flow is:
+The observed native flow is:
 
 1. Open the two original fixture files read-only while denying write/delete
    sharing, reject reparse paths and compare **all bytes** with the positive
@@ -65,8 +67,8 @@ observe the real string table. The parser bodies are unchanged. This probes
 those exact production methods and their real serialization/support routines;
 it does not validate the original class vtable, full ZoneTool initialization,
 stock DB fallback, command dispatch or whole-application linkage. Logging alone
-is adapted to `fprintf(stderr, ...)`. The compile/link below produced an EXE;
-runtime assertions and parser/converter execution remain unverified.
+is adapted to `fprintf(stderr, ...)`. Compile B and Probe below now verify this
+bounded method/ABI route, not the omitted whole-application integration.
 
 ## String and material limits remain explicit
 
@@ -205,8 +207,9 @@ added nine assertions against Plan C, including immutable-plan, core,
 provider and same-length source drift, lowered budgets and probe-before-compile
 refusals. These are **source/lifecycle checks, not a new real Job witness**.
 Those checks did not launch the H1 compiler or probe. The parent must review the
-final plan hash and grant each relevant native stage separately. The single
-Compile GO described below has been consumed; no retry or Probe GO was granted.
+final plan hash and grant each relevant native stage separately. Compile A's GO
+was consumed without a retry; Compile B and Probe subsequently received their
+own separate explicit authorizations, documented below.
 
 ## One admitted compile attempt, 2026-10-12
 
@@ -256,14 +259,15 @@ The retained local observer records the exact absolute launcher and argument
 array for the one invocation (`Run-H1Native.ps1`, Plan C/hash, `-Stage Compile
 -Run`), the compiler argument array, original child tuple, native receipt and
 post-run checks. No retry, Stage Probe, game, full CLI, FF or render test followed.
-The failed Compile receipt deliberately blocks Stage Probe. Next action is a
+The failed Compile receipt deliberately blocks Stage Probe. Its next action was
 source review of compiler ancillary-process handling and a new plan/GO; do not
 edit this receipt to promote the retained EXE into an accepted compile stage.
 
 ## Prepared correction: original compiler plus qualified telemetry closure
 
-This revision is **source-tested only**, after the failed attempt above. It does
-not reclassify that attempt or grant a retry/Probe authorization. It reuses the
+This revision was first source-tested after the failed attempt above; its
+successful native qualification is recorded below. It does not reclassify the
+failed attempt or implicitly grant further runs. It reuses the
 MaterialV2/GSC qualified policy: compiler success is necessary, while residual
 membership, identity and fresh post-stop closure need their own evidence.
 
@@ -328,4 +332,84 @@ method objects. The ordinary wait loop is tested to perform a new zero-active
 poll after the accepted stop; private-method calls and cached `Closed` alone
 are never accepted as closure evidence. None of these checks loads/emits the
 new native observer, acquires a lease, launches a compiler or retries the probe.
-Actual adapter/native behavior remains subject to independent review and a new GO.
+Those source checks alone did not prove actual adapter/native behavior. The
+separately reviewed Compile B below now exercises the successful closure path;
+the mocked fault cases are not reclassified as native fault-injection evidence.
+
+## Compile B and separately admitted Probe: 2026-10-12
+
+Both invocations used clean source `f20b1428d6d43e09e8b42b971a409171b5b0e963`
+and Plan F SHA-256
+`ce9d6d5805a4aa0b927a59002838d2203c9ef060ea5bb092040d4f8a360d76cf`.
+Each had a separate central GO and fresh atomic admission. There was one
+Compile B invocation, no retry, then one separately authorized Probe invocation
+using its retained EXE. The 59 inputs matched before and after; no shared source
+or fixture bytes changed. Both receipts report `Passed`, original exit 0,
+`TreeClosureConfirmed=true`, `LeaseReleased=true`, `Quarantined=false`.
+
+Compile B reserved 4/6 GiB and began its stage clock at `08:43:00.5823668Z`.
+The original `cl.exe` PID 25332 was created at `08:43:00.6950598Z` and exited 0.
+Two native captures at `08:43:03.2666302Z` and `08:43:03.3465747Z` independently
+reported one identical member: pinned `vctip.exe` PID 32984, parent 25332,
+creation `08:43:02.1503335Z`, `InOriginalJob=true`, no image/parent query error.
+After the original-job stop, a fresh root0/Active0 snapshot was captured at
+`08:43:03.3552283Z`, an empty member list at `08:43:03.3554510Z`, and the ordinary
+supervision loop independently observed root0/Active0 at `08:43:03.3604539Z`.
+Artifact acceptance took **2,850.3902 ms** from admission-stage start; cleanup
+and receipt preparation finished `08:43:03.6377276Z`. No deadline extension or
+PID/name kill was used. The two existing production `strcpy` C4996 warnings
+remain in stdout; stderr is empty.
+
+Compile receipt SHA-256:
+`91ceb86a85601f65cc2942a4adbe08c3dc99681e9b0bacd29ea0fce8682ffdfa`.
+Its EXE is 1,251,840 bytes, SHA-256
+`7271eaf3f2069a4f92587e02b6caa1775983dcadcb1dbfb0fda7ee4753ea7e01`.
+The six compile-stage files, including receipt, total **18,005,458 bytes**.
+
+Probe used a new 256/256 MiB Analysis reservation with the unchanged 15-second
+deadline. Its original PID 28164 was created at `08:46:37.6078022Z` and exited 0.
+It completed before CIM registration: that failed registration is preserved as
+`Original process differs from scheduler observation.`, and the explicit
+`Original job already empty before CIM registration` branch required original
+root/job closure. No missing/reused PID was adopted. Measured supervision elapsed
+was 272.3284 ms; final observation acceptance was **291.3531 ms**. The stage
+finished `08:46:38.0720612Z`, closed and released.
+
+The real native stdout reports **111 successful checks**. Together with the
+compiled static assertions, this proves the reviewed synthetic case covers:
+
+- H1 `XModel` 680 bytes, `XModelSurfs` 56, `XSurface` 264, packed vertex 32 and
+  rigid-list entry 16; IW7 `XModel` 736 and `XSurface` 256, plus selected offsets.
+- Production parsing of the exact 932-byte XMB and 1,328-byte XSB, one bone/root,
+  one LOD/surface, 24 vertices, 12 triangles and one rigid root group.
+- Actual returned parser objects passed to the production converters; fresh
+  model/group/vertex allocations, expected bounds/scale/counts, and observed
+  bind-pose/bone-info/topology/rigid-list aliases within allocator lifetimes.
+- Position, color, UV, normal and tangent transfer for all 24 vertices, literal
+  self-visibility result `0x01FE0100`, expected part bits/counts and absent
+  unsupported optional streams.
+- Parser-retained string `tag_origin` with numeric token still **zero**; material
+  name and LOD named reference observed, but technique and linked LOD geometry
+  intentionally still absent. These last checks establish limits, not completeness.
+
+Probe receipt SHA-256:
+`40cc0a14320a517c97f12765354522a64d9f471d7f14a713408f05688b6df1c0`.
+Stdout is 497 bytes, SHA-256
+`97e82008b1f684f016a09c9f5e4bb1364440fddc8cbcb6511a9118b4da35b30b`;
+stderr contains only the two parsing messages (101 bytes). Probe files total
+2,815 bytes; the full Compile B + Probe run is **18,008,273 bytes**, below 32 MiB.
+Memory values are reservations, not measured peaks.
+
+Fresh post-run process/registry observations found no remaining owned probe,
+compiler/telemetry/heavy process and no lease. Main retained PID 27784, creation
+`2026-10-12T00:52:28.7133740Z` and image SHA-256
+`408ecfaef8e3584769736878858ed225c4648249433e91caff3ad8c5c7efb9a7`.
+Local observer manifests retain absolute commands, full receipts and hashes;
+the sanitized checkpoint is [native-observation-2026-10-12.json](native-observation-2026-10-12.json).
+
+Full CLI/class-vtable integration, engine script-string resolution, complete
+material/technique/shaders, linked LOD dependencies, dump/FF, recipient loading,
+rendered appearance and retail-H1 compatibility remain unverified. The source-only
+contract/validation JSONs remain dated preparation evidence. No existing Failed
+receipt or acceptance boundary was rewritten. A next export/integration step
+requires a distinct source plan and authorization; this witness grants none.
