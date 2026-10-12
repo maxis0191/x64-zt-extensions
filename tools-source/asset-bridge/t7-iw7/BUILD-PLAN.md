@@ -641,3 +641,51 @@ loaded no native diagnostic type, hashed no binary and acquired no lease. It
 created neither an EXE nor a Passed build receipt. The coordinator and catalogue
 parser owner received this exact source/plan for review; the build still needs
 its own GO, and any later real catalogue run requires a separate reviewed plan.
+
+### Exit-context build A: Passed and fully closed, no candidate launch
+
+Independent review accepted source 55dde1d and the exact plan above. After the
+image fixture released the shared slot, the coordinator authorized one build.
+Fresh preflight at 14:56:52 UTC on 2026-10-12 found sufficient 4/6 GiB capacity,
+zero leases/builds, Main still stopped and the exact Python PID 23352 generation
+unchanged. The new persistent PowerShell host PID 21776 invoked the existing
+runner once; no retry or alternative compiler/link route was used.
+
+Main compiled under /W4 /WX in 3.334 seconds and Link completed in 2.948 seconds.
+Original roots cl PID 20668 and link PID 24764 both exited zero. The qualified H1
+telemetry policy closed both jobs and recorded zero active members afterward.
+Actual source dependencies passed the guarded-set check; Data.Source identifies
+the reviewed PreparedMain, with Windows path case normalized by MSVC. Final
+source/input revalidation passed. Total group elapsed time was 16.595 seconds;
+maximum observed output was 167,935,441 bytes, below the unchanged 256 MiB cap.
+
+Receipt `runtime/zt-t7-exit-context-a/receipt.json` is 14,488 bytes, SHA256
+3366373d1cf91e30634bfb3367133bee99771ca2b2cb9c794c7ced784cc9f6b0.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+with no quarantine. Its BuildProfile is exactly equal to the reviewed plan's
+profile, including ContextSchema and all four text pins. New artifacts under
+`runtime/zt-t7-exit-context-a` are:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| main/main.obj | 538,558 | 179d7ee84d84fdcc83c00587775aeea0914e34fea141ec673c3c83b279b08f67 |
+| main/compile.pdb | 1,732,608 | 05867f326e0e34abac9de0ea1faf5c3ce988283f37554435bf6abd6457e9b67b |
+| main/dependencies.json | 61,947 | 82ebe404731828932c65e6752c4365f465365596d44d6685e93309645507f414 |
+| link/zonetool-t7.exe | 21,744,640 | f3408671d392b97e3ca09bc3e6e294c761813feccd18d8a1aaa4920874be2847 |
+| link/zonetool-t7.pdb | 136,482,816 | cfc51daed1e5ca49379e413949bd88362c36f3239c188868f26847d464729854 |
+| link/zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| link/zonetool-t7.exp | 3,927 | 6c93e70042f25bc473a38799d73d0e9740756c76861e24f66ccf81d5696ce9fc |
+
+Postflight at 14:58:26 UTC found zero leases/build/telemetry processes, Main still
+stopped and Python's exact identity preserved. The retained host verified the
+exact Passed receipt and absence of AppDomain quarantine, saved its outcome and
+exited zero. Independent observation at 14:58:52.3190650 UTC confirmed PID 21776
+absent. All four pre/postflight and host outcome/exit records remain in
+`runtime/t7-exit-context-build-plan-a`. The coordinator and catalogue owner received
+these new pins and complete closure proof for the separately reviewed Plan E.
+
+CandidateExecuted and Ready remain false. Compilation validates the new C++/SEH
+syntax and linkage, not actual memory/stack capture behavior, the cause of the
+engine exit, catalogue generation or gameplay. No candidate or engine was
+launched by this build. The separate runtime parser correction does not change
+this qualified build; future runtime acceptance must bind its own reviewed plan.
