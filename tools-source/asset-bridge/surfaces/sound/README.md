@@ -1,9 +1,11 @@
 # Original PCM sound source adapter
 
-Latest checkpoint, 2026-10-12: the single authorized FFmpeg decode passed against
-the retained original source B. PCM and the complete resulting WAV match the
-original exactly. See the final section and `codec-checkpoint-2026-10-12.json`.
-SAB/FF creation, delivery and audible game acceptance remain unverified.
+Latest checkpoint, 2026-10-12: the single authorized SAB/FF F transaction passed
+build, verify, dump and independent read using the corrected native candidate.
+The original PCM checksum is now correct; the sixteen checksum bytes are the
+only SABL difference from the preserved failed run. See
+[SAB-FF-F-RESULT.md](SAB-FF-F-RESULT.md) and its sanitized checkpoint.
+Delivery and audible game acceptance remain unverified; `Ready` stays false.
 
 This source-only adapter prepares an original short WAV, lossless FLAC sample,
 one IW7 alias and a bank/zone source inventory. It does not build a sound bank,
@@ -497,7 +499,11 @@ The original state, artifacts and logs remain unchanged. `Ready` and
 native probe and incremental build history are recorded in
 [`native-checksum/README.md`](native-checksum/README.md). Subsequently, Build F
 completed all fourteen native steps, both C++ checksum probes, final artifact
-proof and safe closure; its exact candidate has not yet run the sound transaction.
+proof and safe closure.
 [SAB-FF-CANDIDATE-F.md](SAB-FF-CANDIDATE-F.md) records the prepared minimal binding
-to the existing four phases. Another native sound attempt requires separate
-reviewed source, complete admission and a new explicit GO.
+to the existing four phases. A separate GO then authorized one SAB/FF F cycle:
+all four phases passed, including the unchanged independent reader, and all
+managed inputs were restored before the host exited zero. The failed first run
+remains failed and unchanged. [SAB-FF-F-RESULT.md](SAB-FF-F-RESULT.md) records the
+new byte-level proof and remaining delivery/playback exclusions. Any further
+native cycle requires separate review, complete admission and a new explicit GO.

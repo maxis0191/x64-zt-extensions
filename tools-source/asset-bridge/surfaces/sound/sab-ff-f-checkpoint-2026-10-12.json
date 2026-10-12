@@ -1,0 +1,603 @@
+{
+  "schema": "iw7.original-sound-sab-ff-checkpoint/1",
+  "status": "SoundSABAndFFBytesVerified",
+  "execution_source_commit": "d9a0e966d71775e47b8e3f1549347bc0a4de5831",
+  "review_plan": {
+    "bytes": 16530,
+    "sha256": "5c0a3b4799fb3d9e2a998188ac61a213d89b75c515218cbef4843d5794f54b5b"
+  },
+  "execution_plan": {
+    "bytes": 66270,
+    "sha256": "3d90a5746a8ee698fb08715e270f2855f261b318393257f91a9e7f59e3ad39d5"
+  },
+  "execution_command": {
+    "bytes": 1049,
+    "sha256": "2009fda548d75eaf7f32ba2b1023e106550c8262dfb918917adecb66dbd726f7"
+  },
+  "authorized_runs": 1,
+  "actual_runs": 1,
+  "retry_count": 0,
+  "started_utc": "2026-10-12T15:29:34.9442757Z",
+  "returned_utc": "2026-10-12T15:30:01.4697712Z",
+  "physical_estimate_bytes": 8589934592,
+  "commit_estimate_bytes": 11811160064,
+  "physical_reserve_bytes": 0,
+  "commit_reserve_fraction": 0.2,
+  "new_output_stop_bytes": 67108864,
+  "per_pipe_log_limit_bytes": 2097152,
+  "native_phase_timeout_seconds": 240,
+  "reader_timeout_seconds": 30,
+  "final_decision_allowance_seconds": 5,
+  "job_drain_limit_ms": 2000,
+  "failure_cleanup_seconds": 15,
+  "tool_sha256": "4740f0c22a1a7bab0b01f7a55ec0b133263ac218825ac3c0d15b9e269fe472b0",
+  "tool_bytes": 21696512,
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "candidate_build_receipt": {
+    "bytes": 413367,
+    "sha256": "a8253c8efa5b315c7870f27c6732eb6893528c0bd4c8ad3ddcbe7dde407faf62"
+  },
+  "candidate_build_state": {
+    "bytes": 6864,
+    "sha256": "5a99ed368636d08d1d4407e3125cab73f5da879344880588c6aa54efcb556ed8"
+  },
+  "failure": null,
+  "phases": [
+    {
+      "phase": "build",
+      "root_exit_code": 0,
+      "child_exit_code": 0,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T15:29:41.9090949Z",
+      "closure_elapsed_ms": 5718,
+      "drain_elapsed_ms": 125,
+      "post_receipt_elapsed_ms": 5734,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": true,
+      "spec": {
+        "bytes": 787,
+        "sha256": "43a441b0ea1d72bc94bd6e1d411ed63a9ac704bd5979a06c2e4d5457ce5d7873"
+      },
+      "phase_receipt": {
+        "bytes": 295,
+        "sha256": "fc1a265d8ecd3217b46ff97346e6681fe9573823a5a42abebb6ac9f871476963"
+      },
+      "sound_receipt": {
+        "bytes": 321,
+        "sha256": "eb511bd08b95db6cdfeecc0476ac168d55547ddf93574b4c45fb60797d889913"
+      },
+      "stdout": {
+        "bytes": 1526,
+        "sha256": "c7c2c7740235438b4cf77e384cef73768b09967fc5de154660673c72ed3b1cd8"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "phase": "verify",
+      "root_exit_code": 0,
+      "child_exit_code": 0,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T15:29:47.6833724Z",
+      "closure_elapsed_ms": 3719,
+      "drain_elapsed_ms": 0,
+      "post_receipt_elapsed_ms": 3734,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": true,
+      "spec": {
+        "bytes": 790,
+        "sha256": "282e80c88e931a5597d1c72aa75d42c8b4f8523ef535979d6c8ca787ca2aced6"
+      },
+      "phase_receipt": {
+        "bytes": 296,
+        "sha256": "eeed4bde921a4fda7e265918709f715e7d681ffd27e0a13008da80cad4523c08"
+      },
+      "sound_receipt": {
+        "bytes": 322,
+        "sha256": "5af23a5cb6faa2a575bb8333d86e957472dec9eecccde56840da164544a87209"
+      },
+      "stdout": {
+        "bytes": 813,
+        "sha256": "6eea5fbf6a6e71c4a34a5e865be8ae4c381689e0a05a8223cea4fdbe3bb3ff3c"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "phase": "dump",
+      "root_exit_code": 0,
+      "child_exit_code": 0,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T15:29:51.4196023Z",
+      "closure_elapsed_ms": 4000,
+      "drain_elapsed_ms": 15,
+      "post_receipt_elapsed_ms": 4000,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": true,
+      "spec": {
+        "bytes": 784,
+        "sha256": "8bad2ef936fdc0bec38092e05d311c122b47aa22cf69ad71b6cff6ed394b92f2"
+      },
+      "phase_receipt": {
+        "bytes": 294,
+        "sha256": "a76bd09f5be1964caccd96e12cd043f9e487a38c22fec60cb7e1f0f67a9c0101"
+      },
+      "sound_receipt": {
+        "bytes": 320,
+        "sha256": "a98f82c2997ca9273f32fcc2a0868a6d9d4343631c5949edf3b6e35bc4b2361e"
+      },
+      "stdout": {
+        "bytes": 690,
+        "sha256": "3d83815f7bf82cf78497da2c9852c7b65edc2fb0f1a07a61cf681e65156b1d36"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "phase": "read",
+      "root_exit_code": 0,
+      "child_exit_code": 0,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T15:29:55.4240748Z",
+      "closure_elapsed_ms": 438,
+      "drain_elapsed_ms": 16,
+      "post_receipt_elapsed_ms": 438,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": true,
+      "spec": {
+        "bytes": 1619,
+        "sha256": "a465ffb54ea52077f8daa058b8b4fb1acf0de6b2dfd8e2c3fcd73ac86e464803"
+      },
+      "phase_receipt": {
+        "bytes": 293,
+        "sha256": "b3f068f855abe85bf070f91918a347930b08a8674446c39d9a41fb927291be0b"
+      },
+      "sound_receipt": {
+        "bytes": 320,
+        "sha256": "aa3f4c2e9cece01ac714dbccf0d6ccf710113d372c71fd235fcd1961f7c3beaf"
+      },
+      "stdout": {
+        "bytes": 1418,
+        "sha256": "184383478ce6a9cff493e61d718dfc55b3ea788e9fd01b27e2414dad24c0f6c3"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "relative": "zone/sdk_original_sound_v1.ff",
+      "bytes": 544,
+      "sha256": "13e878aeec2c545d5e6c8c02a6b75eb6061fd1bec14c9199450ef6a45e135900"
+    },
+    {
+      "relative": "zone/sdk_original_sound_v1.sabl",
+      "bytes": 114816,
+      "sha256": "e0ce851bc7264a03d06e6ca2a44d15d424f1f4c01957ab0dda915879ca4d0110"
+    },
+    {
+      "relative": "zone/sdk_original_sound_v1.sabs",
+      "bytes": 4096,
+      "sha256": "e490efefe70da393fd7830102637f3e0df12f6b6b0945e8c54cada2a6fef3b6f"
+    }
+  ],
+  "independent_reader": {
+    "schema": "iw7.original-sound-sab-read/1",
+    "status": "SABBytesVerified",
+    "loaded": {
+      "bytes": 114816,
+      "sha256": "e0ce851bc7264a03d06e6ca2a44d15d424f1f4c01957ab0dda915879ca4d0110",
+      "entries": 1,
+      "payload_bytes": 96348,
+      "payload_md5_verified": true,
+      "pcm_md5_verified": true,
+      "pcm_sha256": "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9",
+      "seek_points": 12,
+      "frames": 12,
+      "samples": 48000
+    },
+    "streamed": {
+      "bytes": 4096,
+      "sha256": "e490efefe70da393fd7830102637f3e0df12f6b6b0945e8c54cada2a6fef3b6f",
+      "entries": 0
+    },
+    "alias": "community_original_chime_v1",
+    "source_alias_verified": true,
+    "alias_id": 1489483025,
+    "asset_id": 1496246593,
+    "source_alias_matches_sab_asset": true,
+    "dump_alias_values_verified": true,
+    "inventory_verified": true,
+    "inventory_asset_count": 2,
+    "dump_seek_frame_bytes_verified": true,
+    "dump_streaminfo_rewritten": true,
+    "dump_standalone_flac_validated": false,
+    "native_alias_index_verified": false,
+    "expected_single_alias_index": {
+      "value": 0,
+      "next": 65535
+    },
+    "checksum_checksum_verified": false,
+    "checksum_checksum_kind": "writer 16xCC placeholder",
+    "separate_reader": true,
+    "source_recheck": "sequential size/hash snapshots",
+    "input_bytes_read_including_recheck": 824974,
+    "playback_verified": false,
+    "ready": false
+  },
+  "previous_failed_run": {
+    "state": {
+      "bytes": 63197,
+      "sha256": "c1b532dc3d61f0408f3ec4202e93fdf2d6394b0209ed3b2b9d2cdaaed7098276"
+    },
+    "status": "Failed",
+    "failure": "Closed successful exact native phase required.",
+    "reader_failure": "SAB PCM checksum mismatch",
+    "reader_failure_location": "read_sab.py:190",
+    "unchanged": true
+  },
+  "comparison_with_failed_run": {
+    "sabl_changed_byte_count": 16,
+    "changed_range_start_inclusive": 110592,
+    "changed_range_end_exclusive": 110608,
+    "old_pcm_md5_field": "78000000000000000000000000000000",
+    "new_pcm_md5_field": "24fe5af1473ea8f4be33912348210c78",
+    "all_sabl_bytes_outside_pcm_md5_field_identical": true,
+    "ff_identical": true,
+    "sabs_identical": true
+  },
+  "transaction": {
+    "hash_input_count": 40,
+    "staged_input_count": 77,
+    "stock_inputs": 72,
+    "stock_hardlinks": 71,
+    "stock_sentinel_copy_bytes": 77,
+    "saved_entry_count": 80,
+    "final_state_fields": {
+      "JobClosureVerified": true,
+      "JobDisposeCompleted": true,
+      "Restored": true,
+      "StockPreserved": true,
+      "RestorationStatus": "Confirmed",
+      "SourceHashesUnchanged": true,
+      "ReadGuardsReleased": true,
+      "Quarantined": false,
+      "RetainedLeaseToken": null,
+      "CleanupError": null
+    }
+  },
+  "accounting": {
+    "status": "Converged",
+    "final_bytes": 1404291,
+    "max_observed_bytes": 1522299,
+    "file_count": 51,
+    "scope": "RunRoot file lengths after state write; only verified staged hardlinks excluded; snapshot, not continuous disk maximum",
+    "not_a_filesystem_quota": true,
+    "manual_host_check_correction": "First host recount omitted hidden files; Force recount equals sealed final bytes; no native retry or state change.",
+    "omitted_hidden_file_bytes": 4,
+    "initial_manual_visible_total": 1404287
+  },
+  "postflight": {
+    "observed_utc": "2026-10-12T15:32:19.7453009Z",
+    "host_final_checks_utc": "2026-10-12T15:31:47.4167097Z",
+    "host_final_checks_passed": true,
+    "exec_exit_code": 0,
+    "host_and_four_phase_roots_absent": true,
+    "heavy_and_lab_count": 0,
+    "lease_count": 0,
+    "main_baseline": "Stopped",
+    "main_helper_revision": "5707abd",
+    "main_pid_image_and_udp_absent_before_and_after": true,
+    "main_restart_performed": false,
+    "main_stop_cause": "Unknown",
+    "unrelated_python_original_identity_preserved": true
+  },
+  "local_evidence": {
+    "state": {
+      "bytes": 65117,
+      "sha256": "d0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9"
+    },
+    "preinvoke": {
+      "bytes": 730,
+      "sha256": "545d95081d4dcac3a2676f9496aa1f821544c7ec2c9ec338b370361f08606dfd"
+    },
+    "host_outcome": {
+      "bytes": 598,
+      "sha256": "df04799c16bf9c488763c210b017e8069ebe0f4fbc5631093bc022a7c39ce7ae"
+    },
+    "postflight": {
+      "bytes": 1596,
+      "sha256": "b6b6b6700027d522336e023c768087389bc664d378568085d40fba6f048d824d"
+    },
+    "run_file_inventory": [
+      {
+        "relative": "artifacts/sdk_original_sound_v1.ff",
+        "bytes": 544,
+        "sha256": "13e878aeec2c545d5e6c8c02a6b75eb6061fd1bec14c9199450ef6a45e135900"
+      },
+      {
+        "relative": "artifacts/sdk_original_sound_v1.sabl",
+        "bytes": 114816,
+        "sha256": "e0ce851bc7264a03d06e6ca2a44d15d424f1f4c01957ab0dda915879ca4d0110"
+      },
+      {
+        "relative": "artifacts/sdk_original_sound_v1.sabs",
+        "bytes": 4096,
+        "sha256": "e490efefe70da393fd7830102637f3e0df12f6b6b0945e8c54cada2a6fef3b6f"
+      },
+      {
+        "relative": "backup/recovery.local.json",
+        "bytes": 8825,
+        "sha256": "e0322f0b074d6b8762b9ba7f1cc245f7edfefe2912f4d52817a8e85e35fc3ce2"
+      },
+      {
+        "relative": "build-spec.json",
+        "bytes": 787,
+        "sha256": "43a441b0ea1d72bc94bd6e1d411ed63a9ac704bd5979a06c2e4d5457ce5d7873"
+      },
+      {
+        "relative": "dump-spec.json",
+        "bytes": 784,
+        "sha256": "8bad2ef936fdc0bec38092e05d311c122b47aa22cf69ad71b6cff6ed394b92f2"
+      },
+      {
+        "relative": "logs/build/phase.json",
+        "bytes": 295,
+        "sha256": "fc1a265d8ecd3217b46ff97346e6681fe9573823a5a42abebb6ac9f871476963"
+      },
+      {
+        "relative": "logs/build/sound-phase.json",
+        "bytes": 321,
+        "sha256": "eb511bd08b95db6cdfeecc0476ac168d55547ddf93574b4c45fb60797d889913"
+      },
+      {
+        "relative": "logs/build/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "relative": "logs/build/stdout.log",
+        "bytes": 1526,
+        "sha256": "c7c2c7740235438b4cf77e384cef73768b09967fc5de154660673c72ed3b1cd8"
+      },
+      {
+        "relative": "logs/dump/phase.json",
+        "bytes": 294,
+        "sha256": "a76bd09f5be1964caccd96e12cd043f9e487a38c22fec60cb7e1f0f67a9c0101"
+      },
+      {
+        "relative": "logs/dump/sound-phase.json",
+        "bytes": 320,
+        "sha256": "a98f82c2997ca9273f32fcc2a0868a6d9d4343631c5949edf3b6e35bc4b2361e"
+      },
+      {
+        "relative": "logs/dump/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "relative": "logs/dump/stdout.log",
+        "bytes": 690,
+        "sha256": "3d83815f7bf82cf78497da2c9852c7b65edc2fb0f1a07a61cf681e65156b1d36"
+      },
+      {
+        "relative": "logs/read/phase.json",
+        "bytes": 293,
+        "sha256": "b3f068f855abe85bf070f91918a347930b08a8674446c39d9a41fb927291be0b"
+      },
+      {
+        "relative": "logs/read/sound-phase.json",
+        "bytes": 320,
+        "sha256": "aa3f4c2e9cece01ac714dbccf0d6ccf710113d372c71fd235fcd1961f7c3beaf"
+      },
+      {
+        "relative": "logs/read/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "relative": "logs/read/stdout.log",
+        "bytes": 1418,
+        "sha256": "184383478ce6a9cff493e61d718dfc55b3ea788e9fd01b27e2414dad24c0f6c3"
+      },
+      {
+        "relative": "logs/verify/phase.json",
+        "bytes": 296,
+        "sha256": "eeed4bde921a4fda7e265918709f715e7d681ffd27e0a13008da80cad4523c08"
+      },
+      {
+        "relative": "logs/verify/sound-phase.json",
+        "bytes": 322,
+        "sha256": "5af23a5cb6faa2a575bb8333d86e957472dec9eecccde56840da164544a87209"
+      },
+      {
+        "relative": "logs/verify/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "relative": "logs/verify/stdout.log",
+        "bytes": 813,
+        "sha256": "6eea5fbf6a6e71c4a34a5e865be8ae4c381689e0a05a8223cea4fdbe3bb3ff3c"
+      },
+      {
+        "relative": "read-spec.json",
+        "bytes": 1619,
+        "sha256": "a465ffb54ea52077f8daa058b8b4fb1acf0de6b2dfd8e2c3fcd73ac86e464803"
+      },
+      {
+        "relative": "state.local.json",
+        "bytes": 65117,
+        "sha256": "d0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9"
+      },
+      {
+        "relative": "verify-spec.json",
+        "bytes": 790,
+        "sha256": "282e80c88e931a5597d1c72aa75d42c8b4f8523ef535979d6c8ca787ca2aced6"
+      },
+      {
+        "relative": "work/__iw7_ship",
+        "bytes": 4,
+        "sha256": "039f92d01e0f1907d40e144aeeeb39475415b3ab75a3732bdec07e9255d9231c"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sdk_original_sound_v1",
+        "bytes": 28,
+        "sha256": "5134b43e15050642b55c451012b42b1d9821364f92a55e7dab679e5edb9b8e8c"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sdk_original_sound_v1.csv",
+        "bytes": 72,
+        "sha256": "b4be61d8a859cff25cc000c63de35eb6f7eda2fe964289de471ada232c0f7f6c"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.adsr.csv",
+        "bytes": 82,
+        "sha256": "7937237ff3f40ee44d42c7c35f05374580a17ae01f9c5a94c40ee6d45cfe1c09"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.adsrZoneNPC.csv",
+        "bytes": 40,
+        "sha256": "f4f912275d885ae6f1a245095292b03a8b62baccb85e6137322bb6f585475c2f"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.adsrZonePlayer.csv",
+        "bytes": 43,
+        "sha256": "20a92f95a916c7342937eeee1f209056cb2997f99e98f0fde1adfa2b92f1078e"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.aliases.csv",
+        "bytes": 1111,
+        "sha256": "16276cdb0f980d95503f21b798a16284b7ee39a12c407c94aa789b1ba7ac9327"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.ambient.csv",
+        "bytes": 52,
+        "sha256": "c92a10a567d1d6a6539a3ab10fe770b0dc0c3eec598e751f42c63c7be10568ae"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.ambientElement.csv",
+        "bytes": 59,
+        "sha256": "cb70c5b5ce60f6506c09eeb99752700e9bfa38b860759dec607c53bed2504598"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.ambientEvent.csv",
+        "bytes": 29,
+        "sha256": "4d26cc445272cf21ad7c6ae7590e2d8414d36ee46dee50a69e726060d1696650"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.filters.csv",
+        "bytes": 39,
+        "sha256": "13e8e5664fa114edd3e174146bb850de38c18fa7c4d2afb857a6758926b9413f"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.fullOcclusions.csv",
+        "bytes": 28,
+        "sha256": "a5c69711f5802cd8d95cfa380fe8822865cb9da6871c13ae302b76890f14e607"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.mixes.csv",
+        "bytes": 28,
+        "sha256": "49e16cc3a2a0984d63590d816e858d5c82d960a907fa2252e51eb02d9a575773"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.occlusionFilters.csv",
+        "bytes": 105,
+        "sha256": "5dddbd7992b57d917402ac96014fc2fd6039c7577d6881a0717502d8dd930118"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.playerBreathStates.csv",
+        "bytes": 45,
+        "sha256": "0558082ae03955503a12731f9fdcd62483be468432e167c6353a97eee1a67e61"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.reverbs.csv",
+        "bytes": 53,
+        "sha256": "f57b04164d338130208170441ab38894d2edf3f5bdd0a3564e2469d8156d2da5"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.sendEffectParams.csv",
+        "bytes": 170,
+        "sha256": "b8bef5da65af1724e49e7e3d55fc2fa1bf03b59ce9570ab6ac6146ae2ecbdbd4"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.timescales.csv",
+        "bytes": 38,
+        "sha256": "8465b1bf8b28bd9c461269b1f0e425777f98596293cccab5625009b3b1d5027d"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/community_original_sound_v1.all.zone.csv",
+        "bytes": 543,
+        "sha256": "cb9740204af096b9e9640400936a60fedf6d93586dd953d95028b55ff7439ebc"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound/unk/community_original_sound_v1.all.json",
+        "bytes": 4,
+        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/sound_assets/community/original_chime_v1.flac",
+        "bytes": 96394,
+        "sha256": "a4e9276568dfeaf42d39deefe243b1efc2b9095b2f558bcb3512b98c417154d9"
+      },
+      {
+        "relative": "work/dump/sdk_original_sound_v1/soundbank/community_original_sound_v1.all.json",
+        "bytes": 1710,
+        "sha256": "b8d74de60331d33dfd6323bd9b45075af89f1b61dbff5749e7b0900408f3882a"
+      },
+      {
+        "relative": "work/main/data0.dcache",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "relative": "work/main/data1.dcache",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "relative": "work/main/toc0.dcache",
+        "bytes": 549664,
+        "sha256": "054a405f6bc9f6f30cc1246db6ff7aaafdcfcc363c40a6f81a31479d7bf53183"
+      },
+      {
+        "relative": "work/main/toc1.dcache",
+        "bytes": 549664,
+        "sha256": "054a405f6bc9f6f30cc1246db6ff7aaafdcfcc363c40a6f81a31479d7bf53183"
+      }
+    ]
+  },
+  "codec_repeated": false,
+  "game_launched": false,
+  "server_deployed": false,
+  "delivered": false,
+  "playback_verified": false,
+  "owner_acceptance": false,
+  "ready": false,
+  "scope_limit": "One original loaded SAB entry, empty streamed bank, native FF verify/dump and independent PCM byte verification only.",
+  "next_action": "Coordinator review and GitHub integration of this byte-verified checkpoint; any playback, delivery or further native cycle requires its own reviewed plan and explicit GO."
+}
