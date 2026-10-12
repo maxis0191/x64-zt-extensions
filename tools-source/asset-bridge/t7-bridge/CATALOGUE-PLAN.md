@@ -1292,3 +1292,34 @@ The [source preparation checkpoint](catalogue-core-gfx-preparation-o-20261012.js
 keeps all runtime/compatibility flags false and requires a new explicit GO after
 independent review. V2, the bounded reader, runtime candidate and operational
 source pins remain unchanged; no V3 policy or guessed inventory is adopted.
+
+## Distinct CoreGfxA qualification closed; O awaits its own GO
+
+After independent review, the coordinator authorized CoreGfxA alone. The previous
+batch remains stopped. Fresh admission at 19:43:49 UTC passed with 6/8 GiB,
+zero heavy/client/lease counts and unchanged Main/Python identities. Its unique
+qualification completed at 19:43:57 UTC: two guarded 6,105,536-byte passes,
+12,211,072 bytes total, with final metadata, identity and hash revalidation.
+Guards and lease closed, quarantine was absent and no engine was executed.
+PTY 59923 actually exited 0 (`2dc139`). The independent 19:44:41 UTC witness
+confirmed host/parent absence and zero heavy/client/lease counts. No payload
+hash was read after release. This is identity/hash evidence, not compatibility.
+
+Using that real receipt, Plan O is now sealed under V2 with six bootstraps,
+74,300,608 bytes, 40 bindings, ten metadata rows and a 202,110,040-byte output
+ceiling. Default validation and actual host/runner argument capture pass with
+no payload hash, native load, lease or runtime files. Host initialization and
+dispatch retain the exact N global names. O has not been launched.
+
+The review-only O closure draft changes literal paths, plan hash/length and
+counts. Its 140 variable occurrences, 32 command occurrences and 850 nonliteral
+tokens are identical to the corrected N helper. The complete diff is retained.
+The historical N host/native identity literals are explicitly still present;
+they are not invented future identities. Before invocation, bind the actually
+observed O identities, publish the new hash and inspect that literal-only delta.
+The draft is not execution-ready. A separate O GO remains required after review.
+
+The [qualification and O preparation checkpoint](catalogue-core-gfx-qualified-o-20261012.json)
+records the distinct authorization, actual closure/PTY/absence proof and sealed
+Plan/dispatch/helper-draft pins. Operational V2 source, reader and candidate
+remain unchanged. No compatibility, catalogue or export is claimed.
