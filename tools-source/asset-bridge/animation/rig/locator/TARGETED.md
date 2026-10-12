@@ -1,9 +1,34 @@
 # Targeted candidate continuation, Plan C
 
-This is source and inert Plan preparation only. The coordinator has not given
-Run C or attachment permission. Run B's original files, hashes and failure-free
+The initial checkpoint below was source and inert Plan preparation only. A later
+separate GO authorized exactly one Run C, whose failed partial result is recorded
+below; it did not authorize a retry or attachment. Run B's original files, hashes and failure-free
 lifecycle receipt remain unchanged. The engine chat received the candidate and
 its limitations through the coordinator; this did not grant a live probe GO.
+
+## Run C: bounded refusal, 2026-10-12
+
+The [sanitized Run C receipt](run-c-validation-2026-10-12.json) records one
+invocation at source `7551e64`. It exited 2 with `absent or ambiguous pdata
+ownership` after decoding three ranges / 267 bytes / 53 instructions and
+visiting 29 instructions. There were eight recorded control edges and zero
+global opcode scans. The original job closed with Active=0, all guarded inputs
+were unchanged, the lease was released and Main was unchanged. Two output files
+total 14,607 bytes; the 14,614-byte maximum includes an earlier, longer state.
+
+The last recorded jump leaves the three ranges after stack/register restoration
+and targets `0x1400a1240`. It is a candidate shared external tail, not a proved
+leaf or named function. C did not serialize the refusing frontier's address or
+distinguish missing from ambiguous ownership; its generic error is preserved.
+
+The independent conditional fallthrough enters the adjacent range at
+`0x140a179de`. The retained decoded body contains a header count at `+0x10`,
+a count multiplied by 256 before a call, and a per-record loop calling
+`0x140a17e70` while advancing by `0x100`. These are report-only structural clues,
+not a new scan or established XSurface symbol/base. C stopped before visiting
+most of that body. Its `reachable_in_static_walk=false` means not visited before
+termination, not proved unreachable. No first writer or live compatibility is
+established, and the failed output must not be relabeled as a completed route.
 
 The sole entry is `0x140a17970`, the common callee immediately before the
 type-7 wrapper in the two Run B caller fragments. This is a snapshot address,
