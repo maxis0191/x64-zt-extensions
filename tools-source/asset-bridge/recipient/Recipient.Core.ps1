@@ -61,8 +61,8 @@ function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$
     $inputs=@(Get-FFStockBindingInputs $stock $observation $reviewed $Spec.StockRoot $Spec.StockReceiptSHA256 $Spec.ReviewedStockManifestSHA256)
     foreach($entry in $inputs){$entry|Add-Member NoteProperty BaselineMode $entry.Mode;$entry.Mode=if($entry.Relative -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'}}
     $requests=@(
-        @{Relative='recipient-material.csv';Source=(Join-Path $Spec.RequestRoot 'recipient-material-requests.csv');SHA256=$Spec.MaterialRequestSHA256},
-        @{Relative='recipient-scripts.txt';Source=(Join-Path $Spec.RequestRoot 'recipient-script-requests.txt');SHA256=$Spec.ScriptRequestSHA256})
+        [ordered]@{Relative='recipient-material.csv';Source=(Join-Path $Spec.RequestRoot 'recipient-material-requests.csv');SHA256=$Spec.MaterialRequestSHA256},
+        [ordered]@{Relative='recipient-scripts.txt';Source=(Join-Path $Spec.RequestRoot 'recipient-script-requests.txt');SHA256=$Spec.ScriptRequestSHA256})
     foreach($entry in $requests){Assert-BeaconHash $entry.Source $entry.SHA256;if((Get-Item -LiteralPath $entry.Source).Length -gt 4096){throw 'Recipient request too large.'}}
     $expected="material,mopw/character_park_clown_zombie_shoes`ntechset,mopw_l_sm_replace_i0c0s0o0n0p0`nimage,park_clown_zombie_shoes_n_3e46d100_packed_nog`nimage,park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs`n"
     if([IO.File]::ReadAllText($requests[0].Source).Replace("`r`n","`n") -cne $expected -or

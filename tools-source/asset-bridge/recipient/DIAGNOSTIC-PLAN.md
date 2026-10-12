@@ -202,6 +202,12 @@ coordinator's one GO. The original job must be closed with zero members before
 source-preserving restoration and release; no successful diagnostic observation
 can substitute for that lifecycle proof.
 
+The first B planning repeat had equal values but different raw hashes because
+ordinary PowerShell request hashtables changed JSON property order across hosts.
+Those two local plans and their canonical-equality comparison are retained.
+Request maps now have explicit ordering so the reviewed plan can be compared
+byte-for-byte across fresh hosts; this changes no native request or argument.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256
