@@ -1,0 +1,59 @@
+{
+  "schema": "iw7.sound-standard-mod-capacity-checkpoint/1",
+  "date": "2026-10-12",
+  "source_commit": "e73f2de26b6e03aa67f1dd2db0a61b46980bc74e",
+  "status": "CapacityRefusedBeforeRun",
+  "plan_sha256": "96dd7599ea3b29f85474e0b46bea136362341b339a92c616e4b83bacbef81feb",
+  "command_sha256": "5f2e9ce0acc00e807c375c3c5f423fe51ff2064ddbca7f00279bb7a3018b2e23",
+  "dispatch_sha256": "e898948e2bae0b3fce07e7b66ed7cbaa2ded084a35a912e75afd4c22801aecea",
+  "preflight": {
+    "utc": "2026-10-12T19:15:14.8495544Z",
+    "receipt_sha256": "e6c3b82f07ea2b91c57f586d95d6081979466026311c2587bedf314a1292fcab",
+    "actual_exit_code": 1,
+    "physical_budget_bytes": 8589934592,
+    "commit_budget_bytes": 11811160064,
+    "physical_available_bytes": 15626366976,
+    "committed_bytes": 26479996928,
+    "commit_limit_bytes": 47564615680,
+    "required_commit_reserve_bytes": 9512923136,
+    "projected_commit_deficit_bytes": 239464448,
+    "budget_lowered": false
+  },
+  "independent_observation": {
+    "utc": "2026-10-12T19:15:54.0100432Z",
+    "receipt_sha256": "8cdf1e28e642ad8cdfd058a7ed206bd8dae1f563f49b1c3d8a2a8de8d0193ca4",
+    "observer_exit_code": 0,
+    "heavy_processes": 0,
+    "leases": 0,
+    "game_processes": 0,
+    "main_udp_endpoints": 0,
+    "run_root_absent": true,
+    "unrelated_python_preserved": true
+  },
+  "execution": {
+    "native_run_invocations": 0,
+    "admission_acquisitions": 0,
+    "persistent_host_launched": false,
+    "payload_reads": 0,
+    "compiler_c_rebuilt": false,
+    "standard_package_produced": false,
+    "standard_package_validated": false,
+    "native_fix_validated": false,
+    "playback_verified": false,
+    "plan_consumed": false,
+    "prior_go_closed_by_refusal": true,
+    "retry_authorized": false,
+    "ready": false
+  },
+  "historical_f_memory_evidence": {
+    "bounded_read": "Existing build/verify/dump/read phase.json receipts only, 1178 bytes total; no payload read or live measurement.",
+    "phase_receipts_inspected": 4,
+    "receipt_fields": ["schema", "phase", "pid", "exit_code", "failure", "executable_sha256", "log_limit_each", "ownership"],
+    "total_group_physical_peak_available": false,
+    "total_group_commit_peak_available": false,
+    "sufficient_evidence_to_lower_budget": false,
+    "finding": "The four successful F phase receipts contain no memory peaks. Together with the coordinator's negative state.local.json memory-field search, these retained receipts cannot establish total-group peaks across all four phases. Startup snapshots or working-set values would not substitute for that evidence.",
+    "further_search_performed": false
+  },
+  "next_action": "Keep 8/11 GiB unchanged. No Run, retry or resource polling under the closed GO. A later fresh capacity check and execution require a distinct coordinator GO. This checkpoint validates no standard package or native fix."
+}
