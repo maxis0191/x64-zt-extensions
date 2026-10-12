@@ -1,0 +1,256 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-checkpoint/1",
+  "date": "2026-10-12",
+  "attempt": "L",
+  "plan": {
+    "name": "t7-catalog-plan-l.local.json",
+    "bytes": 17136,
+    "sha256": "1f8f2567708c0bc6318f82c18b7806dde6e207cd85435fccf006ffc806a006a6"
+  },
+  "candidate_bytes": 21750272,
+  "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+  "source_commit": "adf39bcc26d2754a958cfe0feae71049254f3b6f",
+  "dispatch": {
+    "name": "Invoke-T7CatalogueL.local.ps1",
+    "bytes": 3558,
+    "sha256": "8bd507046e65f82021f3825b71493a20b1e9f562547e96c2a8bdb4d8667369a8"
+  },
+  "dispatch_review": {
+    "name": "t7-catalog-l-dispatch-review.local.json",
+    "bytes": 5362,
+    "sha256": "fafa8ea8d443c5e16fd550923d9357345f2f712bbb1d1d53f1b19f90943b2f0c"
+  },
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "trace_outcome": "TraceObserved",
+  "exit_context_outcome": "Observed",
+  "callers_outcome": "Observed",
+  "message": {
+    "outcome": "Observed",
+    "captures": [
+      {
+        "Kind": "install",
+        "ThreadId": 36448,
+        "Status": "installed",
+        "Error": 0
+      },
+      {
+        "Kind": "buffer",
+        "ThreadId": 30828,
+        "Status": "ok",
+        "Error": 0,
+        "Requested": 384,
+        "ReadBytes": 384,
+        "Length": 40,
+        "NulTerminated": true
+      }
+    ],
+    "incomplete_trailing_line": false,
+    "install_boundary_observed": true,
+    "exit_correlated": true,
+    "correlation": "SameThreadBeforeExit",
+    "decoded_or_interpreted_by_adapter": false
+  },
+  "exit_code": 0,
+  "elapsed_ms": 2346.657600015402,
+  "started_utc": "2026-10-12T18:58:31.9926604Z",
+  "finished_utc": "2026-10-12T18:58:36.0074576Z",
+  "runner_returned_utc": "2026-10-12T18:58:36.032727Z",
+  "native_root": {
+    "pid": 35608,
+    "created_utc": "2026-10-12T18:58:32.0265082Z"
+  },
+  "trace_events": [
+    {
+      "Phase": "enabled",
+      "StdoutUnbuffered": true,
+      "StderrUnbuffered": true,
+      "ThreadId": 36448
+    },
+    {
+      "Phase": "before_entry_point",
+      "Code": 0,
+      "ThreadId": 36448,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "before_post_unpack",
+      "Code": 0,
+      "ThreadId": 36448,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "after_post_unpack",
+      "Code": 0,
+      "ThreadId": 36448,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "exit_hook",
+      "Code": 0,
+      "ThreadId": 30828,
+      "ReturnAddress": "0000000140AC00C4"
+    }
+  ],
+  "stderr_evidence_under_guards": {
+    "name": "stderr.log",
+    "bytes": 4878,
+    "sha256": "e21475e0efdce60939077b73d92ffcd997e889814a7829f31509c7e9f36ad775",
+    "hash_recalculated_after_release": false
+  },
+  "stdout_bytes": 70,
+  "receipt": {
+    "name": "receipt.json",
+    "bytes": 16614,
+    "sha256": "85191ad41a8642a0a782c48917b181c5ace9d67cc743cfa74f054ba34e440041"
+  },
+  "bootstraps": [
+    {
+      "name": "en_core_pre_gfx.ff",
+      "bytes": 832,
+      "sha256": "37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c",
+      "relative_alias": "zone/en_core_pre_gfx.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "core_pre_gfx.ff",
+      "bytes": 22351168,
+      "sha256": "5016669dba3eab765999bd2d0fdcda01c336f4fe2ea6ee8670c61c48107d97ce",
+      "relative_alias": "zone/core_pre_gfx.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "en_core_patch.ff",
+      "bytes": 624640,
+      "sha256": "241f1154237ca5459b98e948156f2138a546968a63f92cd13f70cb2e9794906e",
+      "relative_alias": "zone/en_core_patch.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    }
+  ],
+  "preflight": {
+    "captured_utc": "2026-10-12T18:57:59.7955677Z",
+    "decision": "PassedPendingAtomicAdmission",
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "commit_used_percent": 54.7,
+    "physical_reserve": 0,
+    "commit_reserve": 9512923136
+  },
+  "closure": {
+    "tree_confirmed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "termination_requested": false,
+    "inputs_reverified_under_lease": true,
+    "engine_outputs_validated": true,
+    "original_metadata_unchanged": true,
+    "postflight_utc": "2026-10-12T18:59:05.7206678Z",
+    "metadata_equal_count": 7,
+    "file_ids_equal_count": 14,
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "host_pid": 3236,
+    "host_created_utc": "2026-10-12T18:58:06.3749214Z",
+    "host_parent_pid": 14896,
+    "session_id": 52678,
+    "tool_exit_chunk": "f6aaed",
+    "actual_host_exit_code": 0,
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T18:59:28.071281Z",
+    "host_parent_and_root_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "payload_hashes_read_after_release": false,
+    "guard_disposal_evidence": "Pinned runner finally disposes and clears every guard after Context.Closed and Lease=null, before the observed wrapper return."
+  },
+  "closure_helper": {
+    "name": "Finish-T7CatalogueL.local.ps1",
+    "bytes": 5445,
+    "sha256": "3e72bfd6c1cec6f966100a81d13837de80278ce84de6cdffc93b1c78e2cc5935"
+  },
+  "preflight_correction": {
+    "RefusalToolChunk": "7779d5",
+    "Cause": "An overly broad cod.* name filter matched the Codex application processes, not game clients.",
+    "Correction": "Restrict the additional read-only client filter to the actual IW7/BlackOps3 executable families; core resource admission is unchanged.",
+    "HostOrNativeStartedBeforeCorrection": false,
+    "LeaseAcquiredBeforeCorrection": false,
+    "PinnedSourcesChanged": false
+  },
+  "private_evidence": [
+    {
+      "name": "t7-catalog-l-preflight.local.json",
+      "bytes": 2022,
+      "sha256": "18e8a2925b1489976ffb4254640e56c6256c6cf4f17a5a85a952546ab5fea0c7"
+    },
+    {
+      "name": "t7-catalog-l-host-start.local.json",
+      "bytes": 408,
+      "sha256": "8afdceddd90772ca3bf21ffe6ee6af6836107e493c69111ff63ed2fa0003056e"
+    },
+    {
+      "name": "t7-catalog-l-host-return.local.json",
+      "bytes": 433,
+      "sha256": "240d022afe51baa9b04b897791cde45dba46203236c9a657601faa453c0c7623"
+    },
+    {
+      "name": "t7-catalog-l-postflight.local.json",
+      "bytes": 4968,
+      "sha256": "a6768293b836c5229f41f49d0c861ab282a2d7bbab6827641f73332eaf539229"
+    },
+    {
+      "name": "t7-catalog-l-host-outcome.local.json",
+      "bytes": 371,
+      "sha256": "ec8d4104f4c199b8bca468f5cfb488c324b9e6c7285b9359d8590a0349ce7915"
+    },
+    {
+      "name": "t7-catalog-l-host-exit.local.json",
+      "bytes": 214,
+      "sha256": "bd62a30f7bb8e8db721c256aeedc8bf93ab7e6ebe8081993d1d6da99ddfacc07"
+    },
+    {
+      "name": "t7-catalog-l-host-absence.local.json",
+      "bytes": 851,
+      "sha256": "aeb2003669f80d7f89008d72b50f2e6687667265b9cd684116842b168ca44984"
+    }
+  ],
+  "limits": {
+    "native_invocations": 1,
+    "runtime_attempt_consumed": true,
+    "catalogue_success": false,
+    "compatibility_proven": false,
+    "ready": false,
+    "plan_k_preserved": true,
+    "new_probe_added": false,
+    "speculative_dependency_added": false
+  },
+  "next_action": "Propose exact metadata observation of only core_patch.ff, followed by bounded qualification only if separately authorized by the coordinator. Its existence, size, metadata, identity and hash have not been observed in this follow-up; this checkpoint authorizes no asset read or new Run.",
+  "analysis_owner_51": {
+    "first_complete_correlated_message_bytes": 40,
+    "encoding": "ASCII",
+    "error_category": "Required startup zone not found",
+    "missing_zone_name": "core_patch",
+    "previous_k_missing_zone_name": "en_core_patch",
+    "same_named_failure_as_k": false,
+    "initialization_complete_marker_observed": false,
+    "model_catalog_marker_observed_in_stdout_or_stderr": false,
+    "catalogue_json_present": false,
+    "catalogue_directory_present": false,
+    "stdout_bytes": 70,
+    "stdout_only_initialization_started": true,
+    "raw_message_or_hex_published": false,
+    "receipt_sha256_independently_confirmed": "85191ad41a8642a0a782c48917b181c5ace9d67cc743cfa74f054ba34e440041",
+    "interpretation_limit": "The first named failure changed after staging the localized patch. The validity of all three prior bootstraps, an exhaustive startup list and engine compatibility remain unproved.",
+    "next_named_file_metadata_observed": false,
+    "additional_asset_consulted": false,
+    "additional_dependency_added": false
+  }
+}

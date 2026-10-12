@@ -1077,3 +1077,49 @@ directories remain empty and there is no attempt marker. Independent source
 review, coordinator-owned exact-head CI/integration, fresh preflight and a
 distinct exact GO remain necessary before any catalogue Run. No new catalogue,
 model export or content compatibility is claimed.
+
+## Catalogue L: one attempt retained and independently closed
+
+After independent source/Plan and dispatch reviews, L received a distinct GO
+for one invocation. The extra read-only preflight client filter initially used
+`cod.*`, which incorrectly matched Codex processes. It refused before any
+persistent host, lease or payload access. Restricting that additional filter to
+the actual IW7/BlackOps3 executable families preserved the common admission
+checks and all pinned source/commands. The fresh 18:57:59.7955677 UTC preflight
+passed at 54.70% commit use with the unchanged 6/8 GiB budget, no client/heavy
+process and no lease. This correction did not cause a native retry.
+
+The exact reviewed host command and pinned L dispatcher were used once. The
+native root exited naturally with code 0 after 2,346.66 ms. The run finalized
+at 18:58:36.0074576 UTC as `Failed / NoCatalogue`; the wrapper returned at
+18:58:36.0327270 UTC. TRACE, EXIT, CALLERS and a complete 40-byte NUL-terminated
+MSG capture were observed and correlated. These diagnostics and exit code 0
+do not establish a successful catalogue. Raw message/code bytes remain private
+for the analysis owner.
+
+Under-lease final hashes, metadata and IDs revalidated all seven sources and
+aliases. Same-host postflight at 18:59:05.7206678 UTC confirmed seven unchanged
+metadata rows, fourteen equal file IDs, closure/release and no quarantine.
+The pinned runner's finally path disposes the guards before wrapper return;
+no separate guard counter is claimed. No payload hash was read after release.
+Session 52678 actually exited 0 (chunk `f6aaed`); the independent witness at
+18:59:28.0712810 UTC found host 3236, parent 14896, native root 35608 and the
+run-root processes absent. There were no clients, heavy workloads or leases;
+Main/image/UDP remained absent and Python's preserved identity was unchanged.
+
+The [sanitized L runtime checkpoint](catalogue-runtime-l-20261012.json) pins
+the 16,614-byte receipt, reviewed dispatch, helper, corrected preflight,
+same-host postflight, actual exit and independent absence. The 4,878-byte
+stderr hash was recorded under runtime guards; stdout is 70 bytes. L is consumed
+and retained. No further dependency, payload read, build or catalogue Run is
+authorized by this result.
+
+The analysis owner independently confirmed the receipt and interpreted the
+complete correlated message as a missing `core_patch` startup zone, replacing
+K's `en_core_patch` failure. Stdout still contains only initialization starting;
+the initialization-complete and catalogue markers, catalogue JSON and its
+directory are absent. The changed first named failure does not prove complete
+validity of the three earlier files or an exhaustive dependency list. No new
+asset path or metadata was consulted. The smallest proposed next decision is
+an exact metadata observation of `core_patch.ff`, then bounded qualification
+only if separately authorized. No dependency is inferred from name symmetry.
