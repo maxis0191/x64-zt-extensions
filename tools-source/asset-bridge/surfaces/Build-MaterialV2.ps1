@@ -3,7 +3,10 @@ param(
     [Parameter(Mandatory)][string]$CheckerRoot,[Parameter(Mandatory)][string]$ZTSource,
     [Parameter(Mandatory)][string]$CandidateRoot,[Parameter(Mandatory)][string]$SharedRepo,
     [Parameter(Mandatory)][string]$StockRoot,[Parameter(Mandatory)][string]$StockReceipt,
-    [Parameter(Mandatory)][string]$StockReceiptSHA256,[Parameter(Mandatory)][string]$RunRoot,
+    [Parameter(Mandatory)][string]$StockReceiptSHA256,
+    [Parameter(Mandatory)][string]$StockBindingReceipt,[Parameter(Mandatory)][string]$StockBindingReceiptSHA256,
+    [Parameter(Mandatory)][string]$ReviewedStockManifest,[Parameter(Mandatory)][string]$ReviewedStockManifestSHA256,
+    [Parameter(Mandatory)][string]$RunRoot,
     [Parameter(Mandatory)][string]$VCToolsRoot,[Parameter(Mandatory)][string]$WindowsSdkRoot,
     [Parameter(Mandatory)][string]$WindowsSdkVersion,[switch]$Run
 )
@@ -22,6 +25,7 @@ foreach($entry in $pins.PSObject.Properties){
 . "$SharedRepo/ops/Resource-Scheduler.Core.ps1"
 . "$SharedRepo/ops/model-lab/ModelFF.Core.ps1"
 . "$SharedRepo/sdk/modding/BeaconFF.Core.ps1"
+. "$SharedRepo/tools-source/asset-bridge/common/StockBinding.Core.ps1"
 . "$PSScriptRoot/MaterialV2.Core.ps1"
 $RunRoot=Resolve-IW7BasePath (Join-Path $repo 'runtime') ([IO.Path]::GetRelativePath((Join-Path $repo 'runtime'),[IO.Path]::GetFullPath($RunRoot)))
 if(Test-Path -LiteralPath $RunRoot){throw 'Fresh material-v2 run directory required.'}
@@ -50,27 +54,26 @@ $writerRoot=Join-Path $RunRoot 'writer';$writer=Join-Path $writerRoot 'material-
 $work=Join-Path $RunRoot 'work';$dump=Join-Path $work ('dump/'+$source.zone)
 $compileArgs=@(Get-MaterialV2CompilerArguments $VCToolsRoot $WindowsSdkRoot $WindowsSdkVersion $ZTSource $PreparedRoot $writerRoot)
 Assert-BeaconHash $StockReceipt $StockReceiptSHA256
+Assert-BeaconHash $StockBindingReceipt $StockBindingReceiptSHA256
+Assert-BeaconHash $ReviewedStockManifest $ReviewedStockManifestSHA256
 $stock=Read-BeaconJson $StockReceipt
-if($stock.Schema -cne 'iw7.model-ff-build/1' -or !$stock.Restored -or !$stock.StockPreserved -or $stock.RetainedLeaseToken){throw 'Completed retained stock transaction required.'}
-$inputs=@();$seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-foreach($entry in $stock.Inputs){
-    $path=Resolve-IW7BasePath $StockRoot $entry.Relative;$file=Get-Item -LiteralPath $path
-    if($path -ine $entry.Source -or !$seen.Add($entry.Relative) -or $file.Length -ne $entry.Bytes -or
-       $file.Attributes.HasFlag([IO.FileAttributes]::ReadOnly)){throw 'Stock path/size/duplicate/read-only mismatch.'}
-    if($entry.Relative -ceq 'main/fileSysCheck.cfg' -and $file.Length -ne 77){throw 'Exact mutable stock sentinel required.'}
-    $inputs+=[pscustomobject]@{Relative=$entry.Relative;Source=$path;Mode=$(if($entry.Relative -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'});
-        Bytes=$file.Length;ModifiedUtc=$file.LastWriteTimeUtc.ToString('o');Attributes=[int]$file.Attributes}
-}
-if($inputs.Count -gt 96 -or !$seen.Contains('main/code_pre_gfx.ff') -or !$seen.Contains('zone/assetfile1.pak') -or
-   !$seen.Contains('iw7_ship.exe') -or !$seen.Contains('main/fileSysCheck.cfg')){throw 'Bounded bootstrap stock contract differs.'}
+$observation=Read-BeaconJson $StockBindingReceipt
+$reviewed=Read-BeaconJson $ReviewedStockManifest
+$inputs=@(Get-FFStockBindingInputs $stock $observation $reviewed $StockRoot $StockReceiptSHA256 $ReviewedStockManifestSHA256)
+Set-MaterialV2StagingModes $inputs
+$seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+foreach($entry in $inputs){$null=$seen.Add($entry.Relative)}
 foreach($entry in $source.source_files.PSObject.Properties){$hashInputs.Add([pscustomobject]@{Path=(Resolve-IW7BasePath $PreparedRoot $entry.Name);SHA256=$entry.Value.sha256})}
 foreach($entry in $source.writer_interface_hashes.PSObject.Properties){$hashInputs.Add([pscustomobject]@{Path=(Resolve-IW7BasePath $ZTSource $entry.Name);SHA256=$entry.Value})}
-foreach($path in @($StockReceipt,$compiler,$python,(Join-Path $PreparedRoot 'material-v2-plan.json'))+
+foreach($path in @($StockReceipt,$StockBindingReceipt,$ReviewedStockManifest,$compiler,$python,(Join-Path $PreparedRoot 'material-v2-plan.json'))+
     @(Get-ChildItem -LiteralPath $PSScriptRoot -File|Where-Object Extension -in '.py','.ps1','.json'|ForEach-Object FullName)){
     $hashInputs.Add([pscustomobject]@{Path=$path;SHA256=(Get-FileHash -LiteralPath $path).Hash})
 }
 $budgets=Get-MaterialV2Budgets
 $plan=[ordered]@{Schema='iw7.material-v2-execution-plan/1';RunRoot=$RunRoot;Source=$source;StockInputs=$inputs;
+    StockRoot=$StockRoot;StockBindingReceipt=$StockBindingReceipt;StockBindingReceiptSHA256=$StockBindingReceiptSHA256;
+    StockReceiptSHA256=$StockReceiptSHA256;ReviewedStockManifestSHA256=$ReviewedStockManifestSHA256;
+    StockContentAndIdentityRecheckPending=$true;StagingCopyBytes=[long](@($inputs|Where-Object Mode -CEQ Copy)|Measure-Object Bytes -Sum).Sum;
     Compiler=$compiler;CompilerArguments=$compileArgs;HashInputs=$hashInputs.ToArray();SharedHelperPins=$pins;
     Phases=@('compile','write','build','verify','dump','read');WriterPhysicalBytes=$budgets.WriterPhysicalBytes;WriterCommitBytes=$budgets.WriterCommitBytes;
     FFPhysicalBytes=$budgets.FFPhysicalBytes;FFCommitBytes=$budgets.FFCommitBytes;LogBytesPerStream=2MB;NewOutputStopBytes=64MB;
@@ -81,7 +84,7 @@ if('IW7.CommunityBuild.BuildJob' -as [type]){throw 'Fresh PowerShell host requir
 $candidate=Assert-BeaconCandidate $CandidateRoot $source.builder.receipt_sha256
 if($candidate.SHA256 -ine $source.builder.executable_sha256){throw 'Exact final full-tool executable required.'}
 $state=[ordered]@{Schema='iw7.material-v2-build/1';Work=$work;Inputs=$inputs;Plan=$plan;Status='Preparing';Phases=@();
-    Restored=$false;StockPreserved=$false;RestorationStatus='Pending';CleanupError=$null;RetainedLeaseToken=$null;
+    Restored=$false;StockPreserved=$false;StockContentAndIdentityVerified=$false;RestorationStatus='Pending';CleanupError=$null;RetainedLeaseToken=$null;
     WriterLeaseReleased=$false;GeometryRoundtripVerified=$false;InventoryVerified=$false;DiffuseBytesVerified=$false;
     RecipientReferenceResolved=$false;NativeCBTSemanticsVerified=$false;PixelsVerified=$false;Ready=$false;
     MaxObservedBytes=0L;FinalObservedBytes=$null}
@@ -107,11 +110,8 @@ function Invoke-MaterialPhase([string]$Phase,[string]$Exe,[string]$Hash,$Argumen
     $identity=Get-BeaconJobIdentity $owner $python $Phase
     $identity.SpecSHA256=$specHash;$identity.NativeExecutableSHA256=$Hash
     $state.Phases+=,$identity;Save-MaterialState
-    $owner.Resume();$start=[datetime]::UtcNow;$attached=$false
-    while(!$owner.Exited -and !$attached){
-        try{Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID;$attached=$true}
-        catch{if($_.Exception.Message -notlike 'Child identity unavailable*' -or [datetime]::UtcNow -gt $start.AddSeconds(5)){throw};Start-Sleep -Milliseconds 100}
-    }
+    $resumed=Start-MaterialV2OwnedPhase $owner $lease.Token
+    $start=$resumed.StartedUtc;$identity.SchedulerAttached=$resumed.SchedulerAttached;Save-MaterialState
     while(!$owner.Exited -or $owner.Active -ne 0){
         if(($owner.Exited -and $owner.Active -ne 0) -or [datetime]::UtcNow -gt $start.AddSeconds($spec.timeout+5)){throw 'Phase timeout or orphan descendants; close original job.'}
         if(Test-Path -LiteralPath (Join-Path $RunRoot 'stop.request')){throw 'Coordinator requested owned stop.'}
@@ -159,7 +159,16 @@ try {
         $file=Get-Item -LiteralPath $entry.Source
         $state.Inputs+=,[pscustomobject]@{Relative=$entry.Relative;Source=$entry.Source;Mode='HardLink';Bytes=$file.Length;ModifiedUtc=$file.LastWriteTimeUtc.ToString('o');Attributes=[int]$file.Attributes}
     }
-    foreach($entry in $state.Inputs){$guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'));Set-MaterialV2SourceIdentity $entry ([IW7HudFileIdentity]::Read($entry.Source))}
+    foreach($entry in $state.Inputs){
+        $null=Resolve-IW7BasePath (Split-Path $entry.Source -Parent) (Split-Path $entry.Source -Leaf)
+        $guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'))
+        $actualId=[IW7HudFileIdentity]::Read($entry.Source)
+        Assert-FFStockIdentity $entry $actualId
+        Set-MaterialV2SourceIdentity $entry $actualId
+    }
+    Assert-ModelFFInputs $state.Inputs $work -SourceOnly
+    Assert-FFStockContent $inputs
+    $state.StockContentAndIdentityVerified=$true;Save-MaterialState
     foreach($entry in $stage){Assert-BeaconHash $entry.Source $entry.SHA256}
     [IO.Directory]::CreateDirectory($work)|Out-Null
     $state.Transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$work;MutableFiles=@($state.Inputs.Relative)+@('zone/'+$source.zone+'.ff');ProfileDirectory='unused';ProfileDirectories=@()}) (Join-Path $RunRoot 'backup')
@@ -169,6 +178,10 @@ try {
         if($entry.Mode -ceq 'Copy'){Copy-Item -LiteralPath $entry.Source -Destination $target}else{New-Item -ItemType HardLink -Path $target -Target $entry.Source|Out-Null}
         $entry|Add-Member NoteProperty TargetId ([IW7HudFileIdentity]::Read($target))
         if($entry.Mode -ceq 'HardLink' -and $entry.TargetId -cne $entry.SourceId){throw 'Staged NTFS identity differs.'}
+        if($entry.Mode -ceq 'Copy'){
+            Assert-MaterialV2CopyIdentity $entry $entry.TargetId
+            (Get-Item -LiteralPath $target).IsReadOnly=$false
+        }
     }
     Assert-ModelFFInputs $state.Inputs $work
     $tool=Join-Path $work 'zonetool.exe';$common=@('-headless','-unbuffered-io','-strict-content-sources')

@@ -409,6 +409,71 @@ strictly unchanged until the helper is committed. No stock files, native process
 lease, Add-Type or build are touched. The next material FF remains sequenced after
 the animation FF and requires the central GO.
 
+### Durable observation binding integrated, Plan only
+
+The shared helper from commit `618c3ba` (parent integration `d3d720c`) is now
+called directly by Material. Its only contract is documented in
+[`animation/STOCK-BINDING.md`](../tools-source/asset-bridge/animation/STOCK-BINDING.md).
+The old block that reconstructed Sources under the disappeared root is removed.
+No helper code or validation schema was duplicated into `surfaces/`.
+
+The coordinator's reviewed BaseClient pin update `5a47546` was applied unchanged:
+`E504A87334FAE8F294458C72D7980C3E9B00D3C6549B969D1DFB41F26CA70605`.
+The other six original pins remain unchanged. The eighth provider pin is the
+common helper, SHA256
+`5C07DFE9ADFF6527EEF3478B153E38F3ADF293C85AA732600818CC540AB2BDE4`.
+Use the reviewed `modding-asset-authoring` provider; this source update does not
+modify its files while Animation runs its separately authorized FF transaction.
+
+The new parameters are `StockBindingReceipt` / `StockBindingReceiptSHA256` and
+`ReviewedStockManifest` / `ReviewedStockManifestSHA256`. `StockReceipt` retains
+the historical baseline and its hash. The explicit durable `StockRoot` must
+match the new observation; it is not hardcoded into the adapter. The current
+observation's SHA256 is
+`AA8B4D6F560A78BB0FBD012319EBB43675EDD3DF5EF9660F6E2BB16D07013A4C`.
+The baseline and reviewed-stock hashes remain `4CF67EBE…60CB3850` and
+`9116255E…A9DCBF4`; all three files are read/hash-bound and enter source guards.
+Old local parameter files and the old restoration receipt remain unchanged.
+
+`Get-FFStockBindingInputs` supplies current explicit Sources, observed metadata,
+`ExpectedSourceId` and `ExpectedSHA256`. The caller retains returned modes as
+`BaselineMode` and sets the operational71HardLink/one77-byteCopy policy.
+Plan mode reports `StockContentAndIdentityRecheckPending=true`; it reads only
+receipts and preparation sources, without scanning/hashing live stock contents,
+loading the NTFS helper, reserving resources or writing a run directory.
+
+Only after the future8/11GiB FF admission does the adapter hold every source
+guard, read a native ID, call `Assert-FFStockIdentity` before assigning `SourceId`,
+check source metadata through ModelFF, then call `Assert-FFStockContent` with all
+guards held. Content hashing remains the common helper's implementation. This
+precedes staging. Material/writer/tool source hashes and the existing transaction
+and final stock-preservation checks remain in force.
+
+For the sentinel only, native staging proves the copied target ID differs from
+its guarded source ID before clearing ReadOnly on that owned copy. The observed
+source remains attributes33. Pure tests cover same-ID refusal, wrong relative,
+wrong copy size, absent ID, mode preservation and generated-byte accounting.
+
+The actual durable Plan passes with72entries,71operational links,one77-byte copy,
+nine baseline Copy entries and all identity/content rechecks still pending. Its
+native job class remains unloaded and its run directory absent. The source suite
+passes54 Python tests, two PowerShell parses and24 refusal fixtures plus the new
+mode/copy checks. No native Material writer/FF process, Add-Type, lease or stock
+write was performed. The ignored `material-v2-durable-parameters.local.json` and
+`material-v2-durable-plan.local.json` retain the reviewed paths separately from
+the earlier invalid parameters. Native FF build/dump/read still awaits central GO
+after Animation; rendered material acceptance is a later independent gate.
+
+The phase owner already resumed before scheduler registration. After Animation's
+suspended-process CIM refusal, this ordering was extracted into a pure-testable
+local helper: verify original handles first, Resume, then retry only
+`Child identity unavailable` for at most5seconds while the original root lives.
+A root that exits before/during registration records `SchedulerAttached=false`;
+its original handle exit code and zero active job members are still mandatory.
+Mocked tests cover delayed WMI, both short-phase timings, timeout, unrelated
+scheduler refusal and Resume failure. No Resource-Scheduler or provider API was
+changed, and these mocks do not constitute a new native lifecycle validation.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual
