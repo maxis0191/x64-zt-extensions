@@ -221,7 +221,8 @@ def inventory(raw):
             match = re.search(r'Loading asset "([^"\r\n]+)" of type ([a-z0-9]+)\.$', line)
             require(match is not None, "malformed inventory callback")
             found.append((match[2], match[1]))
-    require(found == [("soundbank", BANK)], "one exact soundbank inventory callback required")
+    expected = {("soundbank", BANK), ("rawfile", ZONE)}
+    require(len(found) == 2 and set(found) == expected, "exact soundbank and native branding rawfile inventory required")
 
 
 def inspect(source, banks, contract_path, dump=None, inventory_path=None):
@@ -246,6 +247,7 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None):
             "streamed": streamed, "alias": ALIAS, "source_alias_verified": True, "alias_id": spec["alias_id"],
             "asset_id": spec["asset_id"], "source_alias_matches_sab_asset": True,
             "dump_alias_values_verified": dump is not None, "inventory_verified": dump is not None,
+            "inventory_asset_count": 2 if dump is not None else 0,
             "dump_seek_frame_bytes_verified": dump is not None, "dump_streaminfo_rewritten": dump is not None,
             "dump_standalone_flac_validated": False, "native_alias_index_verified": False,
             "expected_single_alias_index": {"value": 0, "next": 65535},

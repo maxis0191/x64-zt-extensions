@@ -302,8 +302,9 @@ placeholder. `checksum_checksum_verified` stays false. A one-alias native index
 would have value 0 / next 65535, but this is only an expectation: the native CSV
 dump does not expose the index, so `native_alias_index_verified` stays false.
 
-With both `--dump` and `--inventory`, the reader additionally checks exactly one
-soundbank inventory callback, one alias row with all 53 columns in order, exact
+With both `--dump` and `--inventory`, the reader additionally checks exactly two
+inventory callbacks (the soundbank and native zone-branding rawfile), one alias
+row with all 53 columns in order, exact
 text/enums and decimal numeric values, and the complete dumped FLAC bytes against
 the pinned writer's known header rewrite plus original payload. Numeric formatting
 such as 0.500000 is accepted without accepting changed values or NaN. This writer
@@ -346,10 +347,73 @@ a separate sound receipt without editing the shared provider's receipt. Failure
 inside the shared runner can exit before that extra receipt exists; the outer
 original job owner must treat any nonzero exit or missing receipt as failure.
 
-This delivery intentionally has no native `-Run` orchestration or authorization.
-The review plan names the existing original-job supervision and restoration
-functions to bind next. That future binding must include FF, SABL and SABS in the
-transaction/output accounting, preserve held source/stock identities, stop only
-the original job, qualify closure before restoration/release, and retain evidence
-on failure. One central native GO and complete 8/11 admission are still required.
+## Checkout identities and transactional native gate
+
+`sab_ff_helpers.json` explicitly uses `utf8-crlf-to-lf-only/1` for the sixteen
+reviewed helper source identities. Only CRLF becomes LF; BOM, whitespace, final
+newline, lone CR and every other byte remain significant. All sixteen canonical
+sources were compared byte-for-byte with Git and the coordinator checkout.
+MaterialV2.Core.ps1 was 9284 bytes/LF locally and 9424 bytes/CRLF centrally; both
+matched the same 9284-byte Git blob. No provider was edited to resolve this.
+Six portability tests cover both newline styles, genuine source mutations,
+strict normalization and import of the unchanged runner/SDK drain. Review-plan
+`input_pins` and execution `HashInputs` still record exact checkout byte lengths
+and SHA256. Newline conversion after preparing a plan invalidates that plan.
+
+`Prepare-SoundFF.ps1` now binds the read-only review plan, previously reviewed
+stock receipts, current source bytes and existing E7 candidate provenance into a
+new execution plan. It reads metadata without staging or hashing retail stock.
+`Build-SoundFF.ps1` defaults to validation and printing that plan: no RunRoot,
+native type, job or reservation is created. Explicit `-Run` is implemented but
+is not authorized by either plan. A separate central GO after independent review
+of the complete cycle and fresh **8 GiB RAM / 11 GiB commit** admission is required.
+
+The sound-local supervisor reuses existing admission, suspended original job,
+BelowNormal priority, Resume/identity registration, monotonic wait/stop helpers,
+NTFS identity checks, and file-level backup/restoration. It binds exactly four
+phases: build, verify, dump, independent read. It holds exact source hashes and
+read guards across those phases. Native phases retain the 240-second timeout,
+the independent read uses 30 seconds, and the outer decision allows five more
+seconds. Fresh monotonic decisions cover slow getters, callback saves and the
+final dispose/receipt/hash/save path. Root exit allows two seconds for remaining
+job processes; failure cleanup allows fifteen seconds and never kills by PID.
+
+The reviewed stock profile has 71 hard links and one 77-byte sentinel copy.
+Adding four original inputs and the existing tool yields 77 staged inputs.
+All 80 transaction entries include the FF, SABL and SABS. A successful build
+preserves three bounded, hash-checked copies outside the restored work directory;
+reader bank hashes must match those artifacts and all three are rechecked after
+restoration. Output accounting excludes only known staged hard links, includes
+artifacts/logs/dumps/backups, stops at 64 MiB and limits each pipe log to 2 MiB.
+
+Restoration requires proven original-job closure and disposal, unchanged source
+identities/content, and a vacant owned work directory. The source guards are
+released only after job disposal so owned hard links can be removed, then fresh
+guards and full source/artifact checks precede lease release. Unknown closure,
+failed disposal, source drift or incomplete restoration retains evidence and
+the reservation, marks quarantine, and makes no source-integrity claim. Read
+guards cannot survive a terminated supervisor, so quarantine does not imply
+durable file locks. No automatic retry or broad directory removal is provided.
+
+```powershell
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/Prepare-SoundFF.ps1 -ReviewPlanPath <review.json> -ReviewPlanSHA256 <sha> -StockParametersPath <reviewed-parameters.json> -StockParametersSHA256 <sha> -OutputPath <fresh-execution.json>
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/Build-SoundFF.ps1 -PlanPath <execution.json> -PlanSHA256 <sha>
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_plan.ps1 -PlanPath <execution.json>
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1
+pwsh -NoProfile -File tools-source/asset-bridge/surfaces/sound/test_sound_ff_deadlines.ps1
+```
+
+Thirteen cycle tests execute the production orchestration with tiny original
+files and real hard-link/file-transaction operations, while mocking admission,
+native ownership, NTFS identity and phases. Eleven clock tests inject slow
+getters, stop/dispose, saves and receipts. Twelve default-Plan/identity cases
+check source-only behavior, altered plans, LF/CRLF and exact runtime hashes.
+These tests never launch ZoneTool or touch stock. The earlier one-asset fixture
+expectation was corrected before native work: the pinned native builder always
+adds a zone-branding rawfile alongside the soundbank. Its absence is now a
+negative reader case. No native success is inferred from these synthetic tests.
+
 No shared provider was modified and no SAB/FF native invocation took place here.
+SAB/FF byte validation, in-game sound playback and owner acceptance remain pending;
+`Ready` and `PlaybackVerified` remain false. The coordinator owns the private PR,
+exact-head CI, merge and common documentation for this source delivery.

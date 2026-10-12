@@ -67,7 +67,7 @@ def fixture(root):
             raw[26:42] = bytes(16)
         path.write_bytes(raw)
     inventory = root / "verify.log"
-    inventory.write_text('Loading zone "sdk_original_sound_v1"\nLoading asset "community_original_sound_v1.all" of type soundbank.\n')
+    inventory.write_text('Loading zone "sdk_original_sound_v1"\nLoading asset "community_original_sound_v1.all" of type soundbank.\nLoading asset "sdk_original_sound_v1" of type rawfile.\n')
     return source, banks, dump, inventory
 
 
@@ -194,7 +194,7 @@ class SABTests(unittest.TestCase):
 
     def test_inventory_missing_duplicate_extra_or_errors_refused(self):
         original = self.inventory.read_bytes()
-        for raw in (b"", original + original, original.replace(b"soundbank.", b"material."),
+        for raw in (b"", original + original, b"\n".join(original.splitlines()[:2]) + b"\n", original.replace(b"soundbank.", b"material."),
                     original + b'[ ERROR ] failure\n', original + b'Loading asset "extra" of type image.\n'):
             self.inventory.write_bytes(raw)
             with self.assertRaises(ValueError): self.inspect()
