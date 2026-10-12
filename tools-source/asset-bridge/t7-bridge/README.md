@@ -429,3 +429,11 @@ source cross-check only; it was neither installed nor adopted as a parallel
 export route. Existing ZoneTool/Creator components remain the implementation
 route. Native compile/export and any donor launch require their separate
 coordinated resource admission; no such GO is active for this checkpoint.
+
+The catalogue adapter now supports the specifically qualified `t7-catalog-trace`
+build alongside unchanged ordinary D2 acceptance. It binds the rebuilt main,
+link and build provenance, and reads six bounded stderr events after closure.
+Trace presence never counts as a catalogue. See [C preparation](CATALOGUE-PLAN.md)
+and run both `Test-T7Catalogue.ps1` and `Test-T7CatalogueTrace.ps1` for the light
+source checks. The actual instrumented build is available; its catalogue Run
+still needs review of the separate exact private plan and coordinator GO.

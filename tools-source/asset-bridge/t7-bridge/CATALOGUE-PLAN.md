@@ -239,3 +239,58 @@ and private logs/receipts remain retained. The
 The build owner is inspecting the actual prepared D2 path from initialization to
 command parsing and exit. No compatible-engine conclusion, automatic retry,
 speculative bootstrap file or new native probe follows from exit 0 alone.
+
+## C preparation: qualify the instrumented catalogue candidate
+
+`CandidateProfile=t7-catalog-trace` is a narrowly qualified alternative to the
+exact ordinary D2 candidate. Missing `CandidateProfile` retains D2 semantics;
+unknown profiles and diagnostic candidates remain refused. The CLI stays
+`-t7-iw7-catalog mp_freerun_04`, with three arguments including the executable.
+The existing H1 owner, limits, admission, aliases and closure code are reused.
+
+The trace path requires its own closed Passed build receipt and pinned build
+plan. Both must carry the exact eight-field BuildProfile: Name, Option,
+ArgumentCount, TraceSchema, Wiring, PreparedMain, BaseBuildPlan and
+BaseBuildReceipt. All four provenance pins must match the receipt, build and
+catalogue text bindings. The original D2 plan/receipt hashes remain fixed.
+The retained failed-compile provenance must match D2; only its zonetool11/xpak
+objects are retained. The new receipt must contain successful, closed main
+Compile and link Link stages tied to its own plan. The pinned compiler
+dependencies identify the prepared trace main, and the existing pinned link.rsp
+consumes that new main object exactly once. Candidate bytes/hash come from the
+actual Link artifact. The catalogue preparer does not rehash objects, EXE or
+stock outside native admission.
+
+The build owner's completed trace A receipt is 14,430 bytes, SHA256
+`6a886fd9befa29b35ef220efa4cfb011a45cd0fd30bdcaff8a9b3374d0df73b3`, for build plan
+`0a6af99207b0b35bdf689a7378af3e1760bfd06e2da870fc1e1c9e5164462d31`.
+Its actual EXE is 21,741,056 bytes, SHA256
+`1034faa2f198f3edc367e6f5d6c24059bddb6962f9950a347400e6108f3b60b0`.
+The receipt reports Passed, InputsReverified, TreeClosureConfirmed and
+LeaseReleased, with CandidateExecuted and Quarantined false. These are build
+observations, not a catalogue runtime result. See the build owner's BUILD-PLAN.
+
+For this candidate only, stderr must contain at most one of each of six known
+`[T7_CATALOG_TRACE] schema=iw7.t7-catalog-trace/1` events: enabled,
+before_post_unpack, after_post_unpack, before_entry_point, entry_point_return,
+exit_hook. Every line is below 256 bytes, total below 1,536 bytes. The reader
+accepts LF/CRLF, canonical DWORD thread IDs, int32 codes and 16-digit hex return
+addresses. Non-exit pointers and pre-call codes must be zero. Unknown output,
+duplicates, incomplete lines, byte-order marks and unsupported encodings are
+refused. Failed setvbuf flags are recorded as observed; they do not prove that
+buffering succeeded. Event order is recorded without inventing causality.
+
+TraceObserved means the enabled marker and any present events are structurally
+valid. It never proves a catalogue, successful dispatch or compatibility. A
+trace alone remains Failed/NoCatalogue. Malformed trace does not suppress the
+independent catalogue and input checks. After forced closure only bounded trace
+and catalogue diagnostics are inspected; payloads are not rehashed after lease
+release. Unclosed jobs retain their owner and lease without inspecting output.
+
+Validation: 126 catalogue checks and 123 trace/provenance checks pass using
+synthetic files and mocked job/provenance readers. No native types, real lease,
+native process or owner stock were used. These tests include strict D2/unknown
+refusals, provenance mutations, malformed trace and finalization outcomes.
+The exact private Plan C must still pass default validation and coordinator
+review before its single native invocation. No new Run is authorized by this
+source change; A and B remain consumed Failed attempts.

@@ -196,6 +196,11 @@ try {
         $fixed.Zone.SHA256=$null;$fixed.RetryAuthorized=$true
         Refuses {Assert-T7CataloguePlan $fixed $fakeRepo 'synthetic-runner'} 'Fixed catalogue plan'
         $fixed.RetryAuthorized=$false
+        $fixed|Add-Member NoteProperty CandidateProfile 'unknown'
+        Refuses {Assert-T7CataloguePlan $fixed $fakeRepo 'synthetic-runner'} 'Unknown catalogue'
+        $fixed.CandidateProfile='ordinary-d2';$fixed.CandidateSHA256='0'*64
+        Refuses {Assert-T7CataloguePlan $fixed $fakeRepo 'synthetic-runner'} 'Ordinary D2'
+        $fixed.CandidateSHA256=$bindings[0].SHA256
         [IO.File]::WriteAllText((Join-Path $runRoot 'attempt.json'),'{}')
         Refuses {Assert-T7CataloguePlan $fixed $fakeRepo 'synthetic-runner'} 'Fresh attempt'
     }
@@ -221,27 +226,36 @@ try {
     Check ($errors.Count -eq 0) 'Runner parse failed.'
     $outer=@($ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})[0]
     $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2))
-    function Read-T7CatalogueReport($Plan,$State,$Context){$script:reportReads++;'EmptyCatalogue'}
+    function Read-T7CatalogueReport($Plan,$State,$Context){$script:reportReads++;if($mode -ceq 'trace-only'){'NoCatalogue'}else{'EmptyCatalogue'}}
+    function Read-T7CatalogueTrace($Plan,$State,$Context){
+        if((Get-T7CatalogueCandidateProfile $Plan) -ceq 'ordinary-d2'){return}
+        $script:traceReads++
+        $State.TraceOutcome=if($mode -ceq 'trace-missing'){'NoTrace'}else{'TraceObserved'}
+        if($mode -ceq 'trace-malformed'){$State.TraceOutcome='TracePresentUnqualified';throw 'injected malformed trace'}
+    }
     function Assert-T7PrepatchMain($Expected){[pscustomobject]@{GenerationAndUDP27016OwnerUnchanged=$true}}
     function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
-    foreach($mode in 'normal','release-late','publication-late','release-failed','forced','unclosed') {
+    foreach($mode in 'normal','release-late','publication-late','release-failed','forced','unclosed','trace-valid','trace-only','trace-missing','trace-malformed','trace-forced') {
         Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
         $guards=$context.Guards;$attempted=$true;$failure=$null;$zonePin=[pscustomobject]@{Path='synthetic'}
         $state.InputsReverified=$false;$state.CatalogueOutcome='NoCatalogue';$state.Identity=$identity;$state.ExitCode=0
         Enable-T7CatalogueRuntimeProfile $plan
-        $script:reportReads=0;$script:pinReads=0
+        $script:reportReads=0;$script:pinReads=0;$script:traceReads=0
+        $plan|Add-Member NoteProperty CandidateProfile $(if($mode.StartsWith('trace-')){'t7-catalog-trace'}else{'ordinary-d2'}) -Force
         if($mode -ceq 'release-late'){$script:clock=199999;$script:releaseDelay=2}
         if($mode -ceq 'publication-late'){$script:clock=199999;$script:publicationLate=$true}
         if($mode -ceq 'release-failed'){$script:releaseFails=$true}
-        if($mode -cin @('forced','unclosed')){$context.Closed=$false;$failure='injected runtime failure';$state.Status='Failed';$fakeOwner.StopFails=$mode -ceq 'unclosed'}
+        if($mode -cin @('forced','unclosed','trace-forced')){$context.Closed=$false;$failure='injected runtime failure';$state.Status='Failed';$fakeOwner.StopFails=$mode -ceq 'unclosed'}
         function Write-H1Receipt($Plan,$State,$StageRoot){if($script:publicationLate){$script:clock+=2;$script:publicationLate=$false};[IO.File]::WriteAllText((Join-Path $StageRoot 'receipt.json'),($State|ConvertTo-Json -Depth 8))}
         . $finalizer
         $saved=Get-Content -Raw -LiteralPath (Join-Path $evidence 'receipt.json')|ConvertFrom-Json
-        if($mode -ceq 'normal'){Check ($saved.Status -ceq 'CatalogueObservedPendingDonorReview' -and $saved.CatalogueOutcome -ceq 'EmptyCatalogue') 'Empty observation lost.'}
+        if($mode -cin @('normal','trace-valid')){Check ($saved.Status -ceq 'CatalogueObservedPendingDonorReview' -and $saved.CatalogueOutcome -ceq 'EmptyCatalogue') 'Empty observation lost.'}
+        elseif($mode -cin @('trace-only','trace-missing','trace-malformed')){Check ($saved.Status -ceq 'Failed' -and $state.InputsReverified -and $state.LeaseReleased -and $reportReads -eq 1) 'Trace upgraded failure or prevented independent catalogue/input checks.'}
         elseif($mode -cin @('release-late','publication-late')){Check ($saved.Status -ceq 'Failed' -and $state.LeaseReleased -and $null -ne $failure) 'Late success survived.'}
-        elseif($mode -ceq 'forced'){Check ($state.TerminationRequested -and $state.LeaseReleased -and $pinReads -eq 0 -and $reportReads -eq 1 -and $saved.Status -ceq 'Failed') 'Forced closure rehashed stock or succeeded.'}
+        elseif($mode -cin @('forced','trace-forced')){Check ($state.TerminationRequested -and $state.LeaseReleased -and $pinReads -eq 0 -and $reportReads -eq 1 -and $saved.Status -ceq 'Failed') 'Forced closure rehashed stock or succeeded.'}
         else{Check ($state.Quarantined -and $context.Lease) 'Uncertain closure/release lost lease.'}
         if($mode -ceq 'unclosed'){Check ($reportReads -eq 0 -and $pinReads -eq 0) 'Unclosed job report inspected.'}
+        if($mode.StartsWith('trace-')){Check ($traceReads -eq 1) 'Trace was not inspected exactly once after closure.'}
         [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
         Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
         if(Test-Path -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')){Remove-Item -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')}
