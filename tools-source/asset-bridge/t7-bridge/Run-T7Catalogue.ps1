@@ -29,8 +29,8 @@ try {
     . $profile
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
-    $bootstrap=Get-T7CatalogueBootstrap $plan
-    if($null -ne $bootstrap){Assert-T7CatalogueBootstrapReceipt $plan (Read-H1SmallJson $bootstrap.QualificationReceipt.Path 32KB)}
+    $bootstraps=@(Get-T7CatalogueBootstraps $plan)
+    foreach($bootstrap in $bootstraps){Assert-T7CatalogueBootstrapReceipt $plan (Read-H1SmallJson $bootstrap.QualificationReceipt.Path 32KB) $bootstrap.Path}
     $job=@($plan.Bindings|Where-Object {$_.Path -ceq $plan.JobAssembly -and !$_.IsText})
     if($job.Count -ne 1 -or $job[0].SHA256 -cne '5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8'){throw 'Existing witnessed NativeJob pin required.'}
     $shell=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
@@ -73,12 +73,15 @@ try {
         Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     }
     $state.Aliases+=@(New-T7CatalogueAlias $zonePin (Join-Path $plan.WorkingDirectory $plan.Zone.RelativePath) $context)
-    if($null -ne $bootstrap){
+    $bootstrapEvidence=@()
+    foreach($bootstrap in $bootstraps){
         $bootstrapPin=@($plan.Bindings|Where-Object Path -CEQ $bootstrap.Path)[0]
         $state.Aliases+=@(New-T7CatalogueAlias $bootstrapPin (Join-Path $plan.WorkingDirectory $bootstrap.RelativePath) $context)
-        $state.Bootstrap=[ordered]@{Source=$bootstrap.Path;Bytes=832;SHA256=$bootstrap.SHA256;QualifiedFileId=$bootstrap.FileId;RelativePath=$bootstrap.RelativePath;QualificationReceipt=$bootstrap.QualificationReceipt;EngineLookupPathProven=$false}
+        $bootstrapEvidence+=@([ordered]@{Source=$bootstrap.Path;Bytes=$bootstrap.Bytes;SHA256=$bootstrap.SHA256;QualifiedFileId=$bootstrap.FileId;RelativePath=$bootstrap.RelativePath;QualificationReceipt=$bootstrap.QualificationReceipt;EngineLookupPathProven=$false})
         Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     }
+    if($plan.PSObject.Properties['Bootstraps']){$state.Bootstraps=$bootstrapEvidence}
+    elseif($bootstrapEvidence.Count){$state.Bootstrap=$bootstrapEvidence[0]}
     foreach($name in 'profile','profile/roaming','profile/local'){[IO.Directory]::CreateDirectory((Join-Path (Join-Path $plan.RunRoot 'temp') $name))|Out-Null}
     $null=[Reflection.Assembly]::LoadFrom($plan.JobAssembly)
     Assert-H1Deadline $script:T7CatalogueGroupStarted 200

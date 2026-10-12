@@ -913,3 +913,56 @@ snapshot, not fresh identity/content/hash evidence. Nothing in this checkpoint
 opens that payload, implements a new probe, changes J or authorizes a retry.
 Because the failed name changed, the conditional exact-open-path diagnostic
 for a repeated `en_core_pre_gfx` failure is not justified by this result.
+
+## Core Bootstrap A qualified; explicit two-item Plan K prepared
+
+After J's new named failure, the analysis owner observed only the exact
+`core_pre_gfx.ff` metadata and ancestors. A separately reviewed qualification
+then received its own exact GO. Fresh preflight at 18:15:16.0541313 UTC admitted
+the unchanged 6/8 GiB reservation at 53.08% commit use, with physical reserve
+zero. Two guarded reads of exactly 22,351,168 bytes established SHA256
+`5016669dba3eab765999bd2d0fdcda01c336f4fe2ea6ee8670c61c48107d97ce`.
+File identity, creation/write metadata and attributes matched before/after.
+No header, prefix, copy, alias or engine invocation was part of qualification.
+The hash is observed under lease, not depot verified; content compatibility
+and engine lookup remain unknown.
+
+The successful identity/hash-only receipt was finalized at 18:15:17.0534247 UTC.
+Guards closed, the lease released and quarantine was absent. Session 64360
+exited 0 (chunk `1f74c6`); an independent 18:15:58.1916795 UTC witness found host
+22852 and parent 28012 absent, no lease/heavy workload, Main/UDP absent and
+Python's preserved identity unchanged. No payload hash was read after release.
+The [sanitized qualification/K checkpoint](catalogue-core-bootstrap-k-20261012.json)
+pins the script, receipt, closure and independent absence evidence. The reviewed
+qualification retained B's five lifecycle functions unchanged and passed the
+same 54 pure host/finalization/release checks before the one real invocation.
+
+The catalogue profile now normalizes the legacy `Bootstrap` object or an
+explicit `Bootstraps` array through one shared collection path. The new array
+accepts exactly `en_core_pre_gfx.ff` (832 bytes), then `core_pre_gfx.ff`
+(22,351,168 bytes), with distinct pinned qualification receipts/scripts and
+exact per-item hashes, file identities and metadata. Mixed schemas, unknown,
+duplicate, reordered or additional items are refused. The getter validates
+the entire collection before publishing any item; a focused fixture verifies
+that an invalid second item cannot expose the first to a pipeline consumer.
+Existing receipt validators, binary guards, identity checks, alias creation
+and final revalidation are reused for each declared item. There is no scan,
+automatic dependency discovery or duplicated execution pipeline.
+
+Plan K is 14,736 bytes, SHA256
+`cd14c1d897ce7317bf07fca4794189be0f1ce5cb9c0b7e3a5557e7a465170dc0`.
+It retains J's MSG candidate/build, arguments, donor zone, stderr cap and
+6/8 GiB, 200/120/5-second limits. Its 28 bindings comprise 21 text and seven
+binary inputs; six metadata records imply six runtime aliases and twelve
+original/alias file-ID checks. The output ceiling rises by the new dependency's
+22,351,168 bytes to 150,161,432. J, the localized bootstrap and both completed
+qualification receipts remain unchanged. K reuses the closed qualification's
+Stopped Main snapshot; fresh identity/capacity checks are still required.
+
+All 1,301 source checks pass: 95 new collection checks and all 1,206 existing
+checks. The sealed K default validates both actual qualification receipts
+under text guards and returns `PlanCheckedPendingGO` without binary hashing,
+native types, lease or runtime files. K's prepared work/evidence/temp directories
+remain empty. No K Run, new build, catalogue or model export is claimed.
+The next action is independent review and a distinct exact GO after the
+current heavy workload closes; this preparation does not authorize execution.

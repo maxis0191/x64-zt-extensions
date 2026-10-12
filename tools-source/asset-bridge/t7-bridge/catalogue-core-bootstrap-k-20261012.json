@@ -1,0 +1,191 @@
+{
+  "schema": "iw7.t7-core-bootstrap-catalogue-preparation/1",
+  "date": "2026-10-12",
+  "status": "PlanKCheckedPendingReviewAndDistinctGO",
+  "core_qualification": {
+    "status": "IdentityAndHashObservedCompatibilityUnknown",
+    "script": {
+      "name": "Qualify-T7CoreBootstrapA.local.ps1",
+      "bytes": 13353,
+      "sha256": "65d4a29c532d9af7683d62a97102242c8f74aee58cde9e7f752395e2172fbe7d"
+    },
+    "receipt": {
+      "name": "t7-core-bootstrap-qualification-a.local.json",
+      "bytes": 4435,
+      "sha256": "602842a23916684d4a70287091596d703c1a0d282a3ab8700820ed018a78c95a"
+    },
+    "input_name": "core_pre_gfx.ff",
+    "input_bytes": 22351168,
+    "sha256": "5016669dba3eab765999bd2d0fdcda01c336f4fe2ea6ee8670c61c48107d97ce",
+    "hash_provenance": "ObservedUnderLeaseNotDepotVerified",
+    "qualified_file_identity_retained_privately": true,
+    "guarded_read_bytes_per_pass": 22351168,
+    "guarded_read_passes": 2,
+    "metadata_and_identity_reverified": true,
+    "hash_reverified_under_guard": true,
+    "preflight_utc": "2026-10-12T18:15:16.0541313Z",
+    "commit_used_percent": 53.08,
+    "finished_utc": "2026-10-12T18:15:17.0534247Z",
+    "tree_closed": true,
+    "lease_released": true,
+    "guards_closed": true,
+    "quarantined": false,
+    "header_semantics_known": false,
+    "prefix_captured": false,
+    "compatibility_proven": false,
+    "depot_verified": false,
+    "engine_lookup_proven": false,
+    "payload_copied": false,
+    "engine_executed": false,
+    "payload_hashes_read_after_release": false,
+    "actual_host_exit": {
+      "session_id": 64360,
+      "chunk_id": "1f74c6",
+      "exit_code": 0
+    },
+    "host_parent_absent": true,
+    "independent_absence_utc": "2026-10-12T18:15:58.1916795Z",
+    "heavy_count": 0,
+    "lease_count": 0,
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "private_closure": {
+      "name": "t7-core-bootstrap-a-host-closure.local.json",
+      "bytes": 858,
+      "sha256": "a4aa4b5ef2477b4523a95c26af7e96af71e92611d240b1574d2ba96fe28c236f"
+    },
+    "private_absence": {
+      "name": "t7-core-bootstrap-a-host-absence.local.json",
+      "bytes": 795,
+      "sha256": "1cfd6103699cbb5077e4e70b872eb641346fd628dae7ee727663ffeb06325d34"
+    }
+  },
+  "plan_k": {
+    "plan": {
+      "name": "t7-catalog-plan-k.local.json",
+      "bytes": 14736,
+      "sha256": "cd14c1d897ce7317bf07fca4794189be0f1ce5cb9c0b7e3a5557e7a465170dc0"
+    },
+    "preserved_j": {
+      "name": "t7-catalog-plan-j.local.json",
+      "bytes": 12690,
+      "sha256": "44bb6204bf695fdb212c7fd342af740f44f95da5a44201c3f87edacc2b1a9f7a"
+    },
+    "changed_top_level_fields": [
+      "Bindings",
+      "Bootstrap",
+      "Bootstraps",
+      "Image",
+      "InputMetadata",
+      "MainBaselineObservation",
+      "OutputLimitBytes",
+      "RunRoot",
+      "StageRoot",
+      "WorkingDirectory"
+    ],
+    "explicit_bootstraps": [
+      {
+        "name": "en_core_pre_gfx.ff",
+        "bytes": 832,
+        "sha256": "37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c",
+        "relative_alias": "zone/en_core_pre_gfx.ff",
+        "qualification_receipt": {
+          "name": "t7-bootstrap-qualification-b.local.json",
+          "bytes": 4417,
+          "sha256": "591beba0fb2f7e6c319b8a73beeb51622a5dee8a45f027ca4ad45b3cf855f9a0"
+        }
+      },
+      {
+        "name": "core_pre_gfx.ff",
+        "bytes": 22351168,
+        "sha256": "5016669dba3eab765999bd2d0fdcda01c336f4fe2ea6ee8670c61c48107d97ce",
+        "relative_alias": "zone/core_pre_gfx.ff",
+        "qualification_receipt": {
+          "name": "t7-core-bootstrap-qualification-a.local.json",
+          "bytes": 4435,
+          "sha256": "602842a23916684d4a70287091596d703c1a0d282a3ab8700820ed018a78c95a"
+        }
+      }
+    ],
+    "bindings": 28,
+    "text_bindings": 21,
+    "binary_bindings": 7,
+    "input_metadata_records": 6,
+    "future_aliases": 6,
+    "future_original_and_alias_ids": 12,
+    "output_limit_bytes": 150161432,
+    "additional_output_bytes": 22351168,
+    "candidate_bytes": 21750272,
+    "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+    "build_plan_sha256": "0b1d6f29cb6b02f81d78e2d11f46bbc3679a635a943cca232b7be72d0643a28a",
+    "build_receipt_sha256": "4001a1ed0a320bea393bed3e5ca4f17c8a9c0c1feb3ec43f6b4fc0761ccb3ae6",
+    "arguments": [
+      "-t7-iw7-catalog",
+      "mp_freerun_04"
+    ],
+    "stderr_limit_bytes": 8192,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "group_deadline_seconds": 200,
+    "native_deadline_seconds": 120,
+    "cleanup_seconds": 5,
+    "main_snapshot_reused_not_admission": true,
+    "run_invoked": false,
+    "new_candidate_built": false,
+    "attempt_marker_exists": false,
+    "runtime_receipt_exists": false,
+    "prepared_directories_empty": true
+  },
+  "implementation": {
+    "legacy_single_bootstrap_preserved": true,
+    "exact_two_item_collection_only": true,
+    "mixed_schema_duplicates_unknown_items_rejected": true,
+    "qualification_receipts_and_scripts_distinct_per_item": true,
+    "shared_existing_validators_and_alias_pipeline": true,
+    "complete_collection_validated_before_first_item_published": true,
+    "automatic_scan_or_dependency_addition": false
+  },
+  "source_pins": [
+    {
+      "name": "Run-T7Catalogue.ps1",
+      "bytes": 12460,
+      "sha256": "6b57af8798c5ddf21da5d906331a93af3f70e656b79b7483e51462bd280de2c7"
+    },
+    {
+      "name": "T7Catalogue.Profile.ps1",
+      "bytes": 68555,
+      "sha256": "1cf51b20e0f18388fd4d1afad89160610bb160a1e2a1ca5c98fefb48dd4c32e6"
+    },
+    {
+      "name": "Test-T7CatalogueBootstraps.ps1",
+      "bytes": 9657,
+      "sha256": "4de096fa78c03405e7c1f2ea1c03136d7059e0a7a4d40fbe724fa93d85371679"
+    }
+  ],
+  "validation": {
+    "default": {
+      "status": "PlanCheckedPendingGO",
+      "chunk_id": "df9137",
+      "exit_code": 0,
+      "binary_inputs_hashed": false,
+      "lease_acquired": false,
+      "native_types_loaded": false,
+      "files_created": false
+    },
+    "source_pure_tests": {
+      "checks": 1301,
+      "new_collection_checks": 95,
+      "existing_checks": 1206,
+      "all_exit_codes": 0,
+      "owner_stock_read": false,
+      "native_process_started": false
+    },
+    "core_qualification_pure_tests": {
+      "checks": 54,
+      "chunk_id": "e134d9",
+      "exit_code": 0
+    }
+  },
+  "ready": false,
+  "next_action": "Independent source/plan review and a distinct exact K GO after the active heavy group closes. No further payload read or engine invocation is authorized by this preparation."
+}

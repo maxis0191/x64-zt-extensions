@@ -45,48 +45,74 @@ function Assert-T7CatalogueMetadata($Expected) {
        $item.CreationTimeUtc.Ticks -ne ([datetimeoffset]$Expected.CreationUtc).UtcDateTime.Ticks){throw 'Reviewed input creation metadata changed.'}
 }
 function Get-T7CatalogueBootstrap($Plan) {
-    if(!$Plan.PSObject.Properties['Bootstrap']){return $null}
-    $bootstrap=$Plan.Bootstrap
-    Assert-T7CatalogueFields $bootstrap @('Path','Bytes','SHA256','FileId','RelativePath','HashProvenance','QualificationReceipt','QualificationScript')
-    if((Get-T7CatalogueCandidateProfile $Plan) -cne 't7-catalog-message' -or
-       !(Test-T7CatalogueInteger $bootstrap.Bytes 832) -or $bootstrap.Bytes -ne 832 -or
-       $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) 'en_core_pre_gfx.ff') -or
-       $bootstrap.RelativePath -cne 'zone/en_core_pre_gfx.ff' -or
-       $bootstrap.SHA256 -cnotmatch '\A[0-9a-f]{64}\z' -or $bootstrap.FileId -cnotmatch '\A[0-9A-F]{8}:[0-9A-F]{16}\z' -or
-       $bootstrap.HashProvenance -cne 'ObservedUnderLeaseNotDepotVerified'){throw 'Only the exact qualified 832-byte message bootstrap is allowed.'}
-    Assert-H1Path $bootstrap.Path
-    $bootstrap
+    # Legacy single-item accessor retained for existing callers/tests.
+    $items=@(Get-T7CatalogueBootstraps $Plan)
+    if($items.Count -gt 1){throw 'Single bootstrap accessor cannot select a collection item.'}
+    if($items.Count){$items[0]}
+}
+function Get-T7CatalogueBootstraps($Plan) {
+    $single=[bool]$Plan.PSObject.Properties['Bootstrap']
+    $plural=[bool]$Plan.PSObject.Properties['Bootstraps']
+    if($single -and $plural){throw 'Mixed bootstrap schemas are forbidden.'}
+    if(!$single -and !$plural){return}
+    $specs=@(@{Name='en_core_pre_gfx.ff';Bytes=832L},@{Name='core_pre_gfx.ff';Bytes=22351168L})
+    if($single){
+        if($null -eq $Plan.Bootstrap -or $Plan.Bootstrap -is [array]){throw 'One legacy bootstrap object required.'}
+        $items=@($Plan.Bootstrap);$specs=@($specs[0])
+    }
+    else {
+        if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -ne 2){throw 'Exactly two declared bootstrap items required.'}
+        $items=@($Plan.Bootstraps)
+    }
+    for($index=0;$index -lt $items.Count;$index++){
+        $bootstrap=$items[$index];$spec=$specs[$index]
+        Assert-T7CatalogueFields $bootstrap @('Path','Bytes','SHA256','FileId','RelativePath','HashProvenance','QualificationReceipt','QualificationScript')
+        if((Get-T7CatalogueCandidateProfile $Plan) -cne 't7-catalog-message' -or
+           !(Test-T7CatalogueInteger $bootstrap.Bytes $spec.Bytes) -or $bootstrap.Bytes -ne $spec.Bytes -or
+           $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) $spec.Name) -or
+           $bootstrap.RelativePath -cne ('zone/'+$spec.Name) -or
+           $bootstrap.SHA256 -cnotmatch '\A[0-9a-f]{64}\z' -or $bootstrap.FileId -cnotmatch '\A[0-9A-F]{8}:[0-9A-F]{16}\z' -or
+           $bootstrap.HashProvenance -cne 'ObservedUnderLeaseNotDepotVerified'){throw 'Only the exact declared message bootstraps are allowed.'}
+        Assert-H1Path $bootstrap.Path
+    }
+    $items # Publish no item until the complete declared collection has validated.
 }
 function Assert-T7CatalogueBootstrapBindings($Plan) {
-    $bootstrap=Get-T7CatalogueBootstrap $Plan
-    if($null -eq $bootstrap){return}
-    $pin=@($Plan.Bindings|Where-Object Path -CEQ $bootstrap.Path)
-    if($pin.Count -ne 1 -or $pin[0].IsText -isnot [bool] -or $pin[0].IsText -or
-       $pin[0].Bytes -ne 832 -or $pin[0].SHA256 -cne $bootstrap.SHA256){throw 'Exact bootstrap binary pin missing.'}
+    $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
+    if(!$bootstraps.Count){return}
     $binaryPaths=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.JobAssembly,
-        [Diagnostics.Process]::GetCurrentProcess().MainModule.FileName,$bootstrap.Path)
+        [Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)+@($bootstraps.Path)
     $binaryPins=@($Plan.Bindings|Where-Object {!$_.IsText})
-    if($binaryPins.Count -ne 6 -or @($binaryPins|Where-Object {$_.Path -cnotin $binaryPaths}).Count){throw 'Only the six explicit runtime binary bindings are allowed.'}
-    foreach($name in 'QualificationReceipt','QualificationScript'){
-        Assert-T7CatalogueTextPin $bootstrap.$name $Plan.Bindings
-        if($bootstrap.$name.Bytes -gt 32KB){throw 'Bootstrap qualification text exceeds 32 KiB.'}
+    if($binaryPins.Count -ne 5+$bootstraps.Count -or @($binaryPins|Where-Object {$_.Path -cnotin $binaryPaths}).Count){throw 'Only the explicit runtime binary bindings are allowed.'}
+    $qualificationPaths=@()
+    foreach($bootstrap in $bootstraps){
+        $pin=@($Plan.Bindings|Where-Object Path -CEQ $bootstrap.Path)
+        if($pin.Count -ne 1 -or $pin[0].IsText -isnot [bool] -or $pin[0].IsText -or
+           $pin[0].Bytes -ne $bootstrap.Bytes -or $pin[0].SHA256 -cne $bootstrap.SHA256){throw 'Exact bootstrap binary pin missing.'}
+        foreach($name in 'QualificationReceipt','QualificationScript'){
+            Assert-T7CatalogueTextPin $bootstrap.$name $Plan.Bindings
+            if($bootstrap.$name.Bytes -gt 32KB){throw 'Bootstrap qualification text exceeds 32 KiB.'}
+            $qualificationPaths+=@($bootstrap.$name.Path)
+        }
+        $metadata=@($Plan.InputMetadata|Where-Object Path -CEQ $bootstrap.Path)
+        if($metadata.Count -ne 1 -or $metadata[0].Bytes -ne $bootstrap.Bytes){throw 'One matching bootstrap metadata record required.'}
+        Assert-T7CatalogueFields $metadata[0] @('Path','Bytes','Attributes','CreationUtc','LastWriteUtc')
+        Assert-T7CatalogueMetadata $metadata[0]
     }
-    if($bootstrap.QualificationReceipt.Path -ceq $bootstrap.QualificationScript.Path){throw 'Distinct bootstrap receipt and script required.'}
-    $metadata=@($Plan.InputMetadata|Where-Object Path -CEQ $bootstrap.Path)
-    if($metadata.Count -ne 1){throw 'One bootstrap metadata record required.'}
-    Assert-T7CatalogueFields $metadata[0] @('Path','Bytes','Attributes','CreationUtc','LastWriteUtc')
-    Assert-T7CatalogueMetadata $metadata[0]
+    if(@($qualificationPaths|Sort-Object -Unique).Count -ne 2*$bootstraps.Count){throw 'Distinct per-item bootstrap receipts and scripts required.'}
 }
-function Assert-T7CatalogueBootstrapReceipt($Plan,$Receipt) {
-    $bootstrap=Get-T7CatalogueBootstrap $Plan
-    if($null -eq $bootstrap){throw 'Explicit bootstrap declaration required.'}
+function Assert-T7CatalogueBootstrapReceipt($Plan,$Receipt,[string]$BootstrapPath) {
+    $items=@(Get-T7CatalogueBootstraps $Plan)
+    if($BootstrapPath){$items=@($items|Where-Object Path -CEQ $BootstrapPath)}
+    if($items.Count -ne 1){throw 'Select one explicitly declared bootstrap receipt.'}
+    $bootstrap=$items[0]
     Assert-T7CatalogueBootstrapBindings $Plan
     if($Receipt.Schema -cne 'iw7.t7-bootstrap-qualification/1' -or
        $Receipt.Status -cne 'IdentityAndHashObservedCompatibilityUnknown' -or
        $Receipt.ScriptSHA256 -cne $bootstrap.QualificationScript.SHA256 -or
        $Receipt.SHA256 -cne $bootstrap.SHA256 -or $Receipt.FileId -cne $bootstrap.FileId -or
        $Receipt.HashProvenance -cne $bootstrap.HashProvenance -or
-       $Receipt.GuardedReadBytesPerPass -ne 832 -or $Receipt.GuardedReadPasses -ne 2 -or
+       $Receipt.GuardedReadBytesPerPass -ne $bootstrap.Bytes -or $Receipt.GuardedReadPasses -ne 2 -or
        $Receipt.PSObject.Properties['Error'] -or $Receipt.PSObject.Properties['CleanupError'] -or
        $Receipt.PSObject.Properties['FinalizationError']){throw 'Closed successful bootstrap qualification required.'}
     foreach($name in 'DataFileOpened','PayloadHashed','LeaseAcquired','LeaseReleased','GuardsClosed','TreeClosureConfirmed',
@@ -104,7 +130,7 @@ function Assert-T7CatalogueBootstrapReceipt($Plan,$Receipt) {
     Assert-T7CatalogueFields $Receipt.Input @('Path','Bytes','Attributes','CreationUtc','LastWriteUtc')
     if($Receipt.Input.Path -cne $bootstrap.Path){throw 'Qualification input path differs.'}
     foreach($row in @($Receipt.Input,$Receipt.MetadataBefore,$Receipt.MetadataAfter)){
-        if($row.Bytes -ne 832 -or $row.Attributes -cne $metadata.Attributes -or
+        if($row.Bytes -ne $bootstrap.Bytes -or $row.Attributes -cne $metadata.Attributes -or
            ([datetimeoffset]$row.CreationUtc).UtcDateTime.Ticks -ne ([datetimeoffset]$metadata.CreationUtc).UtcDateTime.Ticks -or
            ([datetimeoffset]$row.LastWriteUtc).UtcDateTime.Ticks -ne ([datetimeoffset]$metadata.LastWriteUtc).UtcDateTime.Ticks){throw 'Qualified bootstrap metadata differs.'}
     }
@@ -114,18 +140,18 @@ function Assert-T7CatalogueBootstrapReceipt($Plan,$Receipt) {
     }
 }
 function Assert-T7CatalogueBootstrapIdentity($Plan) {
-    $bootstrap=Get-T7CatalogueBootstrap $Plan
-    if($null -eq $bootstrap){return}
-    $metadata=@($Plan.InputMetadata|Where-Object Path -CEQ $bootstrap.Path)
-    if($metadata.Count -ne 1){throw 'One bootstrap metadata record required.'}
-    Assert-T7CatalogueMetadata $metadata[0]
-    if((Get-T7CatalogueFileId $bootstrap.Path) -cne $bootstrap.FileId){throw 'Bootstrap differs from its qualified file identity.'}
+    foreach($bootstrap in @(Get-T7CatalogueBootstraps $Plan)){
+        $metadata=@($Plan.InputMetadata|Where-Object Path -CEQ $bootstrap.Path)
+        if($metadata.Count -ne 1){throw 'One bootstrap metadata record required.'}
+        Assert-T7CatalogueMetadata $metadata[0]
+        if((Get-T7CatalogueFileId $bootstrap.Path) -cne $bootstrap.FileId){throw 'Bootstrap differs from its qualified file identity.'}
+    }
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     $null=Get-T7CatalogueMainBaseline $Plan
-    $bootstrap=Get-T7CatalogueBootstrap $Plan
-    $bootstrapBytes=if($null -ne $bootstrap){832L}else{0L}
+    $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
+    $bootstrapBytes=0L;foreach($bootstrap in $bootstraps){$bootstrapBytes+=$bootstrap.Bytes}
     if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
        $Plan.EngineOutputProfile -cne 'ObservedStartupA' -or
        $Plan.PhysicalBytes -ne 6GB -or $Plan.CommitBytes -ne 8GB -or
@@ -175,10 +201,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         $pin=@($Plan.Bindings|Where-Object Path -CEQ $row[0])
         if($pin.Count -ne 1 -or $pin[0].IsText -or $pin[0].Bytes -ne $row[1] -or $pin[0].SHA256 -cne $row[2]){throw 'Exact qualified D2/engine/Steam binding required.'}
     }
-    $inputCount=if($null -ne $bootstrap){5}else{4}
+    $inputCount=4+$bootstraps.Count
     if(@($Plan.InputMetadata).Count -ne $inputCount -or @($Plan.InputMetadata.Path|Sort-Object -Unique).Count -ne $inputCount){throw 'Exact input metadata count differs.'}
     $paths=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.Zone.Path)
-    if($null -ne $bootstrap){$paths+=@($bootstrap.Path)}
+    if($bootstraps.Count){$paths+=@($bootstraps.Path)}
     foreach($item in $Plan.InputMetadata){if($item.Path -cnotin $paths){throw 'Unexpected input metadata.'};Assert-T7CatalogueMetadata $item}
     if($Plan.Zone.Bytes -ne 16977344 -or $Plan.Zone.SHA256 -ne $null -or
        $Plan.Zone.RelativePath -cne 'zone/mp_freerun_04.ff' -or
@@ -822,7 +848,7 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
         }
         if($name -cnotin @('zone',$Plan.OutputKey) -or ![IO.Directory]::Exists($entry)){throw 'Unexpected engine output; preserve and stop.'}
         $allowed=@(if($name -ceq 'zone'){'mp_freerun_04.ff'}else{'catalog.json'})
-        if($name -ceq 'zone' -and $null -ne (Get-T7CatalogueBootstrap $Plan)){$allowed+=@('en_core_pre_gfx.ff')}
+        if($name -ceq 'zone'){$allowed+=@(Get-T7CatalogueBootstraps $Plan|ForEach-Object {[IO.Path]::GetFileName($_.RelativePath)})}
         foreach($child in [IO.Directory]::EnumerateFileSystemEntries($entry)) {
             Assert-H1Path $child
             if([IO.Path]::GetFileName($child) -cnotin $allowed -or [IO.Directory]::Exists($child)){throw 'Unexpected zone/catalogue output; preserve and stop.'}
