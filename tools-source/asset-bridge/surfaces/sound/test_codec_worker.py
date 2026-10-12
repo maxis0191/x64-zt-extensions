@@ -31,21 +31,21 @@ class FakeProcess:
 
 
 class CodecTests(unittest.TestCase):
-    def fixture(self, root):
+    def fixture(self, root, profile="OriginalSource"):
         root = Path(root)
         original = root / "original.wav"
         original.write_bytes(original_wave())
         run = root / "run"
         run.mkdir()
-        plan = {"RunRoot": str(run), "Codec": str(root / "ffmpeg.exe"),
+        plan = {"InputProfile": profile, "RunRoot": str(run), "Codec": str(root / "ffmpeg.exe"),
                 "InputFLAC": str(root / "source.flac"), "OriginalWAV": str(original)}
         plan["CodecArguments"] = worker.expected_arguments(plan["InputFLAC"], run / "decoded.wav")
-        hashes = {plan["Codec"]: worker.CODEC_SHA, plan["InputFLAC"]: worker.FLAC_SHA,
+        hashes = {plan["Codec"]: worker.CODEC_SHA, plan["InputFLAC"]: worker.input_profile(plan)[1],
                   plan["OriginalWAV"]: worker.WAV_SHA}
         return plan, hashes, run
 
-    def run_mock(self, root, process=None, corrupt=False):
-        plan, hashes, run = self.fixture(root)
+    def run_mock(self, root, process=None, corrupt=False, profile="OriginalSource"):
+        plan, hashes, run = self.fixture(root, profile)
 
         def fake_launch(*args, **kwargs):
             raw = bytearray(original_wave())
@@ -80,6 +80,52 @@ class CodecTests(unittest.TestCase):
             result, _, _ = self.run_mock(root, FakeProcess(exit_code=3))
             self.assertEqual(result["failure"], "codec exit nonzero")
             self.assertFalse(result["pcm_verified"])
+
+    def test_native_dump_profile_has_separate_status_without_conformance_claim(self):
+        with tempfile.TemporaryDirectory() as root:
+            result, launch, _ = self.run_mock(root, profile="NativeDumpF")
+            self.assertEqual(result["status"], "DumpDecodedByFFmpeg")
+            self.assertEqual(result["input_flac_sha256"], worker.DUMP_F_SHA)
+            self.assertEqual(result["input_profile"], "NativeDumpF")
+            self.assertTrue(result["pcm_verified"])
+            self.assertFalse(result["standalone_flac_conformance_verified"])
+            self.assertFalse(result["playback_verified"])
+            args = launch.call_args.args[0]
+            self.assertNotIn("-ar", args)
+            self.assertNotIn("-ac", args)
+
+    def test_closed_profiles_reject_unknown_or_missing_before_any_payload_read(self):
+        for value in (None, "nativedumpf", "Other", True, {}, 1):
+            with self.subTest(profile=value), tempfile.TemporaryDirectory() as root:
+                plan, _, _ = self.fixture(root)
+                plan["InputProfile"] = value
+                with patch.object(worker, "file_hash") as hashed, patch.object(worker.subprocess, "Popen") as launch:
+                    with self.assertRaisesRegex(ValueError, "closed codec profile"):
+                        worker.decode(plan, drain.copy_bounded)
+                    hashed.assert_not_called()
+                    launch.assert_not_called()
+
+    def test_profiles_cannot_exchange_input_hashes(self):
+        for name, wrong_sha in (("OriginalSource", worker.DUMP_F_SHA), ("NativeDumpF", worker.FLAC_SHA)):
+            with self.subTest(profile=name), tempfile.TemporaryDirectory() as root:
+                plan, hashes, _ = self.fixture(root, name)
+                hashes[plan["InputFLAC"]] = wrong_sha
+                with patch.object(worker, "file_hash", side_effect=lambda path: hashes[str(path)]), \
+                        patch.object(worker.subprocess, "Popen") as launch:
+                    with self.assertRaisesRegex(ValueError, "pinned"):
+                        worker.decode(plan, drain.copy_bounded)
+                    launch.assert_not_called()
+
+    def test_resampling_arguments_refused(self):
+        for option in ("-ar", "-ac"):
+            with self.subTest(option=option), tempfile.TemporaryDirectory() as root:
+                plan, _, _ = self.fixture(root, "NativeDumpF")
+                plan["CodecArguments"][0:0] = [option, "48000"]
+                with patch.object(worker, "file_hash") as hashed, patch.object(worker.subprocess, "Popen") as launch:
+                    with self.assertRaisesRegex(ValueError, "arguments"):
+                        worker.decode(plan, drain.copy_bounded)
+                    hashed.assert_not_called()
+                    launch.assert_not_called()
 
     def test_log_flood_is_truncated_and_refused(self):
         with tempfile.TemporaryDirectory() as root:

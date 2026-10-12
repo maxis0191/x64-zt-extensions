@@ -27,10 +27,14 @@ function Test-CodecCleanup([string]$Case) {
     $closed=($Case -ne 'UnknownClosure');$intact=$true;$created=$true
     $PlanPath='mock-plan';$PlanSHA256='mock-hash'
     $plan=[pscustomobject]@{HashInputs=@([pscustomobject]@{Path='mock-input'})}
+    $heldInputs=$plan.HashInputs;$allInputsVerified=$true
+    $profile=[pscustomobject]@{Name='OriginalSource';SuccessStatus='ThirdPartyPCMVerified'}
+    if($Case -eq 'DumpSuccess'){$profile.Name='NativeDumpF';$profile.SuccessStatus='DumpDecodedByFFmpeg'}
     $state=[ordered]@{Status='ThirdPartyPCMVerified';Failure=$null;Cleanup=$null;
         RetainedLeaseToken=$lease.Token;JobClosed=$false;JobDisposeCompleted=$false;
         InputHashesMatch=$false;InputsUnchanged=$false;ReadGuardsReleased=$false;
-        Quarantined=$false;ExternalDecoderVerified=$false}
+        Quarantined=$false;ExternalDecoderVerified=$false;DumpDecodedByFFmpeg=$false}
+    $state.Status=$profile.SuccessStatus
     function Assert-CodecHash($Entry){if($Case -eq 'InputMismatch'){throw 'Mock input drift'}}
     function Get-FileHash {param($LiteralPath);[pscustomobject]@{Hash='mock-hash'}}
     function Save-CodecState {}
@@ -46,8 +50,9 @@ function Test-CodecCleanup([string]$Case) {
         throw "Input guard released before job disposal attempt: $Case"
     }
     if(!$state.ReadGuardsReleased){throw "Released guards unreported: $Case"}
-    if($Case -eq 'Success'){
-        if(!$state.ExternalDecoderVerified -or !$state.InputsUnchanged -or $state.Quarantined -or $state.RetainedLeaseToken){throw 'Valid closure was not accepted.'}
+    if($Case -in @('Success','DumpSuccess')){
+        if(!$state.InputsUnchanged -or $state.Quarantined -or $state.RetainedLeaseToken){throw 'Valid closure was not accepted.'}
+        if($state.ExternalDecoderVerified -ne ($Case -eq 'Success') -or $state.DumpDecodedByFFmpeg -ne ($Case -eq 'DumpSuccess')){throw 'Profile-specific success flag differs.'}
     }else{
         if($state.ExternalDecoderVerified -or !$state.Quarantined -or $state.Status -ne 'Failed' -or !$state.RetainedLeaseToken){throw "Failed cleanup escaped quarantine: $Case"}
         if($Case -ne 'LeaseFailure' -and $state.InputsUnchanged){throw "Unknown integrity was qualified: $Case"}
@@ -59,6 +64,6 @@ function Test-CodecCleanup([string]$Case) {
     if($Case -eq 'DisposeFailure' -and $state.JobDisposeCompleted){throw 'Failed disposal was accepted.'}
 }
 
-foreach($case in 'Success','UnknownClosure','DisposeFailure','InputMismatch','LeaseFailure'){Test-CodecCleanup $case}
+foreach($case in 'Success','DumpSuccess','UnknownClosure','DisposeFailure','InputMismatch','LeaseFailure'){Test-CodecCleanup $case}
 if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Native classes unexpectedly loaded.'}
-'5 actual-finally cleanup cases passed with mocks; no native classes, reservation or codec launched.'
+'6 actual-finally cleanup cases passed with mocks; no native classes, reservation or codec launched.'

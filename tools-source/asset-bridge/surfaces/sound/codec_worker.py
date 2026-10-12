@@ -14,6 +14,7 @@ import wave
 PCM_SHA = "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9"
 WAV_SHA = "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4"
 FLAC_SHA = "9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb"
+DUMP_F_SHA = "a4e9276568dfeaf42d39deefe243b1efc2b9095b2f558bcb3512b98c417154d9"
 CODEC_SHA = "ad8f211bc894755e0061c55ab280ae00e8d3d4f15a8cc4372b24cfa247b5942e"
 DRAIN_SHA = "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d"
 
@@ -26,6 +27,15 @@ def check(ok, message):
 def file_hash(path):
     with Path(path).open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def input_profile(plan):
+    # No arbitrary caller-provided hash, permissive mode, or legacy fallback.
+    profiles = {"OriginalSource": (FLAC_SHA, "ThirdPartyPCMVerified"),
+                "NativeDumpF": (DUMP_F_SHA, "DumpDecodedByFFmpeg")}
+    name = plan.get("InputProfile")
+    check(type(name) is str and name in profiles, "explicit closed codec profile required")
+    return name, *profiles[name]
 
 
 def expected_arguments(flac, output):
@@ -67,19 +77,22 @@ def guarded_drain(drain, source, destination, failed, completed, status):
 
 
 def decode(plan, copy_bounded):
+    profile, flac_sha, success_status = input_profile(plan)
     root = Path(plan["RunRoot"])
     output = root / "decoded.wav"
     check(not output.exists(), "fresh WAV required")
     check(plan["CodecArguments"] == expected_arguments(plan["InputFLAC"], output), "codec arguments changed")
-    for path, sha in ((plan["Codec"], CODEC_SHA), (plan["InputFLAC"], FLAC_SHA), (plan["OriginalWAV"], WAV_SHA)):
+    for path, sha in ((plan["Codec"], CODEC_SHA), (plan["InputFLAC"], flac_sha), (plan["OriginalWAV"], WAV_SHA)):
         check(file_hash(path) == sha, "pinned codec/audio changed")
     exceeded = threading.Event()
     streams, workers, completions = [], [], []
     drain_status = {name: {"normal_return": False, "exception_type": None}
                     for name in ("stdout", "stderr")}
-    result = {"schema": "iw7.original-sound-codec-worker/1", "codec_sha256": CODEC_SHA,
+    result = {"schema": "iw7.original-sound-codec-worker/2", "codec_sha256": CODEC_SHA,
+              "input_profile": profile, "input_flac_sha256": flac_sha, "status": "Decoding",
               "native_exit_code": None, "pipes_eof": False, "failure": None,
               "pcm_verified": False, "playback_verified": False, "ready": False,
+              "standalone_flac_conformance_verified": False,
               "drains": drain_status}
     # Outer shared job owns this root and descendants. Never detach or kill by PID.
     process = subprocess.Popen([plan["Codec"], *plan["CodecArguments"]], cwd=root,
@@ -113,10 +126,11 @@ def decode(plan, copy_bounded):
         raw, pcm = read_wave(output)
         _, original = read_wave(plan["OriginalWAV"])
         check(pcm == original, "decoded samples differ from original WAV")
-        result.update(pcm_verified=True, pcm_bytes=96000, pcm_sha256=PCM_SHA, samples=48000,
+        result.update(status=success_status, pcm_verified=True, pcm_bytes=96000, pcm_sha256=PCM_SHA, samples=48000,
                       channels=1, bits_per_sample=16, sample_rate=48000,
                       wav_bytes=len(raw), wav_sha256=hashlib.sha256(raw).hexdigest())
     except Exception as error:
+        result["status"] = "Failed"
         result["failure"] = str(error)
     finally:
         for name, completed in completions:
@@ -141,7 +155,8 @@ def main():
         raw = stream.read(65537)
     check(len(raw) <= 65536 and hashlib.sha256(raw).hexdigest() == args.plan_sha256.lower(), "plan changed")
     plan = json.loads(raw)
-    check(plan["Schema"] == "iw7.original-sound-codec-execution/1", "plan schema differs")
+    check(plan["Schema"] == "iw7.original-sound-codec-execution/2", "plan schema differs")
+    input_profile(plan)
     drain_path = Path(plan["SharedRepo"]) / "sdk/modding/beacon_tool_phase.py"
     check(file_hash(drain_path) == DRAIN_SHA, "shared log drain changed")
     spec = importlib.util.spec_from_file_location("existing_bounded_drain", drain_path)
