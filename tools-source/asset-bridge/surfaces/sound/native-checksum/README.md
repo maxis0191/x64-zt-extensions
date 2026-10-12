@@ -1,14 +1,16 @@
 # Native source-checksum correction proposal
 
-This is a private source patch and a review proposal, not a rebuilt ZoneTool.
-No native compiler, linker, librarian, probe, FFmpeg or ZoneTool was run for this
-correction. The failed first SAB/FF attempt remains unchanged. The independent
-reader still rejects its checksum. Playback and `Ready` remain false.
+This is a private source patch, not a rebuilt ZoneTool. The one authorized native
+build attempt stopped at its first compiler invocation with MSVC D8004. No C++
+probe, linker, librarian, FFmpeg or ZoneTool ran for this correction. The failed
+first SAB/FF attempt remains unchanged. The independent reader still rejects its
+checksum. Playback and `Ready` remain false.
 
 The subsequent [Seal C checkpoint](INPUT-SEALING.md) qualifies the retained input
-bytes. The [private executable Build Plan C](BUILD-PLAN.md) now has a source-only
-launcher and mock verification. It still requires separate review and native GO;
-the earlier preparation descriptions below are historical proposal evidence.
+bytes. The [private executable Build Plan C](BUILD-PLAN.md) records the closed
+failed native attempt, source/mock verification and the response-file correction
+needed before another review/GO. The earlier preparation descriptions below are
+historical proposal evidence.
 
 ## Observed defect and source boundary
 

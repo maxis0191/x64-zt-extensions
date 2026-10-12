@@ -1,10 +1,11 @@
-# Private checksum build Plan C: review only
+# Private checksum build Plan C: first compile failed
 
-The source launcher and its Plan are runnable, but no native build or C++ probe
-has been authorized or executed. The coordinator must review this exact Plan and
-give a separate GO. The failed SAB/FF run remains preserved; its strict reader
-is unchanged. Neither this Plan nor the input seal establishes the native fix,
-SAB serialization, playback, deployment or owner acceptance. `Ready` is false.
+The coordinator reviewed Plan C and authorized one native attempt on 2026-10-12.
+It stopped at the first compilation with MSVC D8004: `'/D' requires an argument`.
+No C++ probe ran and no candidate was produced. The run, its failure logs and the
+earlier failed SAB/FF output are preserved. The strict reader is unchanged.
+Neither this attempt nor the input seal establishes the native fix, SAB
+serialization, playback, deployment or owner acceptance. `Ready` is false.
 
 ## Exact local bindings
 
@@ -16,7 +17,9 @@ SAB serialization, playback, deployment or owner acceptance. `Ready` is false.
 | `build-command-c.local.ps1` | 615 | `9c2977b50cbf92fc6c694a63c9dcf73b1795c421a81b7f4de55353f681f4fe60` |
 
 The short command starts a fresh PowerShell 7.6.5 host with `-NoProfile`, the exact
-Plan path/hash and `-Build`. Its existence is not permission to invoke it. Without
+Plan path/hash and `-Build`. It was preserved but never invoked. The authorized
+attempt used command D below in a persistent host. No remaining GO authorizes a
+retry. Without
 `-Build`, `Build-ChecksumCandidate.ps1` only validates small guarded source/Plan
 files and the completed Seal C manifests. It does not request admission, import
 the scheduler, compile a native type, inspect processes, hash the reusable
@@ -26,7 +29,8 @@ outer run/lease bindings.
 
 Earlier local Plans A and B remain preserved and unexecuted. The
 final candidate path, `runtime/zt-sound-md5-b`, was absent after all default-Plan
-tests. No shared native or H1 output is changed. The fourteen response-file
+tests and now contains the failed attempt's four evidence files. No shared native
+or H1 output is changed. The fourteen response-file
 commands retain the source proposal's eight compilations, two probe links,
 two probe runs, one private archive construction and one candidate link.
 
@@ -166,6 +170,43 @@ Plan B and its command retain their original 28618/615-byte identities:
 `701ecfc01babfdcfd0d93d79725e883cd56cc8f153e574d169ae90e6ded3994b`.
 They are obsolete review evidence; neither was invoked for a native build.
 
-Next action: independent coordinator review of this source, exact Plan C,
-environment, seal and unchanged qualified providers. Only a new explicit GO can
-authorize one native build attempt. Any later SAB/FF rerun remains separately gated.
+The coordinator completed this source review before the attempt below. Only a
+new reviewed Plan and explicit GO can authorize another native build attempt.
+Any later SAB/FF rerun remains separately gated.
+
+## Unique native attempt with persistent host D
+
+At 10:11 UTC the coordinator explicitly authorized one invocation of the same
+Build arguments and Plan C, changing only the outer host lifetime. Local
+`build-command-d.local.ps1` is 1083 bytes, SHA-256
+`29c16d4c32cec0e68d75afa9e9c2307db90b82fb460a58834de557392a342a4f`.
+It directly invokes `Build-ChecksumCandidate.ps1` with the unchanged Plan path,
+SHA and `-Build`, catches the outcome and does not exit. It was loaded by a fresh
+PS7 host with `-NoLogo -NoProfile -NoExit -File`. The earlier ephemeral wrapper C
+and its hash remain intact. The source and Plan were not changed for this run.
+
+Fresh preflight verified the source, helper and seal pins, empty registry, no
+heavy process, unchanged Main process identity, absent output and complete 4/6 GiB
+capacity. The actual atomic admission then succeeded. The first cl invocation
+returned 2 with D8004; its original Python root returned 1. The original job was
+observed exited with zero active members, and all 1410 inputs passed both source
+proofs: 2207024770 bytes read and 1410 retained guards opened/disposed. The lease
+was released, its retained token is null, and the AppDomain quarantine key was
+absent. Only then was the persistent host closed normally.
+
+The run took 101844 ms including source proofs and cleanup. All four output files
+total 1872 bytes, matching final/peak observed accounting. The 1516-byte state has
+SHA-256 `e4e7d0c53f510e4b2b62436e579e55797fa13e4a111c766423a858c1e4c78258`.
+See `build-checkpoint-2026-10-12.json` for the sanitized complete file hashes.
+Fresh postflight at 10:13:30 UTC found no lease/heavy process and the same Main
+identity. At 10:14:50 UTC the host/native PIDs were absent and helper/source pins
+still matched. No retry, link, archive, probe execution, FF/SAB work or playback
+test occurred.
+
+Source inspection found standalone `/D` lines followed by their macro names on
+the next line in the first compile response file. The native diagnostic now
+rejects that serialization before C++ compilation. The retained command records
+and sealed response files must stay immutable. Next preparation must attach each
+definition to its `/D` option in fresh response files, preserve the exact original
+macro set/options, bind the new bytes and obtain a new review/GO. No compiler
+invocation is authorized as a quick syntax test.
