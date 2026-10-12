@@ -261,6 +261,7 @@
     "unchanged": true
   },
   "comparison_with_failed_run": {
+    "evidence_kind": "Supplementary sequential post-release byte snapshots, outside admission and read guards",
     "sabl_changed_byte_count": 16,
     "changed_range_start_inclusive": 110592,
     "changed_range_end_exclusive": 110608,
@@ -317,6 +318,31 @@
     "unrelated_python_original_identity_preserved": true
   },
   "local_evidence": {
+    "supplementary_payload_read_provenance": {
+      "under_lease_proof": "The completed transaction checked its 40 HashInputs, staged inputs and retained artifacts before release. Its sealed final-state flags are distinct from this supplementary catalogue and comparison.",
+      "comparison_and_inventory_after_utc": "2026-10-12T15:32:19.7453009Z",
+      "comparison_and_inventory_before_checkpoint_creation_utc": "2026-10-12T15:35:34.9110077Z",
+      "second_inventory_validation_approximate_utc": "2026-10-12T15:38:16Z",
+      "per_file_timestamps_recorded": false,
+      "admission_held": false,
+      "read_guards_held": false,
+      "continuous_immutability_proven": false,
+      "full_inventory_passes": 2,
+      "files_per_inventory_pass": 51,
+      "bytes_per_inventory_pass": 1404291,
+      "sabl_comparison_input_bytes_each": 114816,
+      "ff_comparison_input_bytes_each": 544,
+      "sabs_comparison_input_bytes_each": 4096,
+      "additional_new_artifact_rehash_bytes": 119456,
+      "auxiliary_partial_attempt": {
+        "outcome": "Stopped after reading toc0.dcache: 549664 bytes exceeds auxiliary 512 KiB per-file limit",
+        "partial_catalogue_read": true,
+        "native_run_performed": false,
+        "native_retry_performed": false,
+        "runtime_or_reader_limits_changed": false,
+        "later_auxiliary_inventory_per_file_bound": 1048576
+      }
+    },
     "state": {
       "bytes": 65117,
       "sha256": "d0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9"

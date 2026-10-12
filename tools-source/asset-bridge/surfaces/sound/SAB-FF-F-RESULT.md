@@ -39,10 +39,22 @@ the FF and SABS are also identical. The old state still hashes to
 `c1b532dc3d61f0408f3ec4202e93fdf2d6394b0209ed3b2b9d2cdaaed7098276` and stays failed.
 No retained bank or receipt was repaired in place.
 
+That comparison and the supplementary 51-file hash inventory were sequential
+snapshots **after lease release**, without retained input guards or admission.
+They were computed after the 15:32:19.7453009 UTC postflight and before checkpoint
+creation at 15:35:34.9110077 UTC. A second complete inventory check ran around
+15:38:16 UTC in the commit command. No per-file timestamp was captured. These
+checks do not establish continuous immutability or extend the under-lease proof.
+An earlier auxiliary inventory attempt read a partial catalogue and stopped when
+the 549664-byte `toc0.dcache` exceeded its local 512 KiB limit; no native Run or
+retry occurred. The later inventory used a separate 1 MiB per-file bound, without
+changing any runtime or independent-reader threshold.
+
 All 77 staged inputs and 80 transaction entries were restored. The final state
 records confirmed job closure/disposal, unchanged source hashes, preserved stock
 and released read guards; no cleanup error, quarantine or retained lease remains.
-The 40 hash inputs were checked by the transaction. The reused stock profile
+The 40 hash inputs and retained artifacts were checked by the transaction under
+its admission and guards, separately from those later snapshots. The reused stock profile
 remains 71 hard links plus its 77-byte sentinel copy. Final accounting converged
 to 51 files / 1404291 bytes; the highest sampled total was 1522299 bytes. The
 64 MiB total and 2 MiB per-pipe limits are observed stop thresholds, not quotas.
