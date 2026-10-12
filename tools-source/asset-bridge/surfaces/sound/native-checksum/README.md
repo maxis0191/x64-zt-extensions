@@ -5,6 +5,11 @@ No native compiler, linker, librarian, probe, FFmpeg or ZoneTool was run for thi
 correction. The failed first SAB/FF attempt remains unchanged. The independent
 reader still rejects its checksum. Playback and `Ready` remain false.
 
+The subsequent [Seal C checkpoint](INPUT-SEALING.md) qualifies the retained input
+bytes. The [private executable Build Plan B](BUILD-PLAN.md) now has a source-only
+launcher and mock verification. It still requires separate review and native GO;
+the earlier preparation descriptions below are historical proposal evidence.
+
 ## Observed defect and source boundary
 
 The original 34-byte FLAC STREAMINFO contains 18 metadata bytes followed by the
