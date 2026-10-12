@@ -28,11 +28,17 @@ try {
     & {
         $script:readerPathCalls=0
         function Assert-H1Path([string]$Path){$script:readerPathCalls++;throw 'BeforeStreamSentinel'}
+        Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' -Guards $null} 'limit must be explicitly'
         foreach($limit in @(33554433,45217664,67108864)){
             Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null} 'explicit 64 MiB opt-in'
         }
-        foreach($limit in @(0,67108865)){
-            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow64MiB} 'validate argument'
+        foreach($limit in @(0,536870913,[long]::MaxValue)){
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow512MiB} 'validate argument|Cannot process argument transformation'
+        }
+        foreach($limit in @(67108865,536870912)){
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null} 'explicit 512 MiB opt-in'
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow64MiB} 'explicit 512 MiB opt-in'
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow512MiB:$false} 'explicit 512 MiB opt-in'
         }
         Check ($script:readerPathCalls -eq 0) 'Oversize/default bounds reached the path or reader.'
         Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' 33554432 $null} 'BeforeStreamSentinel'
@@ -40,6 +46,10 @@ try {
             Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow64MiB} 'BeforeStreamSentinel'
         }
         Check ($script:readerPathCalls -eq 4) 'Explicit reader boundary dispatch differs.'
+        foreach($limit in @(33554432,33554433,67108864,67108865,536870912)){
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow512MiB} 'BeforeStreamSentinel'
+        }
+        Check ($script:readerPathCalls -eq 9) 'Explicit 512 MiB opt-in dispatch differs.'
     }
     $snapshotPath=Join-Path $outer 'snapshot.txt'
     $replacement=Join-Path $outer 'replacement.txt'
@@ -54,14 +64,25 @@ try {
             [Text.Encoding]::UTF8.GetString($snapshot.Bytes) -ceq 'observed header and bytes') 'Header and digest did not use the same snapshot.'
         $opted=Read-SteamSnapshot $snapshotPath 64 $held -Allow64MiB
         Check ($opted.SHA256 -ceq $snapshot.SHA256 -and $opted.Length -eq $snapshot.Length -and $held.Count -eq 2) 'Opt-in changed the existing guarded snapshot implementation.'
+        # Only the small original text is allocated, even with the maximum limit.
+        $v3=Read-SteamSnapshot $snapshotPath 512MB $held -Allow512MiB
+        Check ($v3.SHA256 -ceq $snapshot.SHA256 -and $v3.Bytes.Length -eq $original.Length -and $held.Count -eq 3) '512 MiB opt-in changed the byte snapshot/guard contract.'
         Refuses {[IO.File]::AppendAllText($snapshotPath,'growth')} '.'
         Refuses {[IO.File]::Move($replacement,$snapshotPath,$true)} '.'
         Check ([IO.File]::ReadAllText($snapshotPath) -ceq 'observed header and bytes' -and (Test-Path -LiteralPath $replacement)) 'Guarded file was replaced or grew.'
     }finally{foreach($guard in $held){$guard.Dispose()};$held.Clear()}
     [IO.File]::WriteAllBytes($snapshotPath,[byte[]]::new(65))
-    Refuses {Read-SteamSnapshot $snapshotPath 64 $held} 'exceeds byte bound'
+    # Exclusive share would reject any second open. The size refusal must happen
+    # from metadata first, proving no file-body read/allocation is attempted.
+    $exclusive=[IO.FileStream]::new($snapshotPath,'Open','Read','None')
+    try{Refuses {Read-SteamSnapshot $snapshotPath 64 $held} 'exceeds byte bound'}finally{$exclusive.Dispose()}
     Check ($held.Count -eq 0 -and $snapshot.Length -eq $original.Length -and
         [Text.Encoding]::UTF8.GetString($snapshot.Bytes) -ceq 'observed header and bytes') 'Oversize read retained a handle or mutated earlier snapshot.'
+    [IO.File]::WriteAllBytes($snapshotPath,[byte[]]::new(0))
+    try{
+        $empty=Read-SteamSnapshot $snapshotPath 1 $held
+        Check ($empty.Length -eq 0 -and $empty.Bytes.Length -eq 0 -and $held.Count -eq 1) 'Empty snapshots changed their legacy behavior.'
+    }finally{foreach($guard in $held){$guard.Dispose()};$held.Clear()}
     Remove-Item -LiteralPath $snapshotPath,$replacement
     $listPath=Join-Path $outer 'filelist.txt'
     try {

@@ -214,6 +214,66 @@ try {
     $script:provider[$f.Plan.CandidateSource].Length=64MB;$f.Plan.OutputLimitBytes=307385752L
     Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
     $f.Plan.OutputLimitBytes++;Refuses {Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner'} 'budget|Fixed catalogue'
+    foreach($count in 1,8,32){
+        $f=New-Qualified $count 'QualifiedCollectionV3'
+        Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+        Check (@(Get-T7CatalogueBootstraps $f.Plan).Count -eq $count) 'V3 explicit item count differs.'
+        Assert-T7CatalogueBootstrapReceipt $f.Plan $f.Receipts[-1] $f.Plan.Bootstraps[-1].Path;$checks++
+        Assert-T7CatalogueDistinctInputIds $f.Plan @(New-InputIds $f);$checks++
+        Check ($f.Plan.Bindings.Count -eq 22+3*$count) 'V3 exact binding count differs.'
+    }
+    foreach($count in 0,33){
+        $f=New-Qualified $count 'QualifiedCollectionV3'
+        Refuses {Get-T7CatalogueBootstraps $f.Plan} 'one through 32'
+    }
+    foreach($policy in 'QualifiedCollectionV1','QualifiedCollectionV2'){
+        $f=New-Qualified 9 $policy
+        Refuses {Get-T7CatalogueBootstraps $f.Plan} 'one through 8'
+    }
+    $f=New-Qualified 1 'QualifiedCollectionV3';Set-QualifiedBytes $f 0 512MB
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    $f.Plan.Bootstraps[0].Bytes++;Refuses {Get-T7CatalogueBootstraps $f.Plan} 'bytes'
+    $f=New-Qualified 32 'QualifiedCollectionV3'
+    Set-QualifiedBytes $f 0 512MB;Set-QualifiedBytes $f 31 (256MB-30000)
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    Check ($f.Plan.OutputLimitBytes -eq 933115800L) 'V3 current MSG candidate plus 768 MiB exact ceiling differs.'
+    $f.Plan.Bootstraps[-1].Bytes++;$script:partialItems=[Collections.Generic.List[object]]::new()
+    Refuses {Get-T7CatalogueBootstraps $f.Plan|ForEach-Object {$script:partialItems.Add($_)}} 'aggregate'
+    Check ($script:partialItems.Count -eq 0) 'Late V3 aggregate excess leaked a partial collection.'
+    $f=New-Qualified 2 'QualifiedCollectionV3';Set-QualifiedBytes $f 0 512MB;Set-QualifiedBytes $f 1 256MB
+    $f.Plan.CandidateBytes=64MB;$f.Plan.Bindings[0].Bytes=64MB;$f.Plan.InputMetadata[0].Bytes=64MB
+    $script:provider[$f.Plan.CandidateSource].Length=64MB;$f.Plan.OutputLimitBytes=978474392L
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    Check ($f.Plan.OutputLimitBytes -lt 1GB) 'V3 theoretical output ceiling is not below 1 GiB.'
+    foreach($value in @(-1,0,1.5,'978474392',$true,[long]::MaxValue,978474393L)){
+        $bad=Copy-Value $f;$bad.Plan.OutputLimitBytes=$value
+        Refuses {Assert-T7CataloguePlan $bad.Plan $bad.Repo 'synthetic-runner'} 'budget|Fixed catalogue'
+    }
+    foreach($value in @(-1,0,1.5,'1000',$null,$true,536870913,[long]::MaxValue)){
+        $f=New-Qualified 32 'QualifiedCollectionV3';$f.Plan.Bootstraps[-1].Bytes=$value
+        Refuses {Get-T7CatalogueBootstraps $f.Plan} 'bytes'
+    }
+    foreach($value in @(-1,0,'67108864',67108865,[long]::MaxValue)){
+        $f=New-Qualified 1 'QualifiedCollectionV3';$f.Plan.CandidateBytes=$value
+        Refuses {Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner'} 'candidate'
+    }
+    foreach($case in 'name','id','receipt','script','alias','base-path'){
+        $f=New-Qualified 32 'QualifiedCollectionV3';$b=$f.Plan.Bootstraps[-1]
+        switch($case){
+            name {$b.Path=$f.Plan.Bootstraps[0].Path;$b.RelativePath=$f.Plan.Bootstraps[0].RelativePath}
+            id {$b.FileId=$f.Plan.Bootstraps[0].FileId}
+            receipt {$b.QualificationReceipt=Copy-Value $f.Plan.Bootstraps[0].QualificationReceipt}
+            script {$b.QualificationScript=Copy-Value $f.Plan.Bootstraps[0].QualificationScript}
+            alias {$b.RelativePath='zone/../invented_31.ff'}
+            base-path {$b.QualificationScript.Path=$f.Plan.EngineSource}
+        }
+        $script:partialItems=[Collections.Generic.List[object]]::new()
+        Refuses {Get-T7CatalogueBootstraps $f.Plan|ForEach-Object {$script:partialItems.Add($_)}}
+        Check ($script:partialItems.Count -eq 0) 'Invalid 32nd V3 item published earlier items.'
+    }
+    $f=New-Qualified 1 'QualifiedCollectionV3'
+    $f.Plan.Bindings[3].Bytes=64MB+1;$script:provider[$f.Plan.JobAssembly].Length=64MB+1
+    Refuses {Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner'} 'Bound pin metadata'
     foreach($case in 'name-path','identity','receipt','script','text-source','text-base','run-root','foreign-parent','alias-case','alias-traversal','hash','provenance','text-size','extra-field'){
         $f=New-Qualified;$b=$f.Plan.Bootstraps[-1]
         switch($case){
@@ -284,6 +344,17 @@ try {
     $state.InputFileIds[-1].FileId=$state.InputFileIds[0].FileId
     Refuses {. ([scriptblock]::Create($fragment))} 'Distinct'
     Check (!(Test-Path -LiteralPath (Join-Path $plan.WorkingDirectory 'zone'))) 'ID collision created an alias directory.'
+    foreach($case in 'donor-hardlink','base-hardlink','missing','qualified-mismatch'){
+        $f=New-Qualified 32 'QualifiedCollectionV3';$plan=$f.Plan;$state=[pscustomobject]@{InputFileIds=@(New-InputIds $f)}
+        switch($case){
+            donor-hardlink {$state.InputFileIds[3].FileId=$state.InputFileIds[-1].FileId}
+            base-hardlink {$state.InputFileIds[0].FileId=$state.InputFileIds[-1].FileId}
+            missing {$state.InputFileIds=@($state.InputFileIds[0..($state.InputFileIds.Count-2)])}
+            qualified-mismatch {$state.InputFileIds[-1].FileId='AABBCCDD:FFFFFFFFFFFFFFFF'}
+        }
+        Refuses {. ([scriptblock]::Create($fragment))} 'Distinct|Complete|identity'
+        Check (!(Test-Path -LiteralPath (Join-Path $plan.WorkingDirectory 'zone'))) 'Late V3 ID failure created an alias directory.'
+    }
     Check ($runner.IndexOf('Assert-T7CatalogueBootstrapReceipt') -lt $runner.IndexOf('if(!$Run)') -and $start -lt $runner.IndexOf('New-T7CatalogueAlias $pin')) 'Global qualification/identity validation moved behind aliases.'
     $receiptStart=$runner.IndexOf('    $bootstraps=@(');$receiptEnd=$runner.IndexOf('    $job=', $receiptStart)
     $receiptFragment=$runner.Substring($receiptStart,$receiptEnd-$receiptStart)
@@ -297,6 +368,77 @@ try {
         . ([scriptblock]::Create($directoryFragment))
     }} 'lifecycle'
     Check (!(Test-Path -LiteralPath (Join-Path $plan.WorkingDirectory 'zone'))) 'Late failed qualification created an alias directory.'
+    $f=New-Qualified 32 'QualifiedCollectionV3';$plan=$f.Plan;$qualifiedReceipts=@{}
+    for($i=0;$i -lt 32;$i++){$qualifiedReceipts[$f.Plan.Bootstraps[$i].QualificationReceipt.Path]=$f.Receipts[$i]}
+    $f.Receipts[-1].GuardsClosed=$false
+    Refuses {& {
+        function Read-H1SmallJson([string]$Path,[int]$Limit){$qualifiedReceipts[$Path]}
+        . ([scriptblock]::Create($receiptFragment))
+        . ([scriptblock]::Create($directoryFragment))
+    }} 'lifecycle'
+    Check (!(Test-Path -LiteralPath (Join-Path $plan.WorkingDirectory 'zone'))) 'Failed 32nd V3 receipt created an alias directory.'
+    # Execute the actual plan-validation/receipt-read runner fragment. A late
+    # size refusal must precede all further pin/receipt reads, not just aliases.
+    $planStart=$runner.IndexOf('    Assert-T7CataloguePlan $plan $repo $PSCommandPath')
+    $planFragment=$runner.Substring($planStart,$receiptEnd-$planStart)
+    $f=New-Qualified 32 'QualifiedCollectionV3';$plan=$f.Plan;$plan.Bootstraps[-1].Bytes=[long]::MaxValue
+    $script:afterPlanReads=0
+    Refuses {& {
+        $repo=$f.Repo
+        function Open-H1Pin($Pin){$script:afterPlanReads++;throw 'UnexpectedPinRead'}
+        function Read-H1SmallJson([string]$Path,[int]$Limit){$script:afterPlanReads++;throw 'UnexpectedReceiptRead'}
+        . ([scriptblock]::Create($planFragment))
+    }} 'bytes'
+    Check ($script:afterPlanReads -eq 0) 'Invalid V3 sum reached later runner file reads.'
+
+    # Streaming guard/dispatch uses only small authored bytes. No real FF,
+    # native ID provider, admission or hardlink is involved in this test.
+    $f=New-Qualified 1 'QualifiedCollectionV3';$b=$f.Plan.Bootstraps[0]
+    $content=[Text.Encoding]::UTF8.GetBytes('Original V3 streaming-guard test bytes.')
+    Set-QualifiedBytes $f 0 $content.Length
+    $b.SHA256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($content)).ToLowerInvariant()
+    $pin=@($f.Plan.Bindings|Where-Object Path -CEQ $b.Path)[0];$pin.SHA256=$b.SHA256
+    [IO.File]::WriteAllBytes($b.Path,$content)
+    $baseOpen=${function:Open-H1Pin};$baseBudget=${function:Test-H1Budget};$baseDeadline=${function:Assert-H1Deadline}
+    try{
+        foreach($policy in 'QualifiedCollectionV1','QualifiedCollectionV2'){
+            $f.Plan.BootstrapPolicy=$policy
+            Enable-T7CatalogueRuntimeProfile $f.Plan
+            Check (${function:Open-H1Pin}.ToString() -ceq $baseOpen.ToString()) 'V1/V2 replaced the shared pin reader.'
+            ${function:Test-H1Budget}=$baseBudget;${function:Assert-H1Deadline}=$baseDeadline
+        }
+        $f.Plan.BootstrapPolicy='QualifiedCollectionV3';Enable-T7CatalogueRuntimeProfile $f.Plan
+        $guard=Open-H1Pin $pin
+        try{
+            Check ($guard.Length -eq $content.Length -and $guard.Position -eq 0) 'V3 streaming guard is not retained/reset.'
+            Refuses {[IO.File]::AppendAllText($b.Path,'mutation')} '.'
+        }finally{$guard.Dispose()}
+        $aliasDir=Join-Path $f.Plan.WorkingDirectory 'zone';[IO.Directory]::CreateDirectory($aliasDir)|Out-Null
+        $aliasPath=Join-Path $f.Plan.WorkingDirectory $b.RelativePath
+        [IO.File]::WriteAllBytes($aliasPath,$content) # Ordinary synthetic file, not a claimed hardlink.
+        $aliasPin=[pscustomobject]@{Path=$aliasPath;Bytes=$b.Bytes;SHA256=$b.SHA256}
+        try{
+            $guard=Open-H1Pin $aliasPin
+            try{Check ($guard.Length -eq $content.Length) 'Exact V3 alias path was not dispatched.'}finally{$guard.Dispose()}
+        }finally{Remove-Item -LiteralPath $aliasPath;Remove-Item -LiteralPath $aliasDir}
+        foreach($case in 'bytes','hash','text','string-text'){
+            $bad=Copy-Value $pin
+            switch($case){bytes {$bad.Bytes++};hash {$bad.SHA256='0'*64};text {$bad.IsText=$true};string-text {$bad.IsText='false'}}
+            Refuses {Open-H1Pin $bad} 'Exact V3'
+        }
+        $foreign=[pscustomobject]@{Path=(Join-Path $root 'never-opened.ff');Bytes=64MB+1;SHA256=('0'*64)}
+        Refuses {Open-H1Pin $foreign} 'Invalid bounded binding'
+        $content[0]=$content[0] -bxor 1;[IO.File]::WriteAllBytes($b.Path,$content)
+        Refuses {Open-H1Pin $pin} 'V3 bound input hash/length'
+        $guard=[IO.FileStream]::new($b.Path,'Open','Read','None');$guard.Dispose();$checks++
+        # An exclusive guard proves the metadata mismatch refuses before open.
+        $script:provider[$b.Path].Length++
+        $guard=[IO.FileStream]::new($b.Path,'Open','Read','None')
+        try{Refuses {Open-H1Pin $pin} 'before open'}finally{$guard.Dispose()}
+    }finally{
+        ${function:Open-H1Pin}=$baseOpen;${function:Test-H1Budget}=$baseBudget;${function:Assert-H1Deadline}=$baseDeadline
+        Remove-Item -LiteralPath $b.Path
+    }
     $legacy=New-Pair;Assert-T7CatalogueDistinctInputIds $legacy.Plan $null;$checks++
     $f=New-Pair;$zoneDir=Join-Path $f.Plan.WorkingDirectory 'zone';[IO.Directory]::CreateDirectory($zoneDir)|Out-Null
     foreach($name in 'en_core_pre_gfx.ff','core_pre_gfx.ff'){[IO.File]::WriteAllText((Join-Path $zoneDir $name),'invented text only')}
@@ -306,7 +448,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $zoneDir 'guessed.ff'),'invented')
     Refuses {Assert-T7CatalogueEngineOutputs $f.Plan} 'Unexpected zone'
     Check (!('IW7ResourceMemoryV1' -as [type]) -and !('IW7HudFileIdentity' -as [type]) -and !('IW7.AnimationProbe.NativeJob' -as [type])) 'Pure tests loaded native support.'
-    [ordered]@{Status='Passed';Checks=$checks;Fixtures='Legacy pair and explicit 1/3/8-item qualified collections';OwnerStockRead=$false;RealLeaseAcquired=$false;NativeTypesLoaded=$false;NativeProcessStarted=$false;OperationalPlanCreated=$false}|ConvertTo-Json
+    [ordered]@{Status='Passed';Checks=$checks;Fixtures='Legacy pair; V1/V2 1..8; V3 1..32, 512/768 MiB metadata only; tiny original streaming guards';OwnerStockRead=$false;RealLeaseAcquired=$false;NativeTypesLoaded=$false;NativeProcessStarted=$false;OperationalPlanCreated=$false}|ConvertTo-Json
 }finally{
     $full=[IO.Path]::GetFullPath($root);$temp=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')+'\'
     if(!$full.StartsWith($temp,[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($full) -cnotmatch '^t7-bootstraps-tests-[0-9a-f]{32}$'){throw 'Unexpected synthetic cleanup root.'}
