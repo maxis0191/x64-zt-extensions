@@ -1,8 +1,24 @@
 # Locator Plan E: reassessed fixed owner-range bounds
 
-This is source, pure tests and inert Plan only. No Run E, fresh snapshot content
-read, resource admission, game or debugger attachment has occurred. The Run D
+The original checkpoint below was source, pure tests and inert Plan only. A later
+separate GO authorized one Run E, recorded below, without retry or attachment.
+The Run D
 failure is archived separately and its original receipts remain unchanged.
+
+## Run E: complete range decode, partial traversal
+
+The [sanitized receipt](run-e-validation-2026-10-12.json) records one Run at
+source `3ca9df4`. Its owner is `[0x140a17e70, 0x140a18832)`, 2,498 bytes, fully
+decoded into 500 instructions. The traversal visited 310 instructions and
+recorded 64 control edges before refusing the next edge at `0x140a183c3`.
+Six frontiers remain pending; there were no local ownership refusals or global
+opcode scans. This is `Failed` / `bounded-refusal`, not a completed route.
+
+The original process exited 2, job Active=0; final guarded input proof passed,
+the job closed and its reservation was released. Main was unchanged. The two
+output files total 103,728 bytes; maximum 103,732 includes an earlier state.
+No callee was followed, no retry occurred and the original receipts are intact.
+E's measured range size does not retroactively fill D's missing size evidence.
 
 D refused before decoding because its entry's unique `.pdata` range exceeded
 the deliberate 2 KiB limit. The exact range size was not serialized by D and is
