@@ -36,6 +36,11 @@ try {
         if($hash -cne $pin[0].SHA256){throw 'Bootstrap source differs from reviewed plan.'}
     }
     . $plan.Core
+    $dumpProfile=$false
+    if($plan.PSObject.Properties.Name -contains 'Profile') {
+        if($plan.Profile -cnotin @('ParserConverter','OriginalH1Dump')){throw 'Unknown H1 profile.'}
+        $dumpProfile=$plan.Profile -ceq 'OriginalH1Dump'
+    }
     if($plan.OutputLimitBytes -ne 32MB -or $plan.MetadataReserveBytes -ne 1MB -or $plan.CleanupSeconds -ne 5 -or
        $plan.Stages.Compile.PhysicalBytes -ne 4GB -or $plan.Stages.Compile.CommitBytes -ne 6GB -or
        $plan.Stages.Compile.DeadlineSeconds -ne 120 -or $plan.Stages.Compile.Kind -cne 'Build' -or
@@ -122,7 +127,8 @@ try {
         $state.Executable=@($state.Artifacts|Where-Object Path -CEQ $plan.Executable)[0]
     }else{
         $state.Observation=Read-H1SmallJson (Join-Path $stageRoot 'stdout.log') 4096
-        Assert-H1Observation $state.Observation
+        Assert-H1Observation $state.Observation -Dump:$dumpProfile
+        if($dumpProfile){$state.DumpArtifacts=@(Get-H1DumpArtifacts $plan $context)}
         $state.Executable=$prior.Executable
     }
     Assert-H1Deadline $stageStarted $budget.DeadlineSeconds

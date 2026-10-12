@@ -413,3 +413,8 @@ rendered appearance and retail-H1 compatibility remain unverified. The source-on
 contract/validation JSONs remain dated preparation evidence. No existing Failed
 receipt or acceptance boundary was rewritten. A next export/integration step
 requires a distinct source plan and authorization; this witness grants none.
+
+The separate [DUMP-PROBE.md](DUMP-PROBE.md) now supplies that next source-only
+profile and an independent reader. Its fixture-only string bridge leaves token
+0 unresolved. The prepared B bytes and receipts are preserved; no new native
+stage has run under the dump Plan.

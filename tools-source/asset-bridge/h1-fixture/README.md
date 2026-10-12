@@ -95,9 +95,10 @@ Compile A remains a preserved failed deadline attempt.
    `prepare` normally turns those strings into zone-buffer indices. Direct
    XModel conversion only aliases that array, while `iw7::xmodel::dump` calls
    the engine `SL_ConvertToString`. Calling dump directly on the parsed model
-   therefore is not a demonstrated valid path. A native consumer may inspect
-   converted fields first, but emission needs a reviewed genuine string
-   resolution path, with no invented live engine ID.
+   therefore is not a demonstrated valid path. The new source-only
+   [dump profile](DUMP-PROBE.md) bridges this one original string through the
+   actual parser table, without changing token 0 or inventing an engine ID.
+   That explicit fixture adapter is not engine SL integration and has not run.
 3. **Complete material.** `h1/assets/material.cpp:199-340` expects a named
    technique and its statebits. An empty technique leaves zero state entries
    and hits `max_state_index >= stateBitsCount`; an empty JSON is not a valid
@@ -112,3 +113,7 @@ native checkpoint is separate and does not rewrite those receipts. No FF build,
 extraction, game, download, retail data read or shared-source modification occurred
 for this fixture. Main's original process identity and image hash stayed unchanged.
 The coordinating branch owns the private integration/CI/merge workflow.
+
+The next source-only candidate is [DUMP-PROBE.md](DUMP-PROBE.md): exact IW7 dump
+fragments, independent bounded readback, 68-binding two-stage Plan, dependency
+handoff to existing Beacon/rig tooling. No dump/FF/render result is claimed.

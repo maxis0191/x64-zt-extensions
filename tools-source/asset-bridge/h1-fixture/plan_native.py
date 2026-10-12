@@ -46,18 +46,26 @@ def binding(path, expected=None):
     return {"Path": str(path), "Bytes": total, "SHA256": value}
 
 
-def make_plan(source, prepared, fixture, providers, job, vc, sdk, sdk_version, run):
-    prepare_native.verify_prepared(source, prepared)
+def make_plan(source, prepared, fixture, providers, job, vc, sdk, sdk_version, run, *, dump=False):
+    if dump:
+        import prepare_dump
+        prepare_dump.verify_prepared(source, prepared)
+    else:
+        prepare_native.verify_prepared(source, prepared)
     generate.regular_ancestry(run)
     runtime = OWN.parents[2] / "runtime"
     generate.require(run.is_relative_to(runtime) and run != runtime and not run.exists(),
                      "fresh run root beneath this worktree runtime required")
     inputs = []
     contract = json.loads(prepare_native.raw_bounded(OWN / "native-source-contract.json"))
-    inputs += [binding(source / name) for name in contract["lf_sha256"]]
-    inputs += [binding(prepared / name) for name in
-               ("parser_declarations.inc", "production_parsers.inc", "production_converters.inc",
-                "production_support.inc", "fixture_bytes.inc", "native_probe.cpp", "preparation.local.json")]
+    source_names = list(contract["lf_sha256"])
+    prepared_names = ["parser_declarations.inc", "production_parsers.inc", "production_converters.inc",
+                      "production_support.inc", "fixture_bytes.inc", "native_probe.cpp", "preparation.local.json"]
+    if dump:
+        source_names += [prepare_native.BASE + name for name in prepare_dump.EXTRA_NAMES]
+        prepared_names += ["production_dumps.inc", "native_dump_adapter.inc"]
+    inputs += [binding(source / name) for name in dict.fromkeys(source_names)]
+    inputs += [binding(prepared / name) for name in prepared_names]
     for name, payload in generate.build_payloads().items():
         generate.require(prepare_native.raw_bounded(fixture / name) == payload, "original fixture differs")
         inputs.append(binding(fixture / name))
@@ -65,6 +73,9 @@ def make_plan(source, prepared, fixture, providers, job, vc, sdk, sdk_version, r
                  "generate.py", "inspect_fixture.py", "native_probe.cpp", "native-source-contract.json",
                  "h1-xsurface-reviewed.patch", "H1Native.Compiler.ps1", "H1Native.JobMembers.cs"):
         inputs.append(binding(OWN / name))
+    if dump:
+        for name in ("prepare_dump.py", "native_dump_adapter.inc", "dump-source-contract.json", "inspect_dump.py"):
+            inputs.append(binding(OWN / name))
     inputs += [binding(providers / name, sha) for name, sha in PROVIDERS.items()]
     inputs.append(binding(job, JOB_SHA))
     compiler_dir = vc / "bin/Hostx64/x64"
@@ -85,6 +96,7 @@ def make_plan(source, prepared, fixture, providers, job, vc, sdk, sdk_version, r
             "/Fo" + str(compile_root / "native_probe.obj"), "/Fe" + str(compile_root / "native_probe.exe"),
             str(prepared / "native_probe.cpp"), "/link", "/INCREMENTAL:NO", "user32.lib"]
     return {"Schema": "iw7.h1-native-plan/2", "NativeExecuted": False, "LeaseAcquired": False,
+            "Profile": "OriginalH1Dump" if dump else "ParserConverter",
             "Authorization": "Plan is not a native GO; invoke one stage only after coordinator approval",
             "RunRoot": str(run), "FixtureRoot": str(fixture), "PreparedRoot": str(prepared),
             "SourceRoot": str(source), "SourcePin": generate.PIN,
@@ -113,10 +125,11 @@ if __name__ == "__main__":
     for name in ("source", "prepared", "fixture", "providers", "job", "vc", "sdk", "run"):
         cli.add_argument("--" + name, type=Path, required=True)
     cli.add_argument("--sdk-version", default="10.0.26100.0")
+    cli.add_argument("--dump", action="store_true", help="separate exact IW7 dump preparation profile")
     cli.add_argument("--output", type=Path, help="optional create-only local plan; stdout otherwise")
     args = cli.parse_args()
     plan = make_plan(args.source, args.prepared, args.fixture, args.providers, args.job,
-                     args.vc, args.sdk, args.sdk_version, args.run)
+                     args.vc, args.sdk, args.sdk_version, args.run, dump=args.dump)
     payload = (json.dumps(plan, indent=2) + "\n").encode()
     generate.require(len(payload) <= 128 * 1024, "plan exceeds 128 KiB")
     if args.output:

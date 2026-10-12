@@ -149,15 +149,36 @@ function Write-H1Receipt($Plan,$State,[string]$StageRoot) {
     if((Measure-H1Output $Plan.RunRoot) -gt $Plan.OutputLimitBytes){throw 'Output changed before receipt publication.'}
     [IO.File]::Move($pending,$final) # No replacement; success is never published early.
 }
-function Assert-H1Observation($Report) {
-    if($Report.schema -cne 'iw7.h1-parser-converter-observation/1' -or $Report.checks -lt 1 -or
+function Assert-H1Observation($Report,[switch]$Dump) {
+    $schema=if($Dump){'iw7.h1-parser-converter-dump-observation/1'}else{'iw7.h1-parser-converter-observation/1'}
+    if($Report.schema -cne $schema -or $Report.checks -lt 1 -or
        $Report.vertices_checked -ne 24 -or $Report.bone_name_observed -cne 'tag_origin' -or
        $Report.material_reference -cne 'paris_h1_original_material'){throw 'Native observation identity differs.'}
     foreach($name in 'production_parsers_executed','production_converters_executed','declaration_adapter') {
         if($Report.$name -isnot [bool] -or !$Report.$name){throw 'Native method observation missing.'}
     }
+    if($Report.dump_executed -isnot [bool] -or $Report.dump_executed -ne [bool]$Dump){throw 'Dump scope differs from reviewed profile.'}
+    if($Dump -and ($Report.fixture_string_adapter -isnot [bool] -or !$Report.fixture_string_adapter -or
+                  $Report.string_calls -ne 1 -or $Report.dump_files -ne 2)){throw 'Original fixture dump adapter identity differs.'}
     foreach($name in 'whole_zonetool_application','bone_engine_token_resolved','material_complete','lod_named_reference_linked',
-        'dump_executed','ff_built','render_verified','retail_h1_compatibility') {
+        'ff_built','render_verified','retail_h1_compatibility') {
         if($Report.$name -isnot [bool] -or $Report.$name){throw 'Native observation overclaims its scope.'}
+    }
+}
+function Get-H1DumpArtifacts($Plan,$Context) {
+    $root=Join-Path $Plan.RunRoot 'probe/dump/h1_original'
+    $expected=@('xmodel/paris_h1_original_cube.xmb','xsurface/paris_h1_original_cube_lod0.xsb')
+    # Measure validates all descendants before any recursive file enumeration.
+    $null=Measure-H1Output $root
+    $files=@([IO.Directory]::EnumerateFiles($root,'*',[IO.SearchOption]::AllDirectories))
+    if($files.Count -ne 2){throw 'Exactly two dump artifacts required.'}
+    foreach($relative in $expected) {
+        $path=Join-Path $root $relative
+        Assert-H1Path $path
+        $stream=[IO.FileStream]::new($path,'Open','Read','Read');$Context.Guards.Add($stream)
+        if($stream.Length -le 0 -or $stream.Length -gt 64KB){throw 'Dump artifact exceeds 64 KiB or is empty.'}
+        $sha=[Security.Cryptography.SHA256]::Create()
+        try{$hash=[Convert]::ToHexString($sha.ComputeHash($stream)).ToLowerInvariant()}finally{$sha.Dispose()}
+        [pscustomobject]@{Path=$path;Bytes=$stream.Length;SHA256=$hash}
     }
 }
