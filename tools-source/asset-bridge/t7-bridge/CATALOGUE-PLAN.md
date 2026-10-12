@@ -803,3 +803,113 @@ the adapter did not decode the capture. Raw hex and decoded message text remain
 outside Git. I is now consumed. The next step is review of worker 51's finding
 and a separately authorized response; this checkpoint authorizes no retry,
 extra input, new build or further native invocation.
+## Bootstrap B qualification and Plan J preparation (2026-10-12)
+
+The complete I message led the analysis owner to identify one startup-zone
+dependency. An exact 832-byte `en_core_pre_gfx.ff` was qualified separately;
+no other FF, prefix, header, alias, copy or native engine was read or created
+by that qualification. Two guarded reads established SHA256
+`37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c`,
+with unchanged file identity, creation time, write time and attributes.
+This is **ObservedUnderLeaseNotDepotVerified**. Header semantics, content
+compatibility, depot provenance and engine lookup location remain unproved.
+
+The first B dispatch passed a forward-slash `-File` argument to a contract
+that requires exact equality with normalized `PSCommandPath`. It refused
+before live preflight, lease, marker or payload access. Source guards closed;
+session 44110 exited 1 (chunk `99f85e`), and an independent witness found host
+and parent absent. The script and this refusal were preserved. A distinct GO
+authorized the literal Windows-path correction, with no source change.
+
+Corrected B admitted 6/8 GiB at 17:49:41.3646928 UTC, with physical reserve zero
+and unchanged commit reserve. Its successful identity/hash-only receipt was
+published at 17:49:42.3089216 UTC. The lease was released, guards closed and
+quarantine absent. Session 51026 exited 0 (chunk `7ace0c`); the independent
+17:50:38.6993542 UTC witness found host/parent absent, zero leases/heavy work,
+Main/UDP absent and the preserved Python identity unchanged. No payload hash
+was read after release. The [sanitized checkpoint](catalogue-bootstrap-j-20261012.json)
+pins both dispatch outcomes and the private qualification/closure evidence.
+
+The existing catalogue runner now accepts an optional explicit `Bootstrap`
+only for `t7-catalog-message`. It requires the exact 832-byte binary pin,
+qualified file identity, creation/write metadata, and separately pinned
+qualification receipt and script. Default validation checks that successful
+receipt while text guards are held. After resource admission, the runner
+checks the actual file identity under its binary guard and creates the fifth
+alias at `work/zone/en_core_pre_gfx.ff` through the existing guarded alias
+helper. Existing final input/alias hash, metadata and file-ID verification
+also cover this dependency. The output allowlist admits only this additional
+declared file. Plans without `Bootstrap` retain their four-input behavior.
+
+Plan J is 12,690 bytes, SHA256
+`44bb6204bf695fdb212c7fd342af740f44f95da5a44201c3f87edacc2b1a9f7a`.
+It preserves I's MSG candidate/build, arguments, donor zone, stderr cap,
+6/8 GiB reservation and 200/120/5-second limits. It has 25 bindings
+(19 text, six binary), five input metadata records and five expected aliases.
+The total output ceiling increases by exactly 832 bytes to 127,810,264.
+Its Stopped Main observation comes from the closed qualification witness;
+that dated observation is not runtime admission. I and its runtime evidence
+remain unchanged.
+
+All 1,206 pure checks pass, including 177 bootstrap checks and all 1,029
+existing catalogue/trace/exit/Main/caller/message checks. A preparation test
+caught single-element array unrolling in the output allowlist; explicit
+array construction fixed it before applying the source. Default validation
+of the sealed J plan reports `PlanCheckedPendingGO`, without payload hashing,
+lease, native type loading or runtime files. No J Run has occurred. The next
+step is independent review and a distinct exact GO after the competing heavy
+group closes, followed by fresh admission. No catalogue or model export is
+claimed by this preparation.
+
+## Plan J: new named startup dependency, complete runtime closure
+
+After independent source/plan/dispatch review and a distinct exact GO, J was
+invoked once. Fresh preflight at 18:01:14.9362851 UTC admitted the unchanged
+6/8 GiB estimate at 52.81% commit use, with physical reserve zero, the unchanged
+commit reserve, no lease/heavy workload, Main Stopped and Python preserved.
+The actual persistent-host arguments matched the reviewed launch command;
+the dispatcher bound the exact J path/hash and reviewed runner. No new probe,
+candidate build or speculative input was added.
+
+J is **Failed / NoCatalogue**, with a natural native exit 0 after
+2,194.033 ms. Trace, EXIT, CALLERS and MSG are Observed. The message installation
+is installed/error 0 on thread 6172. The buffer is ok/error 0 on thread 23636,
+with 384 bytes requested/read, a 42-byte NUL-terminated message, no incomplete
+trailing line, and SameThreadBeforeExit correlation. The exit hook reports
+code 0 and return address `0x140AC00C4`. These are diagnostic observations,
+not successful engine initialization or catalogue production.
+
+Worker 51 alone decoded/interpreted the bounded private capture after closure.
+The first complete correlated error names the missing **`core_pre_gfx`** zone.
+I had named `en_core_pre_gfx`; J therefore changed the first named failure
+after the single localized-bootstrap addition. The 70-byte stdout contains
+only initialization-start output. The initialization-complete marker and
+model-catalog marker are absent. This does not establish full validity of
+the localized FF, its complete lookup path, or an exhaustive dependency list.
+Raw message bytes, captured hex and absolute machine paths remain private.
+
+All five input metadata records and ten original/alias file identities matched
+in postflight. The runner reverified their hashes under its lease, confirmed
+native tree closure, released the lease and disposed its guards before return.
+No quarantine was present. The first closure helper rejected an equal creation
+time because JSON had converted the timestamp to `System.DateTime` before a
+string comparison. The original helper is preserved; a distinct correction
+compares UTC ticks exactly (`639274249169605724`) and passed every closure check
+without another native invocation.
+
+Host session 65217 exited 0 (tool chunk `edc24d`). The independent witness at
+18:04:19.8994175 UTC found host 19432, parent 30128 and native root 10828 absent,
+zero leases/heavy workloads, Main/UDP absent and the preserved Python identity
+unchanged. No payload hash was read after release. The 14,157-byte receipt and
+4,877-byte stderr are retained; the stderr hash in the checkpoint comes from
+the guarded runtime receipt. The [sanitized J runtime checkpoint](catalogue-runtime-j-20261012.json)
+pins the dispatch, preflight, postflight, actual exit, independent absence and
+both closure-helper versions.
+
+The minimal proposed next step is qualification of only the newly named
+`core_pre_gfx.ff`, after a distinct coordinator decision and available resource
+slot. The earlier metadata inventory lists 22,351,168 bytes; it is a historical
+snapshot, not fresh identity/content/hash evidence. Nothing in this checkpoint
+opens that payload, implements a new probe, changes J or authorizes a retry.
+Because the failed name changed, the conditional exact-open-path diagnostic
+for a repeated `en_core_pre_gfx` failure is not justified by this result.

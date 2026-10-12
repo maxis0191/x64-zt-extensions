@@ -1,0 +1,170 @@
+{
+  "Schema": "iw7.t7-bootstrap-catalogue-preparation/1",
+  "Date": "2026-10-12",
+  "Status": "PlanJCheckedPendingReviewAndDistinctGO",
+  "Qualification": {
+    "Status": "IdentityAndHashObservedCompatibilityUnknown",
+    "Script": {
+      "Name": "Qualify-T7BootstrapB.local.ps1",
+      "Bytes": 13303,
+      "SHA256": "f3b3426ddcbe2b1d6eb6f2684e680f128d7a5694facb2865a446e5a41001dc89"
+    },
+    "Receipt": {
+      "Name": "t7-bootstrap-qualification-b.local.json",
+      "Bytes": 4417,
+      "SHA256": "591beba0fb2f7e6c319b8a73beeb51622a5dee8a45f027ca4ad45b3cf855f9a0"
+    },
+    "InputName": "en_core_pre_gfx.ff",
+    "InputBytes": 832,
+    "InputSHA256": "37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c",
+    "HashProvenance": "ObservedUnderLeaseNotDepotVerified",
+    "QualifiedFileIdRecordedPrivately": true,
+    "TwoGuarded832ByteReads": true,
+    "MetadataAndIdentityReverifiedUnderGuard": true,
+    "LeaseReleased": true,
+    "GuardsClosed": true,
+    "Quarantined": false,
+    "HeaderSemanticsKnown": false,
+    "HeaderPrefixCaptured": false,
+    "ContentCompatibilityProven": false,
+    "DepotVerified": false,
+    "EngineLookupPathProven": false,
+    "PayloadCopiedToDisk": false,
+    "PayloadHashesReadAfterRelease": false,
+    "NativeEngineExecuted": false,
+    "FinishedUtc": "2026-10-12T17:49:42.3089216Z",
+    "HostClosure": {
+      "Name": "t7-bootstrap-b-corrected-host-closure.local.json",
+      "Bytes": 838,
+      "SHA256": "190e97e2868f4335f98ef054a04a381782786ed2ac75b1a78a5f338087f15f19"
+    },
+    "HostAbsence": {
+      "Name": "t7-bootstrap-b-corrected-host-absence.local.json",
+      "Bytes": 796,
+      "SHA256": "77e3962574b32485d70bd8e3b005471381600ef537361102a2e0ed5984133eed"
+    },
+    "HostExitWitness": {
+      "SessionID": 51026,
+      "ChunkID": "7ace0c",
+      "ExitCode": 0
+    },
+    "IndependentAbsenceUtc": "2026-10-12T17:50:38.6993542Z"
+  },
+  "DispatchRefusal": {
+    "Reason": "Forward-slash File argument differed from normalized PSCommandPath in exact host contract.",
+    "BeforePreflightLeaseMarkerAndPayload": true,
+    "Refusal": {
+      "Name": "t7-bootstrap-b-dispatch-refusal.local.json",
+      "Bytes": 1687,
+      "SHA256": "08bde28d6aa6ccefbede5331b7501c52e9bc922102d1b99e0c32669b9649890e"
+    },
+    "Closure": {
+      "Name": "t7-bootstrap-b-dispatch-refusal-closure.local.json",
+      "Bytes": 416,
+      "SHA256": "ac8686227bebc53e809c95eb708b5d4dfdde734161f038f39b67033000ede7e1"
+    },
+    "ExitWitness": {
+      "SessionID": 44110,
+      "ChunkID": "99f85e",
+      "ExitCode": 1
+    },
+    "CorrectedCommandReceivedDistinctGO": true,
+    "QualificationScriptUnchanged": true
+  },
+  "PlanJ": {
+    "Plan": {
+      "Name": "t7-catalog-plan-j.local.json",
+      "Bytes": 12690,
+      "SHA256": "44bb6204bf695fdb212c7fd342af740f44f95da5a44201c3f87edacc2b1a9f7a"
+    },
+    "PreservedPlanI": {
+      "Name": "t7-catalog-plan-i.local.json",
+      "Bytes": 10833,
+      "SHA256": "234dc0d788c769e5ddb83cb9d6daa2e9a09d677baf6b4b4aaaef99590e4ff03f"
+    },
+    "ChangedTopLevelFields": [
+      "Bindings",
+      "Bootstrap",
+      "Image",
+      "InputMetadata",
+      "MainBaselineObservation",
+      "OutputLimitBytes",
+      "RunRoot",
+      "StageRoot",
+      "WorkingDirectory"
+    ],
+    "Bindings": 25,
+    "TextBindings": 19,
+    "BinaryBindings": 6,
+    "InputMetadataRecords": 5,
+    "ExpectedRuntimeAliases": 5,
+    "BootstrapRelativePath": "zone/en_core_pre_gfx.ff",
+    "OutputLimitBytes": 127810264,
+    "OutputIncreaseBytes": 832,
+    "CandidateBytes": 21750272,
+    "CandidateSHA256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+    "CandidateBuildPlanSHA256": "0b1d6f29cb6b02f81d78e2d11f46bbc3679a635a943cca232b7be72d0643a28a",
+    "CandidateBuildReceiptSHA256": "4001a1ed0a320bea393bed3e5ca4f17c8a9c0c1feb3ec43f6b4fc0761ccb3ae6",
+    "Arguments": [
+      "-t7-iw7-catalog",
+      "mp_freerun_04"
+    ],
+    "TraceStderrLimitBytes": 8192,
+    "PhysicalBytes": 6442450944,
+    "CommitBytes": 8589934592,
+    "GroupDeadlineSeconds": 200,
+    "DeadlineSeconds": 120,
+    "CleanupSeconds": 5,
+    "MainBaseline": "Stopped",
+    "MainObservationReusedFromClosedQualification": true,
+    "RuntimeAdmissionEstablished": false,
+    "RunInvoked": false,
+    "NewCandidateBuilt": false,
+    "AttemptMarkerExists": false,
+    "RuntimeReceiptExists": false
+  },
+  "SourcePins": [
+    {
+      "Name": "Run-T7Catalogue.ps1",
+      "Bytes": 12210,
+      "SHA256": "0ca9812e0ba950aad02bca6d3e29631aec83207420a789b30d53abd441160f0e"
+    },
+    {
+      "Name": "T7Catalogue.Profile.ps1",
+      "Bytes": 66973,
+      "SHA256": "0d25abc8692265e3904d5595fc4fc64039f59d6e9b0fd643c6a2590dfcaa09f3"
+    },
+    {
+      "Name": "Test-T7CatalogueBootstrap.ps1",
+      "Bytes": 13232,
+      "SHA256": "6556fa95c2c7e8a57cee54f634768793cdda140caa5a6b4f10e4c05bd8cf5a34"
+    }
+  ],
+  "Validation": {
+    "Default": {
+      "ChunkID": "b19409",
+      "ExitCode": 0,
+      "Status": "PlanCheckedPendingGO",
+      "BinaryInputsHashed": false,
+      "LeaseAcquired": false,
+      "NativeTypesLoaded": false,
+      "FilesCreated": false
+    },
+    "PureTests": {
+      "TotalChecks": 1206,
+      "Bootstrap": 177,
+      "Catalogue": 188,
+      "Trace": 209,
+      "ExitContext": 161,
+      "Main": 52,
+      "Callers": 209,
+      "Message": 210,
+      "AllExitCodes": 0,
+      "OwnerStockRead": false,
+      "RealLeaseAcquired": false,
+      "NativeProcessStarted": false
+    },
+    "PreparationCorrection": "Pure test rejected bootstrap alias because a single-element PowerShell array had unrolled to string; explicit array construction corrected it before source application."
+  },
+  "Ready": false
+}
