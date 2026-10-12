@@ -1,0 +1,29 @@
+{
+  "schema": "iw7.h1-native-probe-source-contract/1",
+  "pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "lf_sha256": {
+    "src/zonetool/zonetool/h1/structs.hpp": "e205d7b81514abde7c4d6e8405cbe217f8ea745ee529b76ad1c374495c4563be",
+    "src/zonetool/zonetool/h1/assets/xmodel.cpp": "3c66b25038fcac85a79ef221720e1dcb226e617d1a2f7cee07d3c743a61c0c02",
+    "src/zonetool/zonetool/h1/assets/xsurface.cpp": "7b72e571814220235affb926f5b704c5c85b5e93f3582b615500344048463e9e",
+    "src/zonetool/zonetool/h1/assets/material.cpp": "8e7ae7a620389b9535d653ba3f46333766da30b22e51672b6ebab03981b0eabd",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/xmodel.cpp": "eb144cbb654c81aacf4c6f1551bc36c5b601f22e6a11d5dae514d68c35a49460",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp": "db44ec1166c6f0cbb3af0ad21631154b8e3b00b42aac042b59e79c1ced4d24ce",
+    "src/zonetool/zonetool/iw7/assets/xmodel.cpp": "a72e445a09c21b165b09c6648164bd60044ab494ba6ccbbe9c175f1ce31276f4",
+    "src/zonetool/zonetool/utils/io/assetmanager.hpp": "28f3981362f6ce502add0ad3c6716b64e948dd7c85ebe744b04b1f4f14c66f05",
+    "src/zonetool/zonetool/utils/io/filesystem.cpp": "580cdb455ad178b1cb14fcadecea1a7ec2738ecdd25b655aa12254b9098a76c2",
+    "src/zonetool/game/shared.cpp": "7296150205d468d6f026ac2a925dbbdb20a3fcc2693ea1e45e08366e1b3fc3c1",
+    "src/zonetool/zonetool/h1/zonetool.cpp": "f506120ae473ebaf63755b5e0f0277ac8093d14fbca92dfbe266dcf1d5c681fc",
+    "src/zonetool/main.cpp": "205578e09b66f830df33d51e74d56be72aec249c690149810961a6184e96235e",
+    "src/zonetool/zonetool/h1/assets/xmodel.hpp": "7792de91a21725a804baebad5244ad323d091e8754d681d76636eddad6402c92",
+    "src/zonetool/zonetool/h1/assets/xsurface.hpp": "cc37f1bb8a6d333c3f4c1a097b85fe5b4e519ed4ba90daf803a6f1639355c50f",
+    "src/zonetool/zonetool/h1/converter/include.hpp": "0ed40d6ed5c0d67dcea99a9e8427d39c1f30e86298595e3e9f9ba7e88cc92ac4",
+    "src/zonetool/zonetool/iw7/structs.hpp": "482affaf3641dc5318422c4cef45383923183349ae91d18e9d3ff29699f8a0df",
+    "src/zonetool/zonetool/utils/io/filesystem.hpp": "d1534192326ac803ef7e5e1759a8649034e7e69511274372ce717823d2e0796d",
+    "src/zonetool/zonetool/utils/memory.hpp": "9025b835313ee45ba3418e3322210dec3b6d334e504a1dd3b59e9f38e2898f35",
+    "src/common/utils/memory.hpp": "0ff5266730dd822e7d7de14a0d217ccba9066b52313d85786f3b66458d825c42",
+    "src/common/utils/memory.cpp": "9708aa9f494f43252e2f52762375179c1314a77e80fe816cbd3acd722071894f",
+    "src/common/utils/io.cpp": "de015a2869a2021004a7bf5bffc9f69a3425d251724c6bc4e1c4cab67af9d9af"
+  },
+  "native_compile_verified": false,
+  "native_execution_verified": false
+}

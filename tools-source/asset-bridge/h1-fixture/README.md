@@ -75,6 +75,10 @@ reproducibility, not native acceptance.
 
 ## Precise remaining gaps and next observation
 
+A source-only consumer is now prepared in [NATIVE-PROBE.md](NATIVE-PROBE.md).
+It uses exact production parser/converter bodies with a documented declaration
+adapter. It has not been compiled or run and closes none of the native gaps yet.
+
 1. **Actual parser-to-converter invocation.** A separately authorized native
    consumer must register the fixture directory in the real file search path,
    call production `h1::xmodel::parse(MODEL, zone_memory)` and
