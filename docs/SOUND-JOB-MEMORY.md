@@ -98,6 +98,9 @@ end-to-end Plan test. No timestamp was falsified, no F/A/B plan was rewritten,
 and no historical metadata check was relaxed. A separately reviewed preparation
 change must explicitly bind current helper sources in a new plan while retaining
 the immutable F payload/evidence contract. This correction does not implement it.
+The subsequent, separate source preparation change is documented in
+[SOUND-SOURCE-PROJECTION.md](SOUND-SOURCE-PROJECTION.md); it does not revise this
+historical refusal or grant native execution.
 
 A future admitted execution must bind the changed sources in a newly reviewed
 plan and retain all phase records plus normal closure evidence. Historical plans

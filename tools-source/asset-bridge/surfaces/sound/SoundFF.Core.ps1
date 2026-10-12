@@ -152,6 +152,68 @@ function Read-SoundFFImmutableF($Evidence) {
         $state.Work -ine $plan.Work -or $state.Ready -or $state.PlaybackVerified -or @($state.Artifacts).Count -ne 3){throw 'Preserved F result differs.'}
     [pscustomobject]@{Plan=$plan;State=$state}
 }
+function Get-SoundFFCurrentSourceRelatives {
+    # Closed, reviewed source set. Never infer eligibility from a directory or
+    # extension: historical receipts, stock and original media are not helpers.
+    @('ops/Base-Client.Core.ps1','ops/hud-lab/HudFileIdentity.cs','ops/model-lab/ModelFF.Core.ps1',
+        'ops/native/ResourceMemory.cs','ops/Resource-Memory.ps1','ops/Resource-RecorderOwnedProcess.Core.ps1',
+        'ops/Resource-Scheduler.Core.ps1','sdk/modding/beacon_tool_phase.py','sdk/modding/BeaconFF.Core.ps1',
+        'tools-source/asset-bridge/common/StockBinding.Core.ps1','tools-source/asset-bridge/model/BuildJob.cs',
+        'tools-source/asset-bridge/surfaces/inspect_content.py','tools-source/asset-bridge/surfaces/material_v2_phase.py',
+        'tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1','tools-source/asset-bridge/surfaces/prepare_beacon.py',
+        'tools-source/asset-bridge/surfaces/prepare_material_v2.py')
+    foreach($name in 'Build-SoundFF.ps1','Prepare-SoundFF.ps1','prepare_sab_ff.py','read_flac.py','read_sab.py',
+        'sab_contract.json','sab_ff_helpers.json','sound_ff_phase.py','SoundFF.Core.ps1','SoundBuildJob.cs'){
+        'tools-source/asset-bridge/surfaces/sound/'+$name
+    }
+}
+function New-SoundFFSourceProjection($HistoricalPlan,[string]$PlanSHA256) {
+    $expectedRoot=Join-Path $HistoricalPlan.SharedRepo 'tools-source/asset-bridge/surfaces/sound'
+    if($expectedRoot -ine $PSScriptRoot){throw 'Current sound sources must belong to the preserved shared repository.'}
+    $entries=@(foreach($relative in Get-SoundFFCurrentSourceRelatives){
+        $path=Join-Path $HistoricalPlan.SharedRepo $relative;Assert-SoundFFPath $path
+        if((Get-Item -LiteralPath $path).Length -gt 128KB){throw 'Bounded current helper source required.'}
+        $old=@($HistoricalPlan.HashInputs|Where-Object Path -IEQ $path)
+        $new=$relative -ceq 'tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs'
+        if($old.Count -ne $(if($new){0}else{1})){throw 'Exact F helper membership required.'}
+        [pscustomobject]@{Relative=$relative;HistoricalPin=$(if($new){$null}else{$old[0]});CurrentPin=(Get-SoundFFPin $path)}
+    })
+    [pscustomobject]@{Schema='iw7.sound-current-source-projection/1';BasisPlanSHA256=$PlanSHA256;Entries=$entries}
+}
+function Assert-SoundFFSourceProjection($Plan,$HistoricalPlan) {
+    $projection=$Plan.SourceProjection;$relatives=@(Get-SoundFFCurrentSourceRelatives)
+    if(!$projection -or $projection.Schema -cne 'iw7.sound-current-source-projection/1' -or
+        $projection.BasisPlanSHA256 -cne $Plan.ImmutableFF.PlanSHA256 -or @($projection.Entries).Count -ne $relatives.Count){
+        throw 'Explicit current-source projection from preserved F required.'
+    }
+    $currentPaths=@(foreach($relative in $relatives){
+        $path=Join-Path $HistoricalPlan.SharedRepo $relative
+        $rows=@($projection.Entries|Where-Object Relative -CEQ $relative)
+        $old=@($HistoricalPlan.HashInputs|Where-Object Path -IEQ $path)
+        $new=$relative -ceq 'tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs'
+        if($rows.Count -ne 1 -or $old.Count -ne $(if($new){0}else{1})){throw 'Closed current-source membership differs.'}
+        $historical=if($new){$null}else{$old[0]}
+        $row=$rows[0];$bound=@($Plan.HashInputs|Where-Object Path -IEQ $path)
+        if(($row.HistoricalPin|ConvertTo-Json -Depth 8 -Compress) -cne ($historical|ConvertTo-Json -Depth 8 -Compress) -or
+            $row.CurrentPin.Path -ine $path -or $bound.Count -ne 1 -or
+            ($row.CurrentPin|ConvertTo-Json -Depth 8 -Compress) -cne ($bound[0]|ConvertTo-Json -Depth 8 -Compress)){
+            throw 'Projected helper provenance or current pin differs.'
+        }
+        Assert-SoundFFPath $path
+        if((Get-Item -LiteralPath $path).Length -gt 128KB){throw 'Bounded current helper source required.'}
+        Assert-SoundFFPin $row.CurrentPin
+        $path
+    })
+    $oldCandidate=@('build-receipt.json','supervisor-state.json'|ForEach-Object {Join-Path $HistoricalPlan.CandidateRoot $_})
+    foreach($old in $HistoricalPlan.HashInputs){
+        if($old.Path -iin $currentPaths -or $old.Path -iin $Plan.PayloadInputs.Path -or $old.Path -iin $oldCandidate){continue}
+        $bound=@($Plan.HashInputs|Where-Object Path -IEQ $old.Path)
+        if($bound.Count -ne 1 -or ($bound[0]|ConvertTo-Json -Depth 8 -Compress) -cne ($old|ConvertTo-Json -Depth 8 -Compress)){
+            throw 'Unprojected historical evidence must retain its complete F pin.'
+        }
+        Assert-SoundFFPin $old
+    }
+}
 function Assert-SoundFFDumpOnlyInputs($Plan) {
     $f=Read-SoundFFImmutableF $Plan.ImmutableFF
     if(($Plan.StockInputs|ConvertTo-Json -Depth 15 -Compress) -cne ($f.Plan.StockInputs|ConvertTo-Json -Depth 15 -Compress) -or
@@ -165,6 +227,7 @@ function Assert-SoundFFDumpOnlyInputs($Plan) {
     }
     $expected=@($f.Plan.HashInputs|Where-Object {[IO.Path]::GetExtension($_.Path) -iin @('.exe','.wav','.flac')})
     if(($Plan.PayloadInputs|ConvertTo-Json -Depth 6 -Compress) -cne ($expected|ConvertTo-Json -Depth 6 -Compress)){throw 'Exact deferred original/Python identities required.'}
+    if($Plan.Profile -ceq 'StandardMod'){Assert-SoundFFSourceProjection $Plan $f.Plan}
     foreach($original in @($f.Plan.HashInputs|Where-Object {$_.Path.StartsWith($f.Plan.Review.source+'\',[StringComparison]::OrdinalIgnoreCase)})){
         $bound=@(@($Plan.HashInputs)+@($Plan.PayloadInputs)|Where-Object Path -IEQ $original.Path)
         if($bound.Count -ne 1 -or $bound[0].SHA256 -ine $original.SHA256 -or $bound[0].Bytes -ne $original.Bytes){throw 'Every original source must retain its F identity and guard.'}
