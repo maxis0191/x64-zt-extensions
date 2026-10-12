@@ -734,10 +734,41 @@ One additional driver test exercises both compile and fixture launch contracts,
 including redirected handles and refusal of console/new-console/job-breakaway
 flag combinations. The driver/reader total is now **15 Python tests**, alongside
 the unchanged **177 PowerShell pure/mock checks** and inert installed-tool Plan
-test. No third Run is authorized or performed; no replacement Plan snapshot is
-issued until review and scheduling require it.
+test. That source-only correction subsequently received independent review and
+one separately authorized third attempt, recorded next.
 
-An actual inert Plan command (the installed compiler pin is also checked):
+### Third native refusal: the nested linker console, 2026-10-12
+
+The [third checkpoint](../tools-source/asset-bridge/world/native-checkpoint-2026-10-12-detached.json)
+retains source `757e3a1`, exact Plan `b6f79c9f`, driver and evidence hashes.
+The first seven polls reached an actual compile/link graph at
+`12:18:51.5814777Z`: Python with its console host; direct child `cl.exe`;
+compiler children `vctip.exe` and `link.exe`; and a second console host whose
+native parent was the linker. All six members were in the original job with
+complete parent/image/creation observations. Thus changing the direct compiler
+launch did not eliminate the nested linker's console. The per-poll single-console
+witness again refused before a compiler success receipt or fixture permit.
+
+An object file was emitted, but compilation/link success is **not established**.
+There is no fixture stdout or stderr and **0/24 observations**. Both compiler
+streams were empty at interruption. Outer stdout contains only the retained
+PowerShell host's banner/prompts; stderr reports the console-generation refusal.
+No fourth invocation or speculative source correction followed this result.
+
+Original-job cleanup confirmed root exit `122` / Active0 at
+`12:18:51.7199067Z`. Postflight verified unchanged source pins and Main, no known
+children, no lease and no quarantine while the original host remained alive.
+The host was then exited and the released slot confirmed at
+`12:21:20.4989967Z`. No Main/config/bank restoration was required. The immutable
+`BeforeLeaseRelease` receipt remains distinct from the later external release
+proof; neither host exit nor cleanup turns any of the three attempts into a pass.
+
+The next source review must account for phase boundaries and the observed nested
+compiler/linker roles before any new exact Plan and separate GO. Merely increasing
+the global console count would not establish the expected role identities.
+
+The third attempt's exact Plan command is retained below for provenance. Its
+runtime directory is now occupied and cannot be reused:
 
 ```powershell
 $world = Join-Path (Get-Location) 'tools-source/asset-bridge/world'
@@ -751,7 +782,7 @@ $planArgs = @{
 & "$world/Run-ObserverHarness.ps1" @planArgs
 ```
 
-Run this from the reviewed repository root in a fresh PowerShell7 host. After
+New reviewed Plans run from the repository root in a fresh PowerShell7 host. After
 review and explicit coordinated GO only, the same command with `-Run` performs
 admission and the single native group. An existing output directory is refused;
 retain failed output and choose a new reviewed run identity for any later attempt.
@@ -761,9 +792,10 @@ The first attempt's local Plan, command and diagnostics are retained under
 by the failed attempt and must not be reused. The corrected source's inert Plan
 and retry evidence are retained under `world/.review/observer-harness-conhost-source/`.
 That second runtime directory is also occupied and must not be reused. These
-ignored review directories contain machine paths. The next proposed runtime
-directory remains absent until a separately authorized
-Run. Saving a review snapshot does not change the inert Plan command's behavior.
+ignored review directories contain machine paths. The third Plan and failed
+attempt are retained under `world/.review/observer-harness-detached-source/`;
+its runtime directory is now occupied as well. Saving a review snapshot does not
+change the inert Plan command's behavior.
 
 After coordinated native GO, perform the following sequentially, using current
 reviewed Resource-Scheduler/stock helpers and preserving occupied owner processes.
@@ -779,6 +811,6 @@ The ordinary engine load is larger than the observer's 2 KiB inspection budget;
 the complete process must pass resource admission. Capture only the owned child
 identity and use the existing recovery/timeout discipline. No lease, build,
 stock copy or native observation was performed for this source correction.
-The two earlier failed native attempts remain documented above.
+The three failed native attempts remain documented above.
 Only a successful real record can advance the root-class finding; collision
 creation/serialization and the original-box test remain subsequent work.
