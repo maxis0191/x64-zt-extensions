@@ -113,6 +113,7 @@ $hooks=[ordered]@{
         if(!(Test-Path -LiteralPath $path)){return [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=0;Status='Loading'}}
         $event=Read-WatchJson $path
         if($event.schema -cne 'iw7.rig-watch-transport/1' -or $event.FixtureOnly -ne $true -or $event.RootPID -ne $s.Identity.PID){throw 'Transport identity differs.'}
+        Assert-RigWatchWorkers $event.Workers
         if($event.Status -cin @('ArmedStopped','CaptureStopped')){
             $observation=[IW7.AnimationRig.JobMembers]::Capture($s.Owner)
             if($observation.AssignedCount -ne 3 -or $observation.ListedCount -ne 3 -or $observation.Members.Count -ne 3){throw 'Exact root/CDB/fixture membership required.'}

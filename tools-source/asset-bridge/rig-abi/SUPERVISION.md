@@ -95,14 +95,27 @@ The provider root must include the current source-bound rig member observer.
 There is no game, client, Main, locator address, build toolchain or installation
 in this qualification recipe. Keep the 10/14 estimate; no admission was measured.
 
-Current verification is 35 Python source tests (20 capture/identity, 15 concrete
-protocol/pipe simulations), 19 PowerShell transaction simulations and PowerShell
+Current verification is 42 Python source tests (20 capture/identity, 22 concrete
+protocol/pipe simulations), 19 PowerShell transaction simulations, 12 worker-state
+refusals and PowerShell
 AST parsing. A real default Plan against the retained sources returned
 NativeExecuted=false, NativeTypesLoaded=false, LeaseAcquired=false, Ready=false,
 and did not create its future run directory. The first Plan exposed hidden
 WindowsApps ancestry needing `Get-Item -Force`; this read-only path check was
 corrected and the Plan passed. No CDB, DebugBreak fixture, new C# compilation,
 hardware watchpoint, native job or resource measurement was exercised.
+
+Review found that a worker `BaseException`, or an exception whose `__str__`
+raises, could previously end a drain without setting the failure signal. Workers
+now catch `BaseException`, signal failure before assigning a bounded fixed reason
+that never formats the exception, and publish explicit termination in `finally`.
+The controller rejects any worker termination, rechecks health around protocol
+processing/publication, and exports all three worker states. The PowerShell
+consumer independently rejects missing, ended or non-running workers. Regressions
+include valid stdout combined with a failed stderr worker, writer failures at
+queue/read/write/flush boundaries, hostile formatting, and a failed error handler.
+The prior Plan is preserved unchanged pending the complete independent verdict;
+its old source bindings do not describe this corrective revision.
 
 Source corrections include the documented `r $t0` destination syntax and the
 positive `$bp3` acknowledgement. Actual command quoting, console/pipe behavior,

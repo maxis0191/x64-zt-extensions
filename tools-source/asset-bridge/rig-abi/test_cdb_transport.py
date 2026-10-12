@@ -127,6 +127,8 @@ class PipeTests(unittest.TestCase):
         self.pipe.error = None
         self.pipe.raw = {"stdout": bytearray(), "stderr": bytearray()}
         self.pipe.eof = set()
+        self.pipe.worker_done = {name: threading.Event() for name in ("stdout", "stderr", "stdin")}
+        self.pipe.worker_outcome = {name: "running" for name in self.pipe.worker_done}
 
     def test_nonblocking_pump_and_send(self):
         self.pipe.events.put_nowait(("stdout", b"hello"))
@@ -155,6 +157,103 @@ class PipeTests(unittest.TestCase):
         stream = Mock()
         stream.read1.side_effect = OSError("synthetic pipe error")
         self.pipe.drain("stdout", stream)
+        with self.assertRaises(ValueError):
+            self.pipe.pump()
+
+    def test_hostile_exception_description_is_never_called(self):
+        class Hostile(BaseException):
+            described = False
+
+            def __str__(self):
+                self.described = True
+                raise SystemExit("description must not run")
+
+            __repr__ = __str__
+
+        for name in ("stdout", "stderr"):
+            with self.subTest(worker=name):
+                self.setUp()
+                error = Hostile()
+                stream = Mock()
+                stream.read1.side_effect = error
+                # Even complete valid stdout cannot survive a failed other drain.
+                self.pipe.events.put_nowait(("stdout", witness()))
+                self.pipe.drain(name, stream)
+                self.assertTrue(self.pipe.failure.is_set())
+                self.assertFalse(error.described)
+                self.assertEqual(self.pipe.worker_status()[name], {"Terminated": True, "Outcome": "failed"})
+                with self.assertRaises(ValueError):
+                    self.pipe.pump()
+
+    def test_writer_baseexceptions_at_get_write_and_flush_are_signalled(self):
+        for stage in ("get", "write", "flush"):
+            with self.subTest(stage=stage):
+                self.setUp()
+                self.pipe.commands.put_nowait(b"g\n")
+                target = self.pipe.commands if stage == "get" else self.pipe.process.stdin
+                setattr(target, stage, Mock(side_effect=KeyboardInterrupt()))
+                self.pipe.write()
+                self.assertTrue(self.pipe.failure.is_set())
+                self.assertEqual(self.pipe.worker_status()["stdin"], {"Terminated": True, "Outcome": "failed"})
+                with self.assertRaises(ValueError):
+                    self.pipe.pump()
+
+    def test_fail_signals_before_diagnostic_assignment(self):
+        class GuardedError:
+            def __set__(self, instance, value):
+                if not instance.failure.is_set():
+                    raise AssertionError("failure flag was not set first")
+                instance.saved_error = value
+
+        class GuardedPipe(transport.PipeIO):
+            error = GuardedError()
+
+        subject = GuardedPipe.__new__(GuardedPipe)
+        subject.failure = threading.Event()
+        subject.fail("x" * 1000)
+        self.assertEqual(subject.saved_error, "x" * 128)
+
+    def test_fail_description_does_not_use_str_subclass_hooks(self):
+        class HostileText(str):
+            def __getitem__(self, _):
+                raise SystemExit("slice hook must not run")
+
+            def __str__(self):
+                raise SystemExit("str hook must not run")
+
+        self.pipe.fail(HostileText("bad"))
+        self.assertTrue(self.pipe.failure.is_set())
+        self.assertEqual(self.pipe.error, "pipe worker failure")
+
+    def test_worker_termination_rejects_even_without_failure_signal(self):
+        for name in ("stdout", "stderr", "stdin"):
+            with self.subTest(worker=name):
+                self.setUp()
+                self.pipe.events.put_nowait(("stdout", witness()))
+                self.pipe.worker_done[name].set()
+                with self.assertRaises(ValueError):
+                    self.pipe.pump()
+
+    def test_finally_records_termination_if_failure_handler_itself_raises(self):
+        for name in ("stdout", "stderr", "stdin"):
+            with self.subTest(worker=name):
+                self.setUp()
+                self.pipe.fail = Mock(side_effect=SystemExit())
+                stream = Mock()
+                stream.read1.side_effect = KeyboardInterrupt()
+                self.pipe.commands.get = Mock(side_effect=KeyboardInterrupt())
+                with self.assertRaises(SystemExit):
+                    if name == "stdin":
+                        self.pipe.write()
+                    else:
+                        self.pipe.drain(name, stream)
+                self.assertTrue(self.pipe.worker_done[name].is_set())
+                with self.assertRaises(ValueError):
+                    self.pipe.pump()
+
+    def test_normal_drain_eof_has_explicit_terminal_state(self):
+        self.pipe.drain("stdout", io.BytesIO(b""))
+        self.assertEqual(self.pipe.worker_status()["stdout"], {"Terminated": True, "Outcome": "eof"})
         with self.assertRaises(ValueError):
             self.pipe.pump()
 

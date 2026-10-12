@@ -61,13 +61,17 @@ class PipeIO:
         self.error = None
         self.raw = {"stdout": bytearray(), "stderr": bytearray()}
         self.eof = set()
+        self.worker_done = {name: threading.Event() for name in ("stdout", "stderr", "stdin")}
+        self.worker_outcome = {name: "running" for name in self.worker_done}
         for name in ("stdout", "stderr"):
             threading.Thread(target=self.drain, args=(name, getattr(process, name)), daemon=True).start()
         threading.Thread(target=self.write, daemon=True).start()
 
-    def fail(self, exc):
-        self.error = str(exc)[:256]
+    def fail(self, reason):
+        # Signal first. Never invoke exception __str__/__repr__ (or a str
+        # subclass hook) while reporting the failure that must stop acceptance.
         self.failure.set()
+        self.error = reason[:128] if type(reason) is str else "pipe worker failure"
 
     def drain(self, name, stream):
         try:
@@ -75,9 +79,13 @@ class PipeIO:
                 chunk = stream.read1(4096)
                 self.events.put_nowait((name, chunk))
                 if not chunk:
+                    self.worker_outcome[name] = "eof"
                     return
-        except Exception as exc:
-            self.fail(exc)
+        except BaseException:
+            self.worker_outcome[name] = "failed"
+            self.fail("pipe drain failed")
+        finally:
+            self.worker_done[name].set()
 
     def write(self):
         try:
@@ -85,8 +93,22 @@ class PipeIO:
                 command = self.commands.get()
                 self.process.stdin.write(command)
                 self.process.stdin.flush()
-        except Exception as exc:
-            self.fail(exc)
+        except BaseException:
+            self.worker_outcome["stdin"] = "failed"
+            self.fail("pipe writer failed")
+        finally:
+            self.worker_done["stdin"].set()
+
+    def worker_status(self):
+        return {name: {"Terminated": done.is_set(), "Outcome": self.worker_outcome[name]}
+                for name, done in self.worker_done.items()}
+
+    def assert_healthy(self):
+        capture.require(not self.failure.is_set(), "pipe failure")
+        capture.require(not any(done.is_set() for done in self.worker_done.values()),
+                        "pipe worker terminated before owned closure")
+        capture.require(not self.eof, "debugger pipe EOF before owned closure")
+        capture.require(self.process.poll() is None, "debugger exited before owned closure")
 
     def send(self, command):
         raw = command.encode("ascii")
@@ -97,6 +119,7 @@ class PipeIO:
             self.fail("stdin queue overflow")
 
     def pump(self):
+        self.assert_healthy()
         # At most 64 queued chunks per poll, never an unbounded draining loop.
         for _ in range(64):
             try:
@@ -109,9 +132,7 @@ class PipeIO:
                 self.fail("combined stdout/stderr cap exceeded")
             else:
                 self.raw[name].extend(raw)
-        capture.require(not self.failure.is_set(), "pipe failure: " + str(self.error))
-        capture.require(not self.eof, "debugger pipe EOF before owned closure")
-        capture.require(self.process.poll() is None, "debugger exited before owned closure")
+        self.assert_healthy()
         return bytes(self.raw["stdout"])
 
 
@@ -266,18 +287,22 @@ def run(spec, root):
             if protocol.phase == "armed" and control_path.exists():
                 continuation = json.loads(capture.bounded(control_path, 1024))
             state = protocol.step(raw, continuation)
-            state.update(DebuggerPID=process.pid, RootPID=os.getpid())
+            io.assert_healthy()
+            state.update(DebuggerPID=process.pid, RootPID=os.getpid(), Workers=io.worker_status())
             if state != last and (time.monotonic() - last_flush >= 0.1 or state["Status"] in ("ArmedStopped", "CaptureStopped")):
                 for name, data in io.raw.items():
                     (root / (name + ".raw.log")).write_bytes(data)
+                io.assert_healthy()
                 atomic_json(root / "transport.json", state)
+                io.assert_healthy()
                 last = state
                 last_flush = time.monotonic()
             time.sleep(0.025)
         raise ValueError("transport local deadline; original owner must close job")
     except Exception as exc:
         atomic_json(root / "transport.json", {"schema": "iw7.rig-watch-transport/1", "Nonce": spec["nonce"],
-                    "Status": "Failed", "Healthy": False, "Bytes": sum(map(len, io.raw.values())), "Error": str(exc)[:512]})
+                    "Status": "Failed", "Healthy": False, "Bytes": sum(map(len, io.raw.values())),
+                    "Workers": io.worker_status(), "PipeFailure": io.error, "Error": str(exc)[:512]})
         raise
     finally:
         # No kill(), detach, process-name enumeration or private replacement job.

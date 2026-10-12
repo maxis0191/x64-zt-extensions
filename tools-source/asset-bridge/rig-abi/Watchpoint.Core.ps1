@@ -32,6 +32,14 @@ function Get-RigWatchSnapshot($Owner) {
     if($exited -and $code -isnot [uint32] -and $code -isnot [int] -and $code -isnot [long]){throw 'Original exit code unavailable.'}
     [pscustomobject]@{RootExited=$exited;Active=$active;RootExitCode=$code}
 }
+function Assert-RigWatchWorkers($Workers) {
+    foreach($name in @('stdout','stderr','stdin')){
+        if(!$Workers -or !$Workers.$name -or $Workers.$name.Terminated -isnot [bool] -or
+           $Workers.$name.Terminated -or $Workers.$name.Outcome -cne 'running'){
+            throw 'Transport worker termination or missing liveness evidence.'
+        }
+    }
+}
 function Invoke-RigWatchTransaction($Hooks,$State) {
     foreach($name in @('Now','Acquire','Stage','Prepare','Identity','Deadline','Register','Poll','Continue','Seal',
         'Budget','Save','VerifySources','Restore','Release','Quarantine','Delay')){

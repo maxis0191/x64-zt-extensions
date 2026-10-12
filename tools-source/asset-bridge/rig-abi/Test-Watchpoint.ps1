@@ -109,4 +109,14 @@ RunCase 'late release records actual release without acceptance' {$script:hooks.
 RunCase 'persistent stopped debugger reaches global timeout' {$script:hooks.Poll={param($s) [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=1;Status='Loading'}};$script:hooks.Delay={$script:tick+=60000L}} {
     param($s) Check (!$s.DiagnosticCaptured -and $s.Closed -and $s.Restored -and $script:job.StopCount -eq 1) 'Persistent debugger was not recovered'
 }
-Write-Output "Source-only transaction cases: $script:cases passed; no native types, debugger, fixture or process launched."
+$workers=@{stdout=@{Terminated=$false;Outcome='running'};stderr=@{Terminated=$false;Outcome='running'};stdin=@{Terminated=$false;Outcome='running'}}
+Assert-RigWatchWorkers $workers
+foreach($name in @('stdout','stderr','stdin')){
+    foreach($bad in @(@{Terminated=$true;Outcome='failed'},@{Terminated=$false;Outcome='eof'},@{Terminated='false';Outcome='running'},$null)){
+        $saved=$workers[$name];$workers[$name]=$bad;$refused=$false
+        try{Assert-RigWatchWorkers $workers}catch{$refused=$true}
+        Check $refused "Invalid $name worker liveness was accepted"
+        $workers[$name]=$saved
+    }
+}
+Write-Output "Source-only transaction cases: $script:cases passed; 12 worker-state refusals passed; no native types, debugger, fixture or process launched."
