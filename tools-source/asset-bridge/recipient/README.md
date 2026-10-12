@@ -4,7 +4,9 @@ This narrow runner requests four non-default recipient references, followed by
 one compiled `scripts/engine/utility` export. It does **not** complete a mod
 package. Source preparation and synthetic tests were performed on 2026-10-12;
 the first authorized native attempt subsequently timed out before producing
-reference results. Source-zone resolution and compiled retail bytes remain
+reference results. A separately authorized references-only B probe exposed live
+logs and a Fatal Error window, then stopped with confirmed restoration. Effective
+reference resolution and compiled retail bytes remain
 unobserved by this runner. Coordinator adoption/admission is required before
 each `-Run`; there is no automatic retry. See the failed-attempt record below.
 
@@ -220,11 +222,11 @@ transport/writer tests cover short live messages, EOF, caps, timeout prefixes,
 partial/zero/None writes, errors after a saved prefix, read/write/flush ValueError,
 closed pipes, SystemExit and exceptional finalization. Failed captures remain
 failures even when the native stub exits zero and output bytes were retained.
-This fixes visibility/integrity only. There has been no second native run,
-and it does not establish or fix the native stall. Native-start/capture receipts
+This fixes visibility/integrity only; the subsequent B result below does not
+establish or fix the native cause. Native-start/capture receipts
 explicitly distinguish observed PID/timing from verified creation/job closure.
-The next proposed native observation uses the existing 8/11 GiB group and light
-diagnostics first. Full snapshot/CDB capture at 10/14 remains an unexecuted plan
+The B native observation used the existing 8/11 GiB group and light
+diagnostics. Full snapshot/CDB capture at 10/14 remains an unexecuted plan
 requiring separate review and authorization.
 
 The prepared B plan uses a new RunRoot and the explicit references-only mode.
@@ -235,4 +237,36 @@ a process handle during sampling and rechecks identities afterwards. Later
 samples must pass the first native identity; replacement PIDs are refused.
 It records CPU, memory, IO, up to 256 thread states/waits and the main window.
 It does not enumerate all windows or directly query job membership. See the
-diagnostic plan for sample timing and output limits. No B observation has run.
+diagnostic plan for sample timing and output limits.
+
+## Recipient B: visible progress and fatal window, restored
+
+The [sanitized B record](native-validation-b-2026-10-12.json) preserves the one
+authorized execution of `379526b` under fresh atomic 8/11 admission. The exact
+E7, stock, reference CLI, stdin pipe and deadlines were retained. Live stdout
+contains 1,449 bytes through `Loading zone "global_mp"...`; stderr is empty.
+The exact native process had the same `Fatal Error` main-window handle in three
+identity-checked samples. The body of the dialog and the root cause remain unknown.
+Earlier missing `eng_*` notices do not prove the cause.
+
+Samples actually occurred at 43.35, 107.14 and 193.22 seconds, missing the
+planned early schedule; their recorded ages take precedence over filenames.
+DirectJobMembershipQueried is false. CIM's two-second per-request timeout is
+not a hard deadline for the entire observation. CPU grew only 0.266 seconds
+between first and final samples; native IO totals were unchanged. These facts
+locate a persistent fatal window without supplying a call stack or dialog body.
+
+The existing dialog reader required a private desktop absent from this launch.
+The coordinator then authorized `stop.request`. Permission for a bounded Python
+ctypes text read arrived after that stop was placed; the stop was not revoked.
+No click, new reader, dump, CDB or retry occurred. The original state remains
+Failed / `Coordinator requested owned stop.`; root exit code 122 and zero job
+members were confirmed. Restoration and source preservation passed, all 75
+staged paths disappeared, no owned process or lease remained, and Main retained
+its exact identity. Final retained output was 1,225,970 bytes.
+
+No reference CSV, phase receipt or utility phase was produced. The outer
+NativeExecuted field remains null; its unchanged meaning is preserved while the
+locator and three real process samples independently prove native launch.
+Next: prepare the bounded identity-checked dialog text reader before requesting
+a separate short diagnostic attempt. B's single-run authorization is exhausted.

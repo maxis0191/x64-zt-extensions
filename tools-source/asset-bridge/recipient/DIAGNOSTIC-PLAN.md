@@ -1,8 +1,8 @@
-# Recipient timeout: targeted observation plan, not executed
+# Recipient timeout: observation plan and B outcome
 
-The first attempt and restoration are fixed in `0007825`. No further ZoneTool,
-debugger, dump or capture process has been started. The coordinator controls
-the next native slot. A new
+The first attempt and restoration are fixed in `0007825`. The separately
+authorized B probe has now stopped and restored, as recorded below. No debugger
+or dump process was started. The coordinator controls the next native slot. A new
 diagnostic run requires reviewed source changes, a fresh plan and a separate GO.
 The original `cb3d9ac` commit and failed outputs remain preserved. Implemented
 follow-up changes are Recipient's pipe visibility, honest capture receipts,
@@ -207,6 +207,37 @@ ordinary PowerShell request hashtables changed JSON property order across hosts.
 Those two local plans and their canonical-equality comparison are retained.
 Request maps now have explicit ordering so the reviewed plan can be compared
 byte-for-byte across fresh hosts; this changes no native request or argument.
+
+### B execution outcome and remaining observation
+
+One B attempt of `379526b` ran after explicit GO and fresh atomic 8/11 admission.
+The [sanitized record](native-validation-b-2026-10-12.json) binds the exact plan,
+command and retained hashes. The corrected capture exposed 1,449 bytes of stdout:
+bootstrap finalized and the last marker announced `global_mp` loading. Three
+identity-checked samples showed the same `Fatal Error` main window. Its body
+was not read, so neither the fatal cause nor the missing-language notices are
+diagnosed. No reference CSV or script phase was produced.
+
+Actual sample ages were 43.35, 107.14 and 193.22 seconds; the planned early timing
+was missed and is not claimed. The direct job-membership query flag remained
+false and each CIM timeout remained a per-request bound only. The existing
+private-desktop reader was inapplicable and its guard was not bypassed. A later
+authorization for Python ctypes text reading arrived after the approved
+`stop.request` had already been placed. Shutdown continued without cancelling
+the stop. Exact arrival relative to final closure was not independently timed.
+
+The original job stopped with root exit 122 and zero members; restoration and
+stock preservation passed. All 75 staging paths were removed, the registry was
+empty, both owned processes were absent and Main's identity was unchanged.
+The original Failed state and NativeExecuted=null were preserved. This is a
+closed diagnostic failure, not reference or package acceptance.
+
+Before another separately authorized attempt, prepare a minimal Python ctypes
+reader using the existing interpreter: verify real parent/child image/creation,
+E7 and HWND ownership before and after; read at most eight child controls and
+16 KiB total; use bounded text reads without clicks or command messages. It
+should be ready before launch so useful text can be captured promptly. This
+preparation is not permission to rerun B, add a dump or enlarge the budget.
 
 ## Existing tools and exact constraints
 
