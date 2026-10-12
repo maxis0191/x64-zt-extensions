@@ -1450,3 +1450,45 @@ literals intentionally remain until an actual P return. The draft was never
 invoked. The [corrected P checkpoint](catalogue-preparation-p-corrected-20261012.json)
 pins the complete diff, actual default/argument evidence and source comparisons.
 The old two-phase GO remains closed. A distinct P-only GO is still required.
+
+## Catalogue P: distinct Run consumed and fully closed
+
+The coordinator issued a new P-only GO after reviewing the corrected source
+preparation. Fresh 6/8 GiB admission at 20:24:08 UTC passed with 57.48% commit
+usage, no client/heavy process or lease, unchanged Main baseline and preserved
+Python. Current resource workflow and scheduler source still matched. P used
+the sealed seven-input Plan and unchanged V2, reader, runner and candidate.
+
+The unique Run finalized at 20:25:01 UTC as `Failed / NoCatalogue`, with natural
+native exit 0 and 3,330.77 ms reported elapsed. TRACE, EXIT, CALLERS and MSG were
+observed. Input identities, hashes and metadata revalidated under reservation;
+the tree closed and lease released without termination or quarantine. The
+4,884-byte stderr pin comes from the guarded receipt; stdout is 70 bytes.
+No payload was rehashed after release.
+
+Only the actual host PID, native PID and native creation UTC were bound into
+the frozen closure draft. Exact token comparison found those three changes and
+no others; 140 variable occurrences, 32 command occurrences and 850 nonliteral
+tokens remained identical. Under the coordinator's expressly delegated gate,
+the coherent receipt/identity proof, exact diff and hash were published before
+one bound-helper invocation. The draft was never invoked and no helper incident
+occurred. Guard disposal is supported by the pinned runner's finalization path
+before wrapper return, not by a separately observed guard counter.
+
+Same-host postflight passed 11 metadata rows and 22 original/alias file IDs.
+PTY 45743 actually exited 0 (`b0aba5`). The independent 20:26:49 UTC witness
+confirmed host 23236, parent 16072 and native 8508 absent, no client/heavy process
+or lease, unchanged stopped Main/UDP baseline and preserved Python. The
+[P runtime checkpoint](catalogue-runtime-p-20261012.json) pins full closure,
+literal-only review and actual exit/absence evidence. Analysis owner 51 was
+then asked to interpret only the retained MSG. No Q, new metadata, qualification,
+export or automatic continuation is authorized by this closed P GO.
+
+After full closure, analysis owner 51 confirmed a complete 43-byte ASCII
+missing-zone message naming `core_post_gfx`, correlated on the same thread before
+exit. The name comes from the actual capture, not an inferred localized pair.
+The entry-point return, initialization-complete and catalogue markers were absent.
+The first named failure changed from O's `en_core_post_gfx`; this does not prove
+complete dependency closure or compatibility of previous bootstraps. No path or
+metadata for the newly named dependency was consulted, and no new qualification
+or Run followed. Further action remains the coordinator's decision.
