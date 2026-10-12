@@ -33,6 +33,13 @@ magic/version. Identify it by source commit plus serializer/layout hashes.
 Pinned IW7 layout assertions: XModel 736 bytes, XSurface 256, XModelSurfs 56.
 The reader must support the writer's bounded backreferences or reject an actual
 export explicitly; the old original-cube reader is not a general BO3 reader.
+The SDK reader review also found that its existing skin reader only handles a
+narrow name-alias case and has 64 KiB/128-character bounds. The production
+writer's ledger is global and untyped: present records create entries, absent
+and OFFSET records do not, and `array_index` uses the consuming type's stride.
+The future bounded reader must track record kind, stride, count and extent,
+reject unproven aliases, and preserve all logical aliases during any binding.
+Do not relax historical fixture oracles or use global binary name replacement.
 
 ## First real donor profile
 
@@ -89,6 +96,17 @@ and throws a reason on refusal. Its readable-range checks use `VirtualQuery`;
 the caller still owns binary compatibility and database lifetime. This source
 has not yet been compiled or executed. The constraints define pilot v1, not
 permanent SDK limits on future multisurface, skeletal or animated imports.
+
+Independent review found that ASCII alone did not confine the native writers'
+paths. The selector now calls the common `asset_name`/`checked_asset_name` rule
+on **both** the selected model and mesh. It rejects traversal, rooted/UNC/drive
+paths, ADS, empty segments, Windows device aliases (including with extensions),
+trailing dots/spaces, control bytes and forbidden Windows filename characters.
+Valid donor names retain their spelling and relative subdirectories. The CLI
+must also check actual output ancestry/reparse entries; lexical name validation
+does not secure a preexisting output tree. `test_t7_asset_name.cpp` prepares
+51 boundary checks against the real portable helper; native execution remains
+pending admission and is required before any export.
 
 The converter copies packed normals/tangents and UV words. Greyhound's BO3
 source independently identifies the two UV fields as half floats and decodes
@@ -155,6 +173,17 @@ as a child, while the original job owns its complete update/process tree. This
 requires a reviewed adapter, deadline, private cache/temp/log paths and separate
 before/after executable hashes; it is not yet an executable run recipe. An
 uncertain or still-active original job retains/quarantines its reservation.
+
+`steamcmd_metadata_phase.py` is that fixed-command child adapter. It reuses
+`sdk/modding/beacon_tool_phase.py::copy_bounded`, limits each output log to 2 MiB,
+observes the whole private tool/cache/temp tree against 512 MiB with 1 MiB
+reserved for final metadata, and applies a 180-second phase deadline. The disk
+limit is sampled, not an OS quota; the outer retained job must stop all children
+on failure and confirm closure before lease release. Seven light Python checks
+passed for refusals, disk accounting and the existing bounded-output helper.
+They never started SteamCMD. Prepare the outer launch plan with current pins of
+Python, this adapter, its imported helper, scheduler and original NativeJob DLL;
+do not invoke the adapter directly as an unsupervised process.
 
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is

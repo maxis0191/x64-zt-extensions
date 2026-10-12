@@ -6,6 +6,7 @@
 #include "game/shared.hpp"
 #include "zonetool/t7/structs.hpp"
 #include "utils/memory.hpp"
+#include "t7_asset_name.hpp"
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -112,12 +113,17 @@ namespace zonetool::t7::resident_iw7
         }
     }
 
+    inline std::string asset_name(const char* value)
+    {
+        return checked_asset_name(detail::name(value));
+    }
+
     inline XModel* select(const XModel* source, const char* exact_name,
         const unsigned int lod, utils::memory::allocator& allocator)
     {
         using namespace detail;
         const auto& model = object(source);
-        require(name(model.name) == name(exact_name), "model name differs from exact selection");
+        require(asset_name(model.name) == asset_name(exact_name), "model name differs from exact selection");
         require(model.numLods > 0 && model.numLods <= 8 && lod < model.numLods, "invalid LOD selection");
         require(model.numBones == 1 && model.numRootBones == 1 && model.numCosmeticBones == 0,
             "pilot requires one root bone and no cosmetic bones");
@@ -145,7 +151,7 @@ namespace zonetool::t7::resident_iw7
         require(std::isfinite(bone.radiusSquared) && bone.radiusSquared >= 0, "invalid bone radius");
 
         const auto& mesh = object(model.meshes[lod]);
-        (void)name(mesh.name);
+        (void)asset_name(mesh.name);
         require(mesh.numSurfs == 1, "pilot requires one selected surface");
         const auto& surf = object(mesh.surfs);
         require((surf.flags & (XSURFACE_FLAG_SKINNED | XSURFACE_FLAG_STREAMED)) == 0,
