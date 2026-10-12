@@ -1,6 +1,18 @@
 # Pure definitions. Admission and existing native type loading occur only in Build.
 function Get-ChecksumBuildClock { [Environment]::TickCount64 }
 function Read-ChecksumBuildChunk($Stream,[byte[]]$Buffer) { $Stream.Read($Buffer,0,$Buffer.Length) }
+function Preserve-ChecksumBuildQuarantine($Owner,$Lease,$Context,$Bootstrap) {
+    if(!$Lease.Token){throw 'Sound quarantine requires its original reservation token.'}
+    $key='IW7.SoundChecksum.Quarantine.'+$Lease.Token
+    if($null -ne [AppDomain]::CurrentDomain.GetData($key)){throw 'Existing sound quarantine must not be overwritten.'}
+    $Context.Owner=$Owner
+    $Context.Record.Quarantined=$true;$Context.Record.QuarantineKey=$key
+    $Bootstrap.Retain=$true;$Bootstrap.QuarantineKey=$key
+    # Strong host roots outlive the invoking .ps1 scope. No automatic clearing.
+    [AppDomain]::CurrentDomain.SetData($key,@{Owner=$Owner;Lease=$Lease;Context=$Context;
+        InputGuards=$Context.InputGuards;Bootstrap=$Bootstrap;Record=$Context.Record})
+    $key
+}
 function Assert-ChecksumBuildPath([string]$Path) {
     if(![IO.Path]::IsPathFullyQualified($Path) -or $Path.Contains('"') -or $Path -match '[\x00-\x1f]'){throw 'Absolute literal build path required.'}
     for($p=[IO.Path]::GetFullPath($Path);$p;$p=Split-Path $p -Parent){
@@ -67,6 +79,9 @@ function Assert-ChecksumBuildBudget($Context) {
         $Context.LastPressurePoll=Get-ChecksumBuildClock
         if($Context.LastPressurePoll-$Context.Started -ge 3600000){throw 'Late pressure callback exceeded observed deadline.'}
     }
+    # Output measurement and any pressure callback consume the same deadline.
+    $Context.Record.ElapsedMs=(Get-ChecksumBuildClock)-$Context.Started
+    if($Context.Record.ElapsedMs -ge 3600000){throw 'Sound build budget observation returned after global deadline.'}
     $size
 }
 function Get-ChecksumBuildHash($Stream,$Context) {
@@ -147,6 +162,7 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
         [IO.Directory]::CreateDirectory($Plan.candidate)|Out-Null
         Open-ChecksumBuildInputs $c $Seal
         Initialize-ChecksumBuildTypes $Plan
+        $null=Assert-ChecksumBuildBudget $c
         $context=@{PlanSHA256=$PlanSHA256;RunID=$record.RunID;LeaseToken=$lease.Token;LeaseOwnerPID=$PID;OriginalIdentity=$null;
             AcceptedReceipt=$null;SealedPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase);SealedByPath=@{}}
         foreach($entry in $Seal.Inputs){$path=[IO.Path]::GetFullPath($entry.Path);[void]$context.SealedPaths.Add($path);$context.SealedByPath[$path]=$entry}
@@ -159,9 +175,12 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
             [Environment]::SetEnvironmentVariable('IW7_SOUND_BUILD_LEASE',$lease.Token,'Process')
             [Environment]::SetEnvironmentVariable('IW7_SOUND_BUILD_OWNER',[string]$PID,'Process')
             $arguments='-I -B "'+$Plan.worker+'" --plan "'+$PlanPath+'" --plan-sha256 '+$PlanSHA256+' --execute'
+            $null=Assert-ChecksumBuildBudget $c
             $closed=$false # A failed factory has unknown closure, never implicit success.
             $owner=New-ChecksumBuildOwner $Plan $arguments
+            $null=Assert-ChecksumBuildBudget $c
             $record.OriginalIdentity=Get-AuditOriginalIdentity $owner $Plan.python;$context.OriginalIdentity=$record.OriginalIdentity
+            $null=Assert-ChecksumBuildBudget $c
             $owner.Resume();$startedNative=$true;$postProofRequired=$true
         }finally{
             foreach($name in @([Environment]::GetEnvironmentVariables('Process').Keys)){[Environment]::SetEnvironmentVariable($name,$null,'Process')}
@@ -198,10 +217,13 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
                 Exit-IW7ResourceLease -Token $lease.Token
                 $record.RetainedLeaseToken=$null
             }
-            if($sourceProofFailed){$record.TreeClosed=$closed;$record.LeaseRetainedReason='Post-run input proof unresolved';$Bootstrap.Retain=$true;$c.Owner=$owner;$script:ChecksumRetainedContext=$c}
+            if($sourceProofFailed){
+                $record.TreeClosed=$closed;$record.LeaseRetainedReason='Post-run input proof unresolved'
+                $null=Preserve-ChecksumBuildQuarantine $owner $lease $c $Bootstrap
+            }
             else{
                 Complete-AuditOwnedCleanup $owner $record $closed $measure $release
-                if(!$record.LeaseReleased){$Bootstrap.Retain=$true;$c.Owner=$owner;$script:ChecksumRetainedContext=$c}
+                if(!$record.LeaseReleased){$null=Preserve-ChecksumBuildQuarantine $owner $lease $c $Bootstrap}
             }
         }
         $record.NativeRootResumed=$startedNative;$record.ElapsedMs=(Get-ChecksumBuildClock)-$c.Started

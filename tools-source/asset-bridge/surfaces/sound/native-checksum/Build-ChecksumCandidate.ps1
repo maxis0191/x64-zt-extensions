@@ -67,6 +67,9 @@ try {
     . $receipt
     Invoke-ChecksumBuild $plan $seal $PlanPath $PlanSHA256 $bootstrap|ConvertTo-Json -Depth 20
 } finally {
-    if($bootstrap.Retain){$script:ChecksumRetainedBootstrap=$bootstrap}
+    if($bootstrap.Retain){
+        $held=[AppDomain]::CurrentDomain.GetData($bootstrap.QuarantineKey)
+        if(!$held -or ![object]::ReferenceEquals($held.Bootstrap,$bootstrap)){throw 'Sound bootstrap quarantine root missing or different.'}
+    }
     else{foreach($guard in $bootstrap.Guards){$guard.Dispose()}}
 }
