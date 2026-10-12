@@ -1,0 +1,157 @@
+{
+  "schema": "iw7.native-dump-codec-checkpoint/1",
+  "status": "NativeDumpFDecodeFailed",
+  "execution_source_commit": "28ee8dbb52d79529292451ad88800389c259f887",
+  "execution_plan": {
+    "bytes": 8692,
+    "sha256": "8cf5e60187cef1f5a3f5ba7e144e705267e4801ab317ae4b3cb406239194be09"
+  },
+  "execution_command": {
+    "bytes": 1105,
+    "sha256": "ce81b637942132e624f442ffc7da0a9659a4461af212da07528f3740491a7402"
+  },
+  "authorized_runs": 1,
+  "actual_runs": 1,
+  "retry_count": 0,
+  "input_profile": "NativeDumpF",
+  "started_utc": "2026-10-12T16:08:56.444048Z",
+  "returned_utc": "2026-10-12T16:08:59.9936806Z",
+  "reservation_created_utc": "2026-10-12T16:08:57.7231048Z",
+  "physical_estimate_bytes": 536870912,
+  "commit_estimate_bytes": 1073741824,
+  "phase_deadline_ms": 10000,
+  "cleanup_deadline_ms": 5000,
+  "per_pipe_log_limit_bytes": 32768,
+  "wav_success_and_observed_stop_bytes": 131072,
+  "total_output_stop_bytes": 1048576,
+  "codec_version": "8.1.2-full_build-www.gyan.dev",
+  "codec": {
+    "bytes": 242496512,
+    "sha256": "ad8f211bc894755e0061c55ab280ae00e8d3d4f15a8cc4372b24cfa247b5942e"
+  },
+  "input_dump": {
+    "bytes": 96394,
+    "sha256": "a4e9276568dfeaf42d39deefe243b1efc2b9095b2f558bcb3512b98c417154d9"
+  },
+  "original_wav": {
+    "bytes": 96044,
+    "sha256": "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4"
+  },
+  "native_f_state": {
+    "bytes": 65117,
+    "sha256": "d0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9"
+  },
+  "input_pin_provenance": "Declared plan pins; guarded complete input validation/revalidation under admission reported by the executed source. No post-release executable/audio/F-state read or rehash.",
+  "native_exit_code_windows": 3199971767,
+  "native_error_code_signed": -1094995529,
+  "worker_root_exit_code": 2,
+  "supervisor_failure": "Worker root exited nonzero.",
+  "worker_failure": "codec exit nonzero",
+  "native_diagnostic": "blocksize 4096 > 1024; decode_frame() failed; Invalid data found when processing input; Conversion failed!",
+  "expected_pcm_bytes": 96000,
+  "expected_pcm_sha256": "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9",
+  "decoded_wav_bytes_metadata_only": 0,
+  "decoded_wav_sha256": null,
+  "pcm_verified": false,
+  "worker_receipt_scope": "Bounded existing worker trace inspected after release. The supervisor rejected root exit 2 before accepting any successful worker receipt; its Worker field remains null.",
+  "pipes_eof": true,
+  "drains": {
+    "stdout": {
+      "normal_return": true,
+      "exception_type": null
+    },
+    "stderr": {
+      "normal_return": true,
+      "exception_type": null
+    }
+  },
+  "lifecycle": {
+    "scheduler_attached": true,
+    "below_normal": true,
+    "root_exited": true,
+    "active_job_members": 0,
+    "root_observation_elapsed_ms": 372,
+    "cleanup_stop_requested": true,
+    "cleanup_closed": true,
+    "cleanup_elapsed_ms": 1,
+    "cleanup_error": null,
+    "job_closed": true,
+    "job_dispose_completed": true,
+    "input_hashes_match": true,
+    "inputs_unchanged": true,
+    "read_guards_released": true,
+    "retained_lease": null,
+    "quarantined": false
+  },
+  "postflight": {
+    "observed_utc": "2026-10-12T16:11:01.6702616Z",
+    "host_final_checks_utc": "2026-10-12T16:10:17.9132059Z",
+    "host_safe_failure_closure_confirmed": true,
+    "host_exec_exit_code": 0,
+    "host_exec_zero_is_not_codec_success": true,
+    "host_and_children_absent": true,
+    "leases": 0,
+    "heavy_lab_codec_processes": 0,
+    "main_baseline": "Stopped",
+    "main_helper_revision": "5707abd",
+    "main_restart_performed": false,
+    "main_prior_stop_cause": "Unknown",
+    "main_pid_image_udp_absent_before_and_after": true,
+    "unrelated_python_original_identity_preserved": true
+  },
+  "accounting": {
+    "file_count": 5,
+    "total_bytes_from_file_metadata": 6185,
+    "file_lengths": {
+      "decoded.wav": 0,
+      "state.local.json": 1443,
+      "stderr.log": 4017,
+      "stdout.log": 0,
+      "worker-receipt.json": 725
+    },
+    "payload_reads_or_hashes_after_release": 0,
+    "scope": "Postflight file-length snapshot only; no WAV content read/hash and no continuous maximum claim."
+  },
+  "evidence": {
+    "state": {
+      "bytes": 1443,
+      "sha256": "b9564651a739854680eac567db55766b9f591c5ffc0d9da524dcca872ddb62ea"
+    },
+    "worker": {
+      "bytes": 725,
+      "sha256": "53feaf47992f334214b3dc8ad5085dac2a0310bdbf55d5068384d6ab1c6af0e0"
+    },
+    "stderr": {
+      "bytes": 4017,
+      "sha256": "a781c3dd3060b3a786abe87f325f7fc341a88331873a254a0cbd5ba72d05cb05"
+    },
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "preflight": {
+      "bytes": 1437,
+      "sha256": "c4cf81a92bb73e4b8935b5d8e16615dc1afb9504105a9131993f6897002a3209"
+    },
+    "host_outcome": {
+      "bytes": 845,
+      "sha256": "94645220d6c51efb4ab7d887f57e538c68116f545e2382295b09ad4665a5dc97"
+    },
+    "postflight": {
+      "bytes": 2212,
+      "sha256": "b7c801948d52cc08f5777ad782861154e353ad995e46f4ecaf113679b07312a4"
+    }
+  },
+  "evidence_read_scope": "Only the small codec state, worker/log traces, plan/command and host/pre/postflight metadata were read after release.",
+  "original_sab_ff_byte_checkpoint_retracted": false,
+  "dump_decoded_by_ffmpeg": false,
+  "standalone_flac_conformance_verified": false,
+  "native_alias_index_verified": false,
+  "checksum_checksum_verified": false,
+  "playback_verified": false,
+  "ready": false,
+  "production_source_modified_after_failed_run": false,
+  "game_launched": false,
+  "stock_staged": false,
+  "next_action": "Coordinator review/integration of this preserved failed checkpoint. Any native dump-writer correction needs separately reviewed source and a new explicit native GO; no retry or in-place header repair is authorized by this run."
+}

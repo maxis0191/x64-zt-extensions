@@ -1,5 +1,10 @@
 # Decode the native F dump: source-only plan
 
+This preparation record was followed by one separately authorized execution of
+post-commit Plan B. [CODEC-DUMP-F-RESULT.md](CODEC-DUMP-F-RESULT.md) records its
+failed decode and confirmed closure. The preparation and original F dump remain
+preserved; this document does not authorize a retry.
+
 The [completed F transaction](SAB-FF-F-RESULT.md) proves the original sound's SAB
 payload and checks the dump's exact metadata rewrite. It did not decode that
 standalone dump. The native writer sets STREAMINFO min/max block sizes to 1024,

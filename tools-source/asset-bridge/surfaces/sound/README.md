@@ -7,12 +7,13 @@ only SABL difference from the preserved failed run. See
 [SAB-FF-F-RESULT.md](SAB-FF-F-RESULT.md) and its sanitized checkpoint.
 Delivery and audible game acceptance remain unverified; `Ready` stays false.
 
-The next source-only proposal is [CODEC-DUMP-F-PLAN.md](CODEC-DUMP-F-PLAN.md):
-reuse the installed FFmpeg for one decode of the unmodified F dump under a fresh
-reservation. Codec schema 2 requires an explicit `OriginalSource` or `NativeDumpF`
-profile. Executable/audio hashes now require admission and retained read guards;
-default Plan only reads its JSON and checks input metadata. No new codec run has
-occurred, and the SAB reader and its exclusions remain unchanged.
+The subsequent single [dump codec attempt](CODEC-DUMP-F-RESULT.md) failed:
+FFmpeg rejected `blocksize 4096 > 1024`, produced no PCM, and closed safely with
+unchanged inputs and released admission. The original SAB/FF byte proof is
+unchanged; standalone dump decoding remains unverified. Codec schema 2 requires
+an explicit `OriginalSource` or `NativeDumpF` profile, with executable/audio hashes
+under admission and retained guards. The [prepared plan](CODEC-DUMP-F-PLAN.md)
+is historical and cannot authorize another invocation.
 
 This source-only adapter prepares an original short WAV, lossless FLAC sample,
 one IW7 alias and a bank/zone source inventory. It does not build a sound bank,
