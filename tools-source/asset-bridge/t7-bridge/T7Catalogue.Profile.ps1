@@ -8,6 +8,7 @@ function Assert-T7CatalogueMetadata($Expected) {
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
+       $Plan.EngineOutputProfile -cne 'ObservedStartupA' -or
        $Plan.PhysicalBytes -ne 6GB -or $Plan.CommitBytes -ne 8GB -or
        $Plan.GroupDeadlineSeconds -ne 200 -or $Plan.DeadlineSeconds -ne 120 -or
        $Plan.MutableOutputLimitBytes -ne 64MB -or $Plan.MetadataReserveBytes -ne 64KB -or
@@ -154,6 +155,47 @@ function Read-T7CatalogueReport($Plan,$State,$Context) {
     $State.ModelCount=$report.model_count
     $outcome
 }
+function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
+    Assert-H1Path $Plan.WorkingDirectory
+    $allowedFiles=@('BlackOps3_UnrankedDedicatedServer.exe','steam_api64.dll','t7-zonetool-candidate.exe')
+    foreach($entry in [IO.Directory]::EnumerateFileSystemEntries($Plan.WorkingDirectory)) {
+        Assert-H1Path $entry
+        $name=[IO.Path]::GetFileName($entry)
+        if($name -cin $allowedFiles){if([IO.Directory]::Exists($entry)){throw 'Binary alias became a directory.'};continue}
+        if($name -ceq 'steam_appid.txt') {
+            if([IO.Directory]::Exists($entry) -or (Get-Item -LiteralPath $entry).Length -gt 6){throw 'Observed Steam app-id output type/size differs.'}
+            if($Closed) {
+                # Partial writes are tolerated during observation, never at acceptance.
+                $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::ASCII.GetBytes('311210'))).ToLowerInvariant()
+                $Context.Guards.Add((Open-H1Pin ([pscustomobject]@{Path=$entry;Bytes=6;SHA256=$sha})))
+            }
+            continue
+        }
+        if($name -ceq 'identities') {
+            if(![IO.Directory]::Exists($entry)){throw 'Observed identities path must be a directory.'}
+            # Only the four empty directory shapes observed in A. Never read keys.
+            $allowed=@('dedicatedpc','dedicatedpc\dumps','dedicatedpc\LPC')
+            $pending=[Collections.Generic.Stack[string]]::new();$pending.Push($entry)
+            while($pending.Count) {
+                foreach($child in [IO.Directory]::EnumerateFileSystemEntries($pending.Pop())) {
+                    Assert-H1Path $child
+                    $relative=$child.Substring($entry.Length+1)
+                    if($relative -cnotin $allowed -or ![IO.Directory]::Exists($child)){throw 'Unexpected identity entry; retain privately without reading payload.'}
+                    $pending.Push($child)
+                }
+            }
+            continue
+        }
+        if($name -cnotin @('zone',$Plan.OutputKey) -or ![IO.Directory]::Exists($entry)){throw 'Unexpected engine output; preserve and stop.'}
+        $allowed=if($name -ceq 'zone'){'mp_freerun_04.ff'}else{'catalog.json'}
+        foreach($child in [IO.Directory]::EnumerateFileSystemEntries($entry)) {
+            Assert-H1Path $child
+            if([IO.Path]::GetFileName($child) -cne $allowed -or [IO.Directory]::Exists($child)){throw 'Unexpected zone/catalogue output; preserve and stop.'}
+            if($allowed -ceq 'catalog.json' -and (Get-Item -LiteralPath $child).Length -gt 512KB){throw 'Catalogue report cap exceeded.'}
+        }
+    }
+    if(Test-Path -LiteralPath (Join-Path $Plan.RunRoot 'zone')){throw 'Unexpected parent zone.'}
+}
 function Enable-T7CatalogueRuntimeProfile($Plan) {
     $script:T7CatalogueGroupStarted=Get-H1Clock
     $script:T7CatalogueBaseDeadline=${function:Assert-H1Deadline};$script:T7CatalogueBaseBudget=${function:Test-H1Budget}
@@ -168,18 +210,7 @@ function Enable-T7CatalogueRuntimeProfile($Plan) {
             $path=Join-Path $Plan.StageRoot $name
             if((Test-Path -LiteralPath $path) -and (Get-Item -LiteralPath $path).Length -gt 1MB){throw 'Catalogue log cap exceeded.'}
         }
-        $allowedFiles=@('BlackOps3_UnrankedDedicatedServer.exe','steam_api64.dll','t7-zonetool-candidate.exe')
-        foreach($entry in [IO.Directory]::EnumerateFileSystemEntries($Plan.WorkingDirectory)) {
-            $name=[IO.Path]::GetFileName($entry)
-            if($name -cin $allowedFiles){if([IO.Directory]::Exists($entry)){throw 'Binary alias became a directory.'};continue}
-            if($name -cnotin @('zone',$Plan.OutputKey) -or ![IO.Directory]::Exists($entry)){throw 'Unexpected engine output; preserve and stop.'}
-            $allowed=if($name -ceq 'zone'){'mp_freerun_04.ff'}else{'catalog.json'}
-            foreach($child in [IO.Directory]::EnumerateFileSystemEntries($entry)) {
-                if([IO.Path]::GetFileName($child) -cne $allowed -or [IO.Directory]::Exists($child)){throw 'Unexpected zone/catalogue output; preserve and stop.'}
-                if($allowed -ceq 'catalog.json' -and (Get-Item -LiteralPath $child).Length -gt 512KB){throw 'Catalogue report cap exceeded.'}
-            }
-        }
-        if(Test-Path -LiteralPath (Join-Path $Plan.RunRoot 'zone')){throw 'Unexpected parent zone.'}
+        Assert-T7CatalogueEngineOutputs $Plan
         Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     }
 }

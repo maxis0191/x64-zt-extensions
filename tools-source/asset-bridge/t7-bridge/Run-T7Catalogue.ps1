@@ -47,7 +47,7 @@ try {
     $state=[ordered]@{Schema='iw7.t7-catalogue-run/1';Status='Running';PlanSHA256=$PlanSHA256;Stage='Catalogue';
         DeadlineSeconds=120;MaxObservedOutputBytes=0L;Identity=$null;ExitCode=$null;TreeClosureConfirmed=$true;
         LeaseReleased=$false;Quarantined=$false;TerminationRequested=$false;CatalogueOutcome='NoCatalogue';
-        CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;Aliases=@();InputFileIds=@()}
+        CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;EngineOutputsValidated=$false;Aliases=@();InputFileIds=@()}
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'T7 single-zone catalogue'
     $state.LeaseToken=$context.Lease.Token
     Enable-T7CatalogueRuntimeProfile $plan
@@ -82,6 +82,8 @@ try {
     # while guards/admission remain; failure never becomes a successful catalogue.
     if($state -and $attempted -and $context.Owner -and $context.Closed -and $context.Lease) {
         try {
+            Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context
+            $state.EngineOutputsValidated=$true
             $state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context
             foreach($pin in @($plan.Bindings)+@($zonePin)+@($state.Aliases)) {
                 $guard=Open-H1Pin $pin;try{}finally{$guard.Dispose()};Assert-H1Deadline $script:T7CatalogueGroupStarted 200
@@ -106,7 +108,8 @@ try {
         try {
             if(!$state.Quarantined){Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
             if(!$failure -and $context.Closed -and !$context.Lease -and $state.LeaseReleased -and
-               !$state.TerminationRequested -and $state.InputsReverified -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
+               !$state.TerminationRequested -and $state.InputsReverified -and $state.EngineOutputsValidated -and
+               $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message}
         try {
             Write-H1Receipt $plan $state $plan.StageRoot

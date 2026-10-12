@@ -125,6 +125,34 @@ try {
     Check (($start.ArgumentList -join '|') -ceq '-t7-iw7-catalog|mp_freerun_04' -and !$start.UseShellExecute -and $start.CreateNoWindow) 'Fixed catalogue command changed.'
     Check ($start.Environment['LOCALAPPDATA'].StartsWith((Join-Path $root 'temp'))) 'Private environment changed.'
 
+    $appid=Join-Path $work 'steam_appid.txt'
+    [IO.File]::WriteAllText($appid,'')
+    Assert-T7CatalogueEngineOutputs $plan;$checks++
+    Refuses {Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context} 'length differs'
+    [IO.File]::WriteAllText($appid,'311210')
+    foreach($dir in 'identities/dedicatedpc/dumps','identities/dedicatedpc/LPC'){[IO.Directory]::CreateDirectory((Join-Path $work $dir))|Out-Null}
+    Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context;$checks++
+    Refuses {[IO.File]::WriteAllText($appid,'999999')} '.'
+    foreach($g in $context.Guards){$g.Dispose()};$context.Guards.Clear()
+    [IO.File]::WriteAllText($appid,'999999')
+    Assert-T7CatalogueEngineOutputs $plan;$checks++
+    Refuses {Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context} 'hash/length differs'
+    [IO.File]::WriteAllText($appid,"311210`n")
+    Refuses {Assert-T7CatalogueEngineOutputs $plan} 'type/size'
+    Remove-Item -LiteralPath $appid
+    [IO.Directory]::CreateDirectory($appid)|Out-Null
+    Refuses {Assert-T7CatalogueEngineOutputs $plan} 'type/size'
+    Remove-Item -LiteralPath $appid
+    $keyPath=Join-Path $work 'identities/dedicatedpc/synthetic-private-key'
+    $key=[IO.FileStream]::new($keyPath,'CreateNew','Write','None')
+    try {Refuses {Assert-T7CatalogueEngineOutputs $plan} 'Unexpected identity entry'}finally{$key.Dispose()}
+    Remove-Item -LiteralPath $keyPath
+    $unexpected=Join-Path $work 'identities/dedicatedpc/other'
+    [IO.Directory]::CreateDirectory($unexpected)|Out-Null
+    Refuses {Assert-T7CatalogueEngineOutputs $plan} 'Unexpected identity entry'
+    Remove-Item -LiteralPath $unexpected
+    foreach($dir in 'identities/dedicatedpc/dumps','identities/dedicatedpc/LPC','identities/dedicatedpc','identities'){Remove-Item -LiteralPath (Join-Path $work $dir)}
+
     Enable-T7CatalogueRuntimeProfile $plan
     $budgetState=[ordered]@{MaxObservedOutputBytes=0L}
     [IO.File]::WriteAllText((Join-Path $work 'unexpected.ff'),'synthetic')
@@ -158,7 +186,7 @@ try {
         $ff=[pscustomobject]@{Path=(Join-Path $root 'mp_freerun_04.ff');Bytes=16977344;SHA256=$null;RelativePath='zone/mp_freerun_04.ff';HashProvenance='ObserveUnderLease';Attributes='Archive';LastWriteUtc='2026-10-12T00:00:00.0000000Z'}
         $metadata=@($bindings|ForEach-Object {[pscustomobject]@{Path=$_.Path;Bytes=$_.Bytes;Attributes='Archive';LastWriteUtc=$ff.LastWriteUtc}})+@($ff)
         function Get-Item($LiteralPath){$m=@($metadata|Where-Object Path -CEQ $LiteralPath)[0];[pscustomobject]@{PSIsContainer=$false;Length=$m.Bytes;Attributes='Archive';LastWriteTimeUtc=([datetimeoffset]$m.LastWriteUtc).UtcDateTime}}
-        $fixed=[pscustomobject]@{Schema='iw7.t7-catalogue-plan/1';Runner='synthetic-runner';PhysicalBytes=6GB;CommitBytes=8GB;GroupDeadlineSeconds=200;DeadlineSeconds=120;MutableOutputLimitBytes=64MB;MetadataReserveBytes=64KB;CleanupSeconds=5;ReportLimitBytes=512KB;LogLimitBytes=1MB;OutputLimitBytes=127799192;RetryAuthorized=$false;
+        $fixed=[pscustomobject]@{Schema='iw7.t7-catalogue-plan/1';EngineOutputProfile='ObservedStartupA';Runner='synthetic-runner';PhysicalBytes=6GB;CommitBytes=8GB;GroupDeadlineSeconds=200;DeadlineSeconds=120;MutableOutputLimitBytes=64MB;MetadataReserveBytes=64KB;CleanupSeconds=5;ReportLimitBytes=512KB;LogLimitBytes=1MB;OutputLimitBytes=127799192;RetryAuthorized=$false;
             RunRoot=$runRoot;WorkingDirectory=(Join-Path $runRoot 'work');StageRoot=(Join-Path $runRoot 'evidence');Image=(Join-Path $runRoot 'work/t7-zonetool-candidate.exe');Arguments=@('-t7-iw7-catalog','mp_freerun_04');OutputKey='t7_iw7_catalog_1d7749fdf2454720fad852816e9ddde027a157a4cc486aa18b3eb8fd4a25c2ce';Bindings=$bindings;InputMetadata=$metadata;Zone=$ff;CandidateSource=$bindings[0].Path;CandidateBytes=$bindings[0].Bytes;CandidateSHA256=$bindings[0].SHA256;EngineSource=$bindings[1].Path;SteamSource=$bindings[2].Path}
         Assert-T7CataloguePlan $fixed $fakeRepo 'synthetic-runner';$script:checks++
         $fixed.Arguments+=@('+set')

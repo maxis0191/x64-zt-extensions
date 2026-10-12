@@ -150,13 +150,13 @@ retains useful report evidence while remaining Failed. No report is inspected
 while the job remains unclosed. After forced closure, only the bounded JSON may
 be read outside admission; stock is not rehashed and success remains impossible.
 
-`Test-T7Catalogue.ps1` passes 95 light checks using synthetic files, fake owners
+`Test-T7Catalogue.ps1` initially passed 95 light checks using synthetic files, fake owners
 and clocks, with no owner-stock reads, native type loading or real reservation.
 It covers report scope/count/name/refusal cases, retained file guards, fixed-plan
 and retry refusals, output caps, ordinary root failure, closure quarantine, and
 the actual runner finalizer after late release/publication or forced closure.
-The native catalogue path itself remains unexecuted. Coordinator review and a
-separate exact-plan GO are still required; exhaustive theoretical bootstrap
+These pure tests do not qualify the native catalogue path. Coordinator review and a
+separate exact-plan GO are required; exhaustive theoretical bootstrap
 closure and another prepatch capture are not gates.
 
 ## Attempt A: stopped on unlisted startup outputs
@@ -183,3 +183,31 @@ launcher host exited normally after its quarantine check; host and candidate
 were absent at 13:22:55 UTC. Raw files remain private. The
 [sanitized A record](catalogue-runtime-a-20261012.json) binds the receipts.
 Prepare a narrowly scoped source correction and a new plan; A must never retry.
+
+## B correction: only the observed startup paths
+
+The new plan declares `EngineOutputProfile=ObservedStartupA`. It permits an
+ordinary `steam_appid.txt` of at most six bytes while the engine is writing it;
+after ordinary native closure, acceptance requires exactly the bytes `311210`,
+with a read-only guard retained through receipt publication. This avoids stopping
+on a legitimate transient zero-length file without accepting different final
+contents. An unexpected type or seventh byte still stops the attempt.
+
+Only `identities/`, `identities/dedicatedpc/`, and its empty `dumps/` and `LPC/`
+directories are permitted. No other descendant, file or reparse point is allowed.
+The adapter never reads an identity/key payload. Any newly observed entry is
+preserved privately for diagnosis and cannot trigger an automatic broadening.
+The existing total size, 64-entry and time limits are unchanged.
+
+These bounds are a deliberate observation-based policy. No writer for these
+paths was found in the pinned C++ sources; the exact closed-engine writer is
+unknown. The separate `temp/zt-tlsdll.dll` matches the loader resource name in
+`src/zonetool/loader/tls.cpp` and stays under existing temporary-output bounds;
+its generated binary has not been read or analyzed after the A reservation.
+
+The corrected adapter passes 112 light checks, including partial/exact/incorrect
+app-id contents, final read guard, wrong output types, unlisted directories and a
+locked synthetic identity file refused without reading it. Plan B uses the same
+four inputs, no additional FF/FD/XPAK, and no larger budget. Its native invocation
+requires a new explicit coordinator GO. A's receipt, runtime tree and failure
+remain unchanged.
