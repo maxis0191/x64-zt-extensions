@@ -58,6 +58,17 @@ try {
         Refuses {Get-T7CatalogueCandidateProfile ([pscustomobject]@{CandidateProfile=$name})} 'Unknown catalogue'
     }
     $f=New-Fixture;Assert-T7CatalogueBuild $f.Plan $f.Receipt;$checks++
+    $f=New-Fixture;$f.Plan.CandidateProfile='t7-catalog-exit-context'
+    foreach($profile in @($f.Build.BuildProfile,$f.Receipt.BuildProfile)){
+        $profile.Name='t7-catalog-exit-context';$profile|Add-Member NoteProperty ContextSchema 'iw7.t7-catalog-exit-context/1'
+    }
+    Assert-T7CatalogueBuild $f.Plan $f.Receipt;$checks++
+    $f.Receipt.BuildProfile.ContextSchema='unknown'
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact exit context schema'
+    $f.Receipt.BuildProfile.PSObject.Properties.Remove('ContextSchema')
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
+    $f=New-Fixture;$f.Plan.CandidateProfile='t7-catalog-exit-context'
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
     $cases=@(
         @{Change={$f.Build.BuildProfile.Name='unknown'};Error='Exact catalogue trace'},
         @{Change={$f.Build.BuildProfile.Option='-new-mode'};Error='Exact catalogue trace'},
@@ -106,6 +117,18 @@ try {
     Check ((ConvertFrom-T7CatalogueTrace ($exitLine+$enabled)).Outcome -ceq 'TraceObserved') 'Event order wrongly assumed.'
     $partial=ConvertFrom-T7CatalogueTrace ($enabled.Replace('unbuffered=1','unbuffered=0'))
     Check (!$partial.Events[0].StdoutUnbuffered -and !$partial.Events[0].StderrUnbuffered) 'setvbuf failure flags lost.'
+    # The five-event shape actually observed in D remains valid under /1.
+    $observedD=@(
+        $prefix+'enabled stdout_unbuffered=1 stderr_unbuffered=1 tid=31804'
+        $prefix+'before_entry_point code=0 tid=31804 return_address=0000000000000000'
+        $prefix+'before_post_unpack code=0 tid=31804 return_address=0000000000000000'
+        $prefix+'after_post_unpack code=0 tid=31804 return_address=0000000000000000'
+        $prefix+'exit_hook code=0 tid=18184 return_address=0000000140AC00C4'
+    ) -join "`r`n"
+    $observed=ConvertFrom-T7CatalogueTrace ($observedD+"`r`n")
+    Check ($observed.Outcome -ceq 'TraceObserved' -and $observed.Events.Count -eq 5 -and
+        $observed.Events[4].ThreadId -eq 18184 -and $observed.Events[4].ReturnAddress -ceq '0000000140AC00C4' -and
+        @($observed.Events|Where-Object Phase -CEQ 'entry_point_return').Count -eq 0) 'Observed D trace changed or invented a return.'
     foreach($bad in @($enabled.TrimEnd("`n"),($enabled+$enabled),($complete+$boundary),($prefix+"unknown code=0 tid=42 return_address=0000000000000000`n"),
         $enabled.Replace('tid=42','tid=4294967296'),$enabled.Replace('tid=42','tid=042'),$enabled.Replace('unbuffered=1','unbuffered=2'),
         $boundary.Replace('code=0','code=1'),$boundary.Replace('code=0','code=-0'),$boundary.Replace('0000000000000000','0000000000000001'),

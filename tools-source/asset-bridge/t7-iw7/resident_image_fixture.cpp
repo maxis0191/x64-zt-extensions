@@ -168,12 +168,22 @@ namespace
         });
         changed("resident image metadata/pointer changed while copying", [](fixture& f) { f.on_second_header = fixture::change::metadata; });
         changed("resident image metadata/pointer changed while copying", [](fixture& f) { f.on_second_header = fixture::change::pointer; });
-        const auto never_read = [](const void*, std::size_t) { throw std::runtime_error("callback must not run"); };
-        refusal("missing resident image", [&] { (void)image::copy(nullptr, never_read); });
+        // Use the same stateful allowlist as the valid cases. An always-throw
+        // callback makes MSVC report C4702 in the template's code after the call.
+        // A regressed precheck still cannot permit a dereference of the bad pointer.
+        fixture guard;
+        unsigned callback_calls = 0;
+        const auto guarded_read = [&](const void* pointer, std::size_t bytes) {
+            ++callback_calls;
+            guard.readable(pointer, bytes);
+        };
+        refusal("missing resident image", [&] { (void)image::copy(nullptr, guarded_read); });
+        check(callback_calls == 0 && guard.header_reads == 0 && guard.pixel_reads == 0);
         refusal("image header address overflow", [&] {
             const auto pointer = reinterpret_cast<const t7::GfxImage*>((std::numeric_limits<std::uintptr_t>::max)() - 7);
-            (void)image::copy(pointer, never_read);
+            (void)image::copy(pointer, guarded_read);
         });
+        check(callback_calls == 0 && guard.header_reads == 0 && guard.pixel_reads == 0);
         check(copied_cases == 6 && format_cases == 18 && refused_cases == 30 && largest_pixel_copy == 96);
     }
 }

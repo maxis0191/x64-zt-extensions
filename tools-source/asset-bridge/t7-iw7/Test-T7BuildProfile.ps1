@@ -67,4 +67,18 @@ $fixture=New-TraceFixture;$fixture.BuildProfile|Add-Member -NotePropertyName Hel
 $fixture=New-TraceFixture;$fixture.Bindings[2].IsText=$false;Must-Refuse $fixture
 $fixture=New-TraceFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
 $fixture=New-TraceFixture;$fixture.ReuseCompile.RecompiledMain='true';Must-Refuse $fixture
+function New-ExitContextFixture {
+    $fixture=New-TraceFixture
+    $fixture.BuildProfile.Name='t7-catalog-exit-context'
+    $fixture.BuildProfile|Add-Member -NotePropertyName ContextSchema -NotePropertyValue 'iw7.t7-catalog-exit-context/1'
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-ExitContextFixture) $PSScriptRoot)){throw 'Qualified exit context refused.'};$checks++
+$fixture=New-ExitContextFixture;$fixture.BuildProfile.ContextSchema='iw7.t7-catalog-exit-context/2';Must-Refuse $fixture
+$fixture=New-ExitContextFixture;$fixture.BuildProfile.TraceSchema='iw7.t7-catalog-trace/2';Must-Refuse $fixture
+$fixture=New-ExitContextFixture;$fixture.BuildProfile.PSObject.Properties.Remove('ContextSchema');Must-Refuse $fixture
+$fixture=New-ExitContextFixture;$fixture.BuildProfile.Name='t7-catalog-trace';Must-Refuse $fixture
+$fixture=New-ExitContextFixture;$fixture.BuildProfile.PreparedMain.SHA256=('b'*64);Must-Refuse $fixture
+$fixture=New-ExitContextFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
+$fixture=New-ExitContextFixture;$fixture.BuildProfile|Add-Member -NotePropertyName UnboundedStack -NotePropertyValue $true;Must-Refuse $fixture
 "T7_BUILD_PROFILE_CHECKS=$checks"

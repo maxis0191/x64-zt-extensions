@@ -532,3 +532,160 @@ CandidateExecuted and Ready remain false. This build did not run the EXE or
 engine, observe any trace marker, produce a catalogue, or validate export or
 gameplay. The next action belongs to the catalogue runner owner: qualify these
 new artifacts, prepare a real catalogue plan and obtain its separate runtime GO.
+
+## Loaded exit context: source preparation after catalogue D
+
+The catalogue owner's D evidence records five /1 markers: buffering enabled and
+entry_point/post_unpack entered on TID 31804, post_unpack returned, then exit_hook
+received code zero on TID 18184 with return address 0x140AC00C4. There was no
+entry_point_return and no catalogue. The original job exited naturally and closed;
+the run receipt is f518bf36f08eeb01f9d89ead6f8d0f5b79fe48501864e0cb93801652f7b9e3b4.
+This establishes an exit from another thread, not its cause. Source review found
+no name for this RVA or matching saved byte window. Console/scheduler sources do
+not explicitly request ExitProcess; attributing the exit to anti-tamper, the CRT,
+or missing files would be speculation. The packed disk image was not reread.
+
+The coordinator authorized a source-only extension at the existing exit_hook.
+`wire_main` and its six /1 markers are preserved exactly; an identity test matches
+the previously built 14,426-byte main. `wire_exit_main` adds context without
+changing arguments, dispatch, engine patches, exit code or cleanup. The build
+selector `--catalog-exit` is mutually exclusive with `--catalog-trace` and the
+pre-patch build variant. It is not a new runtime argument or command mode.
+
+The distinct BuildProfile Name is `t7-catalog-exit-context`, retaining Option
+`-t7-iw7-catalog`, ArgumentCount 3 and TraceSchema `iw7.t7-catalog-trace/1`, plus
+ContextSchema `iw7.t7-catalog-exit-context/1`. Its same four text pins are Wiring,
+PreparedMain, BaseBuildPlan and BaseBuildReceipt. The base remains ordinary D2,
+with the exact same checked C compilation chain and two retained dependency roots;
+main Compile and Link must produce their own new Passed receipt and EXE. The /1
+candidate, its receipt and catalogue failures remain separate historical evidence.
+
+A single InterlockedOr selection owns the exit marker **and** its three context
+lines. Only the selected invocation calls the generic /1 exit marker, then captures
+code/TID/RA locally. Other exit invocations proceed directly to the original
+cleanup/exit without waiting for the capture. Concurrent termination can therefore
+leave partial output, which must not be treated as a complete observation.
+
+The selected thread attempts these three independently SEH-guarded observations:
+
+- Memory: 256 bytes at RA minus 0x40. The named existing T7 module must have base
+  0x140000000, allocation must match, and the entire window must fit one committed
+  region without guard/no-access protection. VirtualQuery metadata is recorded;
+  ReadProcessMemory uses the current process only. Partial bytes remain labeled.
+- Stack: RtlCaptureStackBackTrace requests at most eight addresses from the current
+  thread. This is a best-effort runtime stack observation, not validated unwind/ABI.
+- Function: RtlLookupFunctionEntry is called only for RA minus one, after checking
+  that address's allocation. If present, its image base must match T7 and only the
+  accessible 12-byte RUNTIME_FUNCTION is copied. Begin/End must contain RA minus
+  one for status ok; UnwindData is recorded as metadata, never dereferenced.
+
+Each observation is serialized and flushed before attempting the next, retaining
+the window if stack walking fails or the process exits concurrently. All three
+errors are non-fatal to this instrumentation; original pre_destroy/exit follows.
+The observer restores the calling thread's saved LastError. Fixed local buffers
+are clamped again after guarded calls, before serialization. No file read/write,
+process attachment, worker hook, engine offset patch or new supervisor is added.
+
+Context prefix is `[T7_CATALOG_EXIT] schema=iw7.t7-catalog-exit-context/1`.
+Each of memory, stack and function occurs at most once, following the /1 exit_hook
+marker with matching signed int32 code, DWORD TID and pointer RA. Exact formats
+are the three fprintf literals in prepare_catalog_trace.py, shared with the
+catalogue parser owner. Integers are decimal except pointer hex16 and function
+RVAs hex8; data is uppercase hex (two characters per copied byte), stack addresses
+are uppercase hex16 separated by commas, and an empty data/list is `-`.
+Each fprintf LF may become CRLF under Windows text mode.
+
+Memory is at most 1,024 bytes per line, stack and function 512 each, and the six
+unchanged markers 256 each. The entire stderr contract is at most 4 KiB/nine lines.
+Raw captured bytes belong only to ignored runtime stderr/receipts; committed
+evidence must retain metadata, states and pins without byte windows.
+
+Memory status ok requires 256 copied bytes, partial 1..255. read_failed has zero
+bytes, or a full count if the API anomalously reports failure despite that count.
+Exception retains bounded metadata/bytes already obtained. Function partial has
+1..11 copied bytes, read_failed zero or 12, and both have zeroed RVA fields.
+Function exception also zeroes RVAs; record_invalid can preserve a full record
+that fails containment. Early refusals have zero bytes and zero RVAs. Stack ok
+has 1..8 frames; empty/invalid_count/exception have none. API/SEH errors are
+explicit. Absent or incomplete contexts are not success; even three ok records
+prove neither the cause of ExitProcess nor a successful catalogue.
+
+Source tests verify unchanged /1 output/control flow, single-invocation ownership,
+per-API SEH guards, allocation/read/array bounds, incremental publication, original
+exit/LastError preservation and actual maximum-width fprintf sizes. The runner's
+profile tests keep /1 strict and refuse unknown/mixed context schemas. These are
+source/synthetic tests only; C++ compilation and actual capture behavior remain
+unverified pending independent review and separate build/runtime GO decisions.
+
+Local validation on 2026-10-12 passes 68 Python tests using the pinned retained
+native source/E7 command records and 45 PowerShell checks (32 profile, 3 deadline,
+10 Link telemetry). The current SDK header confirms the declared lookup API;
+no dependency, compiler option or common provider changed. These checks loaded
+no native diagnostic type, launched no child and acquired no heavy lease.
+
+### Exact exit-context build plan A, awaiting review/GO
+
+Source commit 55dde1dd60ff925efa9326312deb12b0f6c2e56b produced
+`runtime/t7-exit-context-build-plan-a/build-plan.local.json` (298,652 bytes),
+SHA256 0cd2c2f3bdc22021a045d53bec19988b912c8d3db095e02eef061ebfa201880b.
+Its default source/metadata check passes with 1,083 inputs and no missing pin.
+The entire Inputs array equals the trace A array. Its 413-object Link response
+differs from trace A on exactly line 22, the newly compiled main.obj; the other
+412 references are identical. No dependency or common provider was added.
+
+Wiring is 13,796 bytes / 4f86d6c5189a26978827d97ce86c022a1978437555dcfa579554a3039f5c209b;
+prepared main is 22,194 bytes / 5f64c43ca9306cfa0ee561fbe94592a4f0cedcc9382456d11772653695c3fae3.
+The two D2 base-proof pins and the retained C compilation chain are unchanged.
+The future `runtime/zt-t7-exit-context-a` output root is absent. This preparation
+loaded no native diagnostic type, hashed no binary and acquired no lease. It
+created neither an EXE nor a Passed build receipt. The coordinator and catalogue
+parser owner received this exact source/plan for review; the build still needs
+its own GO, and any later real catalogue run requires a separate reviewed plan.
+
+### Exit-context build A: Passed and fully closed, no candidate launch
+
+Independent review accepted source 55dde1d and the exact plan above. After the
+image fixture released the shared slot, the coordinator authorized one build.
+Fresh preflight at 14:56:52 UTC on 2026-10-12 found sufficient 4/6 GiB capacity,
+zero leases/builds, Main still stopped and the exact Python PID 23352 generation
+unchanged. The new persistent PowerShell host PID 21776 invoked the existing
+runner once; no retry or alternative compiler/link route was used.
+
+Main compiled under /W4 /WX in 3.334 seconds and Link completed in 2.948 seconds.
+Original roots cl PID 20668 and link PID 24764 both exited zero. The qualified H1
+telemetry policy closed both jobs and recorded zero active members afterward.
+Actual source dependencies passed the guarded-set check; Data.Source identifies
+the reviewed PreparedMain, with Windows path case normalized by MSVC. Final
+source/input revalidation passed. Total group elapsed time was 16.595 seconds;
+maximum observed output was 167,935,441 bytes, below the unchanged 256 MiB cap.
+
+Receipt `runtime/zt-t7-exit-context-a/receipt.json` is 14,488 bytes, SHA256
+3366373d1cf91e30634bfb3367133bee99771ca2b2cb9c794c7ced784cc9f6b0.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+with no quarantine. Its BuildProfile is exactly equal to the reviewed plan's
+profile, including ContextSchema and all four text pins. New artifacts under
+`runtime/zt-t7-exit-context-a` are:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| main/main.obj | 538,558 | 179d7ee84d84fdcc83c00587775aeea0914e34fea141ec673c3c83b279b08f67 |
+| main/compile.pdb | 1,732,608 | 05867f326e0e34abac9de0ea1faf5c3ce988283f37554435bf6abd6457e9b67b |
+| main/dependencies.json | 61,947 | 82ebe404731828932c65e6752c4365f465365596d44d6685e93309645507f414 |
+| link/zonetool-t7.exe | 21,744,640 | f3408671d392b97e3ca09bc3e6e294c761813feccd18d8a1aaa4920874be2847 |
+| link/zonetool-t7.pdb | 136,482,816 | cfc51daed1e5ca49379e413949bd88362c36f3239c188868f26847d464729854 |
+| link/zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| link/zonetool-t7.exp | 3,927 | 6c93e70042f25bc473a38799d73d0e9740756c76861e24f66ccf81d5696ce9fc |
+
+Postflight at 14:58:26 UTC found zero leases/build/telemetry processes, Main still
+stopped and Python's exact identity preserved. The retained host verified the
+exact Passed receipt and absence of AppDomain quarantine, saved its outcome and
+exited zero. Independent observation at 14:58:52.3190650 UTC confirmed PID 21776
+absent. All four pre/postflight and host outcome/exit records remain in
+`runtime/t7-exit-context-build-plan-a`. The coordinator and catalogue owner received
+these new pins and complete closure proof for the separately reviewed Plan E.
+
+CandidateExecuted and Ready remain false. Compilation validates the new C++/SEH
+syntax and linkage, not actual memory/stack capture behavior, the cause of the
+engine exit, catalogue generation or gameplay. No candidate or engine was
+launched by this build. The separate runtime parser correction does not change
+this qualified build; future runtime acceptance must bind its own reviewed plan.

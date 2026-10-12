@@ -39,11 +39,15 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
             PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
         }
-    } elseif($profile.Name -ceq 't7-catalog-trace') {
+    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context')) {
+        $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring'
+        if($profile.Name -ceq 't7-catalog-exit-context') {
+            if($profile.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit-context schema required.'}
+            $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
+        }
         if($profile.Option -cne '-t7-iw7-catalog' -or $profile.ArgumentCount -ne 3 -or
            $profile.TraceSchema -cne 'iw7.t7-catalog-trace/1' -or
-           (@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne
-           'ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring' -or
+           (@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne $fields -or
            $profile.BaseBuildPlan.SHA256 -cne 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa' -or
            $profile.BaseBuildReceipt.SHA256 -cne 'c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'){
             throw 'Exact catalogue trace profile and ordinary D2 proof required.'

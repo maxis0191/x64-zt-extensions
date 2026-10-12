@@ -98,7 +98,7 @@ try {
             $state.InputsReverified=$true;$state.OriginalInputMetadataUnchanged=$true;$state.AliasesRetained=$true
             Test-H1Budget $plan $state
             if(!$failure -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
-            if(!$failure -and (Get-T7CatalogueCandidateProfile $plan) -ceq 't7-catalog-trace' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
+            if(!$failure -and (Get-T7CatalogueCandidateProfile $plan) -cne 'ordinary-d2' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
     if($state){Complete-H1Stage $context $state}

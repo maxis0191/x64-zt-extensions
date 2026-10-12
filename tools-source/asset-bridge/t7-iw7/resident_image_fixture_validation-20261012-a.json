@@ -1,0 +1,105 @@
+{
+  "schema": "iw7.t7-resident-image-native-checkpoint/1",
+  "status": "FailedCompileAClosedNoRetry",
+  "fixture_source_commit": "efd94c0daf603d319edd429b5df6220d484aa622",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "plan_sha256": "3d746d44b18d422c8840e1e0f2d652c5d5ab90ee7443efd2d371124c14db6ff7",
+  "recipe_sha256": "1f9b31f51cd83fe637b8154ce9d3cbde2901466eef298b92c205a7f0e3bbaabf",
+  "go_utc": "2026-10-12T14:38:20Z",
+  "started_utc": "2026-10-12T14:40:41.6690020Z",
+  "finished_utc": "2026-10-12T14:40:55.3282438Z",
+  "invocations": 1,
+  "compiler_exit_code": 2,
+  "compiler_diagnostics": [
+    "C2220: warning treated as error",
+    "C4702: unreachable code"
+  ],
+  "diagnostic_source": "tools-source/asset-bridge/t7-iw7/resident_image_copy.hpp:109",
+  "supervisor_failure": "Successful original compiler handle identity required.",
+  "original_job_residual_count_on_root_exit": 1,
+  "failure_cleanup_requested": true,
+  "original_job_closure_confirmed": true,
+  "bound_inputs_revalidated_under_lease": true,
+  "native_compilation_passed": false,
+  "link_invoked": false,
+  "fixture_invoked": false,
+  "checker_invoked": false,
+  "native_cases_prepared": 54,
+  "native_cases_executed": 0,
+  "engine_observed": false,
+  "atomic_snapshot_proven": false,
+  "seh_verified": false,
+  "receipt_stage": "BeforeLeaseRelease",
+  "receipt_is_release_confirmation": false,
+  "postflight_registry_empty": true,
+  "host_appdomain_quarantine_absent": true,
+  "host_exited_normally": true,
+  "host_and_compiler_absence_confirmed_utc": "2026-10-12T14:43:53.1832103Z",
+  "main_stopped_before_after": true,
+  "protected_python_identity_preserved": true,
+  "postflight_other_heavy_count": 0,
+  "binary_input_hashes_performed_after_release": false,
+  "evidence_read_after_release": "Only bounded JSON/text/log receipts; no executable, DLL, object or library rehash",
+  "exit_guard_note": "Initial timestamp string comparison refused after JSON auto-conversion; host retained, reread with DateKind String, exact original timestamp verified before exit",
+  "candidate_source_correction": "Replace always-throw callback with existing stateful fixture allowlist and verify zero callback calls on null/header overflow; retain /WX and production helper",
+  "correction_native_validated": false,
+  "pure_python_tests_after_correction": 36,
+  "next_action": "Separate reviewed B Plan and one explicit GO; no automatic retry",
+  "local_evidence": [
+    {
+      "name": "t7-resident-image-fixture-a/run.json",
+      "bytes": 115103,
+      "sha256": "e24fa8a2de0a1d70934a4bb28a9c7e37840e0328b63e0bc818163b45e49a1211"
+    },
+    {
+      "name": "t7-resident-image-fixture-a/compile/stdout.log",
+      "bytes": 402,
+      "sha256": "5763c0d77bf90416b4ce371e75e4683bd3f3ac677d7f9b50e4bbf7f0a9743a2a"
+    },
+    {
+      "name": "t7-resident-image-fixture-a/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/preflight-a.json",
+      "bytes": 1706,
+      "sha256": "29af7821969721d089e4b16475e35c362730ff48189bb54331e3b2d08c2f3bc3"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/host-before-a.json",
+      "bytes": 326,
+      "sha256": "427cef57694f985a6d5656145dc157822a8239c2f4a022c26ef01f42a2fc2ea2"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/invocation-a.json",
+      "bytes": 305,
+      "sha256": "34b2519dc9b4cc1dfb291ae10ed16a4332bb997466d751b6ac451cdec97d312a"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/failure-a.txt",
+      "bytes": 389,
+      "sha256": "59f55e361a9659fd871e820959bd6fb7ab2af98a33b428816906b61a5c01610e"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/host-closure-a.json",
+      "bytes": 455,
+      "sha256": "cbf663ad810e07484fa6b7ce19ac8b6d0ef85f6a7c3309c71b5450da2b42650d"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/postflight-a.json",
+      "bytes": 1430,
+      "sha256": "ab32aefde2f6f5493ab0193a099b0b96523950801807cdb623993d240be9e5ab"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/host-exiting-a.json",
+      "bytes": 309,
+      "sha256": "7a4784aa501a447d0b77bde8d7df2aa99120075c31637887d0a4dfb9a5c066e4"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012/slot-released-a.json",
+      "bytes": 302,
+      "sha256": "3fb955f042429841b9228aaae260d99fcefdd44259ea3df50e94154e07b6a78b"
+    }
+  ]
+}
