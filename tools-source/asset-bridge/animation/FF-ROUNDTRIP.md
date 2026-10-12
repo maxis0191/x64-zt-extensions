@@ -69,8 +69,10 @@ preparation snapshot. The subsequent source-only adapter has its own
 | Stock manifest | Completed/restored `model-lod1m-ff-build-20261007/state.local.json`, SHA256 `4cf67ebe1645c6c0761b9a24cb4e4630edee9c5d737742c704d624fe60cb3850`; exact 72 entries, 839210257 logical bytes |
 | Stock/restore helpers | Existing `ops/Base-Client.Core.ps1`, `ops/model-lab/ModelFF.Core.ps1`, `ops/hud-lab/HudFileIdentity.cs`, current resource scheduler |
 
-The stock source remains the retained `doom-negative-textures/runtime/dt`.
-Reuse its 72 immutable/bootstrap inputs by temporary NTFS hardlinks and original
+The original plan used `doom-negative-textures/runtime/dt`. Those paths later
+became absent; the coordinator inventories and retains a durable alternative via
+the separate observation contract above, without rewriting the old receipt.
+Reuse the validated 72 immutable/bootstrap inputs by temporary NTFS hardlinks and original
 read guards, copying only the existing 77-byte mutable filesystem sentinel.
 Link the existing executable and two animation inputs: 75 staged input entries
 in total. Do not copy the EXE, PDB, source tool tree, PAKs or full stock. Record
@@ -86,6 +88,11 @@ source guards and restoration logic. Keep that specialization inside animation
 ownership or have the coordinator apply it; do not edit another author's live
 SDK files or build a generic exporter/framework. Re-pin any changed shared helper
 before GO instead of silently using its old hash.
+
+If those historical paths disappear, use the separate
+[alternate-stock binding contract](STOCK-BINDING.md). Keep the old receipt
+unchanged and supply the new binding path/hash; another stock root cannot be
+accepted by just replacing path strings in the old transaction.
 
 ## Executable specialization, not yet run
 

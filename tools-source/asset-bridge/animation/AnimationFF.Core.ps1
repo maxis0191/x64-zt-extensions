@@ -32,8 +32,15 @@ function Assert-AnimationNativeReceipt($Receipt) {
         $Receipt.Readback.status -cne 'original-probe-data-pass' -or $Receipt.Readback.sha256 -ine $hash -or
         @($Receipt.Processes).Count -ne 3 -or @($Receipt.Processes|Where-Object {$_.ExitCode -ne 0}).Count){throw 'Exact successful original native XAB receipt required.'}
 }
-function Get-AnimationStockInputs($State,[string]$StockRoot) {
+function Get-AnimationStockInputs($State,[string]$StockRoot,$Binding=$null,$ReviewedManifest=$null,[string]$ReviewedManifestSHA256) {
     if($State.Schema -cne 'iw7.model-ff-build/1' -or !$State.Restored -or !$State.StockPreserved -or $State.RetainedLeaseToken -or @($State.Inputs).Count -ne 72){throw 'Completed/restored 72-entry stock transaction required.'}
+    if($Binding){
+        $bound=@(Get-FFStockBindingInputs $State $Binding $ReviewedManifest $StockRoot '4cf67ebe1645c6c0761b9a24cb4e4630edee9c5d737742c704d624fe60cb3850' $ReviewedManifestSHA256)
+        # Preserve each historical mode separately. This staging profile still
+        # links immutable EXE/DLL bytes and copies only the mutable sentinel.
+        foreach($entry in $bound){$entry|Add-Member NoteProperty BaselineMode $entry.Mode;$entry.Mode=if($entry.Relative -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'}}
+        return $bound
+    }
     $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $inputs=@(foreach($entry in $State.Inputs){
         $path=Resolve-IW7BasePath $StockRoot $entry.Relative
@@ -50,7 +57,8 @@ function Get-AnimationStockInputs($State,[string]$StockRoot) {
 function New-AnimationFFPlan($Bindings,[string]$RunRoot,[string]$AnimationRoot,[string]$NativeInput,[string]$NativeReceipt,
     [string]$NativeReceiptSHA256,[string]$StockRoot,[string]$StockReceipt,[string]$StockReceiptSHA256,
     [string]$CandidateRoot,[string]$CandidateArtifactSHA256,[string]$JobSource,[string]$JobSourceSHA256,
-    [string]$PythonExe,[string]$PythonSHA256,[switch]$RequirePins) {
+    [string]$PythonExe,[string]$PythonSHA256,[string]$StockBindingReceipt,[string]$StockBindingReceiptSHA256,
+    [string]$ReviewedStockManifest,[string]$ReviewedStockManifestSHA256,[switch]$RequirePins) {
     $repo=Split-Path (Split-Path (Split-Path $AnimationRoot -Parent) -Parent) -Parent
     $run=Resolve-IW7BasePath (Join-Path $repo 'runtime') ([IO.Path]::GetRelativePath((Join-Path $repo 'runtime'),[IO.Path]::GetFullPath($RunRoot)))
     if(Test-Path -LiteralPath $run){throw 'Fresh animation FF run directory required.'}
@@ -62,7 +70,14 @@ function New-AnimationFFPlan($Bindings,[string]$RunRoot,[string]$AnimationRoot,[
     if((Get-Item -LiteralPath $NativeInput).Length -ne 281){throw 'Original XAB must remain 281 bytes.'}
     $csv=Join-Path $AnimationRoot 'fixtures/sdk_animation_probe.csv'
     if([IO.File]::ReadAllText($csv).Replace("`r`n","`n") -cne "xanim,paris_original_probe_bend`n"){throw 'Exact one-line animation zone required.'}
-    $inputs=@(Get-AnimationStockInputs (Read-BeaconJson $StockReceipt) $StockRoot)
+    $stockBinding=$null;$reviewed=$null
+    $stockPins=@($StockBindingReceipt,$StockBindingReceiptSHA256,$ReviewedStockManifest,$ReviewedStockManifestSHA256)
+    if(@($stockPins|Where-Object {$_}).Count -notin @(0,4)){throw 'Alternate binding and reviewed stock manifest each require a path and explicit hash.'}
+    if($StockBindingReceipt){
+        Assert-BeaconHash $StockBindingReceipt $StockBindingReceiptSHA256;$stockBinding=Read-BeaconJson $StockBindingReceipt
+        Assert-BeaconHash $ReviewedStockManifest $ReviewedStockManifestSHA256;$reviewed=Read-BeaconJson $ReviewedStockManifest
+    }
+    $inputs=@(Get-AnimationStockInputs (Read-BeaconJson $StockReceipt) $StockRoot $stockBinding $reviewed $ReviewedStockManifestSHA256)
     if($RequirePins -and (!$CandidateArtifactSHA256 -or !$JobSourceSHA256 -or !$PythonSHA256)){throw 'Run requires candidate artifact, job source and Python hashes.'}
     $candidate=$null
     if($CandidateArtifactSHA256){
@@ -77,11 +92,15 @@ function New-AnimationFFPlan($Bindings,[string]$RunRoot,[string]$AnimationRoot,[
     if($PythonSHA256){Assert-BeaconHash $python $PythonSHA256}
     $reader=Join-Path $AnimationRoot 'read_probe.py';$adapter=Join-Path $AnimationRoot 'animation_tool_phase.py'
     $sources=[ordered]@{}
-    foreach($path in @($reader,$adapter,(Join-Path $AnimationRoot 'Build-AnimationFF.ps1'),(Join-Path $AnimationRoot 'AnimationFF.Core.ps1'),$csv,$NativeInput,$NativeReceipt,$StockReceipt)){
+    foreach($path in @($reader,$adapter,(Join-Path $AnimationRoot 'Build-AnimationFF.ps1'),(Join-Path $AnimationRoot 'AnimationFF.Core.ps1'),
+        (Join-Path (Split-Path $AnimationRoot -Parent) 'common/StockBinding.Core.ps1'),$csv,$NativeInput,$NativeReceipt,$StockReceipt)){
         $sources[$path]=(Get-FileHash -LiteralPath $path).Hash
     }
+    if($StockBindingReceipt){$sources[$StockBindingReceipt]=$StockBindingReceiptSHA256;$sources[$ReviewedStockManifest]=$ReviewedStockManifestSHA256}
     [pscustomobject]@{Schema='iw7.animation-ff-plan/2';Zone='sdk_animation_probe';RunRoot=$run;Work=(Join-Path $run 'work');
-        StockInputs=$inputs;Candidate=$candidate;CandidatePending=($null -eq $candidate);Bindings=$Bindings;SourceHashes=$sources;
+        StockInputs=$inputs;StockBindingReceipt=$StockBindingReceipt;StockBindingReceiptSHA256=$StockBindingReceiptSHA256;
+        StagingCopyBytes=[long](($inputs|Where-Object Mode -CEQ Copy|Measure-Object Bytes -Sum).Sum);
+        StockContentAndIdentityRecheckPending=($null -ne $stockBinding);Candidate=$candidate;CandidatePending=($null -eq $candidate);Bindings=$Bindings;SourceHashes=$sources;
         NativeInput=[IO.Path]::GetFullPath($NativeInput);ZoneCSV=$csv;Reader=$reader;Adapter=$adapter;PythonExe=$python;
         PythonSHA256=(Get-FileHash -LiteralPath $python).Hash;JobSource=$JobSource;JobSourceSHA256=$JobSourceSHA256;
         Phases=@('build','verify','dump','read');Inventory=@('xanim,paris_original_probe_bend','rawfile,sdk_animation_probe');

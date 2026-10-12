@@ -7,6 +7,10 @@ param(
     [Parameter(Mandatory)][string]$StockRoot,
     [Parameter(Mandatory)][string]$StockReceipt,
     [Parameter(Mandatory)][string]$StockReceiptSHA256,
+    [string]$StockBindingReceipt,
+    [string]$StockBindingReceiptSHA256,
+    [string]$ReviewedStockManifest,
+    [string]$ReviewedStockManifestSHA256,
     [Parameter(Mandatory)][string]$CandidateRoot,
     [string]$CandidateArtifactSHA256,
     [Parameter(Mandatory)][string]$JobSource,
@@ -19,6 +23,9 @@ param(
 # Default plan has no Add-Type, lease, directory creation or child process.
 $ErrorActionPreference='Stop'
 . "$PSScriptRoot/AnimationFF.Core.ps1"
+$stockCore=Join-Path (Split-Path $PSScriptRoot -Parent) 'common/StockBinding.Core.ps1'
+Assert-AnimationPureImport $stockCore
+. $stockCore
 $bindings=Get-AnimationProviderBindings $ProviderRoot $ProviderHashes -RequirePins:$Run
 foreach($name in @('ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1','ops/model-lab/ModelFF.Core.ps1')){
     Assert-AnimationPureImport $bindings[$name].Path
@@ -27,7 +34,9 @@ foreach($name in @('ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1','o
 $plan=New-AnimationFFPlan -Bindings $bindings -RunRoot $RunRoot -AnimationRoot $PSScriptRoot -NativeInput $NativeInput `
     -NativeReceipt $NativeReceipt -NativeReceiptSHA256 $NativeReceiptSHA256 -StockRoot $StockRoot -StockReceipt $StockReceipt `
     -StockReceiptSHA256 $StockReceiptSHA256 -CandidateRoot $CandidateRoot -CandidateArtifactSHA256 $CandidateArtifactSHA256 `
-    -JobSource $JobSource -JobSourceSHA256 $JobSourceSHA256 -PythonExe $PythonExe -PythonSHA256 $PythonSHA256 -RequirePins:$Run
+    -JobSource $JobSource -JobSourceSHA256 $JobSourceSHA256 -PythonExe $PythonExe -PythonSHA256 $PythonSHA256 `
+    -StockBindingReceipt $StockBindingReceipt -StockBindingReceiptSHA256 $StockBindingReceiptSHA256 `
+    -ReviewedStockManifest $ReviewedStockManifest -ReviewedStockManifestSHA256 $ReviewedStockManifestSHA256 -RequirePins:$Run
 if(!$Run){$plan|ConvertTo-Json -Depth 10;return}
 foreach($type in @('IW7.CommunityBuild.BuildJob','IW7HudFileIdentity','IW7ResourceMemoryV1')){
     if($type -as [type]){throw 'Use a fresh PowerShell host for source-bound native helpers.'}
@@ -104,7 +113,16 @@ try {
         $file=Get-Item -LiteralPath $pair[1]
         $state.Inputs+=,[pscustomobject]@{Relative=$pair[0];Source=$file.FullName;Mode='HardLink';Bytes=$file.Length;ModifiedUtc=$file.LastWriteTimeUtc.ToString('o');Attributes=[int]$file.Attributes}
     }
-    foreach($entry in $state.Inputs){$guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'));$entry|Add-Member NoteProperty SourceId ([IW7HudFileIdentity]::Read($entry.Source))}
+    foreach($entry in $state.Inputs){
+        $null=Resolve-IW7BasePath (Split-Path $entry.Source -Parent) (Split-Path $entry.Source -Leaf)
+        $guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'))
+        $sourceId=[IW7HudFileIdentity]::Read($entry.Source)
+        Assert-FFStockIdentity $entry $sourceId
+        $entry|Add-Member NoteProperty SourceId $sourceId
+    }
+    # All guards are already held. Deduplicate hash reads by verified NTFS ID,
+    # not by guessed relative aliases; no full stock hashing in plan mode.
+    Assert-FFStockContent $state.Inputs
     Assert-ModelFFInputs $state.Inputs $work -SourceOnly
     if(Test-Path -LiteralPath $RunRoot){throw 'Animation run directory appeared during admission; preserve it.'}
     New-Item -ItemType Directory -Path $RunRoot -ErrorAction Stop|Out-Null
@@ -118,6 +136,12 @@ try {
         if($entry.Mode -ceq 'Copy'){Copy-Item -LiteralPath $entry.Source -Destination $target}else{New-Item -ItemType HardLink -Path $target -Target $entry.Source|Out-Null}
         $entry|Add-Member NoteProperty TargetId ([IW7HudFileIdentity]::Read($target))
         if($entry.Mode -ceq 'HardLink' -and $entry.TargetId -cne $entry.SourceId){throw 'Staged NTFS identity differs.'}
+        if($entry.Mode -ceq 'Copy'){
+            if($entry.TargetId -ceq $entry.SourceId){throw 'Sentinel copy aliases stock; do not alter its attributes.'}
+            # Only this separately created owned file may become writable.
+            $copy=Get-Item -LiteralPath $target
+            if($copy.IsReadOnly){$copy.IsReadOnly=$false}
+        }
     }
     Assert-ModelFFInputs $state.Inputs $work
     $state.Status='Building';Save-AnimationState

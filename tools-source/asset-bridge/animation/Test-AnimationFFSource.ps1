@@ -36,6 +36,8 @@ Assert-Check ($source.IndexOf('Add-IW7ResourceProcess -Token') -lt $source.Index
 Assert-Check ($source -notmatch 'Stop-Process|taskkill|\.Kill\(|WaitForExit|Start-Process') 'No PID-only process/closure fallback'
 Assert-Check ($source -match 'if\(\$closed\)\{\$owner.Dispose\(\)' -and $source -match 'AnimationFF.Quarantine') 'Unknown closure retains exact owner'
 Assert-Check ($source.IndexOf('$script:closed=$false') -lt $source.IndexOf('[IW7.CommunityBuild.BuildJob]::Prepare')) 'Failed factory cannot imply tree closure'
+Assert-Check ($source.IndexOf('Assert-FFStockIdentity $entry $sourceId') -gt 0 -and $source.IndexOf('Assert-FFStockIdentity $entry $sourceId') -lt $source.IndexOf('$state.Transaction=Save-IW7BaseTransaction')) 'Bound NTFS identities checked under guards before staging'
+Assert-Check ($source.IndexOf('Assert-FFStockContent $state.Inputs') -gt $source.IndexOf('$lease=Enter-IW7ResourceLease') -and $source.IndexOf('Assert-FFStockContent $state.Inputs') -lt $source.IndexOf('$state.Transaction=Save-IW7BaseTransaction')) 'Content hashes checked after admission and before staging'
 
 $native=[pscustomobject]@{Schema='iw7.original-probe-native-run/1';Status='NativeSerializerAndReadbackPassed';XabBytes=281;
     XabSHA256='1284b72cf501ae42f77958579610dbcaf692b9153cd06ff66dcf2d1d11eeda7d';
@@ -69,11 +71,15 @@ try{
     Assert-Throws {Assert-AnimationPureImport $impure} 'function definitions only'
     $stock=Join-Path $testRoot 'stock';[IO.Directory]::CreateDirectory($stock)|Out-Null
     $names=@('main/code_pre_gfx.ff','zone/assetfile1.pak','iw7_ship.exe','main/fileSysCheck.cfg')+@(0..67|ForEach-Object {"main/pure-$_.ff"})
+    $index=0
     $entries=@(foreach($name in $names){
         $path=Join-Path $stock $name;[IO.Directory]::CreateDirectory((Split-Path $path))|Out-Null
         $size=if($name -ceq 'main/fileSysCheck.cfg'){77}else{1}
         [IO.File]::WriteAllBytes($path,[byte[]]::new($size))
-        [pscustomobject]@{Relative=$name;Source=[IO.Path]::GetFullPath($path);Bytes=$size}
+        $file=Get-Item -LiteralPath $path;$index++
+        [pscustomobject]@{Relative=$name;Source=[IO.Path]::GetFullPath($path);Bytes=$size;
+            Mode=$(if($name -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'});SourceId=('D088B64A:'+$index.ToString('X16'));
+            ModifiedUtc=$file.LastWriteTimeUtc.ToString('o');Attributes=[int]$file.Attributes}
     })
     $receipt=[pscustomobject]@{Schema='iw7.model-ff-build/1';Restored=$true;StockPreserved=$true;RetainedLeaseToken=$null;Inputs=$entries}
     $inputs=@(Get-AnimationStockInputs $receipt $stock)
