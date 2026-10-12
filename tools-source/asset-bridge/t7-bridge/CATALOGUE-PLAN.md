@@ -803,3 +803,60 @@ the adapter did not decode the capture. Raw hex and decoded message text remain
 outside Git. I is now consumed. The next step is review of worker 51's finding
 and a separately authorized response; this checkpoint authorizes no retry,
 extra input, new build or further native invocation.
+## Bootstrap B qualification and Plan J preparation (2026-10-12)
+
+The complete I message led the analysis owner to identify one startup-zone
+dependency. An exact 832-byte `en_core_pre_gfx.ff` was qualified separately;
+no other FF, prefix, header, alias, copy or native engine was read or created
+by that qualification. Two guarded reads established SHA256
+`37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c`,
+with unchanged file identity, creation time, write time and attributes.
+This is **ObservedUnderLeaseNotDepotVerified**. Header semantics, content
+compatibility, depot provenance and engine lookup location remain unproved.
+
+The first B dispatch passed a forward-slash `-File` argument to a contract
+that requires exact equality with normalized `PSCommandPath`. It refused
+before live preflight, lease, marker or payload access. Source guards closed;
+session 44110 exited 1 (chunk `99f85e`), and an independent witness found host
+and parent absent. The script and this refusal were preserved. A distinct GO
+authorized the literal Windows-path correction, with no source change.
+
+Corrected B admitted 6/8 GiB at 17:49:41.3646928 UTC, with physical reserve zero
+and unchanged commit reserve. Its successful identity/hash-only receipt was
+published at 17:49:42.3089216 UTC. The lease was released, guards closed and
+quarantine absent. Session 51026 exited 0 (chunk `7ace0c`); the independent
+17:50:38.6993542 UTC witness found host/parent absent, zero leases/heavy work,
+Main/UDP absent and the preserved Python identity unchanged. No payload hash
+was read after release. The [sanitized checkpoint](catalogue-bootstrap-j-20261012.json)
+pins both dispatch outcomes and the private qualification/closure evidence.
+
+The existing catalogue runner now accepts an optional explicit `Bootstrap`
+only for `t7-catalog-message`. It requires the exact 832-byte binary pin,
+qualified file identity, creation/write metadata, and separately pinned
+qualification receipt and script. Default validation checks that successful
+receipt while text guards are held. After resource admission, the runner
+checks the actual file identity under its binary guard and creates the fifth
+alias at `work/zone/en_core_pre_gfx.ff` through the existing guarded alias
+helper. Existing final input/alias hash, metadata and file-ID verification
+also cover this dependency. The output allowlist admits only this additional
+declared file. Plans without `Bootstrap` retain their four-input behavior.
+
+Plan J is 12,690 bytes, SHA256
+`44bb6204bf695fdb212c7fd342af740f44f95da5a44201c3f87edacc2b1a9f7a`.
+It preserves I's MSG candidate/build, arguments, donor zone, stderr cap,
+6/8 GiB reservation and 200/120/5-second limits. It has 25 bindings
+(19 text, six binary), five input metadata records and five expected aliases.
+The total output ceiling increases by exactly 832 bytes to 127,810,264.
+Its Stopped Main observation comes from the closed qualification witness;
+that dated observation is not runtime admission. I and its runtime evidence
+remain unchanged.
+
+All 1,206 pure checks pass, including 177 bootstrap checks and all 1,029
+existing catalogue/trace/exit/Main/caller/message checks. A preparation test
+caught single-element array unrolling in the output allowlist; explicit
+array construction fixed it before applying the source. Default validation
+of the sealed J plan reports `PlanCheckedPendingGO`, without payload hashing,
+lease, native type loading or runtime files. No J Run has occurred. The next
+step is independent review and a distinct exact GO after the competing heavy
+group closes, followed by fresh admission. No catalogue or model export is
+claimed by this preparation.
