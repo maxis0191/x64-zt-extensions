@@ -73,6 +73,7 @@ The spec is a local JSON object with these mandatory fields:
 | `StockRoot` | Canonical absolute retained stock root |
 | `StockReceipt`, `StockReceiptSHA256` | Original 72-entry completed receipt, SHA `4cf67ebe1645c6c0761b9a24cb4e4630edee9c5d737742c704d624fe60cb3850` |
 | `StockBindingReceipt`, `StockBindingReceiptSHA256` | Explicit current durable `iw7.ff-stock-observation/1` and measured hash |
+| `RecipientStockBindingReceipt`, `RecipientStockBindingReceiptSHA256` | Separate four-PAK `iw7.recipient-stock-observation/1` metadata receipt and measured hash; required after C |
 | `ReviewedStockManifest`, `ReviewedStockManifestSHA256` | Reviewed content manifest, SHA `9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4` |
 | `CandidateRoot`, `CandidateArtifactSHA256` | Existing E7 fulltool directory and final artifact hash |
 | `PythonExe`, `PythonExeSHA256` | Absolute interpreter path and measured hash |
@@ -98,7 +99,12 @@ references-only run records `ReferencesObservedScriptNotRun` and leaves
 `ScriptBytesVerified=false`, `Ready=false` and `ClosureComplete=false`.
 
 The common binding preserves historical 63-link/9-copy provenance separately
-from this operation's 71 stock hardlinks and one 77-byte mutable sentinel copy.
+from the baseline's 71 stock hardlinks and one 77-byte mutable sentinel copy.
+The post-C [supplemental Recipient profile](STOCK-PROFILE.md) adds only four
+previously observed PAKs as hardlinks. It does not alter the common FF binding.
+The combined stock has 75 hardlinks and one sentinel copy; candidate/requests
+bring the transaction to 79 paths. `StockBudget` records the distinct logical
+and deduplicated hash-read bytes. Supplemental content is not read during Plan.
 Before staging, the admitted operation holds all source guards, checks observed
 NTFS identities, hashes deduplicated physical stock content, then verifies
 size/time/attributes. The candidate and two requests add three immutable links.
@@ -330,6 +336,9 @@ PID/image/UTC creation ticks. Original receipts remain unchanged. Final retained
 output was 1,216,572 bytes. No retry, utility phase, pool/zone workaround, dump or
 debugger was used. C's single-execution authorization is exhausted.
 
-Next: inspect the pinned file-search path and current pak17 identity/metadata,
-then prepare the smallest separately reviewed staging correction. Further native
-execution requires a new GO; the next slots remain GSC then rig.
+The subsequent [source-only investigation and correction](STOCK-PROFILE.md)
+found pak17 in durable stock and proved its omission from C. A separate profile
+now binds the four PAK prerequisites retained in the older CP diagnostics.
+No post-C native execution or content requalification has occurred. Further
+execution requires review, a fresh admission and a new GO; the next slots remain
+GSC then rig.

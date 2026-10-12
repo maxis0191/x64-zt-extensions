@@ -53,17 +53,20 @@ function Get-RecipientLimits([switch]$FatalTextDiagnostic) {
     else{[ordered]@{PhaseSeconds=240;OuterPhaseSeconds=245;OverallSeconds=600}}
 }
 function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$ReferencesOnly,[switch]$FatalTextDiagnostic) {
-    foreach($field in @('RunRoot','StockRoot','StockReceipt','StockBindingReceipt','ReviewedStockManifest','CandidateRoot','PythonExe','RequestRoot')){
+    foreach($field in @('RunRoot','StockRoot','StockReceipt','StockBindingReceipt','RecipientStockBindingReceipt','ReviewedStockManifest','CandidateRoot','PythonExe','RequestRoot')){
         if(![IO.Path]::IsPathFullyQualified($Spec.$field)){throw "Absolute path required: $field"}
     }
     $runtime=Join-Path $Repo 'runtime'
     $run=Resolve-IW7BasePath $runtime ([IO.Path]::GetRelativePath($runtime,$Spec.RunRoot))
     if(Test-Path -LiteralPath $run){throw 'Fresh recipient run directory required.'}
-    foreach($field in @('StockReceipt','StockBindingReceipt','ReviewedStockManifest','PythonExe')){Assert-BeaconHash $Spec.$field $Spec.($field+'SHA256')}
+    foreach($field in @('StockReceipt','StockBindingReceipt','RecipientStockBindingReceipt','ReviewedStockManifest','PythonExe')){Assert-BeaconHash $Spec.$field $Spec.($field+'SHA256')}
     $stock=Read-BeaconJson $Spec.StockReceipt;$observation=Read-BeaconJson $Spec.StockBindingReceipt
     $reviewed=Read-BeaconJson $Spec.ReviewedStockManifest
     $inputs=@(Get-FFStockBindingInputs $stock $observation $reviewed $Spec.StockRoot $Spec.StockReceiptSHA256 $Spec.ReviewedStockManifestSHA256)
     foreach($entry in $inputs){$entry|Add-Member NoteProperty BaselineMode $entry.Mode;$entry.Mode=if($entry.Relative -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'}}
+    $supplemental=@(Get-RecipientSupplementalStockInputs (Read-BeaconJson $Spec.RecipientStockBindingReceipt) $reviewed $Spec.StockRoot $Spec.ReviewedStockManifestSHA256)
+    $stockBudget=Get-RecipientStockBudget $inputs $supplemental
+    $inputs+=@($supplemental)
     $requests=@(
         [ordered]@{Relative='recipient-material.csv';Source=(Join-Path $Spec.RequestRoot 'recipient-material-requests.csv');SHA256=$Spec.MaterialRequestSHA256},
         [ordered]@{Relative='recipient-scripts.txt';Source=(Join-Path $Spec.RequestRoot 'recipient-script-requests.txt');SHA256=$Spec.ScriptRequestSHA256})
@@ -77,13 +80,13 @@ function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$
     foreach($name in @('build-artifact.local.json','preparation.local.json','result.local.json')){
         $path=Join-Path $Spec.CandidateRoot $name;$sourceHashes[$path]=(Get-FileHash -LiteralPath $path).Hash
     }
-    foreach($field in @('StockReceipt','StockBindingReceipt','ReviewedStockManifest','PythonExe')){$sourceHashes[$Spec.$field]=$Spec.($field+'SHA256')}
+    foreach($field in @('StockReceipt','StockBindingReceipt','RecipientStockBindingReceipt','ReviewedStockManifest','PythonExe')){$sourceHashes[$Spec.$field]=$Spec.($field+'SHA256')}
     foreach($entry in $requests){$sourceHashes[$entry.Source]=$entry.SHA256}
-    foreach($name in @('recipient_phase.py','recipient_contract.py','recipient_dialog.py','Recipient.Core.ps1','Recipient.Light.ps1','Run-RecipientClosure.ps1','provider-pins.json')){
+    foreach($name in @('recipient_phase.py','recipient_contract.py','recipient_dialog.py','Recipient.Core.ps1','Recipient.Stock.ps1','Recipient.Light.ps1','Run-RecipientClosure.ps1','provider-pins.json')){
         $path=Join-Path $Root $name;$sourceHashes[$path]=(Get-FileHash -LiteralPath $path).Hash
     }
     $limits=Get-RecipientLimits -FatalTextDiagnostic:$FatalTextDiagnostic
-    [ordered]@{Schema='iw7.recipient-closure-plan/1';RunRoot=$run;Work=(Join-Path $run 'work');StockInputs=$inputs;
+    [ordered]@{Schema='iw7.recipient-closure-plan/1';RunRoot=$run;Work=(Join-Path $run 'work');StockInputs=$inputs;StockBudget=$stockBudget;
         SourceZoneOrder=@(Get-RecipientZoneOrder $inputs);Candidate=$candidate;Requests=$requests;SourceHashes=$sourceHashes;
         ProviderBindings=$Bindings;PythonExe=$Spec.PythonExe;PythonSHA256=$Spec.PythonExeSHA256;
         Adapter=(Join-Path $Root 'recipient_phase.py');PhysicalBytes=8GB;CommitBytes=11GB;

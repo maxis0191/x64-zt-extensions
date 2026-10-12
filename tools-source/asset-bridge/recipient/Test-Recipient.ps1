@@ -67,4 +67,21 @@ Refuses {Wait-RecipientPhase $fake $identity 2 5 {$script:tick} {} {} {$script:t
 Check ($script:tick -eq 3 -and $identity.PostRootExitObservations.Count -eq 0) 'Outer deadline applies before root exit'
 $script:tick=246;$fake=[pscustomobject]@{Exited=$true;Active=0;ExitCode=0};$identity=@{PostRootExitObservations=@()}
 Refuses {Wait-RecipientPhase $fake $identity 245 5 {$script:tick} {} {} {throw 'Unexpected wait'}} 'Late closure still exceeds outer deadline'
+# Exercise the real budget function with only in-memory dependency doubles.
+$runner=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-RecipientClosure.ps1'),[ref]$tokens,[ref]$errors)
+$budgetFunction=$runner.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Assert-RecipientBudget'},$false)
+Invoke-Expression $budgetFunction.Extent.Text
+$plan=@{OverallSeconds=600;FatalTextDiagnostic=$false};$overall=@{Elapsed=@{TotalSeconds=1}}
+$runRoot='C:\recipient-pure-budget-fixture';$created=$false;$script:measureCalls=0;$script:committed=80
+function Test-Path {param($LiteralPath) $false}
+function Measure-RecipientOutput {$script:measureCalls++}
+function Get-IW7ResourceSnapshot {@{Committed=$script:committed;CommitLimit=100}}
+Assert-RecipientBudget
+Check ($script:measureCalls -eq 0) 'Pre-staging budget never enumerates the absent run directory'
+$created=$true;Assert-RecipientBudget
+Check ($script:measureCalls -eq 1) 'Created-run budget still measures output'
+$created=$false;$script:committed=86
+Refuses {Assert-RecipientBudget} 'Pre-staging budget refuses fresh commit pressure'
+$script:committed=80;$overall.Elapsed.TotalSeconds=601
+Refuses {Assert-RecipientBudget} 'Pre-staging budget refuses elapsed deadline'
 "$checks source/contract checks passed; native execution untested."

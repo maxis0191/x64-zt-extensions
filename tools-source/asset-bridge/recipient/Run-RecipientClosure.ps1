@@ -18,6 +18,8 @@ foreach($name in @('ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1','o
 }
 Assert-AnimationPureImport (Join-Path $PSScriptRoot 'Recipient.Core.ps1')
 . "$PSScriptRoot/Recipient.Core.ps1"
+Assert-AnimationPureImport (Join-Path $PSScriptRoot 'Recipient.Stock.ps1')
+. "$PSScriptRoot/Recipient.Stock.ps1"
 $specHash=(Get-FileHash -LiteralPath $SpecPath).Hash
 $plan=New-RecipientPlan (Read-BeaconJson $SpecPath) $repo $PSScriptRoot $bindings -ReferencesOnly:$ReferencesOnly -FatalTextDiagnostic:$FatalTextDiagnostic
 $plan.SourceHashes[$SpecPath]=$specHash
@@ -52,7 +54,7 @@ function Assert-RecipientBudget {
     if($overall.Elapsed.TotalSeconds -gt $plan.OverallSeconds){throw 'Recipient group active-work deadline exceeded.'}
     if(Test-Path -LiteralPath (Join-Path $runRoot 'stop.request')){throw 'Coordinator requested owned stop.'}
     if($plan.FatalTextDiagnostic -and (Test-Path -LiteralPath (Join-Path $runRoot 'diagnostic-stop.request'))){throw 'Fatal-text diagnostic finished; original job stop required.'}
-    Measure-RecipientOutput
+    if($created){Measure-RecipientOutput}
     $memory=Get-IW7ResourceSnapshot
     if($memory.Committed -gt $memory.CommitLimit*0.85){throw 'Commit pressure exceeded 85 percent.'}
 }
@@ -113,6 +115,7 @@ try {
         $entry|Add-Member NoteProperty SourceId $sourceId
     }
     Assert-FFStockContent $state.Inputs
+    Assert-RecipientBudget
     Assert-ModelFFInputs $state.Inputs $work -SourceOnly
     if(Test-Path -LiteralPath $runRoot){throw 'Run directory appeared during admission; preserve it.'}
     New-Item -ItemType Directory -Path $runRoot -ErrorAction Stop|Out-Null;$created=$true

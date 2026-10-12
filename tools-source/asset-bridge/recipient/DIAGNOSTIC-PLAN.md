@@ -313,6 +313,14 @@ prove the staging omission before proposing a minimal guarded hardlink addition.
 Do not alter pools, skip `global_mp`, copy the full retail installation or rerun
 without a separate review/GO. C's original evidence is immutable.
 
+The resulting [separate Recipient stock profile](STOCK-PROFILE.md) is prepared
+with four historically observed PAK prerequisites and a metadata-only binding.
+The default plan requires that receipt; neither it nor the light fixtures reads
+PAK content. Full SHA-256 requalification remains inside the next admitted,
+guarded operation. The 72-entry shared FF profile and 12 provider pins are intact.
+The next plan requests references only. Its result, memory peak and complete
+stock sufficiency remain unverified until a separately authorized execution.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256
