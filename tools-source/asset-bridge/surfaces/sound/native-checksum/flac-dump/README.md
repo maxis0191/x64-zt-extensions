@@ -80,7 +80,12 @@ The native pin stays `fab935826c898806855376662a8a03317b3ad8f1`. The patch is
 additional to the accepted bytewise source-MD5 correction; it does not replace
 that correction or modify the shared native checkout.
 
-## Concrete next build recipe, not an executable Plan
+## Build recipe and later adapter checkpoint
+
+The recipe below was the source proposal. The subsequently implemented closed
+profile, source-only test results and exact local Plan are recorded in
+[FLAC-BUILD-PROFILE.md](../FLAC-BUILD-PROFILE.md). That checkpoint completes the
+adapter preparation described below; it does not authorize native execution.
 
 Reuse the existing sound-owned build supervisor, input guards, reservation,
 owned job, phase runner, EOF receipts, output limits and quarantine behavior.
@@ -124,7 +129,8 @@ the current response-revision validator intentionally rejects more than macro
 repair/output relocation. Guard the new source/response inputs separately from
 the immutable Seal C list; do not backdate them into that seal. Revalidate all
 reused sealed inputs under complete admission. This adapter/profile work and a
-reviewable exact executable Plan are still pending; this source overlay is not GO.
+reviewable exact executable Plan were pending at this proposal. See the later
+checkpoint linked above for their completion; this source overlay is not GO.
 
 Planning retains the previous 4 GiB RAM / 6 GiB commit build request, 512 MiB
 output stop and 768 MiB planning ceiling, subject to the reviewed final inventory.

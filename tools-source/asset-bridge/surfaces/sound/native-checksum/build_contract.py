@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 SCHEMA = "iw7.sound-checksum-build-plan/1"
+FLAC_SCHEMA = "iw7.sound-flac-dump-build-plan/1"
 EXPECTED = "24fe5af1473ea8f4be33912348210c78"
 CORRUPT = "78000000000000000000000000000000"
 SDK_BIN = r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
@@ -30,6 +31,14 @@ PROVIDERS = {
     "members": "5a02254764277b62f752792f1ec4f5b93b85237b171a3381a78d58f6af190e91",
     "job": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
 }
+
+
+def is_flac(plan):
+    return plan.get("schema") == FLAC_SCHEMA
+
+
+def build_order(plan):
+    return ORDER[:6] + ("probe-flac-compile", "probe-flac-link", "probe-flac-run") + ORDER[6:] if is_flac(plan) else ORDER
 
 
 def require(condition, message):
@@ -127,7 +136,8 @@ def include_report(raw, allowed, expected_header, forbidden_header):
 def reviewed_responses(plan, sealed_inputs):
     """New tiny response sources are Plan-pinned, never relabelled as Seal C."""
     responses = plan.get("response_pins", [])
-    require(type(responses) is list and len(responses) in (0, 12), "zero or twelve reviewed response sources required")
+    allowed = (14,) if is_flac(plan) else (0, 12)
+    require(type(responses) is list and len(responses) in allowed, "exact reviewed response source count required")
     if not responses:
         return {}
     source_list = plan["source_pins"]
@@ -143,7 +153,7 @@ def reviewed_responses(plan, sealed_inputs):
                 re.fullmatch("[0-9a-f]{64}", pin["sha256"]), "bounded exact response pin required")
         require(path in sources and sources[path] == pin, "response must be guarded as a bootstrap source")
         result[path] = {"Path": pin["path"], "Bytes": pin["bytes"], "SHA256": pin["sha256"]}
-    require(set(result) == expected and len(expected) == 12, "exact twelve command responses must be reviewed")
+    require(set(result) == expected and len(expected) == (14 if is_flac(plan) else 12), "exact command responses must be reviewed")
     for command in plan["commands"]:
         if command["kind"] != "probe_run":
             require(result[key(command["response_path"])]["SHA256"] == command["response_sha256"], "command response pin differs")
@@ -173,14 +183,19 @@ def reviewed_sdk_tools(plan, sealed_inputs):
 
 
 def validate_plan(plan, sealed=False):
-    require(type(plan) is dict and plan.get("schema") == SCHEMA, "sound build plan schema differs")
+    require(type(plan) is dict and plan.get("schema") in (SCHEMA, FLAC_SCHEMA), "sound build plan schema differs")
+    if is_flac(plan):
+        from flac_build_profile import validate_extension
+        validate_extension(plan, {})
+    else:
+        require("flac" not in plan, "FLAC extension cannot use historical checksum schema")
     require(plan.get("source_pin") == "fab935826c898806855376662a8a03317b3ad8f1", "native source pin differs")
     require(plan.get("gsc_provider_revision") == "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a", "v6 source revision differs")
     require(plan.get("physical_bytes") == 4 * 1024**3 and plan.get("commit_bytes") == 6 * 1024**3,
             "complete build resource budget differs")
     require(plan.get("stop_bytes") == 512 * 1024**2 and plan.get("planning_ceiling_bytes") == 768 * 1024**2,
             "build output bound differs")
-    require(tuple(c.get("phase") for c in plan.get("commands", [])) == ORDER, "ordered fourteen commands required")
+    require(tuple(c.get("phase") for c in plan.get("commands", [])) == build_order(plan), "closed native command order required")
     require(len(plan["providers"]) == 6, "exact provider count required")
     require({p["role"]: p["sha256"] for p in plan["providers"]} == PROVIDERS, "qualified provider identities differ")
     for field in ("candidate", "output", "shared_repo", "python", "inventory", "seal", "seal_result", "worker", "compiler"):
@@ -197,10 +212,11 @@ def validate_plan(plan, sealed=False):
         require(key(command["working_directory"]) == key(plan["candidate"]), "private command directory required")
         if phase.endswith("-run"):
             original = phase == "probe-original-run"
+            flac = phase == "probe-flac-run"
             require(command["kind"] == "probe_run" and command["arguments"] ==
-                    ["--expect-observed-corrupt" if original else "--expect-original"], "exact native probe mode required")
+                    ([] if flac else ["--expect-observed-corrupt" if original else "--expect-original"]), "exact native probe mode required")
             require(key(command["executable"]) == key(ntpath.join(plan["candidate"], "probe",
-                    "original.exe" if original else "patched.exe")), "private compiled probe required")
+                    "flac-header.exe" if flac else ("original.exe" if original else "patched.exe"))), "private compiled probe required")
         else:
             require(command["arguments"] == ["@" + command["response_path"]], "literal response-file invocation required")
             require(re.fullmatch("[0-9a-f]{64}", command["executable_sha256"]), "sealed tool digest required")
