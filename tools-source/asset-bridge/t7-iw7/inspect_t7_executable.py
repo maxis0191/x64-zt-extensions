@@ -169,11 +169,12 @@ class PE:
             return b""
         require(rva and 0 < size <= 2 * 1024 * 1024 and size % 12 == 0, "invalid .pdata bound")
         data = self.read(rva, size)
-        previous = -1
+        previous, previous_end = -1, 0
         for start, end, unwind in struct.iter_unpack("<III", data):
             require(previous < start < end <= self.image_size and 0 < unwind < self.image_size,
                     "invalid or unsorted .pdata record")
-            previous = start
+            require(start >= previous_end, "overlapping .pdata function ranges")
+            previous, previous_end = start, end
         return data
 
     def unwind(self, pdata, rva):

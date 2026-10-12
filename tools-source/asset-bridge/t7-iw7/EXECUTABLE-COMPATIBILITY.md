@@ -40,6 +40,9 @@ at `.pdata` BeginAddress only when that entry lies inside the selected window.
 Otherwise its decode is explicitly `source_assumed_site`, with an indeterminate
 boundary. Missing unwind metadata, packed/transformed code, truncated windows
 or unavailable disassembly must not become positive compatibility evidence.
+Overlapping `.pdata` function ranges invalidate the directory as an anchor:
+the report remains indeterminate and never silently chooses one overlapping
+record. Adjacent half-open ranges are valid and have unique boundary ownership.
 
 ## Remaining fixed sites
 
@@ -107,6 +110,9 @@ Validation: synthetic PE tests cover section/RVA boundaries, overlap, truncation
 BSS, import termination, metadata budget, unwind lookup, source-derived CALL
 checks, changed-file refusal, optional disassembly and raw-output confinement.
 No retail executable, server process, acquisition or lease was used for them.
-Local result: 18/18 tests pass with the existing Capstone; `python -B -S` also
-passes (17 executed, one optional decoder test skipped). This is a portable
+Review correction: the initial inspector checked increasing starts but could
+silently select one overlapping function range. That approach is superseded by
+the explicit overlap rejection and synthetic overlap/adjacency regressions.
+Local result: 20/20 tests pass with the existing Capstone; `python -B -S` also
+passes (19 executed, one optional decoder test skipped). This is a portable
 dependency check on this workstation, not a claim that hosted CI executed.

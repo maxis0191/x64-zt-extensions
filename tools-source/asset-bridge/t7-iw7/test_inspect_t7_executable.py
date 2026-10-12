@@ -121,6 +121,32 @@ class InspectorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             pe.pdata()
 
+    def test_overlapping_pdata_is_indeterminate_not_an_independent_anchor(self):
+        def overlap(data):
+            struct.pack_into("<I", data, 0x98 + 112 + 3 * 8 + 4, 24)
+            struct.pack_into("<III", data, 0x45C, 0x1010, 0x1090, 0x20A0)
+        _, pe = self.image(overlap)
+        with self.assertRaisesRegex(ValueError, "overlapping .pdata"):
+            pe.pdata()
+        with patch.object(subject, "SITES", [("ambiguous", 0x1020, 0x20, 64, "entry")]):
+            report = subject.inspect(self.path)
+        row = report["windows"][0]
+        self.assertEqual(row["decode_anchor"], "source_assumed_site")
+        self.assertIsNone(row["runtime_function"])
+        self.assertTrue(any("overlapping .pdata" in error for error in report["indeterminate"]))
+        self.assertEqual(report["decision"], "indeterminate_manual_review_required")
+        self.assertFalse(report["boot_authorized"])
+
+    def test_adjacent_pdata_ranges_have_unique_half_open_ownership(self):
+        def adjacent(data):
+            struct.pack_into("<I", data, 0x98 + 112 + 3 * 8 + 4, 24)
+            struct.pack_into("<III", data, 0x45C, 0x1080, 0x1090, 0x20A0)
+        _, pe = self.image(adjacent)
+        pdata = pe.pdata()
+        self.assertEqual(pe.unwind(pdata, 0x107F)["begin_rva"], 0x1000)
+        self.assertEqual(pe.unwind(pdata, 0x1080)["begin_rva"], 0x1080)
+        self.assertIsNone(pe.unwind(pdata, 0x1090))
+
     def test_invalid_unwind_header_cannot_anchor_decoding(self):
         _, pe = self.image(lambda b: b.__setitem__(0x4A0, 0))
         with self.assertRaisesRegex(ValueError, "unwind header"):
