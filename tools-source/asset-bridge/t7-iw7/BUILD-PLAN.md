@@ -777,3 +777,33 @@ The initial test invocations lacked the retained E7 environment/provider
 arguments; the complete invocations above passed after those were supplied.
 No native diagnostic type, build child or lease was created. These source and
 synthetic tests do not establish C++ compilation or actual caller capture.
+
+### Exact caller build plan A, awaiting review and coordinated GO
+
+Source commit 39933eb35f85c0267a75138330ecf9da81a90ed4 produced
+`runtime/t7-callers-build-plan-a/build-plan.local.json` (298,615 bytes), SHA256
+455b67c2862105ce5670f9cb2fefb26ba8e86f0167481ae7a1d8cc7f1a1e1b20.
+The default runner source/metadata check passes with 1,083 inputs and zero
+missing pins. The initial invocation supplied forward slashes in PlanPath and
+was refused by the existing canonical-path guard; resolving that same path
+passed without changing the plan or runner. No native action occurred.
+
+| Text binding | Bytes | SHA256 |
+| --- | ---: | --- |
+| Wiring | 21,022 | 04f8ef6d2b27ca6168bf4571e5e1495d2ad4c65731597c3f5512c0cf200e7b1e |
+| PreparedMain | 28,832 | af47dee318d9390f26c326d2e8ddd734e41bdc6db81b2b240e82c653cf7d2aa4 |
+| Ordinary D2 plan | 296,330 | daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa |
+| Ordinary D2 receipt | 7,136 | c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2 |
+
+The Inputs array equals exit-context plan A exactly. Of 413 Link object paths,
+only the 21st object (main.obj, response-file line 22) changes; 412 references
+remain identical. Stages are main and Link, with the retained C helper/T7/xpak
+proof. Budgets remain 4/6 GiB, 120 seconds per stage, 600 seconds per group and
+256 MiB output. The future `runtime/zt-t7-callers-a` root is absent.
+
+NativeTypesLoaded, BinaryInputsHashed, LeaseAcquired and RunRootCreated are all
+false in the default check. Preparation creates no EXE, PDB or Passed build
+receipt. No candidate/engine was launched. Source and exact plan were sent to
+the coordinator and runtime parser owner; Sound F currently owns the heavy slot.
+Review and a separate coordinator build GO are the next actions. A later real
+catalogue invocation must bind the actual resulting artifacts in its own plan.
