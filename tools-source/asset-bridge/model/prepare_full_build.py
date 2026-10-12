@@ -25,6 +25,10 @@ def put(parent, name, value):
 def prepare(source, output):
     source, output = source.resolve(strict=True), output.resolve()
     plan = json.loads((HERE / 'full-build-plan-2026-10-12.json').read_text())
+    repair = json.loads((HERE / 'map-layout-source.json').read_text())
+    if repair['source_pin'] != plan['reference_pin']: raise ValueError('Repair source pin differs')
+    plan['patched_files'].update(repair['files'])
+    plan['patches'][repair['patch']] = repair['sha256']
     if output.exists(): raise ValueError('Fresh absent output directory required')
     if source in output.parents or output in source.parents: raise ValueError('Separate overlay required')
     if run('git', 'rev-parse', 'HEAD', cwd=source) != plan['reference_pin']:
@@ -43,7 +47,8 @@ def prepare(source, output):
         target = patched / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(original.read_text(encoding='utf-8'), encoding='utf-8', newline='\n')
-    patches = [HERE / 'zonetool-fab9358-h1-xsurface.patch', HERE.parent / 'surfaces/strict-content-sources.patch']
+    patches = [HERE / 'zonetool-fab9358-h1-xsurface.patch', HERE.parent / 'surfaces/strict-content-sources.patch',
+               HERE / repair['patch']]
     # A tiny standalone temporary repository avoids git discovering our parent worktree.
     run('git', 'init', '--quiet', cwd=patched)
     for patch in patches:
@@ -134,7 +139,8 @@ def prepare(source, output):
     inputs += [source / p for p in plan['patched_files']]
     evidence = {'schema':'iw7.zonetool-isolated-overlay/1', 'source':str(source), 'output':str(output),
         'source_pin':plan['reference_pin'], 'submodules':submodules.splitlines(), 'patches':plan['patches'],
-        'compile_units':len(root.findall('.//' + q('ClCompile') + '[@Include]')),
+        'compile_units':len(root.findall('.//' + q('ClCompile') + '[@Include]')), 'patched_units':len(redirects),
+        'experimental_unvalidated_capabilities':[repair['capability']],
         'dependency_libraries':len(libs), 'feature_macro':'EXPERIMENTAL_IW7', 'project_sha256':digest(project),
         'readonly_inputs':[{ 'path':str(p), 'bytes':p.stat().st_size, 'sha256':digest(p)} for p in inputs],
         'new_artifact_hard_ceiling':2*1024**3, 'stop_at_bytes':1600*1024**2}

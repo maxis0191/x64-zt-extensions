@@ -43,15 +43,31 @@ try {
     @{ActiveBeforeStop=$testActive;ActiveAfterStop=$owner.Active;ExitCode=$owner.ExitCode;Priority=$owner.Priority}|
         ConvertTo-Json|Set-Content -LiteralPath (Join-Path $root 'job-fixture.local.json')
     $owner.Dispose();$owner=$null
-    for($attempt=1;$attempt -le 8;$attempt++) {
+    $previousAttempts=@(Get-ChildItem -LiteralPath $root -Filter 'build-*.log' | ForEach-Object {
+        if($_.Name -match '^build-(\d+)\.log$'){[int]$Matches[1]}
+    })
+    $firstAttempt=if($previousAttempts.Count){1+($previousAttempts|Measure-Object -Maximum).Maximum}else{1}
+    for($attempt=$firstAttempt;$attempt -lt $firstAttempt+8;$attempt++) {
         $log=Join-Path $root "build-$attempt.log"
         $argsText='"{0}" /m:1 /nr:false /nologo /noconsolelogger /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64 /p:MultiProcessorCompilation=false /p:BuildProjectReferences=false "/flp:LogFile={1};Verbosity=normal"' -f $project,$log
         $owner=[IW7.CommunityBuild.BuildJob]::Prepare($MSBuild,$argsText,$root)
-        Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID
-        $record=[ordered]@{Attempt=$attempt;PID=$owner.PID;StartedUtc=[datetime]::UtcNow.ToString('o');Priority=$owner.Priority;Arguments=$argsText;ExitCode=$null;JobActiveAtClose=$null}
+        if($owner.Image -ine [IO.Path]::GetFullPath($MSBuild)){throw 'Original handle image differs.'}
+        $record=[ordered]@{Attempt=$attempt;PID=$owner.PID;Image=$owner.Image;CreatedUtc=$owner.CreatedUtc;
+            StartedUtc=[datetime]::UtcNow.ToString('o');Priority=$owner.Priority;Arguments=$argsText;
+            SchedulerAttached=$false;ExitCode=$null;JobActiveAtClose=$null}
         $records.Add($record)
         $owner.Resume()
-        while(!$owner.Exited -or $owner.Active -ne 0) {
+        # WMI cannot reliably query the image of a never-resumed process. The
+        # original handle and assigned job already own the complete process tree.
+        $registrationUntil=[datetime]::UtcNow.AddSeconds(5)
+        while(!$owner.Exited -and !$record.SchedulerAttached){
+            try {Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID;$record.SchedulerAttached=$true}
+            catch {
+                if($_.Exception.Message -notlike 'Child identity unavailable*' -or [datetime]::UtcNow -gt $registrationUntil){throw}
+                Start-Sleep -Milliseconds 100
+            }
+        }
+        while(!$owner.Exited) {
             $bytes=Get-CandidateBytes;$maxBytes=[math]::Max($maxBytes,$bytes)
             if($bytes -ge 1600MB){throw 'Artifact stop threshold 1600 MiB reached; preserving margin below 2 GiB.'}
             $memory=Get-IW7ResourceSnapshot
@@ -60,6 +76,14 @@ try {
             if(Test-Path -LiteralPath (Join-Path $root 'stop.request')){throw 'Coordinator requested owned job stop.'}
             Start-Sleep -Milliseconds 250
         }
+        $record.ExitCode=$owner.ExitCode
+        # The root compiler driver has exited. Some native tool helpers can
+        # outlive it; terminate only descendants in our original kernel job.
+        $record.JobActiveAfterRootExit=$owner.Active
+        if($owner.Active -ne 0){$owner.Stop()}
+        $until=[datetime]::UtcNow.AddSeconds(15)
+        while(($owner.Active -ne 0 -or !$owner.Exited) -and [datetime]::UtcNow -lt $until){Start-Sleep -Milliseconds 100}
+        if($owner.Active -ne 0 -or !$owner.Exited){throw 'Original build tree closure unavailable.'}
         $record.ExitCode=$owner.ExitCode;$record.JobActiveAtClose=$owner.Active;$record.EndedUtc=[datetime]::UtcNow.ToString('o')
         $owner.Dispose();$owner=$null
         $records|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $root 'attempts.local.json')
@@ -86,14 +110,26 @@ finally {
         }catch{$closed=$false}
         $owner.Dispose()
     }
-    $unchanged=$true
-    foreach($entry in $prep.readonly_inputs){if((Get-FileHash -LiteralPath $entry.path).Hash.ToLowerInvariant() -cne $entry.sha256){$unchanged=$false}}
-    $released=$false
-    if($lease -and $closed){Exit-IW7ResourceLease -Token $lease.Token;$released=$true}
+    $unchanged=$true;$auditErrors=[Collections.Generic.List[string]]::new()
+    foreach($entry in $prep.readonly_inputs){
+        try {if((Get-FileHash -LiteralPath $entry.path).Hash.ToLowerInvariant() -cne $entry.sha256){$unchanged=$false;$auditErrors.Add("Input digest changed: $($entry.path)")}}
+        catch {$unchanged=$false;$auditErrors.Add($_.Exception.Message)}
+    }
+    $released=$false;$releaseError=$null
+    if($lease -and $closed){
+        try {Exit-IW7ResourceLease -Token $lease.Token;$released=$true}
+        catch {$releaseError=$_.Exception.Message}
+    }
+    $finalBytes=$null;$snapshot=$null
+    try {$finalBytes=Get-CandidateBytes;$maxBytes=[math]::Max($maxBytes,$finalBytes)}catch{$auditErrors.Add($_.Exception.Message)}
+    try {$snapshot=Get-IW7ResourceSnapshot}catch{$auditErrors.Add($_.Exception.Message)}
+    if(!$failure -and (!$unchanged -or $auditErrors.Count -or !$released -or !$closed)){$failure='Post-build audit or release incomplete.'}
+    if(!$failure -and ($null -eq $finalBytes -or $finalBytes -ge 1600MB)){$failure='Final artifacts reached the conservative stop threshold.'}
     [ordered]@{Schema='iw7.zonetool-full-build/1';StartedUtc=$started.ToString('o');EndedUtc=[datetime]::UtcNow.ToString('o');
-        Failure=$failure;Attempts=@($records.ToArray());MaxObservedBytes=$maxBytes;FinalBytes=(Get-CandidateBytes);
+        Failure=$failure;Attempts=@($records.ToArray());MaxObservedBytes=$maxBytes;FinalBytes=$finalBytes;
         HardCeiling=2GB;StopThreshold=1600MB;ReadOnlyInputsUnchanged=$unchanged;JobClosureVerified=$closed;
-        LeaseReleased=$released;LeaseToken=$(if($lease){$lease.Token});AfterSnapshot=(Get-IW7ResourceSnapshot)}|
+        LeaseReleased=$released;LeaseToken=$(if($lease){$lease.Token});AfterSnapshot=$snapshot;
+        AuditErrors=@($auditErrors.ToArray());ReleaseError=$releaseError}|
         ConvertTo-Json -Depth 8|Set-Content -LiteralPath (Join-Path $root 'result.local.json')
 }
 if($failure){throw $failure}

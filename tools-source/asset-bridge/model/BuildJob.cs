@@ -36,9 +36,13 @@ public sealed class BuildJob : IDisposable {
     [DllImport("kernel32.dll", SetLastError=true)] static extern uint WaitForSingleObject(IntPtr handle,uint ms);
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool GetExitCodeProcess(IntPtr process,out uint code);
     [DllImport("kernel32.dll", SetLastError=true)] static extern uint GetPriorityClass(IntPtr process);
+    [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern bool QueryFullProcessImageName(IntPtr process,uint flags,StringBuilder path,ref int size);
+    [DllImport("kernel32.dll", SetLastError=true)] static extern bool GetProcessTimes(IntPtr process,out long created,out long exited,out long kernel,out long user);
     [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr handle);
     IntPtr job,process,thread;
     public uint PID { get; private set; }
+    public string Image { get { var path=new StringBuilder(32768);int size=path.Capacity; if(!QueryFullProcessImageName(process,0,path,ref size)) Fail();return path.ToString(); } }
+    public string CreatedUtc { get { long created,exited,kernel,user; if(!GetProcessTimes(process,out created,out exited,out kernel,out user)) Fail();return DateTime.FromFileTimeUtc(created).ToString("o"); } }
     public uint Priority { get { return GetPriorityClass(process); } }
     public bool Exited { get { var value=WaitForSingleObject(process,0); if(value==0xffffffff) Fail(); return value==0; } }
     public uint ExitCode { get { uint value; if(!Exited || !GetExitCodeProcess(process,out value)) throw new InvalidOperationException("Original process has no exit"); return value; } }

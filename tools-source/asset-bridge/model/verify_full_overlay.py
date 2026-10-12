@@ -29,7 +29,7 @@ def verify(directory):
                 assert Path(includes[0]).is_relative_to(source)
         if node.tag == q('ObjectFileName'):
             assert node.text.startswith('$(IntDir)') and '..' not in node.text, node.text
-    assert patched == 4
+    assert patched == prep['patched_units'] == 5
     for group in root.findall(q('PropertyGroup')):
         if group.find(q('IntDir')) is not None:
             assert Path(group.find(q('IntDir')).text).resolve() == directory / 'obj'
