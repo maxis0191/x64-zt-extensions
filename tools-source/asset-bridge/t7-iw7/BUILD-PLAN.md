@@ -90,6 +90,13 @@ cover catalogue/export rules. No native name-helper/three-TU/link result is
 claimed here. The conversion owner confirms no exactly qualified 51-case helper
 exists; the helper compile/probe stages therefore remain necessary.
 
+For exact command tests, set both `IW7_T7_SOURCE` to the retained native checkout
+and `IW7_T7_E7_BUILD` to its existing E7 build directory. The latter is explicit:
+an integration checkout must reuse the original tlogs rather than assume they
+exist under its own runtime directory or copy them there. Missing optional paths
+skip that test class; supplied invalid paths or changed tlog hashes fail. This is
+independent of the three source comparisons controlled by `IW7_T7_SOURCE` alone.
+
 ## Review correction: the 600-second boundary
 
 The lifecycle reviewer reproduced two gaps in Plan B: provider loading could

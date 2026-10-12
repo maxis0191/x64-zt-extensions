@@ -14,11 +14,12 @@ class RecipeTests(unittest.TestCase):
         with self.assertRaises(ValueError): p.read_records('^C:\\a.cpp\na.hpp\n^c:\\A.cpp\nb.hpp\n')
 
 
-@unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'), 'Retained source not supplied')
+@unittest.skipUnless(os.environ.get('IW7_T7_SOURCE') and os.environ.get('IW7_T7_E7_BUILD'),
+                     'Retained T7 source and E7 build paths not supplied')
 class ExactCommandTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.e7 = p.HERE.parents[2]/'runtime/zt-full-a'
+        cls.e7 = Path(os.environ['IW7_T7_E7_BUILD'])
         cls.cl = p.text_pin(cls.e7/'obj/tlog/CL.command.1.tlog',4*1024**2,p.CL_LOG_SHA)[0].decode('utf-16')
         cls.link = p.text_pin(cls.e7/'obj/tlog/link.command.1.tlog',256*1024,p.LINK_LOG_SHA)[0].decode('utf-16')
         cls.native = os.environ['IW7_T7_SOURCE']
