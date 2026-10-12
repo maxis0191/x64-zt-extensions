@@ -95,13 +95,15 @@ namespace recipient_script_names
         }
 
     public:
-        // The factory is invoked only for a matched name, never for other assets.
-        template <typename MetadataFactory>
-        void enumerate(const void* pointer, const char* raw_name, MetadataFactory factory)
+        // Raw header names are read only after callback admission and the null
+        // identity guard. Metadata is read only after an exact target match.
+        template <typename RawNameFactory, typename MetadataFactory>
+        void enumerate(const void* pointer, RawNameFactory raw_name_factory, MetadataFactory factory)
         {
             require(callbacks_ < max_callbacks, "script-name observation: callback limit exceeded");
             ++callbacks_;
             if (!pointer) { ++null_headers_; return; }
+            const auto* raw_name = raw_name_factory();
             if (!raw_name) { ++null_names_; return; }
             const auto name = bounded_name(raw_name);
             ++named_;

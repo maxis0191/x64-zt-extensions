@@ -34,7 +34,7 @@ void observe_recipient_script_names(const std::string& donor_zone)
         try
         {
             auto* script = header.scriptfile;
-            observed.enumerate(script, script ? script->name : nullptr, [&] { return metadata(script); });
+            observed.enumerate(script, [&] { return script->name; }, [&] { return metadata(script); });
         }
         catch (...) { enum_error = std::current_exception(); }
     }, false);

@@ -55,6 +55,14 @@ captured inside that callback and rethrown after the engine returns, avoiding
 unwinding through the enum implementation. This is a read cap, not a guarantee
 of aborting/preempting engine traversal or a proof arbitrary pointers are valid.
 
+Independent review found the initial wrapper evaluated `script->name` before
+entering the counter guard, so callback 4097 could still read that pointer.
+The corrected API takes a lazy raw-name factory and invokes it only after
+callback admission and the null-identity guard. The C++ harness now counts raw
+name-factory calls across 4096 non-null callbacks, then requires the 4097th to
+refuse without incrementing either name or metadata reads. Null identities also
+must not call the name factory. This harness remains uncompiled/unexecuted.
+
 The JSON output is at most 4096 bytes, at
 `enemy-catalog/sdk_beacon_script_names.json`. Directory validation and the existing
 exclusive `CREATE_NEW` writer/readback are reused. The `.csv` sibling check from
@@ -65,13 +73,15 @@ not a fabricated partial-success JSON.
 
 ## Pure tests and source check
 
-The 26 Python checks pass with the explicit retained source path: 18 output
-contract cases plus five source/preparer guards and three source-bound patch
+The 27 Python checks pass with the explicit retained source path: 18 output
+contract cases plus six source/preparer guards and three source-bound patch
 checks. They cover canonical/numeric distinctions, populated-but-unmatched
 enumeration, duplicate occurrences, conflicting identities, rejection of multiple
 enum rows, name/type/length/count bounds, exact two-key ordering, duplicate JSON
 fields, and refusal of payload/alias/readiness claims. These fixtures validate
 the **reader**, not native enum or engine behavior.
+The additional source guard checks admission-before-factory ordering and the
+lazy wrapper call; runtime enforcement still needs the prepared native harness.
 
 `test_recipient_script_names.cpp` exercises the actual header with invented
 identities, canonical/numeric names, same/distinct pointers, null/unmatched

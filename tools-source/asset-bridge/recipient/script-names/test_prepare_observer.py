@@ -29,6 +29,21 @@ class PreparationTests(unittest.TestCase):
         self.assertIn('max_callbacks = 4096',source)
         self.assertIn('max_output = 4096',source)
 
+    def test_callback_admission_precedes_lazy_raw_name_access(self):
+        source=(p.HERE/'recipient_script_names.hpp').read_text()
+        body=source.split('void enumerate(',1)[1].split('void direct(',1)[0]
+        gate=body.index('require(callbacks_ < max_callbacks')
+        null_guard=body.index('if (!pointer)')
+        read=body.index('raw_name_factory()')
+        self.assertLess(gate,null_guard)
+        self.assertLess(null_guard,read)
+        native=(p.HERE/'native_observer.inc').read_text()
+        self.assertIn('observed.enumerate(script, [&] { return script->name; },',native)
+        self.assertNotIn('observed.enumerate(script, script ? script->name',native)
+        harness=(p.HERE/'test_recipient_script_names.cpp').read_text()
+        self.assertIn('bounded.enumerate(&first, counted_name, forbidden)',harness)
+        self.assertEqual(harness.count('check(raw_name_reads == rn::max_callbacks);'),2)
+
     def test_cli_rejects_trailing_arguments_and_catches_errors(self):
         source=(p.HERE/'native_cli.inc').read_text()
         self.assertIn('i + 2 != args.size()',source)
