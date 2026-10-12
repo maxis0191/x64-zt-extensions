@@ -321,6 +321,15 @@ guarded operation. The 72-entry shared FF profile and 12 provider pins are intac
 The next plan requests references only. Its result, memory peak and complete
 stock sufficiency remain unverified until a separately authorized execution.
 
+D subsequently executed once under its explicit GO and stopped on a verified
+Fatal Error title after reaching `global_cp`. Its [immutable failure record](native-validation-d-2026-10-12.json)
+confirms restoration of all 79 paths, source metadata, original job closure,
+unchanged owner/Main and released lease. The light observer did not read body
+text, so the new error is unknown. D's GO is exhausted. The next source-only
+change must enable the existing identity-bound body reader during normal
+references mode, retaining successful results only when no fatal is detected.
+Keep DiagnosticOnly separate; do not broaden PAKs before exact fatal evidence.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256

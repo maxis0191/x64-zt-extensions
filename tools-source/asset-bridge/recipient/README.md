@@ -342,3 +342,31 @@ now binds the four PAK prerequisites retained in the older CP diagnostics.
 No post-C native execution or content requalification has occurred. Further
 execution requires review, a fresh admission and a new GO; the next slots remain
 GSC then rig.
+
+### D result: progressed to global_cp, fatal body unavailable, restored
+
+One authorized references-only execution of `fde8c49` used the separate four-PAK
+profile. The [D record](native-validation-d-2026-10-12.json) retains the exact plan,
+command, identities and artifact hashes. Fresh 8/11 admission and guarded stock
+requalification passed before staging. The native log reached `global_cp` after
+`global_mp`, `patch_global_mp` and `techsets_global_cp`; 15 of the expected 25 zone
+messages were observed. No reference CSV or phase receipt was produced.
+
+At native age 18.67 seconds, the original identity-bound light observer reported
+`Fatal Error`. It records a title, not control text: D's fatal body and exact
+cause remain unknown. The observer preserved its evidence and requested an
+immediate original-job stop. Command completion followed about 3.67 seconds after
+the request, without waiting for the native deadline. Original root exit 122 and
+zero members were confirmed separately; 122 is not a native exit code.
+
+Status remains Failed. All 79 managed paths were removed, source identities and
+metadata matched, restoration/source preservation passed, no owned process or
+lease remained and owner/Main identities were unchanged. Final generated output
+was 1,221,694 bytes. References, script bytes, package closure and Ready remain
+false. No retry or PAK expansion followed. Binder overlay-role support remains a
+separate coordinator gate and was not bypassed.
+
+Next source-only correction: reuse the existing bounded fatal-body reader in
+normal references mode while preserving normal success when no fatal exists.
+D's failure record will not be rewritten as a body-capture result. A new plan,
+review and GO are required before any further native execution.

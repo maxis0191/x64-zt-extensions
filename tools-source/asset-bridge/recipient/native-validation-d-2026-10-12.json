@@ -1,0 +1,195 @@
+{
+  "schema": "iw7.recipient-native-validation/1",
+  "attempt": "D",
+  "date": "2026-10-12",
+  "status": "failed-after-fatal-window-confirmed-restored",
+  "source_commit": "fde8c49b71efcced367057d6fa132e20d6cd5869",
+  "plan_sha256": "F2987B87354EC6B50936F892A4E61C380A2FB340114EA894D2C3250EC8A2908A",
+  "spec_sha256": "18C40FF6D675F3D6EF6CCB5D2DDED6D1DF3E6E284D5C769359BD7304240054F0",
+  "command_sha256": "0B29A3D286C64E76DCD2BBC42236D7980C618372124BCFC30A5B473BBBE7EBEE",
+  "observation_sha256": "2E438CC2067D49E1572C583A14E562B6D869156C0B9386CE9CACE97D260827BE",
+  "native_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "authorized_invocations": 1,
+  "actual_invocations": 1,
+  "phases": [
+    "references"
+  ],
+  "utility_invoked": false,
+  "admission": {
+    "physical_bytes": 8589934592,
+    "commit_bytes": 11811160064,
+    "preflight_utc": "2026-10-12T06:35:04.3735524Z",
+    "physical_available": 16860041216,
+    "committed": 24025759744,
+    "commit_limit": 47564615680,
+    "preflight_allowed": true,
+    "prior_leases": 0,
+    "other_heavy_count": 0,
+    "atomic_lease_and_pre_staging_hash_gate_passed": true,
+    "gate_evidence": "Exact committed control flow reached the registered original job after guarded SHA-256 verification and all staging checks."
+  },
+  "stock": {
+    "baseline_entries": 72,
+    "supplemental_entries": 4,
+    "supplemental_expected": [
+      {
+        "relative": "zone/assetfile17.pak",
+        "bytes": 104595492,
+        "expected_sha256": "6F5C0D1937B5A707D4E1FB3009F68A827714D9E4A72FF2D6570B57DBF6B0F058",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      },
+      {
+        "relative": "zone/assetfile19.pak",
+        "bytes": 418201636,
+        "expected_sha256": "064B6D23CFCEC2BAEDF1A5589FCD602FB1CFBDBB2040D88D21CB8A8CA7779B0D",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      },
+      {
+        "relative": "zone/assetfile37.pak",
+        "bytes": 53477412,
+        "expected_sha256": "839C1DA30E43B9C5C78CC457D3FA3EF61BD85AE818C81A2D2D0B30FF187FB349",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      },
+      {
+        "relative": "zone/assetfile53.pak",
+        "bytes": 3817508,
+        "expected_sha256": "B0C4AC18F4F9965A396B74CE8FBE2118D6FD6F68D92E7295AD29BC7BC2FBF773",
+        "source_matches_observed_identity": true,
+        "target_matches_source_identity": true
+      }
+    ],
+    "hardlinks": 78,
+    "copies": 1,
+    "copy_bytes": 77,
+    "managed_paths": 79,
+    "source_metadata_matches_after_restore": true,
+    "remaining_managed_paths": 0,
+    "fresh_full_content_hash_after_restore": false
+  },
+  "execution": {
+    "started_utc": "2026-10-12T06:35:15.555533Z",
+    "completed_utc": "2026-10-12T06:35:44.0815509Z",
+    "shell_exit_code": 1,
+    "original_parent_pid": 31160,
+    "original_parent_created_utc": "2026-10-12T06:35:21.3320761Z",
+    "native_pid": 5844,
+    "native_created_utc": "2026-10-12T06:35:21.466964Z",
+    "native_creation_verified_by_light_observer": true,
+    "locator_creation_time_verified": false,
+    "resource_registered": true,
+    "source_zone_order_observed": [
+      "techsets_global_core_mp",
+      "techsets_common_core_mp",
+      "code_post_gfx",
+      "patch_code_post_gfx",
+      "techsets_global",
+      "global",
+      "patch_global",
+      "techsets_common",
+      "common",
+      "patch_common",
+      "techsets_global_mp",
+      "global_mp",
+      "patch_global_mp",
+      "techsets_global_cp",
+      "global_cp"
+    ],
+    "expected_zone_count": 25,
+    "last_stdout": "[ INFO ][ zonetool::iw7::load_zone ]: Loading zone \"global_cp\"...",
+    "stdout_bytes": 1665,
+    "stderr_bytes": 0,
+    "phase_receipt_present": false,
+    "reference_csv_present": false,
+    "native_exit_code": null
+  },
+  "fatal_observation": {
+    "utc": "2026-10-12T06:35:40.1350646Z",
+    "native_age_seconds": 18.6692467,
+    "title": "Fatal Error",
+    "hwnd": 197133660,
+    "body_captured": false,
+    "body": null,
+    "all_windows_enumerated": false,
+    "identity_checked_before_and_after": true,
+    "direct_job_membership_queried": false,
+    "cpu_seconds": 3.921875,
+    "working_set_bytes": 476946432,
+    "private_bytes": 650940416,
+    "thread_count": 18,
+    "snapshot_taken": false,
+    "debugger_attached": false,
+    "sha256": "8FBB8735EA183C4AC8EB0817C9EB8CCC2D3CCF115C442C5671BA7124A1FD792F",
+    "stop_requested_utc": "2026-10-12T06:35:40.4083106Z"
+  },
+  "closure": {
+    "status": "Failed",
+    "failure": "Coordinator requested owned stop.",
+    "original_root_exited": true,
+    "original_job_active": 0,
+    "original_root_exit_code": 122,
+    "restored": true,
+    "stock_preserved": true,
+    "restoration_status": "Confirmed",
+    "cleanup_error": null,
+    "retained_lease_token": null,
+    "remaining_owned_processes": 0,
+    "remaining_leases": 0,
+    "owner_inventory_unchanged": true,
+    "main_pid": 27784,
+    "final_generated_bytes": 1221694
+  },
+  "acceptance": {
+    "references_verified": false,
+    "script_bytes_verified": false,
+    "closure_complete": false,
+    "ready": false,
+    "runtime_verified": false,
+    "outer_native_executed_field": null,
+    "binder_overlay_role_acceptance": false
+  },
+  "artifacts": [
+    {
+      "Relative": "state.local.json",
+      "Bytes": 110405,
+      "SHA256": "C0CDB728424E1D9F1FAB8CCBDF46D916B7524DA18E8CD7B4DDF3BBCF3A107000"
+    },
+    {
+      "Relative": "backup/recovery.local.json",
+      "Bytes": 8545,
+      "SHA256": "BE4DA5A0F1C2723CBFA54DE9F92FA7994ED41F502873E8AA9D4700496FC42929"
+    },
+    {
+      "Relative": "references/native-start.json",
+      "Bytes": 542,
+      "SHA256": "343E6E724EAB2911157DAF4CDE6F3718B6D8745C478509CABC306A2F34374F8D"
+    },
+    {
+      "Relative": "references/stdout.log",
+      "Bytes": 1665,
+      "SHA256": "E526B4CB699748543651293F89814C010462FE7610BEB18D7FDCC2CE69B6C9A1"
+    },
+    {
+      "Relative": "references/stderr.log",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Relative": "stop.request",
+      "Bytes": 640,
+      "SHA256": "2C4A361EE1F46EB6BE2013E09D5123B343D51F503E2C2B5E538D0EE3AE1B78C9"
+    }
+  ],
+  "final_observation_sha256": "5101AAF73232A364E40AF474CC49BFB7234214F937A6668D789C5726F997B5FC",
+  "conclusions": [
+    "D progressed beyond the prior global_mp stop through patch_global_mp and techsets_global_cp to global_cp, then exposed an identity-verified Fatal Error window.",
+    "The light observer records the title only. The new fatal body and exact cause are unknown; no missing PAK, pool error or dependency closure is inferred.",
+    "All four supplemental PAKs passed the existing admitted guarded content gate before staging and shared source/target identity checks. This is not a complete required-stock inventory.",
+    "The original job stopped on request without waiting for the native timeout. Closure, source metadata, restoration, owner preservation and released resources were confirmed separately.",
+    "No second native invocation, utility phase, stock expansion, loader/pool change, snapshot or debugger followed. No accepted reference CSV or phase receipt exists.",
+    "The outer NativeExecuted field remains null because the stop interrupted normal receipt acceptance; native startup is independently proven by the exact bound light observation.",
+    "The binder overlay role remains pending coordinator integration. Neither its gate nor reference/package acceptance was bypassed."
+  ]
+}

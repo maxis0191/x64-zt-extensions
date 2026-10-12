@@ -1,7 +1,8 @@
 # Recipient supplemental PAK profile after C
 
 Source-only preparation, 2026-10-12. No new native run, stock copy, download,
-game launch, lease or PAK content hash was performed for this correction.
+game launch, lease or PAK content hash was performed during that preparation.
+The separately authorized D execution and its limits are recorded below.
 
 ## Evidence and immediate cause
 
@@ -119,3 +120,20 @@ four non-default reference rows, original tree closure, all 79 staged paths
 removed, preserved stock, released lease and unchanged owner/Main identities.
 `Ready`, package closure, script-byte validation and gameplay acceptance remain
 false. Coordinator owns integration and the GitHub workflow.
+
+## D execution checkpoint
+
+The [D record](native-validation-d-2026-10-12.json) supersedes the pending-execution
+status above. One execution of `fde8c49` passed fresh 8/11 admission and the
+existing guarded pre-staging SHA-256 gate. All four supplemental source/target
+identities matched. Native loading progressed to `global_cp`, then a verified
+Fatal Error title prompted immediate original-job stop. The light observer did
+not read control text; the new failure cause is unknown. No accepted references
+or complete stock closure were established.
+
+Original root exit 122 and zero members, removal of all 79 managed paths,
+restoration/source preservation, final source metadata, unchanged owner/Main and
+zero remaining owned processes/leases were confirmed. No content rehash outside
+admission was performed after restoration. No retry or PAK expansion is allowed
+by D's exhausted GO. The next source-only change captures future exact fatal
+text in normal reference mode; it cannot reconstruct D's missing body.
