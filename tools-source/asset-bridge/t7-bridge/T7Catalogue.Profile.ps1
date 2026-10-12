@@ -4,6 +4,37 @@ function Get-T7CatalogueCandidateProfile($Plan) {
     if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
+function Get-T7CatalogueMainBaseline($Plan) {
+    if(!$Plan.PSObject.Properties['MainBaseline']){return 'Running'}
+    if($Plan.MainBaseline -cnotin @('Running','Stopped')){throw 'Unknown Main baseline.'}
+    $Plan.MainBaseline
+}
+function Assert-T7CatalogueMain($Plan) {
+    $baseline=Get-T7CatalogueMainBaseline $Plan
+    if($baseline -ceq 'Running') {
+        # Preserve the existing generation/UDP-owner check without changing its helper.
+        return (Assert-T7PrepatchMain $Plan.PreservedMain)
+    }
+    $expected=$Plan.PreservedMain
+    if(!(Test-T7CatalogueInteger $expected.PID ([int]::MaxValue)) -or $expected.PID -le 0 -or
+       !$expected.CreatedUtc -or !$expected.Image){throw 'Original Main identity required for stopped baseline.'}
+    $null=[datetimeoffset]::Parse($expected.CreatedUtc)
+    Assert-H1Path $expected.Image
+    $name=[IO.Path]::GetFileName($expected.Image)
+    $processes=@(Get-IW7ResourceProcesses)
+    # PID reuse, inaccessible same-name images and the expected image at any PID
+    # are conservative refusals. Absence does not explain why Main stopped.
+    $matches=@($processes|Where-Object {
+        $_.PID -eq $expected.PID -or
+        ($_.Image -and $_.Image -ieq $expected.Image) -or
+        (!$_.Image -and $_.Name -ieq $name)
+    })
+    $udp=@(Get-NetUDPEndpoint -ErrorAction Stop|Where-Object LocalPort -EQ 27016)
+    if($matches.Count -or $udp.Count){throw 'Stopped Main baseline differs or is ambiguous.'}
+    [ordered]@{CapturedUtc=[DateTime]::UtcNow.ToString('o');Baseline='Stopped';
+        OriginalPID=$expected.PID;OriginalCreatedUtc=$expected.CreatedUtc;ExpectedImage=$expected.Image;
+        OriginalPIDAbsent=$true;ExpectedImageAbsent=$true;UDP27016Absent=$true;Cause='Unknown'}
+}
 function Assert-T7CatalogueMetadata($Expected) {
     Assert-H1Path $Expected.Path
     $item=Get-Item -LiteralPath $Expected.Path
@@ -13,6 +44,7 @@ function Assert-T7CatalogueMetadata($Expected) {
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
+    $null=Get-T7CatalogueMainBaseline $Plan
     if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
        $Plan.EngineOutputProfile -cne 'ObservedStartupA' -or
        $Plan.PhysicalBytes -ne 6GB -or $Plan.CommitBytes -ne 8GB -or

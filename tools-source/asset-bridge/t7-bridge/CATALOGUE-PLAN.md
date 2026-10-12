@@ -294,3 +294,64 @@ refusals, provenance mutations, malformed trace and finalization outcomes.
 The exact private Plan C must still pass default validation and coordinator
 review before its single native invocation. No new Run is authorized by this
 source change; A and B remain consumed Failed attempts.
+
+## C preflight refusal and explicit stopped-Main baseline
+
+Plan C (`4f8cf5a7015080f9280620b5d64b650ebdb3255adca0bd5251655bcf4a1f1845`)
+passed source validation but its live preflight found the original Main PID,
+expected executable path and UDP27016 absent at 14:11:52 UTC. A second observation
+at 14:12:50 UTC matched. Python's preserved generation remained present. The cause
+of Main's absence is unknown; no crash or owner action is inferred. C never
+created an attempt marker, launched a host/candidate or acquired a lease.
+
+The coordinator separately authorized and reviewed the minimal `4be5bae` delta.
+`MainBaseline=Stopped` explicitly requires the old PID to be absent, no process
+at the expected Main image and no UDP27016 endpoint. An inaccessible same-name
+image, reused old PID, new matching instance or mixed state refuses the check.
+The baseline is recorded before admission, immediately before launch and after
+confirmed closure, including forced closure. An unknown baseline is refused;
+omitting it retains the original exact running-generation/UDP-owner helper.
+No shared prepatch helper, other guard, input or resource threshold changed.
+314 light/pure checks passed: catalogue139, trace123 and Main52.
+
+## Attempt D: post_unpack returned, then another thread called exit_hook
+
+The unique coordinator GO used source `4be5bae7dbc78c3a560c255cb8ca3bbd65e89ab3`
+and Plan D `eb02c7603af92ad026e426784dd2556061be96839cf92e0490d51e5039ded656`.
+Fresh preflight at 14:20:50 UTC confirmed Main Stopped, the preserved Python
+identity, zero leases/heavy work and admission capacity for 6/8 GiB. The runner
+acquired its own atomic reservation and ran only the existing four input aliases.
+
+The native root exited naturally with code 0 after 2,192.60 ms. The outcome stays
+**Failed / NoCatalogue**. stdout is the same 70-byte init_zonetool message as B.
+The 600-byte bounded stderr trace records, in order:
+
+| Event | Code | Thread | Return address |
+| --- | --- | --- | --- |
+| enabled, stdout/stderr unbuffered both true | n/a | 31804 | n/a |
+| before_entry_point | 0 | 31804 | 0 |
+| before_post_unpack | 0 | 31804 | 0 |
+| after_post_unpack | 0 | 31804 | 0 |
+| exit_hook | 0 | 18184 | `0x140AC00C4` |
+
+No entry_point_return event or catalogue was observed. This establishes a return
+from the instrumented post_unpack call and a later observed exit_hook invocation
+on another thread. It does not establish the engine's reason for exiting,
+original initialization completion, command dispatch, ABI compatibility or a
+missing dependency. No extra FF, FD, XPAK or bootstrap input was introduced.
+
+The original job closed without a forced stop or quarantine. All input/alias
+hashes, metadata and identities were reverified while the lease remained held.
+After release, only bounded text diagnostics and metadata/file IDs were read.
+Main remained Stopped before/after. Postflight at 14:22:51 UTC confirmed zero
+leases/heavy workloads/original root, unchanged source/alias metadata and IDs,
+the preserved Python generation and no host quarantine. The persistent host
+exited normally with code 0; host and candidate were absent at 14:23:20 UTC.
+The host's code 0 is the worker's retained exec-session 34424 result. The small
+host-outcome/absence JSONs establish closure and absence, not that exit code.
+
+The [sanitized D checkpoint](catalogue-runtime-d-20261012.json) binds C's refusal,
+D's trace, receipt and postflight evidence. A/B/D remain Failed and C unconsumed.
+The build owner now correlates the exact prepared source and exit return address.
+No automatic retry, new native invocation, binary analysis or added input follows
+from this observation; any subsequent native experiment needs a separate plan/GO.

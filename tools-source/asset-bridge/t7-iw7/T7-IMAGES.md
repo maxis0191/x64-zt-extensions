@@ -124,6 +124,90 @@ DDS parsing, original checkerboard/BC1 red data, all18 typed formats, mip tails,
 sRGB preservation and malformed inputs), plus5 C++ source-contract checks.
 No native build, engine import, real-image capture, material completeness or
 visual acceptance is claimed. The separate synthetic validation receipt records
-the checked sources. The next implementation is a bounded selected-image
-capture/publication extension under its own reviewed native plan, not a new
-general exporter.
+the checked sources. Native synthetic qualification below comes before a bounded
+selected-image capture/publication extension under its own reviewed native plan.
+
+## Prepared native fixture (source only, 2026-10-12)
+
+`resident_image_fixture.cpp` includes the production copy adapter, which includes
+the **actual pinned T7 structs** through the native tree's include path. It does
+not redeclare `GfxImage`, replace the adapter, or disable the native ABI assertions.
+It requires x64, a 264-byte image header and name offset 248. The two assertion
+macros have the same semantics as the pinned `std_include.hpp`, without pulling
+in that application's unrelated dependencies.
+
+The fixture prepares **54 native cases, not yet compiled or executed**:
+
+- Six exact-byte copies cover linear RGBA/R8 rows, odd dimensions, BC1/BC3 block
+  rounding, multiple mips and complete sub-block tails. Expected sizes are literal
+  independent values. Each case checks metadata, bytes and ownership of the copy.
+- Eighteen SDK-named typed formats each copy their independently specified 1x1
+  storage size, retaining the UNORM/SNORM/sRGB distinctions.
+- Thirty refusals cover streaming/fallback/delay, flags, dimensions/mips,
+  cubes/depth, typeless/BC6, short/trailing/over-budget size, unreadable spans,
+  invalid/null/overflowing pointers, and a header/pointer change during copying.
+
+Every pixel array is 128 bytes; the largest successful pixel copy is 96 bytes.
+The readability callback accepts only the fixture's actual header and bounded
+array, throws before an invalid address can be dereferenced, and can simulate a
+change before the second header copy. This tests the callback contract, **not**
+Win32 page probing, SEH, a real DB scope, or an atomic image snapshot. Future engine
+integration still requires a stable DB/allocation scope through both reads and
+the pixel copy; double header checks cannot establish that scope themselves.
+
+Success is one exact JSON record, at most 1 KiB of stdout, empty stderr and root
+exit 0. `resident_image_fixture_check.py` checks a saved transcript with bounded
+reading, exact fields/types/counts, duplicate-key rejection and explicit false
+engine/atomic/SEH flags. A matching transcript alone is forgeable and is **not
+execution evidence**: the checker reports `native_execution_verified: false`.
+The existing owned runner's receipt must prove which binary ran and closed.
+
+### Minimal stage recipe and remaining runner binding
+
+`resident_image_fixture_plan.json` contains the complete four direct-tool argv
+lists and budgets as **inert stage data, not a sealed or executable Plan**:
+
+| Stage | Direct tool and intended result |
+|---|---|
+| Compile | x64 `cl.exe /std:c++20 /EHsc /MD /O1 /W4 /WX /c`, fixture TU to `.obj`, plus `/sourceDependencies` JSON |
+| Link | x64 `link.exe`, that object to the fixture `.exe`; MSVC/SDK CRT libraries and `kernel32.lib` |
+| Fixture | That exact prior link artifact, no arguments; bounded synthetic JSON |
+| Check | Qualified Python `-I -S -B resident_image_fixture_check.py <saved-stdout>` |
+
+These commands are intended as argv passed to the **existing stage owner**, not
+as shell commands bypassing its admission or supervision. Bind the installed
+MSVC and Windows SDK include/library roots, the pinned native tree and the fixture
+source directory. The real T7 header needs SDK `d3d11.h` declarations; no Direct3D
+device or D3D import library, Boost, DirectXTex, game executable or game data is
+needed by this fixture. Compilation remains the check of that dependency claim.
+Retain the compiler dependency report and reject unexpected source provenance.
+
+Reuse `Invoke-WorldStage` in `world/ObserverStages.Profile.ps1`, then
+`Invoke-T7OwnedStage` in `t7-iw7/T7Build.Profile.ps1` and `Invoke-H1OwnedStage` in
+`h1-fixture/H1Native.Core.ps1`, with the already qualified native Job provider.
+The current World CLI fixes its own translation unit, artifacts and transcript
+checker; **it cannot consume this proposal unchanged**. The runner owner must
+bind this narrow fixture profile and seal its existing transitive sources/tool
+receipts. Do not create another launcher, framework, supervisor or native owner.
+
+The proposal retains the qualified stage model: separate Compile and Link jobs,
+previous root exit 0 and original job closure before advancing, guarded/pinned
+artifacts before launch, bounded deadlines, original-handle cleanup and immutable
+closure/release receipt. Reuse the existing quarantine behavior on uncertainty;
+no automatic retry. The inherited reservation proposal is 4 GiB physical/6 GiB
+commit; Compile+Link share 90 s, Fixture 10 s, Check 5 s, group 120 s, cleanup 5 s.
+These are admission limits, not measured fixture peaks. Existing 63 MiB live and
+2 MiB per-log guards are sampled thresholds, not strict write caps; final output
+acceptance is 64 MiB. Fixture transcript acceptance remains the tighter 1 KiB.
+
+Before any GO, bind the exact fixture/helper/checker/proposal, actual T7 header,
+existing profile/provider source closure, qualified compiler/linker/Python and
+telemetry/native-owner receipts, plus a fresh private RunRoot and sanitized child
+environment. **Catalogue C has priority.** Preparing these source files performs
+no binary hash, Plan invocation, resource admission, build, or native execution.
+The source bundle stays below 1 MiB.
+
+The same Python discovery command above passed **36 tests**: the previous 22,
+eight executable transcript-checker tests and six fixture/proposal source checks.
+These checks are separate from the 54 intended native cases; they cannot certify
+compilation or native behavior.
