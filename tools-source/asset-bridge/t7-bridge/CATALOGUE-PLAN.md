@@ -1013,3 +1013,67 @@ smallest proposed next action is qualification of that named file through the
 existing guarded protocol, after a separate coordinator decision and exact GO.
 This result authorizes no new bootstrap, payload read, build or engine
 invocation and proves no content compatibility.
+
+## En Core Patch A closed; bounded qualified collection and Plan L
+
+The separately reviewed qualification of `en_core_patch.ff` received one exact
+GO and reused Core A's five lifecycle functions byte for byte. Its fresh
+18:42:49.6349641 UTC preflight admitted the unchanged 6/8 GiB budget at 56.32%
+commit use with no physical reserve. Two guarded 624,640-byte reads established
+SHA256 `241f1154237ca5459b98e948156f2138a546968a63f92cd13f70cb2e9794906e`;
+metadata and file identity matched before/after. The result finalized at
+18:42:50.6266957 UTC as `IdentityAndHashObservedCompatibilityUnknown`.
+No header/prefix, depot verification, engine invocation or lookup proof was
+part of that qualification.
+
+Same-host closure at 18:43:17.2784906 UTC observed both guard collections empty,
+lease release and no quarantine. Session 31860 actually exited 0 (chunk
+`b834c8`). The independent 18:44:00.0263747 UTC witness found host 6888 and
+parent 30648 absent, zero leases/heavy workloads, Main/image/UDP absent, and
+the preserved Python identity unchanged. Its first invocation lacked the H1
+function import and refused; the corrected read-only witness passed. No
+additional qualification was invoked and no payload hash was read after
+release. The [sanitized collection/L checkpoint](catalogue-qualified-collection-l-20261012.json)
+pins the preparation, qualification, closure and independent evidence.
+
+After full closure, the authorized source change added the explicit opt-in
+`BootstrapPolicy: QualifiedCollectionV1`. It accepts one through eight
+individually qualified `Bootstraps`, with safe lowercase ASCII `.ff` basenames,
+distinct canonical paths/aliases/file identities and per-item receipt/script
+pins. Every item validates before any is returned. All guarded receipts still
+validate before admission; after guarded runtime ID collection, a new assertion
+refuses original-input hardlink collisions before the first alias directory.
+No scan, automatic addition or inferred dependency list is used. Absence of
+the policy retains the existing exact J/K validators and their 32-binding
+ceiling; the consumed J/K artifacts remain unchanged.
+
+The aggregate bootstrap limit is 32 MiB, matching the existing qualification
+reader ceiling without multiplying it by item count. Eight is an administrative
+review/handle limit, not a claim about the engine's dependency list. Under this
+policy the existing 22 MSG bindings plus three per item imply at most 46
+bindings, twelve metadata records/aliases and twenty-four original/alias ID
+checks. Byte types and remaining aggregate capacity are checked before each
+addition; the output limit remains the exact existing base plus candidate and
+declared bootstrap bytes. The 6/8 GiB reservation, 200/120/5-second deadlines,
+stderr bound, execution, final revalidation, release and quarantine paths stay
+unchanged. Exceeding a limit requires another reviewed policy decision.
+
+All 1,489 source checks pass: 283 collection checks plus the 1,206 existing
+checks. Fixtures cover 1/3/8 items, exact size boundaries, unsafe names and
+collisions, invalid receipts, and actual runner fragments refusing a late
+receipt/ID error before any alias directory is created. They read no retail
+payload, load no native support and acquire no lease.
+
+Plan L declares only the three qualified files, totaling 22,976,640 bytes. Its
+31 bindings are 23 text/eight binary inputs; seven metadata rows imply seven
+aliases and fourteen original/alias ID checks. The output ceiling is
+150,786,072 bytes. The candidate, arguments and execution budgets are unchanged.
+The 17,136-byte Plan SHA256 is
+`1f8f2567708c0bc6318f82c18b7806dde6e207cd85435fccf006ffc806a006a6`.
+Its default invocation validated all three real qualification receipts and
+returned `PlanCheckedPendingGO` without hashing binary inputs, loading native
+types, acquiring a lease or creating runtime files. Prepared work/evidence/temp
+directories remain empty and there is no attempt marker. Independent source
+review, coordinator-owned exact-head CI/integration, fresh preflight and a
+distinct exact GO remain necessary before any catalogue Run. No new catalogue,
+model export or content compatibility is claimed.

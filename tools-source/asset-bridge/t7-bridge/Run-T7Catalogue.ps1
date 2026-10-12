@@ -65,6 +65,7 @@ try {
     $state.ObservedZone=$zonePin
     Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     foreach($item in $plan.InputMetadata){Assert-T7CatalogueMetadata $item;$state.InputFileIds+=@([pscustomobject]@{Path=$item.Path;FileId=(Get-T7CatalogueFileId $item.Path)})}
+    Assert-T7CatalogueDistinctInputIds $plan $state.InputFileIds
     [IO.Directory]::CreateDirectory((Join-Path $plan.WorkingDirectory 'zone'))|Out-Null
     $links=@(@($plan.CandidateSource,'t7-zonetool-candidate.exe'),@($plan.EngineSource,'BlackOps3_UnrankedDedicatedServer.exe'),@($plan.SteamSource,'steam_api64.dll'))
     foreach($link in $links){

@@ -50,11 +50,70 @@ function Get-T7CatalogueBootstrap($Plan) {
     if($items.Count -gt 1){throw 'Single bootstrap accessor cannot select a collection item.'}
     if($items.Count){$items[0]}
 }
+function Get-T7CatalogueBootstrapPolicy($Plan) {
+    if(!$Plan.PSObject.Properties['BootstrapPolicy']){return 'Legacy'}
+    if($Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cne 'QualifiedCollectionV1'){
+        throw 'Unknown bootstrap collection policy.'
+    }
+    'QualifiedCollectionV1'
+}
 function Get-T7CatalogueBootstraps($Plan) {
     $single=[bool]$Plan.PSObject.Properties['Bootstrap']
     $plural=[bool]$Plan.PSObject.Properties['Bootstraps']
+    $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'QualifiedCollectionV1'
     if($single -and $plural){throw 'Mixed bootstrap schemas are forbidden.'}
+    if($qualified -and ($single -or !$plural)){throw 'Qualified collection requires only Bootstraps.'}
     if(!$single -and !$plural){return}
+    if($qualified){
+        if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt 8){
+            throw 'Qualified collection requires one through eight explicit items.'
+        }
+        if((Get-T7CatalogueCandidateProfile $Plan) -cne 't7-catalog-message'){throw 'Qualified collection requires MSG profile.'}
+        $items=@($Plan.Bootstraps);$total=0L
+        $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        $aliases=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        $ids=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach($path in @($Plan.Zone.Path,$Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.JobAssembly,
+            $Plan.Image,$Plan.RunRoot,$Plan.WorkingDirectory,$Plan.StageRoot,[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)){
+            $null=$paths.Add($path)
+        }
+        foreach($bootstrap in $items){
+            Assert-T7CatalogueFields $bootstrap @('Path','Bytes','SHA256','FileId','RelativePath','HashProvenance','QualificationReceipt','QualificationScript')
+            foreach($field in 'Path','SHA256','FileId','RelativePath','HashProvenance'){
+                if($bootstrap.$field -isnot [string]){throw 'Qualified bootstrap strings required.'}
+            }
+            $name=[IO.Path]::GetFileName($bootstrap.Path)
+            $stem=[IO.Path]::GetFileNameWithoutExtension($name)
+            if($name -cnotmatch '\A[a-z][a-z0-9_]{0,62}\.ff\z' -or
+               $stem -match '\A(con|prn|aux|nul|com[1-9]|lpt[1-9])\z' -or $name -ieq 'mp_freerun_04.ff' -or
+               $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) $name) -or
+               $bootstrap.RelativePath -cne ('zone/'+$name)) {throw 'Unsafe or noncanonical qualified bootstrap name/path.'}
+            if(!(Test-T7CatalogueInteger $bootstrap.Bytes 32MB) -or $bootstrap.Bytes -le 0 -or
+               $bootstrap.Bytes -gt 32MB-$total){throw 'Qualified bootstrap bytes exceed the aggregate 32 MiB bound.'}
+            $total+=[long]$bootstrap.Bytes
+            if($bootstrap.SHA256 -cnotmatch '\A[0-9a-f]{64}\z' -or $bootstrap.FileId -cnotmatch '\A[0-9A-F]{8}:[0-9A-F]{16}\z' -or
+               $bootstrap.HashProvenance -cne 'ObservedUnderLeaseNotDepotVerified'){throw 'Qualified bootstrap provenance differs.'}
+            if(!$names.Add($name) -or !$aliases.Add($bootstrap.RelativePath) -or !$ids.Add($bootstrap.FileId)){
+                throw 'Distinct qualified names, aliases and file identities required.'
+            }
+            foreach($field in 'QualificationReceipt','QualificationScript'){
+                $pin=$bootstrap.$field
+                Assert-T7CatalogueFields $pin @('Path','Bytes','SHA256')
+                if($pin.Path -isnot [string] -or $pin.SHA256 -isnot [string] -or
+                   !(Test-T7CatalogueInteger $pin.Bytes 32KB) -or $pin.Bytes -le 0 -or $pin.SHA256 -cnotmatch '\A[0-9a-f]{64}\z'){
+                    throw 'Bounded qualified receipt/script text pins required.'
+                }
+            }
+            foreach($path in @($bootstrap.Path,$bootstrap.QualificationReceipt.Path,$bootstrap.QualificationScript.Path)){
+                Assert-H1Path $path
+                if(!$paths.Add($path) -or $path.StartsWith($Plan.RunRoot.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)){
+                    throw 'Distinct qualified source/text paths outside the run root required.'
+                }
+            }
+        }
+        return $items # No partial collection may escape before every item validates.
+    }
     $specs=@(@{Name='en_core_pre_gfx.ff';Bytes=832L},@{Name='core_pre_gfx.ff';Bytes=22351168L})
     if($single){
         if($null -eq $Plan.Bootstrap -or $Plan.Bootstrap -is [array]){throw 'One legacy bootstrap object required.'}
@@ -147,11 +206,31 @@ function Assert-T7CatalogueBootstrapIdentity($Plan) {
         if((Get-T7CatalogueFileId $bootstrap.Path) -cne $bootstrap.FileId){throw 'Bootstrap differs from its qualified file identity.'}
     }
 }
+function Assert-T7CatalogueDistinctInputIds($Plan,$InputFileIds) {
+    if((Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV1'){return}
+    $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
+    $expected=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.Zone.Path)+@($bootstraps.Path)
+    if(@($InputFileIds).Count -ne $expected.Count){throw 'Complete original input IDs required before aliases.'}
+    $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $ids=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($row in $InputFileIds){
+        Assert-T7CatalogueFields $row @('Path','FileId')
+        if($row.Path -isnot [string] -or $row.Path -cnotin $expected -or $row.FileId -isnot [string] -or
+           $row.FileId -cnotmatch '\A[0-9A-F]{8}:[0-9A-F]{16}\z' -or !$paths.Add($row.Path) -or !$ids.Add($row.FileId)){
+            throw 'Distinct original input paths and file identities required before aliases.'
+        }
+        $bootstrap=@($bootstraps|Where-Object Path -CEQ $row.Path)
+        if($bootstrap.Count -and $bootstrap[0].FileId -cne $row.FileId){throw 'Original bootstrap identity differs from qualification.'}
+    }
+}
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     $null=Get-T7CatalogueMainBaseline $Plan
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
+    $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'QualifiedCollectionV1'
     $bootstrapBytes=0L;foreach($bootstrap in $bootstraps){$bootstrapBytes+=$bootstrap.Bytes}
+    if($qualified -and (!(Test-T7CatalogueInteger $Plan.OutputLimitBytes 206722456L) -or
+        @($Plan.Bindings).Count -ne 22+3*$bootstraps.Count)){throw 'Exact qualified collection budget/binding count required.'}
     if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
        $Plan.EngineOutputProfile -cne 'ObservedStartupA' -or
        $Plan.PhysicalBytes -ne 6GB -or $Plan.CommitBytes -ne 8GB -or
@@ -186,8 +265,11 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     foreach($dir in @($Plan.WorkingDirectory,$Plan.StageRoot,(Join-Path $Plan.RunRoot 'temp'))) {
         if(@([IO.Directory]::EnumerateFileSystemEntries($dir)).Count){throw 'Prepared work/evidence/temp must be empty.'}
     }
-    if(@($Plan.Bindings).Count -gt 32 -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
+    $bindingLimit=if($qualified){46}else{32}
+    if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
+    $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
+        if($qualified -and !$bindingPaths.Add($pin.Path)){throw 'Distinct qualified binding paths required.'}
         Assert-H1Path $pin.Path
         $item=Get-Item -LiteralPath $pin.Path
         if($item.PSIsContainer -or $pin.IsText -isnot [bool] -or $pin.Bytes -le 0 -or $pin.Bytes -gt 64MB -or
