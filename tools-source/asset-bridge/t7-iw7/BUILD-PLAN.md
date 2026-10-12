@@ -856,3 +856,36 @@ and Ready remain false. Compilation proves C++/SEH syntax and linkage; it does
 not prove real caller captures, the cause of ExitProcess, catalogue generation
 or gameplay. The next action is a separately reviewed runtime plan using these
 actual artefact identities, followed only by its own explicit coordinator GO.
+
+### Message diagnostic: source-only implementation after F
+
+[The F analysis](CALLER-F-ANALYSIS.md) records the verified 644 captured code
+bytes, two complete functions, one partial region and the exact observed callsite.
+It supplies the concrete ABI, installation/readback/rollback guards, publication
+ordering, one-shot and error-count contract for the message observer. F remains
+NoCatalogue; no missing dependency or fatal-function name has been established.
+
+The new preparation selector `--catalog-message` is exclusive with the four
+earlier selectors. BuildProfile has exactly eleven fields: Name
+`t7-catalog-message`, Option `-t7-iw7-catalog`, ArgumentCount 3, the unchanged
+TraceSchema/ContextSchema/CallerSchema, MessageSchema
+`iw7.t7-catalog-message/1`, and Wiring/PreparedMain/BaseBuildPlan/BaseBuildReceipt.
+It still rebuilds only main and Link, reusing the other 412 object references
+and the qualified ordinary D2/C proofs. Runtime argv is unchanged.
+
+The three existing wire schemas and generated sources retain their exact built
+identities. Only the new profile forwards the already observed five-byte call
+through a fixed ABI-preserving wrapper. Forwarding occurs before any diagnostic
+API and is never caught. Afterward, at most 384 stack-buffer bytes are read, and
+only the prefix before NUL is serialized. Original return value, LastError,
+cleanup and exit remain. Installation and buffer observation each publish at
+most one new line. Actual maximum-width formats, including CRLF, total at most
+7,994 bytes/fourteen lines, within the unchanged 8,192-byte stderr contract.
+
+Source validation passes 94 Python tests with retained source/E7 bindings and
+61 PowerShell checks (48 profile, 3 deadline, 10 Link telemetry). The retained
+SHA-256 helper's uppercase encoding and SDK stack-bound API were checked in
+source; both headers already belong to the qualified input set. No native type,
+build child, lease, executable/PDB read or hash was used by this preparation.
+No C++ compilation or actual message capture is claimed. The coordinator owns
+independent review, integration, and the distinct future build/runtime GO gates.

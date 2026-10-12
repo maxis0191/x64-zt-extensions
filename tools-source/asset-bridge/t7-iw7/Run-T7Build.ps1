@@ -39,15 +39,19 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
             PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
         }
-    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers')) {
+    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')) {
         $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring'
-        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers')) {
+        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')) {
             if($profile.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit-context schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
-        if($profile.Name -ceq 't7-catalog-callers') {
+        if($profile.Name -cin @('t7-catalog-callers','t7-catalog-message')) {
             if($profile.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
+        }
+        if($profile.Name -ceq 't7-catalog-message') {
+            if($profile.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
+            $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,MessageSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
         if($profile.Option -cne '-t7-iw7-catalog' -or $profile.ArgumentCount -ne 3 -or
            $profile.TraceSchema -cne 'iw7.t7-catalog-trace/1' -or

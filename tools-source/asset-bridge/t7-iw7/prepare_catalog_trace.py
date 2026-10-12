@@ -11,6 +11,8 @@ EXIT_NAME = 't7-catalog-exit-context'
 EXIT_SCHEMA = 'iw7.t7-catalog-exit-context/1'
 CALLERS_NAME = 't7-catalog-callers'
 CALLERS_SCHEMA = 'iw7.t7-catalog-callers/1'
+MESSAGE_NAME = 't7-catalog-message'
+MESSAGE_SCHEMA = 'iw7.t7-catalog-message/1'
 BASE_PLAN_SHA = 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'
 BASE_RECEIPT_SHA = 'c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'
 
@@ -330,6 +332,212 @@ CALLERS_SUPPORT = r'''
 '''
 
 
+MESSAGE_SUPPORT = r'''
+	// The forwarding target is immutable and exists before the CALL can be patched.
+	constexpr uintptr_t catalog_message_site = 0x140584F98ULL;
+	constexpr uintptr_t catalog_message_target = 0x140AB6460ULL;
+	volatile LONG catalog_message_install_seen = 0;
+	volatile LONG catalog_message_ready = 0;
+	volatile LONG catalog_message_seen = 0;
+	static_assert(catalog_message_site % 8 == 0);
+
+	struct catalog_message_buffer
+	{
+		const char* status;
+		SIZE_T requested;
+		SIZE_T copied;
+		DWORD error;
+		unsigned char bytes[384];
+	};
+
+	__declspec(noinline) void catalog_message_read(const uintptr_t buffer, const uintptr_t capacity, void* caller, catalog_message_buffer& out)
+	{
+		out.status = "exception";
+		__try
+		{
+			if (!buffer || capacity != 0x1000 || reinterpret_cast<uintptr_t>(caller) != catalog_message_site + 5)
+			{ out.status = "argument_invalid"; return; }
+			ULONG_PTR low = 0, high = 0;
+			GetCurrentThreadStackLimits(&low, &high);
+			if (low >= high || buffer < low || buffer >= high || capacity > high - buffer)
+			{ out.status = "stack_invalid"; return; }
+			MEMORY_BASIC_INFORMATION region{};
+			if (VirtualQuery(reinterpret_cast<void*>(buffer), &region, sizeof(region)) != sizeof(region))
+			{ out.error = GetLastError(); out.status = "query_failed"; return; }
+			if (!catalog_exit_readable(region, buffer, 1)) { out.status = "region_invalid"; return; }
+			const auto remaining = region.RegionSize - (buffer - reinterpret_cast<uintptr_t>(region.BaseAddress));
+			out.requested = remaining < sizeof(out.bytes) ? remaining : sizeof(out.bytes);
+			const auto ok = ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(buffer), out.bytes, out.requested, &out.copied);
+			if (!ok) out.error = GetLastError();
+			out.status = ok && out.copied == out.requested ? "complete" :
+				(out.copied && out.copied < out.requested ? "partial" : "read_failed");
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) { out.error = GetExceptionCode(); out.status = "exception"; }
+	}
+
+	__declspec(noinline) void catalog_message_observe(const uintptr_t buffer, const uintptr_t capacity, void* caller)
+	{
+		if (InterlockedCompareExchange(&catalog_message_ready, 0, 0) != 1 ||
+			(InterlockedOr(&catalog_message_seen, 1) & 1)) return;
+		catalog_message_buffer out{};
+		catalog_message_read(buffer, capacity, caller, out);
+		if (out.requested > 384 || out.copied > out.requested)
+		{ out.requested = 0; out.copied = 0; out.status = "read_failed"; out.error = ERROR_INVALID_DATA; }
+		SIZE_T length = out.copied;
+		unsigned nul = 0;
+		for (SIZE_T i = 0; i < out.copied; ++i)
+		{
+			if (out.bytes[i] == 0) { length = i; nul = 1; break; }
+		}
+		if (std::strcmp(out.status, "complete") == 0) out.status = nul ? "ok" : "prefix";
+		constexpr char hex[] = "0123456789ABCDEF";
+		char data[769] = "-";
+		if (length)
+		{
+			for (SIZE_T i = 0; i < length; ++i)
+			{ data[2 * i] = hex[out.bytes[i] >> 4]; data[2 * i + 1] = hex[out.bytes[i] & 15]; }
+			data[2 * length] = '\0';
+		}
+		std::fprintf(stderr, "[T7_CATALOG_MSG] schema=iw7.t7-catalog-message/1 kind=buffer tid=%lu status=%s requested=%zu read=%zu length=%zu nul=%u error=%lu data=%s\n",
+			GetCurrentThreadId(), out.status, out.requested, out.copied, length, nul, out.error, data);
+		std::fflush(stderr);
+	}
+
+	__declspec(noinline) uintptr_t catalog_message_forward(const uintptr_t buffer, const uintptr_t capacity,
+		const uintptr_t format, const uintptr_t arguments)
+	{
+		// No diagnostic API or exception boundary may precede/wrap the original call.
+		const auto result = reinterpret_cast<uintptr_t(*)(uintptr_t, uintptr_t, uintptr_t, uintptr_t)>(catalog_message_target)(
+			buffer, capacity, format, arguments);
+		const DWORD saved_error = GetLastError();
+		catalog_message_observe(buffer, capacity, _ReturnAddress());
+		SetLastError(saved_error);
+		return result;
+	}
+
+	struct catalog_message_install
+	{
+		const char* status;
+		DWORD error;
+		unsigned char bytes[399];
+		LONG64 original;
+		LONG64 replacement;
+		bool attempted;
+	};
+
+	__declspec(noinline) void catalog_message_prepare(catalog_message_install& out)
+	{
+		out.status = "exception";
+		__try
+		{
+			const auto module = GetModuleHandleW(L"BlackOps3_UnrankedDedicatedServer.exe");
+			if (!module) { out.error = GetLastError(); out.status = "module_missing"; return; }
+			if (reinterpret_cast<uintptr_t>(module) != 0x140000000ULL) { out.status = "module_mismatch"; return; }
+			MEMORY_BASIC_INFORMATION region{};
+			if (VirtualQuery(reinterpret_cast<void*>(0x140584F50ULL), &region, sizeof(region)) != sizeof(region))
+			{ out.error = GetLastError(); out.status = "query_failed"; return; }
+			if (region.AllocationBase != module) { out.status = "module_mismatch"; return; }
+			if (region.Protect != PAGE_EXECUTE_READWRITE || region.Type != MEM_IMAGE ||
+				!catalog_exit_readable(region, 0x140584F50ULL, sizeof(out.bytes)))
+			{ out.status = "region_invalid"; return; }
+			SIZE_T copied = 0;
+			const auto ok = ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(0x140584F50ULL), out.bytes, sizeof(out.bytes), &copied);
+			if (!ok || copied != sizeof(out.bytes))
+			{ out.error = ok ? ERROR_INVALID_DATA : GetLastError(); out.status = "read_failed"; return; }
+			int32_t displacement = 0;
+			std::memcpy(&displacement, out.bytes + 73, sizeof(displacement));
+			if (out.bytes[72] != 0xE8 || static_cast<int64_t>(catalog_message_site + 5) + displacement != static_cast<int64_t>(catalog_message_target))
+			{ out.status = "call_mismatch"; return; }
+			const auto relative = static_cast<int64_t>(reinterpret_cast<uintptr_t>(&catalog_message_forward)) -
+				static_cast<int64_t>(catalog_message_site + 5);
+			const auto relative32 = static_cast<int32_t>(relative);
+			if (static_cast<int64_t>(relative32) != relative) { out.status = "wrapper_far"; return; }
+			std::memcpy(&out.original, out.bytes + 72, sizeof(out.original));
+			unsigned char patch[8]{};
+			std::memcpy(patch, &out.original, sizeof(patch));
+			std::memcpy(patch + 1, &relative32, sizeof(relative32));
+			std::memcpy(&out.replacement, patch, sizeof(out.replacement));
+			out.status = "prepared";
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) { out.error = GetExceptionCode(); out.status = "exception"; }
+	}
+
+	__declspec(noinline) void catalog_message_rollback(catalog_message_install& out)
+	{
+		__try
+		{
+			const auto previous = InterlockedCompareExchange64(reinterpret_cast<volatile LONG64*>(catalog_message_site), out.original, out.replacement);
+			if (previous != out.replacement && previous != out.original)
+			{ out.error = ERROR_INVALID_DATA; out.status = "rollback_failed"; return; }
+			const auto flushed = FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(catalog_message_site), sizeof(out.original));
+			const DWORD flush_error = flushed ? 0 : GetLastError();
+			LONG64 observed = 0;
+			SIZE_T copied = 0;
+			const auto read = ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(catalog_message_site), &observed, sizeof(observed), &copied);
+			if (!flushed || !read || copied != sizeof(observed) || observed != out.original)
+			{
+				out.error = !flushed ? flush_error : (!read ? GetLastError() : ERROR_INVALID_DATA);
+				out.status = "rollback_failed"; return;
+			}
+			out.status = "rolled_back";
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) { out.error = GetExceptionCode(); out.status = "rollback_failed"; }
+	}
+
+	__declspec(noinline) void catalog_message_patch(catalog_message_install& out)
+	{
+		__try
+		{
+			out.attempted = true;
+			const auto previous = InterlockedCompareExchange64(reinterpret_cast<volatile LONG64*>(catalog_message_site), out.replacement, out.original);
+			if (previous != out.original) { out.attempted = false; out.status = "compare_mismatch"; return; }
+			const auto flushed = FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(catalog_message_site), sizeof(out.replacement));
+			const DWORD flush_error = flushed ? 0 : GetLastError();
+			LONG64 observed = 0;
+			SIZE_T copied = 0;
+			const auto read = ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<void*>(catalog_message_site), &observed, sizeof(observed), &copied);
+			if (!flushed || !read || copied != sizeof(observed) || observed != out.replacement)
+			{
+				out.error = !flushed ? flush_error : (!read ? GetLastError() : ERROR_INVALID_DATA);
+				catalog_message_rollback(out); return;
+			}
+			out.status = "installed";
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			out.error = GetExceptionCode(); out.status = "exception";
+			if (out.attempted) catalog_message_rollback(out);
+		}
+	}
+
+	void catalog_message_initialize()
+	{
+		if (!catalog_trace_enabled || (InterlockedOr(&catalog_message_install_seen, 1) & 1)) return;
+		const DWORD saved_error = GetLastError();
+		catalog_message_install out{};
+		catalog_message_prepare(out);
+		if (std::strcmp(out.status, "prepared") == 0)
+		{
+			try
+			{
+				if (utils::cryptography::sha256::compute(out.bytes, sizeof(out.bytes), true) !=
+					"6E07CFFEB7E5F2DD6466DD4713537EDC5C93050CBEBC8A07892DB032931F038B")
+					out.status = "signature_mismatch";
+				else catalog_message_patch(out);
+			}
+			catch (...) { out.error = ERROR_UNHANDLED_EXCEPTION; out.status = "exception"; }
+		}
+		const auto printed = std::fprintf(stderr, "[T7_CATALOG_MSG] schema=iw7.t7-catalog-message/1 kind=install tid=%lu status=%s error=%lu\n",
+			GetCurrentThreadId(), out.status, out.error);
+		const auto flushed = std::fflush(stderr);
+		// A concurrent call before publication only forwards; it never waits.
+		if (printed >= 0 && flushed == 0 && std::strcmp(out.status, "installed") == 0)
+			InterlockedExchange(&catalog_message_ready, 1);
+		SetLastError(saved_error);
+	}
+'''
+
+
 def wire_main(source):
     once = prepare_cli.helper.once
     source = once(source, '#include <std_include.hpp>', '#include <std_include.hpp>\n#include <intrin.h>\n#include <cwchar>\n#include <cstdio>')
@@ -366,6 +574,16 @@ def wire_callers_main(source):
     source = prepare_cli.helper.once(source, '\tvoid catalog_exit_once(', CALLERS_SUPPORT+'\n\tvoid catalog_exit_once(')
     return prepare_cli.helper.once(source, '\t\tSetLastError(saved_error);',
         '\t\tcatalog_callers_capture(code, tid, caller, stack);\n\t\tSetLastError(saved_error);')
+
+
+def wire_message_main(source):
+    """Observe one formatted buffer while preserving the original helper and exit."""
+    source = wire_callers_main(source)
+    source = prepare_cli.helper.once(source, '#include <cstring>',
+        '#include <cstring>\n#include <utils/cryptography.hpp>')
+    source = prepare_cli.helper.once(source, '\tvoid catalog_exit_once(', MESSAGE_SUPPORT+'\n\tvoid catalog_exit_once(')
+    return prepare_cli.helper.once(source, '\t\t\tcatalog_trace_once(2, "before_post_unpack");',
+        '\t\t\tcatalog_trace_once(2, "before_post_unpack");\n\t\t\tcatalog_message_initialize();')
 
 
 def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads):

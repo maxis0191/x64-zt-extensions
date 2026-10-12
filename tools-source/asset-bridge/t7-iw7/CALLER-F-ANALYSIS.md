@@ -125,3 +125,47 @@ states must be reconciled with the implementation before sealing any build.
 Next: coordinator review of this narrow ABI/installation/capture proposal, then
 source preparation and parser synchronization under a distinct profile. Build
 and runtime need separate reviewed plans and GO decisions. Exit remains intact.
+
+## Source implementation checkpoint
+
+The coordinator subsequently authorized source-only implementation. MESSAGE_SUPPORT
+now implements this fixed callsite and the proposed eleven-field profile. The
+four older generated profiles remain unchanged. The immutable forwarding target
+exists before the CAS; the noinline wrapper's first call is the original helper
+with the same four integer/pointer arguments. GetLastError follows immediately,
+then the separately noinline observer, restoration and original RAX return.
+SEH readers/installers contain only trivial local types. The C++ exception
+boundary surrounds only digest/preparation, never the original helper call.
+
+The retained SHA helper emits uppercase hex; the expected digest uses that
+case. Its header and GetCurrentThreadStackLimits are already in the qualified
+input set. No shared provider, library implementation or supervisor is changed.
+Install and conditional rollback each require successful FlushInstructionCache
+and exact eight-byte readback. A failed or unknown rollback never sets ready.
+
+Ordering is before_post_unpack, install/flush, then component post_unpack.
+Only after a successful installed record/flush does the atomic ready flag allow
+observation. A concurrent earlier wrapper invocation only forwards. Buffer can
+occur during or after post_unpack; after_post_unpack is not a prerequisite.
+The first completed helper call that observes ready wins a separate atomic
+one-shot, even if reading fails. Later calls always forward without capture.
+The winning buffer is flushed before that wrapper returns. Correlation requires
+its TID to match a later exit_hook; a different or absent exit is not success.
+
+For the reader, Absent means no MSG record; Partial includes refused installation,
+missing/failed/incomplete capture or missing TID/order correlation. Prefix means
+installed plus a complete bounded read without NUL, correctly correlated to exit.
+Observed requires installed plus ok/NUL and that correlation. Duplicate records,
+unknown fields/statuses or impossible counts are contract failures. No encoding
+is assumed and neither messages nor captured bytes belong in tracked evidence.
+
+read_failed accepts requested 1..384 with read=0 or read=requested, including an
+API failure reporting a full count. The impossible-count clamp instead has all
+counts zero, nul=0 and error 13. exception retains 0<=read<=requested<=384, with
+length/nul derived only from that bounded copied array; impossible counts become
+the same clamp. For read=0, length=0/nul=0/data=-. Partial/exception/read_failed
+remain failures even if NUL exists. Other pre-read refusals keep all counts zero.
+
+The 94 Python source/format tests and 61 PowerShell checks pass (48 profile,
+3 deadline, 10 Link telemetry). This validates preparation and structural guards,
+not C++ compilation, loaded-state patching, message capture or catalogue output.
