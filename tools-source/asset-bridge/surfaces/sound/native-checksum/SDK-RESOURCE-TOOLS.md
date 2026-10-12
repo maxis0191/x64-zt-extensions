@@ -1,4 +1,8 @@
-# SDK resource tools: Plan F preparation, not executed
+# SDK resource tools: Plan F preparation record
+
+Update: the single subsequently authorized Plan F invocation completed all
+fourteen stages and final lifecycle checks; see [BUILD-F-RESULT.md](BUILD-F-RESULT.md).
+The source preparation and pre-execution validation below remain historical evidence.
 
 The [failed Build E](BUILD-E-RESULT.md) is preserved separately in `532f9e8`.
 Its two actual C++ probes pass, but its final link reports LNK1158 because the

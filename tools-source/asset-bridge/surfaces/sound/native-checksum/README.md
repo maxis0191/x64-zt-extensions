@@ -1,17 +1,17 @@
 # Native source-checksum correction proposal
 
-The private patch passes both actual C++ checksum probes in
-[Build E](BUILD-E-RESULT.md): the original reproduces `7800...`, and the corrected
-header preserves the expected sixteen MD5 bytes. Thirteen native steps passed,
-but the final link failed with LNK1158 because `rc.exe` was absent from the fixed
-PATH. No final ZoneTool executable exists. The job closed, its lease was released,
-and the persistent host exited after its quarantine check. The earlier D8004
-attempt and failed first SAB/FF output remain unchanged. Playback and `Ready`
-remain false; native SAB/FF validation is still pending.
+The private patch now has a built candidate and two verified actual C++ checksum
+probes in [Build F](BUILD-F-RESULT.md). All fourteen native steps passed, including
+the final link. The original probe reproduces `7800...`; the corrected header
+preserves the expected sixteen MD5 bytes. Input and artifact proofs, original-job
+closure, lease release and host exit all passed. Main stayed unchanged. The earlier
+D8004 attempt, [Build E link failure](BUILD-E-RESULT.md), and failed first SAB/FF
+output remain intact. Playback and `Ready` remain false; native SAB/FF validation
+of the corrected candidate is still pending.
 
-The [SDK resource-tool correction and future Plan F](SDK-RESOURCE-TOOLS.md) bind
-the two existing SDK files to retained guards and the exact native PATH. Source
-and default-Plan checks pass; this plan has not been executed.
+The [SDK resource-tool correction used by Plan F](SDK-RESOURCE-TOOLS.md) binds
+the two existing SDK files to retained guards and the exact native PATH. Its
+preparation record is preserved separately from the completed native evidence.
 
 The subsequent [Seal C checkpoint](INPUT-SEALING.md) qualifies the retained input
 bytes. The [private executable Build Plan C](BUILD-PLAN.md) records the closed
