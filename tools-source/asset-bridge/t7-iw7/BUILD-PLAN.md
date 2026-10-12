@@ -915,3 +915,56 @@ RunRootCreated are false. There is no message candidate or build receipt yet.
 The coordinator and runtime parser owner received the exact source, plan and
 pins for review. No build, engine execution, new payload read or binary/PDB hash
 occurred during preparation. Build and runtime still need distinct GO decisions.
+
+### Message build A: Passed and fully closed, candidate unexecuted
+
+Independent review accepted source ff488654 and the exact plan above. The
+coordinator reported 205 Python tests and 48 profile checks passing, then
+authorized one native build after the other heavy groups fully closed. Fresh
+preflight at 16:12:39.0276108 UTC on 2026-10-12 admitted the unchanged 4/6 GiB
+estimates with zero leases/heavy processes, Main stopped and the exact Python
+PID 23352 generation preserved. A fresh persistent PowerShell host PID 32292,
+created at 16:12:44.7579490 UTC, made the single invocation. Its outer process
+was PID 24976. Run returned without error at 16:13:49.4840838 UTC.
+
+Main compiled in 3.963 seconds and Link completed in 3.535 seconds. Original
+roots cl PID 35196 and link PID 14468 both exited zero. The existing H1 policy
+verified each root's exit and exact VCTIP residual (3300 and 35072), then closed
+each job with zero active members. Artifact identities were generated and
+reverified under the lease. Native source dependencies identify the reviewed
+PreparedMain, with MSVC-normalized casing. Final input revalidation passed.
+The group took 27.121 seconds and observed at most 177,638,923 output bytes,
+below the unchanged 256 MiB cap.
+
+Receipt `runtime/zt-t7-message-a/receipt.json` is 14,510 bytes, SHA256
+4001a1ed0a320bea393bed3e5ca4f17c8a9c0c1feb3ec43f6b4fc0761ccb3ae6.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+Quarantined false and the exact reviewed eleven-field BuildProfile. The receipt
+provides these artifact identities under `runtime/zt-t7-message-a`:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| main/main.obj | 572,842 | 489f95b984c457bf16b86469db33dcc79979f376c2a4796b6eccadb33ed3b358 |
+| main/compile.pdb | 1,732,608 | 523344d519cb21ca798ada41a387a46343d1252da58494092d0d2513a29412dd |
+| main/dependencies.json | 62,096 | 3aadc4c1fea5223bce0dab21b852344d610e1e1ee582799710e26d1a12eecff1 |
+| link/zonetool-t7.exe | 21,750,272 | 57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a |
+| link/zonetool-t7.pdb | 136,458,240 | d510fd16d84cc7eb63e4d2f7a8a07213bdfef2553d7b3e20ce43a9a9d99b34dd |
+| link/zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| link/zonetool-t7.exp | 3,917 | f19aa04d8f8e160f624788af585949e7493f2e2711020de9eb990a124c3b6323 |
+
+Postflight at 16:14:35.3436262 UTC found zero leases/build/telemetry processes,
+Main still stopped and Python's exact identity unchanged. The retained host
+verified the exact receipt and absence of AppDomain quarantine, saved its
+outcome and exited zero. Session 38482 closed with exit code zero. Independent
+observation at 16:15:06.7597234 UTC confirmed host 32292, outer 24976, both tool
+roots and both VCTIP residuals absent. The preflight, postflight, host outcome
+and independent host-exit records remain under `runtime/t7-message-build-plan-a`.
+
+The coordinator and runtime parser owner received the actual artifact pins and
+complete closure proof. No binary was reread or hashed after lease release.
+There was one invocation, no retry and no candidate/engine execution.
+CandidateExecuted and Ready remain false. Compilation establishes C++/SEH
+syntax and linkage, but does not establish live installation, message capture,
+the cause of ExitProcess, catalogue generation or gameplay. The next action is
+a separately reviewed runtime plan using these actual artifact identities,
+followed only by its own explicit coordinator GO.
