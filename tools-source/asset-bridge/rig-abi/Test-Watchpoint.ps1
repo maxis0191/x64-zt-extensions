@@ -163,4 +163,17 @@ foreach($name in @('stdout','stderr','stdin')){
         $workers[$name]=$saved
     }
 }
-Write-Output "Source-only transaction cases: $script:cases passed; 12 worker-state refusals and 4 fixed-profile refusals passed; no native types, debugger, fixture or process launched."
+$failure=[pscustomobject]@{schema='iw7.rig-watch-transport/1';FixtureOnly=$true;RootPID=123;Nonce=('b'*32);Status='Failed';Healthy=$false;
+    Workers=$null;Error='IsProcessInJobAPIFailure: manifest absent';InitialFailure=@{Type='IsProcessInJobAPIFailure';Query=@{ApiReturn=0;LastError=6;MemberValid=$false}}}
+$s=New-RigWatchFixtureState ('b'*32);$s.Identity=@{PID=123};$s.Context.TransportFailure=$null
+$description=$null;try{Assert-RigWatchFixtureTransportEvent $failure $s}catch{$description=$_.Exception.Message}
+Check ($description -ceq 'Fixture transport failed: IsProcessInJobAPIFailure: manifest absent') 'Bound failure masked as identity/worker failure'
+Check ($s.Context.TransportFailure.InitialFailure.Query.LastError -eq 6) 'Initial API evidence lost'
+foreach($field in @('RootPID','Nonce','FixtureOnly')){
+    $foreign=$failure|ConvertTo-Json -Depth 6|ConvertFrom-Json
+    $foreign.$field=if($field -eq 'RootPID'){999}elseif($field -eq 'Nonce'){'a'*32}else{$false}
+    $s.Context.TransportFailure=$null;$description=$null
+    try{Assert-RigWatchFixtureTransportEvent $foreign $s}catch{$description=$_.Exception.Message}
+    Check ($description -ceq 'Transport identity differs.' -and !$s.Context.TransportFailure) 'Unbound failure was trusted'
+}
+Write-Output "Source-only transaction cases: $script:cases passed; 12 worker-state, 4 fixed-profile and 4 failure-envelope checks passed; no native types, debugger, fixture or process launched."

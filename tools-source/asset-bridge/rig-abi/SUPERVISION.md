@@ -117,8 +117,8 @@ retail rig envelope by mistake. The new fixed 4/6 component estimate is separate
 unmeasured and subject to review; retail remains 10/14. Old preflight refusals
 remain intact. No new resource preflight or native execution follows this change.
 
-Current verification is 42 Python source tests (20 capture/identity, 22 concrete
-protocol/pipe simulations), 23 PowerShell transaction simulations, 12 worker-state
+Current verification is 53 Python source tests (20 capture/identity, 22 concrete
+protocol/pipe simulations, 11 job/error diagnostic simulations), 23 PowerShell transaction simulations, 12 worker-state
 refusals, four pre-admission mode/budget refusals and PowerShell
 AST parsing. A real default Plan against the retained sources returned
 NativeExecuted=false, NativeTypesLoaded=false, LeaseAcquired=false, Ready=false,
@@ -157,3 +157,11 @@ capture/closure under a debugger stop remain the purpose of the future fixture
 GO, not established results. See Microsoft's
 [CDB command-line reference](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/cdb-command-line-options)
 and [pseudo-register reference](https://learn.microsoft.com/en-us/windows-hardware/drivers/debuggercmds/pseudo-register-syntax).
+
+The [first admitted fixture](CDB-FIXTURE-2026-10-12-A.md) subsequently refused at
+its ambiguous job guard, then closed/restored and released its lease. It did not
+reach arm or capture. The [next diagnostic source Plan](CDB-DIAGNOSTIC-PLAN.md)
+keeps the guard, separates API/member/last-error evidence, and preserves the
+bound initial failure through the transport and PowerShell state. Four pure
+PowerShell envelope checks cover that reporting and reject foreign identities.
+No second native attempt accompanies this diagnostic source change.
