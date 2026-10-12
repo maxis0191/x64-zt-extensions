@@ -1,0 +1,18 @@
+{
+  "schema": "iw7.asset-bridge.world-source/1",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "lf_sha256": {
+    "src/zonetool/zonetool/h1/structs.hpp": "e205d7b81514abde7c4d6e8405cbe217f8ea745ee529b76ad1c374495c4563be",
+    "src/zonetool/zonetool/iw7/structs.hpp": "482affaf3641dc5318422c4cef45383923183349ae91d18e9d3ff29699f8a0df",
+    "src/zonetool/zonetool/h1/zonetool.cpp": "f506120ae473ebaf63755b5e0f0277ac8093d14fbca92dfbe266dcf1d5c681fc",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/clipmap.cpp": "4dd5b2e1b384d6d462e61bd30addee6f879db36175719bba13912292a2de029b",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/gfxworld.cpp": "d9d49bca2a1b3323d3d575f059ed515d010168f5fbbf5095e922ab7c562525f7",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/comworld.cpp": "deba5562100cb9a86189debf1f8c96fc45d81a15165ac6b42bbed85c70e6e3d5",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/fxworld.cpp": "e7c078c86c700efffaee237e20fb58a8ceb29ebcebbe09c810491d10ef5b883c",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/glassworld.cpp": "d7aee7c1c86d5834053fef7079075187aa70da76190dc8a51fb1a23d4adc6ef2",
+    "src/zonetool/zonetool/iw7/assets/clipmap.cpp": "c56d8922ef6b5aff2f63f7ae853b0f80e20d44e312339075702c6a354740645e",
+    "src/zonetool/zonetool/iw7/assets/mapents.cpp": "7d3e1f54a52f7576a612de0c535dec35caf9f8149aceab84b6fad0919df8e78c",
+    "src/zonetool/zonetool/iw7/common/havok.cpp": "a4b9642c91629ecf8b3a30c25b2d59ed4a0ccf7d1bf368fd1c29ba519028f930"
+  },
+  "evidence": "Local source only; no native execution or asset extraction"
+}

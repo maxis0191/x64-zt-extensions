@@ -1,0 +1,27 @@
+--- a/src/zonetool/zonetool/h1/converter/iw7/assets/clipmap.cpp
++++ b/src/zonetool/zonetool/h1/converter/iw7/assets/clipmap.cpp
+@@ -2,6 +2,7 @@
+ 
+ #include "zonetool/h1/converter/iw7/include.hpp"
+ #include "clipmap.hpp"
++#include <stdexcept>
+ #ifdef EXPERIMENTAL_IW7
+ 
+ #include "zonetool/iw7/assets/clipmap.hpp"
+@@ -55,6 +56,16 @@
+ 		{
+ 			std::uint8_t convert_trigger_type(std::int32_t flags)
+ 			{
++				// Never silently erase H1-only or unknown trigger behavior.
++				constexpr std::int32_t supported_flags =
++					zonetool::h1::CLIENT_TRIGGER_VISIONSET | zonetool::h1::CLIENT_TRIGGER_AUDIO |
++					zonetool::h1::CLIENT_TRIGGER_BLEND_VISION | zonetool::h1::CLIENT_TRIGGER_BLEND_AUDIO |
++					zonetool::h1::CLIENT_TRIGGER_NPC;
++				if (flags < 0 || (flags & ~supported_flags) != 0)
++				{
++					throw std::runtime_error("Unsupported H1 client trigger type bits");
++				}
++
+ 				std::uint8_t new_flags = 0;
+ 				auto convert = [&](zonetool::h1::clientTriggerType_t a, zonetool::iw7::clientTriggerType_t b)
+ 				{
