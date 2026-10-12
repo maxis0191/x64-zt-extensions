@@ -214,7 +214,7 @@ def validate_plan(plan, sealed=False):
             original = phase == "probe-original-run"
             flac = phase == "probe-flac-run"
             require(command["kind"] == "probe_run" and command["arguments"] ==
-                    ([] if flac else ["--expect-observed-corrupt" if original else "--expect-original"]), "exact native probe mode required")
+                    (["--verify-headers"] if flac else ["--expect-observed-corrupt" if original else "--expect-original"]), "exact native probe mode required")
             require(key(command["executable"]) == key(ntpath.join(plan["candidate"], "probe",
                     "flac-header.exe" if flac else ("original.exe" if original else "patched.exe"))), "private compiled probe required")
         else:

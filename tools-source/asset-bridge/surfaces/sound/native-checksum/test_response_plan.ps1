@@ -11,7 +11,7 @@ $state=Get-Content -Raw -LiteralPath $base.seal_result|ConvertFrom-Json -AsHasht
 $checks=0
 $flac=$base.schema -ceq 'iw7.sound-flac-dump-build-plan/1'
 $cases=@('valid','missing-bootstrap','wrong-bootstrap-hash','missing-response','duplicate-response','changed-command','old-seal-path')
-if($flac){$cases+=@('missing-phase','phase-order','downgrade','extra-extension','duplicate-source','source-identity','source-guard','source-in-seal','review-identity','probe-args','probe-image')}
+if($flac){$cases+=@('missing-phase','phase-order','downgrade','extra-extension','duplicate-source','source-identity','source-guard','source-in-seal','review-identity','probe-args','probe-empty','probe-extra','probe-image')}
 foreach($case in $cases){
     $plan=$raw|ConvertFrom-Json -AsHashtable -DateKind String
     $first=$plan.response_pins[0]
@@ -32,6 +32,8 @@ foreach($case in $cases){
         'source-in-seal' {$plan.flac.sources[0].path=$seal.Inputs[0].Path}
         'review-identity' {$plan.flac.review.sha256='0'*64}
         'probe-args' {$plan.commands[8].arguments=@('--skip')}
+        'probe-empty' {$plan.commands[8].arguments=@()}
+        'probe-extra' {$plan.commands[8].arguments=@('--verify-headers','--extra')}
         'probe-image' {$plan.commands[8].executable=$plan.commands[5].executable}
     }
     $failure=$null

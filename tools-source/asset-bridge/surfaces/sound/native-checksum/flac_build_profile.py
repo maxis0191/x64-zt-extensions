@@ -14,7 +14,7 @@ SOURCE_SHA = "46bc9e333cc9985ad3358e68a44adbc9b8469feabdbfe946aeb4eff8c1a068b5"
 SOURCE_PINS = {
     "sound_bank.cpp": (113219, "8142eead0fe7cbdb6a0b17cc106efa4d02f0652e9955657f220ce1b82d66c95e"),
     "sound_flac_metadata.hpp": (6337, "2226b5a9fa8afc241f843a5a1dc8da38574eb0c931a43f4d66a1b5eae0a19eca"),
-    "flac_dump_probe.cpp": (2037, "320c2a3cb9617411fa6fe648f6ade946869879ace50a08bb73ff796aa019b5a8"),
+    "flac_dump_probe.cpp": (2226, "3f0015a2e7958ccb4d7194e876212767ea19b0f3467ab52f96d3993f39064e86"),
     "flac_dump_cases.hpp": (10402, "fbf0e8c03c850af01b45c46a03bf183b8ce5355c294b2618493ca72a75673cb3"),
 }
 
@@ -99,7 +99,7 @@ def expected_commands(plan, read):
         command["phase"] = phase
         if phase.endswith("-run"):
             command["executable"] = ntpath.join(candidate, "probe", "flac-header.exe")
-            command["arguments"] = []
+            command["arguments"] = ["--verify-headers"]
         else:
             raw = responses[base_phase].decode()
             raw = raw.replace(ntpath.join(candidate, "probe", "original"), ntpath.join(candidate, "probe", "flac-header"))

@@ -1,5 +1,9 @@
 # FLAC dump build profile: source and Plan checkpoint
 
+Historical source/Plan A checkpoint. The later authorized attempt failed at the
+new probe command boundary; see [the retained A failure and source-only B
+correction](FLAC-BUILD-ARGUMENT-FIX.md). A's files and evidence are preserved.
+
 2026-10-12. The sound-owned adapter now accepts the explicit
 `iw7.sound-flac-dump-build-plan/1` schema. The historical checksum schema retains
 its fourteen stages and receipt behavior. No shared native source, provider,

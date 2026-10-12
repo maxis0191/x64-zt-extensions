@@ -41,7 +41,7 @@ def fixture():
         if name.endswith("-run"):
             tag = "original" if "original" in name else ("flac-header" if "flac" in name else "patched")
             command.update(kind="probe_run", executable=ntpath.join(candidate, "probe", tag+".exe"),
-                           arguments=[] if tag == "flac-header" else ["--expect-observed-corrupt" if tag == "original" else "--expect-original"])
+                           arguments=["--verify-headers"] if tag == "flac-header" else ["--expect-observed-corrupt" if tag == "original" else "--expect-original"])
         else:
             kind = "candidate_compile" if name.endswith("-compile") or name.startswith("compile-") else "candidate_link"
             exe = "cl.exe" if kind.endswith("compile") else ("lib.exe" if name == "archive-common" else "link.exe")
@@ -63,6 +63,54 @@ class FlacBuildContracts(unittest.TestCase):
         self.assertEqual(len(contract.reviewed_responses(plan, {})), 14)
         self.assertEqual(len(flac.validate_extension(plan, {})), 4)
 
+    def test_all17_worker_specs_pass_real_shared_phase_validator(self):
+        # Exercise the actual worker-to-provider boundary, stopping after the
+        # unchanged provider's validator, before executable reads or Popen.
+        import sys
+        import tempfile
+        import types
+        import build_worker as worker
+        surfaces = Path(__file__).resolve().parents[2]
+        sys.path.insert(0, str(surfaces))
+        import material_v2_phase as phase
+
+        class BoundaryPassed(Exception):
+            pass
+
+        plan = contract.validate_plan(fixture(), sealed=True)
+        observed = []
+        def validate_only(spec, drain):
+            phase.validate_spec(spec)
+            observed.append(spec)
+            raise BoundaryPassed()
+
+        with tempfile.TemporaryDirectory() as directory:
+            # Real platform-native absolute paths keep this pure test portable.
+            # No executable or logs are created: validate_spec only checks paths.
+            candidate = Path(directory) / "candidate"
+            for original in plan["commands"]:
+                command = {**original, "executable": str(Path(directory) / "native.exe")}
+                with self.subTest(phase=command["phase"]), \
+                        patch.object(Path, "open", side_effect=AssertionError("no payload read")), \
+                        patch.object(phase.subprocess, "Popen", side_effect=AssertionError("no native run")), \
+                        self.assertRaises(BoundaryPassed):
+                    worker.native_phase({"candidate": str(candidate)}, command, "a"*64,
+                                        None, types.SimpleNamespace(run=validate_only), None)
+            self.assertEqual(len(observed), 17)
+            self.assertEqual(observed[8]["arguments"], ["--verify-headers"])
+            self.assertFalse(candidate.exists())
+
+            # Reproduce A at the same boundary: the shared provider rejects an
+            # empty list before creating phase logs or starting any executable.
+            command = {**plan["commands"][8], "executable": str(Path(directory) / "native.exe"), "arguments": []}
+            with patch.object(Path, "open", side_effect=AssertionError("no payload read")), \
+                    patch.object(phase.subprocess, "Popen", side_effect=AssertionError("no native run")), \
+                    self.assertRaisesRegex(ValueError, "bounded literal arguments required"):
+                worker.native_phase({"candidate": str(candidate)}, command, "a"*64,
+                                    None, types.SimpleNamespace(run=validate_only), None)
+            self.assertEqual(len(observed), 17)
+            self.assertFalse(candidate.exists())
+
     def test_closed_profile_mutations_fail(self):
         mutations = {
             "schema-downgrade": lambda p: p.update(schema=contract.SCHEMA),
@@ -70,6 +118,8 @@ class FlacBuildContracts(unittest.TestCase):
             "duplicate-phase": lambda p: p["commands"].__setitem__(7, copy.deepcopy(p["commands"][6])),
             "reordered-phase": lambda p: p["commands"].reverse(),
             "probe-extra-arg": lambda p: p["commands"][8]["arguments"].append("--accept"),
+            "probe-empty-args": lambda p: p["commands"][8].update(arguments=[]),
+            "probe-unknown-arg": lambda p: p["commands"][8].update(arguments=["--unknown"]),
             "probe-old-image": lambda p: p["commands"][8].update(executable=p["commands"][5]["executable"]),
             "unsealed-source": lambda p: p["source_pins"].pop(2),
             "duplicate-source": lambda p: p["flac"]["sources"].__setitem__(1, p["flac"]["sources"][0]),

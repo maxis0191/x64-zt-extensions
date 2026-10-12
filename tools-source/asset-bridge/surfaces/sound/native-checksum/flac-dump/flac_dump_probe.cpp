@@ -8,8 +8,13 @@
 namespace meta = zonetool::iw7::sound_asset_bank::flac_metadata;
 #include "flac_dump_cases.hpp"
 
-int main()
+int main(int argc, char** argv)
 {
+    if (argc != 2 || std::strcmp(argv[1], "--verify-headers") != 0)
+    {
+        std::fprintf(stderr, "Expected exactly --verify-headers\n");
+        return 64;
+    }
     unsigned checked{};
     for (const auto& item : cases)
     {

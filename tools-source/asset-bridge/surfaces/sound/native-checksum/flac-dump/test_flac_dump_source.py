@@ -11,6 +11,12 @@ ROOT = Path(__file__).resolve().parent
 
 
 class FlacDumpSourceTests(unittest.TestCase):
+    def test_probe_refuses_empty_extra_and_unknown_arguments_before_cases(self):
+        source = (ROOT / "flac_dump_probe.cpp").read_text()
+        self.assertIn('int main(int argc, char** argv)', source)
+        self.assertIn('argc != 2 || std::strcmp(argv[1], "--verify-headers") != 0', source)
+        self.assertLess(source.index('return 64;'), source.index('for (const auto& item : cases)'))
+
     def test_synthetic_vector_oracle_and_unique_names(self):
         cases = vectors.cases()
         self.assertGreater(len(cases), 90)
