@@ -89,6 +89,9 @@ function Assert-FlacIncludeBytes($File,$Paths,[scriptblock]$CheckClock) {
             [void]$seen.Add([IO.Path]::GetFullPath($path).ToLowerInvariant())
         }
     }
-    Assert-AuditSameJson @($seen|Sort-Object) @($Paths) 'actual FLAC-profile compiler include paths'
+    # Match Python's character ordering, independent of the host culture.
+    $ordered=[string[]]@($seen)
+    [Array]::Sort($ordered,[StringComparer]::Ordinal)
+    Assert-AuditSameJson @($ordered) @($Paths) 'actual FLAC-profile compiler include paths'
     & $CheckClock
 }

@@ -1,5 +1,8 @@
 # FLAC build A failure and source-only B correction
 
+Historical B source checkpoint. Its later native phases passed, but completion
+qualification failed; see [the B include-order failure and C correction](FLAC-BUILD-INCLUDE-ORDER.md).
+
 2026-10-12. One authorized invocation of the exact FLAC Plan A failed. It was
 not retried. Its Plan, dispatch, overlay B, response files and output directory
 remain unchanged. The earlier source-only checkpoint is historical evidence,
