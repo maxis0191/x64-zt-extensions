@@ -1,0 +1,28 @@
+{
+  "schema": "iw7.weapon-animation-bridge-validation/1",
+  "date": "2026-10-12",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_contract_reproduced": true,
+  "h1_slots": 190,
+  "iw7_slots": 260,
+  "exact_matches": 114,
+  "unsupported_if_nonempty": 76,
+  "synthetic_python_tests": {
+    "passed": 11,
+    "failed": 0
+  },
+  "roundtrip": "Python JSON write/read and source-derived format validator only",
+  "real_template_available": false,
+  "real_template_conversion_run": false,
+  "native_cpp_parser_run": false,
+  "clips_converted": false,
+  "fastfile_built": false,
+  "game_run": false,
+  "playable_weapon_proven": false,
+  "source_hashes": {
+    "slot-contract.json": "e75016e7f052cf10fd3f6a42cf07f4f13fedf1224c56a4d86fcaa37c74908db0",
+    "source_contract.py": "6829df09d7f1bd0f3c198a70790ec8045b43b0d8c571adeea228e8d9346a9df4",
+    "test_weapon_anim_bridge.py": "57b0f3a5b8b4b6463af9100234e49d181f87d4b0e600e1883df6897152aef852",
+    "weapon_anim_bridge.py": "9fe3e809c5f5bc59421a889a591b8bf5db7cd5e0fc64593d3a131a18e9f09a93"
+  }
+}
