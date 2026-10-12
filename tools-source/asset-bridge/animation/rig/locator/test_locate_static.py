@@ -62,6 +62,14 @@ class LocatorTests(unittest.TestCase):
             _, instructions = locator.edge(TEXT + len(prefix), target)
             self.assertIsNone(locator.type_seven(instructions, TEXT + len(prefix)), branch.hex())
 
+    def test_internal_call_cannot_enter_after_type_assignment(self):
+        target = TEXT + 0x1000
+        for first_target, expected in ((TEXT + 10, None), (TEXT + 0x800, TEXT + 5)):
+            code = call(TEXT, first_target) + b"\xb9\x07\0\0\0" + call(TEXT + 10, target) + b"\xc3"
+            locator = Locator(code, unwind(TEXT, len(code)))
+            _, instructions = locator.edge(TEXT + 10, target)
+            self.assertEqual(locator.type_seven(instructions, TEXT + 10), expected)
+
     def test_both_edge_opcodes_share_one_linear_search(self):
         target = TEXT + 0x1000
         code = call(TEXT, target) + b"\xe9" + struct.pack("<i", target - TEXT - 10)

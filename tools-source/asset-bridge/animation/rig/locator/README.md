@@ -64,9 +64,9 @@ is identity-bound but is not searched in this first pass. At most 17 scans of
 the existing text buffer account for 359,301,120 linear opcode-search bytes;
 decoding each candidate also reads its four-byte displacement. There is no
 repeated file IO. It decodes at most 16 unwind-owned windows.
-Eleven synthetic tests cover real versus embedded-immediate edges, argument
+Twelve synthetic tests cover real versus embedded-immediate edges, argument
 clobbers and branch bypasses, ambiguous unwind entries, hard caps and the
-difference between an offset match and a proved writer. All eleven passed.
+difference between an offset match and a proved writer. All twelve passed.
 This tool has not been executed against the retained code.
 
 Independent review of the first source revision found three missed cases:
@@ -78,6 +78,9 @@ limit. LOOP/LOOPE/LOOPNE/JRCXZ/JECXZ and exact-limit regressions now pass. The
 earlier command manifest is obsolete because its source pin changed; the new
 supervisor Plan must bind this corrected revision. Neither revision has scanned
 retail code or established a first writer.
+The follow-up review also reproduced an internal direct CALL entering after the
+type assignment. It is now included in incoming-edge refusal; an ordinary
+external call before a fresh type assignment remains supported.
 
 The first invocation implements the registration anchor and three reverse
 levels, retaining bounded instructions, call sites and unproved +0x58 store

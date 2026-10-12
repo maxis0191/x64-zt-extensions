@@ -128,7 +128,6 @@ class Locator:
             if ins.address == edge_address:
                 if evidence is not None and any(
                     (CS_GRP_JUMP in other.groups or CS_GRP_BRANCH_RELATIVE in other.groups) and
-                    CS_GRP_CALL not in other.groups and
                     (not other.operands or other.operands[0].type != CS_OP_IMM or
                      evidence < other.operands[0].imm <= edge_address)
                     for other in instructions):
