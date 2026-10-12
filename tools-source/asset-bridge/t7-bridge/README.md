@@ -256,6 +256,54 @@ select the minimum executable/dependencies. Repeating AppInfo is unnecessary to
 confirm fields already observed. Reusing this updated installation requires an
 explicit reviewed profile; do not bypass the old fresh-two-files/bootstrap pin.
 
+### File-manifest preparation
+
+No verified documented SteamCMD manifest-only route was found. The selected
+tool is [SteamRE DepotDownloader 3.4.0](https://github.com/SteamRE/DepotDownloader/releases/tag/DepotDownloader_3.4.0),
+source commit `c553ef4d60c00a4f5fd16c9fe017f569001589ff`, not a Valve-issued binary.
+The pinned `Program.cs:87` recognizes `-manifest-only`; `ContentDownloader.cs:865`
+dumps the manifest and returns before file selection/chunk download. The text
+dump includes sizes, chunk counts, SHA1, flags and original filenames.
+
+The framework ZIP is 2,661,253 bytes but this release targets .NET 9; the observed
+system shared runtime is only 8.0.28. The autonomous Windows x64 archive avoids
+a separate runtime installation. Official release metadata and HTTP HEAD agree
+on 33,474,005 compressed bytes. Its SHA256
+`41c9e9f0df54b3ad02e67a11726756e5c73283bd7c2e1b04acfa5ae4c2ed3767`
+is published by the [Microsoft WinGet catalog](https://raw.githubusercontent.com/microsoft/winget-pkgs/master/manifests/s/SteamRE/DepotDownloader/3.4.0/SteamRE.DepotDownloader.installer.yaml);
+the upstream GitHub release API digest is null. A metadata-only HTTP Range
+inspection was refused with 501; no archive body was read in that failed request.
+
+The coordinator subsequently authorized the tool download/extraction alone.
+`prepare_depotdownloader.py` obtained and verified that exact archive, inspected
+all entries before extraction, and enforced 40 MiB transfer / 128 MiB extraction
+caps into a fresh durable directory. Actual contents are just `DepotDownloader.exe`
+(78,840,739 bytes, SHA256
+`6281279efce8f1e20db9532a58e42382f81afb9e3827a8b965ffcb43fbe4531f`)
+and `LICENSE` (18,431 bytes), totaling 78,859,170 extracted bytes. The executable
+has no Authenticode signature; the release/archive hash is the provenance check.
+[Preparation receipt](depotdownloader-preparation-20261012.json). No tool execution,
+system .NET installation or game-payload transfer occurred during preparation.
+
+The existing host now has one additional fixed operation, `depot-file-manifest`,
+attempt `manifest-a`. It starts the pinned portable EXE directly in the same
+NativeJob, using anonymous login with distinct LoginID 20261012, exact app545990 /
+depot545991 / manifest2350066205567669287, `-manifest-only` and one download worker.
+There is no arbitrary-command input or fallback to full-depot download. Its fresh
+working directory isolates `account.config`; `-dir` and the .NET bundle/temp
+location stay under the attempt output. The old AppInfo bootstrap guard is
+unchanged; only the exact 78,840,739-byte DepotDownloader pin may exceed the old
+64 MiB source-binding cap. Manifest/cache/temp evidence has an explicit 32 MiB
+cap, while existing 2/3 GiB admission, 200/5-second deadlines, 64 KiB outer logs,
+512 MiB aggregate observation and original-handle closure remain in force.
+
+The host accepts a closed root0/Active0 result only with the expected manifest
+ID/header and a zero downloaded-content-chunk counter. Actual file selection and
+binary compatibility remain separate. Thirty pure PowerShell assertions pass,
+including the new metadata-output cap while preserving the smaller AppInfo cap.
+The fixed command and freshly bound plan are prepared under ignored `runtime/`;
+DepotDownloader has not been executed and requires a separate reviewed GO.
+
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is
 not a per-file filter. Evaluate an existing compatible selective downloader

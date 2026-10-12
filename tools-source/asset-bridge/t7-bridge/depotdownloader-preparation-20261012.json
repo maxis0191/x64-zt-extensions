@@ -1,0 +1,66 @@
+{
+  "schema": "iw7.depotdownloader-preparation/1",
+  "version": "3.4.0",
+  "upstream": "SteamRE/DepotDownloader",
+  "source_commit": "c553ef4d60c00a4f5fd16c9fe017f569001589ff",
+  "release_asset_id": 253287195,
+  "archive_url": "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-windows-x64.zip",
+  "archive_bytes": 33474005,
+  "archive_sha256": "41c9e9f0df54b3ad02e67a11726756e5c73283bd7c2e1b04acfa5ae4c2ed3767",
+  "checksum_source": "Microsoft winget-pkgs SteamRE.DepotDownloader 3.4.0 installer manifest",
+  "upstream_release_api_digest": null,
+  "extracted_bytes": 78859170,
+  "files": [
+    {
+      "path": "DepotDownloader.exe",
+      "bytes": 78840739,
+      "sha256": "6281279efce8f1e20db9532a58e42382f81afb9e3827a8b965ffcb43fbe4531f"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 18431,
+      "sha256": "189b1af95d661151e054cea10c91b3d754e4de4d3fecfb074c1fb29476f7167b"
+    }
+  ],
+  "tool_executed": false,
+  "system_runtime_installed": false,
+  "game_payload_downloaded": false,
+  "manifest_command": [
+    "-app",
+    "545990",
+    "-depot",
+    "545991",
+    "-manifest",
+    "2350066205567669287",
+    "-manifest-only",
+    "-loginid",
+    "20261012",
+    "-max-downloads",
+    "1",
+    "-dir",
+    "<private-attempt>/manifest"
+  ],
+  "source_audit": {
+    "program_manifest_switch_line": 87,
+    "content_manifest_only_early_return_lines": [
+      865,
+      868
+    ],
+    "content_download_list_excludes_null_lines": [
+      671,
+      676
+    ],
+    "content_text_dump_lines": [
+      1355,
+      1384
+    ],
+    "target_runtime": "net9.0",
+    "system_shared_runtime_observed": "8.0.28",
+    "self_contained_selected": true
+  },
+  "primary_links": [
+    "https://github.com/SteamRE/DepotDownloader/releases/tag/DepotDownloader_3.4.0",
+    "https://github.com/SteamRE/DepotDownloader/blob/c553ef4d60c00a4f5fd16c9fe017f569001589ff/DepotDownloader/ContentDownloader.cs",
+    "https://raw.githubusercontent.com/microsoft/winget-pkgs/master/manifests/s/SteamRE/DepotDownloader/3.4.0/SteamRE.DepotDownloader.installer.yaml"
+  ]
+}

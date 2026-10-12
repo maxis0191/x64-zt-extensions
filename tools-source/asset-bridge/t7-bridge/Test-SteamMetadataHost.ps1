@@ -33,6 +33,12 @@ try {
     [IO.File]::WriteAllBytes((Join-Path $outer 'stdout.log'),[byte[]](4,5))
     $script:clock=200000;Refuses {Measure-SteamAttempt $settings 0} 'deadline'
     $script:clock=0
+    [IO.File]::WriteAllBytes((Join-Path $outer 'manifest-test.txt'),[byte[]]::new(1MB))
+    Refuses {Measure-SteamAttempt $settings 0} 'Private output byte cap'
+    $settings|Add-Member NoteProperty operation 'depot-file-manifest'
+    $manifestSample=Measure-SteamAttempt $settings 0
+    Check ($manifestSample.OuterBytes -eq 1MB+2) 'Manifest metadata needs its explicit larger output cap.'
+    Remove-Item -LiteralPath (Join-Path $outer 'manifest-test.txt')
 
     function Measure-SteamAttempt($Settings,$Started){$script:clock+=$script:budgetDelay;[pscustomobject]@{TotalBytes=5}}
     function Get-IW7ResourceSnapshot {[pscustomobject]@{CommitLimit=100;Committed=$script:commit}}
