@@ -97,6 +97,13 @@ python -B tools-source/asset-bridge/h1-fixture/prepare_native.py `
   --output <absolute-fresh-preparation-directory>
 ```
 
+Generic unittest discovery does not supply `--source-repo`, so it skips only
+the preparation class requiring the pinned checkout. The two `raw_bounded`
+concurrency/replacement tests remain independent and run during discovery.
+Use the explicit test command above to exercise preparation checks; an
+explicitly supplied missing, invalid or changed source fails instead of
+being skipped. Neither route compiles or executes native code.
+
 Prepared source and receipts must stay below **1 MiB**. Output is create-only
 and reparse ancestry is refused. `preparation.local.json` records source,
 fragment and output hashes plus proposed compile arguments; it launches no

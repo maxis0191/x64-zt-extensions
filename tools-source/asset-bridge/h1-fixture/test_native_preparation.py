@@ -16,6 +16,8 @@ SOURCE = None
 class NativePreparationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if SOURCE is None:
+            raise unittest.SkipTest("Pinned source preparation requires explicit --source-repo")
         cls.sources, cls.contract = native.checked_sources(SOURCE)
         cls.root = Path(__file__).resolve().parent
         cls.patch = native.bounded(cls.root/"h1-xsurface-reviewed.patch").decode()
@@ -120,6 +122,12 @@ class NativePreparationTests(unittest.TestCase):
                     native.verify_prepared(SOURCE,output)
             target.write_bytes(original)
             native.verify_prepared(SOURCE,output)
+
+
+class BoundedReadTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Path(__file__).resolve().parent
 
     def test_same_handle_read_is_bounded_when_source_grows_concurrently(self):
         # Deterministic real concurrent append after the pre-read fstat, before
