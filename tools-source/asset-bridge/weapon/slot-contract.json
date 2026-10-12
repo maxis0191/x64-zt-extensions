@@ -1,0 +1,1333 @@
+{
+  "schema": "iw7.weapon-animation-slot-contract/1",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_files": {
+    "h1/assets/weapondef.hpp": "ac039946e6ac6e280afe6007f51798383fee12a0c919ad73d73b258e32e88b2a",
+    "h1/assets/weapondef.cpp": "7b093d5d22bfaa3492d20be52c1d11d78555f27d4f293ec79d7bd9817371939c",
+    "h1/structs.hpp": "cd68a7eb9ca9d16339117f5602ba17571cb923de9100aedac673419ebfcb8da4",
+    "iw7/assets/weapon_anim_package.cpp": "5b541eaa1029275c458343444f2406e565281acfb43de012f3da3e3bee62798b",
+    "iw7/assets/weapondef.cpp": "f5015f289e77391a5304f6f99c034aeb142f8bf4e9ecd11ef5030e1b8e634ff0",
+    "iw7/structs.hpp": "adb62e481a533d27f97829e64d9038b13c5e9cd88e6b4aee8cac339b9492921a"
+  },
+  "h1_slots": [
+    {
+      "key": "ROOT",
+      "symbol": "WEAP_ANIM_ROOT",
+      "iw7_index": 0
+    },
+    {
+      "key": "IDLE",
+      "symbol": "WEAP_ANIM_IDLE",
+      "iw7_index": 107
+    },
+    {
+      "key": "EMPTY_IDLE",
+      "symbol": "WEAP_ANIM_EMPTY_IDLE",
+      "iw7_index": 108
+    },
+    {
+      "key": "FIRE",
+      "symbol": "WEAP_ANIM_FIRE",
+      "iw7_index": 109
+    },
+    {
+      "key": "HOLD_FIRE",
+      "symbol": "WEAP_ANIM_HOLD_FIRE",
+      "iw7_index": 110
+    },
+    {
+      "key": "LASTSHOT",
+      "symbol": "WEAP_ANIM_LASTSHOT",
+      "iw7_index": 111
+    },
+    {
+      "key": "RECHAMBER",
+      "symbol": "WEAP_ANIM_RECHAMBER",
+      "iw7_index": 112
+    },
+    {
+      "key": "GRENADE_PRIME",
+      "symbol": "WEAP_ANIM_GRENADE_PRIME",
+      "iw7_index": 113
+    },
+    {
+      "key": "GRENADE_PRIME_READY_TO_THROW",
+      "symbol": "WEAP_ANIM_GRENADE_PRIME_READY_TO_THROW",
+      "iw7_index": 114
+    },
+    {
+      "key": "MELEE_SWIPE",
+      "symbol": "WEAP_ANIM_MELEE_SWIPE",
+      "iw7_index": 118
+    },
+    {
+      "key": "MELEE_HIT",
+      "symbol": "WEAP_ANIM_MELEE_HIT",
+      "iw7_index": 116
+    },
+    {
+      "key": "MELEE_FATAL",
+      "symbol": "WEAP_ANIM_MELEE_FATAL",
+      "iw7_index": 115
+    },
+    {
+      "key": "MELEE_MISS",
+      "symbol": "WEAP_ANIM_MELEE_MISS",
+      "iw7_index": 117
+    },
+    {
+      "key": "MELEE_VICTIM_CROUCHING_HIT",
+      "symbol": "WEAP_ANIM_MELEE_VICTIM_CROUCHING_HIT",
+      "iw7_index": 120
+    },
+    {
+      "key": "MELEE_VICTIM_CROUCHING_FATAL",
+      "symbol": "WEAP_ANIM_MELEE_VICTIM_CROUCHING_FATAL",
+      "iw7_index": 119
+    },
+    {
+      "key": "MELEE_VICTIM_CROUCHING_MISS",
+      "symbol": "WEAP_ANIM_MELEE_VICTIM_CROUCHING_MISS",
+      "iw7_index": 121
+    },
+    {
+      "key": "MELEE_ALT_STANDING",
+      "symbol": "WEAP_ANIM_MELEE_ALT_STANDING",
+      "iw7_index": null
+    },
+    {
+      "key": "MELEE_ALT_CROUCHING",
+      "symbol": "WEAP_ANIM_MELEE_ALT_CROUCHING",
+      "iw7_index": null
+    },
+    {
+      "key": "MELEE_ALT_PRONE",
+      "symbol": "WEAP_ANIM_MELEE_ALT_PRONE",
+      "iw7_index": null
+    },
+    {
+      "key": "MELEE_ALT_JUMPING",
+      "symbol": "WEAP_ANIM_MELEE_ALT_JUMPING",
+      "iw7_index": null
+    },
+    {
+      "key": "MELEE_ALT_STANDING_VICTIM_CROUCHING",
+      "symbol": "WEAP_ANIM_MELEE_ALT_STANDING_VICTIM_CROUCHING",
+      "iw7_index": null
+    },
+    {
+      "key": "MELEE_ALT_CROUCHING_VICTIM_CROUCHING",
+      "symbol": "WEAP_ANIM_MELEE_ALT_CROUCHING_VICTIM_CROUCHING",
+      "iw7_index": null
+    },
+    {
+      "key": "MELEE_ALT_PRONE_VICTIM_CROUCHING",
+      "symbol": "WEAP_ANIM_MELEE_ALT_PRONE_VICTIM_CROUCHING",
+      "iw7_index": null
+    },
+    {
+      "key": "MELEE_ALT_JUMPING_VICTIM_CROUCHING",
+      "symbol": "WEAP_ANIM_MELEE_ALT_JUMPING_VICTIM_CROUCHING",
+      "iw7_index": null
+    },
+    {
+      "key": "RELOAD",
+      "symbol": "WEAP_ANIM_RELOAD",
+      "iw7_index": 171
+    },
+    {
+      "key": "RELOAD_EMPTY",
+      "symbol": "WEAP_ANIM_RELOAD_EMPTY",
+      "iw7_index": 172
+    },
+    {
+      "key": "RELOAD_START",
+      "symbol": "WEAP_ANIM_RELOAD_START",
+      "iw7_index": 173
+    },
+    {
+      "key": "RELOAD_END",
+      "symbol": "WEAP_ANIM_RELOAD_END",
+      "iw7_index": 174
+    },
+    {
+      "key": "FAST_RELOAD",
+      "symbol": "WEAP_ANIM_FAST_RELOAD",
+      "iw7_index": 175
+    },
+    {
+      "key": "FAST_RELOAD_EMPTY",
+      "symbol": "WEAP_ANIM_FAST_RELOAD_EMPTY",
+      "iw7_index": 176
+    },
+    {
+      "key": "FAST_RELOAD_START",
+      "symbol": "WEAP_ANIM_FAST_RELOAD_START",
+      "iw7_index": 177
+    },
+    {
+      "key": "FAST_RELOAD_END",
+      "symbol": "WEAP_ANIM_FAST_RELOAD_END",
+      "iw7_index": 178
+    },
+    {
+      "key": "DUALMAG_RELOAD",
+      "symbol": "WEAP_ANIM_DUALMAG_RELOAD",
+      "iw7_index": null
+    },
+    {
+      "key": "DUALMAG_RELOAD_EMPTY",
+      "symbol": "WEAP_ANIM_DUALMAG_RELOAD_EMPTY",
+      "iw7_index": null
+    },
+    {
+      "key": "SPEED_RELOAD",
+      "symbol": "WEAP_ANIM_SPEED_RELOAD",
+      "iw7_index": null
+    },
+    {
+      "key": "RELOAD_FROM_ALT",
+      "symbol": "WEAP_ANIM_RELOAD_FROM_ALT",
+      "iw7_index": null
+    },
+    {
+      "key": "RAISE",
+      "symbol": "WEAP_ANIM_RAISE",
+      "iw7_index": 179
+    },
+    {
+      "key": "FIRST_RAISE",
+      "symbol": "WEAP_ANIM_FIRST_RAISE",
+      "iw7_index": 180
+    },
+    {
+      "key": "BREACH_RAISE",
+      "symbol": "WEAP_ANIM_BREACH_RAISE",
+      "iw7_index": 181
+    },
+    {
+      "key": "DROP",
+      "symbol": "WEAP_ANIM_DROP",
+      "iw7_index": 182
+    },
+    {
+      "key": "ALT_RAISE",
+      "symbol": "WEAP_ANIM_ALT_RAISE",
+      "iw7_index": 183
+    },
+    {
+      "key": "ALT_DROP",
+      "symbol": "WEAP_ANIM_ALT_DROP",
+      "iw7_index": 186
+    },
+    {
+      "key": "ALT_OVERRIDE",
+      "symbol": "WEAP_ANIM_ALT_OVERRIDE",
+      "iw7_index": 189
+    },
+    {
+      "key": "QUICK_RAISE",
+      "symbol": "WEAP_ANIM_QUICK_RAISE",
+      "iw7_index": 193
+    },
+    {
+      "key": "QUICK_DROP",
+      "symbol": "WEAP_ANIM_QUICK_DROP",
+      "iw7_index": 194
+    },
+    {
+      "key": "EMPTY_RAISE",
+      "symbol": "WEAP_ANIM_EMPTY_RAISE",
+      "iw7_index": 195
+    },
+    {
+      "key": "EMPTY_DROP",
+      "symbol": "WEAP_ANIM_EMPTY_DROP",
+      "iw7_index": 196
+    },
+    {
+      "key": "HYBRID_SIGHT_ON",
+      "symbol": "WEAP_ANIM_HYBRID_SIGHT_ON",
+      "iw7_index": null
+    },
+    {
+      "key": "HYBRID_SIGHT_OFF",
+      "symbol": "WEAP_ANIM_HYBRID_SIGHT_OFF",
+      "iw7_index": null
+    },
+    {
+      "key": "SPRINT_IN",
+      "symbol": "WEAP_ANIM_SPRINT_IN",
+      "iw7_index": 197
+    },
+    {
+      "key": "SPRINT_IN_FROM_SLIDE",
+      "symbol": "WEAP_ANIM_SPRINT_IN_FROM_SLIDE",
+      "iw7_index": null
+    },
+    {
+      "key": "SPRINT_IN_CANCEL",
+      "symbol": "WEAP_ANIM_SPRINT_IN_CANCEL",
+      "iw7_index": 198
+    },
+    {
+      "key": "SPRINT_LOOP",
+      "symbol": "WEAP_ANIM_SPRINT_LOOP",
+      "iw7_index": 199
+    },
+    {
+      "key": "SPRINT_OUT",
+      "symbol": "WEAP_ANIM_SPRINT_OUT",
+      "iw7_index": 200
+    },
+    {
+      "key": "SPRINTANDFIRE_IN",
+      "symbol": "WEAP_ANIM_SPRINTANDFIRE_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "SPRINTANDFIRE_LOOP",
+      "symbol": "WEAP_ANIM_SPRINTANDFIRE_LOOP",
+      "iw7_index": null
+    },
+    {
+      "key": "SPRINTANDFIRE_OUT",
+      "symbol": "WEAP_ANIM_SPRINTANDFIRE_OUT",
+      "iw7_index": null
+    },
+    {
+      "key": "STUNNED_START",
+      "symbol": "WEAP_ANIM_STUNNED_START",
+      "iw7_index": 201
+    },
+    {
+      "key": "STUNNED_LOOP",
+      "symbol": "WEAP_ANIM_STUNNED_LOOP",
+      "iw7_index": 202
+    },
+    {
+      "key": "STUNNED_END",
+      "symbol": "WEAP_ANIM_STUNNED_END",
+      "iw7_index": 203
+    },
+    {
+      "key": "THROWBACK",
+      "symbol": "WEAP_ANIM_THROWBACK",
+      "iw7_index": null
+    },
+    {
+      "key": "DETONATE",
+      "symbol": "WEAP_ANIM_DETONATE",
+      "iw7_index": 204
+    },
+    {
+      "key": "NIGHTVISION_WEAR",
+      "symbol": "WEAP_ANIM_NIGHTVISION_WEAR",
+      "iw7_index": 205
+    },
+    {
+      "key": "NIGHTVISION_REMOVE",
+      "symbol": "WEAP_ANIM_NIGHTVISION_REMOVE",
+      "iw7_index": 206
+    },
+    {
+      "key": "ADS_FIRE",
+      "symbol": "WEAP_ANIM_ADS_FIRE",
+      "iw7_index": 207
+    },
+    {
+      "key": "ADS_LASTSHOT",
+      "symbol": "WEAP_ANIM_ADS_LASTSHOT",
+      "iw7_index": 208
+    },
+    {
+      "key": "ADS_RECHAMBER",
+      "symbol": "WEAP_ANIM_ADS_RECHAMBER",
+      "iw7_index": 209
+    },
+    {
+      "key": "BLAST_FRONT",
+      "symbol": "WEAP_ANIM_BLAST_FRONT",
+      "iw7_index": 210
+    },
+    {
+      "key": "BLAST_RIGHT",
+      "symbol": "WEAP_ANIM_BLAST_RIGHT",
+      "iw7_index": 211
+    },
+    {
+      "key": "BLAST_BACK",
+      "symbol": "WEAP_ANIM_BLAST_BACK",
+      "iw7_index": 212
+    },
+    {
+      "key": "BLAST_LEFT",
+      "symbol": "WEAP_ANIM_BLAST_LEFT",
+      "iw7_index": 213
+    },
+    {
+      "key": "SLIDE_IN",
+      "symbol": "WEAP_ANIM_SLIDE_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "SLIDE_LOOP",
+      "symbol": "WEAP_ANIM_SLIDE_LOOP",
+      "iw7_index": null
+    },
+    {
+      "key": "SLIDE_OUT_TO_SPRINT",
+      "symbol": "WEAP_ANIM_SLIDE_OUT_TO_SPRINT",
+      "iw7_index": null
+    },
+    {
+      "key": "SLIDE_OUT",
+      "symbol": "WEAP_ANIM_SLIDE_OUT",
+      "iw7_index": null
+    },
+    {
+      "key": "SLIDE_AND_FIRE_IN",
+      "symbol": "WEAP_ANIM_SLIDE_AND_FIRE_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "SLIDE_AND_FIRE_LOOP",
+      "symbol": "WEAP_ANIM_SLIDE_AND_FIRE_LOOP",
+      "iw7_index": null
+    },
+    {
+      "key": "SLIDE_AND_FIRE_OUT",
+      "symbol": "WEAP_ANIM_SLIDE_AND_FIRE_OUT",
+      "iw7_index": null
+    },
+    {
+      "key": "HIGH_JUMP_IN",
+      "symbol": "WEAP_ANIM_HIGH_JUMP_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "HIGH_JUMP_DROP_IN",
+      "symbol": "WEAP_ANIM_HIGH_JUMP_DROP_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "HIGH_JUMP_DROP_LOOP",
+      "symbol": "WEAP_ANIM_HIGH_JUMP_DROP_LOOP",
+      "iw7_index": null
+    },
+    {
+      "key": "HIGH_JUMP_DROP_LAND",
+      "symbol": "WEAP_ANIM_HIGH_JUMP_DROP_LAND",
+      "iw7_index": null
+    },
+    {
+      "key": "DODGE_GROUND_BACK",
+      "symbol": "WEAP_ANIM_DODGE_GROUND_BACK",
+      "iw7_index": 214
+    },
+    {
+      "key": "DODGE_GROUND_LEFT",
+      "symbol": "WEAP_ANIM_DODGE_GROUND_LEFT",
+      "iw7_index": 215
+    },
+    {
+      "key": "DODGE_GROUND_RIGHT",
+      "symbol": "WEAP_ANIM_DODGE_GROUND_RIGHT",
+      "iw7_index": 216
+    },
+    {
+      "key": "DODGE_AIR_FORWARD",
+      "symbol": "WEAP_ANIM_DODGE_AIR_FORWARD",
+      "iw7_index": 217
+    },
+    {
+      "key": "DODGE_AIR_BACK",
+      "symbol": "WEAP_ANIM_DODGE_AIR_BACK",
+      "iw7_index": 218
+    },
+    {
+      "key": "DODGE_AIR_LEFT",
+      "symbol": "WEAP_ANIM_DODGE_AIR_LEFT",
+      "iw7_index": 219
+    },
+    {
+      "key": "DODGE_AIR_RIGHT",
+      "symbol": "WEAP_ANIM_DODGE_AIR_RIGHT",
+      "iw7_index": 220
+    },
+    {
+      "key": "LAND_DIP",
+      "symbol": "WEAP_ANIM_LAND_DIP",
+      "iw7_index": null
+    },
+    {
+      "key": "RECOIL_SETTLE",
+      "symbol": "WEAP_ANIM_RECOIL_SETTLE",
+      "iw7_index": 231
+    },
+    {
+      "key": "SWIM_LOOP",
+      "symbol": "WEAP_ANIM_SWIM_LOOP",
+      "iw7_index": 232
+    },
+    {
+      "key": "MANTLE_UP_64",
+      "symbol": "WEAP_ANIM_MANTLE_UP_64",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_UP_56",
+      "symbol": "WEAP_ANIM_MANTLE_UP_56",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_UP_48",
+      "symbol": "WEAP_ANIM_MANTLE_UP_48",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_UP_40",
+      "symbol": "WEAP_ANIM_MANTLE_UP_40",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_UP_32",
+      "symbol": "WEAP_ANIM_MANTLE_UP_32",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_UP_24",
+      "symbol": "WEAP_ANIM_MANTLE_UP_24",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_UP_16",
+      "symbol": "WEAP_ANIM_MANTLE_UP_16",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_OVER_64",
+      "symbol": "WEAP_ANIM_MANTLE_OVER_64",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_OVER_56",
+      "symbol": "WEAP_ANIM_MANTLE_OVER_56",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_OVER_48",
+      "symbol": "WEAP_ANIM_MANTLE_OVER_48",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_OVER_40",
+      "symbol": "WEAP_ANIM_MANTLE_OVER_40",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_OVER_32",
+      "symbol": "WEAP_ANIM_MANTLE_OVER_32",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_OVER_24",
+      "symbol": "WEAP_ANIM_MANTLE_OVER_24",
+      "iw7_index": null
+    },
+    {
+      "key": "MANTLE_OVER_16",
+      "symbol": "WEAP_ANIM_MANTLE_OVER_16",
+      "iw7_index": null
+    },
+    {
+      "key": "GOLIATH_ENTRY",
+      "symbol": "WEAP_ANIM_GOLIATH_ENTRY",
+      "iw7_index": null
+    },
+    {
+      "key": "OFFHAND_SWITCH",
+      "symbol": "WEAP_ANIM_OFFHAND_SWITCH",
+      "iw7_index": null
+    },
+    {
+      "key": "HEAT_COOLDOWN_IN",
+      "symbol": "WEAP_ANIM_HEAT_COOLDOWN_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "HEAT_COOLDOWN_OUT",
+      "symbol": "WEAP_ANIM_HEAT_COOLDOWN_OUT",
+      "iw7_index": null
+    },
+    {
+      "key": "OVERHEAT_OUT",
+      "symbol": "WEAP_ANIM_OVERHEAT_OUT",
+      "iw7_index": null
+    },
+    {
+      "key": "SCRIPTED",
+      "symbol": "WEAP_ANIM_SCRIPTED",
+      "iw7_index": null
+    },
+    {
+      "key": "INSPECTION",
+      "symbol": "WEAP_ANIM_INSPECTION",
+      "iw7_index": null
+    },
+    {
+      "key": "RELOAD_MULTIPLE_1",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_1",
+      "iw7_index": 233
+    },
+    {
+      "key": "RELOAD_MULTIPLE_2",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_2",
+      "iw7_index": 234
+    },
+    {
+      "key": "RELOAD_MULTIPLE_3",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_3",
+      "iw7_index": 235
+    },
+    {
+      "key": "RELOAD_MULTIPLE_4",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_4",
+      "iw7_index": 236
+    },
+    {
+      "key": "RELOAD_MULTIPLE_5",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_5",
+      "iw7_index": 237
+    },
+    {
+      "key": "RELOAD_MULTIPLE_6",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_6",
+      "iw7_index": 238
+    },
+    {
+      "key": "RELOAD_MULTIPLE_7",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_7",
+      "iw7_index": 239
+    },
+    {
+      "key": "RELOAD_MULTIPLE_8",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_8",
+      "iw7_index": 240
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_1",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_1",
+      "iw7_index": 241
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_2",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_2",
+      "iw7_index": 242
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_3",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_3",
+      "iw7_index": 243
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_4",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_4",
+      "iw7_index": 244
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_5",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_5",
+      "iw7_index": 245
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_6",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_6",
+      "iw7_index": 246
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_7",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_7",
+      "iw7_index": 247
+    },
+    {
+      "key": "RELOAD_MULTIPLE_FAST_8",
+      "symbol": "WEAP_ANIM_RELOAD_MULTIPLE_FAST_8",
+      "iw7_index": 248
+    },
+    {
+      "key": "ADS_UP",
+      "symbol": "WEAP_ANIM_ADS_UP",
+      "iw7_index": 249
+    },
+    {
+      "key": "ADS_DOWN",
+      "symbol": "WEAP_ANIM_ADS_DOWN",
+      "iw7_index": 250
+    },
+    {
+      "key": "RECOIL",
+      "symbol": "WEAP_ANIM_RECOIL",
+      "iw7_index": 254
+    },
+    {
+      "key": "WEAP_ALT_ANIM_ADJUST",
+      "symbol": "WEAP_ALT_ANIM_ADJUST",
+      "iw7_index": 255
+    },
+    {
+      "key": "ADDITIVE_ADS_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_ADS_ROOT",
+      "iw7_index": 11
+    },
+    {
+      "key": "ADDITIVE_ADS_UP",
+      "symbol": "WEAP_ANIM_ADDITIVE_ADS_UP",
+      "iw7_index": 12
+    },
+    {
+      "key": "ADDITIVE_HYBRID_SIGHT_UP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_HYBRID_SIGHT_UP_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_HYBRID_SIGHT_UP",
+      "symbol": "WEAP_ANIM_ADDITIVE_HYBRID_SIGHT_UP",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_DRAG_LEFT_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_LEFT_ROOT",
+      "iw7_index": 13
+    },
+    {
+      "key": "ADDITIVE_DRAG_LEFT",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_LEFT",
+      "iw7_index": 14
+    },
+    {
+      "key": "ADDITIVE_DRAG_RIGHT_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_RIGHT_ROOT",
+      "iw7_index": 15
+    },
+    {
+      "key": "ADDITIVE_DRAG_RIGHT",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_RIGHT",
+      "iw7_index": 16
+    },
+    {
+      "key": "ADDITIVE_DRAG_UP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_UP_ROOT",
+      "iw7_index": 17
+    },
+    {
+      "key": "ADDITIVE_DRAG_UP",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_UP",
+      "iw7_index": 18
+    },
+    {
+      "key": "ADDITIVE_DRAG_DOWN_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_DOWN_ROOT",
+      "iw7_index": 19
+    },
+    {
+      "key": "ADDITIVE_DRAG_DOWN",
+      "symbol": "WEAP_ANIM_ADDITIVE_DRAG_DOWN",
+      "iw7_index": 20
+    },
+    {
+      "key": "ADDITIVE_SWIM_FORWARD_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_SWIM_FORWARD_ROOT",
+      "iw7_index": 21
+    },
+    {
+      "key": "ADDITIVE_SWIM_FORWARD",
+      "symbol": "WEAP_ANIM_ADDITIVE_SWIM_FORWARD",
+      "iw7_index": 22
+    },
+    {
+      "key": "ADDITIVE_SWIM_BACKWARD_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_SWIM_BACKWARD_ROOT",
+      "iw7_index": 23
+    },
+    {
+      "key": "ADDITIVE_SWIM_BACKWARD",
+      "symbol": "WEAP_ANIM_ADDITIVE_SWIM_BACKWARD",
+      "iw7_index": 24
+    },
+    {
+      "key": "ADDITIVE_JUMP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_JUMP_ROOT",
+      "iw7_index": 25
+    },
+    {
+      "key": "ADDITIVE_JUMP",
+      "symbol": "WEAP_ANIM_ADDITIVE_JUMP",
+      "iw7_index": 26
+    },
+    {
+      "key": "ADDITIVE_JUMP_BOOST",
+      "symbol": "WEAP_ANIM_ADDITIVE_JUMP_BOOST",
+      "iw7_index": 27
+    },
+    {
+      "key": "ADDITIVE_JUMP_LAND_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_JUMP_LAND_ROOT",
+      "iw7_index": 28
+    },
+    {
+      "key": "ADDITIVE_JUMP_LAND",
+      "symbol": "WEAP_ANIM_ADDITIVE_JUMP_LAND",
+      "iw7_index": 29
+    },
+    {
+      "key": "ADDITIVE_JUMP_LAND_HEAVY",
+      "symbol": "WEAP_ANIM_ADDITIVE_JUMP_LAND_HEAVY",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_WALK_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_WALK_ROOT",
+      "iw7_index": 30
+    },
+    {
+      "key": "ADDITIVE_WALK",
+      "symbol": "WEAP_ANIM_ADDITIVE_WALK",
+      "iw7_index": 31
+    },
+    {
+      "key": "ADDITIVE_HEAT_COOLDOWN_LOOP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_HEAT_COOLDOWN_LOOP_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_HEAT_COOLDOWN_LOOP",
+      "symbol": "WEAP_ANIM_ADDITIVE_HEAT_COOLDOWN_LOOP",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_OVERHEAT_IN_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_OVERHEAT_IN_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_OVERHEAT_IN",
+      "symbol": "WEAP_ANIM_ADDITIVE_OVERHEAT_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_OVERHEAT_LOOP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_OVERHEAT_LOOP_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_OVERHEAT_LOOP",
+      "symbol": "WEAP_ANIM_ADDITIVE_OVERHEAT_LOOP",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_CRAWL_IN_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_IN_ROOT",
+      "iw7_index": 41
+    },
+    {
+      "key": "ADDITIVE_CRAWL_IN",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_IN",
+      "iw7_index": 42
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_ROOT",
+      "iw7_index": 43
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP",
+      "iw7_index": 44
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP_BACK_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_BACK_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP_BACK",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_BACK",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP_LEFT_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_LEFT_ROOT",
+      "iw7_index": 45
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP_LEFT",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_LEFT",
+      "iw7_index": 46
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP_RIGHT_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_RIGHT_ROOT",
+      "iw7_index": 47
+    },
+    {
+      "key": "ADDITIVE_CRAWL_LOOP_RIGHT",
+      "symbol": "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_RIGHT",
+      "iw7_index": 48
+    },
+    {
+      "key": "ADDITIVE_PRONE_DROP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_PRONE_DROP_ROOT",
+      "iw7_index": 49
+    },
+    {
+      "key": "ADDITIVE_PRONE_DROP",
+      "symbol": "WEAP_ANIM_ADDITIVE_PRONE_DROP",
+      "iw7_index": 50
+    },
+    {
+      "key": "ADDITIVE_EMPTY_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_EMPTY_ROOT",
+      "iw7_index": 105
+    },
+    {
+      "key": "ADDITIVE_EMPTY",
+      "symbol": "WEAP_ANIM_ADDITIVE_EMPTY",
+      "iw7_index": 106
+    },
+    {
+      "key": "ADDITIVE_MANTLE_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_MANTLE_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_MANTLE",
+      "symbol": "WEAP_ANIM_ADDITIVE_MANTLE",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_LOW_MANTLE_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_LOW_MANTLE_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_MANTLE_UP_24",
+      "symbol": "WEAP_ANIM_ADDITIVE_MANTLE_UP_24",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_MANTLE_UP_16",
+      "symbol": "WEAP_ANIM_ADDITIVE_MANTLE_UP_16",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_MANTLE_OVER_24",
+      "symbol": "WEAP_ANIM_ADDITIVE_MANTLE_OVER_24",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_MANTLE_OVER_16",
+      "symbol": "WEAP_ANIM_ADDITIVE_MANTLE_OVER_16",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_SHOT_CHARGE_IN_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_SHOT_CHARGE_IN_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_SHOT_CHARGE_IN",
+      "symbol": "WEAP_ANIM_ADDITIVE_SHOT_CHARGE_IN",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_SHOT_CHARGE_LOOP_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_SHOT_CHARGE_LOOP_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_SHOT_CHARGE_LOOP",
+      "symbol": "WEAP_ANIM_ADDITIVE_SHOT_CHARGE_LOOP",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_SCRIPTED_ROOT",
+      "symbol": "WEAP_ANIM_ADDITIVE_SCRIPTED_ROOT",
+      "iw7_index": null
+    },
+    {
+      "key": "ADDITIVE_SCRIPTED",
+      "symbol": "WEAP_ANIM_ADDITIVE_SCRIPTED",
+      "iw7_index": null
+    }
+  ],
+  "iw7_slots": [
+    "WEAP_ANIM_ROOT",
+    "WEAP_ANIM_INNER_ROOT",
+    "WEAP_ANIM_GESTURE_IK_TARGET_1",
+    "WEAP_ANIM_GESTURE_IK_TARGET_2",
+    "WEAP_ANIM_GESTURE_IK_TARGET_3",
+    "WEAP_ANIM_GESTURE_IK_TARGET_4",
+    "WEAP_ANIM_IK_NODE",
+    "WEAP_ANIM_PROC_NODE",
+    "WEAP_ANIM_IK_NODE_VOID",
+    "WEAP_ANIM_PROC_NODE_VOID",
+    "WEAP_ANIM_RELATIVE_ROOT",
+    "WEAP_ANIM_ADDITIVE_ADS_ROOT",
+    "WEAP_ANIM_ADDITIVE_ADS_UP",
+    "WEAP_ANIM_ADDITIVE_DRAG_LEFT_ROOT",
+    "WEAP_ANIM_ADDITIVE_DRAG_LEFT",
+    "WEAP_ANIM_ADDITIVE_DRAG_RIGHT_ROOT",
+    "WEAP_ANIM_ADDITIVE_DRAG_RIGHT",
+    "WEAP_ANIM_ADDITIVE_DRAG_UP_ROOT",
+    "WEAP_ANIM_ADDITIVE_DRAG_UP",
+    "WEAP_ANIM_ADDITIVE_DRAG_DOWN_ROOT",
+    "WEAP_ANIM_ADDITIVE_DRAG_DOWN",
+    "WEAP_ANIM_ADDITIVE_SWIM_FORWARD_ROOT",
+    "WEAP_ANIM_ADDITIVE_SWIM_FORWARD",
+    "WEAP_ANIM_ADDITIVE_SWIM_BACKWARD_ROOT",
+    "WEAP_ANIM_ADDITIVE_SWIM_BACKWARD",
+    "WEAP_ANIM_ADDITIVE_JUMP_ROOT",
+    "WEAP_ANIM_ADDITIVE_JUMP",
+    "WEAP_ANIM_ADDITIVE_JUMP_BOOST",
+    "WEAP_ANIM_ADDITIVE_JUMP_LAND_ROOT",
+    "WEAP_ANIM_ADDITIVE_JUMP_LAND",
+    "WEAP_ANIM_ADDITIVE_WALK_ROOT",
+    "WEAP_ANIM_ADDITIVE_WALK",
+    "WEAP_ANIM_ADDITIVE_WALK_GESTURE_1",
+    "WEAP_ANIM_ADDITIVE_WALK_GESTURE_2",
+    "WEAP_ANIM_ADDITIVE_SPRINT_ROOT",
+    "WEAP_ANIM_ADDITIVE_SPRINT_IN",
+    "WEAP_ANIM_ADDITIVE_SPRINT_LOOP",
+    "WEAP_ANIM_ADDITIVE_SUPER_SPRINT_LOOP",
+    "WEAP_ANIM_ADDITIVE_SPRINT_OUT",
+    "WEAP_ANIM_ADDITIVE_SPRINT_OFFSET_ROOT",
+    "WEAP_ANIM_ADDITIVE_SPRINT_OFFSET",
+    "WEAP_ANIM_ADDITIVE_CRAWL_IN_ROOT",
+    "WEAP_ANIM_ADDITIVE_CRAWL_IN",
+    "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_ROOT",
+    "WEAP_ANIM_ADDITIVE_CRAWL_LOOP",
+    "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_LEFT_ROOT",
+    "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_LEFT",
+    "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_RIGHT_ROOT",
+    "WEAP_ANIM_ADDITIVE_CRAWL_LOOP_RIGHT",
+    "WEAP_ANIM_ADDITIVE_PRONE_DROP_ROOT",
+    "WEAP_ANIM_ADDITIVE_PRONE_DROP",
+    "WEAP_ANIM_ADDITIVE_FINGER_POSE_LEFT_ROOT",
+    "WEAP_ANIM_ADDITIVE_FINGER_POSE_LEFT",
+    "WEAP_ANIM_ADDITIVE_FINGER_POSE_RIGHT_ROOT",
+    "WEAP_ANIM_ADDITIVE_FINGER_POSE_RIGHT",
+    "WEAP_ANIM_ADDITIVE_DEMEANOR_OFFSET_ROOT",
+    "WEAP_ANIM_ADDITIVE_DEMEANOR_OFFSET_SAFE",
+    "WEAP_ANIM_ADDITIVE_GESTURE_1",
+    "WEAP_ANIM_ADDITIVE_GESTURE_2",
+    "WEAP_ANIM_ADDITIVE_GESTURE_3",
+    "WEAP_ANIM_ADDITIVE_GESTURE_4",
+    "WEAP_ANIM_ADDITIVE_GESTURE_5",
+    "WEAP_ANIM_ADDITIVE_GESTURE_6",
+    "WEAP_ANIM_ADDITIVE_GESTURE_7",
+    "WEAP_ANIM_ADDITIVE_GESTURE_8",
+    "WEAP_ANIM_ADDITIVE_GESTURE_9",
+    "WEAP_ANIM_ADDITIVE_GESTURE_10",
+    "WEAP_ANIM_ADDITIVE_GESTURE_11",
+    "WEAP_ANIM_ADDITIVE_GESTURE_12",
+    "WEAP_ANIM_ADDITIVE_GESTURE_13",
+    "WEAP_ANIM_ADDITIVE_GESTURE_14",
+    "WEAP_ANIM_ADDITIVE_GESTURE_15",
+    "WEAP_ANIM_ADDITIVE_GESTURE_16",
+    "WEAP_ANIM_ADDITIVE_GESTURE_17",
+    "WEAP_ANIM_ADDITIVE_GESTURE_18",
+    "WEAP_ANIM_ADDITIVE_GESTURE_19",
+    "WEAP_ANIM_ADDITIVE_GESTURE_20",
+    "WEAP_ANIM_ADDITIVE_GESTURE_21",
+    "WEAP_ANIM_ADDITIVE_GESTURE_22",
+    "WEAP_ANIM_ADDITIVE_GESTURE_23",
+    "WEAP_ANIM_ADDITIVE_GESTURE_24",
+    "WEAP_ANIM_ADDITIVE_GESTURE_25",
+    "WEAP_ANIM_ADDITIVE_GESTURE_26",
+    "WEAP_ANIM_ADDITIVE_GESTURE_27",
+    "WEAP_ANIM_ADDITIVE_GESTURE_28",
+    "WEAP_ANIM_ADDITIVE_GESTURE_29",
+    "WEAP_ANIM_ADDITIVE_GESTURE_30",
+    "WEAP_ANIM_ADDITIVE_GESTURE_31",
+    "WEAP_ANIM_ADDITIVE_GESTURE_32",
+    "WEAP_ANIM_ADDITIVE_GESTURE_33",
+    "WEAP_ANIM_ADDITIVE_GESTURE_34",
+    "WEAP_ANIM_ADDITIVE_GESTURE_35",
+    "WEAP_ANIM_ADDITIVE_GESTURE_36",
+    "WEAP_ANIM_ADDITIVE_GESTURE_37",
+    "WEAP_ANIM_ADDITIVE_GESTURE_38",
+    "WEAP_ANIM_ADDITIVE_GESTURE_39",
+    "WEAP_ANIM_ADDITIVE_GESTURE_40",
+    "WEAP_ANIM_ADDITIVE_SETTLE_ROOT",
+    "WEAP_ANIM_ADDITIVE_SETTLE_ADS",
+    "WEAP_ANIM_ADDITIVE_REGENERATE_ROOT",
+    "WEAP_ANIM_ADDITIVE_REGENERATE",
+    "WEAP_ANIM_ADDITIVE_MAGAZINE_BULLETS_ROOT",
+    "WEAP_ANIM_ADDITIVE_MAGAZINE_BULLETS",
+    "WEAP_ANIM_ADDITIVE_RECOIL_ROOT",
+    "WEAP_ANIM_ADDITIVE_RECOIL",
+    "WEAP_ANIM_ADDITIVE_EMPTY_ROOT",
+    "WEAP_ANIM_ADDITIVE_EMPTY",
+    "WEAP_ANIM_IDLE",
+    "WEAP_ANIM_EMPTY_IDLE",
+    "WEAP_ANIM_FIRE",
+    "WEAP_ANIM_HOLD_FIRE",
+    "WEAP_ANIM_LASTSHOT",
+    "WEAP_ANIM_RECHAMBER",
+    "WEAP_ANIM_GRENADE_PRIME",
+    "WEAP_ANIM_GRENADE_PRIME_READY_TO_THROW",
+    "WEAP_ANIM_MELEE_FATAL",
+    "WEAP_ANIM_MELEE_HIT",
+    "WEAP_ANIM_MELEE_MISS",
+    "WEAP_ANIM_MELEE_SWIPE",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_FATAL",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_HIT",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_MISS",
+    "WEAP_ANIM_MELEE_FATAL_2",
+    "WEAP_ANIM_MELEE_HIT_2",
+    "WEAP_ANIM_MELEE_MISS_2",
+    "WEAP_ANIM_MELEE_SWIPE_2",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_FATAL_2",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_HIT_2",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_MISS_2",
+    "WEAP_ANIM_MELEE_FATAL_3",
+    "WEAP_ANIM_MELEE_HIT_3",
+    "WEAP_ANIM_MELEE_MISS_3",
+    "WEAP_ANIM_MELEE_SWIPE_3",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_FATAL_3",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_HIT_3",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_MISS_3",
+    "WEAP_ANIM_MELEE_FATAL_4",
+    "WEAP_ANIM_MELEE_HIT_4",
+    "WEAP_ANIM_MELEE_MISS_4",
+    "WEAP_ANIM_MELEE_SWIPE_4",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_FATAL_4",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_HIT_4",
+    "WEAP_ANIM_MELEE_VICTIM_CROUCHING_MISS_4",
+    "WEAP_ANIM_ALT_MELEE_FATAL",
+    "WEAP_ANIM_ALT_MELEE_HIT",
+    "WEAP_ANIM_ALT_MELEE_MISS",
+    "WEAP_ANIM_ALT_MELEE_SWIPE",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_FATAL",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_HIT",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_MISS",
+    "WEAP_ANIM_ALT_MELEE_FATAL_2",
+    "WEAP_ANIM_ALT_MELEE_HIT_2",
+    "WEAP_ANIM_ALT_MELEE_MISS_2",
+    "WEAP_ANIM_ALT_MELEE_SWIPE_2",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_FATAL_2",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_HIT_2",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_MISS_2",
+    "WEAP_ANIM_ALT_MELEE_FATAL_3",
+    "WEAP_ANIM_ALT_MELEE_HIT_3",
+    "WEAP_ANIM_ALT_MELEE_MISS_3",
+    "WEAP_ANIM_ALT_MELEE_SWIPE_3",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_FATAL_3",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_HIT_3",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_MISS_3",
+    "WEAP_ANIM_ALT_MELEE_FATAL_4",
+    "WEAP_ANIM_ALT_MELEE_HIT_4",
+    "WEAP_ANIM_ALT_MELEE_MISS_4",
+    "WEAP_ANIM_ALT_MELEE_SWIPE_4",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_FATAL_4",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_HIT_4",
+    "WEAP_ANIM_ALT_MELEE_VICTIM_CROUCHING_MISS_4",
+    "WEAP_ANIM_RELOAD",
+    "WEAP_ANIM_RELOAD_EMPTY",
+    "WEAP_ANIM_RELOAD_START",
+    "WEAP_ANIM_RELOAD_END",
+    "WEAP_ANIM_FAST_RELOAD",
+    "WEAP_ANIM_FAST_RELOAD_EMPTY",
+    "WEAP_ANIM_FAST_RELOAD_START",
+    "WEAP_ANIM_FAST_RELOAD_END",
+    "WEAP_ANIM_RAISE",
+    "WEAP_ANIM_FIRST_RAISE",
+    "WEAP_ANIM_BREACH_RAISE",
+    "WEAP_ANIM_DROP",
+    "WEAP_ANIM_ALT_RAISE",
+    "WEAP_ANIM_ALT_RAISE_ADS",
+    "WEAP_ANIM_ALT_RAISE_AKIMBO",
+    "WEAP_ANIM_ALT_DROP",
+    "WEAP_ANIM_ALT_DROP_ADS",
+    "WEAP_ANIM_ALT_DROP_AKIMBO",
+    "WEAP_ANIM_ALT_OVERRIDE",
+    "WEAP_ANIM_TOGGLE_OVERRIDE",
+    "WEAP_ANIM_SCOPE_TOGGLE_ON",
+    "WEAP_ANIM_SCOPE_TOGGLE_OFF",
+    "WEAP_ANIM_QUICK_RAISE",
+    "WEAP_ANIM_QUICK_DROP",
+    "WEAP_ANIM_EMPTY_RAISE",
+    "WEAP_ANIM_EMPTY_DROP",
+    "WEAP_ANIM_SPRINT_IN",
+    "WEAP_ANIM_SPRINT_IN_CANCEL",
+    "WEAP_ANIM_SPRINT_LOOP",
+    "WEAP_ANIM_SPRINT_OUT",
+    "WEAP_ANIM_STUNNED_START",
+    "WEAP_ANIM_STUNNED_LOOP",
+    "WEAP_ANIM_STUNNED_END",
+    "WEAP_ANIM_DETONATE",
+    "WEAP_ANIM_NIGHTVISION_WEAR",
+    "WEAP_ANIM_NIGHTVISION_REMOVE",
+    "WEAP_ANIM_ADS_FIRE",
+    "WEAP_ANIM_ADS_LASTSHOT",
+    "WEAP_ANIM_ADS_RECHAMBER",
+    "WEAP_ANIM_BLAST_FRONT",
+    "WEAP_ANIM_BLAST_RIGHT",
+    "WEAP_ANIM_BLAST_BACK",
+    "WEAP_ANIM_BLAST_LEFT",
+    "WEAP_ANIM_DODGE_GROUND_BACK",
+    "WEAP_ANIM_DODGE_GROUND_LEFT",
+    "WEAP_ANIM_DODGE_GROUND_RIGHT",
+    "WEAP_ANIM_DODGE_AIR_FORWARD",
+    "WEAP_ANIM_DODGE_AIR_BACK",
+    "WEAP_ANIM_DODGE_AIR_LEFT",
+    "WEAP_ANIM_DODGE_AIR_RIGHT",
+    "WEAP_ANIM_LEAP_IN",
+    "WEAP_ANIM_LEAP_LOOP",
+    "WEAP_ANIM_LEAP_CANCEL",
+    "WEAP_ANIM_LEAP_OUT",
+    "WEAP_ANIM_CHARGE_IN",
+    "WEAP_ANIM_CHARGE_LOOP",
+    "WEAP_ANIM_CHARGE_OUT",
+    "WEAP_ANIM_ADS_CHARGE_IN",
+    "WEAP_ANIM_ADS_CHARGE_LOOP",
+    "WEAP_ANIM_ADS_CHARGE_OUT",
+    "WEAP_ANIM_RECOIL_SETTLE",
+    "WEAP_ANIM_SWIM_LOOP",
+    "WEAP_ANIM_RELOAD_MULTIPLE_1",
+    "WEAP_ANIM_RELOAD_MULTIPLE_2",
+    "WEAP_ANIM_RELOAD_MULTIPLE_3",
+    "WEAP_ANIM_RELOAD_MULTIPLE_4",
+    "WEAP_ANIM_RELOAD_MULTIPLE_5",
+    "WEAP_ANIM_RELOAD_MULTIPLE_6",
+    "WEAP_ANIM_RELOAD_MULTIPLE_7",
+    "WEAP_ANIM_RELOAD_MULTIPLE_8",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_1",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_2",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_3",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_4",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_5",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_6",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_7",
+    "WEAP_ANIM_RELOAD_MULTIPLE_FAST_8",
+    "WEAP_ANIM_ADS_UP",
+    "WEAP_ANIM_ADS_DOWN",
+    "WEAP_ANIM_SHIELD_UP",
+    "WEAP_ANIM_SHIELD_IDLE",
+    "WEAP_ANIM_SHIELD_DOWN",
+    "WEAP_ANIM_RECOIL",
+    "WEAP_ALT_ANIM_ADJUST",
+    "WEAP_ANIM_UNUSED",
+    "WEAP_ANIM_3P_FINGER_POSE_LEFT",
+    "WEAP_ANIM_3P_FINGER_POSE_RIGHT",
+    "WEAP_ANIM_3P_ADDITIVE_ALT_OVERRIDE"
+  ],
+  "timer_fields": {
+    "iFireDelay": "unsigned short",
+    "iMeleeDelay": "unsigned short",
+    "iDetonateDelay": "unsigned short",
+    "iFirstRaiseTime": "unsigned short",
+    "iAltRaiseTime": "unsigned short",
+    "iAltRaiseADSTime": "unsigned short",
+    "iAltRaiseAkimboTime": "unsigned short",
+    "iRechamberTime": "unsigned short",
+    "rechamberTimeOneHanded": "unsigned short",
+    "iRechamberBoltTime": "unsigned short",
+    "iHoldFireTime": "unsigned short",
+    "iHoldPrimeTime": "unsigned short",
+    "iDetonateTime": "unsigned short",
+    "iMeleeTime": "unsigned short",
+    "meleeChargeTime": "unsigned short",
+    "meleeChargeDelay": "unsigned short",
+    "altMeleeTime": "unsigned short",
+    "altMeleeChargeTime": "unsigned short",
+    "altMeleeChargeDelay": "unsigned short",
+    "iReloadTime": "unsigned short",
+    "iFastReloadTime": "unsigned short",
+    "reloadShowRocketTime": "unsigned short",
+    "iReloadEmptyTime": "unsigned short",
+    "iFastReloadEmptyTime": "unsigned short",
+    "iReloadAddTime": "unsigned short",
+    "iFastReloadAddTime": "unsigned short",
+    "iReloadEmptyAddTime": "unsigned short",
+    "iFastReloadEmptyAddTime": "unsigned short",
+    "iReloadStartTime": "unsigned short",
+    "iAltOverride3PInTime": "unsigned short",
+    "iAltOverride3POutTime": "unsigned short",
+    "iReloadStartAddTime": "unsigned short",
+    "iFastReloadStartAddTime": "unsigned short",
+    "iReloadEndTime": "unsigned short",
+    "iFastReloadEndTime": "unsigned short",
+    "iDropTime": "unsigned short",
+    "iRaiseTime": "unsigned short",
+    "iAltDropTime": "unsigned short",
+    "iAltDropADSTime": "unsigned short",
+    "iAltDropAkimboTime": "unsigned short",
+    "quickDropTime": "unsigned short",
+    "quickRaiseTime": "unsigned short",
+    "iBreachRaiseTime": "unsigned short",
+    "iEmptyRaiseTime": "unsigned short",
+    "iEmptyDropTime": "unsigned short",
+    "sprintInTime": "unsigned short",
+    "sprintLoopTime": "unsigned short",
+    "sprintOutTime": "unsigned short",
+    "walkTime": "unsigned short",
+    "gungHoTime": "unsigned short",
+    "crawlTime": "unsigned short",
+    "stunnedTimeBegin": "unsigned short",
+    "stunnedTimeLoop": "unsigned short",
+    "stunnedTimeEnd": "unsigned short",
+    "nightVisionWearTime": "unsigned short",
+    "nightVisionWearTimeFadeOutEnd": "unsigned short",
+    "nightVisionWearTimePowerUp": "unsigned short",
+    "nightVisionRemoveTime": "unsigned short",
+    "nightVisionRemoveTimePowerDown": "unsigned short",
+    "nightVisionRemoveTimeFadeInStart": "unsigned short",
+    "primeTime": "unsigned short",
+    "bHoldFullPrime": "bool",
+    "bAltOverride3PADSOnly": "bool",
+    "blastFrontTime": "unsigned short",
+    "blastRightTime": "unsigned short",
+    "blastBackTime": "unsigned short",
+    "blastLeftTime": "unsigned short",
+    "slideInTime": "unsigned short",
+    "slideLoopTime": "unsigned short",
+    "slideOutTime": "unsigned short",
+    "dodgeTime": "unsigned short",
+    "wallRunInTime": "unsigned short",
+    "wallRunOutTime": "unsigned short",
+    "leapInTime": "unsigned short",
+    "leapLoopTime": "unsigned short",
+    "leapOutTime": "unsigned short",
+    "leapCancelTime": "unsigned short",
+    "chargeInTime": "unsigned short",
+    "chargeLoopTime": "unsigned short",
+    "chargeOutTime": "unsigned short",
+    "iRegenerationTime": "unsigned short",
+    "iRegenerationAddTime": "unsigned short",
+    "iReloadInterruptTime": "unsigned short",
+    "iReloadEmptyInterruptTime": "unsigned short",
+    "iReloadEndInterruptTime": "unsigned short",
+    "iReloadMultiple1InterruptTime": "unsigned short",
+    "iReloadMultiple2InterruptTime": "unsigned short",
+    "iReloadMultiple3InterruptTime": "unsigned short",
+    "iReloadMultiple4InterruptTime": "unsigned short",
+    "iReloadMultiple5InterruptTime": "unsigned short",
+    "iReloadMultiple6InterruptTime": "unsigned short",
+    "iReloadMultiple7InterruptTime": "unsigned short",
+    "iReloadMultiple8InterruptTime": "unsigned short",
+    "iFastReloadInterruptTime": "unsigned short",
+    "iFastReloadEmptyInterruptTime": "unsigned short",
+    "iFastReloadEndInterruptTime": "unsigned short",
+    "iFastReloadMultiple1InterruptTime": "unsigned short",
+    "iFastReloadMultiple2InterruptTime": "unsigned short",
+    "iFastReloadMultiple3InterruptTime": "unsigned short",
+    "iFastReloadMultiple4InterruptTime": "unsigned short",
+    "iFastReloadMultiple5InterruptTime": "unsigned short",
+    "iFastReloadMultiple6InterruptTime": "unsigned short",
+    "iFastReloadMultiple7InterruptTime": "unsigned short",
+    "iFastReloadMultiple8InterruptTime": "unsigned short"
+  },
+  "evidence": "Pinned source text; no native parser/engine execution"
+}

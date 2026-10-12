@@ -37,7 +37,7 @@ class ProbeReader:
         require(self.take(len(expected)) == expected, 'unexpected probe name/alias')
 
 
-def read_probe(data, expected_frequency):
+def read_probe(data, expected_frequency, *, ff_roundtrip=False):
     require(expected_frequency == 1.0, 'only the original probe frequency candidate 1 is supported')
     reader = ProbeReader(data)
     header = bytearray(reader.array(1, 136))
@@ -63,7 +63,12 @@ def read_probe(data, expected_frequency):
     require(packed == [0, 0, 0, 32767, 12539, 0, 0, 30272,
                        -12539, 0, 0, 30272, 0, 0, 0, 32767], 'probe packed rotation changed')
     raw_notes = reader.array(1, 8)
-    require(struct.unpack('<If', raw_notes) == (3, 0.5), 'probe note identity/time changed')
+    note_id, note_time = struct.unpack('<If', raw_notes)
+    # XAnim::prepare interns the note name into the zone script-string table;
+    # a loaded FF can assign a different nonzero ID. The following serialized
+    # string remains the exact semantic identity in both modes.
+    require(note_time == 0.5 and (note_id > 0 if ff_roundtrip else note_id == 3),
+            'probe note identity/time changed')
     reader.exact_string('probe_contact')
     require(reader.offset == len(data), 'trailing probe data')
     samples = []
@@ -79,21 +84,25 @@ def read_probe(data, expected_frequency):
             'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data),
             'decoded_profile': 'four-key-int16-quat4-only', 'samples': samples,
             'root_rotation': 'identity', 'translations': 'no authored translation tracks',
-            'notetrack': {'name': 'probe_contact', 'normalized_time': 0.5},
+            'notetrack': {'name': 'probe_contact', 'normalized_time': 0.5, 'script_string_id': note_id},
+            'readback_scope': 'ff-redump-profile' if ff_roundtrip else 'original-native-writer-profile',
             'frequency_input': expected_frequency, 'frequency_runtime_verified': False,
             'general_xanim_decoder': False, 'runtime_verified': False,
-            'input_provenance': 'must be bound to actual native writer receipt separately'}
+            'input_provenance': ('must be bound to actual FF build/verify/dump receipts separately' if ff_roundtrip else
+                                 'must be bound to actual native writer receipt separately')}
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('xab')
     parser.add_argument('--expected-frequency', type=float, required=True)
+    parser.add_argument('--ff-roundtrip', action='store_true',
+                        help='Accept a remapped nonzero note script-string ID; exact note name/time and all other fields stay required')
     args = parser.parse_args()
     try:
         with Path(args.xab).open('rb') as stream:
             payload = stream.read(65537)
-        print(json.dumps(read_probe(payload, args.expected_frequency), indent=2, allow_nan=False))
+        print(json.dumps(read_probe(payload, args.expected_frequency, ff_roundtrip=args.ff_roundtrip), indent=2, allow_nan=False))
     except (ValueError, OSError, struct.error) as exc:
         print(json.dumps({'status': 'invalid-probe', 'error': str(exc)}))
         sys.exit(2)

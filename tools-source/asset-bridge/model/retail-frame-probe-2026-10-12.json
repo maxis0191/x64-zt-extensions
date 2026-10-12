@@ -1,0 +1,118 @@
+{
+  "schema": "iw7.retail-packed-frame-probe-plan/1",
+  "executed": false,
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "xmodel": {
+    "bytes": 12461,
+    "sha256": "3b1b61b7ce7186341e3ff2f5e80a8baa4d9e5365531ba6ed6ea04b0192e7728b",
+    "name": "park_clown_zombie",
+    "num_lods": 6,
+    "bones": 106,
+    "material_slots": 39,
+    "lods": [
+      {
+        "index": 0,
+        "xmodelsurfs": "park_clown_zombie_lod020vffp3_0060",
+        "surfaces": 8,
+        "first_material": 0,
+        "materials": [
+          "mopw/character_park_clown_zombie_shoes",
+          "mopw/character_park_clown_zombie_body",
+          "mopw/character_park_clown_zombie_hair",
+          "mopw/character_park_clown_zombie_hairplanes",
+          "mopw/character_park_clown_zombie_hairplanes",
+          "mopw/character_park_clown_zombie_head",
+          "mopw/zmb_base_male_body",
+          "mopw/zmb_shared_eyes_a"
+        ]
+      },
+      {
+        "index": 1,
+        "xmodelsurfs": "park_clown_zombie_lod0_auto120vffp3_0060",
+        "surfaces": 8,
+        "first_material": 8,
+        "materials": [
+          "mopw/character_park_clown_zombie_shoes",
+          "mopw/character_park_clown_zombie_body",
+          "mopw/character_park_clown_zombie_hair",
+          "mopw/character_park_clown_zombie_hairplanes",
+          "mopw/character_park_clown_zombie_hairplanes",
+          "mopw/character_park_clown_zombie_head",
+          "mopw/zmb_base_male_body",
+          "mopw/zmb_shared_eyes_a"
+        ]
+      },
+      {
+        "index": 2,
+        "xmodelsurfs": "park_clown_zombie_lod0_auto1_auto220vf7p3_0060",
+        "surfaces": 7,
+        "first_material": 16,
+        "materials": [
+          "mopw/character_park_clown_zombie_shoes",
+          "mopw/character_park_clown_zombie_body",
+          "mopw/character_park_clown_zombie_hair",
+          "mopw/character_park_clown_zombie_hairplanes",
+          "mopw/character_park_clown_zombie_hairplanes",
+          "mopw/character_park_clown_zombie_head",
+          "mopw/zmb_base_male_body"
+        ]
+      },
+      {
+        "index": 3,
+        "xmodelsurfs": "park_clown_zombie_lod0_auto1_auto2_auto320vf3p3_0060",
+        "surfaces": 6,
+        "first_material": 23,
+        "materials": [
+          "mopw/character_park_clown_zombie_shoes",
+          "mopw/character_park_clown_zombie_body",
+          "mopw/character_park_clown_zombie_hair",
+          "mopw/character_park_clown_zombie_hairplanes",
+          "mopw/character_park_clown_zombie_head",
+          "mopw/zmb_base_male_body"
+        ]
+      },
+      {
+        "index": 4,
+        "xmodelsurfs": "park_clown_zombie_lod0_auto1_auto2_auto3_auto420vf1p3_0060",
+        "surfaces": 5,
+        "first_material": 29,
+        "materials": [
+          "mopw/character_park_clown_zombie_shoes",
+          "mopw/character_park_clown_zombie_body",
+          "mopw/character_park_clown_zombie_hair",
+          "mopw/character_park_clown_zombie_head",
+          "mopw/zmb_base_male_body"
+        ]
+      },
+      {
+        "index": 5,
+        "xmodelsurfs": "park_clown_zombie_lod0_auto1_auto2_auto3_auto4_auto520vf1p3_0060",
+        "surfaces": 5,
+        "first_material": 34,
+        "materials": [
+          "mopw/character_park_clown_zombie_shoes",
+          "mopw/character_park_clown_zombie_body",
+          "mopw/character_park_clown_zombie_hair",
+          "mopw/character_park_clown_zombie_head",
+          "mopw/zmb_base_male_body"
+        ]
+      }
+    ],
+    "prefix_bytes": 12377,
+    "remaining_bytes_not_audited": 84
+  },
+  "material": {
+    "name": "mopw/character_park_clown_zombie_shoes",
+    "bytes": 1405,
+    "sha256": "687924c80afb088a285c5df4704475b0786310738687fc555db77a3974c7c8b6",
+    "techset": "mopw_l_sm_replace_i0c0s0o0n0p0"
+  },
+  "selected_lod": 5,
+  "first_console_command_after_zone_load": "dumpasset techset mopw_l_sm_replace_i0c0s0o0n0p0",
+  "optional_console_surface_command": "dumpasset xmodelsurfs park_clown_zombie_lod0_auto1_auto2_auto3_auto4_auto520vf1p3_0060",
+  "shader_name_known": false,
+  "next_shader_step": "Read the dumped technique/pass and vertex declaration; resolve its exact vertexshader name before any selective shader extraction.",
+  "post_registration_shader_program_available": null,
+  "retail_decoder_verified": false,
+  "whole_xmb_validated": false
+}
