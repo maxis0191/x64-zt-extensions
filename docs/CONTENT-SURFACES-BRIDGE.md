@@ -535,6 +535,70 @@ does not load the native job class. These are source/mocked checks only. There i
 a new native run requires a fresh central GO and a newly hash-bound plan after
 integration. Rendered material and recipient-reference acceptance remain pending.
 
+### Attempt B and compile-only identity diagnostic
+
+The separately authorized attempt B also stopped before writer execution/FF.
+Its native compiler and original Python root both exited0. Across32 supervisor
+polls, root exit was first seen at1875ms with Active1; the last sample at3937ms
+still had Active1, and the decision at3953ms recorded2078ms of drain. The unchanged
+two-second gate refused continuation. The original job's Stop was followed by a
+cleanup sample with root exited0 and Active0. Source hashes52/52, job closure and
+lease release were independently confirmed; Main's process identity/UDP27016 was
+unchanged. The remaining member's identity was **not captured**, so neither
+`mspdbsrv` nor `vctip` is a finding. The compiler had `/Fd` without `/Zi`.
+
+Keep the failed B state unchanged (SHA256
+`D412529CE366B010CF9D80E72FF64677CF0850D399A6A26A515B5D3404F2D923`),
+the native compile receipt
+`0DFEAF2588F508AB865DDB6C22DF144D6DD6CB2F2C886CF09BB2912BAD445629`,
+and the separate closure observation. The125952-byte writer
+`866DC245153668326BE02EF948FAF5433CB32CF20B76399D7EC6E0FAF20B81BA`
+was never executed. No stock staging or8/11GiB phase happened.
+
+`Diagnose-MaterialV2Compile.ps1` is a new source-only diagnostic, defaulting to
+Plan. Its explicit `-Run` requires a new central GO and one fresh4/6GiB admission.
+It consumes the exact hashed parameter receipt, asks the existing builder for
+its default read-only Plan, and creates a new run root. Its own plan contains
+only `compile`: it never starts the writer, ZoneTool, FF staging or a game.
+It binds the current sources plus the diagnostic C# and parameter receipt
+(56 hash inputs in the prepared source plan). Compiler arguments remain unchanged.
+
+The local `MaterialV2.JobMembers.cs` borrows the private `job` handle from the
+already-owned, source-pinned BuildJob through a checked reflection lookup.
+This is intentionally bound to that exact field/type layout; there is no
+modification to BuildJob, its pins or the shared scheduler. The helper never
+closes or mutates the borrowed job. Before Resume and at each supervision poll,
+it reads a bounded list of at most64 members of the exact job using
+[QueryInformationJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject)
+and [JOBOBJECT_BASIC_PROCESS_ID_LIST](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_process_id_list).
+An incomplete/oversized list is an explicit diagnostic failure.
+
+For each listed PID, the helper opens only a limited-query handle, confirms
+[IsProcessInJob](https://learn.microsoft.com/en-us/windows/win32/api/jobapi/nf-jobapi-isprocessinjob)
+against that same original job, then records image and creation time from that
+process handle. Parent PID comes from an optional, dynamically resolved
+[NtQueryInformationProcess](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess)
+basic-information query; absence, version/layout differences and inaccessible
+metadata are explicit errors. Parent PID is an observation, not authority to
+open/stop an outside process or a claim about an uncaptured parent's identity.
+Individual PID-list, membership and accounting reads remain non-atomic.
+
+`job-members.jsonl` is flushed and bounded to2MiB; native stdout/stderr remain
+2MiB each and all generated output remains bounded to64MiB. The shared local
+supervision still applies245seconds total,2000ms drain, existing stop/pressure
+checks and15000ms exact-owner cleanup. The last live observation occurs within
+the final supervision poll, with no extra scan delaying Stop. No queried PID is
+ever used for termination. Failed metadata cannot create a successful compilation
+or establish cleanup: original-handle exit, Active0 and the existing receipt gate
+remain independent requirements.
+
+Validation is limited to23 new source/mocked checks, C# syntax/semantic analysis
+without Emit/Add-Type/PInvoke, and an actual default Plan with fresh absent run
+root, compile-only phase and both native classes unloaded. Native ABI/member
+capture still requires the next specifically admitted compile-only run. Its useful
+result is the remaining member's effective identity plus exact closure, not FF
+or material acceptance. A/B receipts and the shared providers remain untouched.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual
