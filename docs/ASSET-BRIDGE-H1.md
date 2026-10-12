@@ -492,3 +492,143 @@ EXE/PDB and local receipts remain in place for the coordinated SDK consumer.
 **No execution of this EXE, FF build, game test, map port or owner acceptance
 occurred in this group.** The next action is parent integration/exact-head CI,
 then a separately admitted original SDK beacon FF build using the bound receipt.
+
+## Original beacon packed-frame audit (2026-10-12)
+
+The later source-only assignment investigates normal/tangent encoding without
+attributing the beacon's dark appearance in the reduced lighting profile to a
+model defect. No native executable, compiler, Add-Type, FF build, extraction,
+game or resource lease was started for this audit. SDK variant 1, surfaces,
+the full-tool candidate and its receipt remain untouched.
+
+`packed_frame_audit.py` reads the retained original source and FF-roundtrip XSB
+prefixes in place. It checks the actual position/UV triangle frames, rather than
+only testing an encoder against its inverse. Its deliberately narrow profile is
+one ordinary rigid, non-subdivision surface, at most 256 vertices/512 triangles,
+and a 2 MiB input bound. It does not parse the trailing surface structures or
+claim to validate arbitrary retail/skinned XSB files.
+
+The reproducible, sanitized result is
+`tools-source/asset-bridge/model/packed-frame-validation-2026-10-12.json`:
+
+- Both inputs are 1,231 bytes; the source hash is
+  `3d55171cb581dfa2ea249bea1de1a1f939f6aaebbc8995e291c005540e388f27`
+  and the roundtrip hash is
+  `d1bcc267099b758506c965add1564fdaecc8814b2a60954c95e79500f9d57b83`.
+  The complete files differ, but all 24 vertex records and 12 triangles are
+  byte-identical. Thirty trailing bytes are outside this prefix audit.
+- Ordinary vertices have stride 32, normal offset 24 and tangent offset 28.
+  Both packed fields have top bits 3 in every vertex. UVs have positive frame
+  handedness on all twelve triangles, so this cube cannot establish the encoding
+  of negative handedness.
+- Both H1-style unsigned 10-bit decoding (`2*q/1023-1`) and midpoint decoding
+  (`(q+0.5)/512-1`) agree with the authored face/UV frames to less than 0.08
+  degrees. A signed 10-bit interpretation does not agree. This distinguishes
+  source consistency, **not which decoder IW7 actually uses**.
+- The seven bounded Python checks cover literal axes, independent geometry/UV
+  frames, an inverted normal, mirrored UV observation, alternative encoding,
+  nonfinite/degenerate input and truncated/count-invalid prefixes. They do not
+  establish rendering or retail shader semantics.
+
+The retained source pin is `fab935826c898806855376662a8a03317b3ad8f1`.
+`game/shared.cpp` names the unsigned packer H1; the H1-to-IW7 converter copies
+ordinary normal/tangent words. Neither fact proves IW7 shader decoding. H1's
+float binormal-sign field and IW7's self-visibility field also occupy the same
+byte-12 slot with different meanings. The helper labelled IW8 is not IW7
+evidence. Therefore **IW7 decoding, tangent-sign semantics and the cause of the
+dark rendering remain unverified**; no packing change is justified by this audit.
+
+### Smallest next retail probe, prepared but not executed
+
+`retail_frame_probe.py` reads only the retained XMB prefix and shoes material
+JSON. Its output is `retail-frame-probe-2026-10-12.json`. The native dump grammar
+comes from `utils/io/assetmanager.hpp`; field order comes from
+`iw7/assets/xmodel.cpp`, and sizes/offsets from `iw7/structs.hpp` at the same pin.
+The first local parse refused an incorrect 6-byte XModelAngle assumption;
+checking the actual structure established four shorts/8 bytes and corrected
+the reader. The successful reader consumes 12,377 of 12,461 XMB bytes, leaving
+84 trailing bytes explicitly unaudited. It does not copy or modify retail data.
+
+`park_clown_zombie` has six retained LODs. Its LOD 5 contains five surfaces and
+still references `mopw/character_park_clown_zombie_shoes`; the first LOD-5
+material is model material slot 34. Its exact XModelSurfs name is:
+
+```
+park_clown_zombie_lod0_auto1_auto2_auto3_auto4_auto520vf1p3_0060
+```
+
+That name is independently present in the retained `references.csv`. LOD 5 is
+the smallest *likely* geometry candidate, not a measured byte-size claim. The
+retained shoes JSON identifies `mopw_l_sm_replace_i0c0s0o0n0p0`. No shader name
+or program is in that JSON, and this retained dump has no XSB/technique/shader
+payload. The source-defined sibling shader-bootstrap directory is also absent.
+
+After a separate coordinator GO and complete resource admission, the first
+selective console command would be:
+
+```
+dumpasset techset mopw_l_sm_replace_i0c0s0o0n0p0
+```
+
+This is the native **console command**, not an invented `-dumpasset` CLI option.
+`component/iw7/console.cpp` reads lines from `std::cin` into `Cbuf_AddText`;
+`component/iw7/zonetool.cpp` runs `Cbuf_Execute` after `start()` registers
+commands. Wait for initialization output before sending input and keep stdin
+open until `quit`; premature input is discarded before `ingame`, and EOF spins
+the console reader. Redirection/control of a future owned process is still
+runtime-unvalidated. Mode selection comes from the working directory's game
+binary, not an invented `-iw7` switch. The existing console component can show
+its console window; `-headless` is not proof that this path stays invisible.
+
+Use a coordinator-selected existing IW7 stock/diagnostic working directory,
+without copying stock or overwriting an existing `dump/assets`. Load the proven
+source-zone dependency order through console `loadzone` commands, checking file
+existence first, as `load_enemy_source_zones("cp_zmb")` does: shared
+`techsets_global_core_mp`, `techsets_common_core_mp`, then existing
+`techsets_<zone>`, `<zone>`, `patch_<zone>` for `code_post_gfx`, `global`, `common`,
+`global_mp`, `global_cp`, `common_mp`, `common_cp`, and `cp_zmb`. Loading is
+synchronous. **Do not use CLI `-loadzone`**, which sets `do_exit` and terminates
+after argument processing. No `dumpzone`, streamed images, broad enemy
+extraction or new stock clone is needed. A small output does not make native
+zone loading a light workload.
+
+The techset dump writes `dump/assets/techsets/<name>.techset`, its `.techset.txt`
+technique-index map, techniques and their vertex declarations. Shader *names*
+are serialized in each pass, but calls that dump shader programs inside
+`dump_technique` are commented out. Next inspect one relevant ordinary-model
+lit pass and its vertex declaration, then resolve the exact vertexshader name.
+Only then can `dumpasset vertexshader` with that observed name be proposed;
+the source writer targets `dump/assets/techsets/vs/<name>.cso`.
+
+There is a further concrete limit: post-registration shader program storage is
+not guaranteed. The pinned tool already has an early shader capture hook because
+later technique dumps can encounter reused storage. That hook is enabled only
+by broad `-enemy-extract`, so it must **not** be enabled as a workaround for this
+bounded probe. A missing/empty/non-DXBC shader result must be preserved and
+reported; the next justified change would be a separately authorized, exact-name
+early capture, not a claim that `dumpasset` necessarily retrieves usable DXBC.
+If the relevant decoding continues into the pixel shader, its exact named pass
+would need the same treatment. Neither native attempt has occurred here.
+
+The optional geometry command, only if it adds evidence after the shader/decl
+inspection, is:
+
+```
+dumpasset xmodelsurfs park_clown_zombie_lod0_auto1_auto2_auto3_auto4_auto520vf1p3_0060
+```
+
+It dumps one complete LOD XSB, not just the shoes sub-surface; the current cube
+reader intentionally cannot audit it. The decisive evidence is the actual input
+format plus shader component decode and bitangent reconstruction, with retail
+words as corroboration. A smoothed retail vertex normal need not equal a face
+cross product. If no negative-handedness sample exists, sign semantics remain
+open. These results alone would still not establish the reduced-profile lighting
+cause or visual acceptance.
+
+Preparation remains below its 2 MiB ceiling. A later native probe should receive
+its own output allowance (suggested 16 MiB monitored stop threshold for these
+selective outputs, not a guaranteed size or filesystem quota) and the existing
+zone-load RAM/commit admission. Preserve output hashes/paths and missing-asset
+diagnostics; close only its owned process/job and verify resource release.
+The parent owns global documentation, PR/exact-head CI/merge and the decision
+to execute this prepared probe. No separate H1 PR is opened for this sub-lot.
