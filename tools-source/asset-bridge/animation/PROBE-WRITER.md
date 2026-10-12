@@ -7,6 +7,13 @@ The sanitized [native validation record](native-validation-2026-10-12.json)
 binds the source, prepared include, compiler, executable, output and diagnostics
 by SHA-256. It contains no game assets or machine paths.
 
+The successful run used the runner hash recorded in that historical evidence.
+Subsequent review found process-tree cleanup and final-receipt budget defects.
+The [source corrections](RUNNER-CORRECTIONS.md) add an atomic Windows Job owner
+and reserve final metadata space; their native helper remains uncompiled and
+unexecuted pending a separately admitted witness. Do not apply the historical
+success claim to the revised launcher's failure paths.
+
 This source tranche prepares `paris_original_probe_bend` for the existing original
 `tag_origin` / `tag_probe` rig. It authors four X-axis rotation keys:
 frame0=0°, frame10=45°, frame20=-45°, frame30=0°, with `probe_contact` at normalized
@@ -79,12 +86,15 @@ succeeded against the actual pinned source. That preparation checkpoint proved
 generated source/input only. The retained earlier `runtime/probe-prepared-v1` predates the
 frequency observations and is superseded by `runtime/probe-prepared-v2`.
 
-After the parent's limited GO, `Run-NativeProbe.ps1` used the current merged
+After the parent's limited GO, the historical `Run-NativeProbe.ps1` used the current merged
 resource helper, a fresh atomic 4 GiB physical / 6 GiB commit admission and
 BelowNormal priority. It rehashes the prepared inputs and SDK against
 `prepared.json` and preserves process PID/creation time, compiler identity,
 arguments, exits and diagnostics in ignored runtime receipts. Output must be a
 fresh directory below this worktree's runtime, with no reparse ancestry.
+The revised source also loads its C# job helper inside the reservation, keeps
+unresolved owners quarantined and checks both final receipts before publication.
+Reusing that source requires the validation gate described above.
 
 ```powershell
 pwsh -NoProfile -File tools-source/asset-bridge/animation/Run-NativeProbe.ps1 `
