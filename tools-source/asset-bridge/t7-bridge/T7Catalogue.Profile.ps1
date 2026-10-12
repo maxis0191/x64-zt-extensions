@@ -336,7 +336,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
     }
     if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
-       $Plan.EngineOutputProfile -cne 'ObservedStartupA' -or
+       $Plan.EngineOutputProfile -cnotin @('ObservedStartupA','ObservedStartupManifestA') -or
        $Plan.PhysicalBytes -ne 6GB -or $Plan.CommitBytes -ne 8GB -or
        $Plan.GroupDeadlineSeconds -ne 200 -or $Plan.DeadlineSeconds -ne 120 -or
        $Plan.MutableOutputLimitBytes -ne 64MB -or $Plan.MetadataReserveBytes -ne 64KB -or
@@ -1030,7 +1030,71 @@ function ConvertFrom-T7CatalogueMessage([string]$Text) {
         Message=[ordered]@{Captures=@($captures.ToArray());IncompleteTrailingLine=$incomplete;InstallBoundaryObserved=$installBoundaryObserved;
             ExitCorrelated=$correlated;Correlation=$correlation}}
 }
+function Initialize-T7CatalogueOpaqueManifestObservation($Plan) {
+    # Per-attempt metadata only. Never infer a producer, format, or file contents.
+    $script:T7CatalogueOpaqueManifestObservation=$null
+    if($Plan.PSObject.Properties['EngineOutputProfile'] -and $Plan.EngineOutputProfile -ceq 'ObservedStartupManifestA') {
+        $script:T7CatalogueOpaqueManifestObservation=[pscustomobject]@{
+            Plan=$Plan;RunRoot=$Plan.RunRoot;Seen=$false;FileId=$null;Finalized=$false;PresentAtFinal=$false
+        }
+    }
+}
+function Get-T7CatalogueOpaqueManifestObservation($Plan) {
+    $variable=Get-Variable T7CatalogueOpaqueManifestObservation -Scope Script -ErrorAction SilentlyContinue
+    if(!$variable -or !$variable.Value -or ![object]::ReferenceEquals($variable.Value.Plan,$Plan) -or
+       $variable.Value.RunRoot -cne $Plan.RunRoot){throw 'Opaque manifest requires its initialized runtime attempt.'}
+    $variable.Value
+}
+function Assert-T7CatalogueOpaqueManifestContext($Context) {
+    if(!$Context -or !$Context.PSObject.Properties['Lease'] -or !$Context.Lease -or
+       !$Context.Lease.PSObject.Properties['Token'] -or $Context.Lease.Token -cnotmatch '\A[0-9a-f]{32}\z' -or
+       !$Context.PSObject.Properties['Closed'] -or $Context.Closed -ne $true -or
+       !$Context.PSObject.Properties['Guards'] -or $null -eq $Context.Guards){
+        throw 'Opaque manifest final validation requires closed native ownership and retained admission/guards.'
+    }
+}
+function Assert-T7CatalogueOpaqueManifest($Plan,[string]$Path,$Observation,[switch]$Closed,$Context) {
+    $expected=Join-Path $Plan.WorkingDirectory 'identities\dedicatedpc\LPC\.manifest'
+    if($Plan.EngineOutputProfile -cne 'ObservedStartupManifestA' -or $Path -cne $expected){
+        throw 'Only the explicit opaque manifest output path is permitted.'
+    }
+    Assert-H1Path $Path
+    $item=Get-Item -LiteralPath $Path
+    if($item.PSIsContainer -or $item.Length -gt 8){throw 'Opaque manifest must be an ordinary file of at most eight bytes.'}
+    $fileId=Get-T7CatalogueFileId $Path
+    if($fileId -cnotmatch '\A[0-9A-F]{8}:[0-9A-F]{16}\z' -or
+       ($Observation.Seen -and $Observation.FileId -cne $fileId) -or
+       ($Observation.Finalized -and !$Observation.PresentAtFinal)){
+        throw 'Opaque manifest identity or finalized absence changed.'
+    }
+    if($Closed) {
+        Assert-T7CatalogueOpaqueManifestContext $Context
+        # Do not read/hash the opaque bytes. Holding this read/share-read handle
+        # freezes the observed file through final validation and lease release.
+        $guard=[IO.FileStream]::new($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        try {
+            Assert-H1Path $Path
+            if($guard.Length -ne 8 -or (Get-T7CatalogueFileId $Path) -cne $fileId){
+                throw 'Opaque manifest final size or identity differs.'
+            }
+            $Context.Guards.Add($guard)
+        }catch{$guard.Dispose();throw}
+    }elseif((Get-T7CatalogueFileId $Path) -cne $fileId){
+        throw 'Opaque manifest identity changed during observation.'
+    }
+    $Observation.Seen=$true;$Observation.FileId=$fileId
+}
 function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
+    $opaque=[bool]($Plan.PSObject.Properties['EngineOutputProfile'] -and
+        $Plan.EngineOutputProfile -ceq 'ObservedStartupManifestA')
+    $manifestSeen=$false;$observation=$null
+    if($opaque) {
+        $observation=Get-T7CatalogueOpaqueManifestObservation $Plan
+        if($Closed) {
+            Assert-T7CatalogueOpaqueManifestContext $Context
+            if($observation.Finalized){throw 'Opaque manifest final validation already consumed.'}
+        }
+    }
     Assert-H1Path $Plan.WorkingDirectory
     $allowedFiles=@('BlackOps3_UnrankedDedicatedServer.exe','steam_api64.dll','t7-zonetool-candidate.exe')
     foreach($entry in [IO.Directory]::EnumerateFileSystemEntries($Plan.WorkingDirectory)) {
@@ -1048,13 +1112,18 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
         }
         if($name -ceq 'identities') {
             if(![IO.Directory]::Exists($entry)){throw 'Observed identities path must be a directory.'}
-            # Only the four empty directory shapes observed in A. Never read keys.
+            # The historical A profile still accepts only the empty directories.
             $allowed=@('dedicatedpc','dedicatedpc\dumps','dedicatedpc\LPC')
             $pending=[Collections.Generic.Stack[string]]::new();$pending.Push($entry)
             while($pending.Count) {
                 foreach($child in [IO.Directory]::EnumerateFileSystemEntries($pending.Pop())) {
                     Assert-H1Path $child
                     $relative=$child.Substring($entry.Length+1)
+                    if($opaque -and $relative -ceq 'dedicatedpc\LPC\.manifest') {
+                        Assert-T7CatalogueOpaqueManifest $Plan $child $observation -Closed:$Closed -Context $Context
+                        $manifestSeen=$true
+                        continue
+                    }
                     if($relative -cnotin $allowed -or ![IO.Directory]::Exists($child)){throw 'Unexpected identity entry; retain privately without reading payload.'}
                     $pending.Push($child)
                 }
@@ -1071,9 +1140,14 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
         }
     }
     if(Test-Path -LiteralPath (Join-Path $Plan.RunRoot 'zone')){throw 'Unexpected parent zone.'}
+    if($opaque) {
+        if($observation.Seen -and !$manifestSeen){throw 'Previously observed opaque manifest disappeared.'}
+        if($Closed){$observation.Finalized=$true;$observation.PresentAtFinal=$manifestSeen}
+    }
 }
 function Enable-T7CatalogueRuntimeProfile($Plan) {
     $script:T7CatalogueGroupStarted=Get-H1Clock
+    Initialize-T7CatalogueOpaqueManifestObservation $Plan
     if((Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'QualifiedCollectionV3'){
         $null=Get-T7CatalogueBootstraps $Plan
         $script:T7CatalogueV3Plan=$Plan;$script:T7CatalogueBaseOpenPin=${function:Open-H1Pin}
