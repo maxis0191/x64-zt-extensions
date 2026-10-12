@@ -5,7 +5,7 @@
   "plan_sha256": "7bf84ebf8f44101040b735ad6843e8ed1882a608e3c5d6f3e72e31d4d4a67a13",
   "run_receipt_sha256": "87ca3bb4005409bc2f069439fed56e901527802644225e471457b98a9b2172fc",
   "postflight_sha256": "e7b9b9ae0f335d93a3487ae50bedbf86f138ff2a3d8d1f3a821c077b25088eaa",
-  "slot_release_sha256": "720eb93c3fce0279f16baaa128a914f72eae8080e83d41d48606eddc9a3a74660",
+  "slot_release_sha256": "720eb93c3fce0279f16baa128a914f72eae8080e83d41d48606eddc9a3a74660",
   "invocations_for_this_plan": 1,
   "native_attempts_total": 2,
   "native_compiled": false,
