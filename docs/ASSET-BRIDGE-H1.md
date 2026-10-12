@@ -272,3 +272,107 @@ optional codecs deliberately throw if reached. This proves the selected real
 converter functions under that fixture, not the full tool allocator, arbitrary
 dump safety, optional stream compatibility, FF relocation/loading, bone-weight
 interpretation, shader correctness, visual deformation or owner acceptance.
+
+## First full ZoneTool candidate: source-only reuse plan
+
+This plan follows the parent's next request; it starts no second heavy group.
+The animation chat owns the newly allocated group. The bounded inventory is in
+`tools-source/asset-bridge/model/full-build-plan-2026-10-12.json`.
+
+The retained clean `x64-zt-enemy` checkout is still at `fab9358`. Its existing
+Release x64 executable is 21,161,472 bytes, SHA-256
+`a2cba8b0c34493fcddb5dc82e034e678c948f5c80d5b4454a93792e8e256b1d9`.
+`build/x64-zt.sln` and `build/zonetool.vcxproj` exist; the latter contains 413
+compile units and 18 dependency-project references. Fourteen submodules are
+already present at their recorded pins. The retained build occupies:
+
+| Retained input | Measured logical bytes | Reuse policy |
+| --- | ---: | --- |
+| All object/intermediate directories | 1,127,437,788 | Preserve, no bulk copy |
+| ZoneTool-only intermediates | 875,658,470 | Fresh candidate objects; do not share mutable outputs |
+| ZoneTool PCH within that total | 277,938,176 | Fresh candidate PCH: macro configuration changes |
+| ZoneTool compiler PDB within that total | 43,020,288 | Do not copy; generate candidate symbols if enabled |
+| 20 existing libraries | 256,258,974 | Resolve the 18 referenced dependency libraries read-only; exclude the tool's own import library |
+| Existing final ZoneTool PDB | 132,345,856 | Preserve in place; never copy to seed the new build |
+| TLS helper DLL embedded by resource.rc | 113,152 | Read the retained file in place |
+
+The material/source patch from commit `992f3f6` has SHA-256
+`4d7049216f24474e077ab704dac625c7f335c8264434b7de525e56a96a988d08`.
+It changes IW7 `material.cpp`, `techset.cpp`, `gfximage.cpp`; the H1 patch changes
+only `h1/converter/iw7/assets/xsurface.cpp`. Both patches were applied sequentially
+and reversed on four temporary original files, with exact resulting hashes in
+the inventory. No conflict or shared-source modification occurred.
+
+Two source findings prevent blindly reusing the old command:
+
+1. The retained Release project does **not** define `EXPERIMENTAL_IW7`.
+   `h1/zonetool.cpp::dump_asset_iw7` and eleven converter translation units are
+   conditional on it. A default build could compile the patched filename while
+   excluding its actual functions. The candidate must explicitly define the
+   macro across its own project/PCH and preserve a compiler-command witness.
+2. Current-main `ops/Build-RhinoZoneTool.ps1` still regenerates Rhino overlays from
+   `a4cec149f0dd34aa13e37e8f7ab754af11e122ec`. The first guarded file,
+   `component/exception.cpp`, differs from both that base and the helper-generated
+   inline-headless version; it has no ownership stamp. The helper also copies
+   `zonetool_rhino.hpp` before that refusal. Its ancestry check alone passes but
+   does not make it compatible. **Do not invoke it on the retained checkout** or
+   pretend it builds the requested clean `fab9358` candidate.
+
+The proposed minimal isolation is a reviewed project/source overlay in one new
+owned runtime directory, not another SDK/game/toolchain checkout:
+
+- Copy only the generated 110,595-byte ZoneTool project, the four patched C++
+  files and small version/resource source files. Input bytes/hashes remain pinned.
+  Keep this preparation below 2 MiB; no dependency directories, PDBs or binaries
+  are copied. A full fork source checkout would be about 16.33 MB without
+  submodules, but is unnecessary for this first candidate build.
+- Rewrite project source/header paths to absolute retained inputs, except the
+  four owned patched files. Each patched file gets its **own original parent
+  include directory**, so H1/IW7 files named `xsurface.hpp` cannot shadow one
+  another. Reuse dependency include directories through absolute read-only paths.
+- Remove dependency `ProjectReference` entries; link their exact existing Release
+  libraries explicitly after input hashes/configuration are checked. Keep the
+  retained static-runtime convention. Do not rebuild or write through those
+  dependency projects.
+- Set private absolute `IntDir`, `OutDir`, compiler PDB/PCH, linker PDB/import-lib,
+  resource and tracking-log outputs. Generate fresh objects/PCH for all 413
+  translation units with `EXPERIMENTAL_IW7`; do not mix the disabled baseline
+  objects with newly enabled H1 code. Preserve the existing C++23, `/W4 /WX`,
+  static runtime, optimization and linker conventions.
+- Remove pre/post-build events and implicit user property-sheet imports from
+  the reviewed overlay. In particular, the original pre-build command runs
+  `premake5 generate-buildinfo` in its parent; it must not touch retained sources.
+  Supply a small candidate version header with source/patch provenance. Give
+  `resource.rc` explicit retained paths for the icon, existing compressed tool
+  resource and `tlsdll.dll`; no game/SDK/resource copy is needed.
+- Before admission, review/evaluate every final project input/output and reject
+  any mutable path outside the candidate root. Record baseline hashes/metadata.
+  Compile only after a new parent GO; preserve failure output before correcting.
+
+The reusable part of the current helper is its scheduler/MSBuild tail, not its
+old overlay mutation. Once the described candidate project is prepared/reviewed,
+the concrete equivalent invocation is:
+
+```powershell
+. <current-private-repo>/ops/Resource-Scheduler.Core.ps1
+Invoke-IW7ResourceJob -Scope <absolute-candidate-root> -Kind Build `
+  -Owner 'Pinned H1 and strict-source ZoneTool candidate' `
+  -PhysicalBytes 4GB -CommitBytes 6GB -Body {
+    & <existing-VS2022>/MSBuild/Current/Bin/MSBuild.exe `
+      <absolute-candidate-root>/zonetool-community.vcxproj `
+      /m:1 /nr:false /v:minimal /p:Configuration=Release /p:Platform=x64 `
+      /p:MultiProcessorCompilation=false /p:BuildProjectReferences=false
+    if ($LASTEXITCODE) { throw 'Full candidate ZoneTool build failed.' }
+  }
+```
+
+This is a plan, not a generated or executed new builder. Parent admission remains
+atomic and authoritative. Keep the identified compiler/MSBuild job, BelowNormal
+priority and closure evidence; do not launch any candidate game/extraction/FF as
+part of this group. Estimated new outputs are **1.4 GiB**, with a **2 GiB hard
+ceiling**, from the measured approximately 1.03 GB old tool intermediates plus
+EXE/final PDB and margin. New symbols are generated, not copied. Enabling the
+previously disabled converters can expose real compile/link errors or increase
+output; stop and report if the ceiling is approached, never borrow more disk or
+lower RAM/commit estimates to pass admission. No full-build runtime/FF/visual
+result is established by this source inventory and plan.
