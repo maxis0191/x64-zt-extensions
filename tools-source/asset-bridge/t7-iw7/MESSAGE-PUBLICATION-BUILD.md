@@ -59,6 +59,8 @@ The runner independently inspects the guarded response text for this profile:
 
 - Each compile command has one `/Fo`, `/Fd` and `/sourceDependencies` target
   in its own fresh stage and ends with the exact prepared source path.
+- Link `/OUT`, `/PDB` and `/IMPLIB` each occur exactly once and name the exact
+  `link/zonetool-t7.exe`, `.pdb` and `.lib` stage artifacts.
 - Multiline compile commands and nested response-file arguments are refused.
 - The link contains exactly 413 unique direct quoted object rows. Main and
   `zonetool11` must each occur once at their new stage path. Old objects, missing
@@ -71,6 +73,30 @@ The runner independently inspects the guarded response text for this profile:
 The existing compiler ABI/flags, ordered E7 link inputs, original-job ownership,
 closure/quarantine handling and source/binary pin guards remain in force. These
 new checks do not replace manual review of the final plan and exact source pins.
+
+### Independent-review P2 correction
+
+The initial profile commit `847ce016` passed 102 source checks but accepted an
+expected quoted `/Fo` plus a second unquoted `/FoC:\outside\stolen.obj`. It also
+accepted `/OUT:C:\outside\stolen.exe` with the exact 413 link objects. Text hashes
+could bind these incorrect responses; artifact checks after execution were too
+late to prevent the redirected writes. Both cases were replayed against the
+original validator (accepted) and the corrected validator (refused).
+
+The correction parses the entire response into arguments before checking output
+options. Spaces/tabs delimit arguments outside quotes; quoted segments can occur
+inside arguments. The output scan recognizes `/` and `-`, case variants, attached
+or separate values and optional colons. Duplicate destinations are refused even
+when both values are correct. Missing or mismatched paths are refused before any
+admission. The existing filename-free `/PDBCompress` flag remains supported.
+
+This is a deliberately bounded parser for the generated response syntax, not a
+general MSVC command interpreter. Escaped, doubled or unclosed quotes, control
+characters and response indirection are refused. It follows the quoted-segment
+and space/tab rules documented by [Microsoft's argument parsing reference](https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments?view=msvc-170)
+for the accepted subset; the optional colon/space form of `/Fo` is documented in
+the [MSVC output option reference](https://learn.microsoft.com/en-us/cpp/build/reference/fo-object-file-name?view=msvc-170).
+No profile schema, pin name, binding or stage contract changes in this correction.
 
 ## Reuse and estimated growth
 
@@ -117,8 +143,15 @@ Actual growth/resource observations belong to that later admitted run.
   duplicate CLI object and changed-source refusals.
 - Publication overlay source/scheduling-model tests: **16 passed** unchanged.
 - Actual PowerShell profile/response validators, extracted without executing
-  the runner: **102 checks passed**, including all historical profile cases,
-  the new pins/stages/artifact guards, and stale or redirected objects.
+  the runner: **366 checks passed** after the P2 correction, including historical
+  profile cases, pins/stages/artifact guards, both review reproductions, every
+  output option across quoted/unquoted/colon/separate/case/prefix forms,
+  duplicates, redirected/missing values, malformed quotes and paths with spaces.
+- Retained main/CLI/link RSP text passed the actual corrected validator with the
+  retained CLI object path adapted only in memory to the expected fresh path.
+  All original flags, including manifest quoting and `/PDBCompress`, were kept.
+- Python build preparation/reuse tests were replayed after the P2 correction:
+  **20 passed with no skips**, reading only retained source and command text.
 - Existing deadline/finalization fixture: **3 passed**, no native types loaded,
   zero child processes and no lease.
 

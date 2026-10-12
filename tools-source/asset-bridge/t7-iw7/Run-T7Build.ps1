@@ -113,23 +113,69 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     }
     return $true
 }
+function Split-T7ResponseArguments([string]$Text) {
+    # Deliberately bounded MSVC response syntax: space/tab separators and quoted
+    # segments within arguments. Escaped/doubled or unclosed quotes are refused,
+    # not guessed; the generator never needs them for these file destinations.
+    if($Text -match '[\x00-\x08\x0a-\x1f\x7f]|\\+"|""' -or $Text.Contains('@')) {
+        throw 'Unsupported or indirect publication response syntax.'
+    }
+    $arguments=[Collections.Generic.List[string]]::new()
+    $token=[Text.StringBuilder]::new();$quoted=$false
+    foreach($character in $Text.ToCharArray()) {
+        if($character -eq '"') {$quoted=!$quoted;continue}
+        if(!$quoted -and ($character -eq ' ' -or $character -eq "`t")) {
+            if($token.Length){$arguments.Add($token.ToString());$null=$token.Clear()}
+        } else {$null=$token.Append($character)}
+    }
+    if($quoted){throw 'Unclosed publication response quote.'}
+    if($token.Length){$arguments.Add($token.ToString())}
+    return ,$arguments.ToArray()
+}
+function Assert-T7ResponseOutputs([string[]]$Arguments,[System.Collections.IDictionary]$Outputs) {
+    $seen=@{}
+    for($index=0;$index -lt $Arguments.Count;$index++) {
+        $argument=$Arguments[$index]
+        if($argument -notmatch '^[-/]'){continue}
+        $option=$argument.Substring(1)
+        # This existing linker flag shares PDB's prefix but takes no filename.
+        if($option -ieq 'PDBCompress'){continue}
+        foreach($name in $Outputs.Keys) {
+            if(!$option.StartsWith($name,[StringComparison]::OrdinalIgnoreCase)){continue}
+            if($seen.ContainsKey($name)){throw 'Duplicate publication output option.'}
+            $seen[$name]=$true
+            $value=$option.Substring($name.Length)
+            if($value.StartsWith(':')){$value=$value.Substring(1)}
+            if(!$value) {
+                $index++
+                if($index -ge $Arguments.Count){throw 'Missing publication output value.'}
+                $value=$Arguments[$index]
+            }
+            if($value -cne $Outputs[$name]){throw 'Publication output must belong to its exact fresh stage.'}
+            break
+        }
+    }
+    if($seen.Count -ne $Outputs.Count){throw 'Missing publication output option.'}
+}
 function Assert-T7PublicationResponses($Plan,[string]$MainResponse,[string]$CLIResponse,[string]$LinkResponse) {
     # Pure text validation, only for the new profile. The caller already guards
     # these exact response files by length/hash; no binary input is read here.
     foreach($row in @(@('main','main.cpp',$MainResponse),@('zonetool11','zonetool.cpp',$CLIResponse))) {
         $name=$row[0];$text=$row[2];$stageRoot=Join-Path $Plan.RunRoot $name
-        if(($text.TrimEnd("`r","`n") -split "`n").Count -ne 1 -or $text.Contains('@')) {throw 'One direct compile command required.'}
-        foreach($entry in @(@('/Fo',($name+'.obj')),@('/Fd','compile.pdb'),@('/sourceDependencies ','dependencies.json'))) {
-            $captureRows=[regex]::Matches($text,'(?i)(?<!\S)'+[regex]::Escape($entry[0])+'"([^"]+)"')
-            if($captureRows.Count -ne 1 -or $captureRows[0].Groups[1].Value -cne (Join-Path $stageRoot $entry[1])) {
-                throw 'Publication compile output must belong to its fresh stage.'
-            }
-        }
-        $source='"'+(Join-Path $Plan.PreparedRoot $row[1])+'"'
-        if(!$text.TrimEnd("`r","`n").EndsWith((' '+$source),[StringComparison]::Ordinal)) {throw 'Exact prepared compile source required.'}
+        $arguments=Split-T7ResponseArguments $text.TrimEnd("`r","`n")
+        Assert-T7ResponseOutputs $arguments ([ordered]@{
+            Fo=(Join-Path $stageRoot ($name+'.obj'));Fd=(Join-Path $stageRoot 'compile.pdb')
+            sourceDependencies=(Join-Path $stageRoot 'dependencies.json')
+        })
+        if(!$arguments.Count -or $arguments[-1] -cne (Join-Path $Plan.PreparedRoot $row[1])) {throw 'Exact prepared compile source required.'}
     }
     $lines=@($LinkResponse.TrimEnd("`r","`n") -split "`r?`n")
     if($lines.Count -ne 414 -or $lines[0] -match '(?i)\.obj\b|@') {throw 'Exact direct 413-object link required.'}
+    $linkRoot=Join-Path $Plan.RunRoot 'link'
+    Assert-T7ResponseOutputs (Split-T7ResponseArguments $lines[0]) ([ordered]@{
+        OUT=(Join-Path $linkRoot 'zonetool-t7.exe');PDB=(Join-Path $linkRoot 'zonetool-t7.pdb')
+        IMPLIB=(Join-Path $linkRoot 'zonetool-t7.lib')
+    })
     $objects=@();$unique=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($line in $lines[1..413]) {
         if($line -notmatch '^"([^"\r\n]+\.obj)"$') {throw 'Direct quoted link object required.'}
