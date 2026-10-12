@@ -31,19 +31,18 @@ if($parameters.StockRoot -ine $review.stock_root){throw 'Historical stock root d
 $baseline=Read-BeaconJson $parameters.StockReceipt;$observation=Read-BeaconJson $parameters.StockBindingReceipt;$reviewed=Read-BeaconJson $parameters.ReviewedStockManifest
 $stock=@(Get-FFStockBindingInputs $baseline $observation $reviewed $parameters.StockRoot $parameters.StockReceiptSHA256 $parameters.ReviewedStockManifestSHA256)
 Set-MaterialV2StagingModes $stock
-$candidateRoot=[IO.Path]::GetFullPath($parameters.CandidateRoot)
-$candidateReceipt=Join-Path $candidateRoot 'build-artifact.local.json'
-$artifact=Read-BeaconJson $candidateReceipt
-if($artifact.executable.path -ine $review.existing_candidate.path -or $artifact.executable.sha256 -cne $review.existing_candidate.sha256){throw 'Reviewed candidate differs.'}
-foreach($entry in @([pscustomobject]@{Path=$candidateReceipt;SHA256=(Get-FileHash -LiteralPath $candidateReceipt).Hash},
-    [pscustomobject]@{Path=(Join-Path $candidateRoot 'preparation.local.json');SHA256=$artifact.preparation_sha256},
-    [pscustomobject]@{Path=(Join-Path $candidateRoot 'result.local.json');SHA256=$artifact.result_sha256},
-    [pscustomobject]@{Path=$artifact.commands_tlog.path;SHA256=$artifact.commands_tlog.sha256})){
+$candidateRoot=[IO.Path]::GetFullPath($review.candidate_root)
+$candidateReceipt=Join-Path $candidateRoot 'build-receipt.json'
+$candidate=Assert-SoundFFChecksumCandidate $candidateRoot $review.candidate_receipt_sha256 $review.candidate_state_sha256
+if($candidate.Path -ine $review.existing_candidate.path -or $candidate.SHA256 -cne $review.existing_candidate.sha256){throw 'Reviewed candidate differs.'}
+foreach($entry in @([pscustomobject]@{Path=$candidateReceipt;SHA256=$review.candidate_receipt_sha256},
+    [pscustomobject]@{Path=(Join-Path $candidateRoot 'supervisor-state.json');SHA256=$review.candidate_state_sha256})){
     Assert-SoundFFPin $entry;$pins.Add((Get-SoundFFPin $entry.Path))
 }
 $unique=@{};foreach($pin in $pins){$key=[IO.Path]::GetFullPath($pin.Path);if($unique.ContainsKey($key) -and $unique[$key].SHA256 -ine $pin.SHA256){throw 'Conflicting source pin.'};$unique[$key]=Get-SoundFFPin $key}
 $plan=[ordered]@{Schema='iw7.original-sound-ff-execution/1';Review=$review;RunRoot=$review.run_root;Work=(Join-Path $review.run_root 'work');
     SharedRepo=$repo;Python=$review.phase_specs[-1].exe;CandidateRoot=$candidateRoot;CandidateReceiptSHA256=(Get-FileHash -LiteralPath $candidateReceipt).Hash;
+    CandidateStateSHA256=$review.candidate_state_sha256;
     StockInputs=$stock;HashInputs=@($unique.Values|Sort-Object Path);PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;
     LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=@($review.owned_future_outputs);HeavyExecutionAuthorizedByPlan=$false;Ready=$false}
 Assert-SoundFFExecutionPlan $plan $PSScriptRoot

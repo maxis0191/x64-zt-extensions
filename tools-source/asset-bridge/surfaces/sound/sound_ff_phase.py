@@ -12,7 +12,7 @@ import threading
 
 from read_sab import Inputs, ZONE, plain, require, sha, strict_json
 
-TOOL_SHA = "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04"
+TOOL_SHA = "4740f0c22a1a7bab0b01f7a55ec0b133263ac218825ac3c0d15b9e269fe472b0"
 PYTHON_SHA = "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
 SOURCE_IDENTITY = "utf8-crlf-to-lf-only/1"
 

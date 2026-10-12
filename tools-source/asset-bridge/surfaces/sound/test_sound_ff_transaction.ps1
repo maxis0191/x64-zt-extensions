@@ -33,7 +33,7 @@ try {
             if($receipt.FinalObservedBytes -ne $actualBytes -or $receipt.OutputAccountingStatus -ne 'Converged' -or $receipt.OutputBudgetError){throw 'Lease release preceded complete serialized-state accounting'}
             $events.Add('Release');if($case -eq 'ReleaseFailure'){throw 'Mock release failure'}
         }
-        function Assert-BeaconCandidate {param($Root,$ArtifactSHA256)
+        function Assert-SoundFFChecksumCandidate {param($Root,$ReceiptSHA256,$StateSHA256,$Guards)
             [pscustomobject]@{Path=$fixtureExe;SHA256=(Get-FileHash -LiteralPath $fixtureExe).Hash}
         }
         function Get-SoundFFFileId {param($Path)
