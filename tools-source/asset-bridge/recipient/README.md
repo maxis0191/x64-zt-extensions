@@ -174,7 +174,7 @@ pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-Recipient.ps1
 pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-RecipientLight.ps1
 ```
 
-11 Python fixture tests, 33 PowerShell source/contract checks and 13 pure light
+11 Python fixture tests, 35 PowerShell source/contract checks and 13 pure light
 observer identity checks passed. They
 cover exact requests/verbs, CSV shape, missing/default/extra rows, paths, names,
 hashes, lengths, bounds, source-zone order and default-plan/ownership ordering.
@@ -270,3 +270,36 @@ NativeExecuted field remains null; its unchanged meaning is preserved while the
 locator and three real process samples independently prove native launch.
 Next: prepare the bounded identity-checked dialog text reader before requesting
 a separate short diagnostic attempt. B's single-run authorization is exhausted.
+
+## Recipient C: prepared source only, automatic fatal-text probe
+
+`-FatalTextDiagnostic` is an explicit references-only mode. It preserves E7,
+native CLI, stdin PIPE, the 72-entry stock and original job owner; it changes no
+zone/pool logic. RAM/commit remain 8/11 GiB. The adapter limit is 45 seconds,
+the original job limit 50 seconds and the group's active-work limit 60 seconds.
+Existing closure may take up to another 15 seconds, followed by guarded source
+verification/restoration. These are not a promise that all cleanup completes
+within 60 wall-clock seconds. Ordinary modes retain their original deadlines.
+
+The adapter checks automatically every 250 ms using `recipient_dialog.py`, with
+the existing Python interpreter and ctypes. It uses the original Popen process
+handle and the current parent's handle; image, true creation FILETIME, PID,
+parent relationship and E7 are checked. Only windows owned by that child are
+read. A `Fatal Error` caption triggers at most one body capture: at most eight
+child controls, STATIC text only, at most 16 KiB UTF-8 of window text and classes.
+WM_GETTEXT uses a 200 ms timeout per control. Identities/HWND ownership are checked
+before and after; any reassignment discards the text. No button, command, click,
+debugger, dump, new process or compiled reader is used.
+
+The bounded `references/fatal-dialog.json` and failed phase receipt are saved
+before `diagnostic-stop.request` tells the original PowerShell job owner to stop.
+Missing text or a reader error still stops the diagnostic; neither successful
+reference output nor a native zero exit can mark the phase accepted. The outer
+status is `DiagnosticFailed`, with no reference/script acceptance. Unknown
+closure still retains the original quarantine safeguards.
+
+17 fake Win32 fixtures and 25 pipe/writer fixtures cover identity reuse,
+ownership changes, timeouts, Unicode byte bounds, control limits and automatic
+failure signaling. They spawn no process and do not validate a real C dialog.
+Source/plan preparation is authorized; C has no execution GO and the next heavy
+slot belongs to the coordinator's strict GSC work.

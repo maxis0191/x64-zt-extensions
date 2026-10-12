@@ -28,6 +28,10 @@ foreach($name in @('Recipient.Core.ps1','Run-RecipientClosure.ps1')){
 . "$PSScriptRoot/Recipient.Core.ps1"
 Check ((@(Get-RecipientPhases) -join ',') -ceq 'references,script') 'Default retains both phases'
 Check ((@(Get-RecipientPhases -ReferencesOnly) -join ',') -ceq 'references') 'Diagnostic explicitly suppresses utility phase'
+$ordinary=Get-RecipientLimits
+Check ($ordinary.PhaseSeconds -eq 240 -and $ordinary.OuterPhaseSeconds -eq 245 -and $ordinary.OverallSeconds -eq 600) 'Ordinary timing retained'
+$diagnostic=Get-RecipientLimits -FatalTextDiagnostic
+Check ($diagnostic.PhaseSeconds -eq 45 -and $diagnostic.OuterPhaseSeconds -eq 50 -and $diagnostic.OverallSeconds -eq 60) 'Fatal diagnostic timing bounded'
 $names=@('techsets_global_core_mp','techsets_common_core_mp','code_post_gfx','global','common','techsets_cp_zmb','cp_zmb','patch_cp_zmb')
 $inputs=@(foreach($name in $names){@{Relative=('main/'+$name+'.ff')};@{Relative=('zone/'+$name+'.ff')}})
 $order=@(Get-RecipientZoneOrder $inputs)

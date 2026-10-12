@@ -239,6 +239,57 @@ E7 and HWND ownership before and after; read at most eight child controls and
 should be ready before launch so useful text can be captured promptly. This
 preparation is not permission to rerun B, add a dump or enlarge the budget.
 
+### C implementation prepared for review, not executed
+
+The new `-FatalTextDiagnostic` plan selects references only and automatically
+polls at 250 ms from the existing Python phase. The native E7 executable,
+reference arguments, stdin, stock and original job are unchanged. Complete
+admission remains 8/11 GiB. Native/adapter work is limited to 45 seconds, its
+original job to 50 seconds, and group active work to 60 seconds. Original-job
+closure remains bounded by the existing extra 15-second stop check; mandatory
+source verification/restoration follows. Do not confuse the active-work bound
+with a guaranteed whole-lifecycle wall-clock deadline.
+
+`recipient_dialog.py` loads only existing Windows DLLs through ctypes, and only
+when this explicit mode executes. It verifies the original native handle and
+the parent's current handle with PID, image and real creation FILETIME. The
+parent relationship comes from ProcessBasicInformation; no process is opened
+by a rediscovered PID. E7 is checked before/after text collection. Ownership is
+checked for the root and every child HWND before/after, and process identities
+are rechecked at the end. Failed identity checks discard potentially
+misattributed text. DirectJobMembershipQueried remains false.
+
+Root discovery inspects at most 256 HWND ownership entries and eight windows
+of this process per poll. It reads no other process's caption. Only the known
+`Fatal Error` caption starts the one capture. EnumChildWindows stops at eight
+controls; only STATIC control text is read. Caption, classes and body text share
+a 16 KiB UTF-8 budget. The complete JSON record is capped at 64 KiB. Each
+WM_GETTEXT has a 200 ms timeout with ABORTIFHUNG and ERRORONEXIT; no broadcast or
+NOTIMEOUTIFNOTHUNG flag is used. The loop additionally checks a two-second soft
+capture deadline. Windows enumeration/API work has no independently guaranteed
+whole-call deadline; the original owner's 50/60-second limits remain decisive.
+
+The record and failed phase receipt precede the automatic diagnostic stop
+marker. Missing body text, read errors, no fatal window before timeout, or a
+native zero exit all remain diagnostic failure. Original stop/closure/restoration
+is performed by the reviewed PowerShell job owner, never by the text reader.
+`DiagnosticFailed` preserves failed evidence without accepting references.
+
+17 fake-reader tests, 25 pipe/writer checks, 11 contract tests, 35 PowerShell
+checks and 13 pure B-observer identity checks pass. These are source fixtures,
+not a real Win32 dialog or C lifecycle test. No C process or lease was started.
+
+API contracts were checked against Microsoft's primary documentation:
+[GetWindowTextW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowtextw)
+does not retrieve another process's control text, so the body uses bounded
+[SendMessageTimeoutW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendmessagetimeoutw)
+with WM_GETTEXT. The
+[EnumChildWindows callback](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumchildwindows)
+can stop enumeration by returning false.
+[NtQueryInformationProcess](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess)
+documents the parent field but is an internal API subject to change; an unavailable
+or incompatible result fails the reader rather than weakening identity checks.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256

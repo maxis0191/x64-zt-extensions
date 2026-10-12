@@ -48,7 +48,11 @@ function Get-RecipientPhases([switch]$ReferencesOnly) {
     'references'
     if(!$ReferencesOnly){'script'}
 }
-function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$ReferencesOnly) {
+function Get-RecipientLimits([switch]$FatalTextDiagnostic) {
+    if($FatalTextDiagnostic){[ordered]@{PhaseSeconds=45;OuterPhaseSeconds=50;OverallSeconds=60}}
+    else{[ordered]@{PhaseSeconds=240;OuterPhaseSeconds=245;OverallSeconds=600}}
+}
+function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$ReferencesOnly,[switch]$FatalTextDiagnostic) {
     foreach($field in @('RunRoot','StockRoot','StockReceipt','StockBindingReceipt','ReviewedStockManifest','CandidateRoot','PythonExe','RequestRoot')){
         if(![IO.Path]::IsPathFullyQualified($Spec.$field)){throw "Absolute path required: $field"}
     }
@@ -75,13 +79,15 @@ function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$
     }
     foreach($field in @('StockReceipt','StockBindingReceipt','ReviewedStockManifest','PythonExe')){$sourceHashes[$Spec.$field]=$Spec.($field+'SHA256')}
     foreach($entry in $requests){$sourceHashes[$entry.Source]=$entry.SHA256}
-    foreach($name in @('recipient_phase.py','recipient_contract.py','Recipient.Core.ps1','Recipient.Light.ps1','Run-RecipientClosure.ps1','provider-pins.json')){
+    foreach($name in @('recipient_phase.py','recipient_contract.py','recipient_dialog.py','Recipient.Core.ps1','Recipient.Light.ps1','Run-RecipientClosure.ps1','provider-pins.json')){
         $path=Join-Path $Root $name;$sourceHashes[$path]=(Get-FileHash -LiteralPath $path).Hash
     }
+    $limits=Get-RecipientLimits -FatalTextDiagnostic:$FatalTextDiagnostic
     [ordered]@{Schema='iw7.recipient-closure-plan/1';RunRoot=$run;Work=(Join-Path $run 'work');StockInputs=$inputs;
         SourceZoneOrder=@(Get-RecipientZoneOrder $inputs);Candidate=$candidate;Requests=$requests;SourceHashes=$sourceHashes;
         ProviderBindings=$Bindings;PythonExe=$Spec.PythonExe;PythonSHA256=$Spec.PythonExeSHA256;
         Adapter=(Join-Path $Root 'recipient_phase.py');PhysicalBytes=8GB;CommitBytes=11GB;
-        OutputStopBytes=256MB;LogBytesPerStream=2MB;PhaseSeconds=240;OuterPhaseSeconds=245;RootExitDrainSeconds=5;OverallSeconds=600;
-        Phases=@(Get-RecipientPhases -ReferencesOnly:$ReferencesOnly);NativeExecuted=$false;ClosureComplete=$false;Ready=$false}
+        OutputStopBytes=256MB;LogBytesPerStream=2MB;PhaseSeconds=$limits.PhaseSeconds;OuterPhaseSeconds=$limits.OuterPhaseSeconds;RootExitDrainSeconds=5;OverallSeconds=$limits.OverallSeconds;
+        FatalTextDiagnostic=[bool]$FatalTextDiagnostic;DiagnosticPollMilliseconds=250;DiagnosticTextBytes=16KB;DiagnosticControlLimit=8;DiagnosticMessageTimeoutMilliseconds=200;DiagnosticRecordBytes=64KB;
+        Phases=@(Get-RecipientPhases -ReferencesOnly:($ReferencesOnly -or $FatalTextDiagnostic));NativeExecuted=$false;ClosureComplete=$false;Ready=$false}
 }

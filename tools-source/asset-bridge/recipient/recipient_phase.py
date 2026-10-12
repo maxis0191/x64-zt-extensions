@@ -86,7 +86,7 @@ def guarded_drain(drain, source, destination, failed):
         failed.set()
 
 
-def capture_streams(process, logs, drain, timeout):
+def capture_streams(process, logs, drain, timeout, observe=None):
     """Bounded raw-pipe capture; caller still owns the original process/job.
 
     On timeout the native writer may remain live. Return that fact and keep
@@ -106,6 +106,10 @@ def capture_streams(process, logs, drain, timeout):
         if exceeded.is_set() or time.monotonic() >= deadline:
             failure = 'log limit/drain failure' if exceeded.is_set() else 'phase timeout'
             break
+        if observe is not None:
+            try: failure = observe()
+            except BaseException as error: failure = 'diagnostic observer raised '+type(error).__name__[:128]
+            if failure: break
         time.sleep(.05)
     if failure is None:
         for worker in workers: worker.join(2)
@@ -121,7 +125,10 @@ def capture_streams(process, logs, drain, timeout):
 
 def run(spec, drain):
     require(spec['schema'] == 'iw7.recipient-phase/1' and spec['phase'] in ('references','script'), 'Exact recipient phase required')
-    require(spec['timeout'] == 240 and spec['sha256'] == EXE_SHA, 'Pinned phase bounds/tool required')
+    require(spec.get('diagnostic_mode') in (None,'fatal-text'), 'Unknown diagnostic mode')
+    diagnostic = spec.get('diagnostic_mode') == 'fatal-text'
+    require(not diagnostic or spec['phase'] == 'references', 'Fatal diagnostic is references-only')
+    require(spec['timeout'] == (45 if diagnostic else 240) and spec['sha256'] == EXE_SHA, 'Pinned phase bounds/tool required')
     for field in ('exe','cwd','logs'):
         require(Path(spec[field]).is_absolute(), 'Absolute owned paths required')
     work = Path(spec['cwd'])
@@ -144,7 +151,30 @@ def run(spec, drain):
              'stdin':'pipe-held-open','output_pipe_buffer_size':0,
              'ownership':'outer original Windows job'}
     (logs/'native-start.json').write_text(json.dumps(start,indent=2)+'\n',encoding='utf-8')
-    failure,workers,handles = capture_streams(process,logs,drain,spec['timeout'])
+    probe = None
+    dialog_record = None
+    next_observation = 0
+    def observe_dialog():
+        nonlocal probe,dialog_record,next_observation
+        if time.monotonic() < next_observation: return None
+        next_observation = time.monotonic()+.25
+        try:
+            from recipient_dialog import make_probe
+            if probe is None: probe = make_probe(process,exe,EXE_SHA)
+            dialog_record = probe.poll()
+        except BaseException as error:
+            dialog_record = {'schema':'iw7.recipient-fatal-dialog/1','fatal_window_observed':False,
+                             'identity_verified_after':False,'errors':[type(error).__name__[:128]]}
+            return 'fatal-text diagnostic observer failed'
+        return 'fatal-text diagnostic observed fatal window' if dialog_record is not None else None
+    failure,workers,handles = capture_streams(process,logs,drain,spec['timeout'],observe_dialog if diagnostic else None)
+    if diagnostic:
+        from recipient_dialog import save_record
+        failure = failure or 'fatal-text diagnostic ended without fatal window; references not accepted'
+        if dialog_record is None:
+            dialog_record = {'schema':'iw7.recipient-fatal-dialog/1','fatal_window_observed':False,
+                             'identity_verified_after':False,'errors':[], 'outcome':failure}
+        save_record(logs/'fatal-dialog.json',dialog_record)
     result = {'schema':'iw7.recipient-phase-result/1','phase':spec['phase'],'pid':process.pid,
               'exit_code':process.poll(),'failure':failure,'executable_sha256':EXE_SHA,
               'ownership':'outer original Windows job','log_limit_each':2097152,'observation':None,
@@ -156,6 +186,10 @@ def run(spec, drain):
         try: result['observation'] = check_output(spec['phase'],work)
         except (ValueError,OSError) as error: result['failure'] = str(error)
     (logs/'phase.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
+    if diagnostic:
+        # The original PowerShell job owner sees this only after both receipts.
+        # Never terminate a process from the diagnostic reader or via a PID.
+        (logs.parent/'diagnostic-stop.request').write_text('Fatal-text diagnostic finished; stop original job.\n',encoding='utf-8')
     if failure:
         os._exit(2)  # Outer owner stops its original job; never PID-based cleanup.
     for handle in handles: handle.close()

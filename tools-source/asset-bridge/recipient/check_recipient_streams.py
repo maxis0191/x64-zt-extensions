@@ -135,9 +135,9 @@ class StreamTests(unittest.TestCase):
         self.result = None
         self.errors = []
 
-    def start(self, timeout=2, drain=None):
+    def start(self, timeout=2, drain=None, observe=None):
         def target():
-            try: self.result = phase.capture_streams(self.process,self.logs,drain or DRAIN,timeout)
+            try: self.result = phase.capture_streams(self.process,self.logs,drain or DRAIN,timeout,observe)
             except BaseException as error: self.errors.append(error)
         self.capture = threading.Thread(target=target,daemon=True)
         self.capture.start()
@@ -364,6 +364,22 @@ class StreamTests(unittest.TestCase):
         self.assertTrue(all(not worker.is_alive() for worker in workers))
         self.assertEqual((self.logs/'stdout.log').read_bytes(),b'complete stdout')
         self.assertEqual((self.logs/'stderr.log').read_bytes(),b'complete stderr')
+
+    def test_automatic_diagnostic_stops_capture_before_native_exit(self):
+        calls=[]
+        def observe(): calls.append(True);return 'fatal-text diagnostic observed fatal window'
+        self.start(observe=observe)
+        failure,workers,_=self.complete()
+        self.assertEqual(failure,'fatal-text diagnostic observed fatal window')
+        self.assertIsNone(self.process.poll());self.assertEqual(len(calls),1)
+        self.assertTrue(any(worker.is_alive() for worker in workers))
+
+    def test_diagnostic_observer_exception_cannot_be_accepted(self):
+        def observe(): raise ValueError('injected diagnostic callback failure')
+        self.start(observe=observe)
+        failure,_,_=self.complete()
+        self.assertEqual(failure,'diagnostic observer raised ValueError')
+        self.assertIsNone(self.process.poll())
 
 
 if __name__ == '__main__':
