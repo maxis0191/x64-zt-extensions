@@ -1,0 +1,126 @@
+# Original PCM sound source adapter
+
+This source-only adapter prepares an original short WAV, lossless FLAC sample,
+one IW7 alias and a bank/zone source inventory. It does not build a sound bank,
+fastfile or executable, launch a codec/game, or prove audible playback.
+The default command is a Plan and leaves the requested output directory absent.
+
+## Existing local native entry points
+
+Audited local x64-zt revision: `fab935826c898806855376662a8a03317b3ad8f1`.
+Line references below refer to that retained revision, under
+`src/zonetool/zonetool/iw7/assets/sound_bank.cpp`:
+
+| Entry | Existing behavior / remaining gap |
+| --- | --- |
+| `sound_bank::parse`, line 3444 | Reads `soundbank/<name>.json`, its alias/table paths, then calls `sound_asset_bank::create`. |
+| `aliases::parse_file`, line 214, and `aliases::parse`, line 358 | Reads 53 positional CSV columns, groups alias heads and creates the alias hash index. Unknown enum strings can silently resolve to default indices; the adapter checks emitted names against the pinned tables. |
+| `find_asset_file`, line 3134 | Resolves `sound_assets/<File>.flac` first, then `.wav`. The alias File column excludes the extension. |
+| `flac::parse`, line 2710 | Reads STREAMINFO metadata and optional SEEKTABLE; writes seek data and compressed frames into the SAB entry. It does not independently decode every frame. |
+| `pcm::parse`, line 2888 | A WAV parser exists, but the SAB constructor does not call it. It accepts more formats than its PCMS16 label establishes, and its length/chunk handling is not a strict PCM validator. |
+| `create_internal`, lines 3160 and 3295-3303 | The PCMS16 call is commented out and WAV logs an unsupported error; an empty entry can still be appended. The adapter never stages a WAV in `sound_assets`. |
+| SAB dump, line 3122 | PCMS16 dump is also commented out. The dormant WAV dumper writes block alignment 0x400, unsuitable for a canonical mono16 PCM file. |
+| `create`, line 3435 | Creates both SABL and SABS according to loaded/streamed alias flags. Their delivery beside the FF and actual engine decode remain separate future gates. |
+
+The adapter hashes four local source files before preparing anything: the bank
+reader/writer, common sound helpers, structs and sound-global tables. It reuses
+the existing 53-column source contract without modifying it. No retail sample or
+bank is read or redistributed. The native PCM path and shared providers are not
+patched. A bank JSON/FF containing an alias is not proof of audio delivery.
+
+## Bounded conversion
+
+Input is canonical RIFF/WAVE with exactly `fmt ` (16 bytes) then `data`, PCM16
+little-endian, mono, 48000 Hz, 16 through 96000 samples. Other metadata chunks,
+stereo, float/ADPCM/extensible WAV, resampling, truncated/trailing bytes and
+inconsistent rate/alignment/length fields are refused. A supplied WAV requires
+`--attest-original`; this records the caller's assertion, not a rights inference.
+The default original marker is one second of three faded integer triangle pulses
+at 500, 750 and 1000 Hz, peak at most 4096, surrounded by silence.
+
+The encoder uses the restricted FLAC format described by
+[RFC 9639 sections 8-9](https://www.rfc-editor.org/rfc/rfc9639.html#section-8):
+fixed 4096-sample blocks, mono16/48k headers, verbatim subframes, CRC8/CRC16,
+STREAMINFO PCM MD5 and one exact seek point per frame. The final block may be
+shorter. This deliberately trades compression for a small, inspectable source
+fixture; the generated FLAC is slightly larger than its PCM payload.
+
+`read_flac.py` is a separately implemented Python parser with no import from
+the encoder. It reconstructs little-endian signed PCM and checks metadata,
+sequence/counts, every seek offset, header/frame CRCs, MD5 and exact file closure.
+Its polynomial-division CRC checker is separate from the encoder's shift-register
+implementation. It refuses features outside this narrow subset. Comparing its
+result to the original WAV establishes this source-level sample roundtrip, not
+third-party decoder interoperability or IW7 playback. Those flags remain false.
+
+The original alias is `community_original_chime_v1`: loaded, nonlooping, one head,
+channel `scn_fx_unres_2d`, volume modifier `interface`, volume 0.5 and pitch 1.
+No secondary/stop alias, duck, localized retail table or subtitle is borrowed.
+The 2D presentation is a proposed fixture choice, not measured engine behavior.
+
+## Source-only commands
+
+Use Python 3.12 or later. All commands below are light Python/source operations;
+there is no `Run` option or native process launcher.
+
+```powershell
+$sound = 'tools-source/asset-bridge/surfaces/sound'
+# Existing pinned local source checkout; do not fetch/rebuild ZoneTool here.
+python -B "$sound/prepare_sound.py" --zt-source <local-pinned-x64-zt> --output <fresh-output>
+python -B "$sound/prepare_sound.py" --zt-source <local-pinned-x64-zt> --output <fresh-output> --write-source
+python -B "$sound/read_flac.py" <fresh-output>/sound_assets/community/original_chime_v1.flac
+python -B "$sound/test_sound.py"
+```
+
+`--wav <original.wav> --attest-original` optionally replaces the generated input.
+The output must not exist and no root/input path may use symlinks or junctions.
+Preparation uses exclusive new files and preserves any partial failure directory;
+no overwrite/cleanup/retry is implicit. The final manifest is written only after
+all source checks pass. Prepared output is capped at 512 KiB, decoder input at
+200000 bytes, and sample count at two seconds. Source artifacts stay in ignored
+runtime storage; no WAV, FLAC, SAB or FF binary belongs in Git.
+
+The manifest inventories the original WAV, FLAC, bank JSON, alias CSV, zone CSV,
+PCM readback and existing-content preflight, with sizes/hashes plus source pins.
+It binds the adapter Python sources and the existing content contract. The
+existing inspector must report zero errors and exactly its pending SAB/playback
+finding. `native_sab_built`, `ff_built`, `external_decoder_verified`, `delivered`,
+`playback_verified` and `ready` all remain false.
+
+## Measured source checkpoint: 2026-10-12
+
+Eighteen Python tests pass, including malformed formats, CRC/MD5/seek corruption,
+signed extremes, partial final blocks, maximum size, missing source pins,
+attestation, unchanged output refusal and Plan without writes. The Python stdlib
+WAV reader independently confirms the generated input parameters and samples.
+A real Plan and source preparation against the four pinned local files also
+pass; none of those checks compile or invoke native ZoneTool code.
+
+Retained corrected source: `runtime/content-surfaces/original-sound-source-b`.
+It contains eight files totaling 199125 bytes. The standalone Python decoder
+reads 48000 samples in 12 frames. Existing content preflight: 0 errors / 1 pending.
+
+| Evidence | Bytes | SHA256 |
+| --- | --- | --- |
+| Source manifest B | 3158 | 06a2bf8650ba235e176746efe29b00f383e26144cd24ff5dd1774c28f9d71a01 |
+| Original WAV | 96044 | 299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4 |
+| Prepared FLAC | 96394 | 9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb |
+| Decoded PCM | 96000 | 72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9 |
+
+The first source preparation A is retained unchanged, manifest SHA256
+2507c294c9cd672b6c4452f49c23b1f1e1af8a18804fc6859970a3ec4c1cd3fd.
+Review found lowercase alias booleans while the actual `FALSE_TRUE` table is
+case-sensitive `False`/`True`; lowercase `precached=true` would resolve to false.
+Source B corrects the spellings and extends exact enum checks to the common and
+bank-local tables. Its CSV SHA256 is
+a1db885270d7ca0e4cfe46ad7eb37ca6334544a73798740d8498fa2532ab7c65.
+This was a source-review correction, with no native run or audio failure. A is
+superseded for future native preparation; neither A nor B has native acceptance.
+
+Next coordinated gate: first decode this exact FLAC with a reviewed independent
+codec, then separately admit existing ZoneTool bank/FF creation and inspect SAB
+entries, checksums, alias index and delivery. Do not rebuild ZoneTool just for
+this fixture. A later protected private recipient test must prove lookup, audible
+playback, stop/retrigger, language routing, cache/join lifecycle and restoration.
+No game/native GO is included in this source checkpoint. Material C is unchanged.
+Commits are handed to the parent for central private PR/CI/merge and common docs.
