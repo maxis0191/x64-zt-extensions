@@ -4,6 +4,7 @@ from boot_contract import PROFILE, command_review, require, safe_name, validate_
 
 FIELDS = {'schema', 'requested_zone', 'source_model', 'selected_source_lod', 'output_model_name',
           'output_mesh_name', 'output_root_key', 'target', 'profile', 'geometry_profile',
+          'root_bone_name', 'selected_counts',
           'material_dependencies', 'model', 'mesh', 'zonetool_xpak_helper_reads_allowed', 'engine_io_verified',
           'dependency_payloads_verified', 'asset_zone_ownership_verified',
           'serialized_parse_verified', 'runtime_verified', 'ready'}
@@ -24,6 +25,15 @@ def validate_export(value, request):
     require(type(value['material_dependencies']) is list and len(value['material_dependencies']) == 1,
             'Exactly one unresolved material name required')
     safe_name(value['material_dependencies'][0])
+    bone = value['root_bone_name']
+    require(type(bone) is str and 1 <= len(bone) <= 255 and all(0x20 <= ord(c) < 0x7f for c in bone),
+            'Exact bounded engine root-bone name required')
+    counts = value['selected_counts']
+    require(type(counts) is dict and set(counts) == {'bones', 'roots', 'surfaces', 'vertices', 'triangles'},
+            'Exact selected geometry counts required')
+    for key, low, high in (('bones',1,1), ('roots',1,1), ('surfaces',1,1),
+                           ('vertices',3,65535), ('triangles',1,65535)):
+        require(type(counts[key]) is int and low <= counts[key] <= high, 'Selected geometry count outside pilot')
     for key in ('zonetool_xpak_helper_reads_allowed', 'engine_io_verified', 'dependency_payloads_verified', 'asset_zone_ownership_verified',
                 'serialized_parse_verified', 'runtime_verified', 'ready'):
         require(value[key] is False, 'Receipt must preserve unqualified claims')

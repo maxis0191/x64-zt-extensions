@@ -7,8 +7,8 @@
       "lf_sha256": "f8d22fb8e084b60e159b14ac9523e6e6a93bd904339b90b173f024409fdd6073"
     },
     "SOURCE-AUDIT.md": {
-      "lf_bytes": 13474,
-      "lf_sha256": "6d0050cc2f9d4ffaa09a657f2f51359df96c2217eff87a5ca817a060ab0cc109"
+      "lf_bytes": 14440,
+      "lf_sha256": "1506e4e4d4f0ddc58ffa825a9b5e75d08d5442ec379acb37fac3dd235679e685"
     },
     "source-inventory.json": {
       "lf_bytes": 3133,
@@ -27,28 +27,28 @@
       "lf_sha256": "d1e30d1c6195d63696f2755faff03a3ece48e3afcb0a6d082fd6b42da9a89934"
     },
     "native_export.inc": {
-      "lf_bytes": 8842,
-      "lf_sha256": "47ec8d625b8225c4acc4b072c4957e094673c2eadd87ba7beb31438a30f8d775"
+      "lf_bytes": 9668,
+      "lf_sha256": "81eae2e9067b5c365b3a4fc6faca1e34c7a7fc1629c61444357c0adc78fd77ed"
     },
     "prepare_cli.py": {
       "lf_bytes": 4585,
       "lf_sha256": "dc089d79578ea51d00e2f05f88ff1d0dfba8ea5820c04beb03266b44acfdd142"
     },
     "test_cli_patch.py": {
-      "lf_bytes": 2987,
-      "lf_sha256": "14d2eb87d7072601f23a915adf6aa5aa33ab73db1ff7e57a2ed90bc565094c69"
+      "lf_bytes": 3236,
+      "lf_sha256": "a1a6d0d9bde5a38efad874252d747b8e2f4fced77b538418b16523c682a2a558"
     },
     "export_contract.py": {
-      "lf_bytes": 3097,
-      "lf_sha256": "9c142d23c5f261e3ae282a141d10e2d032c738fe09b98c58b9077be59ebbe261"
+      "lf_bytes": 3805,
+      "lf_sha256": "36808e9776103308dcd7859c1be400e808ed02ffb8707f5dbedde0b698870fbc"
     },
     "test_export_contract.py": {
-      "lf_bytes": 2890,
-      "lf_sha256": "19f5b4bc5d671380d1c87504ad03c50375c258bb70e70a6995a9f671093eb651"
+      "lf_bytes": 3730,
+      "lf_sha256": "57ac2e06156c6af2e60cef02b845f99bb3fef600d0c1500aa357fc2914115dc4"
     },
     "zonetool-fab9358-t7-resident-cli.patch": {
-      "lf_bytes": 12848,
-      "lf_sha256": "e4d72215674d3ed9f84d9e532327ac3bf461961fe8782cf904df156793d982e2"
+      "lf_bytes": 13696,
+      "lf_sha256": "cd668ee35257913578c3337e57e5f7bc921989b0e64c2029f368fed909ff08e3"
     }
   },
   "external_adapter": {
@@ -74,7 +74,7 @@
   },
   "patched_source_lf_sha256": {
     "src/zonetool/main.cpp": "78f4a60419375be3e22e7ac16f5867f03c49d4002ae794f8906d9e7d457503f5",
-    "src/zonetool/zonetool/t7/zonetool.cpp": "1ddd4b6c6b7749e9dfb66aedaa18128250e57753127bcd441351c7d994af1d77",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "f74e1d358b91b9530928b7635b87d10f7bab8670d954dc8c61a0d61e63ace33a",
     "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
     "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
   },
@@ -100,7 +100,7 @@
   "reused_resource_inputs": 1,
   "full_or_incremental_build_invoked": false,
   "binary_input_contents_read": false,
-  "python_tests_passed": 18,
+  "python_tests_passed": 19,
   "python_tests_use_only_source_and_invented_records": true,
   "git_apply_check_passed": true,
   "native_patch_applied": false,

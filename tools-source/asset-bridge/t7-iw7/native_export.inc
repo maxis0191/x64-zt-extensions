@@ -95,6 +95,16 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
         !selected->meshMaterials[0].materials || !selected->meshMaterials[0].materials[0])
         throw std::runtime_error("Exactly one explicit material dependency required");
     const auto material_name = resident_export_name(selected->meshMaterials[0].materials[0]->name);
+    // Capture observed selection metadata in the same stable DB scope. Bone
+    // strings are observations, not paths: preserve their actual T7 spelling.
+    const auto root_bone_name = resident_iw7::detail::name(SL_ConvertToString(selected->boneNames[0]));
+    const auto selected_mesh = selected->meshes[0];
+    const nlohmann::ordered_json selected_counts = {
+        {"bones", static_cast<unsigned int>(selected->numBones)},
+        {"roots", static_cast<unsigned int>(selected->numRootBones)},
+        {"surfaces", static_cast<unsigned int>(selected_mesh->numSurfs)},
+        {"vertices", static_cast<unsigned int>(selected_mesh->surfs[0].vertCount)},
+        {"triangles", static_cast<unsigned int>(selected_mesh->surfs[0].triCount)}};
     const auto key_input = zone + "\n" + name + "\n" + lod_arg;
     const auto key = "t7_iw7_" + utils::string::to_lower(utils::cryptography::sha256::compute(
         reinterpret_cast<const uint8_t*>(key_input.data()), key_input.size(), true));
@@ -132,6 +142,7 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
         {"output_model_name", name}, {"output_mesh_name", mesh_name}, {"output_root_key", key},
         {"target", "iw7"}, {"profile", "resident-rigid-one-lod"},
         {"geometry_profile", resident_iw7::profile},
+        {"root_bone_name", root_bone_name}, {"selected_counts", selected_counts},
         {"material_dependencies", nlohmann::ordered_json::array({material_name})},
         {"model", resident_export_file(root / model_path, 1024u * 1024u)},
         {"mesh", resident_export_file(root / mesh_path, 16u * 1024u * 1024u)},

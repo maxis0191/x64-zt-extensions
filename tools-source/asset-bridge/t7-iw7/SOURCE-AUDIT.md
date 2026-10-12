@@ -190,7 +190,7 @@ called a verified source zone. `export_contract.py` checks receipt structure
 against the request; it does not independently verify those file bytes or job
 closure.
 
-Validation after the correction below: 18 pure/source tests, exact preparer check and read-only
+Validation after the corrections below: 19 pure/source tests, exact preparer check and read-only
 `git apply --check` pass. The first patch-generation attempt was rejected by
 Git because upstream `xpak.hpp` has no final newline; the preparer now emits
 the proper unified-diff no-newline marker and preserves those original bytes.
@@ -218,3 +218,20 @@ The conversion owner supplies this boundary fix in
 Those 51 cases remain source-only and unexecuted. They require the next admitted
 native qualification along with the three minimal T7 translation units; no
 stock export is authorized by their presence.
+
+## SDK observation fields
+
+The existing asset manifest additionally carries `root_bone_name` resolved from
+the selected T7 root bone's real script-string ID and `selected_counts`
+(`bones`, `roots`, `surfaces`, `vertices`, `triangles`). These values are captured
+from the selected model/mesh in the same stable database scope before dumping;
+no root tag or cube counts are fabricated. Bone names are observations, not
+filesystem paths, and retain their bounded printable ASCII spelling.
+
+The SDK will compare these observations with the fully parsed, independently
+read dump after Run closure. The external Run receipt owns request/manifest
+hashes, engine and ZoneTool identities/hashes, source/header/patch pins, selected
+stock, job closure and restoration. Those fields are not duplicated in this
+asset manifest. Material references remain unresolved and requested-zone
+ownership remains unverified. The CLI does not export or modify the SDK's
+SelfContained GSC.

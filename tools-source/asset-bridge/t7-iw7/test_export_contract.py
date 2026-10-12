@@ -11,6 +11,7 @@ def fixture():
                   source_model=request['model'], selected_source_lod=0, output_model_name=request['model'],
                   output_mesh_name='fixture/mesh', output_root_key=b.command_review(request)['private_output_root_key'],
                   target='iw7', profile=b.PROFILE, geometry_profile='t7-iw7-resident-static-v1',
+                  root_bone_name='fixture_root', selected_counts={'bones':1,'roots':1,'surfaces':1,'vertices':17,'triangles':23},
                   material_dependencies=['fixture/material'],
                   model={'relative_path':'xmodel/fixture/model.xmb','bytes':1,'sha256':'a'*64},
                   mesh={'relative_path':'xsurface/fixture/mesh.xsb','bytes':1,'sha256':'b'*64})
@@ -18,6 +19,16 @@ def fixture():
 
 
 class ExportContractTests(unittest.TestCase):
+    def test_bone_and_counts_are_observed_bounded_values(self):
+        request, report = fixture()
+        for name in ('root tag', 'root/unchanged'):
+            self.assertTrue(e.validate_export({**report,'root_bone_name':name}, request)['receipt_contract_verified'])
+        for name in ('', 'x'*256, 'bad\nname', None):
+            with self.assertRaises(ValueError): e.validate_export({**report,'root_bone_name':name}, request)
+        for key, value in (('bones',2),('roots',True),('surfaces',0),('vertices',2),('triangles',65536)):
+            changed = copy.deepcopy(report); changed['selected_counts'][key] = value
+            with self.assertRaises(ValueError): e.validate_export(changed, request)
+
     def test_backslash_identity_uses_generic_relative_path(self):
         request, report = fixture()
         request['model'] = r'fixture\model'
