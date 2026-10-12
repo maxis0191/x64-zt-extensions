@@ -1269,3 +1269,98 @@ script or next Plan was prepared, and phases five/six were not invoked. Retain
 all evidence and return the next policy decision to the coordinator. The helper
 incident is distinct from N's natural exit and absent catalogue. Do not rename
 global prefixes in closure helpers or repeat N.
+
+## CoreGfxA source-only preparation after the stop
+
+A subsequent coordinator instruction permits source-only preparation and review,
+not execution. The fixed CoreGfxA script binds the existing exact metadata for
+6,105,536 bytes. Its five lifecycle functions remain byte-identical; default,
+54 pure checks and actual future host argument capture pass without payload,
+lease, live admission or native execution. Two future passes would read
+12,211,072 bytes. The qualification scope, attempt marker and receipt are absent.
+
+The successful corrected N closure helper is frozen unchanged, including every
+local/global variable and called function. Future O must retain those N names,
+change only exact literal data and receive full diff review before any GO.
+The preparation records its AST names and source hash. It does not fabricate
+future host/native identities, a qualified core_gfx hash or a runnable O helper.
+After successful qualification and full closure, O would declare six inputs,
+74,300,608 bootstrap bytes, 40 bindings, ten metadata rows/twenty IDs and an
+output limit of 202,110,040 bytes. No real O Plan or dispatcher exists yet.
+
+The [source preparation checkpoint](catalogue-core-gfx-preparation-o-20261012.json)
+keeps all runtime/compatibility flags false and requires a new explicit GO after
+independent review. V2, the bounded reader, runtime candidate and operational
+source pins remain unchanged; no V3 policy or guessed inventory is adopted.
+
+## Distinct CoreGfxA qualification closed; O awaits its own GO
+
+After independent review, the coordinator authorized CoreGfxA alone. The previous
+batch remains stopped. Fresh admission at 19:43:49 UTC passed with 6/8 GiB,
+zero heavy/client/lease counts and unchanged Main/Python identities. Its unique
+qualification completed at 19:43:57 UTC: two guarded 6,105,536-byte passes,
+12,211,072 bytes total, with final metadata, identity and hash revalidation.
+Guards and lease closed, quarantine was absent and no engine was executed.
+PTY 59923 actually exited 0 (`2dc139`). The independent 19:44:41 UTC witness
+confirmed host/parent absence and zero heavy/client/lease counts. No payload
+hash was read after release. This is identity/hash evidence, not compatibility.
+
+Using that real receipt, Plan O is now sealed under V2 with six bootstraps,
+74,300,608 bytes, 40 bindings, ten metadata rows and a 202,110,040-byte output
+ceiling. Default validation and actual host/runner argument capture pass with
+no payload hash, native load, lease or runtime files. Host initialization and
+dispatch retain the exact N global names. O has not been launched.
+
+The review-only O closure draft changes literal paths, plan hash/length and
+counts. Its 140 variable occurrences, 32 command occurrences and 850 nonliteral
+tokens are identical to the corrected N helper. The complete diff is retained.
+The historical N host/native identity literals are explicitly still present;
+they are not invented future identities. Before invocation, bind the actually
+observed O identities, publish the new hash and inspect that literal-only delta.
+The draft is not execution-ready. A separate O GO remains required after review.
+
+The [qualification and O preparation checkpoint](catalogue-core-gfx-qualified-o-20261012.json)
+records the distinct authorization, actual closure/PTY/absence proof and sealed
+Plan/dispatch/helper-draft pins. Operational V2 source, reader and candidate
+remain unchanged. No compatibility, catalogue or export is claimed.
+
+## Catalogue O: one distinct Run, reviewed closure, no catalogue
+
+The coordinator authorized only O after independent review; the prior batch
+remains stopped. Fresh admission at 19:56:09 UTC passed with 6/8 GiB, 56.28%
+commit usage, unchanged owner identities and no heavy/client/lease overlap.
+All 29 text bindings and the reader pin matched. V3 was not adopted.
+
+O ran once and exited naturally 0 after 3,113.33 ms, finalizing at 19:56:54 UTC
+as `Failed / NoCatalogue`. Inputs and aliases revalidated under reservation;
+the original tree closed, lease released and quarantine was absent. TRACE,
+EXIT, CALLERS and MSG were retained. The 4,890-byte stderr hash comes from the
+under-guard receipt; stdout is 70 bytes. No payload hash was read after release.
+
+The NoExit host was retained while the independent reviewer checked the bound
+closure helper. Exactly three literal values changed from the reviewed O draft:
+host PID, native PID and native creation UTC. All 140 variable occurrences,
+32 command occurrences and 850 nonliteral tokens stayed identical. The exact N
+identifiers were retained. Only after favorable review and the coordinator's
+closure instruction was the bound helper invoked once. The historical draft
+was never invoked, and no closure-helper incident occurred.
+
+Same-host postflight passed ten metadata rows and twenty original/alias IDs.
+PTY 56537 actually exited 0 (`3eff29`); the independent 20:02:37 UTC witness
+confirmed host 17760, parent 32288 and native root 14524 absent, no heavy/client
+process or lease, unchanged stopped Main/UDP baseline and preserved Python.
+The [O runtime checkpoint](catalogue-runtime-o-20261012.json) pins the receipt,
+exact identity-only diff, reviewed helper, postflight and actual exit/absence.
+Only the analysis owner may interpret the retained MSG now. This GO authorizes
+no new metadata, dependency qualification, catalogue retry, export or automatic
+continuation. No compatibility or usable asset catalogue has been proved.
+
+After complete closure, the analysis owner confirmed a complete 46-byte ASCII
+message requesting `en_core_post_gfx`, correlated on the same thread before exit.
+Neither initialization completion nor a catalogue marker/file/directory was
+observed. This changed first named failure does not prove complete dependency
+closure or donor compatibility. Under a separate coordinator instruction, the
+analysis owner inspected only that file's metadata: 1,158,208 bytes, no reparse,
+and no payload content or hash read. The coordinator subsequently requested
+source preparation for one qualification and possible seven-input P, subject to
+review and a distinct GO; the old batch and O remain closed.

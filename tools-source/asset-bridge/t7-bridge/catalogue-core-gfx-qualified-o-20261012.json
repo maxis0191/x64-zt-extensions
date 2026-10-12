@@ -1,0 +1,144 @@
+{
+  "schema": "iw7.t7-qualified-bootstrap-plan-checkpoint/1",
+  "date": "2026-10-12",
+  "qualification": "CoreGfxA",
+  "status": "IdentityAndHashObservedCompatibilityUnknown",
+  "authorization": "Distinct qualification-only GO after previous dependency batch was stopped at phase 4.",
+  "source_operational_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+  "qualification_script": {
+    "name": "Qualify-T7CoreGfxA.local.ps1",
+    "bytes": 13326,
+    "sha256": "5e98926b414614b5d00b745022e9b4df69aef9b0b38c4562bca890b2fafeb118"
+  },
+  "qualification_receipt": {
+    "name": "t7-core-gfx-qualification-a.local.json",
+    "bytes": 4427,
+    "sha256": "94143b348273a4cddae263053ff0af22d53d07511b0cbd44c71c21c47bba47f6"
+  },
+  "input": {
+    "name": "core_gfx.ff",
+    "bytes": 6105536,
+    "sha256": "8074aafacc5063769d7e70c7c3b4a70968ada0127331427cb1584aa0aa34493c",
+    "provenance": "ObservedUnderLeaseNotDepotVerified",
+    "metadata_and_identity_reverified": true,
+    "hash_reverified_under_guard": true,
+    "read_passes": 2,
+    "read_bytes_per_pass": 6105536,
+    "total_read_bytes": 12211072,
+    "header_captured": false,
+    "depot_verified": false,
+    "compatibility_proven": false
+  },
+  "started_utc": "2026-10-12T19:43:55.0555692Z",
+  "finished_utc": "2026-10-12T19:43:57.1743463Z",
+  "preflight": {
+    "name": "t7-core-gfx-a-preflight.local.json",
+    "bytes": 1279,
+    "sha256": "2b45575b8f96d6aa266017baee2c43bc564788d8e007e70697e3f7360e85d584"
+  },
+  "closure": {
+    "tree_closed": true,
+    "lease_released": true,
+    "guards_closed": true,
+    "quarantined": false,
+    "source_guard_count": 0,
+    "payload_guard_count": 0,
+    "host_pid": 18688,
+    "host_created_utc": "2026-10-12T19:43:54.4725246Z",
+    "parent_pid": 36280,
+    "session_id": 59923,
+    "actual_exit_code": 0,
+    "actual_exit_chunk": "2dc139",
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T19:44:41.4878438Z",
+    "host_and_parent_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "client_count": 0,
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "payload_hashes_after_release": false,
+    "closure_proof": {
+      "name": "t7-core-gfx-a-host-closure.local.json",
+      "bytes": 809,
+      "sha256": "2cb97efbe69abf51ec10b077df004198344d7eb6c9de8cd64748ea321febd4b2"
+    },
+    "absence_proof": {
+      "name": "t7-core-gfx-a-host-absence.local.json",
+      "bytes": 734,
+      "sha256": "08e9ab6ea2d03ff6b2d80fa02121e3487d78184f7eab92509861352b39168a83"
+    }
+  },
+  "plan_o": {
+    "plan": {
+      "name": "t7-catalog-plan-o.local.json",
+      "bytes": 23181,
+      "sha256": "93072fd1e7e9dd9bf744aeb2ce4fc375ba9e5c0a55afbd36b9e8f862957446cf"
+    },
+    "dispatch": {
+      "name": "Invoke-T7CatalogueO.local.ps1",
+      "bytes": 3999,
+      "sha256": "2649fa93291917d8c902f8634eb34d2a0b689ce20904809ea8e73e5000f656e4"
+    },
+    "dispatch_review": {
+      "name": "t7-catalog-o-dispatch-review.local.json",
+      "bytes": 5358,
+      "sha256": "3b846034531de18e28cc48011ed5c5429b54edb124d0091d836fe84884a7bff2"
+    },
+    "policy": "QualifiedCollectionV2",
+    "bootstrap_count": 6,
+    "bootstrap_bytes": 74300608,
+    "bindings": 40,
+    "text_bindings": 29,
+    "binary_bindings": 11,
+    "metadata_count": 10,
+    "file_id_count": 20,
+    "output_limit_bytes": 202110040,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "default_pass_tool_chunk": "82095d",
+    "actual_arguments_captured": true,
+    "identifiers_retain_N_names": true,
+    "runtime_files": 0,
+    "host_started": false,
+    "native_run_invoked": false,
+    "new_GO_required": true
+  },
+  "closure_draft": {
+    "reference": {
+      "name": "Finish-T7CatalogueNVerified.local.ps1",
+      "bytes": 5446,
+      "sha256": "e594d9200e2ce3a912681e7edf060b498021062dde7845ea5ab8cc90000daa42"
+    },
+    "draft": {
+      "name": "Finish-T7CatalogueO.pending-identities.local.ps1",
+      "bytes": 5599,
+      "sha256": "01d4cc0f1b08e7c962a579e102a7015c2b6327ea75b2293a6d44d53931f37abd"
+    },
+    "literal_diff": {
+      "name": "t7-catalog-o-closure-literal-diff.local.patch",
+      "bytes": 6397,
+      "sha256": "8cb3b35a1e589af353ae6121a3a48fa99b31738badfec6dbf328f41d9bd7661e"
+    },
+    "variable_occurrences_identical": 140,
+    "command_occurrences_identical": 32,
+    "nonliteral_tokens_identical": 850,
+    "comparison_tool_chunk": "cb2ec3",
+    "runtime_identity_literals": "Historical N host PID, native PID and native creation UTC are deliberately retained; bind only actual future O identities and republish pin/diff before invocation.",
+    "execution_ready": false,
+    "independent_review_pending": true
+  },
+  "limits": {
+    "qualification_invocations": 1,
+    "qualification_incident": false,
+    "native_engine_executed_during_qualification": false,
+    "payload_copied": false,
+    "operational_source_changed": false,
+    "candidate_changed": false,
+    "old_batch_remains_stopped": true,
+    "V3_adopted": false,
+    "catalogue_success": false,
+    "ready": false
+  },
+  "next_action": "Coordinator and rig review O plan/dispatch/literal-only helper draft before any distinct O GO. Preserve the N helper identifiers and bind actual future process identities only when observed."
+}

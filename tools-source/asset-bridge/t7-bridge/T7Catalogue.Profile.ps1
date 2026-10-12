@@ -52,15 +52,16 @@ function Get-T7CatalogueBootstrap($Plan) {
 }
 function Get-T7CatalogueBootstrapPolicy($Plan) {
     if(!$Plan.PSObject.Properties['BootstrapPolicy']){return 'Legacy'}
-    if($Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cnotin @('QualifiedCollectionV1','QualifiedCollectionV2')){
+    if($Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cnotin @('QualifiedCollectionV1','QualifiedCollectionV2','QualifiedCollectionV3')){
         throw 'Unknown bootstrap collection policy.'
     }
     $Plan.BootstrapPolicy
 }
 function Get-T7CatalogueBootstrapLimits($Plan) {
     switch -CaseSensitive (Get-T7CatalogueBootstrapPolicy $Plan) {
-        'QualifiedCollectionV1' {[pscustomobject]@{ItemBytes=32MB;TotalBytes=32MB}}
-        'QualifiedCollectionV2' {[pscustomobject]@{ItemBytes=64MB;TotalBytes=128MB}}
+        'QualifiedCollectionV1' {[pscustomobject]@{ItemCount=8;ItemBytes=32MB;TotalBytes=32MB}}
+        'QualifiedCollectionV2' {[pscustomobject]@{ItemCount=8;ItemBytes=64MB;TotalBytes=128MB}}
+        'QualifiedCollectionV3' {[pscustomobject]@{ItemCount=32;ItemBytes=512MB;TotalBytes=768MB}}
         default {throw 'Explicit qualified collection policy required for byte limits.'}
     }
 }
@@ -73,8 +74,8 @@ function Get-T7CatalogueBootstraps($Plan) {
     if(!$single -and !$plural){return}
     if($qualified){
         $limits=Get-T7CatalogueBootstrapLimits $Plan
-        if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt 8){
-            throw 'Qualified collection requires one through eight explicit items.'
+        if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
+            throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
         }
         if((Get-T7CatalogueCandidateProfile $Plan) -cne 't7-catalog-message'){throw 'Qualified collection requires MSG profile.'}
         $items=@($Plan.Bootstraps);$total=0L
@@ -236,7 +237,15 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $null=Get-T7CatalogueMainBaseline $Plan
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
     $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -cne 'Legacy'
-    $bootstrapBytes=0L;foreach($bootstrap in $bootstraps){$bootstrapBytes+=$bootstrap.Bytes}
+    if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0){throw 'Exact bounded candidate identity required.'}
+    $bootstrapBytes=0L
+    foreach($bootstrap in $bootstraps){
+        if(!(Test-T7CatalogueInteger $bootstrap.Bytes ([long]::MaxValue-$bootstrapBytes))){throw 'Bootstrap sum exceeds integer range.'}
+        $bootstrapBytes+=[long]$bootstrap.Bytes
+    }
+    $fixedBytes=106059160L+[long]$Plan.CandidateBytes
+    if($bootstrapBytes -gt [long]::MaxValue-$fixedBytes){throw 'Output budget exceeds integer range.'}
+    $expectedOutputBytes=$fixedBytes+$bootstrapBytes
     if($qualified){
         $limits=Get-T7CatalogueBootstrapLimits $Plan
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
@@ -249,7 +258,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
        $Plan.GroupDeadlineSeconds -ne 200 -or $Plan.DeadlineSeconds -ne 120 -or
        $Plan.MutableOutputLimitBytes -ne 64MB -or $Plan.MetadataReserveBytes -ne 64KB -or
        $Plan.CleanupSeconds -ne 5 -or $Plan.ReportLimitBytes -ne 512KB -or
-       $Plan.LogLimitBytes -ne 1MB -or $Plan.OutputLimitBytes -ne (106059160L+$Plan.CandidateBytes+$bootstrapBytes) -or
+       $Plan.LogLimitBytes -ne 1MB -or $Plan.OutputLimitBytes -ne $expectedOutputBytes -or
        $Plan.RetryAuthorized -isnot [bool] -or $Plan.RetryAuthorized){throw 'Fixed catalogue plan differs.'}
     if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
        $Plan.CandidateSHA256 -cnotmatch '\A[0-9a-f]{64}\z'){throw 'Exact bounded candidate identity required.'}
@@ -277,14 +286,17 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     foreach($dir in @($Plan.WorkingDirectory,$Plan.StageRoot,(Join-Path $Plan.RunRoot 'temp'))) {
         if(@([IO.Directory]::EnumerateFileSystemEntries($dir)).Count){throw 'Prepared work/evidence/temp must be empty.'}
     }
-    $bindingLimit=if($qualified){46}else{32}
+    $bindingLimit=if($qualified){22+3*$limits.ItemCount}else{32}
     if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
     $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
         if($qualified -and !$bindingPaths.Add($pin.Path)){throw 'Distinct qualified binding paths required.'}
         Assert-H1Path $pin.Path
+        # Only explicit bootstrap bindings inherit the selected collection cap.
+        # Candidate/provider/text bounds do not grow with the donor-file policy.
+        $pinLimit=if($qualified -and $pin.Path -cin @($bootstraps.Path)){$limits.ItemBytes}else{64MB}
         $item=Get-Item -LiteralPath $pin.Path
-        if($item.PSIsContainer -or $pin.IsText -isnot [bool] -or $pin.Bytes -le 0 -or $pin.Bytes -gt 64MB -or
+        if($item.PSIsContainer -or $pin.IsText -isnot [bool] -or $pin.Bytes -le 0 -or $pin.Bytes -gt $pinLimit -or
            ($pin.IsText -and $pin.Bytes -gt 1MB) -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or $item.Length -ne $pin.Bytes){throw 'Bound pin metadata differs.'}
     }
     $expected=@(
@@ -407,6 +419,32 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
     if(@($Receipt.Stages[1].Artifacts|Where-Object Path -CEQ $Plan.CandidateSource).Count -ne 1){throw 'Trace candidate absent from Link artifacts.'}
 }
 function Get-T7CatalogueFileId([string]$Path) { [IW7HudFileIdentity]::Read($Path) }
+function Open-T7CatalogueV3Pin($Plan,$Pin,[scriptblock]$DefaultReader) {
+    if((Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV3'){throw 'Explicit V3 reader policy required.'}
+    # Revalidate the complete collection before returning any guarded source or
+    # alias. The runner still performs original-file-ID admission before aliases.
+    $items=@(Get-T7CatalogueBootstraps $Plan)
+    $match=@($items|Where-Object {$Pin.Path -ceq $_.Path -or $Pin.Path -ceq (Join-Path $Plan.WorkingDirectory $_.RelativePath)})
+    if(!$match.Count){return (& $DefaultReader $Pin)}
+    if($match.Count -ne 1 -or !(Test-T7CatalogueInteger $Pin.Bytes 512MB) -or
+       $Pin.Bytes -ne $match[0].Bytes -or $Pin.SHA256 -cne $match[0].SHA256 -or
+       ($Pin.PSObject.Properties['IsText'] -and ($Pin.IsText -isnot [bool] -or $Pin.IsText))){throw 'Exact V3 bootstrap source/alias pin required.'}
+    Assert-H1Path $Pin.Path
+    $metadata=Get-Item -LiteralPath $Pin.Path
+    if($metadata.PSIsContainer -or $metadata.Length -ne $Pin.Bytes){throw 'V3 bound input metadata differs before open.'}
+    $guard=[IO.FileStream]::new($Pin.Path,'Open','Read','Read')
+    try {
+        if($guard.Length -ne $Pin.Bytes){throw 'V3 bound input length differs.'}
+        # The catalogue needs a retained hash guard, not a byte snapshot. Hash
+        # through the stream; do not allocate one 512 MiB array per binding.
+        $hash=[Security.Cryptography.SHA256]::Create()
+        try{$actual=[Convert]::ToHexString($hash.ComputeHash($guard)).ToLowerInvariant()}finally{$hash.Dispose()}
+        if($actual -cne $Pin.SHA256 -or $guard.Length -ne $Pin.Bytes){throw 'V3 bound input hash/length differs.'}
+        Assert-H1Path $Pin.Path
+        $guard.Position=0
+        return $guard
+    }catch{$guard.Dispose();throw}
+}
 function Open-T7CatalogueZone($Zone,$Context) {
     Assert-T7CatalogueMetadata $Zone
     # The only unsealed payload. Hold this exact source open before observing its hash.
@@ -953,6 +991,13 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
 }
 function Enable-T7CatalogueRuntimeProfile($Plan) {
     $script:T7CatalogueGroupStarted=Get-H1Clock
+    if((Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'QualifiedCollectionV3'){
+        $null=Get-T7CatalogueBootstraps $Plan
+        $script:T7CatalogueV3Plan=$Plan;$script:T7CatalogueBaseOpenPin=${function:Open-H1Pin}
+        function script:Open-H1Pin($Pin) {
+            Open-T7CatalogueV3Pin $script:T7CatalogueV3Plan $Pin $script:T7CatalogueBaseOpenPin
+        }
+    }
     $script:T7CatalogueBaseDeadline=${function:Assert-H1Deadline};$script:T7CatalogueBaseBudget=${function:Test-H1Budget}
     function script:Assert-H1Deadline($Started,[int]$Seconds) {
         & $script:T7CatalogueBaseDeadline $script:T7CatalogueGroupStarted 200

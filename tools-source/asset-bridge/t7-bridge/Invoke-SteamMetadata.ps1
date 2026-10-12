@@ -6,20 +6,27 @@ param([Parameter(Mandatory)][string]$Plan,
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 
-function Read-SteamSnapshot([string]$Path,[ValidateRange(1,67108864)][int]$Limit,$Guards,[switch]$Allow64MiB) {
-    if($Limit -gt 32MB -and !$Allow64MiB){throw 'Snapshot above 32 MiB requires explicit 64 MiB opt-in.'}
+function Read-SteamSnapshot([string]$Path,[ValidateRange(1,536870912)][int]$Limit,$Guards,[switch]$Allow64MiB,[switch]$Allow512MiB) {
+    if($Limit -lt 1 -or $Limit -gt 512MB){throw 'Snapshot limit must be explicitly within 1..512 MiB.'}
+    if($Limit -gt 64MB -and !$Allow512MiB){throw 'Snapshot above 64 MiB requires explicit 512 MiB opt-in.'}
+    if($Limit -gt 32MB -and !$Allow64MiB -and !$Allow512MiB){throw 'Snapshot above 32 MiB requires explicit 64 MiB opt-in (or 512 MiB opt-in).'}
     Assert-H1Path $Path
+    $metadata=Get-Item -LiteralPath $Path
+    if($metadata.PSIsContainer -or $metadata.Length -lt 0 -or $metadata.Length -gt $Limit){throw 'Snapshot input exceeds byte bound or is not a file.'}
     $stream=[IO.FileStream]::new($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
     $retained=$false
     try {
         $initial=$stream.Length
-        if($initial -gt $Limit){throw 'Snapshot input exceeds byte bound.'}
-        $buffer=[byte[]]::new($Limit+1);$used=0
-        do {
-            $read=$stream.Read($buffer,$used,$buffer.Length-$used);$used+=$read
-        }while($read -gt 0 -and $used -lt $buffer.Length)
-        if($used -gt $Limit -or $used -ne $initial -or $stream.Length -ne $initial){throw 'Snapshot grew or changed length during bounded read.'}
-        $bytes=[byte[]]::new($used);[Array]::Copy($buffer,$bytes,$used)
+        if($initial -gt $Limit -or $initial -ne $metadata.Length){throw 'Snapshot input exceeds byte bound or changed length before read.'}
+        # One array sized from the guarded length, never two arrays at the
+        # requested ceiling. The checked 512 MiB maximum fits int32 Read counts.
+        $bytes=[byte[]]::new([int]$initial);$used=0
+        while($used -lt $bytes.Length){
+            $read=$stream.Read($bytes,$used,$bytes.Length-$used)
+            if($read -eq 0){break}
+            $used+=$read
+        }
+        if($used -ne $initial -or $stream.ReadByte() -ne -1 -or $stream.Length -ne $initial){throw 'Snapshot grew or changed length during bounded read.'}
         $digest=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
         Assert-H1Path $Path
         $Guards.Add($stream);$retained=$true
