@@ -1,10 +1,10 @@
 # BO3 / T7 to IW7: selected static model
 
-Status, 2026-10-12: source reconnaissance, proposed export contract and the one
-dedicated EXE acquired from its exact Steam manifest. No BO3 asset payload was
-exported, converted, built into an FF or rendered here. The acquired EXE has not
-been executed by this chat; static PE inspection is a separate checkpoint. The
-owner stopped H1 work. Its checkpoint is historical and supplies no BO3 proof.
+Status, 2026-10-12: exact dedicated EXE acquired, then one bounded entrypoint
+diagnostic completed under the instrumented T7 loader. Its 12-window capture
+awaits compatibility review. No BO3 model catalogue, export, conversion, IW7 FF
+build or rendering is proved here. The owner stopped H1 work; its checkpoint
+remains historical and supplies no BO3 proof.
 
 After the owner confirmed download completion, the bounded metadata inventory
 found the client and `boiii.exe`, 168 FFs, 203 XPAKs and 110 FDs immediately under
@@ -395,6 +395,13 @@ and unresolved startup/address gates. It creates no links and authorizes no Run.
 The coordinator subsequently chose an earlier
 [pre-patch diagnostic environment](PREPATCH-ENVIRONMENT.md): two existing binary
 aliases, no zone, and no execution. The catalogue remains a later stage.
+
+The separately authorized [first pre-patch invocation](prepatch-runtime-observation-20261012.json)
+subsequently completed: root0, 12/12 windows, 661,416 requested/returned bytes,
+expected mapped base, normal job closure and lease release. The EXE entrypoint
+has now run through that diagnostic loader; the earlier acquisition-only
+nonexecution statement is a historical boundary. No catalogue/zone command ran,
+and capture completion does not validate the T7 ABI or fixed patch sites.
 
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is

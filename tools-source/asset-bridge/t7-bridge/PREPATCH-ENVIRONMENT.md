@@ -70,7 +70,7 @@ After this diagnostic is qualified, the separate catalogue still needs its
 actual engine/zone compatibility and startup stock decisions. A memory-window
 receipt by itself proves neither a real model name nor conversion or rendering.
 
-## Existing-owner invocation now implemented, not executed
+## Existing-owner invocation
 
 `Run-T7Prepatch.ps1 -PlanPath <private-plan> -PlanSHA256 <reviewed-sha256>` checks
 source pins, input metadata and the fixed command without hashing binary inputs,
@@ -124,4 +124,34 @@ late release or publication. Bounded JSON guard/refusals, exact windows/identity
 ordinary-D2 rejection and candidate/build-plan mismatch also pass. The default
 local check reports pending instrumented candidate with no binary hash/provider/
 lease/file creation. These tests and preparation do not compile, start or qualify
-a native candidate. The final candidate hash remains pending its real build.
+a native candidate. The subsequent actual build and diagnostic are recorded below.
+
+## First actual diagnostic, closed on 2026-10-12
+
+The coordinator authorized exactly one invocation at launcher source `86f4162`,
+Plan C SHA256 `6c28482ecbb11b8931c019dff272464974ca008a1f7ed4c625e0ef454debf741`.
+It used the instrumented build B, 21,776,384 bytes, SHA256
+`6e304990711282a696a4096ed9482d1430ce2783d67f5bc4983235d18e333526`,
+and its actual Passed/closed/released build receipt. The failed build A was not
+used. All binary inputs were guarded/hashed under the 6/8 GiB reservation.
+
+The native stage completed in 1,762.39 ms with root exit0. The 12,343-byte report
+has SHA256 `46126fe9938013a751ae923ba871a090f7b047496ce4f19475ca90c0bc6f0c03`.
+It contains all 12 windows and requested/returned 661,416 bytes against the
+4 MiB read limit. The observed module base is `0x140000000`, matching the source.
+The loader reached the diagnostic entrypoint-to-DPI-hook path and exited;
+`CaptureCompletePendingReview` explicitly leaves compatibility unproved.
+
+Original job closure and lease release are confirmed without termination or
+quarantine. Input hashes and original metadata were reverified. A fresh audit
+at 12:45:49 UTC found zero leases, no heavy process/original root, and the same
+Main process generation/UDP27016 owner. The PS7 NoExit host was retained through
+that audit, checked its quarantine state, then exited normally; its absence was
+verified. stdout is 57 bytes and stderr is empty. The three binary aliases and
+all private raw receipts/logs remain preserved; no second Run is implied.
+
+[The sanitized runtime observation](prepatch-runtime-observation-20261012.json)
+binds report, receipt, postflight, host closure and log hashes. Raw code windows
+and process identity stay private. The engine worker owns offline comparison
+with the static PE. No real model name, asset export, FF/zone request, rendering
+or owner gameplay acceptance follows from this capture.
