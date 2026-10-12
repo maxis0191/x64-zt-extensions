@@ -335,6 +335,31 @@ and other dependencies have **not** been acquired. Select them from the manifest
 against the T7 loader/import needs; reuse BO3's installed FF/XPAK in place.
 This result proves manifest retrieval, not T7 address or asset compatibility.
 
+### First payload selection: dedicated executable only
+
+[The exact selection](bo3-executable-selection.json) contains one file: the
+21,737,352-byte dedicated executable above (21 manifest chunks). The T7 owner's
+source review found that the loader resolves non-intercepted imports from the
+actual PE; the `steamclient64` / `tier0_s64` / `vstdlib_s64` preloads in the Steam
+component are IW7-only. Thus those three DLLs are deferred pending inspection of
+the acquired EXE. The two BAT files and playlist are not referenced by the initial
+T7 loader route; their possible later engine use remains unknown. None is selected.
+The matching existing owner `steam_api64.dll` stays in place.
+
+The same host's fixed `bo3-dedicated-executable` operation uses the literal
+one-line filelist linked to the actual retrieved manifest. It verifies and holds
+both files before starting DepotDownloader; absent lists, regex selectors, extra
+paths and full-depot arguments are refused before execution. The fixed CLI has
+one app, depot, manifest and worker. Its fresh output allows 64 MiB for the selected
+payload plus temporary staging/cache; 2/3 GiB admission and 200/5-second closure
+remain unchanged. A successful result requires exactly the selected payload path,
+the manifest length/SHA1, a SHA256 from the same retained bounded byte snapshot,
+successful filelist logging and 21,737,352 uncompressed bytes in the tool's transfer
+counter (compressed counter capped at 32 MiB). No FF/XPAK or speculative dependency
+is requested, and the host does not execute the downloaded PE. Forty-seven light
+assertions pass, including literal-list acceptance and regex/extra/empty refusal.
+The acquisition command is prepared; no payload invocation has been performed.
+
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is
 not a per-file filter. Evaluate an existing compatible selective downloader

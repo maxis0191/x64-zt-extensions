@@ -6,7 +6,7 @@ $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Invoke-SteamMetadata.ps1'),[ref]$tokens,[ref]$errors)
 if($errors.Count){throw ($errors|Out-String)}
-foreach($name in 'Read-SteamSnapshot','Measure-SteamAttempt','Assert-SteamOriginal','Wait-SteamOriginal','Close-SteamAttempt') {
+foreach($name in 'Read-SteamSnapshot','Assert-SteamExecutableFileList','Measure-SteamAttempt','Assert-SteamOriginal','Wait-SteamOriginal','Close-SteamAttempt') {
     $fn=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true)
     if(!$fn){throw ('Missing host function '+$name)}
     . ([scriptblock]::Create($fn.Extent.Text))
@@ -44,6 +44,19 @@ try {
     Check ($held.Count -eq 0 -and $snapshot.Length -eq $original.Length -and
         [Text.Encoding]::UTF8.GetString($snapshot.Bytes) -ceq 'observed header and bytes') 'Oversize read retained a handle or mutated earlier snapshot.'
     Remove-Item -LiteralPath $snapshotPath,$replacement
+    $listPath=Join-Path $outer 'filelist.txt'
+    try {
+        [IO.File]::WriteAllText($listPath,"UnrankedServer/BlackOps3_UnrankedDedicatedServer.exe`n",[Text.UTF8Encoding]::new($false))
+        $list=Assert-SteamExecutableFileList $listPath $held
+        Check ($held.Count -eq 1 -and $list.Length -gt 0) 'Literal allowlist was not retained.'
+    }finally{foreach($guard in $held){$guard.Dispose()};$held.Clear()}
+    foreach($bad in @("regex:.*`n","UnrankedServer/BlackOps3_UnrankedDedicatedServer.exe`nUnrankedServer/zone/example.ff`n",'')) {
+        try {
+            [IO.File]::WriteAllText($listPath,$bad,[Text.UTF8Encoding]::new($false))
+            Refuses {Assert-SteamExecutableFileList $listPath $held} 'exact one-file literal'
+        }finally{foreach($guard in $held){$guard.Dispose()};$held.Clear()}
+    }
+    Remove-Item -LiteralPath $listPath
     [IO.File]::WriteAllBytes((Join-Path $tool 'cache/data'),[byte[]](1,2,3))
     [IO.File]::WriteAllBytes((Join-Path $outer 'stdout.log'),[byte[]](4,5))
     $sample=Measure-SteamAttempt $settings 0

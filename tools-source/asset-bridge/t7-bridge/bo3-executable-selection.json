@@ -1,0 +1,63 @@
+{
+  "schema": "iw7.bo3-executable-selection/1",
+  "manifest_id": "2350066205567669287",
+  "manifest_sha256": "4423aa96951c341b32e34e65787b6ef7fda29733c8a11f4f254a6d1531b35eb8",
+  "manifest_observation_commit": "95050e92fb6e2e0146da2d521f0606cac0f97fea",
+  "selected_files": [
+    {
+      "bytes": 21737352,
+      "chunks": 21,
+      "sha1": "9d5fdd6f44defb8d65f8f5256e4eb83d4547f408",
+      "flags": 0,
+      "path": "UnrankedServer\\BlackOps3_UnrankedDedicatedServer.exe"
+    }
+  ],
+  "expected_bytes": 21737352,
+  "expected_chunks": 21,
+  "filelist_encoding": "UTF-8 without BOM, one literal slash-normalized path, LF terminator",
+  "filelist_bytes": 53,
+  "filelist_sha256": "e1e28fe817b875ac7b881f9a753c0553db71e404927a9a880639d7d47cbad14b",
+  "reason": "Acquire only the actual dedicated PE for static import inspection. The T7 owner source review found no T7 preload requirement for steamclient64/tier0/vstdlib, and the existing steam_api64 matches the depot. Additional dependencies remain conditional on the real PE/dynamic import closure.",
+  "existing_dependency": {
+    "name": "steam_api64.dll",
+    "bytes": 235600,
+    "sha1": "f5e437ee0e6ceab67f97b1741a32f47a4fbc22e2",
+    "sha256": "71af8666392acad2080a816b9f1196fe9ccb950e1db8a549f8312c4d231f55a8",
+    "copied": false
+  },
+  "deferred_candidates": [
+    {
+      "bytes": 12791872,
+      "chunks": 13,
+      "sha1": "1a8b710b15e4a08280bbb51845f274d8c190034d",
+      "flags": 0,
+      "path": "UnrankedServer\\steamclient64.dll"
+    },
+    {
+      "bytes": 334112,
+      "chunks": 1,
+      "sha1": "de42534b0ddfca3bcefd6850af802fe8727bae15",
+      "flags": 0,
+      "path": "UnrankedServer\\tier0_s64.dll"
+    },
+    {
+      "bytes": 351008,
+      "chunks": 1,
+      "sha1": "012126b39977b8b7232aff92e229850c9796bb14",
+      "flags": 0,
+      "path": "UnrankedServer\\vstdlib_s64.dll"
+    }
+  ],
+  "exclusions": [
+    "FF",
+    "XPAK",
+    "BAT",
+    "bitmap",
+    "playlist",
+    "speculative DLL downloads"
+  ],
+  "run_prepared": true,
+  "game_payload_downloaded": false,
+  "PE_inspected": false,
+  "T7_binary_compatibility_proven": false
+}
