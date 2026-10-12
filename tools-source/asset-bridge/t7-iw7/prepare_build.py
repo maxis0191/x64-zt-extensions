@@ -7,6 +7,7 @@ from pathlib import Path, PureWindowsPath
 import re
 import prepare_cli
 import prepare_prepatch
+import prepare_catalog_trace
 
 HERE = Path(__file__).resolve().parent
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
@@ -114,7 +115,7 @@ def read_records(text):
     return records
 
 
-def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False):
+def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -131,13 +132,14 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     prepared = PureWindowsPath(prior['PreparedRoot']); old_root = PureWindowsPath(prior['RunRoot'])
     expected_payloads = {'prepared/'+name for name in ('main.cpp','zonetool.cpp','common/xpak.cpp',
         'common/xpak.hpp','t7_iw7_resident_model.hpp','t7_asset_name.hpp','test_t7_asset_name.cpp')}
-    if recompile_main: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
+    require(not catalog_trace or recompile_main, 'Catalogue trace requires a fresh main')
+    if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
     require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
             'Exact native payload inventory required for reuse')
     old_text = []
     for name, raw in payloads.items():
         if not name.startswith('prepared/'): continue
-        if recompile_main and name == 'prepared/'+prepare_prepatch.HELPER:
+        if recompile_main and not catalog_trace and name == 'prepared/'+prepare_prepatch.HELPER:
             require(0 < len(raw) <= 64*1024, 'Bounded pre-patch helper required')
             continue
         path = prepared/name.removeprefix('prepared/')
@@ -188,8 +190,15 @@ def prepare(args):
     payloads, replaced = command_payloads(cl, link, source, output/'prepared', run)
     _, patched = prepare_cli.render(source)
     prepatch_helper = getattr(args, 'prepatch_helper', None)
+    catalog_trace = getattr(args, 'catalog_trace', False)
+    require(not (prepatch_helper and catalog_trace), 'Pre-patch and catalogue trace profiles are exclusive')
+    require(bool(getattr(args, 'ordinary_plan', None)) == catalog_trace and
+            bool(getattr(args, 'ordinary_receipt', None)) == catalog_trace,
+            'Catalogue trace requires both ordinary D2 text proofs')
+    recompile_main = bool(prepatch_helper or catalog_trace)
+    if recompile_main:
+        require(args.reuse_plan and args.reuse_compile_receipt, 'Main rebuild must reuse qualified prior compilation')
     if prepatch_helper:
-        require(args.reuse_plan and args.reuse_compile_receipt, 'Pre-patch build must reuse qualified prior compilation')
         payloads['prepared/'+prepare_prepatch.HELPER] = read(prepatch_helper,64*1024)
         patched[prepare_cli.PATHS[0]] = prepare_prepatch.wire_main(patched[prepare_cli.PATHS[0]])
     for path, _, relative in UNITS: payloads['prepared/'+relative] = patched[path].encode()
@@ -206,6 +215,7 @@ def prepare(args):
         require(hashlib.sha256(raw).hexdigest() == pin['lf_sha256'], 'CLI source contract differs')
     for name in ('prepare_build.py', 'prepare_prepatch.py', 'Run-T7Build.ps1', 'T7Build.Profile.ps1'):
         read(HERE/name)
+    if catalog_trace: read(HERE/'prepare_catalog_trace.py')
     read(HERE.parent/'recipient/script-names/prepare_observer.py')
     roles = {'Core': 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1',
              'CompilerCore': 'tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1',
@@ -289,8 +299,16 @@ def prepare(args):
     reuse = None
     require(bool(args.reuse_plan) == bool(args.reuse_compile_receipt), 'Both prior plan and receipt required')
     if args.reuse_plan:
-        reuse, reused_inputs, reused_text = reuse_compilation(read(args.reuse_plan,2*1024**2),
-            read(args.reuse_compile_receipt,128*1024), payloads, run, recompile_main=bool(prepatch_helper))
+        prior_raw = read(args.reuse_plan,2*1024**2)
+        prior_receipt_raw = read(args.reuse_compile_receipt,128*1024)
+        if catalog_trace:
+            prepare_catalog_trace.verify_base(
+                read(args.ordinary_plan,2*1024**2,prepare_catalog_trace.BASE_PLAN_SHA),
+                read(args.ordinary_receipt,128*1024,prepare_catalog_trace.BASE_RECEIPT_SHA),
+                prior_raw, prior_receipt_raw, payloads)
+            payloads['prepared/main.cpp'] = prepare_catalog_trace.wire_main(payloads['prepared/main.cpp'].decode()).encode()
+        reuse, reused_inputs, reused_text = reuse_compilation(prior_raw,
+            prior_receipt_raw, payloads, run, recompile_main=recompile_main, catalog_trace=catalog_trace)
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
                       'Receipt':str(path_checked(args.reuse_compile_receipt))})
         for pin in reused_inputs:
@@ -298,7 +316,7 @@ def prepare(args):
         for pin in reused_text:
             read(pin['Path'],256*1024,pin['SHA256'])
         inputs += reused_inputs
-        stages = [s for s in stages if s['Name'] in (('main','link') if prepatch_helper else ('link',))]
+        stages = [s for s in stages if s['Name'] in (('main','link') if recompile_main else ('link',))]
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -319,6 +337,12 @@ def prepare(args):
                    'Report':prepare_prepatch.REPORT}
         for name, path in [('Helper',output/'prepared'/prepare_prepatch.HELPER),
                            ('Wiring',HERE/'prepare_prepatch.py'),('PreparedMain',output/'prepared/main.cpp')]:
+            profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+    elif catalog_trace:
+        profile = {'Name':prepare_catalog_trace.NAME,'Option':prepare_catalog_trace.OPTION,'ArgumentCount':3,
+                   'TraceSchema':prepare_catalog_trace.SCHEMA}
+        for name, path in [('Wiring',HERE/'prepare_catalog_trace.py'),('PreparedMain',output/'prepared/main.cpp'),
+                           ('BaseBuildPlan',args.ordinary_plan),('BaseBuildReceipt',args.ordinary_receipt)]:
             profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     plan = {'Schema':'iw7.t7-minimal-build-plan/1','SourceCommit':contract['native_source_commit'],
         'RunRoot':str(run),'PreparedRoot':str(output/'prepared'),'Runner':str(HERE/'Run-T7Build.ps1'),
@@ -349,4 +373,7 @@ if __name__ == '__main__':
     parser.add_argument('--reuse-plan',type=Path)
     parser.add_argument('--reuse-compile-receipt',type=Path)
     parser.add_argument('--prepatch-helper',type=Path)
+    parser.add_argument('--catalog-trace',action='store_true')
+    parser.add_argument('--ordinary-plan',type=Path)
+    parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

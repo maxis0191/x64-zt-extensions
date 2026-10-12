@@ -38,4 +38,33 @@ $fixture=New-Fixture;$fixture.BuildProfile.Helper.Path='C:\unbound.inc';Must-Ref
 $fixture=New-Fixture;$fixture.BuildProfile.PreparedMain.SHA256=('b'*64);Must-Refuse $fixture
 $fixture=New-Fixture;$fixture.Bindings[1].IsText=$false;Must-Refuse $fixture
 $fixture=New-Fixture;$fixture.Bindings=@($fixture.Bindings)+@($fixture.Bindings[0]);Must-Refuse $fixture
+function New-TraceFixture {
+    $fixture=New-Fixture
+    $profile=[ordered]@{Name='t7-catalog-trace';Option='-t7-iw7-catalog';ArgumentCount=3;TraceSchema='iw7.t7-catalog-trace/1'}
+    $bindings=@()
+    foreach($row in @(
+        @('Wiring',(Join-Path $PSScriptRoot 'prepare_catalog_trace.py'),('a'*64)),
+        @('PreparedMain',(Join-Path $fixture.PreparedRoot 'main.cpp'),('a'*64)),
+        @('BaseBuildPlan','C:\ordinary-d2\build-plan.local.json','daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'),
+        @('BaseBuildReceipt','C:\ordinary-d2\receipt.json','c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'))) {
+        $pin=[ordered]@{Path=$row[1];Bytes=1024;SHA256=$row[2]}
+        $profile[$row[0]]=$pin
+        $bindings+=[ordered]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true}
+    }
+    $fixture.BuildProfile=([pscustomobject]$profile);$fixture.Bindings=$bindings
+    return ($fixture|ConvertTo-Json -Depth 10|ConvertFrom-Json)
+}
+if(!(Assert-T7BuildProfile (New-TraceFixture) $PSScriptRoot)){throw 'Qualified catalogue trace refused.'};$checks++
+$fixture=New-TraceFixture;$fixture.BuildProfile.Name='unknown-trace';Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile.Option='-t7-prepatch-probe';Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile.ArgumentCount=4;Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile.TraceSchema='iw7.t7-catalog-trace/2';Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile.BaseBuildPlan.SHA256=('b'*64);Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile.BaseBuildReceipt.SHA256=('b'*64);Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile.Wiring.Path='C:\other.py';Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile.PreparedMain.Bytes=65537;Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.BuildProfile|Add-Member -NotePropertyName Helper -NotePropertyValue @{};Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.Bindings[2].IsText=$false;Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
+$fixture=New-TraceFixture;$fixture.ReuseCompile.RecompiledMain='true';Must-Refuse $fixture
 "T7_BUILD_PROFILE_CHECKS=$checks"

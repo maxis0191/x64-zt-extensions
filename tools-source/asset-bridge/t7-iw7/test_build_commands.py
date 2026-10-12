@@ -105,6 +105,22 @@ class ReuseTests(unittest.TestCase):
         prior,r,payloads,run=self.diagnostic_fixture()
         with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
 
+    def test_catalogue_trace_rebuilds_only_main_without_prepatch_helper(self):
+        prior,r,payloads,run=self.fixture();payloads['prepared/main.cpp']=b'catalogue observations'
+        reuse,pins,text=p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,recompile_main=True,catalog_trace=True)
+        self.assertEqual((len(pins),len(text),reuse['RecompiledMain']),(10,7,True))
+        self.assertIn(r'C:\fresh\main\main.obj',payloads['link.rsp'].decode())
+        self.assertEqual(payloads['link.rsp'].decode().count('C:\\old'),2)
+
+    def test_catalogue_trace_refuses_helper_extra_source_or_unchanged_main(self):
+        for mode in ('helper','extra','unchanged'):
+            prior,r,payloads,run=self.fixture()
+            if mode != 'unchanged': payloads['prepared/main.cpp']=b'catalogue observations'
+            if mode == 'helper': payloads['prepared/native_prepatch_probe.inc']=b'other mode'
+            if mode == 'extra': payloads['prepared/extra.cpp']=b'new source'
+            with self.assertRaises(ValueError):
+                p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,recompile_main=True,catalog_trace=True)
+
 
 @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE') and os.environ.get('IW7_T7_E7_BUILD'),
                      'Retained T7 source and E7 build paths not supplied')
