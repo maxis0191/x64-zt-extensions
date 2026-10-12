@@ -1,4 +1,10 @@
-# Animation and AI asset bridge — source tranche, 2026-10-12
+# Animation and AI asset bridge — checkpoints, 2026-10-12
+
+Current checkpoint: the original four-key clip passed native emission and FF
+build/verify/dump/readback. The recovered original two-bone rig has a source-only
+four-key CPU binding proof. Rendered animation, cadence, weight direction, note
+delivery and AI behavior remain unverified. Initial dated notes below retain
+their original scope.
 
 This tranche adds a bounded, read-only H1/IW7 ZoneTool `.xab` envelope inspector
 and exact-name skeleton binding plan in
@@ -59,8 +65,10 @@ The dirty retained `doom-source-pipeline/ops/doom-source/` goes further than the
 merged inventory: `prepare_skin_fixture.py` defines original 8-vertex/6-triangle
 `tag_origin` + `tag_probe` geometry; `SKIN-ABI-CONTRACT.md`, the two-profile
 `writer_skin_two_bone.cpp` and independent readers retain first/second weight
-hypotheses. They are unbuilt source contracts at the inspected checkpoint.
-Reuse them with their owner; do not redo meshes or infer runtime skinning.
+hypotheses. They were unbuilt source contracts at the initial checkpoint. The
+model workstream subsequently re-read the retained October 7 native pairs;
+that is separate from model FF/runtime acceptance. The original source is now
+recovered under animation ownership below. Do not redo meshes or infer skinning.
 `inspect_blender.py` is prepared but has no executed Blender rig/bake evidence.
 The animation fixture deliberately uses those same two names.
 
@@ -116,21 +124,58 @@ are below 0.4 MiB; the reservation was released and no heavy child remained.
 for this exact original profile only; H1 conversion, FF and runtime gates remain
 open. Mesh/material work belongs to the other bridge workstream.
 
+## Original animation FF checkpoint, 2026-10-12
+
+The separately authorized corrected attempt B, source `54a897b`, built the
+512-byte animation FF, verified its exact two-asset inventory, dumped a 281-byte
+XAB and passed the independent four-key reader. All four phases exited zero,
+owned jobs closed, source/stock restoration was confirmed and the lease released.
+The failed attempt and correction remain in the
+[FF evidence](../tools-source/asset-bridge/animation/FF-ROUNDTRIP.md).
+All poses and the note at 0.5 survived; script-string ID remapping 3 to 4036 is
+explicit. This does not establish model deformation or engine event delivery.
+
+## Original two-bone rig, source-only follow-up
+
+[`animation/rig`](../tools-source/asset-bridge/animation/rig/README.md) recovers
+twelve original source/test files byte-for-byte, without the old launch wrapper.
+The profiles keep historical `paris_doom_skin_two_bone_first_a` and
+`paris_doom_skin_two_bone_second_a` identities, distinct from the one-bone Beacon.
+They are a procedural ribbon, not a Doom donor asset. Their pinned IW7 writer,
+complete independent XMB/XSB reader and skin oracle are tracked, reviewable
+sources, with original file hashes retained.
+
+The actual B clip redump was read against fresh original raw rig inputs. All
+four keys match closed-form bend positions: neutral bind and root controls stay
+fixed; maximum CPU discrepancy is 0.0042607866 units including quaternion/weight
+quantization, versus 2.1605451221 for opposite weight interpretation. Both
+conventions remain hypotheses. 79 light tests pass. Only input/source preparation
+and readback ran; no native process, model FF, stock transaction, lease or game
+was started for this follow-up.
+
+The [runtime contract](../tools-source/asset-bridge/animation/rig/RUNTIME-CONTRACT.md)
+binds the proposed visual route to actual retail `precachempanim` and
+`scriptmodelplayanim`, including Zombies CP use. Model/animation registry and
+precache phase still need binding. A custom animtree is not presumed necessary
+for the prop route, and its notetrack consumer is unproved. A timer notification
+cannot substitute for native note delivery.
+
 ## Next decisive experiment, after the parent's gate
 
-1. Feed the actual native XAB into the smallest existing ZoneTool FF
-   parser/serializer roundtrip under a separate parent's GO and admission.
-   Preserve import/output hashes and prove the exact keys and note survive.
-   Do not rebuild the passed standalone writer without a concrete need.
+1. Preserve passed native XAB and FF evidence. Bind retained two-bone model native
+   receipt/hashes to the recovered source and qualify its FF/material dependencies
+   under a separate parent's GO/admission. Do not rebuild a passed writer without
+   a concrete need.
 2. Combine the clip with the other workstream's original two-bone skin fixture
    only after its own native/FF gates. Compare parent list, binds, asymmetric
    weights, rotation samples, event times and root delta separately. Keep root
    motion disabled. No client-bone/IK/blend-shape work.
 3. Use a retained test dedicated plus the base client, after confirming the owner
    client is free and fresh engine godmode/inactivity protection. Record two
-   known poses, a repeated keyed bend, one named notetrack per cycle and a static
-   control. Resolve first/second skin-weight interpretation visibly. Keep actor
-   movement/AI disabled in this visual fixture.
+   known poses, a repeated keyed bend and a static control. Resolve first/second
+   skin-weight interpretation visibly. Bind and verify the real note consumer
+   separately before claiming one named notetrack per cycle. Keep actor movement
+   and AI disabled in this fixture.
 4. Only then attach the proven clip to a minimal attack state on an existing
    retail agent. Measure state entry → notetrack → server damage → recovery and
    death/slot cleanup. A remote observer/late join proves replication in a later
@@ -143,8 +188,9 @@ any native object/build growth needs a separate measured cap before admission
 and counts against the program's remaining10 GiB. Native build admission remains
 4 GiB physical/6 GiB commit; sequential full-quality visual test budgets a
 12 GiB client plus2–4 GiB dedicated, retaining independent commit headroom.
-Only the standalone animation writer reservation above has been executed here;
-the later fixture/runtime estimates are not measured maxima. Do not download
+The standalone writer and separate 8/11 GiB animation FF reservations have
+completed; the rig follow-up used no reservation. Later rig/runtime estimates
+are not measured maxima. Do not download
 another Blender SDK or restore a retired stock lab.
 
 ## Integration handoff
@@ -153,5 +199,7 @@ Ownership is only this document and `tools-source/asset-bridge/animation/`.
 Parent integration should link this tranche in STATE/CHANGELOG/BUGS/VALIDATION/
 PLAN as appropriate, run its exact lightweight suite, preserve dirty historical
 work and complete the private PR/CI/merge record. No direct runtime deployment
-is warranted by this source tool. FF, rendered animation and gameplay gates remain
-open; native-layout proof applies only to the exact original IW7 writer above.
+is warranted by these tools. Model FF, rendered animation and gameplay gates
+remain open; the passed animation FF proof applies only to the exact original
+clip/profile. The parent owns GitHub completion and records source, offline
+native/FF and owner acceptance independently.

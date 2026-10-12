@@ -1,0 +1,166 @@
+{
+  "date": "2026-10-12",
+  "runner_commit": "79735fe9bf35d095c51925fc04df202958d02c40",
+  "status": "diagnostic_failed_fatal_text_captured_and_restored",
+  "native_started": true,
+  "automatic_retries": 0,
+  "native_executable_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "parameters_sha256": "77e87f68da06f7c1501a9c1098af562da958ce1f8422d4fcd3a5e0ff75605f86",
+  "plan_sha256": "2201b484aa37218d91b51eb363818bda2aebfdc9d229381cdd53365540d748ff",
+  "approved_run_command_sha256": "e3620eb8dffa5d56583fa0e07a8cf041441d9398d528d6c46d3b4078824090fb",
+  "policies_main_commit": "178708bde0ee18fc552007aa3b6475477b82aae9",
+  "fresh_atomic_admission": {
+    "physical_bytes": 8589934592,
+    "commit_bytes": 11811160064,
+    "acquired": true,
+    "other_heavy_before_excluding_preserved_main": 0
+  },
+  "configured_limits": {
+    "adapter_seconds": 45,
+    "original_job_seconds": 50,
+    "group_active_work_seconds": 60,
+    "post_stop_closure_wait_seconds": 15,
+    "stop_and_restoration_bounded_by_that_wait": false,
+    "output_stop_bytes": 268435456,
+    "log_bytes_each": 2097152
+  },
+  "native_created_utc": "2026-10-12T06:12:33.9581039Z",
+  "parent_created_utc": "2026-10-12T06:12:33.8244860Z",
+  "command_completed_utc": "2026-10-12T06:12:41.3322421Z",
+  "command_exit_code": 1,
+  "fatal_dialog": {
+    "title": "Fatal Error",
+    "class": "#32770",
+    "controls": [
+      {
+        "class": "Button",
+        "text": "",
+        "buffer_saturated": false,
+        "error": null
+      },
+      {
+        "class": "Static",
+        "text": "",
+        "buffer_saturated": false,
+        "error": null
+      },
+      {
+        "class": "Static",
+        "text": "Could not find asset file assetfile17.pak",
+        "buffer_saturated": false,
+        "error": null
+      }
+    ],
+    "identity_verified_after": true,
+    "text_bytes": 76,
+    "text_truncated": false,
+    "errors": [],
+    "DirectJobMembershipQueried": false,
+    "interaction_performed": false,
+    "whole_capture_deadline_guaranteed": false
+  },
+  "phase": {
+    "requested": [
+      "references"
+    ],
+    "failure": "fatal-text diagnostic observed fatal window",
+    "native_exit_code_at_receipt": null,
+    "capture": {
+      "pipe_buffer_size": 0,
+      "drain_threads_closed": false,
+      "stdout_bytes_at_receipt": 1449,
+      "stderr_bytes_at_receipt": 0,
+      "tree_closure_verified": false
+    },
+    "reference_csv_created": false,
+    "script_phase_started": false,
+    "references_verified": false,
+    "script_verified": false,
+    "original_outer_native_executed_field": null,
+    "last_log": "[ INFO ][ zonetool::iw7::load_zone ]: Loading zone \"global_mp\"..."
+  },
+  "outer_status": "DiagnosticFailed",
+  "diagnostic_only": true,
+  "outer_failure": "Fatal-text diagnostic finished; original job stop required.",
+  "closure_after_stop": {
+    "RootExited": true,
+    "ExitCode": 2,
+    "Active": 0
+  },
+  "restored": true,
+  "stock_preserved": true,
+  "restoration_status": "Confirmed",
+  "cleanup_error": null,
+  "lease_released": true,
+  "remaining_owned_processes": 0,
+  "active_leases_at_final_check": 0,
+  "remaining_recorded_staging_paths": 0,
+  "managed_input_count": 75,
+  "main_same_identity": true,
+  "owner_instances_same_identity": true,
+  "generated_output_final_bytes": 1216572,
+  "final_observation_sha256": "a26a365b036751fb4f65cc2c5cfa96f64bf07768687562191b41fceecdd70ba5",
+  "retained_artifacts": [
+    {
+      "relative": "state.local.json",
+      "bytes": 104549,
+      "modified_utc": "2026-10-12T06:12:41.2558733Z",
+      "sha256": "ac6c6a0d9ee4dd6ef9df1134c8e96e512beec69b50c8d30e080ea11fa41fac04"
+    },
+    {
+      "relative": "backup/recovery.local.json",
+      "bytes": 8141,
+      "modified_utc": "2026-10-12T06:12:40.8220216Z",
+      "sha256": "9207f244a9da94263cf9b506524d519f8426eb9c1c113b31e902acd47c83bff8"
+    },
+    {
+      "relative": "references/native-start.json",
+      "bytes": 543,
+      "modified_utc": "2026-10-12T06:12:33.9633312Z",
+      "sha256": "9dedb708a33929c840ea6d9992849ebfd80a5c14a7c7fab7e83f759d6e391ffd"
+    },
+    {
+      "relative": "references/fatal-dialog.json",
+      "bytes": 1343,
+      "modified_utc": "2026-10-12T06:12:38.0402114Z",
+      "sha256": "0ec1cc17f8cf40b8141e8e4c640246b42d3718ec8ea853aad8b7b4bc6a939305"
+    },
+    {
+      "relative": "references/phase.json",
+      "bytes": 563,
+      "modified_utc": "2026-10-12T06:12:38.0402114Z",
+      "sha256": "5bd697b0d4d69aff17a8c8f77de44c6f7435f58cc7b4b4d9b016c3a5883997ba"
+    },
+    {
+      "relative": "references/stdout.log",
+      "bytes": 1449,
+      "modified_utc": "2026-10-12T06:12:37.7519791Z",
+      "sha256": "24b20a1570c48763c16f047a6473cf0bf385b4fa512535851acb55d652fc037a"
+    },
+    {
+      "relative": "references/stderr.log",
+      "bytes": 0,
+      "modified_utc": "2026-10-12T06:12:33.9643241Z",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "diagnostic-stop.request",
+      "bytes": 52,
+      "modified_utc": "2026-10-12T06:12:38.0412972Z",
+      "sha256": "67760cb02f97b25b4c35aa34d555abe1b16f4895ba6c8be6ac80566fdb7f21c2"
+    }
+  ],
+  "closure_complete": false,
+  "package_ready": false,
+  "runtime_verified": false,
+  "snapshot_taken": false,
+  "cdb_used": false,
+  "limits": [
+    "The real fatal text is Could not find asset file assetfile17.pak. This identifies the immediate unresolved file request, not the physical availability of that file in retained stock.",
+    "No pool or global_mp bypass is justified by this message. Source path resolution and staging membership must be checked before a separate candidate fix.",
+    "The phase capture records open drain threads and no tree closure at receipt time. The original owner later independently proves root exit and zero members.",
+    "NativeExecuted remains null in the original outer state because the diagnostic marker precedes receipt validation. Original-handle dialog identity proves native launch without rewriting that field.",
+    "The first external owner-inventory comparison used JSON text and differed only on .713374Z versus .7133740Z. PID, image and UTC tick comparison confirmed unchanged identities.",
+    "One C execution only. Original outputs are retained. No download, source stock modification, utility phase, debugger, dump or automatic retry occurred."
+  ]
+}

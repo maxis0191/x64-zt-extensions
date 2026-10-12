@@ -1,0 +1,19 @@
+{
+  "schema": "iw7.asset-bridge.h1-client-triggers/1",
+  "trigger": {
+    "count": 1,
+    "models": [{"contents": 1, "hullCount": 1, "firstHull": 0}],
+    "hullCount": 1,
+    "hulls": [{
+      "bounds": {"midPoint": [12.5, -4, 8], "halfSize": [16, 8, 4]},
+      "contents": 1, "slabCount": 3, "firstSlab": 0
+    }],
+    "slabCount": 3,
+    "slabs": [
+      {"dir": [1, 0, 0], "midPoint": 12.5, "halfSize": 16},
+      {"dir": [0, 1, 0], "midPoint": -4, "halfSize": 8},
+      {"dir": [0, 0, 1], "midPoint": 8, "halfSize": 4}
+    ]
+  },
+  "triggerType": [5]
+}

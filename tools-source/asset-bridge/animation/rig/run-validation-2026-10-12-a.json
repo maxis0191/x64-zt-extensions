@@ -1,0 +1,151 @@
+{
+  "schema": "iw7.original-rig-attempt-and-correction/1",
+  "captured_utc": "2026-10-12T06:10:20.817653+00:00",
+  "attempt_source_commit": "aeb1be5a0a99180dc9dfd165f5b5c705c7df16fa",
+  "attempt_count": 1,
+  "attempt_status": "FailedRestored",
+  "retry_executed": false,
+  "original_recipe_d_sha256": "e2d3ab1fc34d51afe96e9a449994bcca69992413b4e3dd341274fbb91e0d17bd",
+  "original_state": {
+    "bytes": 79363,
+    "sha256": "faf0d5d8969d30ddb745777a88a3881a91d53acfed3858d7e4c85ecf4ed46a2b",
+    "files": 27,
+    "total_bytes": 2716722,
+    "serialized_final_and_max_match": true,
+    "preserved_byte_exact_after_correction": true
+  },
+  "native_phases": [
+    {
+      "phase": "compile",
+      "root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "receipt_sha256": "745b06d5a0b82317eab495cede1866f307363e54e26e22399ae79e318cfe0ce0"
+    },
+    {
+      "phase": "emit-first",
+      "root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "receipt_sha256": "b96fe0dc5029b76005a976a6e5dad0cee4cd75e5f8faa0c17d78d1bbbafe46b8"
+    },
+    {
+      "phase": "emit-second",
+      "root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "receipt_sha256": "243d0a82c6dfa521b57522a8d3a09faea0788065c8fb6bea86c5f1ac522908de"
+    },
+    {
+      "phase": "read-native",
+      "root_exit": 0,
+      "job_active_at_close": 0,
+      "root_exited_at_close": true,
+      "receipt_sha256": "40ee9114aaca6a6ef17c6f6b2a6dec204c767550c287b26cae34d273f8cf7165"
+    }
+  ],
+  "native_writer": {
+    "bytes": 104448,
+    "sha256": "bf664f18729ef7be1c92bb5988270e2d8b26e6312e44e8c9181aecf0c250e01e"
+  },
+  "native_files": [
+    {
+      "model": "first",
+      "xmb_bytes": 1114,
+      "xsb_bytes": 730,
+      "xmb_sha256": "60a3624011ff7db186bbeef05aa1765f904245ae7d1df204a22a2672ef343e35",
+      "xsb_sha256": "8f2d5e7a61388c3eabbe63043fd9b187b6c348c45af6fde31fc4225d2206454b"
+    },
+    {
+      "model": "second",
+      "xmb_bytes": 1116,
+      "xsb_bytes": 731,
+      "xmb_sha256": "2b8dd4b7e66b2fbf07962cc3118591a0d87dec2d16cfe5a4fa3f331364265652",
+      "xsb_sha256": "ef27b9e1b75f56037c89ea9bc06c9f4be0541adb3da50e2763a3184d7f4df04a"
+    }
+  ],
+  "native_data_verified": true,
+  "native_clip_sha256": "1284b72cf501ae42f77958579610dbcaf692b9153cd06ff66dcf2d1d11eeda7d",
+  "cpu_max_error_units": 0.004260786588817347,
+  "cpu_opposite_hypothesis_error_units": 2.160545122089258,
+  "compiler_closure": {
+    "independent_compiler_witness": true,
+    "exact_single_telemetry_child_verified": true,
+    "original_job_stop_completed": true,
+    "fresh_root_exit_zero_and_active_zero": true
+  },
+  "toolchain": {
+    "files": 5442,
+    "manifest_sha256": "be36e5bd478ce4693bc695f698ab069702fdc792a04742a5a88860abf9513068",
+    "guarded_final_hash_and_identity_proof": true,
+    "whole_sdk_rehashed_after_lease": false
+  },
+  "admission": {
+    "native_physical_gib": 4,
+    "native_commit_gib": 6,
+    "native_released_before_ff": true,
+    "ff_physical_gib": 8,
+    "ff_commit_gib": 11,
+    "rig_leases_after": 0
+  },
+  "failure": {
+    "phase": "build",
+    "root_exit": 1,
+    "job_active_at_close": 0,
+    "cause": "FF build phase log directory aliased populated native compiler build directory",
+    "bootstrap_error": "fresh phase log directory required",
+    "parent_error": "Missing build/phase.json obscured the initial bootstrap refusal",
+    "zonetool_launched": false,
+    "ff_produced": false,
+    "later_phases_executed": false,
+    "mock_diagnosis_sha256": "7b26b4b59416417f4e99a633b4f74e9335f9de97937111b92823a3e6da47ecc4"
+  },
+  "restoration": {
+    "restored": true,
+    "stock_preserved": true,
+    "source_hashes_rechecked_before_correction": true,
+    "all_79_source_metadata_unchanged": true,
+    "all_79_staged_files_absent": true,
+    "all_original_jobs_closed": true,
+    "original_process_identities_absent": true,
+    "main_identity_and_image_unchanged": true,
+    "postcheck_sha256": "cffdf5e0e6f6fe82593f33b3dbb609c8eeab851ef531ced123e8a8f66c9e01ec"
+  },
+  "correction": {
+    "phase_logs": "logs/<phase>/",
+    "compiler_artifacts": "build/",
+    "missing_phase_receipt_retains_bound_bootstrap_error": true,
+    "existing_error_evidence_never_overwritten": true,
+    "provider_stock_budget_or_ownership_change": false,
+    "source_hashes": {
+      "Build-RigChain.ps1": "9483ac46cb3946ed6a20c2dd4ba93f9e88b362498a22b95b4892dc050f321481",
+      "Rig.Core.ps1": "a69b49fd11119e0ce6808f2bb408b0297d5fbe60e1f9778c625179e64cce7eeb",
+      "rig_phase.py": "bcc545543f0c330c28f755ff164054595551d0ac85ff6d85c48b271a20bd8861",
+      "test_rig_owned_phase.ps1": "7e982765995b03481e344edae3d5f2463659590b203d87e77787ba6d9defd0c2",
+      "test_rig_phase.py": "e5e112bf3f806a7079b6fac3df57642fcf53180efd748bab89b8614f4e2cdba7"
+    }
+  },
+  "focused_checks": {
+    "python_phase_tests": 15,
+    "powershell_actual_orchestrator_checks": 65,
+    "powershell_runner_parser_checks": 64,
+    "all_passed": true,
+    "unchanged_suites_rerun": false
+  },
+  "next_plan_e": {
+    "bytes": 76422,
+    "sha256": "bbf878c5dcc17dc94865197b0572df5804e17d6f010793368ce05429107f9b7d",
+    "executor_evidence_sha256": "1f14d647d491c05e1128a09687393db4a0c960a4b8ad6b7afc32fce7f063011a",
+    "fresh_run_root_absent": true,
+    "native_helpers_unloaded": true,
+    "forbidden_mutation_commands_not_called": true,
+    "run_executed": false,
+    "new_go_required": true
+  },
+  "game_launch": false,
+  "material_binding_verified": false,
+  "engine_weight_direction_verified": false,
+  "engine_playback_verified": false,
+  "notetrack_delivery_verified": false,
+  "ready": false
+}

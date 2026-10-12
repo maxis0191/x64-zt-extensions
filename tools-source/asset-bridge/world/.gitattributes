@@ -1,0 +1,2 @@
+# Unified-diff context preserves a required space before original tabs/blank lines.
+zonetool-fab9358-trigger-types.patch whitespace=-space-before-tab,-blank-at-eol

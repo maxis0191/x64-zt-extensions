@@ -1,0 +1,35 @@
+{
+  "schema": "iw7.rig-redacted-diagnostic-check/1",
+  "captured_utc": "2026-10-12T06:33:32.508934+00:00",
+  "actual_cli_exit": 2,
+  "actual_cli_output": {
+    "status": "invalid-rig-chain-data",
+    "error": "ff-redump/first/xmodel: unexpected native field/padding/dependency; observed XModel.lodInfo[0].surfs offset=272 category=nonzero-8-byte-value; address omitted"
+  },
+  "actual_surface_refusals": [
+    "ff-redump/first/xsurface: unexpected native field/padding/dependency; observed XSurface.blendVertsBuffer (header name) offset=88 category=nonzero-8-byte-value; address omitted",
+    "ff-redump/second/xsurface: unexpected native field/padding/dependency; observed XSurface.blendVertsBuffer (header name) offset=88 category=nonzero-8-byte-value; address omitted"
+  ],
+  "original_attempts_byte_exact": true,
+  "changed_execution_inputs": [
+    "read_rig_chain.py",
+    "test_rig_chain.py"
+  ],
+  "native_or_ff_retry": false,
+  "acceptance_changed": false,
+  "targeted_tests": 34,
+  "tests_passed": true,
+  "local_evidence_sha256": "b484116aae36522444e626d671c8adb4c02ab37745803f24b26392f581d04fc7",
+  "source_hashes": {
+    "read_rig_chain.py": "47f9b28b4dd80f1197112119e70d1fc78c286b7cd6ad6ea4081297fed2459c7c",
+    "test_rig_chain.py": "818f24c77747c1843e518998e3da12f1b13956c1a744183687bc349c137393a7",
+    "read_skin_native.py": "ba6806c74820271ecd37e79701fd8edd7e3cc7d713251f6a9fc3ae8f4dcbf258",
+    "test_skin_native.py": "23c832d75927c1f5e2a3735cfccdfa644a9a50a44af28882d50efd0bca64bd9d"
+  },
+  "chain_tests": 18,
+  "recovered_native_reader_tests": 16,
+  "full_suite_rerun": false,
+  "recovered_sources_changed": false,
+  "new_plan_generated": false,
+  "new_run_authorized": false
+}
