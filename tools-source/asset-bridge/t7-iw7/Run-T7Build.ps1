@@ -24,21 +24,43 @@ function Open-T7Bootstrap($Path,[long]$Bytes,[string]$SHA256) {
 function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $profile=if($Plan.PSObject.Properties.Name -contains 'BuildProfile'){$Plan.BuildProfile}else{$null}
     $recompiled=$Plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $Plan.ReuseCompile -and
-        $Plan.ReuseCompile.PSObject.Properties.Name -contains 'RecompiledMain' -and $Plan.ReuseCompile.RecompiledMain
+        $Plan.ReuseCompile.PSObject.Properties.Name -contains 'RecompiledMain' -and
+        $Plan.ReuseCompile.RecompiledMain -is [bool] -and $Plan.ReuseCompile.RecompiledMain
     if($null -eq $profile) {
         if($recompiled){throw 'Recompiled main requires the explicit diagnostic profile.'}
         return $false
     }
-    if($profile.Name -cne 't7-prepatch-probe' -or $profile.Option -cne '-t7-prepatch-probe' -or
-       $profile.ArgumentCount -ne 2 -or $profile.Report -cne 't7-prepatch-probe.local.json' -or !$recompiled){throw 'Exact diagnostic profile and main rebuild required.'}
-    $paths=@{
-        Helper=(Join-Path $Plan.PreparedRoot 'native_prepatch_probe.inc')
-        Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
-        PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+    if(!$recompiled){throw 'Explicit profile requires a main rebuild.'}
+    if($profile.Name -ceq 't7-prepatch-probe') {
+        if($profile.Option -cne '-t7-prepatch-probe' -or $profile.ArgumentCount -ne 2 -or
+           $profile.Report -cne 't7-prepatch-probe.local.json'){throw 'Exact pre-patch profile required.'}
+        $paths=@{
+            Helper=(Join-Path $Plan.PreparedRoot 'native_prepatch_probe.inc')
+            Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
+            PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+        }
+    } elseif($profile.Name -ceq 't7-catalog-trace') {
+        if($profile.Option -cne '-t7-iw7-catalog' -or $profile.ArgumentCount -ne 3 -or
+           $profile.TraceSchema -cne 'iw7.t7-catalog-trace/1' -or
+           (@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne
+           'ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring' -or
+           $profile.BaseBuildPlan.SHA256 -cne 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa' -or
+           $profile.BaseBuildReceipt.SHA256 -cne 'c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'){
+            throw 'Exact catalogue trace profile and ordinary D2 proof required.'
+        }
+        $paths=@{
+            Wiring=(Join-Path $SourceRoot 'prepare_catalog_trace.py')
+            PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+            BaseBuildPlan=$profile.BaseBuildPlan.Path
+            BaseBuildReceipt=$profile.BaseBuildReceipt.Path
+        }
+    } else {
+        throw 'Unknown T7 build profile.'
     }
-    foreach($name in 'Helper','Wiring','PreparedMain') {
+    foreach($name in $paths.Keys) {
         $pin=$profile.$name
-        if($pin.Path -cne $paths[$name] -or $pin.Bytes -le 0 -or $pin.Bytes -gt 64KB -or
+        $limit=if($name -ceq 'BaseBuildPlan'){2MB}elseif($name -ceq 'BaseBuildReceipt'){128KB}else{64KB}
+        if($pin.Path -cne $paths[$name] -or $pin.Bytes -le 0 -or $pin.Bytes -gt $limit -or
            $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Diagnostic source pin differs.'}
         $match=@($Plan.Bindings|Where-Object {$_.Path -ceq $pin.Path -and $_.IsText -is [bool] -and $_.IsText -and
             $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256})
@@ -58,9 +80,9 @@ try {
        $plan.OutputLimitBytes -ne 256MB -or $plan.MetadataReserveBytes -ne 1MB -or $plan.CleanupSeconds -ne 5 -or
        $plan.ReusedObjects -ne 410 -or $plan.ReusedProjectLibraries -ne 18 -or $plan.ReusedResources -ne 1){throw 'Fixed minimal build limits differ.'}
     $reuse=$plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $plan.ReuseCompile
-    $prepatch=Assert-T7BuildProfile $plan $PSScriptRoot
-    $buildProfile=if($prepatch){$plan.BuildProfile}else{$null}
-    $names=@(if($prepatch){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
+    $recompiled=Assert-T7BuildProfile $plan $PSScriptRoot
+    $buildProfile=if($recompiled){$plan.BuildProfile}else{$null}
+    $names=@(if($recompiled){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
     if(@($plan.Stages).Count -ne $names.Count -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact full, retained-link or diagnostic main/link stages required.'}
     if(@($plan.Bindings).Count -gt 128 -or @($plan.Inputs).Count -gt 2048 -or
        @($plan.Bindings.Path|Sort-Object -Unique).Count -ne @($plan.Bindings).Count){throw 'Input set bound/uniqueness differs.'}
@@ -102,7 +124,7 @@ try {
             if(@($plan.Bindings|Where-Object {$_.Path -ceq $required -and $_.IsText}).Count -ne 1){throw 'Retained receipt/plan binding absent.'}
         }
         $priorPlan=Read-H1SmallJson $plan.ReuseCompile.SourcePlan 2MB
-        $retainedNames=@(if($prepatch){'zonetool11','xpak'}else{'main','zonetool11','xpak'})
+        $retainedNames=@(if($recompiled){'zonetool11','xpak'}else{'main','zonetool11','xpak'})
         $retainedRoots=@($retainedNames|ForEach-Object {Join-Path $priorPlan.RunRoot $_})
         if((@($plan.ReuseCompile.StageRoots)-join '|') -cne ($retainedRoots-join '|')){throw 'Exact retained dependency roots required.'}
     }

@@ -390,3 +390,145 @@ existing diagnostic-launcher workstream for source/metadata preparation only.
 Its separate reviewed launch plan and coordinator GO must precede any runtime
 capture. Compilation proves neither reaching SetProcessDPIAware nor fixed-address
 compatibility, successful catalogue/export, or owner gameplay acceptance.
+
+## Catalogue trace: observe the ordinary command without changing dispatch
+
+The real catalogue B run used ordinary D2 and naturally returned zero in 2.180
+seconds, with only the initial ZoneTool message and no catalogue. That message is
+emitted from component post_unpack before the original engine initialization call.
+The logger uses printf without fflush, so missing later lines alone cannot locate
+the exit. Source review found no argv/define mismatch and no explicit successful
+exit in the interval. A missing bootstrap file or wrong patch offset is not proven.
+Catalogue A/B failures and the earlier pre-patch experiments remain historical.
+
+The coordinator authorized a minimal observation during the **same** command,
+`-t7-iw7-catalog mp_freerun_04`. `prepare_catalog_trace.py` overlays only the
+ordinary prepared main. At the first main statement it checks the actual wide
+command line for exactly three arguments, the exact catalogue option and a
+nonempty zone argument. It does not alter argv, cache flags, add a command mode,
+validate the zone differently, or replace any loader, patch or dispatch behavior.
+For this invocation it calls setvbuf on stdout and stderr before engine work and
+reports whether each call succeeded. It emits flushed stderr observations around
+T7 post_unpack, before entry_point, after its return with the original result,
+and at exit_hook with the original code, current TID and caller return address
+before pre_destroy. _ReturnAddress is captured at the hook itself. Other phases
+carry a null address and zero code except entry_point_return, which carries the
+original result. The original cleanup and exit/return remain unchanged.
+
+Each of six fixed events has an InterlockedOr bit; repeated calls cannot flood
+the trace. No raw command line, asset name or memory contents are logged. Each
+line is under 256 bytes; all trace output is under 1,536 bytes. The exact formats
+(fprintf LF, possibly translated to CRLF by Windows) are:
+
+```text
+[T7_CATALOG_TRACE] schema=iw7.t7-catalog-trace/1 phase=enabled stdout_unbuffered=%d stderr_unbuffered=%d tid=%lu
+[T7_CATALOG_TRACE] schema=iw7.t7-catalog-trace/1 phase=%s code=%d tid=%lu return_address=%p
+```
+
+The second format allows only before_post_unpack, after_post_unpack,
+before_entry_point, entry_point_return and exit_hook. Buffering indicators are
+0/1, code is signed int32, TID is unsigned DWORD, and address uses the pinned
+MSVC x64 %p representation. Markers prove only that their sites were reached;
+they do not establish engine readiness, successful catalogue or export.
+
+The explicit build profile is `t7-catalog-trace`, Option `-t7-iw7-catalog`,
+ArgumentCount 3, TraceSchema `iw7.t7-catalog-trace/1`. It binds exactly Wiring,
+PreparedMain, BaseBuildPlan and BaseBuildReceipt text pins (Path/Bytes/SHA256),
+with no Helper or Report. The base is ordinary D2 plan daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa
+and Passed receipt c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2.
+Preparation explicitly compares D2's compile-reuse chain with C, all seven
+uninstrumented native payloads in both prepared-source bindings, and all retained
+helper/object artifact pins. Only then is main overlaid. No binary is read by
+this comparison. The old source/receipt identities are not reused for a new EXE.
+
+The existing build runner accepts this named profile and pre-patch as separate
+variants. Unknown or mixed profiles are refused. ReuseCompile.RecompiledMain is
+true, its exact retained dependency roots are zonetool11 and xpak, and the two
+new stages are main Compile then Link. The qualified helper's 51 native checks
+remain historical. The common H1 providers, scheduler, telemetry policy and
+4/6 GiB, 120-second stage, 600-second group, 256 MiB output limits are unchanged.
+The new receipt must copy the exact BuildProfile and report its own plan hash,
+both original roots exiting zero and closed, Passed, InputsReverified and
+LeaseReleased with no quarantine. Catalogue launcher qualification belongs to
+the existing T7 acquisition chat and must bind this new evidence.
+
+Source tests recover the exact original main after removing only observations,
+check the order of trace/cleanup/return, enforce the bounded existing command,
+and reject changed ordinary source, proof chains, retained artifact pins and
+mixed payloads. PowerShell tests execute the runner's actual profile validator
+without providers. A plan and independent review precede any native build GO;
+no build, engine launch, lease or binary hash is authorized by preparation alone.
+
+Local source validation on 2026-10-12 passes 58 Python tests against the retained
+native source and explicit E7 path, plus 37 PowerShell checks (24 profile,
+3 deadline, 10 Link telemetry). The deadline/telemetry fixtures use the existing
+providers with synthetic native observations: no native types, children or lease.
+
+### Exact catalogue trace build plan A, awaiting review/GO
+
+Source commit 6c9b781d45a24747a66c24a6d803478b77215f6a produced
+`runtime/t7-catalog-trace-build-plan-a/build-plan.local.json`, SHA256
+0a6af99207b0b35bdf689a7378af3e1760bfd06e2da870fc1e1c9e5164462d31.
+Default-check passes with 1,083 expected inputs and no missing pins. Wiring is
+5,485 bytes / 247f4ed5f2734ddf0f36dcaf7d9ffe548e4a53c8977440d9306aeb419a039b56;
+prepared main is 14,426 bytes / 6d06778290f1d8befb3184cc7ff7de7f82d7acb02ebef9f72e0a91cdf2056bb1.
+The D2 base plan/receipt text pins are 296,330/7,136 bytes respectively, with
+the unchanged hashes above. Comparing all 413 object references in both Link
+response files finds exactly one changed row, line 22: the fresh main.obj.
+The other 412 paths are identical. intrin.h, cwchar and cstdio already belong to
+the expected input set; this requires no toolchain copy or dependency download.
+
+The future output root `runtime/zt-t7-catalog-trace-a` remains absent. This
+preparation loaded no native type, acquired no lease and hashed no binary.
+No new EXE, dependencies.json, Passed build receipt or catalogue exists yet.
+The coordinator and catalogue launcher owner received this exact plan and its
+source pins for independent review and later qualification. A new build receipt
+and explicit runtime plan/GO remain separate requirements.
+
+### Catalogue trace build A: Passed, closed, candidate not executed
+
+After favorable independent review and an explicit single-run coordinator GO,
+the exact plan above ran once on 2026-10-12. Preflight at 13:57:48 UTC recorded
+sufficient 4/6 GiB capacity, zero competing leases/builds and unchanged Main
+PID 27784 and Python PID 23352 identities. The retained PowerShell host PID 7980
+invoked the existing runner without any new supervisor or provider changes.
+
+Main compiled under /W4 /WX in 3.517 seconds; Link completed in 2.693 seconds.
+Original roots cl PID 9196 and link PID 5512 each exited zero. The existing H1
+policy qualified each exact telemetry child and its parent relationship, then
+closed the retained job; both after-stop observations report zero active members.
+Total group elapsed time was 16.974 seconds, with maximum observed output
+188,513,840 bytes, within the unchanged 256 MiB limit. Actual main dependencies
+passed the guarded-set check; Data.Source identifies the reviewed PreparedMain
+(Windows path case normalized to lowercase by MSVC). Both stages' artifacts
+passed comparison across telemetry cleanup and final input revalidation.
+
+Receipt `runtime/zt-t7-catalog-trace-a/receipt.json`, SHA256
+6a886fd9befa29b35ef220efa4cfb011a45cd0fd30bdcaff8a9b3374d0df73b3,
+records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased, with
+no quarantine. It carries the exact catalogue-trace BuildProfile and its four
+source/base-proof pins. These are the new artifacts under that run root:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| main/main.obj | 521,953 | 6423dff9e3ba14d920a8a04b49740b6c313fe815f6e082eb6616f15ecd75d195 |
+| main/compile.pdb | 1,724,416 | a5be4ee5c012fbec7663af444e0b74b594509c28e5bcf917426e5d830bfefdad |
+| main/dependencies.json | 61,948 | 11e21fcb1430dc6ae4dd08bd4eb1313256b2f399835af114c13391853d441cd4 |
+| link/zonetool-t7.exe | 21,741,056 | 1034faa2f198f3edc367e6f5d6c24059bddb6962f9950a347400e6108f3b60b0 |
+| link/zonetool-t7.pdb | 136,474,624 | 5ef1dca35b70e2c04093f248bc839e484b395805b1ec9657180e1277d75949a0 |
+| link/zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| link/zonetool-t7.exp | 3,929 | 29f525675fc321d1b9bed53ed3f857fca14761bbad3821811bdb9b77578dbd3c |
+
+Postflight at 13:59:33 UTC confirmed zero leases and build/telemetry processes,
+plus unchanged Main and Python identities. The retained host verified the exact
+Passed receipt and absence of its AppDomain quarantine, saved its outcome and
+exited zero. Independent observation at 14:00:08 UTC confirmed PID 7980 absent.
+Preflight, postflight, host-outcome and host-exit evidence is retained under
+`runtime/t7-catalog-trace-build-plan-a`. The coordinator and catalogue runner
+owner received the new pins and closure proof; no D2 receipt is substituted for
+this build. All previous failed and successful candidates remain preserved.
+
+CandidateExecuted and Ready remain false. This build did not run the EXE or
+engine, observe any trace marker, produce a catalogue, or validate export or
+gameplay. The next action belongs to the catalogue runner owner: qualify these
+new artifacts, prepare a real catalogue plan and obtain its separate runtime GO.

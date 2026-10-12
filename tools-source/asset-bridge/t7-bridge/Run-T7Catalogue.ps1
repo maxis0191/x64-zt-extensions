@@ -34,7 +34,9 @@ try {
     $shell=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
     if(@($plan.Bindings|Where-Object {$_.Path -ceq $shell -and !$_.IsText}).Count -ne 1){throw 'Exact current PowerShell host pin required.'}
     $build=@($plan.Bindings|Where-Object {$_.Path -ceq $plan.BuildReceipt -and $_.IsText})
-    if($build.Count -ne 1 -or $build[0].SHA256 -cne 'c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'){throw 'Exact D2 receipt binding required.'}
+    $candidateProfile=Get-T7CatalogueCandidateProfile $plan
+    $receiptHash=if($candidateProfile -ceq 'ordinary-d2'){'c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'}else{$plan.ExpectedBuildReceiptSHA256}
+    if($receiptHash -cnotmatch '\A[0-9a-f]{64}\z' -or $build.Count -ne 1 -or $build[0].SHA256 -cne $receiptHash){throw 'Exact catalogue build receipt binding required.'}
     Assert-T7CatalogueBuild $plan (Read-H1SmallJson $plan.BuildReceipt 1MB)
     if(!$Run) {
         [ordered]@{Status='PlanCheckedPendingGO';NativeTypesLoaded=$false;BinaryInputsHashed=$false;
@@ -44,7 +46,7 @@ try {
     if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]) -or ('IW7HudFileIdentity' -as [type])){throw 'Fresh PowerShell host required.'}
     . $scheduler
     $before=Assert-T7PrepatchMain $plan.PreservedMain
-    $state=[ordered]@{Schema='iw7.t7-catalogue-run/1';Status='Running';PlanSHA256=$PlanSHA256;Stage='Catalogue';
+    $state=[ordered]@{Schema='iw7.t7-catalogue-run/1';Status='Running';PlanSHA256=$PlanSHA256;CandidateProfile=$candidateProfile;Stage='Catalogue';
         DeadlineSeconds=120;MaxObservedOutputBytes=0L;Identity=$null;ExitCode=$null;TreeClosureConfirmed=$true;
         LeaseReleased=$false;Quarantined=$false;TerminationRequested=$false;CatalogueOutcome='NoCatalogue';
         CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;EngineOutputsValidated=$false;Aliases=@();InputFileIds=@()}
@@ -82,6 +84,8 @@ try {
     # while guards/admission remain; failure never becomes a successful catalogue.
     if($state -and $attempted -and $context.Owner -and $context.Closed -and $context.Lease) {
         try {
+            try{Read-T7CatalogueTrace $plan $state $context}
+            catch{if(!$failure){$failure=$_};$state.TraceError=$_.Exception.Message;$state.Status='Failed'}
             Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context
             $state.EngineOutputsValidated=$true
             $state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context
@@ -94,11 +98,13 @@ try {
             $state.MainAfter=Assert-T7PrepatchMain $plan.PreservedMain
             Test-H1Budget $plan $state
             if(!$failure -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
+            if(!$failure -and (Get-T7CatalogueCandidateProfile $plan) -ceq 't7-catalog-trace' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
     if($state){Complete-H1Stage $context $state}
     if($state -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
-        # After forced closure, inspect only the bounded report, never hash payloads.
+        # After forced closure, inspect only bounded diagnostics, never hash payloads.
+        try{Read-T7CatalogueTrace $plan $state $context}catch{$state.TraceError=$_.Exception.Message}
         try{$state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context}catch{$state.ReportError=$_.Exception.Message}
     }
     if($state -and !$context.Closed){$state.CatalogueOutcome='NotInspectedWhileJobUnclosed'}
