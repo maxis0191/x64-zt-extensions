@@ -1,0 +1,316 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-observation/1",
+  "date": "2026-10-12",
+  "attempt": "F",
+  "source_commit": "78f134c1ff7df86f13ffdec2f4f0b609a3650e7b",
+  "plan_sha256": "103f912daa09429c8afcba099c2b28a23afb95502757e995db448d99bf1152fe",
+  "invocations": 1,
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "qualification_error": "No qualified catalogue was produced.",
+  "root_pid": 34564,
+  "root_created_utc": "2026-10-12T15:42:19.7421835Z",
+  "stage_started_utc": "2026-10-12T15:42:19.7089573Z",
+  "finished_utc": "2026-10-12T15:42:23.2550616Z",
+  "root_exit_code": 0,
+  "native_stage_elapsed_ms": 2146.7954000234604,
+  "termination_requested": false,
+  "max_observed_output_bytes": 60815453,
+  "candidate": {
+    "profile": "t7-catalog-callers",
+    "bytes": 21747200,
+    "sha256": "01aa3310e92a1e458005de044c582c302c12149a81bf7fce23b7cc5ae153bbd4",
+    "build_plan_sha256": "455b67c2862105ce5670f9cb2fefb26ba8e86f0167481ae7a1d8cc7f1a1e1b20",
+    "build_receipt_sha256": "9f8b8bc235bd52429a915bb1f1d3fc3ca0afd6b852e8897dfc312d566166aa99"
+  },
+  "observed_zone": {
+    "file": "mp_freerun_04.ff",
+    "bytes": 16977344,
+    "sha256": "7456c7fbbcfe29ca3b71298bfab3f77e253dfabdda82a88304aa8eecb019125b",
+    "provenance": "ObservedUnderLeaseNotDepotVerified",
+    "payload_reverified_under_lease_after_closure": true
+  },
+  "admission": {
+    "preflight_utc": "2026-10-12T15:41:34.4200730Z",
+    "preflight_lease_count": 0,
+    "preflight_heavy_count": 0,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "preflight_budget_allowed": true,
+    "group_deadline_seconds": 200,
+    "stage_deadline_seconds": 120,
+    "cleanup_seconds": 5
+  },
+  "outputs": {
+    "stdout_bytes": 70,
+    "stderr_bytes": 4565,
+    "stderr_cap_bytes": 8192,
+    "stdout_message": "[ INFO ][ zonetool::t7::init_zonetool ]: ZoneTool is initializing...",
+    "trace_outcome": "TraceObserved",
+    "trace_events": [
+      {
+        "phase": "enabled",
+        "tid": 15060,
+        "stdout_unbuffered": true,
+        "stderr_unbuffered": true
+      },
+      {
+        "phase": "before_entry_point",
+        "tid": 15060,
+        "code": 0,
+        "return_address": "0000000000000000"
+      },
+      {
+        "phase": "before_post_unpack",
+        "tid": 15060,
+        "code": 0,
+        "return_address": "0000000000000000"
+      },
+      {
+        "phase": "after_post_unpack",
+        "tid": 15060,
+        "code": 0,
+        "return_address": "0000000000000000"
+      },
+      {
+        "phase": "exit_hook",
+        "tid": 27900,
+        "code": 0,
+        "return_address": "0000000140AC00C4"
+      }
+    ],
+    "context_outcome": "Observed",
+    "context": [
+      {
+        "Kind": "memory",
+        "Code": 0,
+        "ThreadId": 27900,
+        "ReturnAddress": "0000000140AC00C4",
+        "Status": "ok",
+        "Error": 0,
+        "start": "0000000140AC0084",
+        "Requested": 256,
+        "ReadBytes": 256,
+        "module": "0000000140000000",
+        "allocation": "0000000140000000",
+        "region": "0000000140AC0000",
+        "RegionSize": 178491392,
+        "state": 4096,
+        "protect": 64,
+        "type": 16777216
+      },
+      {
+        "Kind": "stack",
+        "Code": 0,
+        "ThreadId": 27900,
+        "ReturnAddress": "0000000140AC00C4",
+        "Status": "ok",
+        "Error": 0,
+        "Count": 8,
+        "Addresses": [
+          "00000001601BCEC5",
+          "00000001601BC855",
+          "00000001601BD022",
+          "0000000140AC00C4",
+          "0000000140584FD8",
+          "00000001401DA015",
+          "0000000140526D02",
+          "00007FF90747CD87"
+        ]
+      },
+      {
+        "Kind": "function",
+        "Code": 0,
+        "ThreadId": 27900,
+        "ReturnAddress": "0000000140AC00C4",
+        "Status": "ok",
+        "Error": 0,
+        "ReadBytes": 12,
+        "Image": "0000000140000000",
+        "Record": "000000014B44B2AC",
+        "begin": 11272008,
+        "end": 11272413,
+        "unwind": 17154424
+      }
+    ],
+    "context_incomplete_trailing_line": false,
+    "callers_outcome": "Observed",
+    "callers": [
+      {
+        "index": 0,
+        "return_address": "0000000140584FD8",
+        "frame": 4,
+        "status": "ok",
+        "error": 0,
+        "code": 0,
+        "tid": 27900,
+        "exit_return_address": "0000000140AC00C4",
+        "module": "0000000140000000",
+        "image": "0000000140000000",
+        "record": "000000014B40BD60",
+        "record_read_bytes": 12,
+        "begin_rva": "0x00584F50",
+        "end_rva_exclusive": "0x005850DF",
+        "unwind_rva": "0x00FFFC5C",
+        "start": "0000000140584F50",
+        "scope": "full",
+        "requested_bytes": 399,
+        "read_bytes": 399,
+        "allocation": "0000000140000000",
+        "region": "0000000140584000",
+        "region_size": 183980032,
+        "state": 4096,
+        "protect": 64,
+        "type": 16777216
+      },
+      {
+        "index": 1,
+        "return_address": "00000001401DA015",
+        "frame": 5,
+        "status": "ok",
+        "error": 0,
+        "code": 0,
+        "tid": 27900,
+        "exit_return_address": "0000000140AC00C4",
+        "module": "0000000140000000",
+        "image": "0000000140000000",
+        "record": "000000014B3D4E78",
+        "record_read_bytes": 12,
+        "begin_rva": "0x001D9FE0",
+        "end_rva_exclusive": "0x001DA135",
+        "unwind_rva": "0x00FD73D0",
+        "start": "00000001401DA000",
+        "scope": "window",
+        "requested_bytes": 85,
+        "read_bytes": 85,
+        "allocation": "0000000140000000",
+        "region": "00000001401DA000",
+        "region_size": 187822080,
+        "state": 4096,
+        "protect": 64,
+        "type": 16777216
+      },
+      {
+        "index": 2,
+        "return_address": "0000000140526D02",
+        "frame": 6,
+        "status": "ok",
+        "error": 0,
+        "code": 0,
+        "tid": 27900,
+        "exit_return_address": "0000000140AC00C4",
+        "module": "0000000140000000",
+        "image": "0000000140000000",
+        "record": "000000014B405EC8",
+        "record_read_bytes": 12,
+        "begin_rva": "0x00526C80",
+        "end_rva_exclusive": "0x00526D20",
+        "unwind_rva": "0x00FF6604",
+        "start": "0000000140526C80",
+        "scope": "full",
+        "requested_bytes": 160,
+        "read_bytes": 160,
+        "allocation": "0000000140000000",
+        "region": "0000000140526000",
+        "region_size": 184365056,
+        "state": 4096,
+        "protect": 64,
+        "type": 16777216
+      }
+    ],
+    "callers_incomplete_trailing_line": false,
+    "caller_code_bytes_captured": 644,
+    "caller_function_record_bytes_captured": 36,
+    "captured_bytes_retained_privately_only": true,
+    "catalogue_files": 0,
+    "entry_point_return_observed": false,
+    "startup_output_profile_validated": true,
+    "identity_payload_files": 0,
+    "binary_payload_read_after_release_by_adapter": false
+  },
+  "closure": {
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "inputs_reverified": true,
+    "original_metadata_unchanged": true,
+    "main_baseline": "Stopped",
+    "main_stoppage_cause": "Unknown",
+    "main_observed_before_utc": "2026-10-12T15:42:18.3954409Z",
+    "main_observed_before_launch_utc": "2026-10-12T15:42:19.6935783Z",
+    "main_observed_after_utc": "2026-10-12T15:42:23.2534976Z",
+    "postflight_utc": "2026-10-12T15:42:46.1499719Z",
+    "postflight_lease_count": 0,
+    "postflight_heavy_count": 0,
+    "postflight_original_metadata_equal": true,
+    "postflight_source_and_alias_ids_equal": true,
+    "host_pid": 9028,
+    "host_created_utc": "2026-10-12T15:41:43.8259667Z",
+    "host_quarantine_absent": true,
+    "host_session_exit": {
+      "source_tool": "tools.write_stdin",
+      "session_id_from_call": 89803,
+      "observed_chunk_id": "a311f7",
+      "observed_exit_code": 0,
+      "derived_from_process_absence": false,
+      "evidence": "host-session-exit.local.json"
+    },
+    "host_and_candidate_absent_utc": "2026-10-12T15:43:35.0747163Z",
+    "absence_evidence": "host-absence.local.json",
+    "host_present": false,
+    "candidate_present": false,
+    "aliases_retained": 4,
+    "preserved_python_generation_unchanged": true
+  },
+  "evidence": [
+    {
+      "name": "evidence/receipt.json",
+      "bytes": 12273,
+      "sha256": "9d9dfda0c385a051a50b43eba7785609d3a8e1f9b456ee8d09ccee4f1a628684"
+    },
+    {
+      "name": "evidence/stdout.log",
+      "bytes": 70,
+      "sha256": "f54b1b215440fd9e9e6533e672b006bca812ae3945573c470509512db12164ca"
+    },
+    {
+      "name": "evidence/stderr.log",
+      "bytes": 4565,
+      "sha256": "09e8d5878864e49dd409e543fc8b4f4f6e8c1362ea1ec602d34fdce785d9e926"
+    },
+    {
+      "name": "postflight.local.json",
+      "bytes": 3391,
+      "sha256": "37c6c45e2d8a9ad29e2a503795916cacbfacf188da7ca4e905668e1487b408d2"
+    },
+    {
+      "name": "host-outcome.local.json",
+      "bytes": 290,
+      "sha256": "ee3143951a4b65edff35055ec0a40e3c41b34ad722a7725805d52827a3baab9e"
+    },
+    {
+      "name": "host-session-exit.local.json",
+      "bytes": 525,
+      "sha256": "034b595d6524b0c4ec3fee7ca00578cd94c601e5a7a38368d9a5d74c7a8458e1"
+    },
+    {
+      "name": "host-absence.local.json",
+      "bytes": 199,
+      "sha256": "1aadf4e34fc17aae95e53fd65c4b0c2aa3a3d3bf889a650116a0d57af9636566"
+    }
+  ],
+  "limits": {
+    "catalogue_produced": false,
+    "exit_context_captured": true,
+    "caller_context_captured": true,
+    "caller_disassembly_performed_by_adapter": false,
+    "exit_cause_established_by_adapter": false,
+    "model_name_observed": false,
+    "asset_export_performed": false,
+    "engine_compatibility_proven": false,
+    "all_external_io_observed": false,
+    "next_native_go": false,
+    "ready": false
+  },
+  "next_action": "Build owner 51 alone analyzes the private captured bytes after confirmed host closure. No automatic retry, expanded capture or new input."
+}
