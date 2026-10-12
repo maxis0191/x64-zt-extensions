@@ -252,3 +252,59 @@ engine compatibility, catalogue/export execution and owner gameplay remain
 unproved. The next authorized work is source-only wiring of a separate bounded
 pre-patch rendezvous probe before `component_loader::post_unpack`; any new
 native build or runtime experiment requires its own reviewed plan and GO.
+
+## Separate pre-patch diagnostic: source and plan only
+
+`prepare_prepatch.py` is a narrow overlay of the already pinned main source.
+It leaves the resident CLI patch and its historical source contract unchanged.
+Its separate helper is owned by the executable-inspection workstream, commit
+9ec33562964dcd8b3c2bd0bbbc12fe82bb63ceb7: `native_prepatch_probe.inc`, 16,290 bytes,
+SHA256 83f7a6e2cbf3551105d2ea698d5e25f21dc3d6343e6ac21a8358fa693145dd67.
+The helper is copied only into the tiny private prepared-source overlay;
+the shared native tree and D2 artifacts are unchanged.
+
+The explicit `-t7-prepatch-probe` invocation is validated before any engine
+selection/load. It requires exactly two arguments including the executable,
+the T7 dedicated file, T7 mode, and the helper's fresh bound output. The first
+T7 SetProcessDPIAware stub calls capture and immediately passes its result to
+the existing exit_hook/pre_destroy path, before post_unpack. The T7 ExitProcess
+import instead refuses an engine exit before capture. Loader exceptions report
+to stderr and return two before the ordinary modal path. Refused post_start/
+post_load and an entrypoint return without capture also return two. Ordinary
+engine modes retain their existing behavior; there is no alternate address
+patch or fallback into the ordinary T7 boot after a diagnostic refusal.
+
+This is a witness after imports, hooks and post_load have already been able to
+act, not a side-effect-free load or an ABI proof. The helper captures metadata
+and twelve bounded windows, then exits. Its complete-capture exit zero still
+requires offline compatibility review. The separate runtime supervisor must
+check the report identity, phase and completeness, not merely the exit code.
+
+The new optional `--prepatch-helper` build mode requires retained compilation
+proof. It recompiles only main and then links, reusing C's unchanged zonetool11/
+xpak objects, PDBs, dependency reports and exact 51-case helper proof. Every
+other native source/header must remain byte-identical; the main must differ.
+Both reused dependency reports (637 and 560 includes) are covered by the new
+guarded set and will be checked again during an admitted build. D2 is not used
+as an instrumented candidate and C's failed group status is preserved.
+
+Plan and native receipt carry BuildProfile `t7-prepatch-probe`, exact option,
+argument count and report name, plus Helper/Wiring/PreparedMain pins that must
+match guarded text bindings. A main rebuild without that profile, or a profile
+without the main rebuild, is refused. The runtime launcher can consequently
+reject a non-instrumented D2 receipt instead of guessing from an EXE filename.
+
+The prepared plan is `runtime/t7-prepatch-build-plan-a/build-plan.local.json`,
+SHA256 63982a61209d68ae693fb1bbc6b59545618f60875f86b237e404bdb21dfe3074.
+Its source/metadata-only check passes: two stages, 1,083 expected inputs, no
+missing pins, no native types, no binary input hashing, no lease or candidate
+root. The future output is `runtime/zt-t7-prepatch-a/link/zonetool-t7.exe`;
+there is currently no EXE or build receipt at that root. Admission remains
+4/6 GiB, each stage 120 seconds, group 600 seconds and output 256 MiB.
+
+Validation: 46 Python source/recipe regressions, eleven actual runner profile
+validator cases, three deadline cases and ten Link telemetry cases pass without
+native execution. IW7_T7_E7_BUILD remains supported for retained-build tests.
+The helper's own ten source tests are separate evidence, not a native result.
+Next: independent review of this exact source and plan, coordinator admission
+and explicit build GO. A future runtime probe remains a separate authorization.

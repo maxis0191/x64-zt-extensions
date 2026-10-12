@@ -21,6 +21,31 @@ function Open-T7Bootstrap($Path,[long]$Bytes,[string]$SHA256) {
     if($actual -cne $SHA256){throw 'Bootstrap source differs.'}
     $stream.Position=0;return $stream
 }
+function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
+    $profile=if($Plan.PSObject.Properties.Name -contains 'BuildProfile'){$Plan.BuildProfile}else{$null}
+    $recompiled=$Plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $Plan.ReuseCompile -and
+        $Plan.ReuseCompile.PSObject.Properties.Name -contains 'RecompiledMain' -and $Plan.ReuseCompile.RecompiledMain
+    if($null -eq $profile) {
+        if($recompiled){throw 'Recompiled main requires the explicit diagnostic profile.'}
+        return $false
+    }
+    if($profile.Name -cne 't7-prepatch-probe' -or $profile.Option -cne '-t7-prepatch-probe' -or
+       $profile.ArgumentCount -ne 2 -or $profile.Report -cne 't7-prepatch-probe.local.json' -or !$recompiled){throw 'Exact diagnostic profile and main rebuild required.'}
+    $paths=@{
+        Helper=(Join-Path $Plan.PreparedRoot 'native_prepatch_probe.inc')
+        Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
+        PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+    }
+    foreach($name in 'Helper','Wiring','PreparedMain') {
+        $pin=$profile.$name
+        if($pin.Path -cne $paths[$name] -or $pin.Bytes -le 0 -or $pin.Bytes -gt 64KB -or
+           $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Diagnostic source pin differs.'}
+        $match=@($Plan.Bindings|Where-Object {$_.Path -ceq $pin.Path -and $_.IsText -is [bool] -and $_.IsText -and
+            $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256})
+        if($match.Count -ne 1){throw 'Diagnostic source pin is not guarded by the build.'}
+    }
+    return $true
+}
 try {
     $planSize=(Get-Item -LiteralPath $PlanPath).Length
     if($planSize -gt 2MB){throw 'Plan exceeds 2 MiB.'}
@@ -33,8 +58,10 @@ try {
        $plan.OutputLimitBytes -ne 256MB -or $plan.MetadataReserveBytes -ne 1MB -or $plan.CleanupSeconds -ne 5 -or
        $plan.ReusedObjects -ne 410 -or $plan.ReusedProjectLibraries -ne 18 -or $plan.ReusedResources -ne 1){throw 'Fixed minimal build limits differ.'}
     $reuse=$plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $plan.ReuseCompile
-    $names=@(if($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
-    if(@($plan.Stages).Count -ne $names.Count -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact full-build or retained-compile link stages required.'}
+    $prepatch=Assert-T7BuildProfile $plan $PSScriptRoot
+    $buildProfile=if($prepatch){$plan.BuildProfile}else{$null}
+    $names=@(if($prepatch){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
+    if(@($plan.Stages).Count -ne $names.Count -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact full, retained-link or diagnostic main/link stages required.'}
     if(@($plan.Bindings).Count -gt 128 -or @($plan.Inputs).Count -gt 2048 -or
        @($plan.Bindings.Path|Sort-Object -Unique).Count -ne @($plan.Bindings).Count){throw 'Input set bound/uniqueness differs.'}
     foreach($pin in $plan.Bindings) {
@@ -74,9 +101,13 @@ try {
         foreach($required in @($plan.ReuseCompile.Receipt,$plan.ReuseCompile.SourcePlan)) {
             if(@($plan.Bindings|Where-Object {$_.Path -ceq $required -and $_.IsText}).Count -ne 1){throw 'Retained receipt/plan binding absent.'}
         }
+        $priorPlan=Read-H1SmallJson $plan.ReuseCompile.SourcePlan 2MB
+        $retainedNames=@(if($prepatch){'zonetool11','xpak'}else{'main','zonetool11','xpak'})
+        $retainedRoots=@($retainedNames|ForEach-Object {Join-Path $priorPlan.RunRoot $_})
+        if((@($plan.ReuseCompile.StageRoots)-join '|') -cne ($retainedRoots-join '|')){throw 'Exact retained dependency roots required.'}
     }
     if(!$Run) {
-        [ordered]@{Schema='iw7.t7-minimal-build-check/1';PlanSHA256=$PlanSHA256;Stages=@($plan.Stages).Count;ReusedCompilation=$reuse;
+        [ordered]@{Schema='iw7.t7-minimal-build-check/1';PlanSHA256=$PlanSHA256;Stages=@($plan.Stages).Count;ReusedCompilation=$reuse;BuildProfile=$buildProfile;
             ExpectedInputs=@($plan.Inputs).Count;MissingExpectedPins=@($plan.MissingExpectedPins).Count;
             NativeTypesLoaded=$false;BinaryInputsHashed=$false;LeaseAcquired=$false;RunRootCreated=$false;Ready=$false}|ConvertTo-Json
         return
@@ -84,7 +115,7 @@ try {
     if($plan.InputPinsComplete -isnot [bool] -or !$plan.InputPinsComplete -or @($plan.MissingExpectedPins).Count){throw 'Complete reviewed expected input pins required before native GO.'}
     if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7.H1Diagnostics.JobMembers' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Fresh PowerShell host required.'}
     . $plan.Scheduler
-    $state=[ordered]@{Schema='iw7.t7-minimal-build/1';PlanSHA256=$PlanSHA256;Status='Pending';Ready=$false;
+    $state=[ordered]@{Schema='iw7.t7-minimal-build/1';PlanSHA256=$PlanSHA256;Status='Pending';Ready=$false;BuildProfile=$buildProfile;
         EstimatesAreMeasured=$false;TreeClosureConfirmed=$true;LeaseReleased=$false;Quarantined=$false;
         MaxObservedOutputBytes=0L;CompilerTelemetry=[ordered]@{Completed=$false};Stages=[Collections.Generic.List[object]]::new()}
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes $plan.PhysicalBytes -CommitBytes $plan.CommitBytes -Owner 'T7 three TU build and name helper'
