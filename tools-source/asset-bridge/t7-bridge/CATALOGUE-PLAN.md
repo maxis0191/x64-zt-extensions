@@ -1420,3 +1420,33 @@ no correction or retry was applied. The
 [closed-phase and stopped-preparation checkpoint](catalogue-en-core-post-gfx-qualified-p-stopped-20261012.json)
 preserves the actual exit/absence and refusal pins. Any correction or continuation
 requires a new coordinator decision; the valid qualification must not be repeated.
+
+## P preparation corrected and sealed; separate Run GO still required
+
+The coordinator authorized a source-only correction after inspecting the complete
+old text bindings: `.cs`, `.py`, `.cpp`, `.rsp` and two approximately 299 KiB JSON
+documents all belong to the existing reviewed collection. A new preparation
+script removes only its redundant old-`IsText` loop. The refused script and
+refusal receipt remain immutable; the small-local-document 128 KiB helper and
+its extension list are unchanged. The existing runner's default path retains
+the actual validation, guards and hashes for every text binding, within its
+existing 1 MiB ceiling. No runner/profile/runtime gate changed.
+
+The corrected preparation creates an immutable P Plan from the actual closed
+qualification. Complete O-to-P comparison confirms all 40 old bindings, six
+bootstraps and ten metadata rows unchanged. Only the qualification receipt,
+qualification script, new binary input and its metadata are appended, alongside
+the P attempt paths, corresponding output limit and qualification closure's Main
+observation. The real runner default reports `PlanCheckedPendingGO`; all 31 text
+bindings and seven qualification receipts pass. Captured host/runner arguments
+also match. No binary was hashed, runtime type loaded, lease acquired or Run
+invoked by this validation.
+
+The dispatcher retains all 78 variable occurrences, 13 command occurrences and
+464 nonliteral tokens. The closure draft retains all 140/32/850 corresponding
+occurrences from the successful O helper, including its N globals and L locals.
+Only authorized data literals and attempt labels changed; historical O identity
+literals intentionally remain until an actual P return. The draft was never
+invoked. The [corrected P checkpoint](catalogue-preparation-p-corrected-20261012.json)
+pins the complete diff, actual default/argument evidence and source comparisons.
+The old two-phase GO remains closed. A distinct P-only GO is still required.

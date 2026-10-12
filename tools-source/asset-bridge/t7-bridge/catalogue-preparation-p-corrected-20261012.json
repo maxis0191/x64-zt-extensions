@@ -1,0 +1,184 @@
+{
+  "schema": "iw7.t7-catalogue-corrected-preparation/1",
+  "date": "2026-10-12",
+  "attempt": "P",
+  "status": "PreparedPendingDistinctCatalogueGO",
+  "prior_checkpoint_commit": "82f5db738101d5b850f5f0471cdcf197118a7f8f",
+  "source_operational_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+  "authorization": {
+    "source_correction_only": true,
+    "previous_two_phase_GO_closed": true,
+    "P_Run_authorized": false,
+    "ordinary_source_preparation_corrections_permitted": true,
+    "runtime_gates_unchanged": true
+  },
+  "correction": {
+    "original_refused_script": {
+      "name": "Prepare-T7CatalogueP.local.ps1",
+      "bytes": 9668,
+      "sha256": "4f75a9547780be0373a8306cc4c9dba8536391b7087e7c52183d2f0cf2820bc6"
+    },
+    "original_refusal": {
+      "name": "t7-catalog-p-preparation-refusal.local.json",
+      "bytes": 1403,
+      "sha256": "ea3f3e5e914b6bbbb34de7647b867ba9d221b0cc8d3c299f6b76ca0cdd802c20"
+    },
+    "corrected_script": {
+      "name": "Prepare-T7CataloguePCorrected.local.ps1",
+      "bytes": 9457,
+      "sha256": "f3397335a46394cad989431df6e8d8c8f6c65f35707403a09f3e524943dcd2f4"
+    },
+    "exact_diff": {
+      "name": "t7-catalog-p-preparation-correction.local.patch",
+      "bytes": 1415,
+      "sha256": "5a34a2720d7e02fb13072a9a8aaa5fa9845c72cd521746e72f21dffe8913cabe"
+    },
+    "only_redundant_old_IsText_loop_removed": true,
+    "small_local_TextPin_limit_bytes": 131072,
+    "small_local_TextPin_extensions_unchanged": true,
+    "reason": "Existing source bindings include .cs/.py/.cpp/.rsp and two JSON documents above 128 KiB. The unchanged runner default already validates and guards every text binding with its existing 1 MiB ceiling.",
+    "original_evidence_preserved": true,
+    "qualification_repeated": false,
+    "runner_or_profile_changed": false
+  },
+  "plan": {
+    "name": "t7-catalog-plan-p.local.json",
+    "bytes": 25254,
+    "sha256": "b29ad1fdea4899ae4f33a7839843715a228bc6c353ea65e770e15004f495fbd7"
+  },
+  "dispatch": {
+    "name": "Invoke-T7CatalogueP.local.ps1",
+    "bytes": 3999,
+    "sha256": "af5a25b6b63d0a5e0709df3dac1734cc0eb2400a425ff8631d9f58d69746e4ab"
+  },
+  "dispatch_review": {
+    "name": "t7-catalog-p-dispatch-review.local.json",
+    "bytes": 5365,
+    "sha256": "b0460945d33512b8a989aa4719976dd76fb86421e87527ef3272021754c2dbc3"
+  },
+  "source_preparation": {
+    "name": "t7-catalog-p-source-preparation.local.json",
+    "bytes": 3008,
+    "sha256": "4cd0ab1acc8959973310deff8e73c63d8d1d1f3747caed5dd663250875fd8593"
+  },
+  "full_plan_diff": {
+    "name": "t7-catalog-o-to-p-plan.local.patch",
+    "bytes": 5754,
+    "sha256": "09447a7538f1e11acec7a371b30c487f097503dfe11b3db69eecc66ed12f1cb5"
+  },
+  "plan_diff_review": {
+    "name": "t7-catalog-p-plan-diff-review.local.json",
+    "bytes": 945,
+    "sha256": "10888786afe296500ac9f7d9387d8e14b8361fccfac8f80d3f5f706e28c13cd2"
+  },
+  "semantic_diff": {
+    "changed_top_level_fields": [
+      "RunRoot",
+      "WorkingDirectory",
+      "StageRoot",
+      "Image",
+      "OutputLimitBytes",
+      "InputMetadata",
+      "Bindings",
+      "MainBaselineObservation",
+      "Bootstraps"
+    ],
+    "existing_bindings_unchanged": 40,
+    "existing_text_bindings_unchanged": 29,
+    "existing_bootstraps_unchanged": 6,
+    "existing_metadata_unchanged": 10,
+    "added_bindings": 3,
+    "added_text_bindings": 2,
+    "added_binary_bindings": 1,
+    "added_qualified_input": 1,
+    "added_metadata": 1,
+    "new_item_matches_actual_closed_qualification": true,
+    "operational_source_and_candidate_pins_unchanged": true
+  },
+  "exact_script_comparisons": [
+    {
+      "reference": {
+        "name": "Invoke-T7CatalogueO.local.ps1",
+        "bytes": 3999,
+        "sha256": "2649fa93291917d8c902f8634eb34d2a0b689ce20904809ea8e73e5000f656e4"
+      },
+      "prepared": {
+        "name": "Invoke-T7CatalogueP.local.ps1",
+        "bytes": 3999,
+        "sha256": "af5a25b6b63d0a5e0709df3dac1734cc0eb2400a425ff8631d9f58d69746e4ab"
+      },
+      "literal_diff": {
+        "name": "Invoke-T7CatalogueP.local.ps1.literal-diff.patch",
+        "bytes": 5161,
+        "sha256": "99b0af162735d257e14c8ec83b12a2b793b2b36a666487497ea65de687328ac4"
+      },
+      "variable_occurrences_unchanged": 78,
+      "command_occurrences_unchanged": 13,
+      "nonliteral_tokens_unchanged": 464
+    },
+    {
+      "reference": {
+        "name": "Finish-T7CatalogueO.bound.local.ps1",
+        "bytes": 5599,
+        "sha256": "e2c0a476ebbaba2e9bba6290dacd4c27a6ee80a64b37a6102f1868b05e72c729"
+      },
+      "prepared": {
+        "name": "Finish-T7CatalogueP.pending-identities.local.ps1",
+        "bytes": 5599,
+        "sha256": "3925ad1e1f7e988efe23c7aa5231cac479ad75b39b05259af8d2886ca0da539b"
+      },
+      "literal_diff": {
+        "name": "Finish-T7CatalogueP.pending-identities.local.ps1.literal-diff.patch",
+        "bytes": 6879,
+        "sha256": "cf57cdb49d0a32448ba1c96d56b9155f55490f587481ea055f74fcee2fda367a"
+      },
+      "variable_occurrences_unchanged": 140,
+      "command_occurrences_unchanged": 32,
+      "nonliteral_tokens_unchanged": 850
+    }
+  ],
+  "validation": {
+    "default_status": "PlanCheckedPendingGO",
+    "default_tool_chunk": "e6983b",
+    "plan_diff_tool_chunk": "b8b8ca",
+    "all_text_bindings_checked_by_existing_runner": 31,
+    "qualification_receipts_validated": 7,
+    "existing_text_binding_ceiling_bytes": 1048576,
+    "actual_runner_and_host_arguments_verified": true,
+    "native_types_loaded": false,
+    "binary_inputs_hashed": false,
+    "lease_acquired": false,
+    "runner_files_created": false,
+    "operational_Run_invoked": false,
+    "host_started": false
+  },
+  "runtime_contract": {
+    "policy": "QualifiedCollectionV2",
+    "bootstrap_count": 7,
+    "bootstrap_bytes": 75458816,
+    "bindings": 43,
+    "text_bindings": 31,
+    "binary_bindings": 12,
+    "metadata_rows": 11,
+    "combined_original_alias_ids": 22,
+    "output_limit_bytes": 203268248,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "native_invocations_planned": 1,
+    "retry_authorized": false,
+    "V3_adopted": false
+  },
+  "closure_draft": {
+    "pin": {
+      "name": "Finish-T7CatalogueP.pending-identities.local.ps1",
+      "bytes": 5599,
+      "sha256": "3925ad1e1f7e988efe23c7aa5231cac479ad75b39b05259af8d2886ca0da539b"
+    },
+    "all_N_globals_and_L_locals_preserved": true,
+    "historical_O_identity_literals_intentionally_retained": true,
+    "draft_invoked": false,
+    "future_binding_requires_exactly_three_actual_identity_literals": true,
+    "future_bound_helper_requires_exact_diff_AST_and_hash_publication": true
+  },
+  "next_action": "Coordinator reviews the concrete sealed P preparation and decides a new P-only GO. No live admission, catalogue Run, new qualification, payload hash or export follows this source-only authorization."
+}
