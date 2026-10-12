@@ -404,3 +404,61 @@ baseline and independent catalogue checks remain intact. The next executable
 plan must bind the actual newly built candidate and its Passed receipt; synthetic
 test identities cannot stand in for those artifacts. A/B/D remain Failed, C
 remains unconsumed and no further build/Run is authorized by this source change.
+
+## Attempt E: complete exit context, still no catalogue
+
+After review of the real context build and the protection-guard correction, the
+coordinator authorized one invocation of Plan E
+`2cc54a561ac944da036e72bbac6bbc6b48b59a310e1c7c08508b09026a716efb`, using source
+`90d28e45c74971a775952042368e997ec8775818`. The actual candidate is 21,744,640 bytes,
+SHA256 `f3408671d392b97e3ca09bc3e6e294c761813feccd18d8a1aaa4920874be2847`, from
+build plan `0cd2c2f3bdc22021a045d53bec19988b912c8d3db095e02eef061ebfa201880b` and
+Passed build receipt `3366373d1cf91e30634bfb3367133bee99771ca2b2cb9c794c7ced784cc9f6b0`.
+The fresh preflight confirmed Main Stopped, the preserved Python generation,
+zero leases/heavy workloads and capacity for the unchanged 6/8 GiB reservation.
+
+The native root exited naturally with code 0 after 1,964.83 ms. E remains
+**Failed / NoCatalogue** with the same 70-byte init_zonetool stdout message.
+The 1,917-byte stderr is structurally qualified as TraceObserved and
+ExitContext Observed. The same five trace phases as D were observed: enabled,
+before_entry_point, before_post_unpack, after_post_unpack, then exit_hook.
+The first four use thread 3848; exit_hook uses thread 24404, code 0 and return
+address `0x140AC00C4`. No entry_point_return or catalogue was observed.
+
+All three context records completed with status ok and error 0:
+
+| Capture | Observed metadata |
+| --- | --- |
+| memory | 256/256 bytes from `0x140AC0084`, expected module/allocation `0x140000000`, committed region, protection 64 |
+| stack | Eight addresses, retained in the private receipt and sanitized address metadata |
+| function | Full 12-byte record; function range `[0x140ABFF48, 0x140AC00DD)`, unwind RVA `0x0105C178` |
+
+The existing Capstone installation decoded only those captured 256 bytes after
+the host was closed. The six-byte indirect call at `0x140AC00BE` ends at the
+reported return address and references the pointer slot `0x14B4BD078` relative
+to RIP. The instruction at the return address is int3. The slot's contents,
+EXE/PDB and any additional memory were not read. The initial window starts
+inside a function, so its initial instruction alignment remains unproven.
+These observations alone do not name the function or establish why it exits.
+The build owner owns subsequent source/cause correlation; no further analysis
+or runtime is implicit in this checkpoint.
+
+Closure and lease release succeeded without forced stop or quarantine. Inputs
+and aliases were reverified under admission. Postflight at 15:07:49 UTC found
+zero leases/heavy workloads/original root, equal metadata and file IDs, Main
+still Stopped and the same Python generation. The original bank, Main process
+state and input set were not changed by this invocation.
+
+Two distinct witnesses establish host closure. First, `tools.write_stdin` for
+the persistent terminal **session 12428** returned **exit code 0**, chunk
+`6fdf98`, after the guarded exit command for host PID 25580. The private
+`host-session-exit.local.json` records this observed tool result; it is not an
+inference from PID absence. Separately, a subsequent process inventory at
+15:08:08.6666893 UTC found host 25580 and native root 14448 absent, recorded in
+`host-absence.local.json`. Both witnesses have separate hashes in the
+[sanitized E checkpoint](catalogue-runtime-e-20261012.json).
+
+The checkpoint includes only statuses, addresses, sizes and evidence hashes.
+Raw captured bytes, full stderr/receipt and disassembly remain in ignored local
+evidence. A/B/D/E remain Failed, C remains unconsumed, and no additional runtime,
+capture expansion, dependency input or automatic retry is authorized.
