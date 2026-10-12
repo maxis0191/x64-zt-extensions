@@ -336,3 +336,19 @@ The plan, prepared source, partial compiler output and failed receipt remain
 preserved. No second invocation or candidate execution occurred. The helper
 owner was notified for a source-only include correction; a new plan and review/GO
 are required before any further build. Qualified D2 remains separate and intact.
+
+## Diagnostic Plan B: one-line include correction, not executed
+
+Helper commit d1858afa1b665eee05322bcf3316dae58d969873 changes only the include
+to `<json.hpp>`, matching the native tree's existing dependency. Its 16,281-byte
+SHA256 is a9f458d2783c845af6958c896bda07fa4b92a5ea23a14c9e5d1201fe234a2018.
+No download, include-path expansion or feature change is required.
+Plan `runtime/t7-prepatch-build-plan-b/build-plan.local.json`, SHA256
+c9e664bb4dbf2b7e3c38c05a9952ef9d809e326cef7ae864209073ecaf61acd6, passes
+the default source/metadata check with the same 1,083 expected inputs and
+main/Link stages. Its entire expected input array is identical to A; wiring,
+prepared main and budgets are also unchanged. The corrected helper and fresh
+private paths are rebound in the text bindings. The candidate root
+`runtime/zt-t7-prepatch-b` remains absent. A and its failed evidence are preserved.
+This is preparation only; targeted review, fresh admission and a new coordinator
+GO remain required before the single proposed invocation.
