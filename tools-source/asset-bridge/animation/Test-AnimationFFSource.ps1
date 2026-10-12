@@ -32,12 +32,38 @@ $source=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Build-AnimationFF.ps1')
 Assert-Check ($source.IndexOf('if(!$Run)') -lt $source.IndexOf('. $bindings[''ops/Resource-Scheduler.Core.ps1''].Path')) 'Plan exits before scheduler import'
 Assert-Check ($source.IndexOf('$lease=Enter-IW7ResourceLease') -lt $source.IndexOf('Add-Type -LiteralPath')) 'BuildJob compilation follows admission'
 Assert-Check ($source.IndexOf('Get-BeaconJobIdentity $owner') -lt $source.IndexOf('$owner.Resume()')) 'Original handle identity before resume'
-Assert-Check ($source.IndexOf('Add-IW7ResourceProcess -Token') -lt $source.IndexOf('$owner.Resume()')) 'Suspended registration before resume'
+Assert-Check ($source.IndexOf('$owner.Resume()') -lt $source.IndexOf('Register-AnimationPhase $owner')) 'CIM registration follows Resume, with original handle identity already captured'
 Assert-Check ($source -notmatch 'Stop-Process|taskkill|\.Kill\(|WaitForExit|Start-Process') 'No PID-only process/closure fallback'
 Assert-Check ($source -match 'if\(\$closed\)\{\$owner.Dispose\(\)' -and $source -match 'AnimationFF.Quarantine') 'Unknown closure retains exact owner'
 Assert-Check ($source.IndexOf('$script:closed=$false') -lt $source.IndexOf('[IW7.CommunityBuild.BuildJob]::Prepare')) 'Failed factory cannot imply tree closure'
 Assert-Check ($source.IndexOf('Assert-FFStockIdentity $entry $sourceId') -gt 0 -and $source.IndexOf('Assert-FFStockIdentity $entry $sourceId') -lt $source.IndexOf('$state.Transaction=Save-IW7BaseTransaction')) 'Bound NTFS identities checked under guards before staging'
 Assert-Check ($source.IndexOf('Assert-FFStockContent $state.Inputs') -gt $source.IndexOf('$lease=Enter-IW7ResourceLease') -and $source.IndexOf('Assert-FFStockContent $state.Inputs') -lt $source.IndexOf('$state.Transaction=Save-IW7BaseTransaction')) 'Content hashes checked after admission and before staging'
+
+$script:registrationCalls=0;$script:delays=0;$script:registrationFailure=$null;$script:exitDuringRegistration=$false
+$mockOwner=[pscustomobject]@{PID=7;Exited=$false}
+function Add-IW7ResourceProcess {
+    param($Token,$ProcessId)
+    $script:registrationCalls++
+    if($script:exitDuringRegistration){$mockOwner.Exited=$true;throw 'Child identity unavailable; reservation retained.'}
+    if($script:registrationFailure){throw $script:registrationFailure}
+    if($script:registrationCalls -eq 1){throw 'Child identity unavailable; reservation retained.'}
+}
+$fixedNow={ [datetime]'2026-10-12T00:00:00Z' }
+$delay={ $script:delays++ }
+$registered=Register-AnimationPhase $mockOwner 'fake' {} $fixedNow $delay
+Assert-Check ($registered.Registered -and $registered.Attempts -eq 2 -and $delays -eq 1) 'Only unavailable CIM identity is retried, then registered'
+$script:registrationFailure='Wrong lease'
+Assert-Throws {Register-AnimationPhase $mockOwner 'fake' {} $fixedNow $delay} 'Wrong lease'
+$script:registrationFailure='Child identity unavailable; reservation retained.';$script:clockReads=0
+Assert-Throws {Register-AnimationPhase $mockOwner 'fake' {} { $script:clockReads++;([datetime]'2026-10-12T00:00:00Z').AddSeconds([math]::Max(0,($script:clockReads-2)*6)) } $delay} 'registration deadline'
+$script:registrationFailure=$null;$script:exitDuringRegistration=$true
+$short=Register-AnimationPhase $mockOwner 'fake' {} $fixedNow $delay
+Assert-Check (!$short.Registered -and $short.Outcome -ceq 'ClosedBeforeRegistration') 'Short completed root is not reported as registered'
+$calls=$script:registrationCalls
+$alreadyClosed=Register-AnimationPhase $mockOwner 'fake' {} $fixedNow $delay
+Assert-Check (!$alreadyClosed.Registered -and $script:registrationCalls -eq $calls) 'Already exited root is never registered by stale PID'
+$script:exitDuringRegistration=$false;$mockOwner.Exited=$false
+Assert-Throws {Register-AnimationPhase $mockOwner 'fake' {throw 'stop budget'} $fixedNow $delay} 'stop budget'
 
 $native=[pscustomobject]@{Schema='iw7.original-probe-native-run/1';Status='NativeSerializerAndReadbackPassed';XabBytes=281;
     XabSHA256='1284b72cf501ae42f77958579610dbcaf692b9153cd06ff66dcf2d1d11eeda7d';
@@ -67,6 +93,22 @@ $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 $testRoot=Join-Path $repo ('runtime/animation-ff-source-tests-'+[guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($testRoot)|Out-Null
 try{
+    # Exercise final serialized receipt accounting with a real tiny file set.
+    $RunRoot=Join-Path $testRoot 'final';$work=Join-Path $RunRoot 'work'
+    [IO.Directory]::CreateDirectory($RunRoot)|Out-Null
+    $statePath=Join-Path $RunRoot 'state.local.json'
+    $state=[ordered]@{Inputs=@();MaxObservedBytes=0L;FinalObservedBytes=$null;Status='SyntheticOnly'}
+    $parseErrors=$null;$parseTokens=$null
+    $runnerAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Build-AnimationFF.ps1'),[ref]$parseTokens,[ref]$parseErrors)
+    foreach($functionName in @('Save-AnimationState','Measure-AnimationOutput','Save-AnimationFinalState')){
+        $fn=$runnerAst.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName},$true)
+        . ([scriptblock]::Create($fn.Extent.Text))
+    }
+    [IO.File]::WriteAllBytes((Join-Path $RunRoot 'tiny.bin'),[byte[]]::new(999))
+    Save-AnimationFinalState
+    $recorded=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+    $actualBytes=[long]((Get-ChildItem -LiteralPath $RunRoot -File -Recurse|Measure-Object Length -Sum).Sum)
+    Assert-Check ($recorded.FinalObservedBytes -eq $actualBytes -and $recorded.MaxObservedBytes -eq $actualBytes) 'Persisted counters include their exact final receipt bytes'
     $impure=Join-Path $testRoot 'impure.ps1';[IO.File]::WriteAllText($impure,'function Safe {} ; Write-Output unsafe')
     Assert-Throws {Assert-AnimationPureImport $impure} 'function definitions only'
     $stock=Join-Path $testRoot 'stock';[IO.Directory]::CreateDirectory($stock)|Out-Null

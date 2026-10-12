@@ -57,6 +57,17 @@ function Measure-AnimationOutput([switch]$Final) {
     if($Final){$state.FinalObservedBytes=$bytes}
     Assert-BeaconOutputBudget $bytes
 }
+function Save-AnimationFinalState {
+    # Persist the final byte counters themselves. A fixed two-pass write can
+    # leave a digit/newline growth difference in the last serialized receipt.
+    for($pass=0;$pass -lt 4;$pass++){
+        Save-AnimationState
+        $previousFinal=$state.FinalObservedBytes;$previousMax=$state.MaxObservedBytes
+        Measure-AnimationOutput -Final
+        if($state.FinalObservedBytes -eq $previousFinal -and $state.MaxObservedBytes -eq $previousMax){return}
+    }
+    throw 'Final animation receipt byte accounting did not converge.'
+}
 function Assert-AnimationRunningBudget {
     if($overall.Elapsed.TotalSeconds -gt $plan.OverallSeconds){throw 'Animation group exceeded 900 seconds.'}
     if(Test-Path -LiteralPath (Join-Path $RunRoot 'stop.request')){throw 'Coordinator requested owned stop.'}
@@ -78,9 +89,9 @@ function Invoke-AnimationPhase([string]$Phase,[string]$Exe,[string]$Hash) {
     $script:owner=[IW7.CommunityBuild.BuildJob]::Prepare($plan.PythonExe,$quoted,$work)
     $identity=Get-BeaconJobIdentity $owner $plan.PythonExe $Phase
     $state.Phases+=,$identity;Save-AnimationState
-    # Register the original still-suspended root before it can launch descendants.
-    Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID
     $owner.Resume();$phaseClock=[Diagnostics.Stopwatch]::StartNew()
+    $identity['ResourceRegistration']=Register-AnimationPhase $owner $lease.Token {Assert-AnimationRunningBudget}
+    Save-AnimationState
     $seconds=if($Phase -ceq 'read'){$plan.ReaderSeconds+5}else{$plan.PhaseSeconds+5}
     while(!$owner.Exited -or $owner.Active -ne 0){
         if($owner.Exited -and $owner.Active -ne 0){throw 'Phase parent exited with descendants; stop original job.'}
@@ -178,7 +189,7 @@ finally {
     if(!$closed){[AppDomain]::CurrentDomain.SetData(('IW7.AnimationFF.Quarantine.'+$lease.Token),@{Owner=$owner;Guards=$guards;State=$state})}
     Complete-AnimationFF $state $statePath $lease $closed $saved $guards
     if($created){
-        try{Save-AnimationState;Measure-AnimationOutput -Final;Save-AnimationState;Measure-AnimationOutput -Final}
+        try{Save-AnimationFinalState}
         catch{$state.Status='Failed';$state.Failure=$_.Exception.Message;Save-AnimationState;throw}
     }
 }

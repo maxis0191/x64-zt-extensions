@@ -134,3 +134,27 @@ function ConvertTo-AnimationArguments($Arguments) {
         '"'+$arg+'"'
     }) -join ' ')
 }
+function Register-AnimationPhase($Owner,[string]$LeaseToken,[scriptblock]$BudgetCheck,
+    [scriptblock]$Now={ [datetime]::UtcNow },[scriptblock]$Delay={ Start-Sleep -Milliseconds 100 }) {
+    # Original-handle identity is captured before Resume by the caller. As in
+    # the proven Beacon adapter, CIM registration follows Resume. Do not weaken
+    # the shared identity API or substitute the pre-resume record for its check.
+    $deadline=(& $Now).AddSeconds(5);$attempts=0
+    while(!$Owner.Exited){
+        if((& $Now) -ge $deadline){throw 'Animation CIM registration deadline exceeded; stop original job.'}
+        & $BudgetCheck
+        $attempts++
+        try{
+            Add-IW7ResourceProcess -Token $LeaseToken -ProcessId $Owner.PID
+            return [pscustomobject]@{Registered=$true;Outcome='Registered';Attempts=$attempts}
+        }catch{
+            if($_.Exception.Message -notlike 'Child identity unavailable*'){throw}
+            if($Owner.Exited){break}
+            if((& $Now) -ge $deadline){throw 'Animation CIM registration deadline exceeded; stop original job.'}
+            & $Delay
+        }
+    }
+    # A short phase may finish before CIM can observe it. This is not registered
+    # success: the caller must still prove zero owned members, exit and receipt.
+    [pscustomobject]@{Registered=$false;Outcome='ClosedBeforeRegistration';Attempts=$attempts}
+}

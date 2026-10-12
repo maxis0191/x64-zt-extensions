@@ -1,6 +1,6 @@
 # Next animation gate: original XAB through the existing full ZoneTool
 
-**Prepared source only; no FF phase has run for this animation.** The input is
+**First FF attempt failed before ZoneTool; no animation FF is built yet.** The input is
 the actual 281-byte `paris_original_probe_bend.xab` from the native witness,
 SHA256 `1284b72cf501ae42f77958579610dbcaf692b9153cd06ff66dcf2d1d11eeda7d`.
 Do not rebuild the writer or substitute synthetic test bytes. Recheck that input
@@ -108,7 +108,8 @@ candidate artifact hash, the reviewed existing BuildJob source hash and Python
 hash, in a fresh PowerShell host. The resource scheduler alone loads its memory
 query during admission; the job and NTFS helpers compile only after the complete
 8/11 GiB reservation. Sources stay guarded against write/delete until owned-tree
-closure. The exact suspended root is recorded and registered before Resume.
+closure. The exact suspended root is recorded before Resume. Following the
+failed first attempt below, CIM registration follows Resume, as in Beacon.
 Failed native factory return, unknown job closure or refused restoration retains
 the reservation. Unknown closure also retains guards and any returned owner in
 an AppDomain quarantine record; it never triggers stock restoration.
@@ -139,6 +140,41 @@ $parameters=Get-Content runtime/animation-ff-arguments.local.json -Raw | Convert
 # Only after independent review and the separate coordinator GO:
 # & ./tools-source/asset-bridge/animation/Build-AnimationFF.ps1 @parameters -Run
 ```
+
+## First attempt and source correction
+
+The single authorized attempt `animation-ff-roundtrip-20261012-a`, source
+`618c3ba`, acquired the 8/11 GiB reservation, verified current stock content/IDs
+under guards and staged all 75 inputs. The original Python handle exposed a valid
+image, creation time and BelowNormal priority while suspended. Registration with
+the shared CIM scheduler then failed before Resume:
+`Child identity unavailable; reservation retained.` No ZoneTool phase or FF ran.
+The receipt does not identify which CIM field was missing, so an uninitialized
+PEB/WMI timing explanation remains an inference, not a measured root cause.
+
+The concrete sequencing difference is established from source: proven Beacon
+resumes its owned Python before retrying CIM registration; this adapter tried
+registration while suspended. The correction retains original-handle identity
+before Resume, then applies a five-second retry window only for the specific
+unavailable-identity error. Each retry still uses the unchanged scheduler API;
+its in-flight call retains its own timeout. Other errors fail immediately. A
+very short root can finish before registration; that outcome is explicitly
+unregistered and still requires empty job accounting, successful original exit
+and the bounded phase receipt. It cannot establish success from root exit alone.
+
+The failed attempt's finalizer closed the owned job, confirmed restoration and
+source preservation, and released the lease. Fresh inventory found no original
+Python or ZoneTool and an empty lease registry; Main's original process identity
+was unchanged. Its two retained files total 110280 bytes, while the original
+receipt recorded 110278. That two-byte discrepancy remains in the original
+evidence. The source correction now persists/re-measures final counters until
+their serialized size converges, at most four passes, including the last receipt.
+
+The [sanitized failure record](ff-validation-2026-10-12.json) preserves hashes and
+validation limits. 55 source checks pass, including delayed identity availability,
+unrelated errors, deadline, short/already-finished roots and exact final serialized
+accounting. No corrected native attempt has run; it needs independent review and
+a new coordinator GO in a fresh directory. Old receipts were not edited.
 
 ## Complete proposed admission and bounds
 
