@@ -176,7 +176,7 @@ The `/3` observation binds F's fatal SHA256
 `67995123AB95D54DE3DDB9FFB0F52015DAA0978F3C782C977A7C9A3A3C9F58F3`
 and the independent complete-inventory SHA256 above. The spec supplies
 `RecipientCompleteInventoryReceipt` and its SHA256. Plan construction requires
-the fixed hash, a bounded receipt of at most 128 KiB, then compares the exact
+the fixed hash, a receipt intended to be at most 128 KiB, then compares the exact
 asset names, bytes, IDs, modification times, attributes and historical hashes.
 The baseline pak1 must also match that inventory. The independent inventory is
 added to `SourceHashes`, so execution would recheck and hold its normal read
@@ -204,4 +204,53 @@ Run the additional pure checks with:
 
 ```powershell
 pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-RecipientCompleteStock.ps1 -StockBindingPath <reviewed-provider>/tools-source/asset-bridge/common/StockBinding.Core.ps1
+```
+
+## Review correction: one bounded guarded snapshot
+
+Independent review found that the initial `/3` implementation checked path
+length, hashed a reopened file, and then called the shared JSON reader, which
+checked a different 1 MiB limit before an unbounded `ReadAllText`. Replacement
+or growth between those calls could defeat the intended 128 KiB bound or make
+the parsed JSON differ from the hashed content. The initial Plan G was never
+authorized or executed and remains preserved as an unapproved historical Plan.
+
+`Read-RecipientInventorySnapshot` now opens one read-only `FileStream` with
+`FileShare.Read` and read-ahead buffering disabled. Windows refuses conflicting
+writers and deletion/replacement while that handle remains open. The reader
+allocates exactly 128 KiB plus one sentinel byte and accumulates bounded reads;
+it rejects the extra byte even if a reported length were stale. An initial
+oversized ordinary file is rejected without a content read.
+
+SHA256 is computed over the exact occupied slice of that fixed buffer. Strict
+UTF8 decoding and JSON parsing use that same slice only after the digest matches.
+A UTF8 BOM, when present, is included in the hash and removed only from decoded
+text. Malformed UTF8/JSON and digest mismatches fail closed.
+
+Length, creation time, modification time and attributes come from the original
+`SafeFileHandle`, before reading, after reading and after parsing. The handle
+value/reference and metadata must remain stable, and final file length must
+equal the bytes read. This is binding to the original guarded handle, not a
+claim that a separately queried NTFS file ID was recorded for this JSON file.
+No file content is reopened for hashing or parsing. Disposal runs on success or
+failure. The existing independent inventory hash and retail-ID checks are
+unchanged; baseline validation receives the parsed guarded snapshot.
+
+The targeted regression uses generated small files and a managed synthetic
+short-read/growth stream. **27 snapshot checks and 65 source/contract checks
+pass.** It proves exact-limit acceptance, overflow refusal at 128 KiB + 1,
+partial reads, invalid encoding/JSON/digest rejection, metadata instability,
+pre-existing writer refusal, and real Windows sharing refusal for all four
+write/rename/delete/replacement attempts at each of the three observation points.
+The first harness attempt stopped because Windows reported replacement denial
+as `UnauthorizedAccessException`; the harness now accepts that specific denial
+as well as `IOException`. The guard itself had correctly refused replacement.
+
+No retail bytes or new Plan were read/generated during this correction. Shared
+providers, old profiles, F evidence, Plan G and its pins remain unchanged as
+artifacts. The changed source necessarily invalidates G's current source-hash
+match. A revised Plan must wait for review of this correction; no GO is implied.
+
+```powershell
+pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-RecipientInventorySnapshot.ps1 -FixtureRoot <fresh-absolute-generated-fixture-directory>
 ```

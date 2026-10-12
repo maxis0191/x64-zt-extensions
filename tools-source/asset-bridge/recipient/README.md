@@ -520,3 +520,9 @@ hash-read budget. All 59 new, 65 earlier-profile and 65 source/contract checks
 pass. A deterministic references-only Plan describes 107 managed paths and an
 absent run root. No retail hash, staging or native run was performed. Plan review,
 new-profile binder agreement and a separately granted GO remain required.
+
+Independent review subsequently rejected G's inventory-read sequence: its size,
+hash and parsed content came from separate path opens. The [correction](COMPLETE-PAK-SCOPE.md#review-correction-one-bounded-guarded-snapshot)
+uses one guarded handle and a fixed 128 KiB + 1 buffer, with SHA256 and JSON from
+the same snapshot. Its 27 targeted checks and 65 source checks pass. G remains
+unapproved and unchanged; no revised Plan is generated before correction review.

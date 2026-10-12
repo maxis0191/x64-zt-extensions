@@ -64,6 +64,61 @@ function Get-RecipientLimits([switch]$FatalTextDiagnostic) {
     if($FatalTextDiagnostic){[ordered]@{PhaseSeconds=45;OuterPhaseSeconds=50;OverallSeconds=60}}
     else{[ordered]@{PhaseSeconds=240;OuterPhaseSeconds=245;OverallSeconds=600}}
 }
+function Get-RecipientInventoryHandleState([IO.FileStream]$Stream) {
+    $handle=$Stream.SafeFileHandle
+    if($handle.IsClosed -or $handle.IsInvalid){throw 'Inventory original handle is unavailable.'}
+    # Metadata is queried from this handle, never by reopening its pathname.
+    [pscustomobject]@{Handle=$handle.DangerousGetHandle().ToInt64();Length=$Stream.Length;
+        CreatedTicks=[IO.File]::GetCreationTimeUtc($handle).Ticks;
+        ModifiedTicks=[IO.File]::GetLastWriteTimeUtc($handle).Ticks;
+        Attributes=[int][IO.File]::GetAttributes($handle)}
+}
+function Assert-RecipientInventoryStable($Before,$After,[long]$ByteCount) {
+    if($Before.Handle -ne $After.Handle -or $Before.Length -ne $After.Length -or
+       $Before.CreatedTicks -ne $After.CreatedTicks -or $Before.ModifiedTicks -ne $After.ModifiedTicks -or
+       $Before.Attributes -ne $After.Attributes -or $After.Length -ne $ByteCount){
+        throw 'Inventory original handle or metadata changed during snapshot.'
+    }
+}
+function Read-RecipientInventoryBytes([IO.Stream]$Stream) {
+    # Fixed capacity includes one overflow sentinel byte. Never CopyTo/ReadAll.
+    $limit=128KB;$buffer=[byte[]]::new($limit+1);$count=0
+    while($count -lt $buffer.Length){
+        $remaining=$buffer.Length-$count
+        $read=$Stream.Read($buffer,$count,$remaining)
+        if($read -lt 0 -or $read -gt $remaining){throw 'Invalid inventory stream read count.'}
+        if($read -eq 0){break}
+        $count+=$read
+    }
+    if($count -gt $limit){throw 'Inventory snapshot exceeds 128 KiB.'}
+    [pscustomobject]@{Buffer=$buffer;Count=$count}
+}
+function Read-RecipientInventorySnapshot([string]$Path,[string]$ExpectedSHA256) {
+    if(![IO.Path]::IsPathFullyQualified($Path) -or $ExpectedSHA256 -cnotmatch '^[A-Fa-f0-9]{64}$'){
+        throw 'Absolute inventory path and exact SHA256 required.'
+    }
+    # FileShare.Read denies writers and deletion/replacement, including a
+    # conflicting pre-existing writer. BufferSize=1 disables read-ahead buffering.
+    $stream=[IO.FileStream]::new($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,
+        [IO.FileShare]::Read,1,[IO.FileOptions]::SequentialScan)
+    try{
+        $handle=$stream.SafeFileHandle
+        $before=Get-RecipientInventoryHandleState $stream
+        if($before.Length -gt 128KB -or ($before.Attributes -band (16 -bor 1024))){throw 'Exact bounded ordinary inventory file required.'}
+        $snapshot=Read-RecipientInventoryBytes $stream
+        Assert-RecipientInventoryStable $before (Get-RecipientInventoryHandleState $stream) $snapshot.Count
+        $hasher=[Security.Cryptography.SHA256]::Create()
+        try{$hash=[Convert]::ToHexString($hasher.ComputeHash($snapshot.Buffer,0,$snapshot.Count))}
+        finally{$hasher.Dispose()}
+        if($hash -ine $ExpectedSHA256){throw 'Inventory snapshot SHA256 differs.'}
+        $text=[Text.UTF8Encoding]::new($false,$true).GetString($snapshot.Buffer,0,$snapshot.Count)
+        if($text.Length -gt 0 -and $text[0] -eq [char]0xFEFF){$text=$text.Substring(1)}
+        $document=ConvertFrom-Json -InputObject $text -Depth 128
+        if(![object]::ReferenceEquals($handle,$stream.SafeFileHandle)){throw 'Inventory original handle changed.'}
+        Assert-RecipientInventoryStable $before (Get-RecipientInventoryHandleState $stream) $snapshot.Count
+        $document
+    }finally{$stream.Dispose()}
+}
 function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$ReferencesOnly,[switch]$FatalTextDiagnostic) {
     foreach($field in @('RunRoot','StockRoot','StockReceipt','StockBindingReceipt','RecipientStockBindingReceipt','ReviewedStockManifest','CandidateRoot','PythonExe','RequestRoot')){
         if(![IO.Path]::IsPathFullyQualified($Spec.$field)){throw "Absolute path required: $field"}
@@ -81,10 +136,8 @@ function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$
     $completeInventory=$null
     if($recipientProfile.InventoryEvidenceSHA256){
         if(![IO.Path]::IsPathFullyQualified($Spec.RecipientCompleteInventoryReceipt) -or
-           $Spec.RecipientCompleteInventoryReceiptSHA256 -ine $recipientProfile.InventoryEvidenceSHA256 -or
-           (Get-Item -LiteralPath $Spec.RecipientCompleteInventoryReceipt).Length -gt 128KB){throw 'Exact bounded complete inventory receipt required.'}
-        Assert-BeaconHash $Spec.RecipientCompleteInventoryReceipt $Spec.RecipientCompleteInventoryReceiptSHA256
-        $completeInventory=Read-BeaconJson $Spec.RecipientCompleteInventoryReceipt
+           $Spec.RecipientCompleteInventoryReceiptSHA256 -ine $recipientProfile.InventoryEvidenceSHA256){throw 'Exact bounded complete inventory receipt required.'}
+        $completeInventory=Read-RecipientInventorySnapshot $Spec.RecipientCompleteInventoryReceipt $Spec.RecipientCompleteInventoryReceiptSHA256
         Assert-RecipientCompleteBaseline $inputs $completeInventory $Spec.StockRoot $Spec.ReviewedStockManifestSHA256
     }elseif($Spec.RecipientCompleteInventoryReceipt -or $Spec.RecipientCompleteInventoryReceiptSHA256){
         throw 'Complete inventory spec cannot be mixed into an earlier profile.'
