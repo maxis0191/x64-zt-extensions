@@ -1,0 +1,85 @@
+{
+  "schema": "iw7.asset-bridge.zonetool-build-inventory/1",
+  "date": "2026-10-12",
+  "reference_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_only": true,
+  "shared_source_modified": false,
+  "native_build_started": false,
+  "patches": {
+    "zonetool-fab9358-h1-xsurface.patch": "e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0",
+    "strict-content-sources.patch": "4d7049216f24474e077ab704dac625c7f335c8264434b7de525e56a96a988d08"
+  },
+  "combined_patch_apply_and_reverse": true,
+  "patched_files": {
+    "src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp": {
+      "base_lf_sha256": "db44ec1166c6f0cbb3af0ad21631154b8e3b00b42aac042b59e79c1ced4d24ce",
+      "patched_lf_sha256": "f0910695382533abf9aed8a0c03f2f0da9d9af1ce2baee0efb5e78d252218a15"
+    },
+    "src/zonetool/zonetool/iw7/assets/material.cpp": {
+      "base_lf_sha256": "95582b1edeb400c1729e9e9fa9822b3e1d09743e518ab640385b1a19377ae163",
+      "patched_lf_sha256": "712dadc251072e756e057eec360d68ef8e19fadb6f0f4fbb527b8491adc9a526"
+    },
+    "src/zonetool/zonetool/iw7/assets/techset.cpp": {
+      "base_lf_sha256": "73a82f572c903e211a714474e62434b25291f246a0caa1578afcefde272e3efd",
+      "patched_lf_sha256": "ae2a4d9d941c9b924d9cf157a4ab5d8f649a171d9d9e7de42f73fab6a10e63ca"
+    },
+    "src/zonetool/zonetool/iw7/assets/gfximage.cpp": {
+      "base_lf_sha256": "7b4deed71f7a17cb9a59db9f206120ca05ef90a81df5957f5cf0016dbaa7bb04",
+      "patched_lf_sha256": "585cdd9dd1732ec0501e81c7dc16c85bb5c23d8269aae2853ac2420d69c4584d"
+    }
+  },
+  "legacy_helper_compatibility": {
+    "file": "src/zonetool/component/exception.cpp",
+    "current_equals_legacy_base": false,
+    "current_equals_helper_generated": false,
+    "overlay_stamp_exists": false,
+    "copy_before_first_guard": true,
+    "safe_to_invoke_on_shared_pin": false
+  },
+  "project": {
+    "relative_path": "build/zonetool.vcxproj",
+    "bytes": 110595,
+    "compile_units": 413,
+    "dependency_project_references": [
+      "common.vcxproj",
+      "asmjit.vcxproj",
+      "DirectXTex.vcxproj",
+      "xsk-gsc-iw7.vcxproj",
+      "xsk-gsc-iw6.vcxproj",
+      "xsk-gsc-s1.vcxproj",
+      "xsk-gsc-h1.vcxproj",
+      "xsk-gsc-h2.vcxproj",
+      "xsk-gsc-utils.vcxproj",
+      "libtomcrypt.vcxproj",
+      "libtommath.vcxproj",
+      "lz4.vcxproj",
+      "minhook.vcxproj",
+      "minizip.vcxproj",
+      "shader-tool.vcxproj",
+      "udis86.vcxproj",
+      "zlib.vcxproj",
+      "zstd.vcxproj"
+    ],
+    "experimental_iw7_defined": false
+  },
+  "retained": {
+    "all_objects_and_intermediates_bytes": 1127437788,
+    "zonetool_intermediates_bytes": 875658470,
+    "zonetool_pch_bytes": 277938176,
+    "zonetool_compiler_pdb_bytes": 43020288,
+    "libraries_count": 20,
+    "libraries_bytes": 256258974,
+    "executable_bytes": 21161472,
+    "executable_sha256": "a2cba8b0c34493fcddb5dc82e034e678c948f5c80d5b4454a93792e8e256b1d9",
+    "linked_pdb_bytes": 132345856,
+    "tlsdll_bytes": 113152
+  },
+  "proposed_budget": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "estimated_new_build_bytes": 1503238553,
+    "hard_new_artifact_ceiling_bytes": 2147483648,
+    "new_source_overlay_bytes_ceiling": 2097152,
+    "requires_parent_go": true
+  }
+}

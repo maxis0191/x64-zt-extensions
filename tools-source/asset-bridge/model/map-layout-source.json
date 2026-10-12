@@ -1,0 +1,27 @@
+{
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "patch": "zonetool-fab9358-h1-map-layout.patch",
+  "sha256": "75c26c4eb9d2260dc71a722d4e54aaa49fea03a4e8c0e8554f3643231d0e3cd7",
+  "files": {
+    "src/zonetool/zonetool/h1/converter/iw7/assets/clipmap.cpp": {
+      "base_lf_sha256": "4dd5b2e1b384d6d462e61bd30addee6f879db36175719bba13912292a2de029b",
+      "patched_lf_sha256": "7db2633e34267775aa456b4cf177ac93969e4dded282a455f16e0c3490a75dba"
+    }
+  },
+  "capability": "h1_clipmap_and_mapents_conversion",
+  "status": "experimental_runtime_unvalidated",
+  "history": {
+    "rename_commit": "8ff0c552b029b3625eae7ed17fc86d8fef02b281",
+    "parent": "021936c95d2272e93697597eb6b1824a9cc8385a",
+    "converter_commit": "0e75f7db04f5f5b4149a6f682ced00db46caa292",
+    "converter_blob": "4475b51ae2021574331813983e7310912db07f85",
+    "source_url": "https://github.com/bigmangeekf/x64-zt/commit/8ff0c552b029b3625eae7ed17fc86d8fef02b281"
+  },
+  "byte_equivalence": {
+    "sentinel_16_bytes_ff": true,
+    "reserved_instance_500": true,
+    "copied_instance_final_zero": true,
+    "intermediate_input_assignment_removed_because_overwritten": true
+  },
+  "runtime_validation": false
+}
