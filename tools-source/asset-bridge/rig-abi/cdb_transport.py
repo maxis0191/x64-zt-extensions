@@ -19,6 +19,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import capture
+from owned_fixture import OwnedFixture
 
 CDB_SHA = "5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67"
 PROMPT = re.compile(rb"(?:^|[\r\n])[0-9]+:[0-9a-fA-F]{3}>[ \t]*$")
@@ -49,7 +50,8 @@ def error_description(error):
     return (type(error).__name__ + (": " + "; ".join(parts) if parts else ""))[:512]
 
 
-def failed_event(spec, error, root_pid, *, debugger_pid=None, workers=None, phase="bootstrap", byte_count=0, pipe_failure=None, job_evidence=None):
+def failed_event(spec, error, root_pid, *, debugger_pid=None, workers=None, phase="bootstrap", byte_count=0, pipe_failure=None, job_evidence=None,
+                 owned_target=None, owned_cleanup=None):
     immediate = {"Type": type(error).__name__, "Message": error_description(error)}
     initial = immediate
     for item in job_evidence or ():
@@ -63,7 +65,7 @@ def failed_event(spec, error, root_pid, *, debugger_pid=None, workers=None, phas
             "Bytes": byte_count, "Workers": workers, "PipeFailure": pipe_failure,
             "Phase": phase, "Error": initial["Type"] + ": " + error_description(error),
             "InitialFailure": initial, "ImmediateFailure": immediate,
-            "JobEvidence": job_evidence}
+            "JobEvidence": job_evidence, "OwnedTarget": owned_target, "OwnedTargetCleanup": owned_cleanup}
 
 
 def retain_failure(root, spec, error, root_pid, **details):
@@ -88,12 +90,13 @@ def retain_failure(root, spec, error, root_pid, **details):
     return event
 
 
-def fixture_command(spec, root):
+def fixture_command(spec, root, target):
     capture.require(spec.get("mode") == "fixture", "retail mode unavailable: locator binding required")
+    capture.require(type(target) is OwnedFixture, "only a newly created owned fixture can be attached")
+    identity = target.identity()  # Original retained handle, never a PID supplied in the spec.
+    capture.require(not identity["PrimaryResumed"], "fixture must remain initially suspended")
     return [spec["cdb"], "-sins", "-y", str(root / "symbols"), "-netsyms:no", "-nosqm", "-noshell",
-            "-cf", str(root / "startup.cdb"), spec["python"], "-I", "-B",
-            str(Path(__file__).with_name("debug_fixture.py")), "--manifest", str(root / "fixture.json"),
-            "--nonce", spec["nonce"]]
+            "-cf", str(root / "startup.cdb"), "-pb", "-xe", "ld", "-p", str(identity["pid"])]
 
 
 class PipeIO:
@@ -213,7 +216,7 @@ def make_fixture_context(spec, manifest, probe):
 
 class FixtureProtocol:
     """Concrete command sequencing; filesystem/pipe operations are injectable in tests."""
-    def __init__(self, spec, root, io, read_json=None, write_json=atomic_json, write_bytes=None):
+    def __init__(self, spec, root, io, read_json=None, write_json=atomic_json, write_bytes=None, *, debugger_pid=None, owned=None):
         self.spec, self.root, self.io = spec, root, io
         self.read_json = read_json or (lambda path: json.loads(capture.bounded(path, 16384)))
         self.write_json = write_json
@@ -223,12 +226,17 @@ class FixtureProtocol:
         self.target = None
         self.context = None
         self.witness = None
+        self.debugger_pid = debugger_pid
+        self.owned = owned
+        self.creation = None
+        self.startup_identity = None
+        self.startup_continued = False
         self.continued = False
         self.state = {"schema": "iw7.rig-watch-transport/1", "Nonce": spec["nonce"], "Healthy": True,
                       "Status": "Loading", "Bytes": 0, "IdentityChecked": False,
                       "BreakpointChecked": False, "RetailRuntimeReady": False, "FixtureOnly": True}
 
-    def step(self, raw, continuation=None):
+    def step(self, raw, continuation=None, startup=None):
         nonce = self.spec["nonce"]
         capture.require(len(raw) <= capture.MAX_LOG, "stdout cap")
         capture.require(not re.search(rb"(?m)^RIG58_REFUSED_", raw), "CDB guard refused")
@@ -238,15 +246,53 @@ class FixtureProtocol:
         self.state["Bytes"] = len(raw)
         if self.phase == "initial" and has_prompt(raw):
             self.cursor = len(raw)
-            self.io.send("bl\n")
+            # The attach DLL notification is our initial stop. Disable only this
+            # temporary filter before later DLL loads, then inspect breakpoints.
+            self.io.send("sxn ld; bl\n")
             self.phase = "empty"
         elif self.phase == "empty" and has_prompt(raw, self.cursor):
             capture.require(not re.search(rb"(?m)^\s*[0-9]+\s+[ed]\s+", raw[self.cursor:]), "fresh empty breakpoint table required")
             self.cursor = len(raw)
-            self.io.send("g\n")  # Fixture-only startup; retail startup is unavailable.
+            self.io.send('.printf "RIG58_CREATED ' + nonce + ' pid=%I64x\\n", @$tpid\n')
+            self.phase = "creation-probe"
+        elif self.phase == "creation-probe" and has_prompt(raw, self.cursor):
+            expression = rb"(?m)^RIG58_CREATED " + nonce.encode() + rb" pid=([0-9a-fA-F]{1,8})\r?$"
+            matches = list(re.finditer(expression, raw[self.cursor:]))
+            capture.require(len(matches) == 1, "exact initial-stop target probe required")
+            pid = int(matches[0].group(1), 16)
+            capture.require(0 < pid <= 0xffffffff and type(self.debugger_pid) is int and
+                            0 < self.debugger_pid <= 0xffffffff and pid != self.debugger_pid,
+                            "distinct created-target/debugger identities required")
+            identity = self.owned.identity()
+            capture.require(pid == identity["pid"] and not identity["PrimaryResumed"], "CDB did not stop on the retained new fixture")
+            self.creation = {"pid": pid, "ProbeSHA256": hashlib.sha256(raw[self.cursor:]).hexdigest(),
+                             "StoppedBeforeFixtureStartup": True, "OriginalJobProven": False}
+            self.write_json(self.root / "creation-probe.json", self.creation)
+            self.state.update(Status="AttachedStopped", Target=identity, CreationProbe=self.creation)
+            self.phase = "created"
+        elif self.phase == "created" and startup is not None:
+            capture.require(type(startup) is dict and set(startup) ==
+                            {"Nonce", "Command", "DebuggerPID", "TargetPID", "TargetCreatedFileTime"},
+                            "exact startup authorization required")
+            capture.require(startup["Nonce"] == nonce and startup["Command"] == "start-fixture-once" and
+                            type(startup["DebuggerPID"]) is int and startup["DebuggerPID"] == self.debugger_pid and
+                            type(startup["TargetPID"]) is int and startup["TargetPID"] == self.creation["pid"] and
+                            type(startup["TargetCreatedFileTime"]) is int and
+                            startup["TargetCreatedFileTime"] == self.owned.identity()["created_filetime"],
+                            "startup identity authorization differs")
+            capture.require(not self.startup_continued and has_prompt(raw), "target must remain stopped before startup")
+            self.startup_identity = dict(startup)
+            self.cursor = len(raw)
+            self.owned.resume_once()  # Original primary HANDLE, while CDB is still stopped.
+            self.io.send("g\n")  # Only after the original-job owner grants fixture startup.
+            self.startup_continued = True
+            self.state["Status"] = "Loading"
             self.phase = "fixture"
         elif self.phase == "fixture" and has_prompt(raw, self.cursor):
             self.target = self.read_json(self.root / "fixture.json")
+            capture.require(self.target.get("pid") == self.startup_identity["TargetPID"] and
+                            self.target.get("created_filetime") == self.startup_identity["TargetCreatedFileTime"],
+                            "fixture differs from original-job startup identity")
             self.cursor = len(raw)
             self.io.send('.if ($vvalid(@rip,8)) { .printf "RIG58_PROBE ' + nonce +
                          ' pid=%I64x rip=%I64x code=%I64x\\n", @$tpid, @rip, qwo(@rip) } '
@@ -324,6 +370,7 @@ def assert_job(spec, root):
 
 
 def run(spec, root):
+    deadline = time.monotonic() + 240
     capture.require(spec.get("mode") == "fixture", "retail mode remains unavailable")
     capture.require(re.fullmatch(r"[a-f0-9]{32}", spec["nonce"]), "nonce")
     capture.require(re.fullmatch(r"[A-Za-z0-9_-]{8,128}", spec["lease_token"]), "lease token")
@@ -337,25 +384,47 @@ def run(spec, root):
     env = dict(os.environ)
     for key in ("_NT_SYMBOL_PATH", "_NT_ALT_SYMBOL_PATH", "_NT_SOURCE_PATH", "_NT_DEBUGGER_EXTENSION_PATH"):
         env.pop(key, None)
-    process = subprocess.Popen(fixture_command(spec, root), cwd=root, env=env, stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, close_fds=True,
-                               creationflags=subprocess.CREATE_NO_WINDOW)
-    io = PipeIO(process)
-    protocol = FixtureProtocol(spec, root, io)
-    deadline = time.monotonic() + 240
+    owned = OwnedFixture(ctypes.WinDLL("kernel32", use_last_error=True))
+    process = io = protocol = identity = None
     last = None
     last_flush = 0.0
     try:
+        identity = owned.prepare(spec, root)
+        atomic_json(root / "owned-target.json", {"schema": "iw7.rig-watch-owned-target/1", "Nonce": spec["nonce"],
+                    "RootPID": os.getpid(), "Target": identity})
+        atomic_json(root / "transport.json", {"schema": "iw7.rig-watch-transport/1", "Nonce": spec["nonce"],
+                    "FixtureOnly": True, "Healthy": True, "RootPID": os.getpid(), "DebuggerPID": None,
+                    "Status": "TargetCreatedStopped", "Bytes": 0, "Target": identity})
+        attach_path = root / "attach-fixture.json"
+        while not attach_path.exists():
+            capture.require(time.monotonic() < deadline, "new-target membership deadline")
+            owned.identity()
+            time.sleep(0.025)
+        attach = json.loads(capture.bounded(attach_path, 1024), object_pairs_hook=capture.unique_pairs)
+        capture.require(attach == {"Nonce": spec["nonce"], "Command": "attach-owned-fixture-once",
+                                  "TargetPID": identity["pid"], "TargetCreatedFileTime": identity["created_filetime"]},
+                        "exact original-job new-target authorization required")
+        capture.require(time.monotonic() < deadline, "attachment authorization arrived late")
+        command = fixture_command(spec, root, owned)
+        process = subprocess.Popen(command, cwd=root, env=env, stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, close_fds=True,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
+        io = PipeIO(process)
+        protocol = FixtureProtocol(spec, root, io, debugger_pid=process.pid, owned=owned)
         while time.monotonic() < deadline:
             raw = io.pump()
             control_path = root / "continue.json"
             continuation = None
             if protocol.phase == "armed" and control_path.exists():
-                continuation = json.loads(capture.bounded(control_path, 1024))
-            state = protocol.step(raw, continuation)
+                continuation = json.loads(capture.bounded(control_path, 1024), object_pairs_hook=capture.unique_pairs)
+            startup_path = root / "start-fixture.json"
+            startup = None
+            if protocol.phase == "created" and startup_path.exists():
+                startup = json.loads(capture.bounded(startup_path, 1024), object_pairs_hook=capture.unique_pairs)
+            state = protocol.step(raw, continuation, startup)
             io.assert_healthy()
             state.update(DebuggerPID=process.pid, RootPID=os.getpid(), Workers=io.worker_status())
-            if state != last and (time.monotonic() - last_flush >= 0.1 or state["Status"] in ("ArmedStopped", "CaptureStopped")):
+            if state != last and (time.monotonic() - last_flush >= 0.1 or state["Status"] in ("AttachedStopped", "ArmedStopped", "CaptureStopped")):
                 for name, data in io.raw.items():
                     (root / (name + ".raw.log")).write_bytes(data)
                 io.assert_healthy()
@@ -366,14 +435,26 @@ def run(spec, root):
             time.sleep(0.025)
         raise ValueError("transport local deadline; original owner must close job")
     except Exception as exc:
-        retain_failure(root, spec, exc, os.getpid(), debugger_pid=process.pid, workers=io.worker_status(),
-                       phase=protocol.phase, byte_count=sum(map(len, io.raw.values())), pipe_failure=io.error)
+        # A partially created target has ORIGINAL handles even before membership
+        # has been proved. Termination here never opens or adopts a PID.
+        cleanup = {"Created": owned.prepared, "Closed": False, "OriginalHandles": True}
+        try:
+            owned.request_stop()
+            if not owned.prepared or owned.exited():
+                cleanup = owned.close_after_exit()
+        except Exception as cleanup_error:
+            cleanup["Error"] = error_description(cleanup_error)
+        retain_failure(root, spec, exc, os.getpid(), debugger_pid=process.pid if process else None,
+                       workers=io.worker_status() if io else None, phase=protocol.phase if protocol else "owned-creation",
+                       byte_count=sum(map(len, io.raw.values())) if io else 0, pipe_failure=io.error if io else None,
+                       owned_target=identity, owned_cleanup=cleanup)
         raise
     finally:
-        # No kill(), detach, process-name enumeration or private replacement job.
-        # The independent original-job deadline/parent owns terminal recovery.
-        for name, data in io.raw.items():
-            (root / (name + ".raw.log")).write_bytes(data)
+        # CDB/root closure remains the original job's responsibility. If original
+        # membership was never proved, the controller must quarantine the lease.
+        if io:
+            for name, data in io.raw.items():
+                (root / (name + ".raw.log")).write_bytes(data)
 
 
 def main():

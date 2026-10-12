@@ -33,9 +33,9 @@ function Assert-WatchFixtureSpec($Spec) {
     $names=@('Schema','Mode','ResourceProfile','Nonce','RunRoot','ProviderRoot','PythonExe','PythonSHA256','CdbExe','SourceBindings')
     $properties=@($Spec.PSObject.Properties)
     if(!$Spec -or $properties.Count -ne $names.Count -or @($properties|Where-Object {$_.Name -cnotin $names}).Count){
-        throw 'Exact fixture v3 fields required; free budgets, target paths and commands are unavailable.'
+        throw 'Exact fixture v4 fields required; free budgets, target paths, existing PIDs and commands are unavailable.'
     }
-    if($Spec.Schema -cne 'iw7.rig-watch-fixture-plan/3' -or $Spec.Mode -cne 'fixture' -or
+    if($Spec.Schema -cne 'iw7.rig-watch-fixture-plan/4' -or $Spec.Mode -cne 'fixture' -or
        $Spec.ResourceProfile -cne 'iw7.rig-watch-python-cdb-fixture/1' -or $Spec.Nonce -cnotmatch '^[a-f0-9]{32}$'){
         throw 'Only the fixed Python/CDB fixture profile is supported; retail mode is unavailable.'
     }
@@ -44,10 +44,10 @@ function Assert-WatchFixtureSpec($Spec) {
 }
 function Get-ReviewedWatchSourceBindings($Expected,[string]$Root,$Guards,[switch]$Hold) {
     $names=@('Run-WatchFixture.ps1','Watchpoint.Core.ps1','WatchpointDeadline.cs','capture.py',
-        'cdb_transport.py','debug_fixture.py','fixture-providers.json')
+        'cdb_transport.py','debug_fixture.py','owned_fixture.py','fixture-providers.json')
     $properties=@($Expected.PSObject.Properties)
     if(!$Expected -or $properties.Count -ne $names.Count -or
-       @($properties|Where-Object {$_.Name -cnotin $names}).Count){throw 'Spec must bind exactly seven reviewed rig-abi sources.'}
+       @($properties|Where-Object {$_.Name -cnotin $names}).Count){throw 'Spec must bind exactly eight reviewed rig-abi sources.'}
     $result=[ordered]@{};$firstGuard=$Guards.Count
     try{
         foreach($name in $names){
@@ -95,11 +95,13 @@ $pins[$cdb]='5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67'
 $pins[(Join-Path (Split-Path $cdb) 'dbgeng.dll')]='4352756685e7325288e54abb3281e768637987517be8575ec4450e4b4421842f'
 $pins[(Join-Path (Split-Path $cdb) 'dbghelp.dll')]='ea639fc67cc1430b66b71ef63a2ec72ea92879cca7e665bb10ae33c4468094f9'
 if(!$Run){
-    [ordered]@{Schema='iw7.rig-watch-fixture-source-plan/3';RunRoot=$runRoot;SourceBindings=$pins;
+    [ordered]@{Schema='iw7.rig-watch-fixture-source-plan/4';RunRoot=$runRoot;SourceBindings=$pins;
         ResourceProfile=$fixtureProfile;PhysicalBytes=$fixtureProfile.PhysicalBytes;CommitBytes=$fixtureProfile.CommitBytes;
         OverallMilliseconds=240000;ArmedMilliseconds=10000;CleanupMilliseconds=30000;OutputBytes=1MB;
-        Mode='fixture';Ready=$false;NativeExecuted=$false;NativeTypesLoaded=$false;LeaseAcquired=$false;
-        Next='Independent source review, then separate GO for owned CDB syntax/protocol qualification.'}|ConvertTo-Json -Depth 8
+        Mode='fixture';CreationModel='new-suspended-original-handles-attach/1';ExistingPIDAllowed=$false;
+        MembershipBeforeAttach=2;MembershipBeforeResume=3;UnprovenClosureRetainsLease=$true;
+        Ready=$false;NativeExecuted=$false;NativeTypesLoaded=$false;LeaseAcquired=$false;
+        Next='Independent source review of owned suspended creation/attachment, then separate fixture GO.'}|ConvertTo-Json -Depth 8
     return
 }
 foreach($name in @('IW7.CommunityBuild.BuildJob','IW7.AnimationRig.JobMembers','IW7.RigWatch.OriginalJobDeadline','IW7ResourceMemoryV1')){
@@ -156,24 +158,30 @@ $hooks=[ordered]@{
         if(!(Test-Path -LiteralPath $path)){return [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=0;Status='Loading'}}
         $event=Read-WatchJson $path
         Assert-RigWatchFixtureTransportEvent $event $s
-        Assert-RigWatchWorkers $event.Workers
-        if($event.Status -cin @('ArmedStopped','CaptureStopped')){
-            $observation=[IW7.AnimationRig.JobMembers]::Capture($s.Owner)
-            if($observation.AssignedCount -ne 3 -or $observation.ListedCount -ne 3 -or $observation.Members.Count -ne 3){throw 'Exact root/CDB/fixture membership required.'}
-            foreach($member in $observation.Members){
-                if($member.Error -or $member.InOriginalJob -isnot [bool] -or !$member.InOriginalJob -or
-                   $member.Image -inotmatch '^(?:'+[regex]::Escape($python)+'|'+[regex]::Escape($cdb)+')$' -or
-                   [datetime]$member.CreatedUtc -lt [datetime]$s.Identity.CreatedUtc){throw 'Original-job member identity differs.'}
-            }
-            $target=@($observation.Members|Where-Object PID -EQ $event.Target.pid)
-            $debugger=@($observation.Members|Where-Object PID -EQ $event.DebuggerPID)
-            if($target.Count -ne 1 -or $target[0].Image -ine $python -or $target[0].PID -eq $s.Identity.PID -or
-               ([datetime]$target[0].CreatedUtc).ToFileTimeUtc() -ne $event.Target.created_filetime -or
-               $debugger.Count -ne 1 -or $debugger[0].Image -ine $cdb){throw 'Stopped debuggee/CDB identity is not bound to original job.'}
-            $s.Context.LastMembership=$observation
+        if($event.Status -cne 'TargetCreatedStopped'){Assert-RigWatchWorkers $event.Workers}
+        if(($event.Status -ceq 'TargetCreatedStopped' -and !$s.AttachmentAuthorized) -or
+           $event.Status -cin @('AttachedStopped','ArmedStopped','CaptureStopped')){
+            $s.DescendantClosureUnproven=$true
+            $s.Context.MembershipPhase=$event.Status
+            try{
+                $observation=[IW7.AnimationRig.JobMembers]::Capture($s.Owner)
+                Confirm-RigWatchFixtureMembers $s $event $observation $python $cdb
+            }catch{$s.Context.MembershipError=$_.Exception.Message;throw}
         }
         $s.Context.Transport=$event
         return $event
+    }
+    Attach={param($s)
+        $path=Join-Path $runRoot 'attach-fixture.json'
+        if(Test-Path -LiteralPath $path){throw 'Attachment already authorized.'}
+        Write-WatchJson $path ([ordered]@{Nonce=$s.Nonce;Command='attach-owned-fixture-once';
+            TargetPID=$s.Context.TargetCreation.pid;TargetCreatedFileTime=$s.Context.TargetCreation.created_filetime})
+    }
+    Startup={param($s)
+        $path=Join-Path $runRoot 'start-fixture.json'
+        if(Test-Path -LiteralPath $path){throw 'Startup already authorized.'}
+        Write-WatchJson $path ([ordered]@{Nonce=$s.Nonce;Command='start-fixture-once';DebuggerPID=$s.Context.DebuggerIdentity.PID;
+            TargetPID=$s.Context.TargetCreation.pid;TargetCreatedFileTime=$s.Context.TargetCreation.created_filetime})
     }
     Continue={param($s)
         $path=Join-Path $runRoot 'continue.json'
@@ -201,6 +209,9 @@ $hooks=[ordered]@{
             $record=[ordered]@{};foreach($key in $s.Keys){if($key -notin @('Owner','Deadline','Context')){$record[$key]=$s[$key]}}
             $record['SourceBindings']=$pins;$record['FixtureOnly']=$true;$record['StockMutated']=$false
             $record['LastMembership']=$s.Context.LastMembership
+            foreach($field in @('CreationMembership','AttachedMembership','MembershipPhase','MembershipError','TargetCreation','DebuggerIdentity')){
+                $record[$field]=$s.Context[$field]
+            }
             $record['TransportFailure']=$s.Context.TransportFailure
             if($s.Deadline){$record['DeadlineStop']=@{Attempted=$s.Deadline.StopAttempted;Completed=$s.Deadline.StopCompleted;ObservedMs=$s.Deadline.StopObservedMs;Failure=$s.Deadline.StopFailure}}
             Write-WatchJson (Join-Path $runRoot 'state.local.json') $record
@@ -226,7 +237,8 @@ $hooks=[ordered]@{
     Delay={Start-Sleep -Milliseconds 50}
 }
 $result=Invoke-RigWatchFixtureTransaction $hooks $state
-[ordered]@{Status=$result.Status;DiagnosticCaptured=$result.DiagnosticCaptured;Closed=$result.Closed;Restored=$result.Restored;
+[ordered]@{Status=$result.Status;DiagnosticCaptured=$result.DiagnosticCaptured;OriginalJobClosed=$result.OriginalJobClosed;
+    DescendantClosureUnproven=$result.DescendantClosureUnproven;Closed=$result.Closed;Restored=$result.Restored;
     LeaseReleased=$result.LeaseReleased;Quarantined=$result.Quarantined;FixtureOnly=$true;RetailRuntimeReady=$false;
     StatePath=(Join-Path $runRoot 'state.local.json');Failure=$result.Failure;CleanupFailure=$result.CleanupFailure}|ConvertTo-Json
 if(!$result.DiagnosticCaptured){exit 2}

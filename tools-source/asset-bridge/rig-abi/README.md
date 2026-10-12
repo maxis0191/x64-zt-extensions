@@ -5,6 +5,10 @@ instruction is unresolved. The included context deliberately cannot emit usable
 commands. Material C remains waiting; this lot performs no resource measurement,
 installation, stock staging, build, native launch, attachment or redump.
 
+The separate synthetic fixture now has a source-only
+[owned suspended creation/attachment Plan](OWNED-CREATION-PLAN.md), after the
+preserved failed A/B trials. This grants no retail attachment or new native GO.
+
 The target is one eight-byte field in the first original rig surface during an
 offline ZoneTool load of recipe E. Paris Main, test dedicateds and game clients
 are outside this observation. A matching address is not proof of field semantics.

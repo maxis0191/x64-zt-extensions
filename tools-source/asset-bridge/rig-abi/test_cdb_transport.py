@@ -5,7 +5,7 @@ from pathlib import Path
 import queue
 import threading
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import capture
 import cdb_transport as transport
@@ -22,17 +22,27 @@ class ProtocolTests(unittest.TestCase):
                          "pid": 0x1234, "xsurface": "0x20000", "xmodelsurfs": "0x30000",
                          "creation_utc": "2026-10-12T00:00:00.0000000Z", "created_filetime": 1}
         self.io = Mock()
+        self.owned = Mock()
+        self.owned.identity.return_value = dict(self.manifest, OriginalHandles=True, CreatedSuspended=True, PrimaryResumed=False)
         self.files = {}
         self.protocol = transport.FixtureProtocol(self.spec, Path("synthetic"), self.io,
             read_json=lambda _: self.manifest,
             write_json=lambda path, data: self.files.__setitem__(path.name, data),
-            write_bytes=lambda path, data: self.files.__setitem__(path.name, data))
+            write_bytes=lambda path, data: self.files.__setitem__(path.name, data), debugger_pid=200, owned=self.owned)
         self.raw = b"CDB synthetic banner\n0:000> "
+        self.startup = {"Nonce": "a" * 32, "Command": "start-fixture-once", "DebuggerPID": 200,
+                        "TargetPID": 0x1234, "TargetCreatedFileTime": 1}
 
-    def reach_armed(self):
+    def reach_attached(self):
         self.protocol.step(self.raw)
         self.raw += b"bl\n0:000> "
         self.protocol.step(self.raw)
+        self.raw += b"probe\nRIG58_CREATED " + b"a" * 32 + b" pid=1234\n0:000> "
+        return self.protocol.step(self.raw)
+
+    def reach_armed(self):
+        self.reach_attached()
+        self.protocol.step(self.raw, startup=self.startup)
         self.raw += b"g\nBreakpoint exception\n0:000> "
         self.protocol.step(self.raw)
         self.raw += b"probe\nRIG58_PROBE " + b"a" * 32 + b" pid=1234 rip=140001000 code=9090909090909090\n0:000> "
@@ -45,9 +55,9 @@ class ProtocolTests(unittest.TestCase):
         event = self.reach_armed()
         self.assertEqual(event["Status"], "ArmedStopped")
         self.assertTrue(event["BreakpointChecked"])
-        self.assertEqual(self.io.send.call_count, 4)
+        self.assertEqual(self.io.send.call_count, 5)
         self.protocol.step(self.raw)  # No continuation request: must remain parked.
-        self.assertEqual(self.io.send.call_count, 4)
+        self.assertEqual(self.io.send.call_count, 5)
         self.protocol.step(self.raw, {"Nonce": self.spec["nonce"], "Command": "continue-once"})
         self.assertEqual(self.io.send.call_args.args, ("g\n",))
         write = b"RIG58 " + b"a" * 32 + b" WRITE"
@@ -95,15 +105,70 @@ class ProtocolTests(unittest.TestCase):
 
     def test_retail_launcher_is_absent(self):
         spec = dict(self.spec, mode="retail")
+        owner = object.__new__(transport.OwnedFixture)
         with self.assertRaises(ValueError):
-            transport.fixture_command(spec, Path("synthetic"))
-        command = transport.fixture_command(self.spec, Path("synthetic"))
-        self.assertNotIn("-p", command)
+            transport.fixture_command(spec, Path("synthetic"), owner)
+        with patch.object(transport.OwnedFixture, "identity", return_value=self.owned.identity()):
+            command = transport.fixture_command(self.spec, Path("synthetic"), owner)
+        self.assertEqual(command[-2:], ["-p", "4660"])
+        self.assertNotIn(self.spec["python"], command)
+        self.assertIn("-pb", command)
+        self.assertEqual(command[command.index("-xe") + 1], "ld")
         self.assertNotIn("-pn", command)
         self.assertNotIn("-g", command)
         self.assertIn("-cf", command)
         self.assertIn("-noshell", command)
         self.assertIn("-netsyms:no", command)
+        for option in ("-pr", "-pd", "-pe", "-pv", "-pvr"):
+            self.assertNotIn(option, command)
+
+    def test_existing_pid_or_manifest_cannot_be_attached(self):
+        for target in (4660, self.manifest, self.owned, None):
+            with self.subTest(target=type(target).__name__), self.assertRaises(ValueError):
+                transport.fixture_command(self.spec, Path("synthetic"), target)
+
+    def test_stopped_attach_waits_without_resuming_original_thread(self):
+        event = self.reach_attached()
+        self.assertEqual(event["Status"], "AttachedStopped")
+        self.assertEqual(self.io.send.call_args_list[0].args, ("sxn ld; bl\n",))
+        self.assertFalse(event["CreationProbe"]["OriginalJobProven"])
+        self.protocol.step(self.raw)
+        self.owned.resume_once.assert_not_called()
+        self.assertEqual(self.io.send.call_count, 2)
+        self.assertNotIn(("g\n",), [call.args for call in self.io.send.call_args_list])
+
+    def test_startup_identity_foreign_missing_extra_and_boolean_are_refused(self):
+        self.reach_attached()
+        for key, bad in (("Nonce", "0" * 32), ("TargetPID", 99), ("DebuggerPID", 201),
+                         ("TargetCreatedFileTime", 2), ("TargetCreatedFileTime", True), ("Command", "g")):
+            with self.subTest(key=key, bad=bad), self.assertRaises(ValueError):
+                self.protocol.step(self.raw, startup=dict(self.startup, **{key: bad}))
+        for request in ({}, dict(self.startup, extra=True)):
+            with self.assertRaises(ValueError):
+                self.protocol.step(self.raw, startup=request)
+        self.owned.resume_once.assert_not_called()
+
+    def test_original_resume_failure_never_sends_g(self):
+        self.reach_attached()
+        self.owned.resume_once.side_effect = OSError("PreviousSuspendCount=0")
+        with self.assertRaises(OSError):
+            self.protocol.step(self.raw, startup=self.startup)
+        self.assertFalse(self.protocol.startup_continued)
+        self.assertEqual(self.io.send.call_count, 2)
+
+    def test_original_handle_target_mismatch_refuses_initial_probe(self):
+        self.owned.identity.return_value["pid"] = 22
+        with self.assertRaises(ValueError):
+            self.reach_attached()
+        self.owned.resume_once.assert_not_called()
+
+    def test_fixture_creation_time_mismatch_refuses_arm(self):
+        self.reach_attached()
+        self.protocol.step(self.raw, startup=self.startup)
+        self.manifest["created_filetime"] = 2
+        self.raw += b"g\nBreakpoint exception\n0:000> "
+        with self.assertRaises(ValueError):
+            self.protocol.step(self.raw)
 
     def test_fixture_cannot_impersonate_real_rig_schema(self):
         event = self.reach_armed()

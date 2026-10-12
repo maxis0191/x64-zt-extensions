@@ -1,5 +1,9 @@
 # Source-only diagnostic after the first fixture refusal
 
+Historical A-to-B diagnostic preparation. B's independent proof is preserved in
+[its trial record](CDB-FIXTURE-DIAGNOSTIC-2026-10-12-B.md). Current source work is
+the [v4 owned-creation Plan](OWNED-CREATION-PLAN.md), without a new native GO.
+
 The immutable [first trial record](CDB-FIXTURE-2026-10-12-A.md) was committed as
 `d59a884fb7c9473a8f06fcc8ea4479a51f7947cb` before this change. The initial job
 guard refusal is unresolved. This change improves the evidence for a separately
