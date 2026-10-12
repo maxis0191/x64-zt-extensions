@@ -6,6 +6,10 @@ The failed [codec F checkpoint](../CODEC-DUMP-F-RESULT.md), its input and all
 earlier artifacts remain immutable. The coordinator owns the next execution slot
 and final integration. Tests below are proposed, not executed.
 
+Subsequent source-only GO produced the [private source candidate](flac-dump/README.md)
+and its pure tests. The analysis below is preserved as the reviewed proposal;
+it is not an execution Plan. No native compilation or decoding followed.
+
 ## Evidence and reusable source
 
 The authorized strict decoder rejected `blocksize 4096 > 1024`. In the reviewed

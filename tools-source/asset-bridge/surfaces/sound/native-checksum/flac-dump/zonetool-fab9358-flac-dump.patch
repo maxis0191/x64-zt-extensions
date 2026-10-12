@@ -1,0 +1,145 @@
+diff --git a/src/zonetool/zonetool/iw7/assets/sound_bank.cpp b/src/zonetool/zonetool/iw7/assets/sound_bank.cpp
+--- a/src/zonetool/zonetool/iw7/assets/sound_bank.cpp
++++ b/src/zonetool/zonetool/iw7/assets/sound_bank.cpp
+@@ -6,6 +6,7 @@
+ #include "utils/io.hpp"
+ #include "utils/bit_buffer.hpp"
+ #include "sound_bank_subset.hpp"
++#include "sound_flac_metadata.hpp"
+ 
+ namespace zonetool::iw7
+ {
+@@ -2509,7 +2510,6 @@
+ 		{
+ 			constexpr auto MARKER = "fLaC";
+ 			constexpr auto MARKER_LEN = 4;
+-			constexpr auto BLOCK_SIZE = 0x400;
+ 			constexpr auto FRAME_SIZE_UNKNOWN = 0;
+ 			constexpr auto BITS_PER_SAMPLE_DEFAULT = 16;
+ 
+@@ -2653,6 +2653,13 @@
+ 
+ 			void dump(SndAssetBankEntry& entry, const std::string& name, uint8_t* data, size_t size)
+ 			{
++				const flac_metadata::Entry metadata{entry.size, entry.seekTableSize, entry.frameCount,
++					entry.hybridPcmSize, entry.frameRate, entry.channelCount};
++				const auto derived = flac_metadata::derive(metadata, data, size);
++				if (!derived)
++				{
++					ZONETOOL_FATAL("FLAC dump refused for %s: %s", name.c_str(), derived.error);
++				}
+ 				std::string buffer{};
+ 
+ 				const auto write = [&](std::vector<std::uint8_t> data_)
+@@ -2671,8 +2678,8 @@
+ 
+ 					write(write_metadata_block_header(has_seektable ? false : true, STREAMINFO, METADATA_STREAMINFO_LEN_BYTES));
+ 					StreamInfo info{};
+-					info.min_blocksize = BLOCK_SIZE;
+-					info.max_blocksize = BLOCK_SIZE;
++					info.min_blocksize = derived.block_size;
++					info.max_blocksize = derived.block_size;
+ 					info.min_framesize = FRAME_SIZE_UNKNOWN;
+ 					info.max_framesize = FRAME_SIZE_UNKNOWN;
+ 					info.sample_rate = entry.frameRate;
+@@ -2692,9 +2699,16 @@
+ 
+ 				const auto path = sound_path_assets + name + ".flac"s;
+ 				auto file = filesystem::file(path);
+-				file.open("wb");
+-				file.write(buffer.data(), buffer.size());
+-				file.close();
++				if (file.open("wb") != 0 || !file.get_fp())
++				{
++					ZONETOOL_FATAL("Cannot open FLAC dump %s", path.c_str());
++				}
++				const auto written = file.write(buffer.data(), 1, buffer.size());
++				const auto closed = file.close();
++				if (written != buffer.size() || closed != 0)
++				{
++					ZONETOOL_FATAL("Incomplete FLAC dump %s", path.c_str());
++				}
+ 			}
+ 
+ 			bool verify_marker(std::vector<uint8_t>& data)
+@@ -3092,33 +3106,66 @@
+ 				return false;
+ 			}
+ 
++			const auto file_size = file.size();
++			if (file_size > static_cast<std::uint64_t>((std::numeric_limits<std::int64_t>::max)()))
++			{
++				ZONETOOL_FATAL("Invalid sound bank extent: %s", path.c_str());
++			}
++			const auto read_exact = [&](const std::uint64_t offset, void* target, const std::size_t count)
++			{
++				if (!flac_metadata::contains(file_size, offset, count) ||
++					file.seek(static_cast<std::size_t>(offset), SEEK_SET) != 0 ||
++					file.read(target, 1, count) != count)
++				{
++					ZONETOOL_FATAL("Invalid or truncated sound bank read: %s", path.c_str());
++				}
++			};
+ 			SndAssetBankHeader header{};
+-			file.read(&header, sizeof(SndAssetBankHeader));
+-
+-			if (!validate_header(&header))
+-			{
+-				return false;
++			read_exact(0, &header, sizeof(header));
++			if (!validate_header(&header) || header.entrySize != sizeof(SndAssetBankEntry))
++			{
++				ZONETOOL_FATAL("Invalid sound bank header: %s", path.c_str());
++			}
++			if (!flac_metadata::contains(file_size, header.entryOffset,
++				static_cast<std::uint64_t>(header.entryCount) * sizeof(SndAssetBankEntry)) ||
++				!flac_metadata::contains(file_size, header.AssetNameOffset,
++				static_cast<std::uint64_t>(header.entryCount) * 128))
++			{
++				ZONETOOL_FATAL("Sound bank tables outside file: %s", path.c_str());
+ 			}
+ 
+ 			for (auto i = 0u; i < header.entryCount; i++)
+ 			{
+ 				SndAssetBankEntry entry{};
+-				file.seek(header.entryOffset + (sizeof(SndAssetBankEntry) * i), SEEK_SET);
+-				file.read(&entry, sizeof(SndAssetBankEntry));
+-
++				read_exact(header.entryOffset + sizeof(entry) * static_cast<std::uint64_t>(i), &entry, sizeof(entry));
+ 				char asset_name[128]{};
+-				memset(asset_name, 0, sizeof(asset_name));
+-				file.seek(header.AssetNameOffset + (sizeof(asset_name) * i), SEEK_SET);
+-				file.read(asset_name, sizeof(asset_name));
+-
+-				file.seek(entry.offset, SEEK_SET);
+-				auto data = file.read_bytes(entry.size + entry.seekTableSize + entry.hybridPcmSize);
++				read_exact(header.AssetNameOffset + sizeof(asset_name) * static_cast<std::uint64_t>(i), asset_name, sizeof(asset_name));
++				if (!std::memchr(asset_name, 0, sizeof(asset_name)))
++				{
++					ZONETOOL_FATAL("Unterminated sound bank asset name: %s", path.c_str());
++				}
+ 
+ 				switch(entry.format)
+ 				{
+ 				case SND_ASSET_FORMAT_FLAC:
++				{
++					const flac_metadata::Entry metadata{entry.size, entry.seekTableSize, entry.frameCount,
++						entry.hybridPcmSize, entry.frameRate, entry.channelCount};
++					std::uint64_t bytes{};
++					if (const auto* error = flac_metadata::validate_entry(metadata, bytes))
++					{
++						ZONETOOL_FATAL("FLAC dump refused for %s: %s", asset_name, error);
++					}
++					// A valid file extent also bounds bytes to the size_t file_size.
++					if (!flac_metadata::contains(file_size, entry.offset, bytes))
++					{
++						ZONETOOL_FATAL("FLAC payload outside sound bank: %s", asset_name);
++					}
++					std::vector<std::uint8_t> data(static_cast<std::size_t>(bytes));
++					read_exact(entry.offset, data.data(), data.size());
+ 					flac::dump(entry, asset_name, data.data(), data.size());
+ 					break;
++				}
+ 				case SND_ASSET_FORMAT_PCMS16:
+ 					//pcm::dump(entry, asset_name, data.data(), data.size());
+ 					break;

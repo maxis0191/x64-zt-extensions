@@ -7,9 +7,10 @@ only SABL difference from the preserved failed run. See
 [SAB-FF-F-RESULT.md](SAB-FF-F-RESULT.md) and its sanitized checkpoint.
 Delivery and audible game acceptance remain unverified; `Ready` stays false.
 
-A [source-only FLAC metadata proposal](native-checksum/FLAC-DUMP-METADATA-PROPOSAL.md)
-derives block bounds from a checked first fixed-strategy frame header, with
-explicit unsupported-case refusals. No native patch or new execution is included.
+A [private FLAC dump source candidate](native-checksum/flac-dump/README.md)
+implements the reviewed metadata proposal with derived block bounds and explicit
+unsupported-case refusals. Ten pure tests cover 103 synthetic header cases; the
+actual C++ helper remains uncompiled. No new native execution is included.
 
 The subsequent single [dump codec attempt](CODEC-DUMP-F-RESULT.md) failed:
 FFmpeg rejected `blocksize 4096 > 1024`, produced no PCM, and closed safely with
