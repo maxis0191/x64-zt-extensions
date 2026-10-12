@@ -158,3 +158,28 @@ the actual runner finalizer after late release/publication or forced closure.
 The native catalogue path itself remains unexecuted. Coordinator review and a
 separate exact-plan GO are still required; exhaustive theoretical bootstrap
 closure and another prepatch capture are not gates.
+
+## Attempt A: stopped on unlisted startup outputs
+
+The single authorized A invocation at source `8760567`, plan SHA256
+`cb8e16f3a98917b4ad4d0fe9264e1086e10c6b2b21d0c452afa4f5efba66bf40`,
+ended Failed/NoCatalogue. The output guard encountered paths outside its initial
+allowlist: `work/steam_appid.txt` (six bytes, `311210`) and `work/identities/`.
+The latter contains only `dedicatedpc/` and its empty `dumps/` and `LPC/`
+directories. No identity payload or key was present/read. These are observed
+startup outputs, not evidence of engine incompatibility or a missing FF.
+
+The retained original job was stopped and its closure confirmed; the reservation
+was released without quarantine. Both outer logs are empty. Four input hardlinks
+remain intact. The selected FF hash observed under admission is
+`7456c7fbbcfe29ca3b71298bfab3f77e253dfabdda82a88304aa8eecb019125b`.
+Because closure was forced, the runner correctly records InputsReverified=false;
+no payload was rehashed after release. The subsequent metadata/file-ID check
+matched all four sources and aliases, separately from content reverification.
+
+Postflight at 13:22:32 UTC found no lease, heavy workload or original root and
+confirmed Main's generation/UDP owner and the preserved Python process. The
+launcher host exited normally after its quarantine check; host and candidate
+were absent at 13:22:55 UTC. Raw files remain private. The
+[sanitized A record](catalogue-runtime-a-20261012.json) binds the receipts.
+Prepare a narrowly scoped source correction and a new plan; A must never retry.

@@ -3,8 +3,10 @@
 Status, 2026-10-12: exact dedicated EXE acquired, then one bounded entrypoint
 diagnostic completed under the instrumented T7 loader. The offline review found
 no concrete refusal among its sampled sites; ABI compatibility remains unproved.
-The [next catalogue recipe](CATALOGUE-PLAN.md) uses ordinary D2 and one initial FF,
-with missing bootstrap inputs to be observed in a separately admitted attempt.
+The [catalogue recipe](CATALOGUE-PLAN.md) uses ordinary D2 and one initial FF.
+Its first attempt stopped on unlisted startup outputs (`steam_appid.txt` and
+empty identity directories), with confirmed closure and reservation release.
+This guard refusal establishes neither engine incompatibility nor a missing FF.
 No BO3 model catalogue, export, conversion, IW7 FF
 build or rendering is proved here. The owner stopped H1 work; its checkpoint
 remains historical and supplies no BO3 proof.
