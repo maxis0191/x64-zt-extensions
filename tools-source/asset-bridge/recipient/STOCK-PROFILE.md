@@ -225,3 +225,8 @@ and Main preserved and zero owned process/lease remaining. This proves neither
 complete CP stock nor accepted references. No sixth entry or retry is introduced.
 The next investigation assesses the complete existing asset-PAK scope and its
 newly measured read budget before any further profile proposal or admission.
+
+The resulting [complete-scope investigation](COMPLETE-PAK-SCOPE.md) identifies
+33 reviewed asset PAKs and 49 separate image PAKs using metadata only. It proposes
+an explicit all-asset list with 5,148,447,113 total stock hash-read bytes, without
+implementing another runner profile or authorizing a run.

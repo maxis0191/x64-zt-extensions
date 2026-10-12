@@ -1,0 +1,315 @@
+{
+  "Schema": "iw7.recipient-complete-asset-pak-proposal/1",
+  "ProposedProfile": "doom-reviewed-all-asset-paks-20261012",
+  "Status": "ProposalOnlyNotSupportedByRunner",
+  "StockRole": "ExistingDurableDoom",
+  "NativeSourcePin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "ReviewedManifestSHA256": "9116255EF148A324DF15FA914795A7917615F023973111FDC39AE7329A9DCBF4",
+  "MetadataEvidenceSHA256": "683C8A39B6BD289A2ACC0A27129A038361D5A217D6EF129D07DA739FEB6F76BF",
+  "MetadataEvidenceBytes": 32403,
+  "CapturedUtc": "2026-10-12T07:36:04.2604339Z",
+  "RetailPayloadBytesReadDuringInvestigation": 0,
+  "InventoryElapsedSeconds": 0.4289757,
+  "AssetFamily": {
+    "Files": 33,
+    "DistinctIds": 33,
+    "LogicalBytes": 4705977508,
+    "ReviewedRows": 33
+  },
+  "ExcludedImageFamily": {
+    "Files": 49,
+    "DistinctIds": 49,
+    "LogicalBytes": 43257601456,
+    "ReviewedRows": 49,
+    "Reason": "Separate native image stream family; not needed to satisfy observed assetfile fatal names; necessity for complete CP loading remains unproven."
+  },
+  "ProposedBudget": {
+    "BaselineInputs": 72,
+    "BaselineDistinctIds": 41,
+    "BaselineHashReadBytes": 452939017.0,
+    "SupplementalCount": 32,
+    "SupplementalBytes": 4695508096.0,
+    "TotalDistinctStockFiles": 73,
+    "TotalUniqueStockHashReadBytes": 5148447113.0,
+    "StockHardLinks": 103,
+    "SentinelCopies": 1,
+    "SentinelCopyBytes": 77,
+    "ManagedPaths": 107,
+    "AdditionalHashReadBytesBeyondF": 3728950220.0,
+    "PAKPayloadCopyBytes": 0
+  },
+  "Files": [
+    {
+      "Name": "assetfile1.pak",
+      "Relative": "zone/assetfile1.pak",
+      "Bytes": 10469412,
+      "ExpectedSHA256": "2C9EE05175E04F14644687DE63212CDD1D2B332BD7CA9C423EBD4D28595740A9",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": true
+    },
+    {
+      "Name": "assetfile17.pak",
+      "Relative": "zone/assetfile17.pak",
+      "Bytes": 104595492,
+      "ExpectedSHA256": "6F5C0D1937B5A707D4E1FB3009F68A827714D9E4A72FF2D6570B57DBF6B0F058",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile19.pak",
+      "Relative": "zone/assetfile19.pak",
+      "Bytes": 418201636,
+      "ExpectedSHA256": "064B6D23CFCEC2BAEDF1A5589FCD602FB1CFBDBB2040D88D21CB8A8CA7779B0D",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile21.pak",
+      "Relative": "zone/assetfile21.pak",
+      "Bytes": 944406564,
+      "ExpectedSHA256": "5DB444E20C87A85FA896778FB5E650A6B532E192ED2D28BCDEC909C2416498B3",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile25.pak",
+      "Relative": "zone/assetfile25.pak",
+      "Bytes": 87621668,
+      "ExpectedSHA256": "8D2232F08D2690914682D3F094055CE04283BD67053A5A6773CCED101A9A19B6",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile26.pak",
+      "Relative": "zone/assetfile26.pak",
+      "Bytes": 403406884,
+      "ExpectedSHA256": "D19DE294A551E84A6EF14BD5D045E3315A25D4A454D0E0E4AD35F33807320EA5",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile36.pak",
+      "Relative": "zone/assetfile36.pak",
+      "Bytes": 61964324,
+      "ExpectedSHA256": "6835E02F5A1A8E99EDB97B43E51C27D2603F2903A3D2687E2185168C37608FB9",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile37.pak",
+      "Relative": "zone/assetfile37.pak",
+      "Bytes": 53477412,
+      "ExpectedSHA256": "839C1DA30E43B9C5C78CC457D3FA3EF61BD85AE818C81A2D2D0B30FF187FB349",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile52.pak",
+      "Relative": "zone/assetfile52.pak",
+      "Bytes": 42762276,
+      "ExpectedSHA256": "E377D1EEA6B9F84689146AB3EB930DE4FF020151242BC6D6B217B3637BB3F522",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile53.pak",
+      "Relative": "zone/assetfile53.pak",
+      "Bytes": 3817508,
+      "ExpectedSHA256": "B0C4AC18F4F9965A396B74CE8FBE2118D6FD6F68D92E7295AD29BC7BC2FBF773",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile68.pak",
+      "Relative": "zone/assetfile68.pak",
+      "Bytes": 26148900,
+      "ExpectedSHA256": "E35FAA16D54246D545181967A08C5739066F88470E16874812CF8384102D3F15",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile69.pak",
+      "Relative": "zone/assetfile69.pak",
+      "Bytes": 386465828,
+      "ExpectedSHA256": "042C8D62A3A24ACD21A5502A5A111E6E426E870505DA3CDD62ADA3C3A23C496F",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile84.pak",
+      "Relative": "zone/assetfile84.pak",
+      "Bytes": 311001124,
+      "ExpectedSHA256": "FF5EDECC4B9C59542418573E952CE97D380BB4BDD51233D179A63CCB5D662864",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile85.pak",
+      "Relative": "zone/assetfile85.pak",
+      "Bytes": 325582884,
+      "ExpectedSHA256": "335685B9EEF52B686A19122E1004503C6AE7D0FAD62BFC4577DBB9D4218DDF65",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile100.pak",
+      "Relative": "zone/assetfile100.pak",
+      "Bytes": 240828452,
+      "ExpectedSHA256": "87FDAC4E56255896C27CBD1722711B3E03CB76871CC46D6ACDD0ED6FEF7A27D3",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile101.pak",
+      "Relative": "zone/assetfile101.pak",
+      "Bytes": 395509796,
+      "ExpectedSHA256": "919308F769389718621883149EC9801EAFAB8895E3A9E74AE73E1D702AA30B38",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile116.pak",
+      "Relative": "zone/assetfile116.pak",
+      "Bytes": 321585188,
+      "ExpectedSHA256": "5619C4FC9E5E5DE9FCE26385B8265E292DDDABFC5619772EBB332A90CE6C0998",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile117.pak",
+      "Relative": "zone/assetfile117.pak",
+      "Bytes": 17383460,
+      "ExpectedSHA256": "AB9B6E1D626F29393C99370EC107192776F89E7B88E01219191473FE58F37E7B",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile132.pak",
+      "Relative": "zone/assetfile132.pak",
+      "Bytes": 15335460,
+      "ExpectedSHA256": "5C13268F235A78EA682C528974206B38AA9BC705412EB9239FFA09A67A979C27",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile133.pak",
+      "Relative": "zone/assetfile133.pak",
+      "Bytes": 6619172,
+      "ExpectedSHA256": "3258818E9D584301E6CD081029CEF67376F422A3CB77955D7ADB3CD44C419AF6",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile148.pak",
+      "Relative": "zone/assetfile148.pak",
+      "Bytes": 9650212,
+      "ExpectedSHA256": "B86AA968EA633983F61266ED945554D1A2F7F9C5EF17D11938D2516F36AB669C",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile149.pak",
+      "Relative": "zone/assetfile149.pak",
+      "Bytes": 229867556,
+      "ExpectedSHA256": "5A733FF9189E8F52A1A4A999A142BE0A3FB6A58D18BA6266439E7DE48FF8AB02",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile164.pak",
+      "Relative": "zone/assetfile164.pak",
+      "Bytes": 242434084,
+      "ExpectedSHA256": "A2BA6569D99C2AF4122E47ADA2200248E2359FB17DCE2850EB61E3E921086B27",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile165.pak",
+      "Relative": "zone/assetfile165.pak",
+      "Bytes": 6045732,
+      "ExpectedSHA256": "06418D501C15F041AF0F3D52DF649BE8D228265A33D33BD80DC20C6596BF879D",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile180.pak",
+      "Relative": "zone/assetfile180.pak",
+      "Bytes": 33882148,
+      "ExpectedSHA256": "46079F24957408D20B5AB3FE4ACA99DF838BF3A4E4E9DC7E93015BBE96037E00",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile181.pak",
+      "Relative": "zone/assetfile181.pak",
+      "Bytes": 1376292,
+      "ExpectedSHA256": "481C3F64B6EF7F1EB2A7BD82378CCABFC9F524A6DB63ECF42F8F3E9A9AEB066F",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile196.pak",
+      "Relative": "zone/assetfile196.pak",
+      "Bytes": 229412,
+      "ExpectedSHA256": "EF73A72B327A1F819EAD79E52C97DF6502BB8EFE53B384225B9BC0C32E0799C2",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile197.pak",
+      "Relative": "zone/assetfile197.pak",
+      "Bytes": 1376292,
+      "ExpectedSHA256": "3BFD3DE923AAD62DF54B78FAA394198BFD083725AA46C5B3163749FCF5B4C518",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile212.pak",
+      "Relative": "zone/assetfile212.pak",
+      "Bytes": 229412,
+      "ExpectedSHA256": "A09AF42DBE7D0EF71BD21F402ADB8E09907B3D6745DD958E08FBF3725FE87E57",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile213.pak",
+      "Relative": "zone/assetfile213.pak",
+      "Bytes": 1376292,
+      "ExpectedSHA256": "032C32788051BF53D85DD3F3B98BD7319BE571FBA26AF33DE5BB03C24BF8DEC5",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile228.pak",
+      "Relative": "zone/assetfile228.pak",
+      "Bytes": 229412,
+      "ExpectedSHA256": "2AC06F84F11FFB56D9313E1EBF5FD920D0209E30A7D5E3E867692D5822A76E46",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile229.pak",
+      "Relative": "zone/assetfile229.pak",
+      "Bytes": 1572900,
+      "ExpectedSHA256": "B29BC71373E6558AD150944CD12A0BB06E52B78C02E4135779ABF5A66B5476ED",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    },
+    {
+      "Name": "assetfile244.pak",
+      "Relative": "zone/assetfile244.pak",
+      "Bytes": 524324,
+      "ExpectedSHA256": "56D3108877108E1C81BC7AA9A229C3F83BFC3BDD8C8F348A58AAD71618EC4DA2",
+      "ExpectedHashProvenance": "HistoricalReviewedManifest",
+      "AlreadyInBaseline": false
+    }
+  ],
+  "Limitations": [
+    "Metadata and historical expected hashes are not current content qualification.",
+    "Complete existing assetfile coverage is not a proved minimal CP dependency closure.",
+    "No runner profile, staging, retail hash, native run or acceptance is added by this proposal.",
+    "Image payload export would have separate file requirements.",
+    "Actual native I/O, peak RAM, commit and loading duration remain unmeasured.",
+    "A new reviewed implementation, exact plan, explicit GO and complete resource admission are required before execution."
+  ]
+}
