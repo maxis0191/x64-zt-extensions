@@ -14,6 +14,26 @@ from read_sab import Inputs, ZONE, plain, require, sha, strict_json
 
 TOOL_SHA = "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04"
 PYTHON_SHA = "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
+SOURCE_IDENTITY = "utf8-crlf-to-lf-only/1"
+
+
+def source_digest(raw):
+    # Only checkout newline conversion is portable. Keep BOM, whitespace,
+    # final newline, lone CR and every other byte significant.
+    raw.decode("utf-8", errors="strict")
+    return sha(raw.replace(b"\r\n", b"\n"))
+
+
+def verify_helpers(inputs, repo):
+    pins = strict_json(inputs.read(Path(__file__).with_name("sab_ff_helpers.json"), 16384))
+    require(type(pins) is dict and set(pins) == {"schema", "normalization", "files"}
+            and pins["schema"] == "iw7.original-sound-helper-sources/1" and pins["normalization"] == SOURCE_IDENTITY
+            and type(pins["files"]) is dict and len(pins["files"]) == 16, "explicit helper source identity required")
+    for relative, expected in pins["files"].items():
+        require(not Path(relative).is_absolute() and ".." not in Path(relative).parts
+                and type(expected) is str and len(expected) == 64, "bounded helper source pin required")
+        # Inputs records and rechecks the exact bytes/length, never this digest.
+        require(source_digest(inputs.read(repo / relative)) == expected, "shared helper changed: " + relative)
 
 
 def validate(spec):
@@ -78,14 +98,18 @@ def run(spec, runner, drain):
 def load_runner(repo):
     repo = plain(repo)
     inputs = Inputs()
-    pins = strict_json(inputs.read(Path(__file__).with_name("sab_ff_helpers.json"), 16384))
-    for relative, expected in pins.items():
-        require(sha(inputs.read(repo / relative)) == expected, "shared helper changed: " + relative)
+    verify_helpers(inputs, repo)
     sys.path.insert(0, str(repo / "tools-source/asset-bridge/surfaces"))
     spec = importlib.util.spec_from_file_location("pinned_existing_ff_phase", repo / "tools-source/asset-bridge/surfaces/material_v2_phase.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module, module.load_drain(repo / "sdk/modding/beacon_tool_phase.py")
+    # Load the already verified unchanged SDK implementation locally. Its own
+    # standalone loader has an LF-only byte pin, unsuitable for CRLF checkouts.
+    drain_spec = importlib.util.spec_from_file_location("pinned_sound_existing_drain", repo / "sdk/modding/beacon_tool_phase.py")
+    drain_module = importlib.util.module_from_spec(drain_spec)
+    drain_spec.loader.exec_module(drain_module)
+    inputs.recheck()
+    return module, drain_module.copy_bounded
 
 
 def main():

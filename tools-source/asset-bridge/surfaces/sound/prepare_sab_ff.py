@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 from read_sab import Inputs, SOURCES, ZONE, contract, original, plain, require, sha, strict_json
-from sound_ff_phase import TOOL_SHA, PYTHON_SHA, validate
+from sound_ff_phase import TOOL_SHA, PYTHON_SHA, SOURCE_IDENTITY, validate, verify_helpers
 
 
 def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sha, candidate_receipt):
@@ -25,9 +25,7 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
             and codec.get("input_flac_sha256") == spec["sources"]["sound_assets/community/original_chime_v1.flac"]["sha256"]
             and codec.get("pcm", {}).get("sha256") == spec["pcm_sha256"] and codec.get("job_closed") is True
             and codec.get("retained_lease") is False, "completed original codec checkpoint required")
-    pins = strict_json(inputs.read(own / "sab_ff_helpers.json", 16384))
-    for relative, expected in pins.items():
-        require(sha(inputs.read(repo / relative)) == expected, "shared helper changed: " + relative)
+    verify_helpers(inputs, repo)
     raw = inputs.read(prior_stock_plan, 131072)
     require(sha(raw) == prior_stock_plan_sha.lower(), "historical stock plan changed")
     previous = strict_json(raw, 131072)
@@ -71,6 +69,7 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
             "owned_future_outputs": ["zone/" + ZONE + ending for ending in (".ff", ".sabl", ".sabs")],
             "phase_specs": phases, "phase_adapter": str(own / "sound_ff_phase.py"),
             "shared_phase_runner": "tools-source/asset-bridge/surfaces/material_v2_phase.py",
+            "helper_source_identity": SOURCE_IDENTITY, "runtime_input_identity": "exact-bytes-size-sha256",
             "outer_functions": ["Start-MaterialV2OwnedPhase", "Wait-MaterialV2OwnedPhase", "Stop-MaterialV2OwnedPhase", "Complete-ModelFFRestore"],
             "pending_execution_work": ["Review original-sound reader/adapter and pins",
                 "Bind the existing outer original-job/stock transaction to these four specs",
