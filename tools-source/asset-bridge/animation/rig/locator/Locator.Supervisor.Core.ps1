@@ -64,7 +64,7 @@ function Get-LocatorArguments($Plan) {
 }
 function Get-LocatorTargetedLimits {
     [ordered]@{root_entries=1;fragments=8;fragment_bytes=16384;decoded_bytes=32768;instructions=8192;
-        control_edges=64;seconds=10;text_scans=0;external_callees_followed=0}
+        control_edges=512;seconds=10;text_scans=0;external_callees_followed=0}
 }
 function Assert-LocatorTargetedPlan($Plan) {
     $limits=Get-LocatorTargetedLimits
@@ -131,7 +131,7 @@ function Assert-LocatorReport($Report,[bool]$Targeted=$false,[string]$ExpectedEn
     $counters=@(@('decoded_instructions',128000),@('text_scans',17),@('linear_opcode_search_bytes',359301120))
     if($Targeted){
         $counters=@(@('decoded_instructions',8192),@('text_scans',0),@('linear_opcode_search_bytes',0),
-            @('fragment_count',8),@('decoded_bytes',32768),@('control_edge_count',64),@('external_callees_followed',0),
+            @('fragment_count',8),@('decoded_bytes',32768),@('control_edge_count',512),@('external_callees_followed',0),
             @('root_entries',1),@('visited_instructions',8192),@('refused_frontier_count',0))
         foreach($key in 'complete_logical_function_established','continuation_same_function_established','unvisited_is_unreachable'){
             if($Report.$key -isnot [bool] -or $Report.$key){throw 'Targeted fragments cannot establish a complete logical function.'}
