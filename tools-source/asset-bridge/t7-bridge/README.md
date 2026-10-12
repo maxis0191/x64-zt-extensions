@@ -153,10 +153,11 @@ the updated client's installed size. Download and hash under a total 512 MiB
 bootstrap/cache/log ceiling. The 774,825-byte ZIP was downloaded with a 1 MiB
 transfer cap; its sole entry was extracted with an 8 MiB limit. The extracted
 1,687,464-byte executable has a valid Valve Authenticode signature and version
-02.02.95.35. Hashes are in `steamcmd-bootstrap.json`. Neither executable nor
-self-update has run. These are bootstrap hashes, not the future updated client.
+02.02.95.35. Hashes are in the retained initial `steamcmd-bootstrap.json` receipt.
+At that preparation checkpoint neither executable nor self-update had run.
+These are initial bootstrap hashes; the subsequent attempt A is recorded below.
 
-Candidate query, pending independent AppID confirmation and review:
+Initial candidate query, before the primary AppID confirmation in attempt A:
 `steamcmd.exe +login anonymous +app_info_update 1 +app_info_print 545990 +quit`.
 This contains no `app_update`, `download_depot`, personal account login or
 server launch. The store `appdetails` endpoint returned `success:false`; an
@@ -171,7 +172,7 @@ expected self-replacement. Prefer the existing pinned Python-phase-under-job
 pattern if retaining SteamCMD: the phase validates and launches the bootstrap
 as a child, while the original job owns its complete update/process tree. This
 requires a reviewed adapter, deadline, private cache/temp/log paths and separate
-before/after executable hashes; it is not yet an executable run recipe. An
+before/after executable hashes; the executable host is described below. An
 uncertain or still-active original job retains/quarantines its reservation.
 
 `steamcmd_metadata_phase.py` is that fixed-command child adapter. It reuses
@@ -216,6 +217,44 @@ live children after root exit, identity mismatch, commit pressure, fresh forced
 closure, failed stop/release and pre-create failure. They load no native provider
 and never start SteamCMD. The final machine-specific plan and exact command stay
 under ignored `runtime/`; they require review and GO before `-Run`.
+
+### AppInfo attempt A observed on 2026-10-12
+
+The coordinator authorized exactly one invocation at source `2fc9470` and plan
+SHA256 `081d703c285d21cba2cf5c9c267fd1b20bd6026d4b0a16a6cb9cbe713fc90e2a`.
+The process attempt **failed**: the original SteamCMD parent returned 7 and
+Python returned 1 after 16.656 seconds. The retained receipt is not promoted to
+passed. Inspected updater logs show two update stages and cleanup warnings marked
+as continuing; the later internal console shows anonymous login, query and unload
+OK. These logs do not explicitly establish why the parent returned 7.
+
+The actual primary AppInfo response is present in the separate internal
+`logs/console_log.txt`, not in the bootstrap's captured stdout. It confirms:
+
+- App **545990**, **Call of Duty: Black Ops III - Unranked Dedicated Server**,
+  type Tool, released for Windows, free-to-download flag set.
+- Public depot **545991**, manifest **2350066205567669287**, build **4500243**.
+- Declared installed size **3,900,040,220 bytes** and download size
+  **3,697,813,104 bytes**. These are depot totals, not a selective EXE transfer.
+- Launch entry `UnrankedServer\Launch_Server.bat`, working directory
+  `UnrankedServer\`. Individual payload paths/sizes still require its file manifest.
+
+The updated SteamCMD executable is 5,462,168 bytes, version 10.95.69.31, validly
+signed by Valve Corp., SHA256
+`88f791368cdb3a8c82b84d3ea53f25c18c33b425a0560d5a3f851bd709b35580`.
+The closed installation occupies 161,068,764 bytes; with the outer receipt/logs,
+161,070,418 bytes. The phase observed a peak of 287,918,599 bytes. The original
+job was already empty at root failure; a stop request and second fresh empty
+snapshot were retained, followed by closure and lease release. A fresh audit
+found zero leases, no original root or tool/host remnants, and the same Main
+process generation and UDP27016 owner. No app/depot install or T7 execution ran.
+
+[The sanitized observation](steamcmd-appinfo-observation-20261012.json) binds
+the small receipts and logs by hash; raw private logs and the failed attempt are
+preserved locally. The useful next step is a file-manifest-only retrieval to
+select the minimum executable/dependencies. Repeating AppInfo is unnecessary to
+confirm fields already observed. Reusing this updated installation requires an
+explicit reviewed profile; do not bypass the old fresh-two-files/bootstrap pin.
 
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is
