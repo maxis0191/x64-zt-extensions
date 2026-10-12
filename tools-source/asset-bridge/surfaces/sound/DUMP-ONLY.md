@@ -1,5 +1,10 @@
 # DumpOnly from the qualified FLAC Build C
 
+The later [actual DumpOnly A checkpoint](dump-only-checkpoint-2026-10-12.json)
+records successful native dump/read and closure; the separate
+[codec checkpoint](dump-only-codec-checkpoint-2026-10-12.json) proves exact original
+PCM recovery. The source/preparation record below remains as its dated context.
+
 This closed profile reuses `Prepare-SoundFF.ps1`, `Build-SoundFF.ps1`, the existing
 sound transaction, original BuildJob ownership and unchanged shared providers.
 It admits exactly `dump,read`; it cannot build or verify a new FF. The preserved

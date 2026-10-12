@@ -1,5 +1,9 @@
 # Strict external decode of the qualified C dump
 
+The later actual [codec A checkpoint](dump-only-codec-checkpoint-2026-10-12.json)
+confirms exact original PCM/WAV recovery and complete closure. The preparation
+and source-validation record below remains unchanged; it does not claim playback.
+
 `NativeDumpOnlyC` is a separate closed input profile in the existing codec worker
 and supervisor. `OriginalSource` and the failed historical `NativeDumpF` keep their
 original identities and behavior. No decoder, format, resampling or permissive
