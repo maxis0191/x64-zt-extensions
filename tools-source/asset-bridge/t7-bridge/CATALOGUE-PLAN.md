@@ -1269,3 +1269,26 @@ script or next Plan was prepared, and phases five/six were not invoked. Retain
 all evidence and return the next policy decision to the coordinator. The helper
 incident is distinct from N's natural exit and absent catalogue. Do not rename
 global prefixes in closure helpers or repeat N.
+
+## CoreGfxA source-only preparation after the stop
+
+A subsequent coordinator instruction permits source-only preparation and review,
+not execution. The fixed CoreGfxA script binds the existing exact metadata for
+6,105,536 bytes. Its five lifecycle functions remain byte-identical; default,
+54 pure checks and actual future host argument capture pass without payload,
+lease, live admission or native execution. Two future passes would read
+12,211,072 bytes. The qualification scope, attempt marker and receipt are absent.
+
+The successful corrected N closure helper is frozen unchanged, including every
+local/global variable and called function. Future O must retain those N names,
+change only exact literal data and receive full diff review before any GO.
+The preparation records its AST names and source hash. It does not fabricate
+future host/native identities, a qualified core_gfx hash or a runnable O helper.
+After successful qualification and full closure, O would declare six inputs,
+74,300,608 bootstrap bytes, 40 bindings, ten metadata rows/twenty IDs and an
+output limit of 202,110,040 bytes. No real O Plan or dispatcher exists yet.
+
+The [source preparation checkpoint](catalogue-core-gfx-preparation-o-20261012.json)
+keeps all runtime/compatibility flags false and requires a new explicit GO after
+independent review. V2, the bounded reader, runtime candidate and operational
+source pins remain unchanged; no V3 policy or guessed inventory is adopted.
