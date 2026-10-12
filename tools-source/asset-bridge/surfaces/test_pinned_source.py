@@ -9,7 +9,7 @@ import tempfile
 
 from inspect_content import Inputs, require, verify_contract
 from prepare_reader_patch import BASE, FLAG, prepare, verify_prepared
-from test_surfaces import SurfacesTests
+import test_surfaces
 
 
 def run(source, native_source=None):
@@ -54,7 +54,7 @@ def run(source, native_source=None):
         subprocess.run(["git", "-C", str(source), "apply", "--check", str(output / "strict-content-sources.patch")],
                        check=True, capture_output=True, text=True)
         checks.append("git apply --check passes against actual source; no patch applied")
-        fixture = SurfacesTests()
+        fixture = test_surfaces.SurfacesTests()
         fixture.setUp()
         try:
             fixture.material()
