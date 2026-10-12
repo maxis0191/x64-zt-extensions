@@ -413,3 +413,11 @@ rendered appearance and retail-H1 compatibility remain unverified. The source-on
 contract/validation JSONs remain dated preparation evidence. No existing Failed
 receipt or acceptance boundary was rewritten. A next export/integration step
 requires a distinct source plan and authorization; this witness grants none.
+
+The separate [DUMP-PROBE.md](DUMP-PROBE.md) now supplies that next
+profile and an independent reader. Its fixture-only string bridge leaves token
+0 unresolved. The prepared B bytes and receipts are preserved. One separately
+authorized Compile and another separately authorized 149-check Probe passed
+under the dump Plan. The two actual IW7 dumps passed independent readback with
+hashes matched to that Probe receipt. FF/material/engine-token/render boundaries
+remain open; the original 111-check B witness above is unchanged.

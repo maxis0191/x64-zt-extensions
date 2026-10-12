@@ -29,6 +29,8 @@ function Fixture {
         Deadline={param($owner,$due) $script:watch.Due=$due;$script:calls.Add('Deadline');return $script:watch}
         Register={param($state) $script:calls.Add('Register')}
         Poll={param($state) $script:poll++;[pscustomobject]@{Nonce=$state.Nonce;Healthy=$true;Bytes=42;Status=$(if($script:poll -eq 1){'ArmedStopped'}else{'CaptureStopped'});IdentityChecked=$true;BreakpointChecked=$true}}
+        Attach={param($state) $script:calls.Add('Attach')}
+        Startup={param($state) $script:calls.Add('Startup')}
         Continue={param($state) $script:calls.Add('Continue')}
         Seal={param($state) [pscustomobject]@{Nonce=$state.Nonce;SHA256=('a'*64);Bytes=42;WitnessParsed=$true;FixtureOnly=$true}}
         Budget={param($state)}
@@ -40,8 +42,18 @@ function Fixture {
         Delay={$script:tick+=100L}
     }
 }
-function RunCase([string]$Name,[scriptblock]$Edit,[scriptblock]$Verify){
+function RunCase([string]$Name,[scriptblock]$Edit,[scriptblock]$Verify,[bool]$WithoutCreation=$false){
     Fixture;& $Edit
+    if(!$WithoutCreation){
+        $script:afterCreationPoll=$script:hooks.Poll;$script:creationPoll=0
+        $script:hooks.Poll={param($s)
+            $script:creationPoll++
+            if($script:creationPoll -le 2){
+                [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=1;OriginalJobChecked=$true;
+                    Status=$(if($script:creationPoll -eq 1){'TargetCreatedStopped'}else{'AttachedStopped'})}
+            }else{& $script:afterCreationPoll $s}
+        }
+    }
     $state=Invoke-RigWatchFixtureTransaction $script:hooks (New-RigWatchFixtureState ('b'*32))
     & $Verify $state
     $script:cases++;Write-Output "PASS $Name"
@@ -52,6 +64,8 @@ RunCase 'capture stop restores; forced root exit stays 122' {} {
     Check (!$s.RuntimeReady -and !$s.FFVerified -and !$s.SemanticAccepted) 'Diagnostic became acceptance'
     Check ($s.Snapshot.RootExitCode -eq 122 -and $script:job.StopCount -eq 1) 'Original forced exit lost'
     Check ($script:calls.IndexOf('Deadline') -lt $script:calls.IndexOf('Resume')) 'Deadline armed late'
+    Check ($script:calls.IndexOf('Attach') -lt $script:calls.IndexOf('Startup') -and
+           $script:calls.IndexOf('Startup') -lt $script:calls.IndexOf('Continue')) 'Owned creation sequence differs'
     Check ($script:calls.IndexOf('Tighten') -lt $script:calls.IndexOf('Continue')) 'Armed deadline set late'
     Check ($script:calls.IndexOf('Dispose') -lt $script:calls.IndexOf('Restore')) 'Restored before close'
 }
@@ -146,6 +160,38 @@ RunCase 'late release records actual release without acceptance' {$script:hooks.
 }
 RunCase 'persistent stopped debugger reaches global timeout' {$script:hooks.Poll={param($s) [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=1;Status='Loading'}};$script:hooks.Delay={$script:tick+=60000L}} {
     param($s) Check (!$s.DiagnosticCaptured -and $s.Closed -and $s.Restored -and $script:job.StopCount -eq 1) 'Persistent debugger was not recovered'
+}
+RunCase 'missing creation membership never attaches and retains admission' {
+    $script:hooks.Poll={param($s) [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=1;Status='TargetCreatedStopped';OriginalJobChecked=$false}}
+} {
+    param($s) Check (!$s.AttachmentAuthorized -and !$s.StartupContinued -and !$script:calls.Contains('Attach')) 'Unowned target attached'
+    Check ($s.OriginalJobClosed -and !$s.Closed -and $s.Quarantined -and !$s.LeaseReleased) 'Original Active0 claimed unknown descendant closure'
+} $true
+RunCase 'attach failure retains unknown debugger closure' {$script:hooks.Attach={throw 'synthetic attachment outcome unknown'}} {
+    param($s) Check ($s.OriginalJobClosed -and !$s.Closed -and $s.Quarantined -and !$s.LeaseReleased -and !$s.StartupContinued) 'Attachment ambiguity released'
+}
+RunCase 'slow creation checkpoint cannot authorize attachment' {
+    $script:hooks.Save={param($s) if($script:creationPoll -eq 1){$script:tick=240000L}}
+} {
+    param($s) Check (!$script:calls.Contains('Attach') -and !$s.AttachmentAuthorized -and $s.Failure -like '*deadline*') 'Expired creation checkpoint attached'
+}
+RunCase 'missing attached membership cannot resume' {
+    $script:hooks.Poll={param($s)
+        $script:poll++
+        [pscustomobject]@{Nonce=$s.Nonce;Healthy=$true;Bytes=1;
+            Status=$(if($script:poll -eq 1){'TargetCreatedStopped'}else{'AttachedStopped'});OriginalJobChecked=($script:poll -eq 1)}
+    }
+} {
+    param($s) Check ($s.AttachmentAuthorized -and !$s.StartupContinued -and !$script:calls.Contains('Startup')) 'Unconfirmed attached target resumed'
+    Check ($s.Quarantined -and !$s.LeaseReleased -and $s.OriginalJobClosed) 'Unconfirmed debugger closure released'
+} $true
+RunCase 'startup callback failure closes proven original three-process job' {$script:hooks.Startup={throw 'synthetic startup failure'}} {
+    param($s) Check ($s.Closed -and $s.LeaseReleased -and !$s.StartupContinued -and !$s.Continued) 'Proven original members did not close'
+}
+RunCase 'slow startup checkpoint cannot resume fixture' {
+    $script:hooks.Save={param($s) if($script:creationPoll -eq 2){$script:tick=240000L}}
+} {
+    param($s) Check (!$script:calls.Contains('Startup') -and !$s.StartupContinued -and $s.Closed) 'Expired attached checkpoint resumed'
 }
 $workers=@{stdout=@{Terminated=$false;Outcome='running'};stderr=@{Terminated=$false;Outcome='running'};stdin=@{Terminated=$false;Outcome='running'}}
 foreach($field in @('Mode','ResourceProfile','PhysicalBytes','CommitBytes')){

@@ -1,0 +1,50 @@
+{
+  "schema": "iw7.h1-dump-readback-observation/1",
+  "date": "2026-10-12",
+  "analysis": "pure Python on actual admitted native dump outputs, separate from native stage",
+  "probe_receipt": {
+    "bytes": 2976,
+    "sha256": "580de36388d7aec0e9bbcc42457ae7ebfa0be19992ba3cbe82ded135fcfad3cb"
+  },
+  "plan_sha256": "328d765786859e435eaa0766153ca7a1b01802d55efbcdd50aea802c67e0abb2",
+  "native_executable": {
+    "bytes": 1331200,
+    "sha256": "15aeb2e9da13a96e1b61045ee4c4f275113ff680af945ce48c0b764f0d7080d6"
+  },
+  "actual_dump_artifact_hashes_matched_to_receipt": true,
+  "readback_executed": true,
+  "reader_source_lf_sha256": "4549335b5a69a7a29e5b6bb10ab0c35cbc7364a1dbc06d38d9e830b0dd00d259",
+  "raw_reader_report": {
+    "schema": "iw7.h1-dump-readback/1",
+    "status": "original-h1-iw7-dump-profile-pass",
+    "outputs": {
+      "xmb": {
+        "bytes": 976,
+        "sha256": "42db307ec9a146c1dbdf9328e2dae65426de83588f5bc735adc2fa2750d1f766"
+      },
+      "xsb": {
+        "bytes": 1236,
+        "sha256": "a6f763660220d2f82434e469f5f5e626f55c12061edc1818952ef3218cbb0524"
+      }
+    },
+    "vertices_checked": 24,
+    "triangles_checked": 12,
+    "bone_string": "tag_origin",
+    "source_bone_token": 0,
+    "bone_engine_token_resolved": false,
+    "material_reference": "paris_h1_original_material",
+    "material_complete": false,
+    "lod_reference": "paris_h1_original_cube_lod0",
+    "lod_named_reference_linked": false,
+    "whole_zonetool_application": false,
+    "ff_built": false,
+    "render_verified": false,
+    "native_provenance_verified": false,
+    "provenance_requires": "separate admitted native receipt and output hashes; synthetic tests are insufficient"
+  },
+  "scope": "raw reader does not authenticate native provenance itself; this observer compared exact receipt DumpArtifacts lengths/hashes against the bytes passed to that reader",
+  "ff_built": false,
+  "render_verified": false,
+  "synthetic_dump_outputs_used": false,
+  "h1_input_fixture_is_original_synthetic": true
+}

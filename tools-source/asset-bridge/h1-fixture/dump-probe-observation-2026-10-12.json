@@ -1,0 +1,87 @@
+{
+  "schema": "iw7.h1-dump-probe-observation/1",
+  "date": "2026-10-12",
+  "source_commit": "65b31627fe15cefa46cdadf9d1f5f485cf8d0730",
+  "execution_checkout_commit": "ceb3c54966b9bf43d16c5acf54afd8872333e8b3",
+  "plan_sha256": "328d765786859e435eaa0766153ca7a1b01802d55efbcdd50aea802c67e0abb2",
+  "plan_bindings_verified_after_run": 68,
+  "stage": "Probe",
+  "status": "Passed",
+  "exit_code": 0,
+  "tree_closure_confirmed": true,
+  "lease_released": true,
+  "quarantined": false,
+  "registration": "Original job already empty before CIM registration",
+  "registration_error": "Original process differs from scheduler observation.",
+  "original_pid": 31144,
+  "original_created_utc": "2026-10-12T09:47:04.2574843Z",
+  "admitted_started_utc": "2026-10-12T09:47:04.2212544Z",
+  "finished_utc": "2026-10-12T09:47:04.7614427Z",
+  "acceptance_elapsed_ms": 327.7111999988556,
+  "physical_reservation_bytes": 268435456,
+  "commit_reservation_bytes": 268435456,
+  "reservations_are_measured_peaks": false,
+  "deadline_seconds": 15,
+  "output_limit_bytes": 33554432,
+  "cleanup_seconds": 5,
+  "executable": {
+    "bytes": 1331200,
+    "sha256": "15aeb2e9da13a96e1b61045ee4c4f275113ff680af945ce48c0b764f0d7080d6"
+  },
+  "native_observation": {
+    "schema": "iw7.h1-parser-converter-dump-observation/1",
+    "checks": 149,
+    "production_parsers_executed": true,
+    "production_converters_executed": true,
+    "declaration_adapter": true,
+    "whole_zonetool_application": false,
+    "bone_name_observed": "tag_origin",
+    "bone_engine_token_resolved": false,
+    "material_reference": "paris_h1_original_material",
+    "material_complete": false,
+    "lod_named_reference_linked": false,
+    "vertices_checked": 24,
+    "dump_executed": true,
+    "fixture_string_adapter": true,
+    "string_calls": 1,
+    "dump_files": 2,
+    "ff_built": false,
+    "render_verified": false,
+    "retail_h1_compatibility": false
+  },
+  "probe_files": {
+    "dump/h1_original/xmodel/paris_h1_original_cube.xmb": {
+      "bytes": 976,
+      "sha256": "42db307ec9a146c1dbdf9328e2dae65426de83588f5bc735adc2fa2750d1f766"
+    },
+    "dump/h1_original/xsurface/paris_h1_original_cube_lod0.xsb": {
+      "bytes": 1236,
+      "sha256": "a6f763660220d2f82434e469f5f5e626f55c12061edc1818952ef3218cbb0524"
+    },
+    "receipt.json": {
+      "bytes": 2976,
+      "sha256": "580de36388d7aec0e9bbcc42457ae7ebfa0be19992ba3cbe82ded135fcfad3cb"
+    },
+    "stderr.log": {
+      "bytes": 101,
+      "sha256": "95f2251aaa5427fa2556fea9326c6d7cbeeb93e9c0d7b8073c67361385c02b14"
+    },
+    "stdout.log": {
+      "bytes": 563,
+      "sha256": "ef17b9907c4645f88777948e405ae6172ce8bde4191e3eb293cd08d063b62669"
+    }
+  },
+  "probe_bytes": 5852,
+  "combined_compile_probe_files": 11,
+  "combined_compile_probe_bytes": 19029999,
+  "fresh_process_registry_observed_utc": "2026-10-12T09:47:24.6836374Z",
+  "fresh_lease_count": 0,
+  "owned_native_compiler_probe_residue": false,
+  "main_pid": 27784,
+  "main_created_utc": "2026-10-12T00:52:28.7133740Z",
+  "main_image_sha256": "408ecfaef8e3584769736878858ed225c4648249433e91caff3ad8c5c7efb9a7",
+  "native_dump_executed": true,
+  "ff_built": false,
+  "render_verified": false,
+  "whole_zonetool_application": false
+}

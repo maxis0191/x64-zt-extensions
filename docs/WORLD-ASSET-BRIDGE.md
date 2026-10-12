@@ -549,7 +549,7 @@ actual per-record 4 KiB and requested-read 2 KiB bounds, and preserves the
 synthetic evidence labels. Its five Python tests passed on original JSON data,
 including 4,096/4,097-byte boundary cases. **That validates the reader only**;
 the C++ cases and real transcript remain pending. The compile/run plan and exact
-provider bindings are in `world/observer-harness-plan.json`.
+provider bindings are in `world/observer-harness-plan.json` (v2).
 
 `world/verify_observer_patch.py` verifies the exact pin/source/header hashes and
 applies/reverses the prepared patch against two temporary source files. This
@@ -569,8 +569,14 @@ compiler/linker and subsequent fixture**, and one 4 GiB RAM / 6 GiB commit lease
 It reuses `model/BuildJob.cs`, the `surfaces/MaterialV2.Core.ps1` start/wait/stop
 functions, `MaterialV2.JobMembers.cs`, the reviewed compiler-witness/telemetry
 policy, and the existing bounded log drain. No replacement job/process manager
-is introduced here. The final source-bound coordinator adapter is still to be
-reviewed before GO; this JSON plan does not execute it or authorize a lease.
+is introduced here. `world/Run-ObserverHarness.ps1` now provides the executable
+adapter: its default Plan mode verifies installed tools and source/provider pins
+without creating output, taking a resource snapshot, loading native helper types,
+reserving resources or starting a child. `-Run` is the future coordinated native
+entry point; source delivery does not authorize using it.
+World-owned PowerShell sources explicitly use LF through the local
+`.gitattributes`, preserving their exact hash pins after checkout. All eleven world
+source pins were also checked against Git's checkout-filtered committed bytes.
 
 Compile one TU using the existing x64 MSVC/Windows SDK, `/std:c++20 /EHsc /MD /O1
 /W4 /D_CRT_SECURE_NO_WARNINGS`, explicit include/lib paths, `/INCREMENTAL:NO`,
@@ -580,20 +586,90 @@ child's compiler environment. The candidate EXE/object and all logs belong to a
 fresh owned runtime directory. Use the fixture's actual compiled EXE hash for
 its single launch; its input is entirely compiled-in original synthetic data.
 
-The root launches the compiler once, requires its witnessed exit zero, then
-launches the fixture once. Before the fixture, the same original job may contain
+The Python driver launches the compiler once, requires its witnessed exit zero,
+then waits for an atomic, token-bound fixture permit from the PowerShell owner.
+The owner keeps the compiled EXE open against writes/deletion and binds its hash
+in that permit. Before permitting the fixture, the same original job may contain
 only the root and, if present, the exact hash/creation/parentage-verified compiler
 telemetry child described by the reviewed policy; any other survivor refuses
 continuation. After the root exits, the existing policy may close that exact
 telemetry child by stopping the original job, then must observe fresh root0 /
 Active0. No PID/name-based cleanup, automatic retry or relaunch is allowed.
-The plan budgets 90 s for compilation, 10 s for the fixture and 120 s for the
-group, within the existing supervisor's 240 s supported envelope; the adapter
-must enforce the stricter group deadline in its poll callback. Keep the existing
+The adapter enforces 90 s for compilation including the permit gate, 10 s from
+fixture permission and 120 s from lease acquisition for the group, within the existing supervisor's
+240 s supported envelope (245 s including its grace). The poll callback checks
+the stricter deadlines before and after its work and after native helper imports;
+the driver independently checks
+its monotonic deadlines during polling, after exit and after log draining. Keep the existing
 2 s drain and 15 s cleanup bounds. A failed/ambiguous job closure retains the
 lease and diagnostics. The full group, receipts included, is capped at 64 MiB;
 each compiler/fixture log stream is capped at 2 MiB and the accepted fixture
 transcript at 128 KiB. These are proposed limits, not measured resource usage.
+
+The driver reuses `beacon_tool_phase.py`'s pinned bounded stream drain. A local
+`guarded_drain` wrapper catches `BaseException` and signals failure before a
+worker returns; it never formats the thrown exception. This covers non-OS stream
+errors and `SystemExit`, which the provider's `OSError` handler does not catch.
+The driver has no
+job owner, lease API or kill operation. Errors exit the root so the PowerShell
+owner stops only its original job. It requires the independent transcript checker
+before successful exit; the owner then requires fresh root0/Active0, the exact
+fixture receipt and transcript digest. Final byte accounting includes `run.json`
+itself. The owner publishes that immutable **before-release snapshot**, checks
+its exact bytes/hash and total output size, and holds it against writes/deletion
+before calling the scheduler releaser. Publication, accounting or verification
+failure prevents any release attempt. The file says `ReceiptStage:
+BeforeLeaseRelease`, `LeaseReleased: false`, and `LeaseReleaseState: NotAttempted`;
+it does not predict scheduler success. After the call returns, only the returned
+result reports `LeaseReleased: true` / `Confirmed`. No later file write is needed
+to qualify the frozen evidence. A throwing release is `Unconfirmed`, retaining
+the token for registry reconciliation without assuming the lease still exists.
+There is no retry of a confirmed or ambiguous release. Failed factory/closure,
+changed source or failed finalization keeps guarded objects and the token;
+no new attempt is started.
+
+Source validation for this adapter: nine Python tests use fake process objects
+and original data; fifty-six PowerShell checks exercise budgets, pins, receipt/member
+refusals, the reused supervisor with fake clocks, deadline boundaries and failed
+cleanup. The driver tests include twelve stdout/stderr read/write/flush faults
+using both ordinary exceptions and `SystemExit` with deliberately broken string
+formatting. Forty-five further original-text/mock-scheduler checks cover receipt
+publication, pre/post-write accounting, same-size content corruption, the held
+receipt guard, release order, ambiguous release and faithful closure/lease flags.
+An additional real installed-tool Plan check verified 26 bound inputs,
+zero prohibited calls, no output directory and no native helper types. An early
+pure test found missing parentheses in a mixed PowerShell `-and`/`-or` type gate;
+the grouping was corrected before delivery. Review of `d2d97ca` then identified
+two gaps missed by the earlier tests: unguarded non-OS drain exceptions and
+release before final receipt publication/accounting. Both corrections and their
+fault-injection tests are now source-only; no earlier native pass is implied.
+All these checks remain **source,
+mock or inert Plan evidence**. No native C++ result is claimed.
+
+An actual inert Plan command (the installed compiler pin is also checked):
+
+```powershell
+$world = Join-Path (Get-Location) 'tools-source/asset-bridge/world'
+$planArgs = @{
+    RunRoot = Join-Path (Get-Location) 'runtime/world-observer-harness-20261012-p2'
+    VCToolsRoot = 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207'
+    WindowsSdkRoot = 'C:/Program Files (x86)/Windows Kits/10'
+    WindowsSdkVersion = '10.0.26100.0'
+    PythonExe = (Get-Command python).Source
+}
+& "$world/Run-ObserverHarness.ps1" @planArgs
+```
+
+Run this from the reviewed repository root in a fresh PowerShell7 host. After
+review and explicit coordinated GO only, the same command with `-Run` performs
+admission and the single native group. An existing output directory is refused;
+retain failed output and choose a new reviewed run identity for any later attempt.
+The harness executable/transcript are never accepted as a real map observation.
+The exact local Plan JSON and command are exported separately under
+`world/.review/observer-harness-20261012-p2/` for coordinator review. This ignored
+review directory contains machine paths; the proposed runtime directory remains
+absent until a separately authorized Run. Saving the review snapshot does not
+change the inert Plan command's behavior.
 
 After coordinated native GO, perform the following sequentially, using current
 reviewed Resource-Scheduler/stock helpers and preserving occupied owner processes.

@@ -11,7 +11,8 @@ function Refuses([scriptblock]$Action,[string]$Pattern) {
     Check ($null -ne $message -and $message -like $Pattern) ('Expected refusal: '+$Pattern+'; actual: '+$message)
 }
 $accepted=& $runner -PlanPath $PlanPath -PlanSHA256 $PlanSHA256|ConvertFrom-Json
-Check ($accepted.BindingsVerified -eq 59 -and !$accepted.NativeTypesLoaded -and !$accepted.LeaseAcquired -and !$accepted.RunRootCreated) 'Read-only plan verification changed state.'
+$expectedBindings=if(($plan.PSObject.Properties.Name -contains 'Profile') -and $plan.Profile -ceq 'OriginalH1Dump'){68}else{59}
+Check ($accepted.BindingsVerified -eq $expectedBindings -and !$accepted.NativeTypesLoaded -and !$accepted.LeaseAcquired -and !$accepted.RunRootCreated) 'Read-only plan verification changed state or omitted profile inputs.'
 Refuses {& $runner -PlanPath $PlanPath -PlanSHA256 ('0'*64)} '*Reviewed plan hash differs*'
 Refuses {& $runner -PlanPath $PlanPath -PlanSHA256 $PlanSHA256 -Stage Probe} '*'
 
@@ -23,6 +24,11 @@ function Save-TestPlan($Value) {
     (Get-FileHash -LiteralPath $copy).Hash.ToLowerInvariant()
 }
 try {
+    $changed=$plan|ConvertTo-Json -Depth 20|ConvertFrom-Json -Depth 20
+    $changed|Add-Member -NotePropertyName Profile -NotePropertyValue 'UnreviewedProfile' -Force
+    $hash=Save-TestPlan $changed
+    Refuses {& $runner -PlanPath $copy -PlanSHA256 $hash} '*Unknown H1 profile*'
+
     $changed=$plan|ConvertTo-Json -Depth 20|ConvertFrom-Json -Depth 20
     $changed.Stages.Probe.PhysicalBytes=1
     $hash=Save-TestPlan $changed

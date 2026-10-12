@@ -9,7 +9,7 @@ separate coordinator GO. Neither estimate is a measured peak or a memory cap.
 | `iw7.rig-watch-python-cdb-fixture/1` | **4 / 6 GiB** | PowerShell controller/helpers, Python transport, CDB and its Python fixture |
 | Future retail observation | **10 / 14 GiB**, unchanged | Existing rig FF envelope 8/11 plus debugger envelope 2/3 |
 
-The fixture estimate is fixed in its v3 Plan and fixture-only transaction. It
+The fixture estimate is fixed in its v4 Plan and fixture-only transaction. It
 is not a choice between resource presets. The input schema refuses retail mode,
 unknown profile identifiers, budget fields, replacement target fields and old
 v1/v2 schemas. The concrete transport still constructs only the fixed Python
@@ -43,7 +43,8 @@ are not process-memory caps.
 No ZoneTool executable, retail image, FF, stock transaction, game/client/server,
 matched retail PDB, source extraction, native build toolchain or hardware GPU
 workload is part of this fixture. CDB receives `-sins`, an initially empty local
-symbol directory, `-netsyms:no`, `-noshell` and the fixed Python target. The
+symbol directory, `-netsyms:no`, `-noshell` and only the newly created/held Python
+target described by the [owned-creation Plan](OWNED-CREATION-PLAN.md). The
 transport removes inherited symbol/source/extension path variables. This is the
 intended symbol-free recipe, not yet a live qualification of CDB's behavior or
 its internal allocations. The admitted helper `Add-Type` compilation is included
@@ -51,8 +52,9 @@ in the controller envelope; no ZoneTool/MSBuild build is requested.
 
 ## Unknown peaks and future evidence
 
-The 2/3 controller envelope is a new conservative planning estimate. No fixture
-has run under it. Startup peaks, debugger/plugin/runtime allocation, .NET/JIT
+The 2/3 controller envelope is a conservative planning estimate. Trials A/B
+failed before arm and did not measure process/group peaks. The v4 owned-creation
+candidate has not run. Startup peaks, debugger/plugin/runtime allocation, .NET/JIT
 and Python library costs, working-set residency and transient commit growth are
 unmeasured. The Plan and transaction explicitly retain `MeasuredPeaks=false` or
 `MeasuredResourcePeaks=false`; success of source simulations cannot change this.
@@ -86,5 +88,5 @@ Their numbers came from applying the README retail sum (rig FF 8/11 + debugger
 2/3) to the smaller synthetic fixture. This correction follows the actual source
 workload, not a currently observed resource deficit. The future retail 10/14
 estimate is preserved. Old Plans are not rewritten or silently executed with the
-new profile. A new source-bound v3 Plan, independent review and separate GO are
+new profile. A new source-bound v4 Plan, independent review and separate GO are
 required. This source change requests no resource preflight or native execution.

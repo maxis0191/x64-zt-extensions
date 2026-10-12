@@ -334,7 +334,7 @@
   },
   "observer_harness_source": {
     "schema": "iw7.world-clipmap-harness-source/1",
-    "plan_sha256": "3520e7d2db673bd3b3aca61435da6a0fbfa35f7f9b81a357c5ae58c98ab95da5",
+    "plan_sha256": "fc8f55da2fe60b25d8d98217eebdf3f982b562e42e49fbd01c69f33a248f8c54",
     "source_sha256": {
       "tools-source/asset-bridge/world/world_clipmap_observer.hpp": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
       "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
@@ -347,5 +347,47 @@
     "native_harness_run": false,
     "engine_observed": false,
     "coordinator_execution_adapter_review_pending": true
+  },
+  "observer_adapter_source": {
+    "schema": "iw7.world-observer-adapter-source/1",
+    "plan_sha256": "fc8f55da2fe60b25d8d98217eebdf3f982b562e42e49fbd01c69f33a248f8c54",
+    "source_sha256": {
+      "tools-source/asset-bridge/world/world_clipmap_observer.hpp": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
+      "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
+      "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
+      "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa",
+      "tools-source/asset-bridge/world/Run-ObserverHarness.ps1": "9bfc9a3d6277f05f9daef3afeb75d835ce5d181ec7501762470d2c5cb0204779",
+      "tools-source/asset-bridge/world/ObserverHarness.Core.ps1": "760ad94967da428a54d052aa5685f69e79452a6e325b0ca84b2e69fbfc7567a4",
+      "tools-source/asset-bridge/world/observer_harness_driver.py": "6d74a088b8922c41ef7998758d1ccbcb7354e3188ae033a0aebd3a8ae13460c9",
+      "tools-source/asset-bridge/world/test_observer_adapter.ps1": "64645c3e23de6b09793ca9b44aa09b8553f3904af9424a2f98c832ff0b6ba89a",
+      "tools-source/asset-bridge/world/test_observer_driver.py": "779d69e4bbcab81374e7c6f1c65637a6ab59190ff0194519a14b2ad605c99dd6",
+      "tools-source/asset-bridge/world/test_observer_plan.ps1": "0121e904ce5677ef9ad314fe64b1e951778d2e32750d997ccbb2f76410b93a10",
+      "tools-source/asset-bridge/world/test_observer_finalization.ps1": "954aa7df91553629fe766f8918fef18a32fa112569e0d69f38cad53ab3d4f447"
+    },
+    "driver_fake_process_tests_passed": 9,
+    "powershell_pure_mock_checks_passed": 56,
+    "installed_tool_plan_inert": true,
+    "plan_bound_inputs": 26,
+    "native_compiled": false,
+    "native_harness_run": false,
+    "engine_observed": false,
+    "review_pending": true,
+    "correction": "Explicit parentheses added to mixed PowerShell type/refusal predicates after pure-test failure.",
+    "checkout_filtered_source_pins_verified": 11,
+    "world_powershell_line_endings": "LF enforced by world/.gitattributes; prevents inherited CRLF checkout pin drift",
+    "guarded_drain_fault_cases": 12,
+    "finalization_mock_checks_passed": 45,
+    "review_corrections": {
+      "base": "d2d97ca16824068d4c64a573237fb64ab1ce726b",
+      "findings": [
+        "non-OS drain exceptions could be accepted as EOF",
+        "lease released before final publication/accounting"
+      ],
+      "corrections": [
+        "local BaseException guard signals failure without exception formatting",
+        "receipt frozen and verified before release; publication failures do not release; ambiguous outcomes stay unconfirmed"
+      ],
+      "native_execution": false
+    }
   }
 }

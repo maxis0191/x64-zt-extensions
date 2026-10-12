@@ -82,7 +82,7 @@ bodies with a documented declaration adapter. Compile B and the separate Probe
 both closed their original process trees and released their distinct leases.
 Compile A remains a preserved failed deadline attempt.
 
-1. **Whole application and export remain open.** Actual parsing of the two
+1. **Whole application and general donor export remain open.** Actual parsing of the two
    original files into production structs, followed directly by the real
    converters with the reviewed surface patch, has now passed. The consumer
    verifies counts/references, ABI, geometry field transfer and aliases without
@@ -95,9 +95,11 @@ Compile A remains a preserved failed deadline attempt.
    `prepare` normally turns those strings into zone-buffer indices. Direct
    XModel conversion only aliases that array, while `iw7::xmodel::dump` calls
    the engine `SL_ConvertToString`. Calling dump directly on the parsed model
-   therefore is not a demonstrated valid path. A native consumer may inspect
-   converted fields first, but emission needs a reviewed genuine string
-   resolution path, with no invented live engine ID.
+   therefore is not a demonstrated valid path. The new source-only
+   [dump profile](DUMP-PROBE.md) bridges this one original string through the
+   actual parser table, without changing token 0 or inventing an engine ID.
+   That explicit fixture adapter now passes the 149-check native dump Probe and
+   independent readback, but is not engine SL integration.
 3. **Complete material.** `h1/assets/material.cpp:199-340` expects a named
    technique and its statebits. An empty technique leaves zero state entries
    and hits `max_state_index >= stateBitsCount`; an empty JSON is not a valid
@@ -112,3 +114,10 @@ native checkpoint is separate and does not rewrite those receipts. No FF build,
 extraction, game, download, retail data read or shared-source modification occurred
 for this fixture. Main's original process identity and image hash stayed unchanged.
 The coordinating branch owns the private integration/CI/merge workflow.
+
+The next candidate is [DUMP-PROBE.md](DUMP-PROBE.md): exact IW7 dump
+fragments, independent bounded readback, 68-binding two-stage Plan, dependency
+handoff to existing Beacon/rig tooling. Its separately authorized Compile A
+and 149-check Probe A passed and closed/released their jobs/leases. The two real
+IW7 dumps then passed independent readback, bound to the native receipt hashes.
+No FF, complete material, engine token integration or render result is claimed.

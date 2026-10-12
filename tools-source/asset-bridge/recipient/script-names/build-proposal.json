@@ -1,0 +1,57 @@
+{
+  "schema": "iw7.recipient-script-name-build-proposal/1",
+  "status": "source-only-no-build-or-run-authorization",
+  "base_native_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "base_executable_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "base_compile_tlog_sha256": "a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333",
+  "base_link_tlog_sha256": "70455d2f32a9b034dda20fbaf48443ee68a02e552381edbf88b19d219f1f66b2",
+  "changed_translation_units": ["src/zonetool/zonetool/iw7/zonetool.cpp"],
+  "replacement_object": "zonetool9.obj",
+  "existing_replacement_object_bytes": 8027786,
+  "unaffected_objects": 412,
+  "unchanged_project_libraries": 18,
+  "unchanged_resource_inputs": 1,
+  "private_common_library_needed": false,
+  "use_shared_pch": false,
+  "write_shared_outputs": false,
+  "partial_metadata_inventory": {
+    "files": 432,
+    "bytes": 840132922,
+    "sha256": "11e53f3b13237a6fa187325c4b9e904021e5fff21f046bed94248ed3651b65ef",
+    "includes_one_retained_compile_pdb": true,
+    "binary_contents_hashed": false,
+    "complete_dependency_closure": false
+  },
+  "proposed_build_limits": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "output_stop_bytes": 268435456,
+    "compile_or_link_seconds": 120,
+    "overall_seconds": 600,
+    "automatic_retries": 0
+  },
+  "observer_limits": {
+    "exact_keys": ["scripts/engine/utility", "2626"],
+    "enum_callbacks_with_reads": 4096,
+    "name_bytes": 240,
+    "name_termination_sentinel_bytes": 1,
+    "metadata_identities": 4,
+    "json_bytes": 4096,
+    "observer_payload_bytes": 0,
+    "token_alias_inferred": false
+  },
+  "remaining_gates": [
+    "Independent source and pure-contract review; C++ harness is prepared but not compiled or executed.",
+    "Exact include/toolchain/VC-SDK-library/debug-input closure and separately admitted input sealing.",
+    "Private response-file generation with original flags/order, one replacement unit and private outputs; no E7 MSBuild invocation.",
+    "Adapt and review existing sound/H1 supervision without weakening original-handle or artifact/telemetry gates.",
+    "Distinct admitted harness/build authorization, actual native checks and candidate provenance.",
+    "Separate observer phase adapter and approved 8/11 GiB stock/restoration Plan; no bypass of the existing E7 recipient guard."
+  ],
+  "native_compiled": false,
+  "native_executed": false,
+  "stock_staged": false,
+  "script_bytes_verified": false,
+  "closure_complete": false,
+  "ready": false
+}
