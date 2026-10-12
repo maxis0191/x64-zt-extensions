@@ -66,9 +66,12 @@ must remain unexplained rather than becoming a guessed dependency list.
 The FF is deliberately unsealed during preparation: no payload hash has been
 read outside admission. The final profile must support this one observed input,
 without pretending it already has a trusted hash. Under the same Extract lease,
-check the reviewed absolute path, file ID, ordinary-file ancestry, size,
+check the reviewed absolute path, ordinary-file ancestry, size,
 attributes and last-write time; open a read-sharing-only guard, calculate its
-SHA256 and retain the guard through closure and reverification. Record that hash
+SHA256 and retain the guard through closure and reverification. Observe the
+source file ID under that guard, match each created alias to it and recheck the
+same identities after closure. Neither the FF hash nor its file ID is claimed
+as a premeasured trusted value in the plan. Record that hash
 as observed provenance, not validation against a depot hash. Changed metadata
 requires stopping before launch and revising the plan. Verify the three already
 qualified binary hashes under admission.
@@ -85,9 +88,10 @@ Reuse the witnessed `Probe-NativeJob.dll`, scheduler and existing
 `H1Native.Core.ps1` functions `Invoke-H1OwnedStage`, `Complete-H1Stage`,
 `Open-H1Pin`, `Read-H1SmallJson` and `Write-H1Receipt`. No new process owner,
 scheduler, arbitrary-command launcher or H1 fixture/compiler policy is needed.
-Keep the completed prepatch contract distinct from the catalogue command/report.
-The small catalogue adapter remains to implement and review; this recipe does
-not claim the old diagnostic runner can already execute this command.
+`Run-T7Catalogue.ps1` and `T7Catalogue.Profile.ps1` provide the catalogue command
+and report checks. They leave the diagnostic runner/profile unchanged and reuse
+only its function-only environment/Main checks. File IDs use the existing
+`HudFileIdentity.cs` helper, loaded under admission; no new native helper is added.
 
 Default preparation loads no native provider, obtains no lease, hashes no
 payload, creates no links and starts no process. Native mode needs an exact
@@ -117,7 +121,8 @@ attribute.
 
 ## Evidence and result meaning
 
-Reuse `t7-iw7/catalog_contract.py::validate_catalog`: schema
+The in-process PowerShell validator follows the reviewed
+`t7-iw7/catalog_contract.py::validate_catalog` contract: schema
 `iw7.t7-iw7-model-catalog/1`, exact requested zone, provenance
 `observed_during_requested_zone_load`, sorted unique observed names, at most
 1,024 names and 256 KiB name storage. Header counts establish neither mesh
@@ -137,7 +142,19 @@ missing dependency, empty catalogue or observed names. No result here proves
 source-zone ownership, ABI, conversion, materials, IW7 FF build, rendering or
 owner gameplay acceptance.
 
-Remaining preparation: the small catalogue adapter and light contract/closure
-checks, then the exact local plan for coordinator review. Complete theoretical
-bootstrap closure and another prepatch capture are not gates. No new native
-execution, extraction or download is authorized by this recipe alone.
+`Run-T7Catalogue.ps1 -PlanPath <local-plan> -PlanSHA256 <reviewed-hash>` validates
+the fixed command, exact D2 build receipt, source pins and original metadata,
+then returns `PlanCheckedPendingGO`. `-Run` consumes one create-only attempt and
+qualifies the observed FF hash under the same 6/8 GiB lease. Ordinary nonzero exit
+retains useful report evidence while remaining Failed. No report is inspected
+while the job remains unclosed. After forced closure, only the bounded JSON may
+be read outside admission; stock is not rehashed and success remains impossible.
+
+`Test-T7Catalogue.ps1` passes 95 light checks using synthetic files, fake owners
+and clocks, with no owner-stock reads, native type loading or real reservation.
+It covers report scope/count/name/refusal cases, retained file guards, fixed-plan
+and retry refusals, output caps, ordinary root failure, closure quarantine, and
+the actual runner finalizer after late release/publication or forced closure.
+The native catalogue path itself remains unexecuted. Coordinator review and a
+separate exact-plan GO are still required; exhaustive theoretical bootstrap
+closure and another prepatch capture are not gates.
