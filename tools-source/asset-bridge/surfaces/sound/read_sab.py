@@ -225,7 +225,9 @@ def inventory(raw):
     require(len(found) == 2 and set(found) == expected, "exact soundbank and native branding rawfile inventory required")
 
 
-def inspect(source, banks, contract_path, dump=None, inventory_path=None):
+def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_profile="NativeDumpF"):
+    require(dump_profile in ("NativeDumpF", "DumpOnlyC"), "closed dump profile required")
+    require(dump_profile == "NativeDumpF" or dump is not None, "DumpOnlyC requires actual dump bytes")
     require((dump is None) == (inventory_path is None), "dump and inventory must be supplied together")
     inputs = Inputs()
     spec = contract(inputs.read(contract_path, 16384))
@@ -238,7 +240,8 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None):
         # Native dump knowingly rewrites these fields. Verify that behavior but
         # do not call the resulting standalone FLAC or alias index validated.
         expected = bytearray(files[FLAC_PATH])
-        expected[8:18] = b"\x04\x00\x04\x00" + bytes(6)
+        block = b"\x04\x00" if dump_profile == "NativeDumpF" else b"\x10\x00"
+        expected[8:18] = block * 2 + bytes(6)
         expected[26:42] = bytes(16)
         require(actual == expected, "dump FLAC header/payload or trailing bytes differ")
         inventory(inputs.read(inventory_path))
@@ -249,6 +252,8 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None):
             "dump_alias_values_verified": dump is not None, "inventory_verified": dump is not None,
             "inventory_asset_count": 2 if dump is not None else 0,
             "dump_seek_frame_bytes_verified": dump is not None, "dump_streaminfo_rewritten": dump is not None,
+            "dump_profile": dump_profile, "dump_streaminfo_block_size": (1024 if dump_profile == "NativeDumpF" else 4096) if dump is not None else None,
+            "inventory_provenance": "PreservedBuildF" if dump_profile == "DumpOnlyC" else "CurrentVerifyPhase",
             "dump_standalone_flac_validated": False, "native_alias_index_verified": False,
             "expected_single_alias_index": {"value": 0, "next": 65535},
             "checksum_checksum_verified": False, "checksum_checksum_kind": "writer 16xCC placeholder",
@@ -263,8 +268,9 @@ def main():
     parser.add_argument("--contract", required=True, type=Path)
     parser.add_argument("--dump", type=Path)
     parser.add_argument("--inventory", type=Path)
+    parser.add_argument("--dump-profile", choices=("NativeDumpF", "DumpOnlyC"), default="NativeDumpF")
     args = parser.parse_args()
-    print(json.dumps(inspect(args.source, args.banks, args.contract, args.dump, args.inventory), indent=2))
+    print(json.dumps(inspect(args.source, args.banks, args.contract, args.dump, args.inventory, args.dump_profile), indent=2))
 
 
 if __name__ == "__main__":

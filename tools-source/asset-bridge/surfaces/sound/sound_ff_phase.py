@@ -13,6 +13,8 @@ import threading
 from read_sab import Inputs, ZONE, plain, require, sha, strict_json
 
 TOOL_SHA = "4740f0c22a1a7bab0b01f7a55ec0b133263ac218825ac3c0d15b9e269fe472b0"
+# Observed qualified C receipt dfe3d7d1...; only its dump command is admitted.
+DUMP_C_SHA = "cef411cf9b4de69be02cb4017aabd964e9143e340e211188daa6b6bab366493a"
 PYTHON_SHA = "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
 SOURCE_IDENTITY = "utf8-crlf-to-lf-only/1"
 
@@ -49,11 +51,14 @@ def validate(spec):
             "literal bounded phase arguments required")
     if spec["phase"] != "read":
         require(args == ["-headless", "-unbuffered-io", "-strict-content-sources", "-" + spec["phase"] + "zone", ZONE]
-                and spec["sha256"] == TOOL_SHA and Path(spec["exe"]).name == "zonetool.exe", "exact original zone/tool required")
+                and (spec["sha256"] == TOOL_SHA or (spec["phase"] == "dump" and spec["sha256"] == DUMP_C_SHA))
+                and Path(spec["exe"]).name == "zonetool.exe", "exact original zone/tool required")
     else:
-        require(spec["sha256"] == PYTHON_SHA and len(args) == 12 and args[0] == "-B" and Path(args[1]).name == "read_sab.py"
-                and args[2::2] == ["--source", "--banks", "--contract", "--dump", "--inventory"], "exact reader command required")
-        require(all(Path(value).is_absolute() for value in [args[1], *args[3::2]]), "absolute reader paths required")
+        require(spec["sha256"] == PYTHON_SHA and (len(args) == 12 or
+                (len(args) == 14 and args[12:] == ["--dump-profile", "DumpOnlyC"]))
+                and args[0] == "-B" and Path(args[1]).name == "read_sab.py"
+                and args[2:12:2] == ["--source", "--banks", "--contract", "--dump", "--inventory"], "exact reader command required")
+        require(all(Path(value).is_absolute() for value in [args[1], *args[3:12:2]]), "absolute reader paths required")
     return spec
 
 
