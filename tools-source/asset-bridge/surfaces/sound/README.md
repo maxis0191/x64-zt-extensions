@@ -461,3 +461,37 @@ No shared provider was modified and no SAB/FF native invocation took place here.
 SAB/FF byte validation, in-game sound playback and owner acceptance remain pending;
 `Ready` and `PlaybackVerified` remain false. The coordinator owns the private PR,
 exact-head CI, merge and common documentation for this source delivery.
+
+## First native SAB/FF attempt: failed independent read, closed and restored
+
+On 2026-10-12 the coordinator authorized exactly one run of execution plan E
+(SHA256 1306c1751ce2321cc2cf6a9308c1e59fd5e82401d2b875a19890418ba51b76ae)
+from source `286a6a8470fbdd21c869e0032c21b76269e396a9`. Fresh admission used the
+complete 8 GiB RAM / 11 GiB commit scenario. There was no retry. The sanitized
+`sab-ff-checkpoint-2026-10-12.json` records the exact state, phase, log and artifact
+hashes without machine paths, process identifiers or raw logs.
+
+Build, verify and dump returned zero with explicit normal pipe completion. The
+independent reader returned one at `read_sab.py:190`: `SAB PCM checksum mismatch`.
+The source-checksum field at SABL offset 110592 is
+`78000000000000000000000000000000`; the original FLAC STREAMINFO and original PCM
+MD5 are both `24fe5af1473ea8f4be33912348210c78`. The reader reached this check after
+its loaded-bank layout, seek/frame equality, reconstructed PCM and payload-MD5
+checks. Full independent bank/readback validation failed; later checks were not
+completed. No checksum was rewritten or accepted by exception.
+
+The retained FF is 544 bytes, SABL 114816 and SABS 4096. All four original jobs
+were observed root-exited/Active0 and disposed. The 77 managed inputs and 80-entry
+transaction completed restoration with unchanged source hashes; guards and the
+lease were released. At 07:52:30 UTC the registry was empty and all four phase
+roots were absent. The pre-existing `vctip.exe` created at 07:38:02.967002 UTC
+remained untouched and is explicitly outside this job-closure proof.
+
+Final accounting converged to 1402412 bytes, equal to the measured directory;
+the sampled peak was 1521907 bytes. The final state SHA256 is
+c1b532dc3d61f0408f3ec4202e93fdf2d6394b0209ed3b2b9d2cdaaed7098276.
+There was no quarantine because closure, disposal, source integrity and
+restoration were proven; that does not make the failed readback successful.
+The original state, artifacts and logs remain unchanged. `Ready` and
+`PlaybackVerified` remain false. The next work is read-only checksum diagnosis;
+another native attempt requires separate reviewed source and a new explicit GO.

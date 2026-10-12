@@ -1,0 +1,248 @@
+{
+  "schema": "iw7.original-sound-sab-ff-checkpoint/1",
+  "status": "NativeBuildVerifyDumpPassedIndependentReadFailed",
+  "execution_source_commit": "286a6a8470fbdd21c869e0032c21b76269e396a9",
+  "execution_plan_sha256": "1306c1751ce2321cc2cf6a9308c1e59fd5e82401d2b875a19890418ba51b76ae",
+  "execution_command_sha256": "72f8c584c092ca1648e0282168631e5488cdf018dd1afc0ed7506ee80aea65df",
+  "authorized_runs": 1,
+  "actual_runs": 1,
+  "retry_count": 0,
+  "physical_estimate_bytes": 8589934592,
+  "commit_estimate_bytes": 11811160064,
+  "physical_reserve_bytes": 0,
+  "commit_reserve_fraction": 0.2,
+  "tool_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "failure": "SAB PCM checksum mismatch",
+  "failure_location": "read_sab.py:190",
+  "failed_phase": "read",
+  "phases": [
+    {
+      "phase": "build",
+      "root_exit_code": 0,
+      "native_exit_code": 0,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T07:51:45.0421954Z",
+      "closure_elapsed_ms": 4422,
+      "post_receipt_elapsed_ms": 4437,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": true,
+      "spec": {
+        "bytes": 787,
+        "sha256": "c819ba9f1d6d3cbcb402f0b19409560ab7a49d23e60c06e55be359ae07787bdd"
+      },
+      "phase_receipt": {
+        "bytes": 294,
+        "sha256": "9faaeb40dbd4c8d0945de774c2449a56f8aef3b2e64a0be252bbca594d852d7d"
+      },
+      "sound_receipt": {
+        "bytes": 321,
+        "sha256": "437bcdd588c215d4ab9150a7447e9e2393db682131260b7ca90ad9aa4d2b75d3"
+      },
+      "stdout": {
+        "bytes": 1526,
+        "sha256": "c7c2c7740235438b4cf77e384cef73768b09967fc5de154660673c72ed3b1cd8"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "phase": "verify",
+      "root_exit_code": 0,
+      "native_exit_code": 0,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T07:51:49.5198297Z",
+      "closure_elapsed_ms": 4688,
+      "post_receipt_elapsed_ms": 4688,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": true,
+      "spec": {
+        "bytes": 790,
+        "sha256": "73e9cafb56f8a4b54a5b4f2909bf979f01e81c9542d7bf1ed1ad5b442dd606c4"
+      },
+      "phase_receipt": {
+        "bytes": 296,
+        "sha256": "3ed3fb792df718572ab540300a78c9f9eee134f78939e652569666a130150d86"
+      },
+      "sound_receipt": {
+        "bytes": 322,
+        "sha256": "17606b893641acde11e9abd27e379b2912aa4bc0eef12452192b7a083a88db49"
+      },
+      "stdout": {
+        "bytes": 813,
+        "sha256": "6eea5fbf6a6e71c4a34a5e865be8ae4c381689e0a05a8223cea4fdbe3bb3ff3c"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "phase": "dump",
+      "root_exit_code": 0,
+      "native_exit_code": 0,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T07:51:54.209191Z",
+      "closure_elapsed_ms": 4015,
+      "post_receipt_elapsed_ms": 4031,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": true,
+      "spec": {
+        "bytes": 784,
+        "sha256": "93f67b3361cb8a7be550e5aeb90eeafadaa86f86e6097a115d436c8401176139"
+      },
+      "phase_receipt": {
+        "bytes": 294,
+        "sha256": "279c9a2e9bfbade36867ae45c995da6af746f2c395a6fd7a126392df42acd651"
+      },
+      "sound_receipt": {
+        "bytes": 320,
+        "sha256": "239a517828b72fbb7ff2184dea243d0b92ddbba98fd3ba8c9a7df640150d9ff7"
+      },
+      "stdout": {
+        "bytes": 690,
+        "sha256": "3d83815f7bf82cf78497da2c9852c7b65edc2fb0f1a07a61cf681e65156b1d36"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "phase": "read",
+      "root_exit_code": 1,
+      "native_exit_code": 1,
+      "root_exited": true,
+      "active_job_members": 0,
+      "started_utc": "2026-10-12T07:51:58.2418758Z",
+      "closure_elapsed_ms": 547,
+      "post_receipt_elapsed_ms": null,
+      "scheduler_attached": true,
+      "below_normal": true,
+      "explicit_normal_pipe_returns": true,
+      "drain_exception_count": 0,
+      "phase_verified": false,
+      "spec": {
+        "bytes": 1619,
+        "sha256": "626a92b1e09fe2f6e8ced0d68a1b8e7116dffa7d7e668fd16d84a617957f0511"
+      },
+      "phase_receipt": {
+        "bytes": 294,
+        "sha256": "6723a1e57dd5005b56e9405dfe8d5bf6199eaca58fa914f4171009aaf9e4abdb"
+      },
+      "sound_receipt": {
+        "bytes": 321,
+        "sha256": "a5b7ee2c46163d1a01feb060a1b8072ed517712d359743e4ef96b381a33d5068"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 1458,
+        "sha256": "1cc3131827c26ffdc5de65028e97f3718df8950c9d0ffeadfb0e652c29208ae5"
+      }
+    }
+  ],
+  "source_flac": {
+    "bytes": 96394,
+    "sha256": "9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb"
+  },
+  "source_wav": {
+    "bytes": 96044,
+    "sha256": "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4"
+  },
+  "source_pcm_bytes": 96000,
+  "source_pcm_sha256": "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9",
+  "source_pcm_md5": "24fe5af1473ea8f4be33912348210c78",
+  "source_flac_streaminfo_md5": "24fe5af1473ea8f4be33912348210c78",
+  "sab_source_checksum_offset": 110592,
+  "sab_source_checksum_observed": "78000000000000000000000000000000",
+  "sab_payload_checksum_observed": "300613dc8d3bf1f785a7345a0466d15c",
+  "full_independent_bank_validation_passed": false,
+  "reader_checks_reached_before_failure": [
+    "loaded header and entry layout",
+    "original seek/frame byte equality",
+    "reconstructed original PCM equality and SHA256",
+    "SAB payload MD5"
+  ],
+  "closure": {
+    "job_closed": true,
+    "job_dispose_completed": true,
+    "read_guards_released": true,
+    "source_hashes_unchanged": true,
+    "stock_preserved": true,
+    "restored": true,
+    "restoration_status": "Confirmed",
+    "quarantined": false,
+    "retained_lease": false,
+    "post_run_observed_utc": "2026-10-12T07:52:30.8401534Z",
+    "post_run_registry_leases": 0,
+    "post_run_phase_root_processes": 0,
+    "registry_sha256": "44c5c693713c3d13af191c9b9d9e0b8b109764519130e9169b01160a69570464",
+    "excluded_preexisting_process": {
+      "name": "vctip.exe",
+      "created_utc": "2026-10-12T07:38:02.967002Z",
+      "still_present_after_run": true,
+      "modified": false,
+      "covered_by_job_closure": false
+    }
+  },
+  "accounting": {
+    "status": "Converged",
+    "final_bytes": 1402412,
+    "actual_directory_bytes": 1402412,
+    "max_observed_bytes": 1521907,
+    "stop_bytes": 67108864,
+    "per_pipe_limit_bytes": 2097152,
+    "budget_error": null,
+    "scope": "Last RunRoot file-length snapshot including state; sampled peak, not continuous disk maximum"
+  },
+  "managed_inputs": 77,
+  "transaction_entries": 80,
+  "reviewed_input_pins": 42,
+  "artifacts": {
+    "sdk_original_sound_v1.ff": {
+      "bytes": 544,
+      "sha256": "13e878aeec2c545d5e6c8c02a6b75eb6061fd1bec14c9199450ef6a45e135900"
+    },
+    "sdk_original_sound_v1.sabl": {
+      "bytes": 114816,
+      "sha256": "42a0ce040adeb0ced4b4661fd7bd1ae9f1081be6604b1c97b105fa8fdfe098b1"
+    },
+    "sdk_original_sound_v1.sabs": {
+      "bytes": 4096,
+      "sha256": "e490efefe70da393fd7830102637f3e0df12f6b6b0945e8c54cada2a6fef3b6f"
+    }
+  },
+  "state_receipt": {
+    "bytes": 63197,
+    "sha256": "c1b532dc3d61f0408f3ec4202e93fdf2d6394b0209ed3b2b9d2cdaaed7098276"
+  },
+  "backup_receipt": {
+    "bytes": 8825,
+    "sha256": "f0f1f5191b485abed36a5f6ce78713def744a5c1697c967bd91dd8763222a773"
+  },
+  "limitations": [
+    "No successful independent SAB/FF readback",
+    "No audible playback, client launch or owner acceptance",
+    "Three missing English language-zone notices occurred in native logs; no repair was attempted",
+    "No checksum normalization or native retry"
+  ],
+  "ready": false,
+  "playback_verified": false
+}
