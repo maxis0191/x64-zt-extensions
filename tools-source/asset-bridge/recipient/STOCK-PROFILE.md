@@ -232,3 +232,15 @@ an explicit all-asset list with 5,148,447,113 total stock hash-read bytes, witho
 authorizing a run. The later source-preparation checkpoint in that note records
 the distinct `/3` runner profile, independent inventory binding and pure tests.
 Its exact Plan still requires review and a separately granted GO.
+
+## H execution checkpoint
+
+The subsequent reviewed Plan H executed once on source `e0654a74`, using schema
+`/3` and the complete fixed asset-PAK profile. All 25 expected zones loaded and
+the four exact requested references were verified without missing/default rows.
+[H's evidence](native-validation-h-2026-10-12.json) confirms original-job closure,
+107 paths restored/removed, source preservation, unchanged owner/Main identities
+and zero remaining process/lease. The stock profile suffices for this recorded
+reference check; its minimal dependency subset, image export, scripts and package
+closure are not established. Earlier profiles and failures are unchanged. No
+additional native operation follows from H's exhausted single-execution GO.

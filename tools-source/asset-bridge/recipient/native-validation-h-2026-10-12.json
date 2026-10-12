@@ -1,0 +1,236 @@
+{
+  "schema": "iw7.recipient-native-validation/1",
+  "attempt": "H",
+  "date": "2026-10-12",
+  "status": "references-verified-confirmed-restored-script-not-run",
+  "source_commit": "e0654a74c63e7ca1f12428166c3d9ba4c8355b1f",
+  "origin_main": "361f655b01a17ec41eb242562f6819591ecce2d8",
+  "plan_sha256": "638DC4B34CABA59D61DA0D7BABF3EA43621CBFCF72F429A9AA80A0805D548C61",
+  "spec_sha256": "39908D03DEFFB509B46AC29022E8A144E1D459259A872E634E3AF047259DB52B",
+  "command_sha256": "5983C8ABF371168C7E852D363BB547979FEB3A30A864463BE56D06ED71FBF9D5",
+  "stock_observation_sha256": "0D38DD171A0DC03F382F8FBA33CCA9BCD32A43C6B6132CBEF517EC920D04D829",
+  "complete_inventory_sha256": "683C8A39B6BD289A2ACC0A27129A038361D5A217D6EF129D07DA739FEB6F76BF",
+  "native_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "authorized_invocations": 1,
+  "actual_invocations": 1,
+  "phases": [
+    "references"
+  ],
+  "diagnostic_only": false,
+  "utility_invoked": false,
+  "admission": {
+    "physical_bytes": 8589934592,
+    "commit_bytes": 11811160064,
+    "preflight_utc": "2026-10-12T08:17:22.7115995Z",
+    "physical_available": 16947646464,
+    "committed": 23919902720,
+    "commit_limit": 47564615680,
+    "physical_reserve": 0,
+    "commit_reserve": 9512923136,
+    "preflight_lease_count": 0,
+    "preflight_foreign_count": 0,
+    "atomic_run_registration": {
+      "Registered": true,
+      "Outcome": "Registered",
+      "Attempts": 1
+    },
+    "guarded_content_gate_passed": true,
+    "memory_peak_measured": false
+  },
+  "stock_profile": {
+    "BaselineEntries": 72,
+    "SupplementalEntries": 32,
+    "SupplementalProfile": "doom-reviewed-all-asset-paks-20261012",
+    "SupplementalLogicalBytes": 4695508096,
+    "SupplementalLimitBytes": 4695508096,
+    "AdditionalBytesBeyondFourPAKs": 4115416048,
+    "SupplementalCopiedBytes": 0,
+    "UniqueHashReadBytes": 5148447113,
+    "UniqueHashReadFiles": 73,
+    "StockHardLinks": 103,
+    "StockCopiedBytes": 77,
+    "ContentVerified": false,
+    "AdditionalResidentBytesMeasured": false
+  },
+  "stock_asset_pak_count": 33,
+  "image_paks_staged": 0,
+  "managed_paths": 107,
+  "pak_payload_copy_bytes": 0,
+  "timing": {
+    "command_started_utc": "2026-10-12T08:18:05.3137022Z",
+    "command_finished_utc": "2026-10-12T08:18:27.6577457Z",
+    "command_elapsed_seconds": 22.3440435,
+    "python_created_utc": "2026-10-12T08:18:16.7506454Z",
+    "native_spawn_observed_utc": "2026-10-12T10:18:16.884442+02:00",
+    "native_creation_time_verified": false,
+    "original_closure_observations": [
+      {
+        "Active": 0,
+        "RootExitCode": 0,
+        "DrainSeconds": 0.002408800000000433,
+        "PhaseSeconds": 6.9718469
+      }
+    ],
+    "phase_limit_seconds": 240,
+    "outer_limit_seconds": 245,
+    "group_active_limit_seconds": 600,
+    "root_exit_drain_limit_seconds": 5,
+    "hard_stop_or_restoration_wallclock_bound_claimed": false
+  },
+  "reference_result": {
+    "native_exit_code": 0,
+    "native_failure": null,
+    "requested_rows": 4,
+    "verified_rows": 4,
+    "missing_rows": 0,
+    "default_rows": 0,
+    "rows": [
+      {
+        "type": "material",
+        "name": "mopw/character_park_clown_zombie_shoes",
+        "status": "verified"
+      },
+      {
+        "type": "techset",
+        "name": "mopw_l_sm_replace_i0c0s0o0n0p0",
+        "status": "verified"
+      },
+      {
+        "type": "image",
+        "name": "park_clown_zombie_shoes_n_3e46d100_packed_nog",
+        "status": "verified"
+      },
+      {
+        "type": "image",
+        "name": "park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs",
+        "status": "verified"
+      }
+    ],
+    "csv_bytes": 265,
+    "csv_sha256": "f14d3326c4038a0289cc7316c3e26a29e12bc801eee26abf9750bdff36780a4d",
+    "source_zone_count": 25,
+    "source_zone_order": [
+      "techsets_global_core_mp",
+      "techsets_common_core_mp",
+      "code_post_gfx",
+      "patch_code_post_gfx",
+      "techsets_global",
+      "global",
+      "patch_global",
+      "techsets_common",
+      "common",
+      "patch_common",
+      "techsets_global_mp",
+      "global_mp",
+      "patch_global_mp",
+      "techsets_global_cp",
+      "global_cp",
+      "patch_global_cp",
+      "techsets_common_mp",
+      "common_mp",
+      "patch_common_mp",
+      "techsets_common_cp",
+      "common_cp",
+      "patch_common_cp",
+      "techsets_cp_zmb",
+      "cp_zmb",
+      "patch_cp_zmb"
+    ],
+    "fatal_dialog_artifact_present": false,
+    "fatal_stop_marker_present": false,
+    "serialized_content_observed": false,
+    "capture": {
+      "pipe_buffer_size": 0,
+      "drain_threads_closed": true,
+      "stdout_bytes_at_receipt": 2497,
+      "stderr_bytes_at_receipt": 0,
+      "tree_closure_verified": false
+    }
+  },
+  "closure": {
+    "command_exit_code": 0,
+    "original_root_exit_code": 0,
+    "original_job_active_at_close": 0,
+    "post_run_owned_process_count": 0,
+    "post_run_lease_count": 0,
+    "inner_phase_does_not_attest_tree_closure": true
+  },
+  "restoration": {
+    "restored": true,
+    "stock_preserved": true,
+    "status": "Confirmed",
+    "cleanup_error": null,
+    "retained_lease_token": null,
+    "managed_paths_removed": 107,
+    "source_metadata_identity_matches": 107,
+    "owner_identities_unchanged": true,
+    "main_identity_matches": true,
+    "post_run_retail_content_rehashed": false
+  },
+  "acceptance": {
+    "run_status": "ReferencesObservedScriptNotRun",
+    "native_executed": true,
+    "references_verified": true,
+    "script_bytes_verified": false,
+    "closure_complete": false,
+    "ready": false,
+    "runtime_verified": false,
+    "binder_qualification_claimed": false,
+    "gameplay_acceptance_claimed": false
+  },
+  "generated_output": {
+    "maximum_bytes": 1268420,
+    "final_bytes": 1268314,
+    "limit_bytes": 268435456
+  },
+  "local_artifact_hashes": [
+    {
+      "Relative": "state.local.json",
+      "Bytes": 152910,
+      "SHA256": "57C6572C252AECDC2C112BDD423F52F5D77E00E0B7382C11987D752C1C36F854"
+    },
+    {
+      "Relative": "backup/recovery.local.json",
+      "Bytes": 11392,
+      "SHA256": "8A66616C672AE7B2EDC210FF5CEEC97D3B7A1CCA911726D6BBAAAB2D120F41F1"
+    },
+    {
+      "Relative": "references/native-start.json",
+      "Bytes": 542,
+      "SHA256": "E883FDC73A8C01D1FBE3EDF9EA1F855241E12CD5197E11D64B76C255A9C0BABB"
+    },
+    {
+      "Relative": "references/phase.json",
+      "Bytes": 811,
+      "SHA256": "3DA5A7097E5AC8E0B065EEEA3D71F5C5068E83FD2306DBAC993B6D19E9377D74"
+    },
+    {
+      "Relative": "references/stdout.log",
+      "Bytes": 2497,
+      "SHA256": "E0279A45F25413D72DA53B7980449983659AB3A1C0C973941B508D9B7BD78912"
+    },
+    {
+      "Relative": "references/stderr.log",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Relative": "work/enemy-catalog/sdk_beacon_recipient_a.csv",
+      "Bytes": 265,
+      "SHA256": "F14D3326C4038A0289CC7316C3E26A29E12BC801EEE26ABF9750BDFF36780A4D"
+    }
+  ],
+  "preflight_sha256": "7650B2ED27B513616E2D0F7936397204C3D1A1BFA6AF6B434BD5F7D375145CFB",
+  "final_observation_sha256": "C0A3E41E23CEBBEC68AD21CBA40E09455A71BB77DE2642B8F1DA291E36D92612",
+  "limits": [
+    "H proves the four exact non-default database references for the recorded 25-zone sequence; it does not prove serialized donor content or all retail/CP dependencies.",
+    "The complete retained assetfile profile succeeded for this check; a minimal required subset and image payload export requirements remain unknown.",
+    "The phase recorder reports tree_closure_verified=false by design; original outer-job exit and zero membership supply closure evidence separately.",
+    "Native creation time was not recorded as verified. Spawn-observed time is not substituted for kernel creation time.",
+    "No utility/script phase, retry, additional native run, stock expansion or Main deployment occurred.",
+    "The 8/11 GiB reservation is estimated. Peak RAM/commit, total native read bytes and isolated hash throughput were not measured.",
+    "Post-restoration source checks used identity, size, modification time and attributes; no retail content rehash occurred after lease release.",
+    "F and all earlier failures remain unchanged. H uses its own reviewed profile, snapshot correction, exact source, plan and single-execution GO.",
+    "Package, binder, script closure and gameplay acceptance remain separate. H single-execution authorization is exhausted."
+  ]
+}

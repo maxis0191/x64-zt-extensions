@@ -526,3 +526,25 @@ hash and parsed content came from separate path opens. The [correction](COMPLETE
 uses one guarded handle and a fixed 128 KiB + 1 buffer, with SHA256 and JSON from
 the same snapshot. Its 27 targeted checks and 65 source checks pass. G remains
 unapproved and unchanged; no revised Plan is generated before correction review.
+
+## H: four references verified, scripts not run
+
+After favorable snapshot review, a distinct Plan H received one explicit GO
+and executed source `e0654a74`. Its complete 33-asset-PAK profile loaded all
+25 expected zones through `patch_cp_zmb` and returned **4 verified, 0 missing,
+0 default** rows for the exact requested material, techset and two images.
+The [H record](native-validation-h-2026-10-12.json) pins the 265-byte result CSV,
+native receipt, logs and independent final observation.
+
+Native and original root exit codes were 0. The original job reached zero
+members; stdout/stderr drains closed. All 107 staged paths were removed and all
+107 source identity/size/time/attribute observations matched. Restoration and
+stock preservation were confirmed, owner/Main identities were unchanged, and
+zero owned process or lease remained. Final generated output was 1,268,314 bytes.
+No post-release retail content hash was performed.
+
+Status is `ReferencesObservedScriptNotRun`: references are verified, but script
+bytes, serialized asset content, package closure, binder qualification and
+gameplay remain unproven. `ClosureComplete`, `Ready` and `RuntimeVerified` stay
+false. H's single-execution GO is exhausted; no utility phase or retry followed.
+The coordinator owns the next separate gate and central GitHub integration.

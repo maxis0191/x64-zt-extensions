@@ -254,3 +254,40 @@ match. A revised Plan must wait for review of this correction; no GO is implied.
 ```powershell
 pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-RecipientInventorySnapshot.ps1 -FixtureRoot <fresh-absolute-generated-fixture-directory>
 ```
+
+## H execution checkpoint
+
+The snapshot correction received favorable review. A distinct references-only
+Plan H, spec and guarded command were separately checked and authorized for one
+execution. Source `e0654a74` passed fresh complete 8/11 GiB admission, guarded
+content verification and staging without changing the explicit profile, limits
+or CLI. No image PAK or payload copy was introduced.
+
+All 25 expected zones loaded through `patch_cp_zmb`. The native checker returned
+4 verified references, 0 missing and 0 default, with CSV SHA256
+`F14D3326C4038A0289CC7316C3E26A29E12BC801EEE26ABF9750BDFF36780A4D`.
+Native and original root exited 0; original job membership reached zero. The
+recorded post-root drain observation was 0.0024088 seconds, at phase time
+6.9718469 seconds. The phase recorder independently closed both output drains;
+its `tree_closure_verified=false` is intentional because outer original-job
+ownership supplies that evidence. Native creation time remains explicitly
+unverified in its start receipt; spawn-observed time is not relabeled.
+
+The complete command ran for 22.3440435 seconds, including software checks,
+admission, guards, 5,148,447,113 distinct stock hash-read bytes, staging, native
+loading and restoration. This is not isolated hash throughput. Native read bytes
+and peak RAM/commit were not measured, so the estimated 8/11 reservation is not
+promoted to a measured maximum or lowered.
+
+Independent final metadata checks confirm all 107 managed paths absent and all
+107 sources unchanged in ID/size/time/attributes, restoration/source preservation,
+unchanged owner/Main identities and zero owned process/lease remaining. Final
+generated output was 1,268,314 bytes. No retail content was rehashed after release.
+See the [sanitized H evidence](native-validation-h-2026-10-12.json).
+
+H proves this reference-loading sequence with the complete retained asset-PAK
+family. It does not establish a minimal subset, scripts, serialized donor content,
+image export, package qualification or gameplay. `ReferencesVerified=true` while
+`ScriptBytesVerified`, `ClosureComplete`, `Ready` and `RuntimeVerified` remain
+false. F and G retain their original failure/unapproved statuses. H's single GO
+is exhausted; there is no automatic retry or next native phase.
