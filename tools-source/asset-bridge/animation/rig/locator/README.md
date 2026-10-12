@@ -64,6 +64,10 @@ edges to their start cannot establish complete caller coverage. The capture's
 source-binary provenance remains unattested, and no first writer, live address
 compatibility or gameplay acceptance has been established.
 
+The subsequent [targeted Plan C](TARGETED.md) prepares one seeded continuation
+walk from `0x140a17970`, with zero global opcode scans and no called targets
+followed. Its source/tests/inert Plan are separate from a still-unapproved Run.
+
 ## Original bounded static preparation (before Run B)
 
 Reuse the existing `unpacked-text.bin` (21,135,360 bytes, mapped at
