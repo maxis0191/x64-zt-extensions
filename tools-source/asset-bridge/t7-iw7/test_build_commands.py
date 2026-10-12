@@ -7,6 +7,14 @@ import prepare_build as p
 
 
 class RecipeTests(unittest.TestCase):
+    def test_committed_cli_source_contract_matches_current_text(self):
+        contract = json.loads((p.HERE/'cli-source-contract.json').read_text(encoding='utf-8'))
+        for name, pin in contract['files'].items():
+            with self.subTest(file=name):
+                raw = (p.HERE/name).read_text(encoding='utf-8').replace('\r\n', '\n').encode()
+                self.assertEqual(len(raw), pin['lf_bytes'])
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), pin['lf_sha256'])
+
     def test_response_paths_reject_quote_or_newline(self):
         for value in ('a"b', 'a\nb', 'a\0b'):
             with self.assertRaises(ValueError): p.quote(value)

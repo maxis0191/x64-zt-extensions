@@ -3,8 +3,8 @@
   "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
   "files": {
     ".gitattributes": {
-      "lf_bytes": 162,
-      "lf_sha256": "f8d22fb8e084b60e159b14ac9523e6e6a93bd904339b90b173f024409fdd6073"
+      "lf_bytes": 258,
+      "lf_sha256": "ce1a8c3ef96c5d8f741c4eb21e8ef1b4e66861921a8cb5d21fc88d1dc8dee501"
     },
     "SOURCE-AUDIT.md": {
       "lf_bytes": 16453,

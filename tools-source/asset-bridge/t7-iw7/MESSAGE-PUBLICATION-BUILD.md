@@ -98,6 +98,22 @@ for the accepted subset; the optional colon/space form of `/Fo` is documented in
 the [MSVC output option reference](https://learn.microsoft.com/en-us/cpp/build/reference/fo-object-file-name?view=msvc-170).
 No profile schema, pin name, binding or stage contract changes in this correction.
 
+### First merged preparation refusal: stale source-contract metadata
+
+The source-only preparation from PR184 merge `6462fd5` refused before creating
+either its new plan or run directory. The CLI source contract still pinned the
+162-byte original `.gitattributes` (`f8d22fb8...`), while merged commits `95f8120`
+and `8abb885` had preserved the patch whitespace rule and added the LF rule for
+`T7Build.Profile.ps1`. The current reviewed file is 258 LF bytes, SHA256
+`ce1a8c3ef96c5d8f741c4eb21e8ef1b4e66861921a8cb5d21fc88d1dc8dee501`.
+Every other member of the source contract still matched.
+
+The correction updates only that file's expected length/hash and adds a test of
+all committed CLI text contract members. It changes neither `.gitattributes`,
+native source, build/provider behavior nor any historical plan/receipt. The
+preparation validator remains strict. Reusing the old attribute file or omitting
+its verification would conceal the merged source state and was not used.
+
 ## Reuse and estimated growth
 
 The 413-object link will consist of **411 reused objects** (410 original E7
