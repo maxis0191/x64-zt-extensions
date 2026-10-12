@@ -599,6 +599,42 @@ capture still requires the next specifically admitted compile-only run. Its usef
 result is the remaining member's effective identity plus exact closure, not FF
 or material acceptance. A/B receipts and the shared providers remain untouched.
 
+### Compile diagnostic A: residual identity measured
+
+The separately admitted4/6GiB diagnostic on2026-10-12 captured36 original-job
+observations without metadata errors. It observed Python, cl.exe, link.exe,
+two conhost.exe instances and vctip.exe, including native creation times and
+parentage. After compiler and Python-root exit0, the final job contained exactly
+one member: the installed MSVC14.44.35207 vctip.exe, independently confirmed
+inside the original job and as a direct child of the exact observed compiler.
+The installed file version is14.44.35229.0. This identifies the residual process
+in this run; it is no longer merely a name-based hypothesis.
+
+The diagnostic's supervision still **failed**: first root exit at1953ms, final
+sample at4047ms with Active1, drain2094ms. Original-job Stop then confirmed root
+exit0 and Active0 in the first cleanup sample. The scheduler registry was empty,
+all six captured process identities were absent, all56 guarded source hashes were
+unchanged, and Main retained its process identity and UDP27016. No writer execution,
+FF phase or stock staging occurred. Generated output was945766bytes, including a
+125952-byte compiled but unexecuted writer.
+
+Preserve the original failed state and separate closure observation:
+
+| Evidence | SHA256 |
+| --- | --- |
+| Diagnostic A state | D32B607D0C840311ADDE49715B559C55042719D62B0CABDABFC0CE9D30D179A6 |
+|36 member observations | DD324CBF1038A6F3F962E69A117BEB97BE0A80C0C9A2AA2F504DEC265495A20A |
+| Native compile receipt | 01DD95ED38CF63F3EDDBE3395023641DA869F99246FFAD2DC52E92BDC23E812C |
+| Separate closure observation | E61A93AE5043D5BAF3A2D0BEBEBA798B2C08F73A3669E6042C310754A3AD10B7 |
+| Unexecuted writer | 292BA234090CF1702B838FC51398D4B62F51E3C95A7136B9BE840AE94CAD8129 |
+| Observed installed vctip image | D591358C6AEE4B673562CA3B3A15C250E612708394FE3B44A7A7EDA2470570A5 |
+
+This native run validates the observer's exercised x64 ABI, exact-job member list
+and image/creation/parent capture on this machine. It does not validate any future
+post-compile telemetry closure policy. Failed material A/B and failed diagnostic A
+remain separate, unchanged records; a source correction needs its own reviewed,
+newly admitted native witness.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual
