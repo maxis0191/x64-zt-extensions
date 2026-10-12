@@ -56,7 +56,9 @@ function Get-LocatorArguments($Plan) {
     $arguments=@('-I','-B','-X',('pycache_prefix='+(Join-Path $Plan.RunRoot 'unused-pycache')),$Plan.Script,
         '--text',$Plan.References.text.Path,'--rdata',$Plan.References.rdata.Path,'--pdata',$Plan.References.pdata.Path,
         '--output',(Join-Path $Plan.RunRoot 'report.local.json'),'--max-output-bytes','3145728')
-    if($Plan.Schema -ceq 'iw7.rig-locator-supervisor-plan/2'){$arguments+=@('--entry','0x140a17970')}
+    if($Plan.Schema -ceq 'iw7.rig-locator-supervisor-plan/2'){
+        Assert-LocatorTargetedPlan $Plan;$arguments+=@('--entry',$Plan.Entry)
+    }
     foreach($argument in $arguments){if($argument -match '["\r\n]' -or $argument.EndsWith('\')){throw 'Unsafe locator argument.'}}
     ($arguments|ForEach-Object {'"'+$_+'"'}) -join ' '
 }
@@ -66,7 +68,7 @@ function Get-LocatorTargetedLimits {
 }
 function Assert-LocatorTargetedPlan($Plan) {
     $limits=Get-LocatorTargetedLimits
-    if($Plan.Phase -cne 'targeted-continuations' -or $Plan.Entry -cne '0x140a17970' -or
+    if($Plan.Phase -cne 'targeted-continuations' -or $Plan.Entry -cnotin '0x140a17970','0x140a17e70' -or
        @($Plan.TargetedLimits.PSObject.Properties).Count -ne $limits.Count){throw 'Exact targeted seed and limits required.'}
     foreach($key in $limits.Keys){
         $value=$Plan.TargetedLimits.$key
@@ -119,8 +121,8 @@ function Test-LocatorRunningBudget($Plan,$State) {
     $memory=Get-IW7ResourceSnapshot
     if($memory.CommitLimit -le 0 -or $memory.Committed -gt $memory.CommitLimit*0.85){throw 'Locator commit pressure exceeded 85 percent.'}
 }
-function Assert-LocatorReport($Report,[bool]$Targeted=$false) {
-    $schema=if($Targeted){'iw7.rig-targeted-static/1'}else{'iw7.rig-first-write-static/1'}
+function Assert-LocatorReport($Report,[bool]$Targeted=$false,[string]$ExpectedEntry='0x140a17970') {
+    $schema=if($Targeted){'iw7.rig-targeted-static/2'}else{'iw7.rig-first-write-static/1'}
     if($Report.schema -cne $schema -or $Report.status -cne 'candidate-route-requires-review' -or $Report.report_limit_bytes -ne 3MB -or
        $Report.file_read_bytes -ne 25162848 -or $Report.reference_hashes_verified -isnot [bool] -or !$Report.reference_hashes_verified){throw 'Bounded locator data report required.'}
     foreach($key in 'actual_first_writer_established','live_breakpoint_established','reference_live_provenance','process_attached','game_or_zonetool_launched','acceptance_changed'){
@@ -130,18 +132,24 @@ function Assert-LocatorReport($Report,[bool]$Targeted=$false) {
     if($Targeted){
         $counters=@(@('decoded_instructions',2048),@('text_scans',0),@('linear_opcode_search_bytes',0),
             @('fragment_count',8),@('decoded_bytes',8192),@('control_edge_count',64),@('external_callees_followed',0),
-            @('root_entries',1),@('reachable_instructions',2048))
-        foreach($key in 'complete_logical_function_established','continuation_same_function_established'){
+            @('root_entries',1),@('visited_instructions',2048),@('refused_frontier_count',0))
+        foreach($key in 'complete_logical_function_established','continuation_same_function_established','unvisited_is_unreachable'){
             if($Report.$key -isnot [bool] -or $Report.$key){throw 'Targeted fragments cannot establish a complete logical function.'}
         }
+        foreach($key in 'frontier_queue_exhausted','all_declared_frontiers_traversed'){
+            if($Report.$key -isnot [bool] -or !$Report.$key){throw 'Refused or pending frontiers cannot establish a completed route.'}
+        }
+        if($Report.entry -cne $ExpectedEntry -or @($Report.refused_frontiers).Count -ne 0 -or
+           @($Report.pending_frontiers).Count -ne 0 -or $null -ne $Report.current_frontier){throw 'Exact entry and no refused/pending frontier required.'}
         Assert-LocatorTargetedPlan ([pscustomobject]@{Phase='targeted-continuations';Entry=$Report.entry;TargetedLimits=$Report.limits})
         if($Report.root_entries -ne 1 -or $Report.fragment_count -lt 1 -or $Report.decoded_instructions -lt 1 -or $Report.decoded_bytes -lt 1 -or
-           $Report.reachable_instructions -lt 1 -or $Report.reachable_instructions -gt $Report.decoded_instructions -or
+           $Report.visited_instructions -lt 1 -or $Report.visited_instructions -gt $Report.decoded_instructions -or
            @($Report.fragments).Count -ne $Report.fragment_count -or @($Report.control_edges).Count -ne $Report.control_edge_count -or
            $Report.elapsed_seconds -isnot [ValueType] -or $Report.elapsed_seconds -is [bool] -or
            ![double]::IsFinite([double]$Report.elapsed_seconds) -or $Report.elapsed_seconds -lt 0 -or $Report.elapsed_seconds -gt 10){throw 'Targeted report bounds differ.'}
         $bytes=0L;$instructions=0L
         foreach($fragment in $Report.fragments){
+            if($fragment.decode_complete -isnot [bool] -or !$fragment.decode_complete){throw 'Incomplete fragment cannot establish a completed route.'}
             if(($fragment.bytes -isnot [int] -and $fragment.bytes -isnot [long]) -or $fragment.bytes -lt 1 -or $fragment.bytes -gt 2048){throw 'Targeted fragment byte bound differs.'}
             $bytes+=$fragment.bytes;$instructions+=@($fragment.instructions).Count
         }

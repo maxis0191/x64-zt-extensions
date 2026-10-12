@@ -101,22 +101,43 @@ foreach($bad in @(@('fragments',9),@('instructions','2048'),@('text_scans',1),@(
 $targetPlan.Entry='0x140a17971';$blocked=$false
 try{Assert-LocatorTargetedPlan $targetPlan}catch{$blocked=$true}
 Check $blocked 'Targeted Plan refuses a different seed';$targetPlan.Entry='0x140a17970'
+$targetPlan.Entry='0x140a17e70';Assert-LocatorTargetedPlan $targetPlan
+Check ((Get-LocatorArguments $targetPlan).EndsWith('"--entry" "0x140a17e70"')) 'Second reviewed seed uses only its own exact entry'
+$targetPlan.Entry='0x140a17970'
 $targetReport=$report|ConvertTo-Json -Depth 8|ConvertFrom-Json
-$fields=@{schema='iw7.rig-targeted-static/1';entry='0x140a17970';limits=[pscustomobject](Get-LocatorTargetedLimits);
-    decoded_instructions=1;reachable_instructions=1;decoded_bytes=1;fragment_count=1;text_scans=0;linear_opcode_search_bytes=0;
+$fields=@{schema='iw7.rig-targeted-static/2';entry='0x140a17970';limits=[pscustomobject](Get-LocatorTargetedLimits);
+    decoded_instructions=1;visited_instructions=1;decoded_bytes=1;fragment_count=1;text_scans=0;linear_opcode_search_bytes=0;
     control_edge_count=0;control_edges=@();external_callees_followed=0;root_entries=1;elapsed_seconds=0.1;
     complete_logical_function_established=$false;continuation_same_function_established=$false;
-    fragments=@([pscustomobject]@{bytes=1;instructions=@([pscustomobject]@{mnemonic='ret'})})}
+    unvisited_is_unreachable=$false;frontier_queue_exhausted=$true;all_declared_frontiers_traversed=$true;
+    refused_frontier_count=0;refused_frontiers=@();current_frontier=$null;pending_frontiers=@();
+    fragments=@([pscustomobject]@{bytes=1;decode_complete=$true;instructions=@([pscustomobject]@{mnemonic='ret'})})}
 foreach($key in $fields.Keys){$targetReport|Add-Member NoteProperty $key $fields[$key] -Force}
 Assert-LocatorReport $targetReport -Targeted $true;Check $true 'Targeted typed report accepted'
 foreach($bad in @(@('entry','0x140a17971'),@('text_scans',1),@('external_callees_followed',1),@('elapsed_seconds',10.01),
     @('complete_logical_function_established',$true),@('continuation_same_function_established','false'),
     @('fragment_count',9),@('control_edge_count',65),@('decoded_bytes',8193),@('decoded_instructions',2049),
-    @('root_entries','1'),@('reachable_instructions',2))){
+    @('root_entries','1'),@('visited_instructions',2))){
     $old=$targetReport.($bad[0]);$targetReport.($bad[0])=$bad[1];$blocked=$false
     try{Assert-LocatorReport $targetReport -Targeted $true}catch{$blocked=$true}
     Check $blocked 'Targeted report refuses widening, overclaims, and inconsistent counters';$targetReport.($bad[0])=$old
 }
+foreach($bad in @(@('entry','0x140a17e70'),@('refused_frontier_count',1),@('unvisited_is_unreachable',$true),
+    @('frontier_queue_exhausted',$false),@('all_declared_frontiers_traversed',$false),@('current_frontier',[pscustomobject]@{address='0x1'}))){
+    $old=$targetReport.($bad[0]);$targetReport.($bad[0])=$bad[1];$blocked=$false
+    try{Assert-LocatorReport $targetReport -Targeted $true}catch{$blocked=$true}
+    Check $blocked 'Exact Plan entry and complete frontier accounting required';$targetReport.($bad[0])=$old
+}
+foreach($field in 'refused_frontiers','pending_frontiers'){
+    $targetReport.$field=@([pscustomobject]@{address='0x1'});$blocked=$false
+    try{Assert-LocatorReport $targetReport -Targeted $true}catch{$blocked=$true}
+    Check $blocked 'Refused or pending frontier array prevents route acceptance';$targetReport.$field=@()
+}
+$targetReport.fragments[0].decode_complete=$false;$blocked=$false
+try{Assert-LocatorReport $targetReport -Targeted $true}catch{$blocked=$true}
+Check $blocked 'Partially decoded fragment prevents route acceptance';$targetReport.fragments[0].decode_complete=$true
+$targetReport.entry='0x140a17e70';Assert-LocatorReport $targetReport -Targeted $true -ExpectedEntry '0x140a17e70'
+Check $true 'Report must match the second entry when that exact Plan selected it';$targetReport.entry='0x140a17970'
 foreach($mode in $true,$false){
     $blocked=$false
     try{if($mode){Assert-LocatorReport $report -Targeted $true}else{Assert-LocatorReport $targetReport}}catch{$blocked=$true}

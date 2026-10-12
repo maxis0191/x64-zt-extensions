@@ -30,6 +30,10 @@ most of that body. Its `reachable_in_static_walk=false` means not visited before
 termination, not proved unreachable. No first writer or live compatibility is
 established, and the failed output must not be relabeled as a completed route.
 
+The separately prepared [Plan D](TARGETED-D.md) preserves C's evidence and
+selects only its per-record callee candidate. It adds precise local refusal
+frontiers and independent branch progress; it has not been run.
+
 The sole entry is `0x140a17970`, the common callee immediately before the
 type-7 wrapper in the two Run B caller fragments. This is a snapshot address,
 not an established function name or currently loaded retail address.
@@ -111,7 +115,7 @@ Matching historical hashes preserves the evidence chain, not live compatibility.
 Any future retail observation must independently match the selected code-window
 hashes against the loaded image and needs a separate live GO.
 
-## Preparation evidence
+## Original Plan C preparation evidence
 
 The [sanitized preparation receipt](targeted-validation-2026-10-12.json) records
 28 passing Python tests (12 original, 16 targeted), 134 PowerShell checks and

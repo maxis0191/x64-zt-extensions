@@ -90,7 +90,7 @@ try {
     $reportPath=Join-Path $plan.RunRoot 'report.local.json'
     if(!(Test-Path -LiteralPath $reportPath) -or (Get-Item -LiteralPath $reportPath).Length -gt 3MB){throw 'Bounded locator report missing.'}
     $report=[IO.File]::ReadAllText($reportPath)|ConvertFrom-Json
-    Assert-LocatorReport $report -Targeted $targeted
+    Assert-LocatorReport $report -Targeted $targeted -ExpectedEntry $plan.Entry
     $state.Report=[ordered]@{Bytes=(Get-Item -LiteralPath $reportPath).Length;SHA256=(Get-FileHash -LiteralPath $reportPath).Hash;Status=$report.status}
     $state.Status='CandidateRouteNeedsReview'
 }catch{$state.Failure=$_.Exception.Message;$state.Status='Failed'}
