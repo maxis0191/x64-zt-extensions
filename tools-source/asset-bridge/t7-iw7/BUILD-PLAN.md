@@ -308,3 +308,31 @@ native execution. IW7_T7_E7_BUILD remains supported for retained-build tests.
 The helper's own ten source tests are separate evidence, not a native result.
 Next: independent review of this exact source and plan, coordinator admission
 and explicit build GO. A future runtime probe remains a separate authorization.
+
+## Diagnostic Plan A attempt: include failure, closed without retry
+
+After favorable independent review, the coordinator authorized exactly one
+invocation of the diagnostic plan above, source 4bc568c5f13f582baf80f2285e3f807f798df933
+and helper 9ec3356. Fresh admission at 12:27:07 UTC found no concurrent build or
+lease, sufficient 4/6 GiB headroom and unchanged Main identity. Main compilation
+failed with original compiler exit two: helper line 15 requested
+`<nlohmann/json.hpp>`, which the pinned native include paths do not provide
+(MSVC fatal C1083). The retained native std_include.hpp instead includes
+`<json.hpp>` and already declares nlohmann json/ordered_json aliases.
+
+The Link stage was never reached and no candidate EXE was created. The original
+job controller correctly refused telemetry qualification for the nonzero
+compiler exit; its surfaced error, "Successful original compiler handle identity
+required", is not a replacement for the C1083 compiler diagnostic. Failed-run
+cleanup confirmed original-job closure, released the lease and recorded no
+quarantine. Full final input revalidation was not reached. The group elapsed
+7.513 seconds. Receipt `runtime/zt-t7-prepatch-a/receipt.json` has SHA256
+df3384100270520efc24653f97b49891165c43c7cf0c125eba4cc0fb1a81ea66.
+
+Postflight at 12:28:43 UTC found zero leases/build processes and unchanged Main.
+The persistent host confirmed the exact failed receipt and absence of AppDomain
+quarantine, saved its outcome, then exited; its absence was independently checked.
+The plan, prepared source, partial compiler output and failed receipt remain
+preserved. No second invocation or candidate execution occurred. The helper
+owner was notified for a source-only include correction; a new plan and review/GO
+are required before any further build. Qualified D2 remains separate and intact.
