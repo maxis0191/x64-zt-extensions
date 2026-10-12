@@ -68,7 +68,7 @@ function Get-LocatorTargetedLimits {
 }
 function Assert-LocatorTargetedPlan($Plan) {
     $limits=Get-LocatorTargetedLimits
-    if($Plan.Phase -cne 'targeted-continuations' -or $Plan.Entry -cnotin '0x140a17970','0x140a17e70' -or
+    if($Plan.Phase -cne 'targeted-continuations' -or $Plan.Entry -cnotin '0x140a17970','0x140a17e70','0x140dd1f90' -or
        @($Plan.TargetedLimits.PSObject.Properties).Count -ne $limits.Count){throw 'Exact targeted seed and limits required.'}
     foreach($key in $limits.Keys){
         $value=$Plan.TargetedLimits.$key

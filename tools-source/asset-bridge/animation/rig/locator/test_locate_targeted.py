@@ -24,10 +24,11 @@ def fixture(parts, **limits):
 
 
 class TargetedTests(unittest.TestCase):
-    def test_only_two_reviewed_canonical_entries_are_allowed_one_at_a_time(self):
-        for address in ("0x140a17970", "0x140a17e70"):
+    def test_only_three_reviewed_canonical_entries_are_allowed_one_at_a_time(self):
+        for address in ("0x140a17970", "0x140a17e70", "0x140dd1f90"):
             self.assertEqual(parse_entry(address), int(address, 16))
-        for address in ("0x140a17e71", "0X140A17E70", "0x140a17970,0x140a17e70"):
+        for address in ("0x140a17e71", "0X140A17E70", "0x140a17970,0x140a17e70",
+                        "0x140dd1f91", "0X140DD1F90", "0x140a7ca90", "0x140dd1f90,0x140a7ca90"):
             with self.assertRaisesRegex(ValueError, "seed"):
                 parse_entry(address)
 
@@ -114,6 +115,16 @@ class TargetedTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "instruction bound"):
             locator.analyze(TEXT)
         self.assertEqual(locator.decoded, 3)
+
+    def test_argument_pointee_store_remains_visible_without_literal_field_offset(self):
+        # mov [rcx],rax; ret. An output argument may already point at S+0x58.
+        # Keep the full instruction witness; do not call it an offset-58 proof.
+        result = fixture([(0, b"\x48\x89\x01\xc3")]).analyze(TEXT)
+        row = result["fragments"][0]["instructions"][0]
+        self.assertEqual((row["mnemonic"], row["operands"]), ("mov", "qword ptr [rcx], rax"))
+        self.assertTrue(row["visited_in_static_walk"])
+        self.assertEqual(result["fragments"][0]["offset_58_overlap_candidates"], [])
+        self.assertFalse(result["actual_first_writer_established"])
 
     def test_fragment_count_byte_and_total_limits_fail_closed(self):
         for changes, expected in (({"fragments": 1}, "fragment count"),
