@@ -205,8 +205,13 @@ blind spot. Recipient's adapter now uses unbuffered pipes and raw bounded log
 files; the pinned SDK drain is unchanged. Review of `4867081` exposed a raw
 short-write defect. A local bounded write-all adapter now counts actual accepted
 bytes and refuses non-progress or write errors; successful counts must match the
-retained files. Sixteen transport/writer tests cover short live messages, EOF,
-caps, timeout prefixes, partial/zero/None writes and errors after a saved prefix.
+retained files. Review of `f1096b1` also found that non-OSError exceptions could
+silently end a drain thread. A local thread-entry guard now records any exception
+type, marks capture failed and signals the phase owner. Twenty-three
+transport/writer tests cover short live messages, EOF, caps, timeout prefixes,
+partial/zero/None writes, errors after a saved prefix, read/write/flush ValueError,
+closed pipes, SystemExit and exceptional finalization. Failed captures remain
+failures even when the native stub exits zero and output bytes were retained.
 This fixes visibility/integrity only. There has been no second native run,
 and it does not establish or fix the native stall. Native-start/capture receipts
 explicitly distinguish observed PID/timing from verified creation/job closure.

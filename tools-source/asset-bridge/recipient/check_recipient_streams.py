@@ -264,6 +264,107 @@ class StreamTests(unittest.TestCase):
         self.assertEqual(handles[0].bytes_written,5)
         self.assertEqual((self.logs/'stdout.log').stat().st_size,5)
 
+    def test_value_error_read_after_native_zero_exit_is_failed(self):
+        class FailedSource:
+            def read(self,size): raise ValueError('injected read failure')
+            def close(self): pass
+        self.process.stdout.close()
+        self.process.stdout=FailedSource()
+        self.process.finish(0)
+        self.start()
+        failure,workers,handles=self.complete()
+        self.assertEqual(failure,'stdout drain raised ValueError')
+        self.assertTrue(handles[0].failed)
+        self.assertEqual(handles[0].drain_exception,'ValueError')
+        self.assertTrue(all(not worker.is_alive() for worker in workers))
+
+    def test_closed_raw_pipe_value_error_is_not_clean_eof(self):
+        self.process.stderr.close()
+        self.process.finish(0)
+        self.start()
+        failure,workers,handles=self.complete()
+        self.assertEqual(failure,'stderr drain raised ValueError')
+        self.assertTrue(handles[1].failed)
+        self.assertEqual(handles[1].bytes_written,0)
+        self.assertTrue(all(not worker.is_alive() for worker in workers))
+
+    def test_value_error_signals_owner_while_native_and_other_pipe_remain_live(self):
+        class FailedSource:
+            def read(self,size): raise ValueError('injected live read failure')
+            def close(self): pass
+        self.process.stdout.close()
+        self.process.stdout=FailedSource()
+        self.start(timeout=2)
+        self.capture.join(1)
+        self.assertFalse(self.capture.is_alive(),'Failure signal must precede phase timeout')
+        failure,workers,handles=self.complete()
+        self.assertEqual(failure,'stdout drain raised ValueError')
+        self.assertIsNone(self.process.poll())
+        self.assertTrue(handles[0].failed)
+        self.assertTrue(workers[1].is_alive())
+
+    def test_value_error_write_after_prefix_is_failed_with_retained_bytes(self):
+        original=phase.BoundedLogWriter
+        class FailedFile:
+            def __init__(self,raw): self.raw=raw;self.calls=0
+            def write(self,data):
+                self.calls+=1
+                if self.calls==1: return self.raw.write(data[:5])
+                raise ValueError('injected write failure')
+            def flush(self): self.raw.flush()
+            def fileno(self): return self.raw.fileno()
+            def close(self): self.raw.close()
+        with mock.patch.object(phase,'BoundedLogWriter',lambda raw:original(FailedFile(raw))):
+            self.process.write(0,b'0123456789');self.process.finish(0)
+            self.start()
+            failure,_,handles=self.complete()
+        self.assertEqual(failure,'stdout drain raised ValueError')
+        self.assertTrue(handles[0].failed)
+        self.assertEqual(handles[0].bytes_written,5)
+        self.assertEqual((self.logs/'stdout.log').read_bytes(),b'01234')
+
+    def test_value_error_flush_is_failed_after_bytes_are_saved(self):
+        original=phase.BoundedLogWriter
+        class FailedFile:
+            def __init__(self,raw): self.raw=raw
+            def write(self,data): return self.raw.write(data)
+            def flush(self): raise ValueError('injected flush failure')
+            def fileno(self): return self.raw.fileno()
+            def close(self): self.raw.close()
+        with mock.patch.object(phase,'BoundedLogWriter',lambda raw:original(FailedFile(raw))):
+            self.process.write(1,b'prefix');self.process.finish(0)
+            self.start()
+            failure,_,handles=self.complete()
+        self.assertEqual(failure,'stderr drain raised ValueError')
+        self.assertTrue(handles[1].failed)
+        self.assertEqual(handles[1].bytes_written,6)
+        self.assertEqual((self.logs/'stderr.log').read_bytes(),b'prefix')
+
+    def test_system_exit_in_worker_fails_instead_of_silent_termination(self):
+        def exit_drain(source,destination,failed): raise SystemExit(0)
+        self.process.finish(0)
+        self.start(drain=exit_drain)
+        failure,workers,handles=self.complete()
+        self.assertEqual(failure,'stdout drain raised SystemExit; stderr drain raised SystemExit')
+        self.assertTrue(all(handle.failed for handle in handles))
+        self.assertTrue(all(not worker.is_alive() for worker in workers))
+
+    def test_exception_during_drain_finalization_cannot_accept_saved_output(self):
+        class UnprintableError(RuntimeError):
+            def __str__(self): raise ValueError('exception formatting also failed')
+        def finalizing_drain(source,destination,failed):
+            try: DRAIN(source,destination,failed)
+            finally: raise UnprintableError()
+        self.process.write(0,b'complete stdout');self.process.write(1,b'complete stderr')
+        self.process.finish(0)
+        self.start(drain=finalizing_drain)
+        failure,workers,handles=self.complete()
+        self.assertEqual(failure,'stdout drain raised UnprintableError; stderr drain raised UnprintableError')
+        self.assertTrue(all(handle.failed for handle in handles))
+        self.assertTrue(all(not worker.is_alive() for worker in workers))
+        self.assertEqual((self.logs/'stdout.log').read_bytes(),b'complete stdout')
+        self.assertEqual((self.logs/'stderr.log').read_bytes(),b'complete stderr')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

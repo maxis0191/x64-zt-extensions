@@ -32,6 +32,7 @@ class BoundedLogWriter:
         self.limit = limit
         self.bytes_written = 0
         self.failed = False
+        self.drain_exception = None
 
     def write(self, data):
         if self.failed:
@@ -71,6 +72,20 @@ class BoundedLogWriter:
         self.raw.close()
 
 
+def guarded_drain(drain, source, destination, failed):
+    """Report every exceptional worker exit to the phase's owning thread.
+
+    The pinned provider handles OSError only. Record the exception type without
+    invoking its potentially failing __str__; even SystemExit must fail capture.
+    """
+    try:
+        drain(source, destination, failed)
+    except BaseException as error:
+        destination.failed = True
+        destination.drain_exception = type(error).__name__[:128]
+        failed.set()
+
+
 def capture_streams(process, logs, drain, timeout):
     """Bounded raw-pipe capture; caller still owns the original process/job.
 
@@ -83,7 +98,7 @@ def capture_streams(process, logs, drain, timeout):
         # The provider flushes each write; raw destinations also preserve the
         # emitted prefix when timeout exits via os._exit without Python cleanup.
         handle = BoundedLogWriter((logs/(name+'.log')).open('xb', buffering=0));handles.append(handle)
-        worker = threading.Thread(target=drain,args=(stream,handle,exceeded),daemon=True)
+        worker = threading.Thread(target=guarded_drain,args=(drain,stream,handle,exceeded),daemon=True)
         worker.start();workers.append(worker)
     failure = None
     deadline = time.monotonic()+timeout
@@ -97,6 +112,10 @@ def capture_streams(process, logs, drain, timeout):
         if exceeded.is_set() or any(worker.is_alive() for worker in workers): failure = 'drain failure or inherited pipe remains open'
     if failure is None and any(h.failed or h.bytes_written != os.fstat(h.fileno()).st_size for h in handles):
         failure = 'log byte accounting differs from retained file'
+    exceptions = [f'{name} drain raised {handle.drain_exception}'
+                  for name,handle in zip(('stdout','stderr'),handles) if handle.drain_exception]
+    if exceptions:
+        failure = '; '.join(exceptions)
     return failure,workers,handles
 
 

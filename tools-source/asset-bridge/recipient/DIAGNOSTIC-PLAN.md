@@ -67,12 +67,13 @@ this makes pipe reads unbuffered and permits short results. See the official
 [Python 3.12 Popen documentation](https://docs.python.org/3.12/library/subprocess.html#subprocess.Popen).
 The `read1` proxy remains only a comparison fixture; it is not the implementation.
 
-Sixteen transport/writer checks pass against the actual unchanged provider:
+Twenty-three transport/writer checks pass against the actual unchanged provider:
 live short stdout/stderr, EOF with a short tail, exact 2 MiB prefix/truncation,
 timeout prefix preservation with no invented closure, read failure, and source
 wiring. They also reproduce the reviewed raw-write defect and cover bounded
-write-all, zero/None/invalid returns, partial-prefix errors, flush errors and
-real-file counters. Eleven contract tests and 29 PowerShell checks also pass. No process was
+write-all, zero/None/invalid returns, partial-prefix errors, flush errors,
+real-file counters and exceptional thread exits. Eleven contract tests and
+29 PowerShell checks also pass. No process was
 spawned by these stream fixtures. `native-start.json` will record the observed
 PID/parent/image/hash promptly; its observation timestamp is explicitly **not**
 verified process creation time. Future identity-gated diagnostics must obtain
@@ -91,6 +92,18 @@ accepted bytes, including a failed prefix; success additionally requires that
 count to match the retained file size. Receipt counts still come from file sizes.
 The provider's completed-chunk counter is not reported as retained bytes after
 failure. This corrects log integrity, not the unresolved native stall.
+
+Review of `f1096b1` then reproduced another failure: a `ValueError` escaped the
+provider's OSError-only handler and silently terminated its thread while capture
+could still succeed. Each thread now enters a local `guarded_drain` wrapper.
+It catches every `BaseException`, marks the destination failed, records its
+exception type and signals the owning phase before terminating. The receipt's
+existing failure string includes the stream and exception type; no schema or
+provider change is needed. Exception formatting is deliberately avoided because
+`__str__` can itself fail. Tests exercise read/write/flush `ValueError`, a closed
+raw pipe, `SystemExit`, an exceptional finalizer with broken error formatting,
+and prompt signaling while the native stub and the other pipe remain live.
+Even a zero native exit with saved output cannot accept those failed captures.
 
 ```powershell
 python -B tools-source/asset-bridge/recipient/check_drain_visibility.py --sdk-drain $reviewedSdkDrain
