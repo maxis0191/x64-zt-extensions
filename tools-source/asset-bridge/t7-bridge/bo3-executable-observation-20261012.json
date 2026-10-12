@@ -1,0 +1,94 @@
+{
+  "schema": "iw7.bo3-dedicated-executable-observation/1",
+  "date": "2026-10-12",
+  "source_commit": "49225da24849bab223f008d9f7c51b251292b24a",
+  "plan_sha256": "0df1208fde4ed06d079a7ca0a3b686d632103c94193672d0bad694de258e5417",
+  "actual_attempt": "executable-a",
+  "invocations": 1,
+  "status": "ExecutableRetrievedPendingPEInspection",
+  "started_utc": "2026-10-12T11:52:21.2986800Z",
+  "finished_utc": "2026-10-12T11:52:30.4455998Z",
+  "elapsed_milliseconds": 8214.695100009441,
+  "tool_version": "DepotDownloader 3.4.0",
+  "operation": "anonymous exact single-file acquisition",
+  "app_id": 545990,
+  "depot_id": 545991,
+  "manifest_id": "2350066205567669287",
+  "build_id": 4500243,
+  "manifest_sha256": "4423aa96951c341b32e34e65787b6ef7fda29733c8a11f4f254a6d1531b35eb8",
+  "filelist_sha256": "e1e28fe817b875ac7b881f9a753c0553db71e404927a9a880639d7d47cbad14b",
+  "executable": {
+    "manifest_path": "UnrankedServer/BlackOps3_UnrankedDedicatedServer.exe",
+    "bytes": 21737352,
+    "manifest_chunks": 21,
+    "sha1": "9d5fdd6f44defb8d65f8f5256e4eb83d4547f408",
+    "sha256": "3df511d71e3690b14517379783bbfb713f6fe2ed2f2e73b445b4878216686156",
+    "compressed_transfer_bytes": 16420720,
+    "snapshot_guards_retained_through_receipt": true,
+    "executed_by_acquisition_host": false
+  },
+  "closure": {
+    "root_exit_code": 0,
+    "active_processes": 0,
+    "forced_stop": false,
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "fresh_audit_utc": "2026-10-12T11:53:54.4801514Z",
+    "fresh_lease_count": 0,
+    "original_root_present": false,
+    "tool_or_host_leftovers": 0,
+    "main_generation_and_udp_owner_unchanged": true
+  },
+  "durable_promotion": {
+    "utc": "2026-10-12T11:53:54.6661228Z",
+    "moved_without_overwrite": true,
+    "source_absent_after_move": true,
+    "destination_read_only": true,
+    "before_after_bytes_and_both_hashes_equal": true,
+    "local_paths_retained_only_in_private_promotion_receipt": true
+  },
+  "storage_before_promotion": {
+    "tool_bytes": 112334444,
+    "attempt_before_receipt_bytes": 21914979,
+    "receipt_bytes": 2159,
+    "limits_are_os_quotas": false
+  },
+  "scope": {
+    "additional_game_payload_selected": false,
+    "ff_or_xpak_downloaded": false,
+    "game_or_sdk_cloned": false,
+    "pe_inspected_by_acquisition_chat": false,
+    "t7_binary_compatibility_proven": false,
+    "bo3_export_performed": false,
+    "ff_or_render_proven": false
+  },
+  "evidence": [
+    {
+      "name": "receipt.json",
+      "bytes": 2159,
+      "sha256": "cbe17f14843ac83133d8ab9210bd5d13e6e5b899e347c4c73239d03f8173fdb9"
+    },
+    {
+      "name": "stdout.log",
+      "bytes": 1197,
+      "sha256": "fd8a6d564b0f4ed785b50a74afd474906897a7dc8db6e1269a2f127c19561bae"
+    },
+    {
+      "name": "stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "depot-executable-closure-a.local.json",
+      "bytes": 343,
+      "sha256": "d0d7b4127d565ebc87239867f432b9cc07ebd3b987f636706d9a2b099993f968"
+    },
+    {
+      "name": "promotion-20261012.json",
+      "bytes": 1237,
+      "sha256": "450e4c8a3f7dc0625e6af144ecca50e5f22e69027b52a5eacd1cd8f38dbd8d69"
+    }
+  ],
+  "next_action": "Separately admit bounded static PE inspection of the stable durable executable before any T7 boot or additional dependency selection."
+}
