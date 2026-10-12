@@ -1,6 +1,7 @@
 """Driver logic with fake processes and original bytes; never starts a process."""
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -79,6 +80,26 @@ class DriverChecks(unittest.TestCase):
         self.assertEqual(self.calls, 1); self.assertEqual(receipt['exit_code'], 0)
         self.assertIsNone(receipt['failure'])
         self.assertEqual((self.root/'fixture.stdout.log').read_bytes(), b'original fixture\n')
+    def test_both_children_have_pipe_only_console_detachment_not_job_breakaway(self):
+        for phase in ('compile', 'fixture'):
+            with self.subTest(phase=phase):
+                root = self.root / phase; root.mkdir()
+                calls = []
+                def capture(argv, **kwargs):
+                    calls.append(argv)
+                    self.assertEqual(kwargs['stdin'], driver.subprocess.DEVNULL)
+                    self.assertEqual(kwargs['stdout'], driver.subprocess.PIPE)
+                    self.assertEqual(kwargs['stderr'], driver.subprocess.PIPE)
+                    flags = kwargs['creationflags']
+                    self.assertEqual(flags, 0x00000008 if os.name == 'nt' else 0)
+                    self.assertFalse(flags & (0x08000000 | 0x00000010 | 0x01000000))
+                    self.assertNotIn('shell', kwargs)
+                    return FakeProcess()
+                receipt = driver.run_phase(phase, self.exe, [], self.sha, root, self.drain, 0,
+                                           clock=lambda: 0, popen=capture)
+                self.assertEqual(len(calls), 1)
+                self.assertEqual(receipt['exit_code'], 0)
+                self.assertIsNone(receipt['failure'])
     def test_exact_phase_group_boundaries(self):
         driver.deadline(89.999, 0, 0, 'compile'); driver.deadline(119.999, 0, 110, 'fixture')
         for values in [(90, 0, 0, 'compile'), (10, 0, 0, 'fixture'), (120, 0, 119, 'fixture'),

@@ -6,6 +6,7 @@ import os
 from pathlib import Path, PureWindowsPath
 import re
 import prepare_cli
+import prepare_prepatch
 
 HERE = Path(__file__).resolve().parent
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
@@ -113,7 +114,7 @@ def read_records(text):
     return records
 
 
-def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run):
+def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -128,17 +129,31 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run):
             stages[1]['Checks'] == 51, 'Successful closed compilation and exact 51-check probe required')
     prior_bindings = {key(p['Path']):p for p in prior['Bindings']}
     prepared = PureWindowsPath(prior['PreparedRoot']); old_root = PureWindowsPath(prior['RunRoot'])
+    expected_payloads = {'prepared/'+name for name in ('main.cpp','zonetool.cpp','common/xpak.cpp',
+        'common/xpak.hpp','t7_iw7_resident_model.hpp','t7_asset_name.hpp','test_t7_asset_name.cpp')}
+    if recompile_main: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
+    require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
+            'Exact native payload inventory required for reuse')
     old_text = []
     for name, raw in payloads.items():
         if not name.startswith('prepared/'): continue
+        if recompile_main and name == 'prepared/'+prepare_prepatch.HELPER:
+            require(0 < len(raw) <= 64*1024, 'Bounded pre-patch helper required')
+            continue
         path = prepared/name.removeprefix('prepared/')
         pin = prior_bindings.get(key(path))
+        if recompile_main and name == 'prepared/main.cpp':
+            require(pin and pin['SHA256'] != hashlib.sha256(raw).hexdigest(),
+                    'Diagnostic main must differ from retained non-instrumented main')
+            old_text.append(pin)
+            continue
         require(pin and pin['Bytes'] == len(raw) and pin['SHA256'] == hashlib.sha256(raw).hexdigest(),
                 'Native source/header/fixture differs from compiled prior stage')
         old_text.append(pin)
     inputs = []
+    reused_units = tuple(u for u in UNITS if not recompile_main or u[1] != 'main.obj')
     required = {'helper':['native_probe.obj','native_probe.exe','native_probe.pdb','dependencies.json'],
-                **{obj[:-4]:[obj,'compile.pdb','dependencies.json'] for _,obj,_ in UNITS}}
+                **{obj[:-4]:[obj,'compile.pdb','dependencies.json'] for _,obj,_ in reused_units}}
     for stage in stages:
         if stage['Name'] not in required: continue
         expected = {key(old_root/stage['Name']/name) for name in required[stage['Name']]}
@@ -148,14 +163,15 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run):
                     re.fullmatch('[0-9a-f]{64}',pin['SHA256']), 'Prior artifact pin invalid')
             inputs.append(pin)
     response = payloads['link.rsp'].decode()
-    for _, obj, _ in UNITS:
+    for _, obj, _ in reused_units:
         source = quote(PureWindowsPath(run)/obj[:-4]/obj)
         require(response.splitlines().count(source) == 1, 'One new object path required before reuse')
         response = response.replace(source+'\n', quote(old_root/obj[:-4]/obj)+'\n')
     payloads['link.rsp'] = response.encode()
     return {'OriginalStatus':'Failed','SourcePlanSHA256':receipt['PlanSHA256'],
             'ReceiptSHA256':hashlib.sha256(receipt_raw).hexdigest(),'Checks':51,
-            'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in UNITS]}, inputs, old_text
+            'RecompiledMain':recompile_main,
+            'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
 def prepare(args):
@@ -171,6 +187,11 @@ def prepare(args):
     link = read(e7/'obj/tlog/link.command.1.tlog', 256*1024, LINK_LOG_SHA).decode('utf-16')
     payloads, replaced = command_payloads(cl, link, source, output/'prepared', run)
     _, patched = prepare_cli.render(source)
+    prepatch_helper = getattr(args, 'prepatch_helper', None)
+    if prepatch_helper:
+        require(args.reuse_plan and args.reuse_compile_receipt, 'Pre-patch build must reuse qualified prior compilation')
+        payloads['prepared/'+prepare_prepatch.HELPER] = read(prepatch_helper,64*1024)
+        patched[prepare_cli.PATHS[0]] = prepare_prepatch.wire_main(patched[prepare_cli.PATHS[0]])
     for path, _, relative in UNITS: payloads['prepared/'+relative] = patched[path].encode()
     payloads['prepared/common/xpak.hpp'] = patched[prepare_cli.PATHS[3]].encode()
     contract = json.loads(read(HERE/'cli-source-contract.json'))
@@ -183,7 +204,7 @@ def prepare(args):
     for name, pin in contract['files'].items():
         raw = read(HERE/name).decode().replace('\r\n', '\n').encode()
         require(hashlib.sha256(raw).hexdigest() == pin['lf_sha256'], 'CLI source contract differs')
-    for name in ('prepare_build.py', 'Run-T7Build.ps1', 'T7Build.Profile.ps1'):
+    for name in ('prepare_build.py', 'prepare_prepatch.py', 'Run-T7Build.ps1', 'T7Build.Profile.ps1'):
         read(HERE/name)
     read(HERE.parent/'recipient/script-names/prepare_observer.py')
     roles = {'Core': 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1',
@@ -269,7 +290,7 @@ def prepare(args):
     require(bool(args.reuse_plan) == bool(args.reuse_compile_receipt), 'Both prior plan and receipt required')
     if args.reuse_plan:
         reuse, reused_inputs, reused_text = reuse_compilation(read(args.reuse_plan,2*1024**2),
-            read(args.reuse_compile_receipt,128*1024), payloads, run)
+            read(args.reuse_compile_receipt,128*1024), payloads, run, recompile_main=bool(prepatch_helper))
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
                       'Receipt':str(path_checked(args.reuse_compile_receipt))})
         for pin in reused_inputs:
@@ -277,7 +298,7 @@ def prepare(args):
         for pin in reused_text:
             read(pin['Path'],256*1024,pin['SHA256'])
         inputs += reused_inputs
-        stages = stages[-1:]
+        stages = [s for s in stages if s['Name'] in (('main','link') if prepatch_helper else ('link',))]
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -292,12 +313,20 @@ def prepare(args):
     for path in (job, compiler_dir/'cl.exe', compiler_dir/'vctip.exe', compiler_dir/'link.exe', *[sdkbin/n for n in SDK_PINS]):
         bindings[key(path)] = dict(expected[key(path)], IsText=False)
     require(bindings[key(compiler_dir/'cl.exe')]['SHA256'] == CL_SHA, 'Pinned compiler differs')
+    profile = None
+    if prepatch_helper:
+        profile = {'Name':prepare_prepatch.NAME,'Option':prepare_prepatch.OPTION,'ArgumentCount':2,
+                   'Report':prepare_prepatch.REPORT}
+        for name, path in [('Helper',output/'prepared'/prepare_prepatch.HELPER),
+                           ('Wiring',HERE/'prepare_prepatch.py'),('PreparedMain',output/'prepared/main.cpp')]:
+            profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     plan = {'Schema':'iw7.t7-minimal-build-plan/1','SourceCommit':contract['native_source_commit'],
         'RunRoot':str(run),'PreparedRoot':str(output/'prepared'),'Runner':str(HERE/'Run-T7Build.ps1'),
         'Profile':str(HERE/'T7Build.Profile.ps1'), **{k:str(providers/v) for k,v in roles.items()},
         'Compiler':str(compiler_dir/'cl.exe'),'JobAssembly':str(job),'Bindings':list(bindings.values()),
         'Inputs':inputs,'MissingExpectedPins':missing,'InputPinsComplete':not missing,'Environment':environment,
-        'Stages':stages,'ReuseCompile':reuse,'PhysicalBytes':4*1024**3,'CommitBytes':6*1024**3,'GroupDeadlineSeconds':600,
+        'Stages':stages,'ReuseCompile':reuse,'BuildProfile':profile,
+        'PhysicalBytes':4*1024**3,'CommitBytes':6*1024**3,'GroupDeadlineSeconds':600,
         'OutputLimitBytes':256*1024**2,'MetadataReserveBytes':1024**2,'CleanupSeconds':5,
         'ReusedObjects':410,'ReusedProjectLibraries':18,'ReusedResources':1,'NativeExecuted':False,
         'ToolchainFullyHermetic':False,'Ready':False}
@@ -319,4 +348,5 @@ if __name__ == '__main__':
     parser.add_argument('--extra-pins',type=Path)
     parser.add_argument('--reuse-plan',type=Path)
     parser.add_argument('--reuse-compile-receipt',type=Path)
+    parser.add_argument('--prepatch-helper',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

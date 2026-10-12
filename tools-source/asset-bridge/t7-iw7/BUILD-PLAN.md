@@ -252,3 +252,141 @@ engine compatibility, catalogue/export execution and owner gameplay remain
 unproved. The next authorized work is source-only wiring of a separate bounded
 pre-patch rendezvous probe before `component_loader::post_unpack`; any new
 native build or runtime experiment requires its own reviewed plan and GO.
+
+## Separate pre-patch diagnostic: source and plan only
+
+`prepare_prepatch.py` is a narrow overlay of the already pinned main source.
+It leaves the resident CLI patch and its historical source contract unchanged.
+Its separate helper is owned by the executable-inspection workstream, commit
+9ec33562964dcd8b3c2bd0bbbc12fe82bb63ceb7: `native_prepatch_probe.inc`, 16,290 bytes,
+SHA256 83f7a6e2cbf3551105d2ea698d5e25f21dc3d6343e6ac21a8358fa693145dd67.
+The helper is copied only into the tiny private prepared-source overlay;
+the shared native tree and D2 artifacts are unchanged.
+
+The explicit `-t7-prepatch-probe` invocation is validated before any engine
+selection/load. It requires exactly two arguments including the executable,
+the T7 dedicated file, T7 mode, and the helper's fresh bound output. The first
+T7 SetProcessDPIAware stub calls capture and immediately passes its result to
+the existing exit_hook/pre_destroy path, before post_unpack. The T7 ExitProcess
+import instead refuses an engine exit before capture. Loader exceptions report
+to stderr and return two before the ordinary modal path. Refused post_start/
+post_load and an entrypoint return without capture also return two. Ordinary
+engine modes retain their existing behavior; there is no alternate address
+patch or fallback into the ordinary T7 boot after a diagnostic refusal.
+
+This is a witness after imports, hooks and post_load have already been able to
+act, not a side-effect-free load or an ABI proof. The helper captures metadata
+and twelve bounded windows, then exits. Its complete-capture exit zero still
+requires offline compatibility review. The separate runtime supervisor must
+check the report identity, phase and completeness, not merely the exit code.
+
+The new optional `--prepatch-helper` build mode requires retained compilation
+proof. It recompiles only main and then links, reusing C's unchanged zonetool11/
+xpak objects, PDBs, dependency reports and exact 51-case helper proof. Every
+other native source/header must remain byte-identical; the main must differ.
+Both reused dependency reports (637 and 560 includes) are covered by the new
+guarded set and will be checked again during an admitted build. D2 is not used
+as an instrumented candidate and C's failed group status is preserved.
+
+Plan and native receipt carry BuildProfile `t7-prepatch-probe`, exact option,
+argument count and report name, plus Helper/Wiring/PreparedMain pins that must
+match guarded text bindings. A main rebuild without that profile, or a profile
+without the main rebuild, is refused. The runtime launcher can consequently
+reject a non-instrumented D2 receipt instead of guessing from an EXE filename.
+
+The prepared plan is `runtime/t7-prepatch-build-plan-a/build-plan.local.json`,
+SHA256 63982a61209d68ae693fb1bbc6b59545618f60875f86b237e404bdb21dfe3074.
+Its source/metadata-only check passes: two stages, 1,083 expected inputs, no
+missing pins, no native types, no binary input hashing, no lease or candidate
+root. The future output is `runtime/zt-t7-prepatch-a/link/zonetool-t7.exe`;
+there is currently no EXE or build receipt at that root. Admission remains
+4/6 GiB, each stage 120 seconds, group 600 seconds and output 256 MiB.
+
+Validation: 46 Python source/recipe regressions, eleven actual runner profile
+validator cases, three deadline cases and ten Link telemetry cases pass without
+native execution. IW7_T7_E7_BUILD remains supported for retained-build tests.
+The helper's own ten source tests are separate evidence, not a native result.
+Next: independent review of this exact source and plan, coordinator admission
+and explicit build GO. A future runtime probe remains a separate authorization.
+
+## Diagnostic Plan A attempt: include failure, closed without retry
+
+After favorable independent review, the coordinator authorized exactly one
+invocation of the diagnostic plan above, source 4bc568c5f13f582baf80f2285e3f807f798df933
+and helper 9ec3356. Fresh admission at 12:27:07 UTC found no concurrent build or
+lease, sufficient 4/6 GiB headroom and unchanged Main identity. Main compilation
+failed with original compiler exit two: helper line 15 requested
+`<nlohmann/json.hpp>`, which the pinned native include paths do not provide
+(MSVC fatal C1083). The retained native std_include.hpp instead includes
+`<json.hpp>` and already declares nlohmann json/ordered_json aliases.
+
+The Link stage was never reached and no candidate EXE was created. The original
+job controller correctly refused telemetry qualification for the nonzero
+compiler exit; its surfaced error, "Successful original compiler handle identity
+required", is not a replacement for the C1083 compiler diagnostic. Failed-run
+cleanup confirmed original-job closure, released the lease and recorded no
+quarantine. Full final input revalidation was not reached. The group elapsed
+7.513 seconds. Receipt `runtime/zt-t7-prepatch-a/receipt.json` has SHA256
+df3384100270520efc24653f97b49891165c43c7cf0c125eba4cc0fb1a81ea66.
+
+Postflight at 12:28:43 UTC found zero leases/build processes and unchanged Main.
+The persistent host confirmed the exact failed receipt and absence of AppDomain
+quarantine, saved its outcome, then exited; its absence was independently checked.
+The plan, prepared source, partial compiler output and failed receipt remain
+preserved. No second invocation or candidate execution occurred. The helper
+owner was notified for a source-only include correction; a new plan and review/GO
+are required before any further build. Qualified D2 remains separate and intact.
+
+## Diagnostic Plan B preparation: one-line include correction
+
+Helper commit d1858afa1b665eee05322bcf3316dae58d969873 changes only the include
+to `<json.hpp>`, matching the native tree's existing dependency. Its 16,281-byte
+SHA256 is a9f458d2783c845af6958c896bda07fa4b92a5ea23a14c9e5d1201fe234a2018.
+No download, include-path expansion or feature change is required.
+Plan `runtime/t7-prepatch-build-plan-b/build-plan.local.json`, SHA256
+c9e664bb4dbf2b7e3c38c05a9952ef9d809e326cef7ae864209073ecaf61acd6, passes
+the default source/metadata check with the same 1,083 expected inputs and
+main/Link stages. Its entire expected input array is identical to A; wiring,
+prepared main and budgets are also unchanged. The corrected helper and fresh
+private paths are rebound in the text bindings. The candidate root
+`runtime/zt-t7-prepatch-b` remains absent. A and its failed evidence are preserved.
+This is preparation only; targeted review, fresh admission and a new coordinator
+GO remain required before the single proposed invocation.
+
+## Diagnostic Plan B result: instrumented build qualified, no runtime probe
+
+Following independent delta review and a new explicit coordinator GO, one B
+invocation ran on 2026-10-12. Fresh admission at 12:37:39 UTC found no competing
+lease/build and unchanged Main identity. Main compiled under /W4 /WX in 5.001
+seconds and Link completed in 2.825 seconds. Each original root exited zero;
+the retained H1 policy qualified telemetry, closed its original job and observed
+zero active members afterward. Total group time was 20.969 seconds. The reused
+two translation units and 51-case name helper were not rebuilt or rerun.
+
+Receipt `runtime/zt-t7-prepatch-b/receipt.json`, SHA256
+a72aceb8828fe5afde79f53d8ab0c4beef711674500e5144997039580a2805d4, records
+Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased, with no
+quarantine. The expected inputs and source bindings passed full postvalidation;
+the new actual compiler dependency report passed the guarded-set check. The
+receipt carries the reviewed BuildProfile and its exact Helper/Wiring/PreparedMain
+pins. Output before receipt was 164,022,183 bytes. Qualified files under
+`runtime/zt-t7-prepatch-b/link`:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| zonetool-t7.exe | 21,776,384 | 6e304990711282a696a4096ed9482d1430ce2783d67f5bc4983235d18e333526 |
+| zonetool-t7.pdb | 136,998,912 | 102b027f6ec37e3ea5d2e81bbc6f812c11afad85aea40caae5f08feddbf215c2 |
+| zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| zonetool-t7.exp | 3,919 | e30af1a45c774a703ba2713c758ae422a9aae861d7e29da4830a845c59f616df |
+
+Postflight at 12:39:21 UTC found zero leases/build/telemetry processes and
+unchanged Main identity. The persistent host verified the exact receipt and
+absence of AppDomain quarantine, saved its outcome, then exited; its absence
+was verified separately. Failed A/C and qualified D2 remain preserved.
+
+CandidateExecuted and Ready remain false: neither this candidate nor the engine
+was launched. The qualified receipt, EXE pin and BuildProfile were handed to the
+existing diagnostic-launcher workstream for source/metadata preparation only.
+Its separate reviewed launch plan and coordinator GO must precede any runtime
+capture. Compilation proves neither reaching SetProcessDPIAware nor fixed-address
+compatibility, successful catalogue/export, or owner gameplay acceptance.

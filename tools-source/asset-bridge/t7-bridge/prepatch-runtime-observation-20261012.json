@@ -1,0 +1,101 @@
+{
+  "schema": "iw7.t7-prepatch-runtime-observation/1",
+  "date": "2026-10-12",
+  "source_commit": "86f4162dd97ef4323c987ddb0cd08c53e2051f16",
+  "plan_sha256": "6c28482ecbb11b8931c019dff272464974ca008a1f7ed4c625e0ef454debf741",
+  "invocations": 1,
+  "status": "CaptureCompletePendingReview",
+  "capture_outcome": "CaptureComplete",
+  "stage_elapsed_milliseconds": 1762.3871000111103,
+  "root_exit_code": 0,
+  "candidate": {
+    "bytes": 21776384,
+    "sha256": "6e304990711282a696a4096ed9482d1430ce2783d67f5bc4983235d18e333526",
+    "build_plan_sha256": "c9e664bb4dbf2b7e3c38c05a9952ef9d809e326cef7ae864209073ecaf61acd6",
+    "build_receipt_sha256": "a72aceb8828fe5afde79f53d8ab0c4beef711674500e5144997039580a2805d4",
+    "profile": "t7-prepatch-probe",
+    "helper_sha256": "a9f458d2783c845af6958c896bda07fa4b92a5ea23a14c9e5d1201fe234a2018"
+  },
+  "dedicated_engine": {
+    "bytes": 21737352,
+    "sha256": "3df511d71e3690b14517379783bbfb713f6fe2ed2f2e73b445b4878216686156",
+    "entrypoint_reached_under_instrumented_loader": true,
+    "standalone_dedicated_launch": false
+  },
+  "capture": {
+    "phase": "first_dpi_before_component_post_unpack",
+    "complete": true,
+    "window_count": 12,
+    "window_observations": 12,
+    "requested_bytes": 661416,
+    "returned_bytes": 661416,
+    "read_limit_bytes": 4194304,
+    "report_limit_bytes": 262144,
+    "module_base": "0x140000000",
+    "base_matches_source": true,
+    "report_bytes": 12343,
+    "report_sha256": "46126fe9938013a751ae923ba871a090f7b047496ce4f19475ca90c0bc6f0c03",
+    "raw_bytes_kept_private": true
+  },
+  "closure": {
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "forced_stop": false,
+    "inputs_reverified": true,
+    "original_input_metadata_unchanged": true,
+    "aliases_retained": true,
+    "postflight_utc": "2026-10-12T12:45:49.5691744Z",
+    "postflight_lease_count": 0,
+    "postflight_heavy_process_count": 0,
+    "original_root_present": false,
+    "main_generation_and_udp_owner_unchanged": true,
+    "host_returned": true,
+    "host_closure_verified": true,
+    "host_quarantine_absent": true,
+    "host_absent_after_controlled_exit": true
+  },
+  "scope": {
+    "catalogue_requested": false,
+    "ff_or_zone_load_requested": false,
+    "model_name_observed": false,
+    "asset_export_performed": false,
+    "abi_proven": false,
+    "runtime_compatibility_proven": false,
+    "next_boot_authorized": false,
+    "external_engine_io_fully_observed": false
+  },
+  "evidence": [
+    {
+      "name": "evidence/receipt.json",
+      "bytes": 3644,
+      "sha256": "bbedd8798504528492a0d274ad29d3a90666a4283c22e55b415fd971ffbd6406"
+    },
+    {
+      "name": "work/t7-prepatch-probe.local.json",
+      "bytes": 12343,
+      "sha256": "46126fe9938013a751ae923ba871a090f7b047496ce4f19475ca90c0bc6f0c03"
+    },
+    {
+      "name": "evidence/stdout.log",
+      "bytes": 57,
+      "sha256": "ad2fc90cdc16fad7d641670476de440288c9fa194e32d9ebb5bcff18d1bc5bd1"
+    },
+    {
+      "name": "evidence/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "postflight.local.json",
+      "bytes": 878,
+      "sha256": "c101446ef3a0afdbd09be0c0ee5180d611198e658e146167d6bdb13bd7e1e882"
+    },
+    {
+      "name": "host-outcome.local.json",
+      "bytes": 225,
+      "sha256": "9ff9fd4e8bdaa63171e2213edb38c2f79e0d1eaf58b2c7fa3a399a7dfa20e22f"
+    }
+  ],
+  "next_action": "Correlate the bounded memory capture with the static report offline; resolve named startup dependencies before any separately admitted catalogue experiment."
+}

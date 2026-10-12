@@ -531,7 +531,8 @@ callback matches. Every refusal still checks one original call and the relevant
 result/exception. No retail file is an input.
 Fixture seeding bypasses engine signature checks explicitly and leaves
 `signature_checked: false`; its records cannot establish an engine observation.
-**The harness has not been compiled or run.**
+At this initial source checkpoint the harness had not been compiled or run;
+the two later native refusals are recorded below. No fixture pass is established.
 
 The harness now captures the real emitter's bytes through a process-owned pipe,
 without changing the observer header. Each normal case checks one complete line
@@ -681,16 +682,98 @@ members and signatures, and cover console-only, telemetry-only and mixed
 post-root closure, unknown survivors and failed closure. Together with the
 existing 56 adapter and 45 finalization checks, these are **177 pure/mock checks**.
 The installed-tool Plan remains inert, now including the console image pin;
-signature validation is forbidden in its Plan test. The correction has not been
-compiled or run natively and still needs independent review and a new explicit
-coordinated GO. The failed checkpoint is not overwritten by the correction.
+signature validation is forbidden in its Plan test. That correction was then
+independently reviewed and given one native retry, recorded next. Neither failed
+checkpoint is overwritten by later source work.
 
-An actual inert Plan command (the installed compiler pin is also checked):
+### Second native refusal and child console roles, 2026-10-12
+
+The [retry checkpoint](../tools-source/asset-bridge/world/native-checkpoint-2026-10-12-retry.json)
+retains the reviewed source `78a34b5`, Plan `7bf84ebf`, receipt/postflight hashes,
+and both console generations and parent roles. The complete native observation
+at `12:02:46.8074986Z` was:
+
+```text
+retained PowerShell owner
+  Python root                 created 12:02:46.5339115Z
+    System32 conhost          created 12:02:46.5546554Z
+    cl.exe                    created 12:02:46.6553769Z
+      System32 conhost        created 12:02:46.6691788Z
+```
+
+All four members were verified in the original job. This was during the live
+compilation, before any successful compiler receipt, fixture permit or fixture
+launch. The new per-poll console witness counted both console roles against its
+single-root-console limit and refused. Compilation was interrupted; this retry
+produced **0/24 observations**. The original job closed with root-exited / Active0
+at `12:02:46.9650788Z`. External postflight confirmed no retained lease or known
+child, no quarantine in the retained PowerShell host, and Main unchanged. Only
+then was the original host exited. Its exit status does not qualify the harness.
+
+`BuildJob.Prepare` requests `CREATE_NO_WINDOW` for Python; the World driver's
+`run_phase` also requested it separately for `cl.exe` and would do so for the
+fixture. Microsoft describes [the console-host startup path](https://github.com/microsoft/terminal/blob/main/doc/specs/%23492%20-%20Default%20Terminal/spec.md):
+the inbox console still serves applications that need no window. Thus this flag
+does not imply the absence of a console-host process. The observed generations
+map to the separate Python and compiler launches, not two generations of the
+same root console. The fixture branch had not run, so a fixture console remains
+a source-derived possibility, not an observed process.
+
+The minimal source correction changes only the World driver's two pipe-only
+child launches to `DETACHED_PROCESS` (`0x8`), with stdin `DEVNULL` and stdout/stderr
+still redirected to the existing bounded drains. This [console detachment flag](https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags)
+is distinct from job breakaway; the original job, BelowNormal inheritance,
+hash-bound launches and cleanup remain unchanged. No new native owner is built,
+and the policy does not raise its console count or allow compiler/fixture console
+hosts. Unknown or extra members remain refused. The fixture uses CRT output and
+an internal capture pipe, with no console-allocation/input API dependency in its
+source. Actual compiler and fixture behavior under these flags still requires
+native validation; it is not inferred from fake-process tests.
+
+One additional driver test exercises both compile and fixture launch contracts,
+including redirected handles and refusal of console/new-console/job-breakaway
+flag combinations. The driver/reader total is now **15 Python tests**, alongside
+the unchanged **177 PowerShell pure/mock checks** and inert installed-tool Plan
+test. That source-only correction subsequently received independent review and
+one separately authorized third attempt, recorded next.
+
+### Third native refusal: the nested linker console, 2026-10-12
+
+The [third checkpoint](../tools-source/asset-bridge/world/native-checkpoint-2026-10-12-detached.json)
+retains source `757e3a1`, exact Plan `b6f79c9f`, driver and evidence hashes.
+The first seven polls reached an actual compile/link graph at
+`12:18:51.5814777Z`: Python with its console host; direct child `cl.exe`;
+compiler children `vctip.exe` and `link.exe`; and a second console host whose
+native parent was the linker. All six members were in the original job with
+complete parent/image/creation observations. Thus changing the direct compiler
+launch did not eliminate the nested linker's console. The per-poll single-console
+witness again refused before a compiler success receipt or fixture permit.
+
+An object file was emitted, but compilation/link success is **not established**.
+There is no fixture stdout or stderr and **0/24 observations**. Both compiler
+streams were empty at interruption. Outer stdout contains only the retained
+PowerShell host's banner/prompts; stderr reports the console-generation refusal.
+No fourth invocation or speculative source correction followed this result.
+
+Original-job cleanup confirmed root exit `122` / Active0 at
+`12:18:51.7199067Z`. Postflight verified unchanged source pins and Main, no known
+children, no lease and no quarantine while the original host remained alive.
+The host was then exited and the released slot confirmed at
+`12:21:20.4989967Z`. No Main/config/bank restoration was required. The immutable
+`BeforeLeaseRelease` receipt remains distinct from the later external release
+proof; neither host exit nor cleanup turns any of the three attempts into a pass.
+
+The next source review must account for phase boundaries and the observed nested
+compiler/linker roles before any new exact Plan and separate GO. Merely increasing
+the global console count would not establish the expected role identities.
+
+The third attempt's exact Plan command is retained below for provenance. Its
+runtime directory is now occupied and cannot be reused:
 
 ```powershell
 $world = Join-Path (Get-Location) 'tools-source/asset-bridge/world'
 $planArgs = @{
-    RunRoot = Join-Path (Get-Location) 'runtime/world-observer-harness-20261012-conhost'
+    RunRoot = Join-Path (Get-Location) 'runtime/world-observer-harness-20261012-detached'
     VCToolsRoot = 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207'
     WindowsSdkRoot = 'C:/Program Files (x86)/Windows Kits/10'
     WindowsSdkVersion = '10.0.26100.0'
@@ -699,7 +782,7 @@ $planArgs = @{
 & "$world/Run-ObserverHarness.ps1" @planArgs
 ```
 
-Run this from the reviewed repository root in a fresh PowerShell7 host. After
+New reviewed Plans run from the repository root in a fresh PowerShell7 host. After
 review and explicit coordinated GO only, the same command with `-Run` performs
 admission and the single native group. An existing output directory is refused;
 retain failed output and choose a new reviewed run identity for any later attempt.
@@ -707,10 +790,12 @@ The harness executable/transcript are never accepted as a real map observation.
 The first attempt's local Plan, command and diagnostics are retained under
 `world/.review/observer-harness-20261012-p2/`; its runtime directory is occupied
 by the failed attempt and must not be reused. The corrected source's inert Plan
-is saved separately under `world/.review/observer-harness-conhost-source/` for
-coordinator review. These ignored review directories contain machine paths.
-The new proposed runtime directory remains absent until a separately authorized
-Run. Saving a review snapshot does not change the inert Plan command's behavior.
+and retry evidence are retained under `world/.review/observer-harness-conhost-source/`.
+That second runtime directory is also occupied and must not be reused. These
+ignored review directories contain machine paths. The third Plan and failed
+attempt are retained under `world/.review/observer-harness-detached-source/`;
+its runtime directory is now occupied as well. Saving a review snapshot does not
+change the inert Plan command's behavior.
 
 After coordinated native GO, perform the following sequentially, using current
 reviewed Resource-Scheduler/stock helpers and preserving occupied owner processes.
@@ -726,6 +811,6 @@ The ordinary engine load is larger than the observer's 2 KiB inspection budget;
 the complete process must pass resource admission. Capture only the owned child
 identity and use the existing recovery/timeout discipline. No lease, build,
 stock copy or native observation was performed for this source correction.
-The earlier single native compile and refused fixture remain documented above.
+The three failed native attempts remain documented above.
 Only a successful real record can advance the root-class finding; collision
 creation/serialization and the original-box test remain subsequent work.

@@ -75,8 +75,12 @@ def run_phase(phase, exe, arguments, expected, root, drain, started,
         env.pop(name, None)
     env['PATH'] = str(Path(exe).parent) + os.pathsep + env.get('PATH', '')
     env['TMP'] = env['TEMP'] = str(root / 'tmp')
-    process = popen([str(exe), *arguments], cwd=root, env=env, stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, creationflags=0x08000000 if os.name == 'nt' else 0)
+    # The original Python job root owns the one reviewed hidden console. These
+    # pipe-only children need no console: NO_WINDOW created a second conhost for
+    # cl.exe in the retained retry. DETACHED_PROCESS is NOT job breakaway.
+    process = popen([str(exe), *arguments], cwd=root, env=env, stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    creationflags=0x00000008 if os.name == 'nt' else 0)
     exceeded = threading.Event()
     workers, handles = [], []
     failure = None

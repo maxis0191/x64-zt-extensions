@@ -68,6 +68,43 @@ class ReuseTests(unittest.TestCase):
         prior,r,payloads,run=self.fixture();r['Quarantined']=True
         with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
 
+    def diagnostic_fixture(self):
+        prior,r,payloads,run=self.fixture()
+        payloads['prepared/main.cpp']=b'instrumented main'
+        payloads['prepared/native_prepatch_probe.inc']=b'bounded diagnostic helper'
+        return prior,r,payloads,run
+
+    def test_diagnostic_build_reuses_two_objects_and_helper_but_keeps_fresh_main(self):
+        prior,r,payloads,run=self.diagnostic_fixture()
+        reuse,pins,text=p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,recompile_main=True)
+        self.assertEqual((len(pins),len(text),reuse['RecompiledMain']),(10,7,True))
+        response=payloads['link.rsp'].decode()
+        self.assertIn(r'C:\fresh\main\main.obj',response)
+        self.assertNotIn(r'C:\old\main\main.obj',response)
+        self.assertEqual(response.count('C:\\old'),2)
+        self.assertEqual(reuse['StageRoots'],[r'C:\old\zonetool11',r'C:\old\xpak'])
+        self.assertFalse(any('\\old\\main\\' in pin['Path'] for pin in pins))
+
+    def test_diagnostic_reuse_refuses_changed_other_tu_or_header(self):
+        for name in ('zonetool.cpp','common/xpak.cpp','common/xpak.hpp','t7_asset_name.hpp'):
+            prior,r,payloads,run=self.diagnostic_fixture();payloads['prepared/'+name]=b'changed'
+            with self.assertRaises(ValueError):
+                p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,recompile_main=True)
+
+    def test_diagnostic_reuse_requires_changed_main_and_bounded_helper(self):
+        for mode in ('same_main','missing_helper','large_helper','extra_source'):
+            prior,r,payloads,run=self.diagnostic_fixture()
+            if mode == 'same_main': payloads['prepared/main.cpp']=b'unchanged source'
+            elif mode == 'missing_helper': del payloads['prepared/native_prepatch_probe.inc']
+            elif mode == 'large_helper': payloads['prepared/native_prepatch_probe.inc']=b'x'*65537
+            else: payloads['prepared/unreviewed.cpp']=b'extra'
+            with self.assertRaises(ValueError):
+                p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,recompile_main=True)
+
+    def test_ordinary_reuse_cannot_accept_instrumented_payload(self):
+        prior,r,payloads,run=self.diagnostic_fixture()
+        with self.assertRaises(ValueError): p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run)
+
 
 @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE') and os.environ.get('IW7_T7_E7_BUILD'),
                      'Retained T7 source and E7 build paths not supplied')
