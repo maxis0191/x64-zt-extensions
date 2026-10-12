@@ -20,7 +20,7 @@ class FakeWin32:
         self.owners={10:900,20:900,21:900};self.title='Fatal Error'
         self.classes={10:'#32770',20:'Static',21:'Button'}
         self.texts={20:'Could not load fixture asset.'};self.controls=[20,21]
-        self.reads=[];self.hook=None
+        self.reads=[];self.hook=None;self.saturated=set()
 
     def current_handle(self): return 1
     def identity(self,handle): return dict(self.parent if handle==1 else self.child)
@@ -35,7 +35,7 @@ class FakeWin32:
         if self.hook: self.hook(hwnd)
         value=self.texts[hwnd]
         if isinstance(value,BaseException): raise value
-        return value
+        return value, hwnd in self.saturated
 
 
 class DialogTests(unittest.TestCase):
@@ -135,8 +135,39 @@ class DialogTests(unittest.TestCase):
                 self.call=(hwnd,message,flags,timeout);return 1
         api=dialog.Win32Reader.__new__(dialog.Win32Reader);api.user=User()
         if not hasattr(ctypes,'set_last_error'): self.skipTest('Windows ctypes last-error API')
-        self.assertEqual(api.static_text(20),'')
+        self.assertEqual(api.static_text(20),('',False))
         self.assertEqual(api.user.call,(20,0x000D,0x22,200))
+
+    def test_raw_message_result_marks_saturation_without_second_message(self):
+        if not hasattr(ctypes,'set_last_error'): self.skipTest('Windows ctypes last-error API')
+        for reported in (7,2046,2047,4096):
+            with self.subTest(reported=reported):
+                class User:
+                    calls=0
+                    def SendMessageTimeoutW(self,hwnd,message,count,buffer,flags,timeout,result):
+                        self.calls+=1
+                        value=ctypes.create_unicode_buffer('x'*min(reported,count-1))
+                        ctypes.memmove(buffer,value,ctypes.sizeof(value))
+                        ctypes.cast(result,ctypes.POINTER(ctypes.c_size_t)).contents.value=reported
+                        return 1
+                api=dialog.Win32Reader.__new__(dialog.Win32Reader);api.user=User()
+                text,saturated=api.static_text(20)
+                self.assertEqual(len(text),min(reported,2047))
+                self.assertEqual(saturated,reported>=2047)
+                self.assertEqual(api.user.calls,1)
+
+    def test_control_saturation_propagates_below_global_text_budget(self):
+        for saturated in (False,True):
+            with self.subTest(saturated=saturated):
+                self.api=FakeWin32();self.api.texts[20]='x'*(2047 if saturated else 7)
+                if saturated: self.api.saturated.add(20)
+                record=self.probe().poll()
+                self.assertTrue(record['identity_verified_after'])
+                self.assertLess(record['text_bytes'],dialog.TEXT_LIMIT)
+                self.assertEqual(record['controls'][0]['buffer_saturated'],saturated)
+                self.assertFalse(record['controls'][1]['buffer_saturated'])
+                self.assertEqual(record['text_truncated'],saturated)
+                self.assertEqual(self.api.reads,[20])
 
     def test_saved_record_is_create_new_and_bounded(self):
         with tempfile.TemporaryDirectory() as directory:

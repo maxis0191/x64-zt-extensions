@@ -245,10 +245,10 @@ The new `-FatalTextDiagnostic` plan selects references only and automatically
 polls at 250 ms from the existing Python phase. The native E7 executable,
 reference arguments, stdin, stock and original job are unchanged. Complete
 admission remains 8/11 GiB. Native/adapter work is limited to 45 seconds, its
-original job to 50 seconds, and group active work to 60 seconds. Original-job
-closure remains bounded by the existing extra 15-second stop check; mandatory
-source verification/restoration follows. Do not confuse the active-work bound
-with a guaranteed whole-lifecycle wall-clock deadline.
+original job to 50 seconds, and group active work to 60 seconds. The existing
+15-second closure wait starts only after `Stop` returns; it does not bound that
+call or the subsequent mandatory source verification/restoration. Do not confuse
+these waits with a guaranteed whole-lifecycle wall-clock deadline.
 
 `recipient_dialog.py` loads only existing Windows DLLs through ctypes, and only
 when this explicit mode executes. It verifies the original native handle and
@@ -275,7 +275,15 @@ native zero exit all remain diagnostic failure. Original stop/closure/restoratio
 is performed by the reviewed PowerShell job owner, never by the text reader.
 `DiagnosticFailed` preserves failed evidence without accepting references.
 
-17 fake-reader tests, 25 pipe/writer checks, 11 contract tests, 35 PowerShell
+Review of `dec2792` found that the 2,048-wchar read could return a full buffer
+without flagging the possible truncation. The reader now returns a conservative
+`buffer_saturated` flag when WM_GETTEXT's result is at least 2,047 characters.
+The control records that flag and propagates it into `text_truncated`, even when
+the total stays below 16 KiB. An exact fit is deliberately treated as possibly
+truncated; no extra message or larger read is attempted. Fake short, boundary
+and over-reported responses prove propagation and a single message per control.
+
+19 fake-reader tests, 25 pipe/writer checks, 11 contract tests, 35 PowerShell
 checks and 13 pure B-observer identity checks pass. These are source fixtures,
 not a real Win32 dialog or C lifecycle test. No C process or lease was started.
 

@@ -116,7 +116,9 @@ class Win32Reader:
         ok=self.user.SendMessageTimeoutW(hwnd,0x000D,len(value),C.cast(value,C.c_void_p),
                                         0x0002|0x0020,MESSAGE_TIMEOUT_MS,C.byref(result))
         if not ok: raise OSError(f'WM_GETTEXT failed or timed out ({C.get_last_error()})')
-        return value.value
+        # An exact buffer fill may already be truncated. Preserve that doubt
+        # without sending a second Win32 message or increasing the read budget.
+        return value.value, result.value >= len(value)-1
 
 
 def same_identity(actual, expected):
@@ -182,13 +184,15 @@ class FatalDialogProbe:
                 self._verify(hwnd)
                 if self.api.window_owner(child)!=self.child['pid'] or not self.api.is_child(hwnd,child):
                     raise OSError('Child control ownership changed')
-                kind=self.api.class_name(child);text='';error=None
+                kind=self.api.class_name(child);text='';error=None;buffer_saturated=False
                 if kind.casefold()=='static':
-                    try: text=self.api.static_text(child)
+                    try: text,buffer_saturated=self.api.static_text(child)
                     except OSError as failure: error=str(failure)[:160]
                 if self.api.window_owner(child)!=self.child['pid'] or not self.api.is_child(hwnd,child):
                     raise OSError('Child control reassigned during read')
-                record['controls'].append({'hwnd':child,'class':take(kind),'text':take(text),'error':error})
+                record['text_truncated'] |= buffer_saturated
+                record['controls'].append({'hwnd':child,'class':take(kind),'text':take(text),
+                                           'buffer_saturated':buffer_saturated,'error':error})
             self._verify(hwnd)
             if self.digest(self.child['image'])!=self.expected_sha: raise OSError('E7 hash changed after read')
             record['identity_verified_after']=True

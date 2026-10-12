@@ -277,9 +277,10 @@ a separate short diagnostic attempt. B's single-run authorization is exhausted.
 native CLI, stdin PIPE, the 72-entry stock and original job owner; it changes no
 zone/pool logic. RAM/commit remain 8/11 GiB. The adapter limit is 45 seconds,
 the original job limit 50 seconds and the group's active-work limit 60 seconds.
-Existing closure may take up to another 15 seconds, followed by guarded source
-verification/restoration. These are not a promise that all cleanup completes
-within 60 wall-clock seconds. Ordinary modes retain their original deadlines.
+The existing closure wait allows 15 seconds after `Stop` returns, followed by
+guarded source verification/restoration. That wait does not bound the `Stop`
+call itself or restoration, and is not a promise that the entire lifecycle
+completes within 60 wall-clock seconds. Ordinary modes retain their deadlines.
 
 The adapter checks automatically every 250 ms using `recipient_dialog.py`, with
 the existing Python interpreter and ctypes. It uses the original Popen process
@@ -287,7 +288,10 @@ handle and the current parent's handle; image, true creation FILETIME, PID,
 parent relationship and E7 are checked. Only windows owned by that child are
 read. A `Fatal Error` caption triggers at most one body capture: at most eight
 child controls, STATIC text only, at most 16 KiB UTF-8 of window text and classes.
-WM_GETTEXT uses a 200 ms timeout per control. Identities/HWND ownership are checked
+WM_GETTEXT uses a 200 ms timeout per control. A result of at least 2,047 characters
+in its 2,048-wchar buffer marks that control `buffer_saturated` and the aggregate
+`text_truncated`, conservatively including an exact fit. No second read is sent.
+Identities/HWND ownership are checked
 before and after; any reassignment discards the text. No button, command, click,
 debugger, dump, new process or compiled reader is used.
 
@@ -298,8 +302,8 @@ reference output nor a native zero exit can mark the phase accepted. The outer
 status is `DiagnosticFailed`, with no reference/script acceptance. Unknown
 closure still retains the original quarantine safeguards.
 
-17 fake Win32 fixtures and 25 pipe/writer fixtures cover identity reuse,
-ownership changes, timeouts, Unicode byte bounds, control limits and automatic
+19 fake Win32 fixtures and 25 pipe/writer fixtures cover identity reuse,
+ownership changes, timeouts, buffer saturation, Unicode byte bounds, control limits and automatic
 failure signaling. They spawn no process and do not validate a real C dialog.
 Source/plan preparation is authorized; C has no execution GO and the next heavy
 slot belongs to the coordinator's strict GSC work.
