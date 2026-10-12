@@ -6,180 +6,174 @@ param(
     [string]$WindowsSdkVersion='10.0.26100.0',
     [Parameter(Mandatory)][string]$PythonExe,
     [string]$ProviderRoot=([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))),
+    [Parameter(Mandatory)][string]$StageProviderRoot,
+    [Parameter(Mandatory)][string]$LinkProfilePath,
+    [Parameter(Mandatory)][string]$NativeJobAssembly,
+    [string]$PlanSHA256,
     [switch]$Run
 )
-# Default Plan: reads/hashes/imports pure functions only; no output tree, child,
-# lease, resource snapshot, Add-Type or native API call. -Run needs later GO.
+# Default Plan is inert. -Run requires this exact Plan hash AND coordinated GO.
+# Reuse qualified H1/T7 providers in place; never build/copy the native owner.
 $ErrorActionPreference='Stop'
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
 $manifestPath=Join-Path $PSScriptRoot 'observer-harness-plan.json'
-if((Get-Item -LiteralPath $manifestPath).Length -gt 64KB){throw 'Bounded world manifest required.'}
+if((Get-Item -LiteralPath $manifestPath).Length -gt 64KB){throw 'Bounded World manifest required.'}
 $manifest=Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json
-if($manifest.schema -cne 'iw7.world-clipmap-harness-plan/2'){throw 'Executable world plan v2 required.'}
+if($manifest.schema -cne 'iw7.world-clipmap-harness-plan/3'){throw 'World stage plan v3 required.'}
 $guards=[Collections.Generic.List[IDisposable]]::new();$entries=[Collections.Generic.List[object]]::new()
-$lease=$null;$owner=$null;$closed=$true;$intact=$true;$state=$null;$failure=$null;$created=$false
+$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards}
+$state=$null;$stageState=$null;$failure=$null;$created=$false;$intact=$true
+function Add-WorldBinding([string]$Path,[string]$Expected) {
+    $Path=[IO.Path]::GetFullPath($Path)
+    $guard=[IO.File]::Open($Path,'Open','Read','Read');$guards.Add($guard)
+    if($guard.Length -le 0 -or $guard.Length -gt 64MB){throw 'Bounded World input required.'}
+    $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($guard)).ToLowerInvariant()
+    if($Expected -and $hash -cne $Expected.ToLowerInvariant()){throw "World binding changed: $([IO.Path]::GetFileName($Path))"}
+    $entries.Add([pscustomobject]@{Path=$Path;SHA256=$hash;Bytes=$guard.Length})
+}
 try {
-    # Bind ALL imports, including the resource helper's transitive source files.
-    foreach($group in 'provider_sha256','source_sha256'){
-        $root=if($group -ceq 'provider_sha256'){$ProviderRoot}else{$repo}
-        foreach($entry in $manifest.$group.PSObject.Properties){
+    foreach($group in 'provider_sha256','stage_provider_sha256','source_sha256') {
+        $root=switch($group){'provider_sha256'{$ProviderRoot};'stage_provider_sha256'{$StageProviderRoot};default{$repo}}
+        foreach($entry in $manifest.$group.PSObject.Properties) {
             if($entry.Name -match '(^|/)\.\.(/|$)|[:\\]' -or [IO.Path]::IsPathRooted($entry.Name)){throw 'Relative manifest path required.'}
-            $path=[IO.Path]::GetFullPath((Join-Path $root $entry.Name))
-            $guards.Add([IO.File]::Open($path,'Open','Read','Read'))
-            if($entry.Value -cnotmatch '^[a-f0-9]{64}$' -or (Get-FileHash -LiteralPath $path).Hash -ine $entry.Value){throw "World source/provider pin differs: $($entry.Name)"}
-            $entries.Add([pscustomobject]@{Path=$path;SHA256=$entry.Value})
+            Add-WorldBinding (Join-Path $root $entry.Name) $entry.Value
         }
     }
-    $guards.Add([IO.File]::Open($manifestPath,'Open','Read','Read'))
-    $entries.Add([pscustomobject]@{Path=$manifestPath;SHA256=(Get-FileHash -LiteralPath $manifestPath).Hash})
-    foreach($relative in @('ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1',
-        'tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1','tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1')){
-        if($relative -cnotin $manifest.provider_sha256.PSObject.Properties.Name){throw 'Required import pin missing.'}
+    Add-WorldBinding $manifestPath ''
+    Add-WorldBinding $LinkProfilePath $manifest.link_profile_sha256
+    Add-WorldBinding $NativeJobAssembly $manifest.native_job_sha256
+    foreach($relative in 'ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1','tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1') {
+        if($relative -cnotin $manifest.provider_sha256.PSObject.Properties.Name){throw 'Required World provider pin missing.'}
         . (Join-Path $ProviderRoot $relative)
     }
-    if('tools-source/asset-bridge/world/ObserverHarness.Core.ps1' -cnotin $manifest.source_sha256.PSObject.Properties.Name){throw 'World core pin missing.'}
     . "$PSScriptRoot/ObserverHarness.Core.ps1"
-    foreach($relative in @('ops/Resource-Scheduler.Core.ps1','ops/Resource-Memory.ps1',
-        'ops/Resource-RecorderOwnedProcess.Core.ps1','ops/native/ResourceMemory.cs',
-        'tools-source/asset-bridge/model/BuildJob.cs','tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs',
-        'sdk/modding/beacon_tool_phase.py')){
-        if($relative -cnotin $manifest.provider_sha256.PSObject.Properties.Name){throw 'Required native/transitive provider pin missing.'}
+    foreach($relative in 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1','tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1') {
+        if($relative -cnotin $manifest.stage_provider_sha256.PSObject.Properties.Name){throw 'Required H1 source pin missing.'}
+        . (Join-Path $StageProviderRoot $relative)
     }
-    foreach($name in 'Run-ObserverHarness.ps1','observer_harness_driver.py','check_observer_harness.py',
-        'test_world_clipmap_observer.cpp','world_clipmap_observer.hpp'){
-        if(('tools-source/asset-bridge/world/'+$name) -cnotin $manifest.source_sha256.PSObject.Properties.Name){throw 'Required world source pin missing.'}
+    . $LinkProfilePath
+    . "$PSScriptRoot/ObserverStages.Profile.ps1"
+    foreach($relative in 'ops/Resource-Scheduler.Core.ps1','ops/Resource-Memory.ps1','ops/Resource-RecorderOwnedProcess.Core.ps1','ops/native/ResourceMemory.cs') {
+        if($relative -cnotin $manifest.provider_sha256.PSObject.Properties.Name){throw 'Required scheduler/transitive pin missing.'}
     }
+    if('tools-source/asset-bridge/h1-fixture/H1Native.JobMembers.cs' -cnotin $manifest.stage_provider_sha256.PSObject.Properties.Name){throw 'H1 observer pin missing.'}
+    foreach($name in 'Run-ObserverHarness.ps1','ObserverHarness.Core.ps1','ObserverStages.Profile.ps1','check_observer_harness.py','test_world_clipmap_observer.cpp','world_clipmap_observer.hpp') {
+        if(('tools-source/asset-bridge/world/'+$name) -cnotin $manifest.source_sha256.PSObject.Properties.Name){throw 'World source pin missing.'}
+    }
+    foreach($entry in $entries){Assert-H1Path $entry.Path}
     Assert-WorldObserverPins $entries
     $RunRoot=Resolve-WorldObserverPath $RunRoot
-    $runtime=[IO.Path]::GetFullPath((Join-Path $repo 'runtime'))+[IO.Path]::DirectorySeparatorChar
-    if(!$RunRoot.StartsWith($runtime,[StringComparison]::OrdinalIgnoreCase) -or (Test-Path -LiteralPath $RunRoot)){throw 'Fresh runtime directory within this worktree required.'}
+    $runtime=[IO.Path]::GetFullPath((Join-Path $repo 'runtime'))
+    if([IO.Path]::GetDirectoryName($RunRoot) -ine $runtime -or (Test-Path -LiteralPath $RunRoot)){throw 'Fresh directory directly under owned runtime required.'}
     $VCToolsRoot=Resolve-WorldObserverPath $VCToolsRoot;$WindowsSdkRoot=Resolve-WorldObserverPath $WindowsSdkRoot
     $PythonExe=Resolve-WorldObserverPath $PythonExe
     $compiler=Resolve-WorldObserverPath (Join-Path $VCToolsRoot 'bin/Hostx64/x64/cl.exe')
     $policy=Get-MaterialV2CompilerPolicy $compiler
-    $consolePolicy=Get-WorldObserverConsolePolicy
-    $null=Resolve-WorldObserverPath $consolePolicy.Image;Assert-BeaconHash $consolePolicy.Image $consolePolicy.SHA256
-    Assert-BeaconHash $compiler $policy.CompilerSHA256
-    $null=Resolve-WorldObserverPath $policy.Telemetry;Assert-BeaconHash $policy.Telemetry $policy.TelemetrySHA256
-    foreach($path in @($compiler,$policy.Telemetry,$PythonExe,$consolePolicy.Image)){
-        $file=Get-Item -LiteralPath $path
-        if($file.PSIsContainer -or $file.Length -lt 1 -or $file.Length -gt 32MB){throw 'Bounded installed native tool required.'}
-        $guards.Add([IO.File]::Open($path,'Open','Read','Read'))
-        $entries.Add([pscustomobject]@{Path=$path;SHA256=(Get-FileHash -LiteralPath $path).Hash})
-    }
-    Assert-BeaconHash $consolePolicy.Image $consolePolicy.SHA256 # now under its read guard
+    $link=Join-Path (Split-Path $compiler -Parent) 'link.exe'
+    Add-WorldBinding $compiler $policy.CompilerSHA256
+    Add-WorldBinding $policy.Telemetry $policy.TelemetrySHA256
+    Add-WorldBinding $link 'a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f'
+    Add-WorldBinding $PythonExe ''
     $arguments=@(Get-WorldObserverCompilerArguments $VCToolsRoot $WindowsSdkRoot $WindowsSdkVersion $PSScriptRoot $RunRoot)
-    $b=Get-WorldObserverBudgets
-    $plan=[ordered]@{Schema='iw7.world-observer-execution-plan/1';Mode=$(if($Run){'Run'}else{'Plan'});
-        RunRoot=$RunRoot;Compiler=$compiler;CompilerArguments=$arguments;CompilerPolicy=$policy;ConsolePolicy=$consolePolicy;PythonExe=$PythonExe;
-        SourceAndProviderPins=$entries.ToArray();Budgets=$b;OriginalJobs=1;NativeParallelism=1;
-        Fixture=Join-Path $RunRoot 'observer.exe';Driver=Join-Path $PSScriptRoot 'observer_harness_driver.py';
+    $stages=@(Get-WorldStages $compiler $PythonExe $arguments $PSScriptRoot $RunRoot)
+    $environment=[ordered]@{}
+    foreach($key in 'SystemRoot','windir','SystemDrive','COMSPEC','USERPROFILE','LOCALAPPDATA','APPDATA') {
+        $value=[Environment]::GetEnvironmentVariable($key)
+        if($value){$environment[$key]=$value}
+    }
+    $environment.PATH=@((Split-Path $compiler -Parent),(Split-Path $PythonExe -Parent),[Environment]::SystemDirectory,$env:SystemRoot)-join ';'
+    $plan=[pscustomobject]@{Schema='iw7.world-observer-execution-plan/2';Mode='Plan';RunRoot=$RunRoot;
+        Compiler=$compiler;Bindings=$entries.ToArray();Stages=$stages;Environment=[pscustomobject]$environment;
+        NativeJobAssembly=[IO.Path]::GetFullPath($NativeJobAssembly);OutputContract=(Get-WorldStageContract);
+        PhysicalBytes=4GB;CommitBytes=6GB;OutputLimitBytes=64MB;MetadataReserveBytes=1MB;
+        GroupDeadlineSeconds=120;OriginalJobs=4;NativeParallelism=1;ToolchainFullyHermetic=$false;
         SyntheticOnly=$true;EngineObserved=$false;HeavyExecutionAuthorizedByPlan=$false}
-    if(!$Run){$plan|ConvertTo-Json -Depth 15;return}
+    $json=$plan|ConvertTo-Json -Depth 20
+    $actualPlanHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($json))).ToLowerInvariant()
+    if(!$Run){[ordered]@{PlanSHA256=$actualPlanHash;Plan=$plan}|ConvertTo-Json -Depth 22;return}
+    if($PlanSHA256 -cne $actualPlanHash){throw 'Exact reviewed World Plan SHA256 required before admission.'}
     if(!$IsWindows -or [IntPtr]::Size -ne 8 -or $PSVersionTable.PSVersion.Major -lt 7){throw 'Fresh Windows x64 PowerShell7 required.'}
-    foreach($type in 'IW7.CommunityBuild.BuildJob','IW7.MaterialDiagnostics.JobMembers','IW7ResourceMemoryV1'){
+    foreach($type in 'IW7.AnimationProbe.NativeJob','IW7.H1Diagnostics.JobMembers','IW7ResourceMemoryV1') {
         if($type -as [type]){throw 'Fresh host required for source-bound native helpers.'}
     }
     . "$ProviderRoot/ops/Resource-Scheduler.Core.ps1"
-    $lease=Enter-IW7ResourceLease -Scope $RunRoot -Kind Build -PhysicalBytes $b.PhysicalBytes -CommitBytes $b.CommitBytes -Owner 'World original CLIPMAP observer harness'
-    $groupStart=Get-MaterialV2MonotonicMs
-    if(Test-Path -LiteralPath $RunRoot){throw 'World output directory appeared during admission.'}
+    $context.Lease=Enter-IW7ResourceLease -Scope $RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'World original CLIPMAP observer fixture'
+    $script:WorldGroupStarted=Get-H1Clock
+    $state=[ordered]@{Schema='iw7.world-observer-run/2';Plan=$plan;PlanSHA256=$actualPlanHash;Status='Preparing';
+        RetainedLeaseToken=$context.Lease.Token;NativeCompiled=$false;NativeHarnessPassed=$false;EngineObserved=$false;
+        JobClosureVerified=$true;SourceHashesUnchanged=$false;LeaseReleased=$false;LeaseReleaseState='NotAttempted';
+        Stages=[Collections.Generic.List[object]]::new();FinalBytes=$null;Failure=$null}
+    if(Test-Path -LiteralPath $RunRoot){throw 'Output appeared during admission.'}
     $null=Resolve-WorldObserverPath $RunRoot
     [IO.Directory]::CreateDirectory($RunRoot)|Out-Null;$created=$true
-    $state=[ordered]@{Schema='iw7.world-observer-run/1';Plan=$plan;Status='Preparing';RetainedLeaseToken=$lease.Token;
-        NativeCompiled=$false;NativeHarnessPassed=$false;EngineObserved=$false;JobClosureVerified=$false;
-        SourceHashesUnchanged=$false;LeaseReleased=$false;LeaseReleaseState='NotAttempted';CompilerWitness=[ordered]@{CompilerIdentity=$null;Completed=$false};
-        ConsoleWitness=[ordered]@{Identity=$null;Completed=$false};
-        JobCleanup=$null;FixturePermit=$null;FixtureStartedMs=$null;FinalBytes=$null;Failure=$null}
-    Assert-WorldObserverConsoleSignature (Get-AuthenticodeSignature -LiteralPath $consolePolicy.Image) $consolePolicy
-    Assert-WorldObserverTime ((Get-MaterialV2MonotonicMs)-$groupStart) 'compile' 0
-    Add-Type -LiteralPath "$ProviderRoot/tools-source/asset-bridge/model/BuildJob.cs"
-    Assert-WorldObserverTime ((Get-MaterialV2MonotonicMs)-$groupStart) 'compile' 0
-    Add-Type -LiteralPath "$ProviderRoot/tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs"
-    Assert-WorldObserverTime ((Get-MaterialV2MonotonicMs)-$groupStart) 'compile' 0
-    $token=([guid]::NewGuid().ToString('N')+[guid]::NewGuid().ToString('N'))
-    $spec=[ordered]@{schema='iw7.world-observer-driver/1';root=$RunRoot;compiler=$compiler;
-        compiler_sha256=$policy.CompilerSHA256.ToLowerInvariant();arguments=$arguments;fixture=$plan.Fixture;
-        drain=Join-Path $ProviderRoot 'sdk/modding/beacon_tool_phase.py';
-        drain_sha256=$manifest.provider_sha256.'sdk/modding/beacon_tool_phase.py';token=$token}
-    $specPath=Join-Path $RunRoot 'spec.json';Write-WorldObserverJson $specPath $spec
-    $guards.Add([IO.File]::Open($specPath,'Open','Read','Read'));$specHash=(Get-FileHash -LiteralPath $specPath).Hash
-    $argsText=ConvertTo-MaterialV2Arguments @('-B',$plan.Driver,'--spec',$specPath,'--sha256',$specHash)
-    Assert-WorldObserverPins $entries
-    Assert-WorldObserverTime ((Get-MaterialV2MonotonicMs)-$groupStart) 'compile' 0
-    $closed=$false # Even factory failure requires closure proof; never infer it from null.
-    $owner=[IW7.CommunityBuild.BuildJob]::Prepare($PythonExe,$argsText,$RunRoot)
-    $identity=Get-BeaconJobIdentity $owner $PythonExe 'world-harness'
-    $state.Identity=$identity;$state.Status='Running'
-    $started=Start-MaterialV2OwnedPhase $owner $lease.Token
-    $identity.ResourceRegistration=$started
-    $clockStart=$started.StartedMonotonicMs
-    Wait-MaterialV2OwnedPhase $owner $identity $clockStart $b.SupervisorSeconds {
-        param($snapshot,$changed)
-        Assert-WorldObserverPollTime $state $clockStart (Get-MaterialV2MonotonicMs) $groupStart
-        if(Test-Path -LiteralPath (Join-Path $RunRoot 'stop.request')){throw 'Coordinator requested original-job stop.'}
-        $null=Measure-WorldObserverOutput $RunRoot
-        $memory=Get-IW7ResourceSnapshot;if($memory.Committed -gt $memory.CommitLimit*0.85){throw 'Commit pressure exceeded85 percent.'}
-        $observation=[IW7.MaterialDiagnostics.JobMembers]::Capture($owner)
-        Update-MaterialV2CompilerWitness $state.CompilerWitness $observation $identity.PID $policy
-        # Never establish a new console witness after the original root exits.
-        if(!$snapshot.RootExited){Update-WorldObserverConsoleWitness $state.ConsoleWitness $observation $identity $consolePolicy}
-        $compilePath=Join-Path $RunRoot 'compile.json'
-        if(Test-Path -LiteralPath $compilePath){
-            $receipt=Read-BeaconJson $compilePath 64KB
-            Assert-WorldObserverCompileReceipt $receipt $state.CompilerWitness $policy
-            $state.NativeCompiled=$true
-            if($null -eq $state.FixtureStartedMs){
-                if($snapshot.RootExited){throw 'Driver exited before the fixture gate.'}
-                Assert-WorldObserverAdvance $observation $identity $state.CompilerWitness $receipt $policy $state.ConsoleWitness $consolePolicy
-                $file=Get-Item -LiteralPath $plan.Fixture
-                if($file.Length -lt 1 -or $file.Length -gt 8MB){throw 'Bounded compiled world fixture required.'}
-                $null=Resolve-WorldObserverPath $plan.Fixture
-                $guards.Add([IO.File]::Open($plan.Fixture,'Open','Read','Read'))
-                $fixtureHash=(Get-FileHash -LiteralPath $plan.Fixture).Hash
-                $entries.Add([pscustomobject]@{Path=$plan.Fixture;SHA256=$fixtureHash})
-                $state.FixturePermit=[ordered]@{schema='iw7.world-observer-permit/1';token=$token;fixture_sha256=$fixtureHash.ToLowerInvariant()}
-                # callback child scope must persist this transition for later polls.
-                $state.FixtureStartedMs=Get-MaterialV2MonotonicMs
-                Write-WorldObserverJson (Join-Path $RunRoot 'fixture-go.json') $state.FixturePermit
-            }
-            if($snapshot.RootExited -and $snapshot.ActiveProcesses -ne 0){
-                $null=Complete-WorldObserverResiduals $owner $snapshot $observation $receipt $state.CompilerWitness $policy $identity $state.ConsoleWitness $consolePolicy
+    Assert-H1Deadline $script:WorldGroupStarted 120
+    [Reflection.Assembly]::LoadFrom($plan.NativeJobAssembly)|Out-Null
+    Assert-H1Deadline $script:WorldGroupStarted 120
+    Add-Type -LiteralPath (Join-Path $StageProviderRoot 'tools-source/asset-bridge/h1-fixture/H1Native.JobMembers.cs')
+    Assert-H1Deadline $script:WorldGroupStarted 120
+    $buildStarted=Get-H1Clock;$fixturePin=$null
+    foreach($stage in $stages) {
+        if(!$context.Closed){throw 'Previous World original job not closed.'}
+        $script:WorldCurrentStage=$stage
+        $stageRoot=Join-Path $RunRoot $stage.Name
+        [IO.Directory]::CreateDirectory($stageRoot)|Out-Null
+        $stageState=[ordered]@{Name=$stage.Name;Stage=$stage.Stage;PlanSHA256=$actualPlanHash;DeadlineSeconds=$stage.DeadlineSeconds;
+            MaxObservedOutputBytes=0L;MaxObservedStreamBytes=0L;TreeClosureConfirmed=$false;TerminationRequested=$false;
+            CompilerTelemetry=[ordered]@{Completed=$false;Action=$null}}
+        $state.Stages.Add($stageState)
+        $started=if($stage.Stage -in 'Compile','Link'){$buildStarted}else{Get-H1Clock}
+        $pins=@(if($stage.Stage -ceq 'Fixture'){$state.Stages[1].Artifacts|Where-Object Path -CEQ $stage.Image}else{$entries|Where-Object Path -CEQ $stage.Image})
+        if($pins.Count -ne 1){throw 'Exact stage executable pin required.'}
+        $start=New-T7Start $plan $stage $stageRoot
+        Invoke-WorldStage $plan $stageState $context $start $pins[0].SHA256 $stageRoot $started
+        $stageState.Artifacts=@(Get-H1CompilerArtifacts $plan $context)
+        if($stageState.CompilerTelemetry.Completed) {
+            foreach($prior in $stageState.CompilerTelemetry.Artifacts) {
+                $now=@($stageState.Artifacts|Where-Object Path -CEQ $prior.Path)
+                if($now.Count -ne 1 -or $now[0].SHA256 -cne $prior.SHA256 -or $now[0].Bytes -ne $prior.Bytes){throw 'World artifact changed across tool cleanup.'}
             }
         }
-        Assert-WorldObserverPollTime $state $clockStart (Get-MaterialV2MonotonicMs) $groupStart
+        foreach($pin in $stageState.Artifacts){$entries.Add($pin)}
+        if($stage.Stage -ceq 'Link'){$state.NativeCompiled=$true}
+        if($stage.Stage -ceq 'Fixture'){$fixturePin=Assert-WorldFixtureOutput $plan $context;$entries.Add($fixturePin)}
+        if($stage.Stage -ceq 'Check') {
+            if((Get-Item -LiteralPath (Join-Path $stageRoot 'stderr.log')).Length -ne 0){throw 'Independent World reader stderr must be empty.'}
+            $checked=Read-H1SmallJson (Join-Path $stageRoot 'stdout.log') 4KB
+            if($checked.schema -cne 'iw7.world-clipmap-harness-check/1' -or $checked.status -cne 'synthetic-transcript-checked' -or
+                $checked.engine_observed -isnot [bool] -or $checked.engine_observed -or $checked.records -ne 24 -or
+                $checked.transcript_sha256 -cne $fixturePin.SHA256 -or $checked.transcript_bytes -ne $fixturePin.Bytes){throw 'Exact independent World transcript result required.'}
+            $state.Checked=$checked
+        }
+        Test-H1Budget $plan $stageState
+        Assert-H1Deadline $started $stage.DeadlineSeconds
     }
-    $closed=$true;Assert-WorldObserverClosed $identity
-    $checked=Read-BeaconJson (Join-Path $RunRoot 'checked.json') 64KB
-    if($checked.schema -cne 'iw7.world-clipmap-harness-check/1' -or $checked.status -cne 'synthetic-transcript-checked' -or
-       $checked.engine_observed -isnot [bool] -or $checked.engine_observed -or $checked.records -ne 24){throw 'Checked synthetic transcript required.'}
-    $fixtureReceipt=Read-BeaconJson (Join-Path $RunRoot 'fixture.json') 64KB
-    Assert-MaterialV2PhaseResult $fixtureReceipt 'fixture' $state.FixturePermit.fixture_sha256 $identity
-    Assert-BeaconHash (Join-Path $RunRoot 'fixture.stdout.log') $checked.transcript_sha256
-    Assert-WorldObserverPollTime $state $clockStart (Get-MaterialV2MonotonicMs) $groupStart
-    $state.Checked=$checked;$state.NativeHarnessPassed=$true;$state.Status='SyntheticHarnessPassed'
-} catch {$failure=$_;if($state){$state.Failure=$_.Exception.Message;$state.Status='Failed'}}
+    Assert-WorldObserverPins $entries
+    Assert-H1Deadline $script:WorldGroupStarted 120
+    $state.NativeHarnessPassed=$true;$state.Status='SyntheticHarnessPassed'
+}catch{$failure=$_;if($state){$state.Failure=$_.Exception.Message;$state.Status='Failed'}}
 finally {
-    if($owner -and !$closed){$state.JobCleanup=[ordered]@{};$closed=Stop-MaterialV2OwnedPhase $owner $state.JobCleanup}
+    if(!$context.Closed -and $stageState -and !$stageState.TerminationRequested){Stop-WorldStageOnFailure $context $stageState}
     try{if(Get-Command Assert-WorldObserverPins -ErrorAction SilentlyContinue){Assert-WorldObserverPins $entries}}catch{$intact=$false;if(!$failure){$failure=$_}}
-    if($state){$state.SourceHashesUnchanged=$intact;$state.JobClosureVerified=$closed}
-    if($closed -and $owner){$owner.Dispose();$owner=$null}
-    if($lease -and $created -and $state){
-        try{
+    if($state){$state.SourceHashesUnchanged=$intact;$state.JobClosureVerified=$context.Closed}
+    if($context.Lease -and $created -and $state) {
+        try {
             if($failure){$state.Status='Failed';$state.Failure=$failure.Exception.Message}
-            Complete-WorldObserverReservation $RunRoot $state $lease $guards
-        }catch{if(!$failure){$failure=$_}}
+            Complete-WorldObserverReservation $RunRoot $state $context.Lease $guards -BeforeReleaseCheck {
+                if(!$failure){Assert-H1Deadline $script:WorldGroupStarted 120}
+            }
+            if(!$failure){Assert-H1Deadline $script:WorldGroupStarted 120}
+        }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.Failure=$_.Exception.Message}
     }
-    if(!$lease -or ($state -and $state.LeaseReleased)){foreach($guard in $guards){$guard.Dispose()}}
-    else{[AppDomain]::CurrentDomain.SetData(('IW7.WorldHarness.Quarantine.'+$lease.Token),@{Owner=$owner;Guards=$guards;State=$state;Failure=$failure})}
+    if(!$context.Lease -or ($state -and $state.LeaseReleased)){foreach($guard in $guards){$guard.Dispose()}}
+    else{[AppDomain]::CurrentDomain.SetData(('IW7.WorldHarness.Quarantine.'+$context.Lease.Token),@{Context=$context;State=$state;Failure=$failure})}
 }
 if($failure){
-    if($lease -and (!$state -or !$state.LeaseReleased)){
+    if($context.Lease -and (!$state -or !$state.LeaseReleased)) {
         $releaseState=if($state){$state.LeaseReleaseState}else{'NotAttempted'}
-        $finalization=if($state -and $state.FinalizationFailure){" Finalization: $($state.FinalizationFailure)"}else{''}
-        throw "World run failed; lease release $releaseState; reconcile token $($lease.Token). $($failure.Exception.Message)$finalization"
+        $detail=if($state -and $state.Contains('FinalizationFailure') -and $state.FinalizationFailure){' Finalization: '+$state.FinalizationFailure}else{''}
+        throw "World failed; lease release $releaseState; retain host and reconcile token $($context.Lease.Token). $($failure.Exception.Message)$detail"
     }
     throw $failure
 }
-if(!$closed -or !$intact -or !$state.LeaseReleased){throw 'World cleanup/source proof incomplete; inspect retained lease.'}
-$state|ConvertTo-Json -Depth 20
+if(!$context.Closed -or !$intact -or !$state.LeaseReleased){throw 'World closure/source/release proof incomplete; retain host for reconciliation.'}
+$state|ConvertTo-Json -Depth 22

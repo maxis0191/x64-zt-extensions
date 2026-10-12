@@ -1,6 +1,6 @@
 {
-  "schema": "iw7.world-clipmap-harness-plan/2",
-  "status": "detached-child-source-correction-awaiting-review-no-third-run",
+  "schema": "iw7.world-clipmap-harness-plan/3",
+  "status": "sampled-output-stage-reuse-source-only-awaiting-review-no-fourth-run",
   "heavy_execution_authorized": false,
   "native_compiled": false,
   "native_harness_run": false,
@@ -9,41 +9,47 @@
   "scope": "standalone observer harness only; no ZoneTool candidate or map registration",
   "ownership": {
     "leases": 1,
-    "original_jobs": 1,
+    "original_jobs": 4,
     "native_parallelism": 1,
-    "root": "observer_harness_driver.py under the reused BuildJob; PowerShell grants a hash-bound fixture permit",
-    "descendants": [
-      "one x64 MSVC compilation/link",
-      "one exact compiled fixture launch"
+    "roots": [
+      "direct cl.exe /c",
+      "direct link.exe",
+      "exact fixture EXE",
+      "independent Python transcript reader"
     ],
-    "native_job_factory": "IW7.CommunityBuild.BuildJob.Prepare",
+    "native_job_factory": "Existing qualified IW7.AnimationProbe.NativeJob DLL",
     "supervisor": [
-      "Start-MaterialV2OwnedPhase",
-      "Wait-MaterialV2OwnedPhase",
-      "Stop-MaterialV2OwnedPhase"
+      "Invoke-H1OwnedStage",
+      "Invoke-T7OwnedStage",
+      "World output/deadline profile"
     ],
-    "compiler_policy": "StopOriginalJobAfterVerifiedCompilerAndTelemetry",
-    "advance_gate": "witnessed compiler exit0; complete original-job root plus at most one pinned Microsoft System32 console-host generation and one exact compiler telemetry child",
-    "release_gate": "successful original root; only previously witnessed console/telemetry residuals may be stopped through existing original-job helper; fresh root0/Active0 required; failure retains lease unless closure and finalization verified",
+    "compiler_policy": "Exact direct tool root0 then zero members or qualified same-tool VCTIP cleanup",
+    "advance_gate": "Previous original job closed, output thresholds checked and artifacts guarded",
+    "release_gate": "World immutable BeforeLeaseRelease receipt, byte verification and one release attempt",
     "automatic_retry": false,
     "terminate_by_pid_or_name": false
   },
   "budgets": {
     "physical_bytes": 4294967296,
     "commit_bytes": 6442450944,
-    "new_output_bytes": 67108864,
-    "log_bytes_per_stream": 2097152,
+    "live_total_sampled_threshold_bytes": 66060288,
+    "final_acceptance_bytes": 67108864,
+    "log_sampled_threshold_per_stream_bytes": 2097152,
+    "strict_log_write_cap": false,
+    "nominal_poll_sleep_ms": 100,
+    "maximum_detection_latency_ms": null,
+    "maximum_overshoot_bytes": null,
     "accepted_transcript_bytes": 131072,
+    "fixture_expected_stdout_maximum_bytes": 98508,
     "read_bytes": 2048,
     "record_bytes": 4096,
-    "compile_seconds": 90,
+    "compile_plus_link_seconds": 90,
     "fixture_seconds": 10,
+    "check_seconds": 5,
     "group_seconds": 120,
-    "existing_supervisor_envelope_seconds": 240,
-    "drain_seconds": 2,
-    "cleanup_seconds": 15,
+    "cleanup_seconds": 5,
     "native_peaks_measured": false,
-    "group_clock_start": "lease acquired; check after each helper import, before launch, both sides of every poll and before success"
+    "group_clock_start": "Lease acquired; cooperative deadline checks before/after stage work and before release"
   },
   "compiler": {
     "architecture": "x64",
@@ -54,7 +60,8 @@
       "/MD",
       "/O1",
       "/W4",
-      "/D_CRT_SECURE_NO_WARNINGS"
+      "/D_CRT_SECURE_NO_WARNINGS",
+      "/c"
     ],
     "link_flags": [
       "/INCREMENTAL:NO",
@@ -69,7 +76,12 @@
     ],
     "remove_child_environment_keys": [
       "CL",
-      "_CL_"
+      "_CL_",
+      "LINK",
+      "_LINK_",
+      "INCLUDE",
+      "LIB",
+      "LIBPATH"
     ],
     "copy_sdk_or_rebuild_dependencies": false,
     "output": "fresh owned runtime directory; exact EXE SHA256 checked before fixture launch"
@@ -79,22 +91,21 @@
     "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
     "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
     "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa",
-    "tools-source/asset-bridge/world/Run-ObserverHarness.ps1": "23ba0c0a89df9c03d9702c57c0ea16fcf61520aa75959b0d5d1ef28286439cd9",
-    "tools-source/asset-bridge/world/ObserverHarness.Core.ps1": "377fa9cc1cdc31fb40905669382a4d817c4782b9eb63fd9429f404c59ef481b2",
+    "tools-source/asset-bridge/world/Run-ObserverHarness.ps1": "f79012a12ac0461a5ffda4ac9f7d04f32e5c39613a69ca33598340040e6c7357",
+    "tools-source/asset-bridge/world/ObserverHarness.Core.ps1": "bab6cd29784f1b6d2d07bdb96fbcf2eb2d2279d69acca6a784e2120bdb990734",
     "tools-source/asset-bridge/world/observer_harness_driver.py": "cc2f12722a98a73e5eaca2e2981cffa233bd9cfefc1a86467e83379ac2ac5e53",
     "tools-source/asset-bridge/world/test_observer_adapter.ps1": "5b6c3bc7ccf31a20c4581eee9147ac7a58e35fd1f8c57439677d83ce4f2a23c5",
     "tools-source/asset-bridge/world/test_observer_driver.py": "64405fc2c236b30edc68031b3b4d99089ab8404deea0007ae59244501ea289db",
-    "tools-source/asset-bridge/world/test_observer_plan.ps1": "ce71cea7ad325e0f1d84b4f139bc693f55ff86db56f72490736da1244bcbe037",
-    "tools-source/asset-bridge/world/test_observer_finalization.ps1": "954aa7df91553629fe766f8918fef18a32fa112569e0d69f38cad53ab3d4f447",
-    "tools-source/asset-bridge/world/test_observer_console.ps1": "5291871cbc634a252f49fab5b907296450f5eeb02a51ced2151396b75009f949"
+    "tools-source/asset-bridge/world/test_observer_plan.ps1": "1226c66a74b2b928f527d19da98ee05eca12735c3152baf178e0e4613c39c604",
+    "tools-source/asset-bridge/world/test_observer_finalization.ps1": "b4afe648ea96d23246dc8fc87269946136216e35f528131447abd72ff4475e02",
+    "tools-source/asset-bridge/world/test_observer_console.ps1": "5291871cbc634a252f49fab5b907296450f5eeb02a51ced2151396b75009f949",
+    "tools-source/asset-bridge/world/ObserverStages.Profile.ps1": "d2b4e019da0d7df30f297d9b86cc713d687f3fb3b32f1fcf2f4a730b819661fe",
+    "tools-source/asset-bridge/world/test_observer_stages.ps1": "259358fe9b4696d7b6fd2543c4dee9379c1ca4a8a2abdbe003c73b7fc29cd84d",
+    "tools-source/asset-bridge/world/test_observer_output_contract.py": "826fd5f6eb872683dfbc4f88098d238dfe91cb44996c0f31d2205ce0e056ce5c"
   },
   "provider_sha256": {
     "ops/Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
-    "tools-source/asset-bridge/model/BuildJob.cs": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
-    "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1": "70b26a3cc7c20f70825dff7212e9cd5f7bf25602645ed00a95a70ac3f5b2c874",
     "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1": "fc024337fdb18c8a759cd6346ad90fe1fb2086d790e4804ade583c30e69d25d6",
-    "tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs": "c8fce6094104eae70442a081654f403739f5315d531c35385021759b74c2abda",
-    "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d",
     "ops/Base-Client.Core.ps1": "e504a87334fae8f294458c72d7980c3e9b00d3c6549b969d1dfb41f26ca70605",
     "sdk/modding/BeaconFF.Core.ps1": "b80047875a39731ea54838459fb71e0dca580c5e42284bd2749dc4b39c3a08a8",
     "ops/Resource-Memory.ps1": "6a708d2e7fa9803628bfbf5c670068d63d22a2d2cfc157994afa82d56ac9c241",
@@ -151,5 +162,12 @@
     "root_owner": "Unchanged BuildJob.Prepare with CREATE_NO_WINDOW",
     "console_limit": "Unchanged: at most one exact witnessed direct-root console host; extra/unknown members refused",
     "native_validation": "Not performed for detached children"
-  }
+  },
+  "stage_provider_sha256": {
+    "tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1": "55430822f5251ae58008bc7e15c36831e3481e7dae4cf0961254c633f001e3f5",
+    "tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1": "e53af5e007d84db102e3fb740b5a9f91e8ecdb612e10f6cf8475c4fda8bdcb46",
+    "tools-source/asset-bridge/h1-fixture/H1Native.JobMembers.cs": "76e0297e6bededd4edb695240e6aa8aa8f74e9cf5f984c29767df5dea592132c"
+  },
+  "link_profile_sha256": "6a512862b3f6b8c2d3fe2b77404122820527a43617df9f50881cd83f10db5747",
+  "native_job_sha256": "5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8"
 }

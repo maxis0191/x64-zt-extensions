@@ -66,7 +66,7 @@ function Write-WorldObserverFinalReceipt([string]$Root,$State) {
     Write-WorldObserverJson (Join-Path $Root 'run.json') $State
     if((Measure-WorldObserverOutput $Root -Final) -ne $State.FinalBytes){throw 'Final world receipt byte accounting differs.'}
 }
-function Complete-WorldObserverReservation([string]$Root,$State,$Lease,$Guards) {
+function Complete-WorldObserverReservation([string]$Root,$State,$Lease,$Guards,[scriptblock]$BeforeReleaseCheck) {
     # The immutable file is an explicitly BEFORE-release snapshot. The returned
     # state alone reports the subsequent scheduler outcome; no file write after
     # release is required to qualify the already published/accounted evidence.
@@ -88,6 +88,7 @@ function Complete-WorldObserverReservation([string]$Root,$State,$Lease,$Guards) 
         if($guard.Length -ne $expected.Length -or $actualHash -cne $expectedHash -or
            (Measure-WorldObserverOutput $Root -Final) -ne $State.FinalBytes){throw 'Published final receipt/accounting verification failed.'}
         $State.FinalReceiptVerified=$true;$State.FinalReceiptSHA256=$actualHash
+        if($BeforeReleaseCheck){& $BeforeReleaseCheck}
         $attempted=$true;$State.LeaseReleaseState='Unconfirmed'
         Exit-IW7ResourceLease -Token $Lease.Token
         $State.LeaseReleased=$true;$State.RetainedLeaseToken=$null;$State.LeaseReleaseState='Confirmed'
