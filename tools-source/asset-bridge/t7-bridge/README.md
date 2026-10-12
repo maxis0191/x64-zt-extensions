@@ -299,8 +299,14 @@ cap, while existing 2/3 GiB admission, 200/5-second deadlines, 64 KiB outer logs
 
 The host accepts a closed root0/Active0 result only with the expected manifest
 ID/header and a zero downloaded-content-chunk counter. Actual file selection and
-binary compatibility remain separate. Thirty pure PowerShell assertions pass,
-including the new metadata-output cap while preserving the smaller AppInfo cap.
+binary compatibility remain separate. Manifest (16 MiB maximum) and stdout
+(64 KiB maximum) are read through retained `FileStream` handles with
+`FileShare.Read`, with an actual limit-plus-one read and stable-length check.
+Headers, zero-chunk marker and receipt hashes all use those same byte snapshots;
+the guards remain held through final measurement and receipt publication.
+Forty PowerShell assertions pass, including attempted growth/replacement while
+the original file is guarded, oversized snapshot refusal, and the metadata-output
+cap while preserving the smaller AppInfo cap. No native provider is loaded.
 The fixed command and freshly bound plan are prepared under ignored `runtime/`;
 DepotDownloader has not been executed and requires a separate reviewed GO.
 

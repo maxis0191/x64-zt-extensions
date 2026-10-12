@@ -6,6 +6,28 @@ param([Parameter(Mandatory)][string]$Plan,
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 
+function Read-SteamSnapshot([string]$Path,[ValidateRange(1,16777216)][int]$Limit,$Guards) {
+    Assert-H1Path $Path
+    $stream=[IO.FileStream]::new($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+    $retained=$false
+    try {
+        $initial=$stream.Length
+        if($initial -gt $Limit){throw 'Snapshot input exceeds byte bound.'}
+        $buffer=[byte[]]::new($Limit+1);$used=0
+        do {
+            $read=$stream.Read($buffer,$used,$buffer.Length-$used);$used+=$read
+        }while($read -gt 0 -and $used -lt $buffer.Length)
+        if($used -gt $Limit -or $used -ne $initial -or $stream.Length -ne $initial){throw 'Snapshot grew or changed length during bounded read.'}
+        $bytes=[byte[]]::new($used);[Array]::Copy($buffer,$bytes,$used)
+        $digest=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
+        Assert-H1Path $Path
+        $Guards.Add($stream);$retained=$true
+        # Caller parses and hashes this same immutable byte array. The original
+        # FileShare.Read guard stays in Context.Guards through measure/receipt.
+        [pscustomobject]@{Bytes=$bytes;Length=$used;SHA256=$digest}
+    }finally{if(!$retained){$stream.Dispose()}}
+}
+
 function Measure-SteamAttempt($Settings,[double]$Started,[int]$Seconds=200) {
     $manifestMode=$Settings.PSObject.Properties['operation'] -and $Settings.operation -ceq 'depot-file-manifest'
     $totals=@(0L,0L);$roots=@($Settings.tool_root,$Settings.outer_evidence_root)
@@ -224,15 +246,16 @@ try {
     Wait-SteamOriginal $settings $state $context $started
     if($manifestMode) {
         $manifest=Join-Path $settings.outer_evidence_root 'manifest/manifest_545991_2350066205567669287.txt'
-        Assert-H1Path $manifest;$item=Get-Item -LiteralPath $manifest
-        if($item.Length -le 0 -or $item.Length -gt 16MB){throw 'Bounded expected manifest missing.'}
-        $text=[IO.File]::ReadAllText($manifest)
+        $manifestSnapshot=Read-SteamSnapshot $manifest 16MB $context.Guards
+        $text=[Text.UTF8Encoding]::new($false,$true).GetString($manifestSnapshot.Bytes)
         if($text -cnotmatch '(?m)^Content Manifest for Depot 545991\s*$' -or
            $text -cnotmatch '(?m)^Manifest ID / date\s*: 2350066205567669287 / '){throw 'Manifest depot/ID differs.'}
-        $console=[IO.File]::ReadAllText((Join-Path $settings.outer_evidence_root 'stdout.log'))
+        $consoleSnapshot=Read-SteamSnapshot (Join-Path $settings.outer_evidence_root 'stdout.log') 64KB $context.Guards
+        $console=[Text.UTF8Encoding]::new($false,$true).GetString($consoleSnapshot.Bytes)
         if(!$console.Contains('Total downloaded: 0 bytes (0 bytes uncompressed) from 1 depots')){throw 'Zero content-chunk counter not confirmed.'}
-        $state.Manifest=[ordered]@{Depot=545991;ManifestID='2350066205567669287';Bytes=$item.Length;
-            SHA256=(Get-FileHash -LiteralPath $manifest).Hash.ToLowerInvariant();ContentChunkBytes=0;FileSelectionReviewed=$false}
+        $state.Manifest=[ordered]@{Depot=545991;ManifestID='2350066205567669287';Bytes=$manifestSnapshot.Length;
+            SHA256=$manifestSnapshot.SHA256;ContentChunkBytes=0;FileSelectionReviewed=$false;
+            StdoutBytes=$consoleSnapshot.Length;StdoutSHA256=$consoleSnapshot.SHA256;SnapshotsRetainedThroughReceipt=$true}
         $state.Output=Measure-SteamAttempt $settings $started
     }else{
     $result=Read-H1SmallJson (Join-Path $settings.tool_root 'metadata-attempt-a/phase.json') 64KB
