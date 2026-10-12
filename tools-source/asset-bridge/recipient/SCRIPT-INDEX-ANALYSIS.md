@@ -156,3 +156,9 @@ the targeted cp_zmb entry is 104,125 bytes, SHA256
 Next action belongs to the coordinator: review the corrected interpretation and
 choose whether to prepare the bounded name witness. The original utility route
 remains unqualified; SelfContained composition continues independently.
+
+Following that review, the coordinator authorized the
+[two-key observer source preparation](script-names/README.md). Its patch, bounded
+reader and invented Python fixtures are now prepared; the C++ harness and private
+incremental build remain uncompiled and unexecuted. The original I evidence and
+the naming hypothesis above have not been replaced by a new engine observation.
