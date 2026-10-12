@@ -376,3 +376,30 @@ previously disabled converters can expose real compile/link errors or increase
 output; stop and report if the ceiling is approached, never borrow more disk or
 lower RAM/commit estimates to pass admission. No full-build runtime/FF/visual
 result is established by this source inventory and plan.
+
+## Full-build overlay and launch preflight
+
+`prepare_full_build.py` creates a small project/source overlay from the clean
+`fab9358` fork and the two pinned patches. `verify_full_overlay.py` verifies 413
+compile inputs, four patched inputs, 18 retained libraries, explicit
+`EXPERIMENTAL_IW7`, private object/PCH/PDB/resource/link/tracking outputs, and the
+absence of dependency projects, user property imports and source-mutating build
+events. The first preparation used 409,603 bytes; no dependencies were copied.
+
+`Build-FullZoneTool.ps1` uses the current resource scheduler with 4 GiB physical
+and 6 GiB commit admission. Its small `BuildJob.cs` owner creates MSBuild suspended
+and BelowNormal, assigns its original handle to a kill-on-close Windows job,
+registers the PID with the scheduler, then resumes it. MSBuild is one node,
+node reuse is disabled and compiler multiprocessing is disabled. All descendants
+remain in the owned job. The runner polls artifact size and commit pressure;
+the conservative stop point is 1,600 MiB, preserving 448 MiB of margin below the
+2 GiB hard ceiling. This is monitored admission, not a kernel disk quota.
+
+The first admission on 2026-10-12 at 02:20:30Z exercised a `cmd`/`ping` child
+containment fixture before starting any MSBuild or compiler. The fixture stopped
+its job but found that zero active job processes can briefly precede the root
+handle's termination signal. The finalizer subsequently confirmed both conditions,
+preserved the failure receipt, verified retained inputs unchanged and released
+the lease (`0078def8e24542bfa02589aa722115a5`). No compiler ran. The correction
+waits for both job emptiness and the original process signal, including cleanup;
+a fresh coordinator allocation is required before its native revalidation.
