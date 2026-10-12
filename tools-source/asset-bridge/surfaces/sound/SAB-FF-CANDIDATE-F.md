@@ -1,5 +1,10 @@
 # Existing SAB/FF transaction with checksum candidate F: prepared only
 
+This document preserves the preparation checkpoint. A subsequent, separately
+authorized unique cycle is recorded in [SAB-FF-F-RESULT.md](SAB-FF-F-RESULT.md).
+The prepared plans and command below were executed unchanged; this historical
+preparation does not authorize another invocation.
+
 [Build F](native-checksum/BUILD-F-RESULT.md) produced the corrected native
 executable and proved both C++ checksum probes. This preparation binds that exact
 candidate to the existing original-sound build/verify/dump/read transaction. It

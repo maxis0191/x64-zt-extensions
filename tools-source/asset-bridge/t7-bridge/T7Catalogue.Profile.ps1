@@ -1,7 +1,7 @@
 # Fixed catalogue adapter. Ownership, pin readers and closure stay in H1Native.Core.
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
 function Get-T7CatalogueMainBaseline($Plan) {
@@ -58,7 +58,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
     if($candidateProfile -cne 'ordinary-d2') {
-        $limit=if($candidateProfile -ceq 't7-catalog-trace'){1536}else{4096}
+        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192}}
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
@@ -136,13 +136,15 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
        $build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1'){throw 'Trace build source/schema differs.'}
     $profile=$build.BuildProfile
     $fields=@('Name','Option','ArgumentCount','TraceSchema','Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
-    if($candidateProfile -ceq 't7-catalog-exit-context'){$fields+=@('ContextSchema')}
+    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers')){$fields+=@('ContextSchema')}
+    if($candidateProfile -ceq 't7-catalog-callers'){$fields+=@('CallerSchema')}
     foreach($p in @($profile,$Receipt.BuildProfile)) {
         Assert-T7CatalogueFields $p $fields
         if($p.Name -cne $candidateProfile -or $p.Option -cne '-t7-iw7-catalog' -or
            ($p.ArgumentCount -isnot [long] -and $p.ArgumentCount -isnot [int]) -or $p.ArgumentCount -ne 3 -or
            $p.TraceSchema -cne 'iw7.t7-catalog-trace/1'){throw 'Exact catalogue trace profile required.'}
-        if($candidateProfile -ceq 't7-catalog-exit-context' -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
+        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
+        if($candidateProfile -ceq 't7-catalog-callers' -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
     }
     foreach($name in 'Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt') {
         $pin=$profile.$name;$other=$Receipt.BuildProfile.$name
@@ -315,24 +317,33 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $profile=Get-T7CatalogueCandidateProfile $Plan
     if($profile -ceq 'ordinary-d2'){return}
     $State.TraceOutcome='NoTrace'
-    if($profile -ceq 't7-catalog-exit-context'){$State.ExitContextOutcome='Absent';$State.ExitContext=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
+    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers')
+    if($hasContext){$State.ExitContextOutcome='Absent';$State.ExitContext=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
+    if($profile -ceq 't7-catalog-callers'){$State.CallersOutcome='Absent';$State.Callers=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
     $path=Join-Path $Plan.StageRoot 'stderr.log'
     if(!(Test-Path -LiteralPath $path)){return}
     $State.TraceOutcome='TracePresentUnqualified'
     Assert-H1Path $path
     $size=(Get-Item -LiteralPath $path).Length
-    if($profile -ceq 't7-catalog-exit-context' -and $size -gt 0){$State.ExitContextOutcome='PresentUnqualified'}
+    if($hasContext -and $size -gt 0){$State.ExitContextOutcome='PresentUnqualified'}
+    if($profile -ceq 't7-catalog-callers' -and $size -gt 0){$State.CallersOutcome='PresentUnqualified'}
     Assert-T7CatalogueTraceSize $profile $size
     $pin=[pscustomobject]@{Path=$path;Bytes=$size;SHA256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}
     $Context.Guards.Add((Open-H1Pin $pin));$State.TraceReport=$pin
     $text=[Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($path))
-    $result=if($profile -ceq 't7-catalog-exit-context'){ConvertFrom-T7CatalogueExitContext $text}else{ConvertFrom-T7CatalogueTrace $text}
+    $result=switch($profile){
+        't7-catalog-callers'{ConvertFrom-T7CatalogueCallers $text}
+        't7-catalog-exit-context'{ConvertFrom-T7CatalogueExitContext $text}
+        default{ConvertFrom-T7CatalogueTrace $text}
+    }
     $State.TraceOutcome=$result.Outcome;$State.TraceEvents=$result.Events
-    if($profile -ceq 't7-catalog-exit-context'){$State.ExitContextOutcome=$result.ContextOutcome;$State.ExitContext=$result.Context}
+    if($hasContext){$State.ExitContextOutcome=$result.ContextOutcome;$State.ExitContext=$result.Context}
+    if($profile -ceq 't7-catalog-callers'){$State.CallersOutcome=$result.CallersOutcome;$State.Callers=$result.Callers}
 }
 function Assert-T7CatalogueTraceSize([string]$Profile,[long]$Bytes) {
     if(($Profile -ceq 't7-catalog-trace' -and $Bytes -ge 1536) -or
-       ($Profile -ceq 't7-catalog-exit-context' -and $Bytes -gt 4096)){throw 'Trace stderr cap exceeded.'}
+       ($Profile -ceq 't7-catalog-exit-context' -and $Bytes -gt 4096) -or
+       ($Profile -ceq 't7-catalog-callers' -and $Bytes -gt 8192)){throw 'Trace stderr cap exceeded.'}
 }
 function Get-T7CatalogueContextNumber($Match,[string]$Name,[ulong]$Maximum=[uint]::MaxValue) {
     $value=[ulong]::Parse($Match.Groups[$Name].Value,[Globalization.CultureInfo]::InvariantCulture)
@@ -454,6 +465,128 @@ function ConvertFrom-T7CatalogueExitContext([string]$Text) {
     $outcome=if(!$captures.Count -and !$incomplete){'Absent'}elseif($captures.Count -eq 3 -and !$incomplete -and !@($captures|Where-Object Status -CNE 'ok').Count){'Observed'}else{'Partial'}
     [pscustomobject]@{Outcome=$trace.Outcome;Events=$trace.Events;ContextOutcome=$outcome;
         Context=[ordered]@{Captures=@($captures.ToArray());IncompleteTrailingLine=$incomplete}}
+}
+function Assert-T7CatalogueCallerWindow($Row) {
+    $base=0x140000000L;$ra=[Convert]::ToUInt64($Row.ReturnAddress,16)
+    $start=[Convert]::ToUInt64($Row.Start,16);$region=[Convert]::ToUInt64($Row.Region,16)
+    $begin=[decimal]$base+$Row.Begin;$end=[decimal]$base+$Row.End
+    $regionEnd=[decimal]$region+$Row.RegionSize
+    if($Row.RecordReadBytes -ne 12 -or [Convert]::ToUInt64($Row.Record,16) -eq 0 -or
+       [Convert]::ToUInt64($Row.Module,16) -ne $base -or [Convert]::ToUInt64($Row.Image,16) -ne $base -or
+       [Convert]::ToUInt64($Row.Allocation,16) -ne $base -or $Row.Begin -ge $Row.End -or
+       ([decimal]$ra-1) -lt $begin -or ([decimal]$ra-1) -ge $end -or
+       $Row.State -ne 0x1000 -or ($Row.Protect -band 0x100) -ne 0 -or
+       ($Row.Protect -band 0xFF) -in @(0,1) -or $regionEnd -gt [decimal][ulong]::MaxValue -or
+       ([decimal]$ra-1) -lt $region -or ([decimal]$ra-1) -ge $regionEnd){throw 'Caller code window lacks a qualified function or readable region.'}
+    if($end-$begin -le 512 -and $begin -ge $region -and $end -le $regionEnd) {
+        $expectedStart=$begin;$expectedEnd=$end;$scope='full'
+    }else {
+        $expectedStart=[Math]::Max([Math]::Max(([decimal]$ra-448),$begin),[decimal]$region)
+        $expectedEnd=[Math]::Min([Math]::Min(([decimal]$ra+64),$end),$regionEnd);$scope='window'
+    }
+    if($expectedStart -gt ([decimal]$ra-1) -or $expectedEnd -le ([decimal]$ra-1) -or
+       $expectedEnd-$expectedStart -gt 512 -or $start -ne $expectedStart -or
+       $Row.Requested -ne $expectedEnd-$expectedStart -or $Row.Scope -cne $scope){throw 'Caller code window differs from the exact bounded intersection.'}
+}
+function ConvertFrom-T7CatalogueCallerLine([string]$Line) {
+    $dec='(0|[1-9][0-9]{0,19})';$ptr='[0-9A-F]{16}'
+    $pattern='\A\[T7_CATALOG_CALLER\] schema=iw7\.t7-catalog-callers/1 code=(?<code>0|-?[1-9][0-9]{0,9}) tid=(?<tid>'+$dec+') exit_ra=(?<exit_ra>'+$ptr+') index=(?<index>[0-2]) ra=(?<ra>'+$ptr+') '+
+        'status=(?<status>ok|absent|stack_unavailable|module_missing|module_mismatch|query_failed|region_invalid|not_found|record_partial|record_read_failed|record_invalid|partial|read_failed|exception) frame=(?<frame>-1|[0-7]) '+
+        'module=(?<module>'+$ptr+') image=(?<image>'+$ptr+') record=(?<record>'+$ptr+') record_read=(?<record_read>'+$dec+') '+
+        'begin=(?<begin>[0-9A-F]{8}) end=(?<end>[0-9A-F]{8}) unwind=(?<unwind>[0-9A-F]{8}) start=(?<start>'+$ptr+') requested=(?<requested>'+$dec+') read=(?<read>'+$dec+') '+
+        'scope=(?<scope>none|full|window) allocation=(?<allocation>'+$ptr+') region=(?<region>'+$ptr+') region_size=(?<region_size>'+$dec+') '+
+        'state=(?<state>'+$dec+') protect=(?<protect>'+$dec+') type=(?<type>'+$dec+') error=(?<error>'+$dec+') data=(?<data>-|[0-9A-F]+)\z'
+    $m=[regex]::Match($Line,$pattern)
+    if(!$m.Success){throw 'Unknown caller record or field format.'}
+    $code=[long]$m.Groups['code'].Value
+    if($code -lt [int]::MinValue -or $code -gt [int]::MaxValue){throw 'Caller code exceeds int32.'}
+    $row=[ordered]@{Code=$code;ThreadId=(Get-T7CatalogueContextNumber $m 'tid');ExitReturnAddress=$m.Groups['exit_ra'].Value;
+        Index=[int]$m.Groups['index'].Value;ReturnAddress=$m.Groups['ra'].Value;Status=$m.Groups['status'].Value;
+        Frame=[int]$m.Groups['frame'].Value;RecordReadBytes=(Get-T7CatalogueContextNumber $m 'record_read' 12);
+        Requested=(Get-T7CatalogueContextNumber $m 'requested' 512);ReadBytes=(Get-T7CatalogueContextNumber $m 'read' 512);
+        Scope=$m.Groups['scope'].Value;RegionSize=(Get-T7CatalogueContextNumber $m 'region_size' ([ulong]::MaxValue));DataHex=$m.Groups['data'].Value}
+    foreach($field in 'module','image','record','start','allocation','region'){$row[$field]=$m.Groups[$field].Value}
+    foreach($field in 'begin','end','unwind'){$row[$field]=[Convert]::ToUInt32($m.Groups[$field].Value,16)}
+    foreach($field in 'state','protect','type','error'){$row[$field]=Get-T7CatalogueContextNumber $m $field}
+    if($row.ReturnAddress -cne @('0000000140584FD8','00000001401DA015','0000000140526D02')[$row.Index]){throw 'Caller index/target differs.'}
+    if($row.ReadBytes -gt $row.Requested -or ($row.ReadBytes -eq 0 -and $row.DataHex -cne '-') -or
+       ($row.ReadBytes -gt 0 -and ($row.DataHex -ceq '-' -or $row.DataHex.Length -ne 2*$row.ReadBytes))){throw 'Caller data/read bounds differ.'}
+    $hasRvas=$row.begin -ne 0 -or $row.end -ne 0 -or $row.unwind -ne 0
+    if(($row.RecordReadBytes -ne 12 -and $hasRvas) -or
+       ($row.Status -cnotin @('ok','partial','read_failed','record_invalid','region_invalid') -and $hasRvas)){throw 'Failed or incomplete caller function copy exposes RVAs.'}
+    if(($row.Status -ceq 'record_partial' -and $row.RecordReadBytes -notin (1..11)) -or
+       ($row.Status -cin @('record_read_failed','record_invalid','region_invalid') -and $row.RecordReadBytes -notin @(0,12)) -or
+       ($row.Status -cin @('absent','stack_unavailable','module_missing','module_mismatch','query_failed','not_found') -and $row.RecordReadBytes -ne 0)){throw 'Caller function status/read differs.'}
+    if($row.Requested -eq 0) {
+        if($row.start -cne '0000000000000000' -or $row.Scope -cne 'none' -or $row.ReadBytes -ne 0){throw 'Caller without a code request has a window.'}
+    }elseif($row.start -ceq '0000000000000000' -or $row.Scope -ceq 'none' -or
+        $row.Status -cnotin @('ok','partial','read_failed','exception')){throw 'Caller pre-read refusal exposes a code request.'}
+    if(($row.Status -ceq 'ok' -and ($row.Requested -eq 0 -or $row.ReadBytes -ne $row.Requested -or $row.error -ne 0)) -or
+       ($row.Status -ceq 'partial' -and ($row.ReadBytes -eq 0 -or $row.ReadBytes -ge $row.Requested)) -or
+       ($row.Status -ceq 'read_failed' -and $row.ReadBytes -notin @(0,$row.Requested)) -or
+       ($row.Status -ceq 'read_failed' -and $row.Requested -eq 0 -and $row.error -ne 13)){throw 'Caller code status/read differs.'}
+    if($row.Status -cin @('absent','stack_unavailable')) {
+        if($row.Frame -ne -1 -or $row.RecordReadBytes -ne 0 -or $row.Requested -ne 0 -or $row.error -ne 0 -or
+           $row.RegionSize -ne 0 -or $row.state -ne 0 -or $row.protect -ne 0 -or $row.type -ne 0){throw 'Uncaptured caller exposes lookup/read metadata.'}
+        foreach($field in 'module','image','record','allocation','region'){if($row[$field] -cne '0000000000000000'){throw 'Uncaptured caller exposes an address.'}}
+    }
+    # Exceptions preserve bounded diagnostic metadata but zero the record RVAs.
+    # A serializer clamp is explicit read_failed/error 13, never Observed.
+    if($row.Requested -gt 0 -and $row.Status -cne 'exception'){Assert-T7CatalogueCallerWindow ([pscustomobject]$row)}
+    [pscustomobject]$row
+}
+function ConvertFrom-T7CatalogueCallers([string]$Text) {
+    Assert-T7CatalogueTraceSize 't7-catalog-callers' ([Text.Encoding]::UTF8.GetByteCount($Text))
+    if($Text -cmatch '[^\x20-\x7e\r\n]'){throw 'Caller stderr must be ASCII without BOM.'}
+    $complete=$Text.EndsWith("`n")
+    $lines=@(if($Text.Length){if($complete){$Text.Substring(0,$Text.Length-1).Split("`n")}else{$Text.Split("`n")}})
+    if($lines.Count -gt 12){throw 'Caller stderr exceeds twelve lines.'}
+    $prefix='[T7_CATALOG_CALLER] schema=iw7.t7-catalog-callers/1 '
+    $legacy=[Text.StringBuilder]::new();$captures=[Collections.Generic.List[object]]::new()
+    $started=$false;$incomplete=$false
+    for($i=0;$i -lt $lines.Count;$i++) {
+        $raw=$lines[$i];$line=$raw -creplace '\r$','';$lastIncomplete=!$complete -and $i -eq $lines.Count-1
+        $isCaller=$line.StartsWith('[T7_CATALOG_CALLER]',[StringComparison]::Ordinal)
+        # Recognizable truncated caller prefix is preserved only after three EXIT records.
+        $isPartial=$lastIncomplete -and $line.Length -gt 0 -and
+            ($prefix.StartsWith($line,[StringComparison]::Ordinal) -or $line.StartsWith($prefix,[StringComparison]::Ordinal))
+        if(!$started -and ($isCaller -or $isPartial)) {
+            $context=ConvertFrom-T7CatalogueExitContext $legacy.ToString()
+            if($context.Context.Captures.Count -eq 3 -and !$context.Context.IncompleteTrailingLine){$started=$true}
+            elseif($isCaller){throw 'Caller records require all three preceding EXIT records.'}
+            # A shorter ambiguous prefix may still be a truncated legacy EXIT.
+            # Let the unchanged legacy reader qualify it at its current stage.
+        }
+        if(!$started){[void]$legacy.Append($raw);if(!$lastIncomplete){[void]$legacy.Append("`n")};continue}
+        if($captures.Count -ge 3 -or $raw.Length+$(if($lastIncomplete){0}else{1}) -gt 2048){throw 'Caller count or line cap exceeded.'}
+        if($lastIncomplete) {
+            if(!$isPartial){throw 'Unrecognized incomplete caller line.'}
+            # Do not accept a visibly duplicated/reordered target even when cut off.
+            $index=[regex]::Match($line,' index=([0-9]+)(?: |$)')
+            if($index.Success -and $index.Groups[1].Value -cne [string]$captures.Count){throw 'Incomplete caller index is duplicated or reordered.'}
+            $incomplete=$true;continue
+        }
+        if(!$isCaller){throw 'Non-caller record follows caller diagnostics.'}
+        $row=ConvertFrom-T7CatalogueCallerLine $line
+        if($row.Index -ne $captures.Count){throw 'Caller records are duplicated or reordered.'}
+        $captures.Add($row)
+    }
+    if(!$started){$context=ConvertFrom-T7CatalogueExitContext $legacy.ToString()}
+    if($started) {
+        $exit=@($context.Events|Where-Object Phase -CEQ 'exit_hook')[0]
+        $stack=@($context.Context.Captures|Where-Object Kind -CEQ 'stack')[0]
+        foreach($row in $captures) {
+            if($row.Code -ne $exit.Code -or $row.ThreadId -ne $exit.ThreadId -or $row.ExitReturnAddress -ine $exit.ReturnAddress){throw 'Caller correlation differs from exit_hook.'}
+            $frame=if($stack.Status -ceq 'ok'){[array]::IndexOf($stack.Addresses,$row.ReturnAddress)}else{-1}
+            if($row.Frame -ne $frame){throw 'Caller frame is not the first matching stack occurrence.'}
+            if(($stack.Status -cne 'ok' -and $row.Status -cne 'stack_unavailable') -or
+               ($stack.Status -ceq 'ok' -and $frame -lt 0 -and $row.Status -cne 'absent') -or
+               ($frame -ge 0 -and $row.Status -cin @('absent','stack_unavailable'))){throw 'Caller presence/status differs from the captured stack.'}
+        }
+    }
+    $outcome=if(!$captures.Count -and !$incomplete){'Absent'}elseif($captures.Count -eq 3 -and !$incomplete -and !@($captures|Where-Object Status -CNE 'ok').Count){'Observed'}else{'Partial'}
+    [pscustomobject]@{Outcome=$context.Outcome;Events=$context.Events;ContextOutcome=$context.ContextOutcome;Context=$context.Context;
+        CallersOutcome=$outcome;Callers=[ordered]@{Captures=@($captures.ToArray());IncompleteTrailingLine=$incomplete}}
 }
 function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
     Assert-H1Path $Plan.WorkingDirectory

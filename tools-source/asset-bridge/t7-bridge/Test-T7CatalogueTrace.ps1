@@ -69,6 +69,25 @@ try {
     Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
     $f=New-Fixture;$f.Plan.CandidateProfile='t7-catalog-exit-context'
     Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
+    foreach($side in 'Build','Receipt') {
+        foreach($field in 'Name','ContextSchema','CallerSchema') {
+            $f=New-Fixture;$f.Plan.CandidateProfile='t7-catalog-callers'
+            foreach($profile in @($f.Build.BuildProfile,$f.Receipt.BuildProfile)) {
+                $profile.Name='t7-catalog-callers'
+                $profile|Add-Member NoteProperty ContextSchema 'iw7.t7-catalog-exit-context/1'
+                $profile|Add-Member NoteProperty CallerSchema 'iw7.t7-catalog-callers/1'
+            }
+            Assert-T7CatalogueBuild $f.Plan $f.Receipt;$checks++
+            $f.$side.BuildProfile.$field='unknown'
+            Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact .*(profile|schema)'
+            $f.$side.BuildProfile.PSObject.Properties.Remove($field)
+            Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
+        }
+    }
+    $f=New-Fixture;$f.Plan.CandidateProfile='t7-catalog-callers'
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
+    $f=New-Fixture;$f.Receipt.BuildProfile|Add-Member NoteProperty CallerSchema 'iw7.t7-catalog-callers/1'
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
     $cases=@(
         @{Change={$f.Build.BuildProfile.Name='unknown'};Error='Exact catalogue trace'},
         @{Change={$f.Build.BuildProfile.Option='-new-mode'};Error='Exact catalogue trace'},

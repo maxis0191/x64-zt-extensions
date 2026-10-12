@@ -462,3 +462,133 @@ The checkpoint includes only statuses, addresses, sizes and evidence hashes.
 Raw captured bytes, full stderr/receipt and disassembly remain in ignored local
 evidence. A/B/D/E remain Failed, C remains unconsumed, and no additional runtime,
 capture expansion, dependency input or automatic retry is authorized.
+
+## Caller reader: source-only qualification after E
+
+The coordinator authorized the build owner to instrument the three caller
+addresses already observed in E, and this adapter to qualify the separate
+`t7-catalog-callers` profile. Producer source is
+`39933eb35f85c0267a75138330ecf9da81a90ed4`. This checkpoint only changes source,
+tests and this document; no caller candidate, native capture or runtime plan is
+created by the adapter. The build owner owns any build plan and candidate.
+
+BuildProfile has exactly ten fields: the eight original trace fields plus
+`ContextSchema=iw7.t7-catalog-exit-context/1` and
+`CallerSchema=iw7.t7-catalog-callers/1`, with Name `t7-catalog-callers`.
+The option, argc 3, four guarded source/base pins, retained D2 compile chain,
+new main Compile/Link provenance and actual candidate-artifact checks remain
+required. The original trace and EXIT /1 parsers and their caps are unchanged.
+
+Only this new profile permits stderr up to 8,192 bytes and twelve lines. Its
+three `[T7_CATALOG_CALLER]` records follow all three EXIT records, in index order
+0/1/2, and target only `0x140584FD8`, `0x1401DA015` and `0x140526D02` respectively.
+Each record is capped at 2,048 bytes. Producer format tests calculate at most
+1,546 bytes per caller and 6,911 bytes for all twelve lines including CRLF.
+
+The reader checks code, thread and exit return address against the original
+exit_hook, and frame against the first matching occurrence in the existing
+stack capture. An unavailable stack requires stack_unavailable; a missing
+target requires absent. Both have frame -1 and zero lookup/read metadata.
+No target is accepted merely because it appeared in the historical E stack.
+
+For an attempted code copy, the complete 12-byte function record must contain
+RA minus 1. Expected module, image and allocation are `0x140000000`; the code
+region must be committed and readable, with checked address arithmetic. A
+function of at most 512 bytes wholly inside that region uses scope full.
+Otherwise scope window must equal the intersection of `[RA-448, RA+64)`, the
+function and the region. The intersection must contain RA minus 1. Exactly
+`2 * read` uppercase hex characters accompany a nonzero copy, up to 512 bytes
+per caller; a zero copy uses `-`. No unwind payload or RF-region observation is
+inferred from fields that the producer does not expose.
+
+Explicit refusals remain diagnostic evidence. Partial/failed RF copies zero
+RVAs; record_invalid can retain an invalid complete record. A post-RF
+region_invalid may retain the valid complete RF but has no code window.
+SEH exceptions preserve bounded metadata/copies while zeroing RVAs. The
+producer's serialization clamp is represented by read_failed/error 13 with
+start/requested/read zero and scope none. None of these statuses is Observed.
+
+CallersOutcome is independent of TraceOutcome, ExitContextOutcome and
+CatalogueOutcome: Absent without caller evidence, Partial for incomplete or
+non-ok captures, and Observed only with three complete correlated ok records.
+A recognizable final caller line without its newline preserves preceding
+complete records as Partial. An ambiguous truncated prefix before the three
+EXIT records remains the legacy reader's responsibility. Malformed completed
+records, duplicate/reordered indices and unrelated stderr are refused.
+
+All 756 light checks pass: catalogue/lifecycle 169, trace/provenance 165,
+EXIT 161, Main 52 and callers 209. The initial empty-stderr test exposed
+PowerShell empty-array unrolling; an explicit array wrapper corrected it.
+Review also identified and corrected ambiguous short-prefix truncation, with
+regression cases. Tests use invented AB bytes and ranges, synthetic private
+stderr and in-memory provenance objects. They load no native type, create no
+native job or lease, and read no stock. Caller Observed/Partial and forced-close
+paths are exercised through the existing finalizer; NoCatalogue stays Failed,
+and forced closure does not rehash stock after release.
+
+Run-T7Catalogue and all shared ownership/resource helpers are unchanged. The
+new profile is dispatched by the already guarded adapter. Raw code bytes stay
+in ignored private stderr/receipts only; they must not enter Git checkpoints or
+public artifacts. Independent source review and a real Passed build receipt
+are still required before any separately authorized runtime plan can be sealed.
+
+## Attempt F: complete caller context, still no catalogue
+
+The coordinator separately reviewed and authorized one invocation of Plan F
+`103f912daa09429c8afcba099c2b28a23afb95502757e995db448d99bf1152fe`
+(10,750 bytes), using adapter source `78f134c1ff7df86f13ffdec2f4f0b609a3650e7b`.
+The actual callers candidate is 21,747,200 bytes, SHA256
+`01aa3310e92a1e458005de044c582c302c12149a81bf7fce23b7cc5ae153bbd4`, from build
+plan `455b67c2862105ce5670f9cb2fefb26ba8e86f0167481ae7a1d8cc7f1a1e1b20` and
+Passed receipt `9f8b8bc235bd52429a915bb1f1d3fc3ca0afd6b852e8897dfc312d566166aa99`.
+Its build and host had closed before runtime admission. Preparation and default
+validation read only bounded text and metadata; payload hashes were checked
+under the runtime lease. The same zone, arguments, four aliases and 6/8 GiB,
+200/120/5-second safeguards were retained, with the reviewed 8,192-byte stderr
+cap. The fresh preflight at 15:41:34 UTC found no lease/heavy workload, Main
+Stopped, the exact preserved Python generation and an allowed resource budget.
+
+F remains **Failed / NoCatalogue**. The native process exited naturally with
+code 0 after 2,146.80 ms, with the same 70-byte init_zonetool stdout message.
+The 4,565-byte stderr qualifies as TraceObserved, ExitContext Observed and
+Callers Observed. Its original phases are enabled, before_entry_point,
+before_post_unpack, after_post_unpack and exit_hook. The first four use thread
+15060; exit_hook uses thread 27900, code 0 and return address `0x140AC00C4`.
+No entry_point_return or catalogue was observed.
+
+Each caller has status ok/error 0 and a complete 12-byte function record.
+Their frame indices are the first occurrences in the newly captured stack.
+
+| Index / frame | Return address | Function range, end exclusive | Captured code |
+| --- | --- | --- | --- |
+| 0 / 4 | `0x140584FD8` | `[0x140584F50, 0x1405850DF)` | full, 399/399 bytes from `0x140584F50` |
+| 1 / 5 | `0x1401DA015` | `[0x1401D9FE0, 0x1401DA135)` | window, 85/85 bytes from `0x1401DA000` |
+| 2 / 6 | `0x140526D02` | `[0x140526C80, 0x140526D20)` | full, 160/160 bytes from `0x140526C80` |
+
+The second window is clipped to its observed region and RA-relative bounds;
+it is not a full-function capture. In total, the caller records contain 644
+code bytes and 36 function-record bytes. The original three EXIT captures also
+completed. This adapter only records their qualified metadata: worker 51 alone
+owns subsequent decoding and cause analysis. No function name, exit cause,
+model export or engine compatibility follows from these diagnostics alone.
+
+Closure, release, engine-output checks, all input revalidation and original
+metadata checks succeeded without forced termination or quarantine. Postflight
+at 15:42:46.1499719 UTC found zero leases/heavy workloads/original root, four
+equal input-metadata records and eight equal source/alias identities. Main
+remained Stopped and Python 23352 retained its exact creation/image identity.
+
+Host PID 9028 was created at 15:41:43.8259667 UTC; native root 34564 was created
+at 15:42:19.7421835 UTC. The host's guarded exit produced a real
+`tools.write_stdin` completion for **session 89803**, chunk **a311f7**, with
+**exit code 0**. `host-session-exit.local.json` records that direct witness.
+A separate CIM inventory at 15:43:35.0747163 UTC confirmed both host and root
+absent; `host-absence.local.json` records the independent absence witness.
+Exit status is not inferred from the absence observation.
+
+The [sanitized F checkpoint](catalogue-runtime-f-20261012.json) retains only
+metadata and evidence hashes. Raw bytes remain in ignored local stderr/receipt
+files and were handed to worker 51 after complete closure. No decoding occurred
+in this adapter chat. A/B/D/E/F remain Failed and C remains unconsumed. No retry,
+extra zone input, expanded capture or further native invocation is authorized
+by this checkpoint.

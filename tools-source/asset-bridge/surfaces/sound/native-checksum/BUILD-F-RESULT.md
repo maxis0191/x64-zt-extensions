@@ -1,5 +1,9 @@
 # Build F: candidate and native checksum probes verified
 
+The later, separately authorized sound transaction is recorded in
+[SAB-FF-F-RESULT.md](../SAB-FF-F-RESULT.md). This document retains the native
+build's original scope and evidence; its receipts were not rewritten.
+
 One authorized invocation of Plan F completed from source
 `f7e57c924a3115ba06cbc8adea0c941d602b7e5e` on 2026-10-12. Its Plan SHA-256 is
 `91280092489387e909516693d4234c60ea0416657166cf6bd8674bd974729c3a`;

@@ -689,3 +689,170 @@ syntax and linkage, not actual memory/stack capture behavior, the cause of the
 engine exit, catalogue generation or gameplay. No candidate or engine was
 launched by this build. The separate runtime parser correction does not change
 this qualified build; future runtime acceptance must bind its own reviewed plan.
+
+### E caller diagnostic: source-only preparation
+
+Runtime E captured ExitProcess with return address 0x140AC00C4 after post_unpack,
+but no catalogue. The subsequent INT3 is not evidence of execution or anti-debug
+failure. The retained source has no exact symbol for the three engine callers.
+No exit suppression, bootstrap fix, renamed function or offset correction is
+justified by this evidence. The coordinator authorized a finite main-only source
+diagnostic on 2026-10-12; build and runtime each require a separate GO.
+
+The preparation selector `--catalog-callers` is exclusive with the pre-patch,
+trace and exit-context selectors. Runtime argv remains `-t7-iw7-catalog <zone>`.
+BuildProfile has exactly ten fields: Name `t7-catalog-callers`, Option,
+ArgumentCount 3, TraceSchema `iw7.t7-catalog-trace/1`, ContextSchema
+`iw7.t7-catalog-exit-context/1`, CallerSchema `iw7.t7-catalog-callers/1`, plus
+Wiring, PreparedMain, BaseBuildPlan and BaseBuildReceipt. The four text pins,
+ordinary D2 proof and retained C compilation chain follow the existing profile.
+Only main is recompiled; Link reuses the other 412 object references. No provider,
+native supervisor, command, stock or shared source tree changes.
+
+The trace /1 and exit-context /1 generators retain their exact previously built
+identities. The new overlay adds a cstring include (already in the sealed input
+set), a POD-only guarded reader and a finite emitter. The existing bit-64 first
+winner, code, TID, exit RA, eight-frame stack and original LastError restoration
+are reused. After all three EXIT records, before original cleanup/exit, exactly
+three CALLER records are independently captured and immediately flushed:
+
+| Index | Fixed target return address |
+| --- | --- |
+| 0 | 0x140584FD8 |
+| 1 | 0x1401DA015 |
+| 2 | 0x140526D02 |
+
+Each target must occur in the already captured current-thread stack. `frame` is
+the zero-based first matching index; unavailable stack or absent target emits an
+explicit refusal with frame -1 and no lookup/read. The named module must be at
+0x140000000. RA-1 must lie in its readable committed allocation. Lookup uses
+RA-1, requires the same image base, and copies only the 12-byte RUNTIME_FUNCTION
+from a readable region in the same allocation. Begin <= RA-1 < End is mandatory.
+UnwindData remains metadata and is never dereferenced.
+
+If the entire function fits in 512 bytes and the RA-1 region contains it, capture
+the whole function. Otherwise intersect [RA-448, RA+64), [Begin, End), and the
+readable region containing RA-1. The intersection must contain RA-1 and have
+length 1..512. `scope=full` means the requested window covers the entire function;
+`window` means a bounded subset. Scope alone does not imply that the read passed.
+No region is traversed and no image/stack scan or additional stack capture occurs.
+The three new records read at most 1,536 code bytes and 36 record bytes in total,
+in addition to the unchanged EXIT /1 observations.
+
+The exact wire format is the single fprintf literal in CALLERS_SUPPORT. Fields
+in order are schema, code, tid, exit_ra, index, ra, status, frame, module, image,
+record, record_read, begin, end, unwind, start, requested, read, scope, allocation,
+region, region_size, state, protect, type, error, data. Prefix is
+`[T7_CATALOG_CALLER]`; pointers are uppercase hex16, RVAs uppercase hex8, other
+numbers decimal, and data uppercase hex2*read or `-`. LF may become CRLF.
+
+Statuses are ok, absent, stack_unavailable, module_missing, module_mismatch,
+query_failed, region_invalid, not_found, record_partial, record_read_failed,
+record_invalid, partial, read_failed, exception. Zero-initialized metadata can
+remain populated up to the failed operation. Before code selection, start,
+requested and read are zero and scope is none. Record partial has 1..11 bytes;
+record_read_failed has zero or 12; both clear all RVAs. record_invalid can retain
+a complete non-containing record. region_invalid after lookup can retain a valid
+record. The record's query region is checked internally but is not emitted.
+
+Code ok requires read=requested, partial requires 0<read<requested, and a failed
+RPM can report read_failed with zero or requested bytes. Exception zeroes RVAs
+while preserving any other bounded metadata/code already obtained. A separate
+serialization clamp also protects partial SEH outcomes: requested>512 or
+read>requested resets start/requested/read to zero and scope to none, with
+read_failed/error=ERROR_INVALID_DATA (13). An overlarge record count is reset to
+zero with zero RVAs and record_invalid. Errors in one target do not suppress the
+next target. The original cleanup and process exit remain unchanged.
+
+The maximum-width test evaluates the actual fprintf formats, including CRLF,
+maximum signed code/DWORD/SIZE_T values, longest states and 512 code bytes per
+caller. It bounds each CALLER line at 1,546 bytes and all 12 possible lines
+(six TRACE, three EXIT, three CALLER) at 6,911 bytes, within the 8,192-byte stderr
+contract. Raw bytes stay in ignored runtime evidence; committed evidence retains
+only metadata, statuses and pins. Observed capture never implies a catalogue.
+
+Source validation passes 77 Python tests with the retained source and E7 command
+records, plus 53 PowerShell checks (40 profile, 3 deadline, 10 Link telemetry).
+The initial test invocations lacked the retained E7 environment/provider
+arguments; the complete invocations above passed after those were supplied.
+No native diagnostic type, build child or lease was created. These source and
+synthetic tests do not establish C++ compilation or actual caller capture.
+
+### Exact caller build plan A, awaiting review and coordinated GO
+
+Source commit 39933eb35f85c0267a75138330ecf9da81a90ed4 produced
+`runtime/t7-callers-build-plan-a/build-plan.local.json` (298,615 bytes), SHA256
+455b67c2862105ce5670f9cb2fefb26ba8e86f0167481ae7a1d8cc7f1a1e1b20.
+The default runner source/metadata check passes with 1,083 inputs and zero
+missing pins. The initial invocation supplied forward slashes in PlanPath and
+was refused by the existing canonical-path guard; resolving that same path
+passed without changing the plan or runner. No native action occurred.
+
+| Text binding | Bytes | SHA256 |
+| --- | ---: | --- |
+| Wiring | 21,022 | 04f8ef6d2b27ca6168bf4571e5e1495d2ad4c65731597c3f5512c0cf200e7b1e |
+| PreparedMain | 28,832 | af47dee318d9390f26c326d2e8ddd734e41bdc6db81b2b240e82c653cf7d2aa4 |
+| Ordinary D2 plan | 296,330 | daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa |
+| Ordinary D2 receipt | 7,136 | c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2 |
+
+The Inputs array equals exit-context plan A exactly. Of 413 Link object paths,
+only the 21st object (main.obj, response-file line 22) changes; 412 references
+remain identical. Stages are main and Link, with the retained C helper/T7/xpak
+proof. Budgets remain 4/6 GiB, 120 seconds per stage, 600 seconds per group and
+256 MiB output. The future `runtime/zt-t7-callers-a` root is absent.
+
+NativeTypesLoaded, BinaryInputsHashed, LeaseAcquired and RunRootCreated are all
+false in the default check. Preparation creates no EXE, PDB or Passed build
+receipt. No candidate/engine was launched. Source and exact plan were sent to
+the coordinator and runtime parser owner; Sound F currently owns the heavy slot.
+Review and a separate coordinator build GO are the next actions. A later real
+catalogue invocation must bind the actual resulting artifacts in its own plan.
+
+### Caller build A: Passed and fully closed, candidate unexecuted
+
+Independent review accepted source 39933eb and the exact plan above without
+P1/P2 findings. After Sound F fully closed, the coordinator authorized one build.
+Fresh preflight at 15:34:20.4447517 UTC on 2026-10-12 admitted the unchanged
+4/6 GiB estimates, with zero leases/heavy processes, Main stopped and the exact
+Python PID 23352 generation preserved. A fresh persistent PowerShell host PID
+18716, created at 15:34:26.0478570 UTC, made the single invocation. Its outer
+process was PID 29752. Run returned without error at 15:35:13.5393776 UTC.
+
+Main compiled under /W4 /WX in 3.250 seconds, and Link completed in 2.631 seconds.
+Original roots cl PID 3484 and link PID 16372 both exited zero. The existing H1
+policy verified each root's exit and exact VCTIP residual, then closed each job
+with zero active members. Artefact hashes were stable across closure. Native
+source dependencies identify the reviewed PreparedMain (case normalized by
+MSVC). Final input revalidation passed. The group took 15.931 seconds and
+observed at most 160,584,166 output bytes, below the unchanged 256 MiB cap.
+
+Receipt `runtime/zt-t7-callers-a/receipt.json` is 14,453 bytes, SHA256
+9f8b8bc235bd52429a915bb1f1d3fc3ca0afd6b852e8897dfc312d566166aa99.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+Quarantined false and the exact reviewed ten-field BuildProfile. New artefacts
+under `runtime/zt-t7-callers-a` are:
+
+| Artefact | Bytes | SHA256 |
+| --- | ---: | --- |
+| main/main.obj | 548,659 | c02b70285028b0a7525b8761487ad5153fb2acefae543c1d930d5380e31ad434 |
+| main/compile.pdb | 1,732,608 | 2969e7be44e123245eef655f488603c132c55f04035dbe1803c8141ecdb22dd2 |
+| main/dependencies.json | 61,942 | 3222d5ee5df6d6779ab928324151357098741421809e10e148c48984f423ada5 |
+| link/zonetool-t7.exe | 21,747,200 | 01aa3310e92a1e458005de044c582c302c12149a81bf7fce23b7cc5ae153bbd4 |
+| link/zonetool-t7.pdb | 136,482,816 | e070475db1bd239fb4f7692c63948d8d7c0898a969069157fc96384c783140c9 |
+| link/zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| link/zonetool-t7.exp | 3,917 | 937c3f08a1dd29100f63bdf6926e2c370da9a74883ca54a62e2ba834bf3a2d9c |
+
+Postflight at 15:35:50.5608723 UTC found zero leases/build/telemetry processes,
+Main still stopped and Python's exact identity unchanged. The retained host
+verified the exact receipt and absence of AppDomain quarantine, saved its
+outcome and exited zero. Session 15400 closed. Independent observation at
+15:36:30.9704126 UTC confirmed host 18716, outer 29752, both tool roots and both
+VCTIP residuals absent. All four pre/postflight and host outcome/exit records
+remain under `runtime/t7-callers-build-plan-a`.
+
+The coordinator and runtime parser owner received these artefacts and closure
+proof. No retry, candidate execution or engine launch occurred. CandidateExecuted
+and Ready remain false. Compilation proves C++/SEH syntax and linkage; it does
+not prove real caller captures, the cause of ExitProcess, catalogue generation
+or gameplay. The next action is a separately reviewed runtime plan using these
+actual artefact identities, followed only by its own explicit coordinator GO.
