@@ -1174,3 +1174,54 @@ those stages; source authorization alone does not authorize them.
 CorePatchA awaits targeted review and a distinct qualification GO. Plan M
 does not yet exist: it can use the fourth file only after qualification has
 fully closed with a real hash/identity. No runtime compatibility is claimed.
+
+## Accepted bounded batch: CorePatchA and catalogue M closed
+
+The coordinator subsequently accepted the exact three-dependency protocol,
+source commit `22bbaa184c583c7d579b991def9b79c73b2a19e4`, V2 profile, reader and
+unchanged MSG candidate. The proposal JSON remains immutable historical evidence.
+This permits at most six sequential heavy phases, no retries, and continuation
+only from the analysis owner's complete correlated message naming one new safe
+startup zone. Every existing admission, identity, size and lifecycle stop remains.
+
+CorePatchA ran once at 19:20:48 UTC. Two guarded passes of 45,217,664 bytes
+established the actual hash and stable identity; compatibility, headers, depot
+integrity and engine lookup remain unproved. Guards closed, the tree closed,
+the lease released and quarantine was absent. PTY 98502 exited 0 (`d9fa11`);
+the independent 19:25:14 UTC witness found host and parent absent, no clients,
+heavy workloads or leases, Main/UDP absent and the preserved Python unchanged.
+An interactive proof-write path error was corrected using the explicit absolute
+path, without repeating qualification or changing its result.
+
+Plan M declares four qualified inputs totaling 68,194,304 bytes, 34 bindings,
+eight metadata rows and an output ceiling of 196,003,736 bytes. Source-only
+default and actual host/runner argument capture passed before publication of
+the sealed plan and dispatch. Fresh admission passed at 55.11% commit usage,
+with the unchanged 6/8 GiB reservation and no RAM reserve.
+
+The unique M run exited naturally with code 0 after 3,025.71 ms, but finalized
+as `Failed / NoCatalogue` at 19:27:42 UTC. The correlated private MSG awaits
+interpretation by its analysis owner. Under-lease input hashes and identities
+revalidated; same-host postflight checked eight metadata rows and sixteen IDs.
+The guards' disposal follows the pinned runner's finally path before wrapper
+return. PTY 48452 actually exited 0 (`e14b7c`); the independent 19:28:47 UTC
+witness confirmed host, parent and native root absent, zero heavy/client/lease
+counts, unchanged stopped Main baseline and preserved Python identity.
+No payload hash was read after release.
+
+A draft closure helper's cosmetic variable-renaming expression failed parsing
+before invocation. The failed draft is retained privately. The corrected helper
+kept predecessor variable names, changed only exact attempt values, passed
+parsing and the same-host closure checks. No operational source or Run changed.
+Future closure helpers should likewise change only fixed attempt values.
+
+The [M checkpoint](catalogue-runtime-m-20261012.json) records both completed
+phases and their private evidence pins. One of three dependency cycles is
+consumed. Further execution remains conditional on the separately accepted
+protocol; no catalogue, export, conversion or rendering has been established.
+
+The analysis owner then confirmed M's complete correlated 41-byte message names
+`en_core_gfx`, a new startup-zone failure in the same category. Its single exact
+path is an ordinary 768-byte file; only metadata and an OS file ID were read.
+Five declared inputs would total 68,195,072 bytes. These observations satisfy the
+batch's name/metadata bounds for dependency two; they prove no content validity.
