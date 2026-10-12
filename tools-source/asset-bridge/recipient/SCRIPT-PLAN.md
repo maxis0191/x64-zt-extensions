@@ -1,7 +1,8 @@
 # Recipient I preparation: compiled utility observation
 
 Execution update: the separately authorized I invocation completed and restored
-its inputs, but script export failed with an empty ScriptFile index. References
+its inputs, but script export found no exact utility name match. `available=0`
+counts requested matches, not all loaded ScriptFiles. References
 passed; no utility bytes or imports were observed. See the
 [I result](native-validation-i-2026-10-12.json) and [failure boundary](README.md#i-references-verified-utility-index-empty-restoration-confirmed).
 The preparation below is retained as the reviewed pre-run plan. Its GO is now

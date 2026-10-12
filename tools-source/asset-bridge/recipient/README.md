@@ -553,6 +553,11 @@ The coordinator owns the next separate gate and central GitHub integration.
 
 ## I: references verified, utility index empty, restoration confirmed
 
+Source correction: "index empty" here means the **requested-name match map** is
+empty. `available=0` does not count all loaded ScriptFiles. The original I record
+is retained; [the source analysis](SCRIPT-INDEX-ANALYSIS.md) binds this correction
+and the next proposed name-only witness without another native execution.
+
 After independent reader/Plan review, the coordinator authorized exactly one
 two-phase invocation of source `da643954`. The [I record](native-validation-i-2026-10-12.json)
 retains the actual result: references again passed 4/4 with the same 265-byte CSV,
