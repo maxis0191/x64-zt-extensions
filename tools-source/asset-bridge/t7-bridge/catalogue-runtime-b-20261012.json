@@ -1,0 +1,110 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-observation/1",
+  "date": "2026-10-12",
+  "attempt": "B",
+  "source_commit": "5b64e86d8edd7782b9c04f59907aa74eee5e3271",
+  "plan_sha256": "bc5de39e59a5f2ba8a8139570e33cc79075d27d4a46e7a845e36d701c52594ed",
+  "invocations": 1,
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "qualification_error": "No qualified catalogue was produced.",
+  "root_exit_code": 0,
+  "native_stage_elapsed_ms": 2180.246299982071,
+  "termination_requested": false,
+  "candidate": {
+    "bytes": 21740032,
+    "sha256": "94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15"
+  },
+  "observed_zone": {
+    "file": "mp_freerun_04.ff",
+    "bytes": 16977344,
+    "sha256": "7456c7fbbcfe29ca3b71298bfab3f77e253dfabdda82a88304aa8eecb019125b",
+    "provenance": "ObservedUnderLeaseNotDepotVerified",
+    "guard_retained_through_native_closure": true,
+    "payload_reverified_under_lease_after_closure": true
+  },
+  "outputs": {
+    "stdout_bytes": 70,
+    "stderr_bytes": 0,
+    "stdout_message": "[ INFO ][ zonetool::t7::init_zonetool ]: ZoneTool is initializing...",
+    "catalogue_files": 0,
+    "startup_output_profile_validated": true,
+    "steam_appid_bytes": 6,
+    "steam_appid_text": "311210",
+    "identity_payload_files": 0,
+    "extra_missing_file_message": false,
+    "binary_payload_read_after_release": false
+  },
+  "closure": {
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "inputs_reverified": true,
+    "original_metadata_unchanged": true,
+    "postflight_utc": "2026-10-12T13:34:00.4645135Z",
+    "postflight_lease_count": 0,
+    "postflight_heavy_count": 0,
+    "original_root_present": false,
+    "main_generation_and_udp_owner_unchanged": true,
+    "postflight_original_metadata_equal": true,
+    "postflight_source_and_alias_ids_equal": true,
+    "host_quarantine_absent": true,
+    "host_normal_exit_confirmed": true,
+    "host_and_candidate_absent_utc": "2026-10-12T13:34:11.5585768Z",
+    "host_present": false,
+    "candidate_present": false,
+    "aliases_retained": 4,
+    "preserved_python_generation_unchanged": true
+  },
+  "evidence": [
+    {
+      "name": "evidence/receipt.json",
+      "bytes": 4352,
+      "sha256": "b5bb8c2c4814f496a05f549fbe5d0f19d1627ba440b87ab481ce22df0429a2a1"
+    },
+    {
+      "name": "evidence/stdout.log",
+      "bytes": 70,
+      "sha256": "f54b1b215440fd9e9e6533e672b006bca812ae3945573c470509512db12164ca"
+    },
+    {
+      "name": "evidence/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "postflight.local.json",
+      "bytes": 3060,
+      "sha256": "2664eb54ec8e72fe4599c7cbedee5e45b64d2125161d341db99378dfc8aad467"
+    },
+    {
+      "name": "host-outcome.local.json",
+      "bytes": 291,
+      "sha256": "019bb58cd5a7090d309edd2f737f35400628dc94f1483321ffcdfe6b5a9a9999"
+    },
+    {
+      "name": "host-absence.local.json",
+      "bytes": 118,
+      "sha256": "f7d92cf88f5547173cafe0024d10eaf641d30fcc8eca8abba726936780c336bf"
+    },
+    {
+      "name": "inventory-after-closure.local.json",
+      "bytes": 3544,
+      "sha256": "718c79d83ba792c436b5411b28a3fe784911fd350be166987b269814380d3760"
+    }
+  ],
+  "limits": {
+    "missing_dependency_named": false,
+    "catalogue_produced": false,
+    "initialization_complete_proven": false,
+    "original_engine_init_returned_proven": false,
+    "handle_params_reached_proven": false,
+    "model_name_observed": false,
+    "asset_export_performed": false,
+    "engine_compatibility_proven": false,
+    "all_external_io_observed": false,
+    "next_native_go": false,
+    "ready": false
+  },
+  "next_action": "Build owner inspects actual prepared D2 initialization/command/exit control flow using retained source. No automatic retry, additional FF or new native probe."
+}

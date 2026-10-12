@@ -35,7 +35,7 @@ function Exit-IW7ResourceLease([string]$Token){
 $testRoot=Join-Path $PSScriptRoot ('.observer-finalization-test-'+[guid]::NewGuid().ToString('N'))
 try {
     [IO.Directory]::CreateDirectory($testRoot)|Out-Null
-    foreach($script:mode in 'success','accounting-before','publication','accounting-after','receipt-content','release','unclosed','changed-source','failed-native'){
+    foreach($script:mode in 'success','accounting-before','publication','accounting-after','receipt-content','release','unclosed','changed-source','failed-native','deadline-before-release'){
         $script:root=Join-Path $testRoot $script:mode
         [IO.Directory]::CreateDirectory($script:root)|Out-Null
         [IO.File]::WriteAllText((Join-Path $script:root 'original.txt'),'original text fixture')
@@ -59,7 +59,9 @@ try {
                 Check ($script:releaseCalls -eq 1 -and $script:state.LeaseReleased -and
                     [IO.File]::ReadAllText((Join-Path $script:root 'run.json')) -ceq $before) 'Retry changed confirmed outcome or immutable receipt'
             }else{
-                Refuse {Complete-WorldObserverReservation $script:root $script:state $lease $guards}
+                Refuse {Complete-WorldObserverReservation $script:root $script:state $lease $guards -BeforeReleaseCheck {
+                    if($script:mode -ceq 'deadline-before-release'){throw 'Mock group deadline after receipt publication'}
+                }}
                 $expectedCalls=if($script:mode -ceq 'release'){1}else{0}
                 $expectedRelease=if($script:mode -ceq 'release'){'Unconfirmed'}else{'NotAttempted'}
                 Check ($script:releaseCalls -eq $expectedCalls -and !$script:state.LeaseReleased -and
