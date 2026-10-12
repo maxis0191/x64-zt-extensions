@@ -417,4 +417,7 @@ requires a distinct source plan and authorization; this witness grants none.
 The separate [DUMP-PROBE.md](DUMP-PROBE.md) now supplies that next
 profile and an independent reader. Its fixture-only string bridge leaves token
 0 unresolved. The prepared B bytes and receipts are preserved. One separately
-authorized Compile passed under the dump Plan; its Probe remains unexecuted.
+authorized Compile and another separately authorized 149-check Probe passed
+under the dump Plan. The two actual IW7 dumps passed independent readback with
+hashes matched to that Probe receipt. FF/material/engine-token/render boundaries
+remain open; the original 111-check B witness above is unchanged.

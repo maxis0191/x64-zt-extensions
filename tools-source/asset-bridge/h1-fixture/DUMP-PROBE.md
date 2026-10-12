@@ -1,9 +1,10 @@
 # Original H1 fixture: exact IW7 dump preparation
 
-2026-10-12: the source/light preparation below was followed by one separately
-authorized **Compile A, passed**. The dump executable has not run. Compile B and
-its separate 111-check Probe remain the earlier parser/converter checkpoint.
-Neither compilation nor that earlier checkpoint is a native dump witness.
+2026-10-12: the source/light preparation below was followed by separately
+authorized **Compile A and Probe A, both passed**, then an independent readback
+of the actual two dumps, also passed. Probe A performed 149 checks. Compile B
+and its separate 111-check Probe remain the earlier parser/converter checkpoint.
+Engine string-token resolution, material completion, FF and rendering remain open.
 
 ## Production fragments and adapters
 
@@ -87,7 +88,8 @@ adapter, reader, source contract and prepared fragments as well as the existing
 compiler/job/scheduler/observer inputs. Read-only `Run-H1Native.ps1` verification
 passed all 68 bindings. Its proposed `runtime/h1-dump-observation-20261012-a`
 root was absent at this preparation checkpoint. The separately authorized
-Compile A below subsequently created its compile stage; Probe remains absent.
+Compile A below subsequently created its compile stage. Probe was still absent
+until the later, separately authorized invocation recorded at the end of this file.
 
 | Stage | Reservation | Deadline | Acceptance |
 | --- | --- | --- | --- |
@@ -176,6 +178,61 @@ compiler, linker, telemetry, ZoneTool or CDB residue. Main was the sole game
 process, PID 27784 / creation `00:52:28.7133740Z`; its image hash was rechecked
 unchanged. Read-only Probe Plan verification subsequently passed all 68 bindings
 and the successful Compile receipt without loading types or acquiring a lease.
-The Probe directory is absent. **No Probe, native dump/readback, FF or game test
-was authorized or run.** The unique Compile GO is consumed; a separate Probe
-GO is still required. This source/evidence belongs to the tranche after PR154.
+At that Compile-only checkpoint the Probe directory was absent; no dump,
+readback, FF or game test had run. The unique Compile GO was consumed and a
+separate Probe GO was required. This source/evidence belongs to the tranche after
+PR154. The next paragraph records the subsequently granted Probe authorization.
+
+## Authorized Probe A and independent readback, 09:47 UTC
+
+The coordinator then authorized exactly one Probe of the same Plan and compiled
+EXE, followed by a small independent readback. Fresh preflight at
+`2026-10-12T09:46:55.1896711Z` verified all 68 bindings, the exact executable,
+successful closed Compile receipt, absent Probe directory, zero leases/heavy
+residue and Main's unchanged identity. No FF or material-binding work was included.
+
+Probe PID 31144, created `09:47:04.2574843Z`, exited 0. Admission started
+`09:47:04.2212544Z`; acceptance took 327.7112 ms and the receipt finished at
+`09:47:04.7614427Z`. The original job closed and its separate 256/256 MiB lease
+was released. As with earlier Probe B, it finished before CIM registration:
+`RegistrationError` is `Original process differs from scheduler observation.`
+and `Registration` is `Original job already empty before CIM registration`.
+Closure was established through the retained original process/job handles, not
+by adopting an unverified PID. No quarantine, correction or retry occurred.
+
+The actual native stdout reports **149 checks**, production parsers/converters
+and dump executed, 24 vertices checked, exactly one fixture string-adapter call
+and two dump files. The raw bone token stayed zero. The original material name
+and unlinked in-memory LOD stub stayed unchanged. This is an actual execution of
+the pinned dump bodies and production assetmanager serializer, with the declared
+class/string adapters; it is not a whole application or engine string-table pass.
+
+| Actual output | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `paris_h1_original_cube.xmb` | 976 | `42db307ec9a146c1dbdf9328e2dae65426de83588f5bc735adc2fa2750d1f766` |
+| `paris_h1_original_cube_lod0.xsb` | 1,236 | `a6f763660220d2f82434e469f5f5e626f55c12061edc1818952ef3218cbb0524` |
+| Probe receipt | 2,976 | `580de36388d7aec0e9bbcc42457ae7ebfa0be19992ba3cbe82ded135fcfad3cb` |
+
+Stdout is 563 bytes; stderr is 101 bytes, just the two parser messages. Probe
+has five files / 5,852 bytes. Compile plus Probe totals **11 files / 19,029,999
+bytes**, within 32 MiB. All hashes and scope flags are retained in
+[dump-probe-observation-2026-10-12.json](dump-probe-observation-2026-10-12.json).
+
+The independent Python reader then consumed those exact native outputs and the
+original synthetic H1 inputs. Before reading, the observer matched each output's
+bytes/length/SHA to `DumpArtifacts` in that actual receipt. Full profile readback
+passed, including all 24 vertices, 12 triangles, root/bind/bounds/UV/frame
+correspondence, names and absent optional fields. The raw reader report retains
+`native_provenance_verified=false` because the reader itself does not authenticate
+receipts. The separate observer records that provenance binding in
+[dump-readback-observation-2026-10-12.json](dump-readback-observation-2026-10-12.json).
+The outputs read were genuine native outputs, not the synthetic IW7 streams used
+by tests; the original H1 input fixture itself remains synthetic/original.
+
+Fresh inventory at `09:47:24.6836374Z` found zero leases or native/heavy residue;
+Main retained PID 27784 and its exact creation/image. All 68 Plan bindings,
+the executable and Main's image hash were rechecked after execution. No existing
+B evidence or shared native E7 source was modified. Both one-shot GOs are now
+consumed. The dependency handoff above is the next source task; **no FF, new
+material binding, engine token integration, renderer or game acceptance follows
+from this dump/readback pass**.
