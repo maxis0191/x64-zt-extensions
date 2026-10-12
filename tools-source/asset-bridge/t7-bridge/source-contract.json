@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "status": "source-only; native compile/export unobserved",
+  "repository": "bigmangeekf/x64-zt",
+  "commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "encoding": "UTF-8 source bytes with CRLF normalized to LF",
+  "profile": "t7-iw7-resident-static-v1",
+  "files": [
+    {
+      "path": "src/zonetool/main.cpp",
+      "lf_bytes": 12374,
+      "sha256_lf": "205578e09b66f830df33d51e74d56be72aec249c690149810961a6184e96235e"
+    },
+    {
+      "path": "src/zonetool/game/shared.cpp",
+      "lf_bytes": 12573,
+      "sha256_lf": "7296150205d468d6f026ac2a925dbbdb20a3fcc2693ea1e45e08366e1b3fc3c1"
+    },
+    {
+      "path": "src/zonetool/game/shared.hpp",
+      "lf_bytes": 5727,
+      "sha256_lf": "a2811b54171ce5160e5862200b113fd4c219929388f62bae24595905be3f7fe4"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/structs.hpp",
+      "lf_bytes": 68857,
+      "sha256_lf": "bfd152e6225a3cb46ad131a154e3d8b64b6f3440717a8a91519e393fc0c46201"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/zonetool.cpp",
+      "lf_bytes": 19076,
+      "sha256_lf": "e44e5da5286db276e52a2bc38d8c0fae220c6a26bb553844b97b163d329c8db0"
+    },
+    {
+      "path": "src/zonetool/component/t7/zonetool.cpp",
+      "lf_bytes": 1378,
+      "sha256_lf": "ab6e0ce3d38ece4cfacdf8c49c9e00eb9626600237e78fa29b3eea6818d94c0f"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/converter/iw7/assets/xmodel.cpp",
+      "lf_bytes": 6584,
+      "sha256_lf": "389716740f4bd7422fd70773cd0f0b1270d052e051d90eaec94fa8175993f332"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/converter/iw7/assets/xmodel_mesh.cpp",
+      "lf_bytes": 7742,
+      "sha256_lf": "dd2b83002f094b1d42637da8f36a705b4c81ac4e279894f1531bee8ae7c48b70"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/converter/iw7/assets/xanim.cpp",
+      "lf_bytes": 5398,
+      "sha256_lf": "bb775513e73b48ac3827d9a4f45268065bef306f1753b3d839c22230a4b52b0e"
+    },
+    {
+      "path": "src/zonetool/zonetool/t7/common/xpak.cpp",
+      "lf_bytes": 7922,
+      "sha256_lf": "9ba8d47147d0a8842742c87593e9171dfebd808b3a85af7983c9a983f2e1f443"
+    },
+    {
+      "path": "src/zonetool/zonetool/iw7/structs.hpp",
+      "lf_bytes": 341135,
+      "sha256_lf": "482affaf3641dc5318422c4cef45383923183349ae91d18e9d3ff29699f8a0df"
+    },
+    {
+      "path": "src/zonetool/zonetool/iw7/assets/xmodel.cpp",
+      "lf_bytes": 13433,
+      "sha256_lf": "a72e445a09c21b165b09c6648164bd60044ab494ba6ccbbe9c175f1ce31276f4"
+    },
+    {
+      "path": "src/zonetool/zonetool/iw7/assets/xsurface.cpp",
+      "lf_bytes": 16721,
+      "sha256_lf": "4f64194d253bd6bbbea813d624fecacf4ee1e6ed8ecccbdf1f70f13825204a9a"
+    },
+    {
+      "path": "src/zonetool/zonetool/utils/io/assetmanager.hpp",
+      "lf_bytes": 15944,
+      "sha256_lf": "28f3981362f6ce502add0ad3c6716b64e948dd7c85ebe744b04b1f4f14c66f05"
+    },
+    {
+      "path": "src/zonetool/zonetool/utils/io/filesystem.cpp",
+      "lf_bytes": 7617,
+      "sha256_lf": "580cdb455ad178b1cb14fcadecea1a7ec2738ecdd25b655aa12254b9098a76c2"
+    },
+    {
+      "path": "src/common/utils/memory.hpp",
+      "lf_bytes": 1555,
+      "sha256_lf": "0ff5266730dd822e7d7de14a0d217ccba9066b52313d85786f3b66458d825c42"
+    }
+  ],
+  "iw7_native_record_bytes": {
+    "XModel": 736,
+    "XSurface": 256,
+    "XModelSurfs": 56
+  },
+  "stream_format": "ZoneTool assetmanager typed native-layout records; no global magic/version",
+  "native_provenance_verified": false,
+  "donor_model_selected": false,
+  "bo3_export_observed": false
+}

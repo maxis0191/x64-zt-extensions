@@ -1,0 +1,119 @@
+{
+  "schema": "iw7.t7-iw7-cli-source-contract/1",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "files": {
+    ".gitattributes": {
+      "lf_bytes": 162,
+      "lf_sha256": "f8d22fb8e084b60e159b14ac9523e6e6a93bd904339b90b173f024409fdd6073"
+    },
+    "SOURCE-AUDIT.md": {
+      "lf_bytes": 14440,
+      "lf_sha256": "1506e4e4d4f0ddc58ffa825a9b5e75d08d5442ec379acb37fac3dd235679e685"
+    },
+    "source-inventory.json": {
+      "lf_bytes": 3133,
+      "lf_sha256": "e0a8a99fed0d76f2db0df5d87d0c6a2bd63cd20399504b6ae04bf31588607b84"
+    },
+    "boot_contract.py": {
+      "lf_bytes": 3439,
+      "lf_sha256": "cc1323778270b51c05587fde63641327c8dd4b5b9d02f041dd07332439c68d99"
+    },
+    "test_boot_contract.py": {
+      "lf_bytes": 2443,
+      "lf_sha256": "a2e47486742a978b90a574397e66f2b8c1c86c943d329b1174be50e2bf48beb3"
+    },
+    "native_cli.inc": {
+      "lf_bytes": 1136,
+      "lf_sha256": "d1e30d1c6195d63696f2755faff03a3ece48e3afcb0a6d082fd6b42da9a89934"
+    },
+    "native_export.inc": {
+      "lf_bytes": 9668,
+      "lf_sha256": "81eae2e9067b5c365b3a4fc6faca1e34c7a7fc1629c61444357c0adc78fd77ed"
+    },
+    "prepare_cli.py": {
+      "lf_bytes": 4585,
+      "lf_sha256": "dc089d79578ea51d00e2f05f88ff1d0dfba8ea5820c04beb03266b44acfdd142"
+    },
+    "test_cli_patch.py": {
+      "lf_bytes": 3236,
+      "lf_sha256": "a1a6d0d9bde5a38efad874252d747b8e2f4fced77b538418b16523c682a2a558"
+    },
+    "export_contract.py": {
+      "lf_bytes": 3805,
+      "lf_sha256": "36808e9776103308dcd7859c1be400e808ed02ffb8707f5dbedde0b698870fbc"
+    },
+    "test_export_contract.py": {
+      "lf_bytes": 3730,
+      "lf_sha256": "57ac2e06156c6af2e60cef02b845f99bb3fef600d0c1500aa357fc2914115dc4"
+    },
+    "zonetool-fab9358-t7-resident-cli.patch": {
+      "lf_bytes": 13696,
+      "lf_sha256": "cd668ee35257913578c3337e57e5f7bc921989b0e64c2029f368fed909ff08e3"
+    }
+  },
+  "external_adapter": {
+    "repository_path": "tools-source/asset-bridge/t7-bridge/t7_iw7_resident_model.hpp",
+    "profile": "t7-iw7-resident-static-v1",
+    "lf_bytes": 13444,
+    "lf_sha256": "6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777",
+    "compile_verified": false,
+    "source_commit": "cf1949658fa374bcd14db79865247243fca7c34c",
+    "required_sibling": {
+      "name": "t7_asset_name.hpp",
+      "lf_bytes": 1945,
+      "lf_sha256": "171a3834a1e4c2321347850d350d9683eee4dec7715f3fdc95d5cb12c4adee65"
+    },
+    "native_boundary_fixture": {
+      "name": "test_t7_asset_name.cpp",
+      "lf_bytes": 2170,
+      "lf_sha256": "b77aee23860f07c9dee92063a1b322d7964da77880990cdd6dc9064f8bb4ddfc",
+      "expected_checks": 51,
+      "compiled": false,
+      "executed": false
+    }
+  },
+  "patched_source_lf_sha256": {
+    "src/zonetool/main.cpp": "78f4a60419375be3e22e7ac16f5867f03c49d4002ae794f8906d9e7d457503f5",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "f74e1d358b91b9530928b7635b87d10f7bab8670d954dc8c61a0d61e63ace33a",
+    "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
+    "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
+  },
+  "compile_replacements": [
+    {
+      "source": "src/zonetool/main.cpp",
+      "object": "main.obj",
+      "retained_object_metadata_bytes": 269417
+    },
+    {
+      "source": "src/zonetool/zonetool/t7/zonetool.cpp",
+      "object": "zonetool11.obj",
+      "retained_object_metadata_bytes": 1207187
+    },
+    {
+      "source": "src/zonetool/zonetool/t7/common/xpak.cpp",
+      "object": "xpak.obj",
+      "retained_object_metadata_bytes": 683683
+    }
+  ],
+  "unaffected_e7_objects": 410,
+  "reused_project_libraries": 18,
+  "reused_resource_inputs": 1,
+  "full_or_incremental_build_invoked": false,
+  "binary_input_contents_read": false,
+  "python_tests_passed": 19,
+  "python_tests_use_only_source_and_invented_records": true,
+  "git_apply_check_passed": true,
+  "native_patch_applied": false,
+  "native_compiled": false,
+  "native_executed": false,
+  "stock_staged": false,
+  "stock_plan_prepared": false,
+  "ready": false,
+  "remaining_gates": [
+    "Integrate exact conversion adapter and independent source review.",
+    "Seal source/toolchain/410 reused objects/18 libraries/resource/debug inputs and exact command/environment closure under separate admission.",
+    "Review private three-TU incremental build plus original-job supervisor adapter and obtain stage GO.",
+    "Bind available exact T7 dedicated engine, selected stock files, bootstrap dependencies and recipient restore profile before native GO.",
+    "Validate serialized parse and geometry; resolve material payloads and source-zone provenance separately."
+  ]
+}

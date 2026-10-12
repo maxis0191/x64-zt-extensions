@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "observed_utc": "2026-10-12T10:28:47.4490584Z",
+  "purpose": "Prepare official SteamCMD for a separately admitted metadata-only BO3 server app query",
+  "source_url": "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip",
+  "zip": {
+    "bytes": 774825,
+    "sha256": "7669b170dee42db8ee2273775ed7dfb2d173bdba1b849f70d2c7b379290bce13",
+    "transfer_cap_bytes": 1048576,
+    "entries": ["steamcmd.exe"]
+  },
+  "executable": {
+    "bytes": 1687464,
+    "sha256": "fc103a323d70caaac475ae1cfcacfd8eec4c6b1e130005c4793f2013b4b019f8",
+    "file_version": "02.02.95.35",
+    "authenticode_status": "Valid",
+    "authenticode_signer": "CN=Valve, OU=Digital ID Class 3 - Microsoft Software Validation v2, O=Valve, S=Washington, C=US",
+    "extraction_cap_bytes": 8388608
+  },
+  "prepared_bytes": 2462289,
+  "execution_performed": false,
+  "self_update_performed": false,
+  "account_login_performed": false,
+  "server_app_metadata_queried_with_steamcmd": false,
+  "bo3_payload_downloaded": false,
+  "future_total_bootstrap_cache_log_limit_bytes": 536870912,
+  "candidate_app_id": 545990,
+  "candidate_app_id_primary_metadata_confirmed": false,
+  "next_action": "Run bounded metadata query under existing process/job/resource supervision only after the coordinator admits this stage. Verify application name, depots, manifest IDs and sizes. No app_update or download_depot."
+}
