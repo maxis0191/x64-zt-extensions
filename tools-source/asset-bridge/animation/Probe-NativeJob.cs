@@ -99,7 +99,7 @@ namespace IW7.AnimationProbe
             if (!Path.IsPathFullyQualified(start.FileName) || !Path.IsPathFullyQualified(start.WorkingDirectory)) throw new ArgumentException("Absolute native paths required");
             imageGuard = new FileStream(start.FileName, FileMode.Open, FileAccess.Read, FileShare.Read);
             using (var digest = SHA256.Create())
-                if (!String.Equals(Convert.ToHexString(digest.ComputeHash(imageGuard)), expectedHash, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Retained executable hash differs");
+                if (!String.Equals(BitConverter.ToString(digest.ComputeHash(imageGuard)).Replace("-", String.Empty), expectedHash, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Retained executable hash differs");
             job = CreateJobObjectW(IntPtr.Zero, null); // unnamed, noninheritable
             Check(!job.IsInvalid, "Create owned job");
             var limits = new ExtendedLimit(); limits.basic.flags = KillOnClose | LimitPriority; limits.basic.priority = BelowNormal;
