@@ -436,5 +436,5 @@ contract; it is not collision generation or gameplay evidence. No observer was
 installed or run in this source-only pass.
 
 ```powershell
-python -B "$world/inspect_world_consumer.py" --reference-root "C:/Users/ezvalo/Documents/IW7-Paris-Server/tools/references"
+python -B "$world/inspect_world_consumer.py" --reference-root "<absolute-path-to-retained-references>"
 ```
