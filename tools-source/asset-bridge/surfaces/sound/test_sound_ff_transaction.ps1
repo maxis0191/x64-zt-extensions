@@ -1,5 +1,6 @@
-param([switch]$DumpOnly)
+param([switch]$DumpOnly,[switch]$StandardMod)
 $ErrorActionPreference='Stop'
+if($DumpOnly -and $StandardMod){throw 'Select one profile.'}
 $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))
 . "$PSScriptRoot/SoundFF.Core.ps1"
 $actualPhase=(Get-Command Invoke-SoundFFPhase).ScriptBlock
@@ -13,6 +14,7 @@ $temp=[IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('iw7-sound-c
 try {
     $cases=@('Success','FactoryFailure','BuildFailure','VerifyFailure','DumpFailure','ReadFailure','ReadClaimFailure','ReadArtifactFailure','UnknownClosure','DisposeFailure','SourceDrift','RestoreFailure','PostRestoreDrift','ReleaseFailure')
     if($DumpOnly){$cases=@($cases|Where-Object {$_ -notin 'BuildFailure','VerifyFailure'})}
+    if($StandardMod){$cases+=@('ReadZoneFailure','ReadNamesFailure','ReadFFFailure','ReadProfileFailure','ReadSourceFailure','ReadDumpZoneFailure','ReadInventoryFailure')}
     foreach($case in $cases){
         $caseRoot=Join-Path $temp $case;[IO.Directory]::CreateDirectory($caseRoot)|Out-Null
         $fixtureSource=Join-Path $caseRoot 'source';[IO.Directory]::CreateDirectory($fixtureSource)|Out-Null
@@ -25,6 +27,13 @@ try {
             StockInputs=@();HashInputs=@((Get-SoundFFPin $fixtureData));MutableOutputs=@('zone/sdk_original_sound_v1.ff','zone/sdk_original_sound_v1.sabl','zone/sdk_original_sound_v1.sabs');
             Review=[pscustomobject]@{source=$fixtureSource;source_stage_relatives=@('original.txt');phase_adapter=(Join-Path $PSScriptRoot 'sound_ff_phase.py');phase_specs=@('build','verify','dump','read'|ForEach-Object {[pscustomobject]@{phase=$_}})}}
         $dataPin=$plan.HashInputs[0];$firstPhase=if($DumpOnly){'dump'}else{'build'}
+        $zone=if($StandardMod){'mod'}else{'sdk_original_sound_v1'}
+        if($StandardMod){
+            $plan|Add-Member NoteProperty Profile 'StandardMod'
+            $plan|Add-Member NoteProperty PayloadInputs @($dataPin)
+            $plan|Add-Member NoteProperty ImmutableFF ([pscustomobject]@{Artifacts=@()})
+            $plan.HashInputs=@();$plan.MutableOutputs=@('ff','sabl','sabs'|ForEach-Object {'zone/mod.'+$_})
+        }
         if($DumpOnly){
             $plan|Add-Member NoteProperty Profile 'DumpOnly'
             $plan|Add-Member NoteProperty PayloadInputs @($dataPin)
@@ -95,7 +104,7 @@ try {
             if($Spec.phase -eq 'build'){
                 if($DumpOnly){throw 'DumpOnly regenerated F'}
                 [IO.Directory]::CreateDirectory((Join-Path $fixtureWork 'zone'))|Out-Null
-                foreach($tuple in @(@('ff',128),@('sabl',114816),@('sabs',4096))){[IO.File]::WriteAllBytes((Join-Path $fixtureWork ('zone/sdk_original_sound_v1.'+$tuple[0])),[byte[]]::new($tuple[1]))}
+                foreach($tuple in @(@('ff',128),@('sabl',114816),@('sabs',4096))){[IO.File]::WriteAllBytes((Join-Path $fixtureWork ('zone/'+$zone+'.'+$tuple[0])),[byte[]]::new($tuple[1]))}
             }
             if(($case -eq ($Spec.phase+'Failure')) -or ($Spec.phase -eq $firstPhase -and $case -in 'UnknownClosure','DisposeFailure')){
                 $owned=[pscustomobject]@{Events=$events;Case=$case}
@@ -116,6 +125,21 @@ try {
                 $r.loaded.bytes=$Context.State.Artifacts[1].Bytes;$r.loaded.sha256=$Context.State.Artifacts[1].SHA256
                 $r.streamed.bytes=$Context.State.Artifacts[2].Bytes;$r.streamed.sha256=$Context.State.Artifacts[2].SHA256
                 if($DumpOnly){$r.dump_profile='DumpOnlyC';$r.dump_streaminfo_block_size=4096;$r.inventory_provenance='PreservedBuildF'}
+                if($StandardMod){
+                    $r.dump_profile='StandardModC';$r.dump_streaminfo_block_size=4096;$r.inventory_provenance='CurrentVerifyPhase'
+                    $r.bank_zone='mod';$r.disk_zone='mod';$r.standard_source_verified=$true;$r.dump_bank_zone_verified=$true
+                    $r.standard_filenames_verified=$true;$r.standard_filenames=@('mod.ff','mod.sabl','mod.sabs')
+                    $r.fastfile=@{bytes=$Context.State.Artifacts[0].Bytes;sha256=$Context.State.Artifacts[0].SHA256}
+                    switch($case){
+                        'ReadZoneFailure' {$r.bank_zone='sdk_original_sound_v1'}
+                        'ReadNamesFailure' {$r.standard_filenames[0]='other.ff'}
+                        'ReadFFFailure' {$r.fastfile.sha256='0'*64}
+                        'ReadProfileFailure' {$r.dump_profile='DumpOnlyC'}
+                        'ReadSourceFailure' {$r.standard_source_verified=$false}
+                        'ReadDumpZoneFailure' {$r.dump_bank_zone_verified=$false}
+                        'ReadInventoryFailure' {$r.inventory_provenance='PreservedBuildF'}
+                    }
+                }
                 if($case -eq 'ReadClaimFailure'){$r.playback_verified=$true}
                 if($case -eq 'ReadArtifactFailure'){$r.loaded.sha256='0'*64}
                 [IO.File]::WriteAllText((Join-Path $logs 'stdout.log'),($r|ConvertTo-Json -Depth 5))
@@ -138,6 +162,7 @@ try {
         if($case -eq 'Success'){
             $order=if($DumpOnly){'dump,read'}else{'build,verify,dump,read'}
             if(($state.Phases.Phase -join ',') -ne $order -or $state.Artifacts.Count -ne 3){throw 'Exact phases/three artifacts required'}
+            if($StandardMod -and ($state.Status -cne 'SoundStandardModBytesVerified' -or ($state.Artifacts.Relative -join ',') -cne 'zone/mod.ff,zone/mod.sabl,zone/mod.sabs')){throw 'Standard result/artifacts differ'}
             if($DumpOnly){
                 if($state.Status -ne 'SoundDumpOnlyBytesVerified' -or !$state.DumpFlac){throw 'DumpOnly status/hash absent'}
                 foreach($a in $artifacts){
@@ -157,7 +182,7 @@ try {
         Set-Item -Path Function:Restore-IW7BaseTransaction -Value $actualRestore
     }
     if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7HudFileIdentity' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Unexpected native class loaded'}
-    "$($cases.Count) actual transaction-flow cases passed (DumpOnly=$DumpOnly) with mock ownership/admission and real tiny-file backup/restore; no native process or stock."
+    "$($cases.Count) actual transaction-flow cases passed (DumpOnly=$DumpOnly; StandardMod=$StandardMod) with mock ownership/admission and real tiny-file backup/restore; no native process or stock."
 } finally {
     # Delete only the verified test root's own files, then its empty directories.
     $resolved=[IO.Path]::GetFullPath($temp)

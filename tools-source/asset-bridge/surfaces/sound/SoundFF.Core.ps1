@@ -138,7 +138,7 @@ function Assert-SoundFFFlacCandidate([string]$Root,[string]$ReceiptSHA256,[strin
 function Get-SoundFFRuntimePins($Plan,$Lease) {
     @($Plan.HashInputs)
     # A failure before admission must not turn cleanup into a payload reader.
-    if($Plan.Profile -ceq 'DumpOnly' -and $Lease){@($Plan.PayloadInputs)}
+    if($Plan.Profile -cin @('DumpOnly','StandardMod') -and $Lease){@($Plan.PayloadInputs)}
 }
 function Read-SoundFFImmutableF($Evidence) {
     if($Evidence.PlanSHA256 -ine '3d90a5746a8ee698fb08715e270f2855f261b318393257f91a9e7f59e3ad39d5' -or
@@ -181,7 +181,8 @@ function Assert-SoundFFDumpOnlyInputs($Plan) {
 }
 function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     $dumpOnly=$Plan.Profile -ceq 'DumpOnly'
-    if($Plan.Profile -and !$dumpOnly){throw 'Unknown sound execution profile.'}
+    $standard=$Plan.Profile -ceq 'StandardMod';$qualifiedC=$dumpOnly -or $standard
+    if($Plan.Profile -and !$qualifiedC){throw 'Unknown sound execution profile.'}
     foreach($entry in @(@('PhysicalBytes',8GB),@('CommitBytes',11GB),@('OutputStopBytes',64MB),@('LogBytesPerStream',2MB),@('CleanupMs',15000))){
         $value=$Plan.($entry[0]);if(($value -isnot [long] -and $value -isnot [int]) -or $value -ne $entry[1]){throw 'Exact typed native 8/11 budget and limits required.'}
     }
@@ -189,9 +190,10 @@ function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     foreach($path in @($Plan.RunRoot,$Plan.Work,$Plan.SharedRepo,$Plan.Python,$Plan.CandidateRoot,$Plan.Review.source)){Assert-SoundFFPath $path}
     if(Test-Path -LiteralPath $Plan.RunRoot){throw 'Fresh absent native RunRoot required; no retry.'}
     if($Plan.Work -ine (Join-Path $Plan.RunRoot 'work')){throw 'Owned work path differs.'}
-    $candidate=if($dumpOnly){Assert-SoundFFFlacCandidate $Plan.CandidateRoot $Plan.CandidateReceiptSHA256 $Plan.CandidateStateSHA256}else{
+    $candidate=if($qualifiedC){Assert-SoundFFFlacCandidate $Plan.CandidateRoot $Plan.CandidateReceiptSHA256 $Plan.CandidateStateSHA256}else{
         Assert-SoundFFChecksumCandidate $Plan.CandidateRoot $Plan.CandidateReceiptSHA256 $Plan.CandidateStateSHA256}
-    if($dumpOnly){Assert-SoundFFDumpOnlyInputs $Plan}
+    if($qualifiedC){Assert-SoundFFDumpOnlyInputs $Plan}
+    if($standard){Assert-SoundFFStandardSources $Plan $SoundRoot}
     if($Plan.Review.candidate_root -ine $Plan.CandidateRoot -or $Plan.Review.existing_candidate.path -ine $candidate.Path -or
         $Plan.Review.existing_candidate.sha256 -ine $candidate.SHA256 -or $Plan.Review.existing_candidate.bytes -ne $candidate.Bytes){throw 'Review and completed candidate differ.'}
     foreach($pair in @(@('build-receipt.json',$Plan.CandidateReceiptSHA256),@('supervisor-state.json',$Plan.CandidateStateSHA256))){
@@ -201,18 +203,19 @@ function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     if($Plan.Review.phase_adapter -ine (Join-Path $SoundRoot 'sound_ff_phase.py')){throw 'Bound sound phase adapter required.'}
     $staged=@('sound/community_original_sound_v1.all.aliases.csv','sound_assets/community/original_chime_v1.flac','soundbank/community_original_sound_v1.all.json','zone_source/sdk_original_sound_v1.csv')
     if($dumpOnly){$staged=@()}
+    if($standard){$staged[3]='zone_source/mod.csv'}
     if(($Plan.Review.source_stage_relatives|Sort-Object|ConvertTo-Json -Compress) -cne ($staged|Sort-Object|ConvertTo-Json -Compress)){throw 'Exact profile source staging required.'}
-    foreach($inputRoot in @($Plan.Review.source,$Plan.Review.stock_root,$Plan.CandidateRoot)){
+    foreach($inputRoot in @($Plan.Review.source,$Plan.Review.stock_root,$Plan.CandidateRoot)+@(if($standard){Join-Path $SoundRoot 'standard-mod'})){
         $full=[IO.Path]::GetFullPath($inputRoot).TrimEnd('\','/')
         if($Plan.RunRoot -ieq $full -or $Plan.RunRoot.StartsWith($full+'\',[StringComparison]::OrdinalIgnoreCase) -or $full.StartsWith($Plan.RunRoot+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Native root overlaps input root.'}
     }
-    $zone='sdk_original_sound_v1';$outputs=@('.ff','.sabl','.sabs'|ForEach-Object {'zone/'+$zone+$_})
+    $zone=if($standard){'mod'}else{'sdk_original_sound_v1'};$outputs=@('.ff','.sabl','.sabs'|ForEach-Object {'zone/'+$zone+$_})
     if($dumpOnly){$outputs=@()}
     if(($Plan.MutableOutputs|ConvertTo-Json -Compress) -cne ($outputs|ConvertTo-Json -Compress)){throw 'Exact profile mutable outputs required.'}
     $phases=@($Plan.Review.phase_specs)
     $order=if($dumpOnly){'dump,read'}else{'build,verify,dump,read'}
     if(($phases.phase -join ',') -cne $order){throw 'Exact ordered sound phases required.'}
-    $pythonPin=@($(if($dumpOnly){$Plan.PayloadInputs}else{$Plan.HashInputs})|Where-Object Path -IEQ $Plan.Python)
+    $pythonPin=@($(if($qualifiedC){$Plan.PayloadInputs}else{$Plan.HashInputs})|Where-Object Path -IEQ $Plan.Python)
     if($pythonPin.Count -ne 1 -or $pythonPin[0].SHA256 -ine '4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a'){throw 'Reviewed Python required.'}
     foreach($phase in $phases){
         $isRead=$phase.phase -ceq 'read'
@@ -222,6 +225,7 @@ function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
             '--contract',(Join-Path $SoundRoot 'sab_contract.json'),'--dump',(Join-Path $Plan.Work ('dump/'+$zone)),
             '--inventory',(Join-Path $Plan.RunRoot 'logs/verify/stdout.log'))}else{@('-headless','-unbuffered-io','-strict-content-sources',('-'+$phase.phase+'zone'),$zone)}
         if($dumpOnly -and $isRead){$args[11]=$Plan.ImmutableFF.InventoryPath;$args+=@('--dump-profile','DumpOnlyC')}
+        if($standard -and $isRead){$args+=@('--dump-profile','StandardModC')}
         if($phase.schema -cne 'iw7.material-v2-phase/1' -or $phase.exe -ine $exe -or $phase.sha256 -ine $hash -or $phase.cwd -ine $Plan.Work -or
             $phase.logs -ine (Join-Path $Plan.RunRoot ('logs/'+$phase.phase)) -or ($phase.timeout -isnot [int] -and $phase.timeout -isnot [long]) -or
             $phase.timeout -ne $(if($isRead){30}else{240}) -or ($phase.arguments|ConvertTo-Json -Compress) -cne ($args|ConvertTo-Json -Compress)){throw 'Sound phase command/path/time differs.'}
@@ -231,6 +235,42 @@ function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     $required=@('read_sab.py','read_flac.py','sound_ff_phase.py','sab_contract.json','sab_ff_helpers.json','SoundFF.Core.ps1','Build-SoundFF.ps1')|ForEach-Object {Join-Path $SoundRoot $_}
     Assert-SoundFFHelperSources $SoundRoot $Plan.SharedRepo $Plan.HashInputs
     foreach($path in $required){if(@($Plan.HashInputs|Where-Object Path -IEQ $path).Count -ne 1){throw 'Required sound source pin missing.'}}
+}
+function Get-SoundFFStageSource($Plan,[string]$Relative,[string]$SoundRoot=$PSScriptRoot) {
+    if($Plan.Profile -ceq 'StandardMod' -and $Relative -cin @('soundbank/community_original_sound_v1.all.json','zone_source/mod.csv')){
+        return Join-Path $SoundRoot ('standard-mod/'+$Relative)
+    }
+    Join-Path $Plan.Review.source $Relative
+}
+function Assert-SoundFFStandardSources($Plan,[string]$SoundRoot) {
+    foreach($pair in @(@('soundbank/community_original_sound_v1.all.json','soundbank/community_original_sound_v1.all.json'),@('zone_source/mod.csv','zone_source/sdk_original_sound_v1.csv'))){
+        $path=Get-SoundFFStageSource $Plan $pair[0] $SoundRoot
+        $pin=@($Plan.HashInputs|Where-Object Path -IEQ $path)
+        if($pin.Count -ne 1){throw 'Exact standard source pin required.'}
+        Assert-SoundFFPin $pin[0]
+        $original=Join-Path $Plan.Review.source $pair[1]
+        $originalPin=@($Plan.HashInputs|Where-Object Path -IEQ $original)
+        if($originalPin.Count -ne 1){throw 'Original text pin required.'};Assert-SoundFFPin $originalPin[0]
+        $expected=[IO.File]::ReadAllText($original)
+        if($pair[0].EndsWith('.json')){
+            $expected=$expected.Replace('"zone": "sdk_original_sound_v1"','"zone": "mod"')
+            if(($expected|ConvertFrom-Json).zone -cne 'mod'){throw 'Explicit standard bank.zone required.'}
+        }
+        # Only checkout newline normalization; all fields, paths and whitespace stay bound.
+        if([IO.File]::ReadAllText($path).Replace("`r`n","`n") -cne $expected.Replace("`r`n","`n")){throw 'Standard source differs beyond bank.zone or zone CSV name.'}
+    }
+}
+function Assert-SoundFFStandardReadback($Read,$Artifacts) {
+    if($Read.dump_profile -cne 'StandardModC' -or $Read.dump_streaminfo_block_size -ne 4096 -or $Read.inventory_provenance -cne 'CurrentVerifyPhase' -or
+        $Read.bank_zone -cne 'mod' -or $Read.disk_zone -cne 'mod'){throw 'Standard reader profile or bank/disk zone differs.'}
+    foreach($name in 'standard_source_verified','dump_bank_zone_verified','standard_filenames_verified'){
+        if($Read.$name -isnot [bool] -or !$Read.$name){throw 'Standard source/dump/name evidence missing.'}
+    }
+    if(($Artifacts.Relative -join ',') -cne 'zone/mod.ff,zone/mod.sabl,zone/mod.sabs' -or ($Read.standard_filenames -join ',') -cne 'mod.ff,mod.sabl,mod.sabs'){
+        throw 'Exact three standard artifacts required.'
+    }
+    $ff=$Read.fastfile;$artifact=$Artifacts[0]
+    if($ff.bytes -isnot [int] -and $ff.bytes -isnot [long] -or $ff.bytes -ne $artifact.Bytes -or $ff.sha256 -ine $artifact.SHA256){throw 'Observed standard FF differs from retained bytes.'}
 }
 function Save-SoundFFState($Context) {
     if(Test-Path -LiteralPath $Context.Plan.RunRoot){[IO.File]::WriteAllText($Context.StatePath,($Context.State|ConvertTo-Json -Depth 25))}
@@ -390,6 +430,7 @@ function Complete-SoundFFTransaction($Context) {
 }
 function Invoke-SoundFFTransaction($Plan,[string]$PlanPath,[string]$PlanSHA256) {
     $dumpOnly=$Plan.Profile -ceq 'DumpOnly'
+    $standard=$Plan.Profile -ceq 'StandardMod';$qualifiedC=$dumpOnly -or $standard
     $state=[ordered]@{Schema='iw7.original-sound-ff-result/1';Status='Preparing';Work=$Plan.Work;Inputs=@();Phases=@();Artifacts=@();Reader=$null;
         Transaction=$null;Restored=$false;StockPreserved=$false;RestorationStatus='Pending';JobClosureVerified=$false;JobDisposeCompleted=$false;
         SourceHashesUnchanged=$false;ReadGuardsReleased=$false;Quarantined=$false;RetainedLeaseToken=$null;Failure=$null;CleanupError=$null;
@@ -406,16 +447,17 @@ function Invoke-SoundFFTransaction($Plan,[string]$PlanPath,[string]$PlanSHA256) 
         $c.Lease=Enter-IW7ResourceLease -Scope $Plan.Work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Original sound SAB and FF build verify dump read'
         $state.RetainedLeaseToken=$c.Lease.Token
         [IO.Directory]::CreateDirectory($Plan.RunRoot)|Out-Null;Save-SoundFFState $c
-        if($dumpOnly){
+        if($qualifiedC){
             foreach($pin in $Plan.PayloadInputs){$c.Guards.Add([IO.File]::Open($pin.Path,'Open','Read','Read'));Assert-SoundFFPin $pin}
-            $state.Profile='DumpOnly';$state.ImmutableFF=$Plan.ImmutableFF;$state.Artifacts=@($Plan.ImmutableFF.Artifacts)
+            $state.Profile=$Plan.Profile;$state.ImmutableFF=$Plan.ImmutableFF
+            if($dumpOnly){$state.Artifacts=@($Plan.ImmutableFF.Artifacts)}
         }
         Initialize-SoundFFNativeTypes $Plan.SharedRepo
-        $candidate=if($dumpOnly){Assert-SoundFFFlacCandidate $Plan.CandidateRoot $Plan.CandidateReceiptSHA256 $Plan.CandidateStateSHA256 $c.Guards}else{
+        $candidate=if($qualifiedC){Assert-SoundFFFlacCandidate $Plan.CandidateRoot $Plan.CandidateReceiptSHA256 $Plan.CandidateStateSHA256 $c.Guards}else{
             Assert-SoundFFChecksumCandidate $Plan.CandidateRoot $Plan.CandidateReceiptSHA256 $Plan.CandidateStateSHA256 $c.Guards}
         $state.Inputs=@($Plan.StockInputs)
         $stage=@(foreach($relative in $Plan.Review.source_stage_relatives){
-            $path=Resolve-IW7BasePath $Plan.Review.source $relative;$pin=@($Plan.HashInputs|Where-Object Path -IEQ $path)
+            $path=Get-SoundFFStageSource $Plan $relative;$pin=@((Get-SoundFFRuntimePins $Plan $c.Lease)|Where-Object Path -IEQ $path)
             if($pin.Count -ne 1){throw 'Staged original sound input pin missing.'}
             [pscustomobject]@{Relative=$relative;Source=$path;ExpectedSHA256=$pin[0].SHA256}
         })+@([pscustomobject]@{Relative='zonetool.exe';Source=$candidate.Path;ExpectedSHA256=$candidate.SHA256})
@@ -467,7 +509,8 @@ function Invoke-SoundFFTransaction($Plan,[string]$PlanPath,[string]$PlanSHA256) 
         $read=Read-BeaconJson (Join-Path $Plan.RunRoot 'logs/read/stdout.log') 16384
         Assert-SoundFFReadback $read $state.Artifacts
         if($dumpOnly -and ($read.dump_profile -cne 'DumpOnlyC' -or $read.dump_streaminfo_block_size -ne 4096 -or $read.inventory_provenance -cne 'PreservedBuildF')){throw 'DumpOnly reader profile differs.'}
-        $state.Reader=$read;$state.Status=if($dumpOnly){'SoundDumpOnlyBytesVerified'}else{'SoundSABAndFFBytesVerified'}
+        if($standard){Assert-SoundFFStandardReadback $read $state.Artifacts}
+        $state.Reader=$read;$state.Status=if($dumpOnly){'SoundDumpOnlyBytesVerified'}elseif($standard){'SoundStandardModBytesVerified'}else{'SoundSABAndFFBytesVerified'}
         if($dumpOnly){
             $path=Join-Path $Plan.Work 'dump/sdk_original_sound_v1/sound_assets/community/original_chime_v1.flac'
             $c.Guards.Add([IO.File]::Open($path,'Open','Read','Read'));$state.DumpFlac=Get-SoundFFPin $path
