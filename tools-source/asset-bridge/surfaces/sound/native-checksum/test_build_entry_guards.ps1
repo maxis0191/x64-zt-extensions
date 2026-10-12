@@ -28,6 +28,14 @@ try {
         foreach($command in $plan.commands){if($command.response_path -ieq $from){$command.response_path=$to;$command.arguments=@('@'+$to)}}
         $global:SoundBuildEntryFixture.Paths['reviewed-response.rsp']=$to
     }
+    # Extra copies exercise the binary-source guards without requesting write
+    # access to installed SDK files. The exact production SDK pins stay intact.
+    foreach($pin in $plan.sdk_tools){
+        $name='fixture-'+[IO.Path]::GetFileName($pin.path);$to=Join-Path $temp $name
+        [IO.File]::WriteAllBytes($to,[IO.File]::ReadAllBytes($pin.path))
+        $plan.source_pins+=@(@{path=$to;bytes=$pin.bytes;sha256=$pin.sha256})
+        $global:SoundBuildEntryFixture.Paths[$name]=$to
+    }
     $copy=Join-Path $temp 'plan.json';$global:SoundBuildEntryFixture.Paths['plan']=$copy
     [IO.File]::WriteAllText($copy,($plan|ConvertTo-Json -Depth 30))
     $hash=(Get-FileHash -LiteralPath $copy).Hash.ToLowerInvariant()

@@ -8,6 +8,11 @@ from pathlib import Path
 SCHEMA = "iw7.sound-checksum-build-plan/1"
 EXPECTED = "24fe5af1473ea8f4be33912348210c78"
 CORRUPT = "78000000000000000000000000000000"
+SDK_BIN = r"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
+SDK_TOOLS = {
+    "rc.exe": (55640, "43da1503c262c30894c851589bf0155f8365d77e63a5f7bc13982320e3a6b42d"),
+    "rcdll.dll": (264536, "9a11e4759adc48abe1fa9e3082ad7db4b53f4d6d77701c13729f4ffd47ae934c"),
+}
 COMMON_MEMBERS = frozenset(name + ".obj" for name in (
     "binary_resource", "bit_buffer", "compression", "cryptography", "flags", "hook",
     "io", "memory", "minidump", "nt", "signature", "string", "thread"))
@@ -145,6 +150,28 @@ def reviewed_responses(plan, sealed_inputs):
     return result
 
 
+def reviewed_sdk_tools(plan, sealed_inputs):
+    """SDK additions are guarded Plan sources, not retroactive Seal C entries."""
+    pins = plan.get("sdk_tools")
+    require(type(pins) is list and len(pins) == 2, "two exact SDK resource tools required")
+    expected = {key(ntpath.join(SDK_BIN, name)): (length, digest)
+                for name, (length, digest) in SDK_TOOLS.items()}
+    sources = plan["source_pins"]
+    seen = set()
+    for pin in pins:
+        require(type(pin) is dict and set(pin) == {"path", "bytes", "sha256"}, "exact SDK pin fields required")
+        path = key(pin["path"])
+        require(path in expected and path not in seen and path not in sealed_inputs, "unique new SDK path required")
+        seen.add(path)
+        require(type(pin["bytes"]) is int and (pin["bytes"], pin["sha256"]) == expected[path],
+                "reviewed SDK byte identity differs")
+        matches = [source for source in sources if key(source["path"]) == path]
+        require(matches == [pin], "SDK tool must be guarded as one bootstrap source")
+    expected_path = ntpath.dirname(plan["compiler"]) + ";" + SDK_BIN + r";C:\Windows\System32"
+    require(plan["environment"].get("PATH") == expected_path, "exact compiler/SDK/system PATH required")
+    return pins
+
+
 def validate_plan(plan, sealed=False):
     require(type(plan) is dict and plan.get("schema") == SCHEMA, "sound build plan schema differs")
     require(plan.get("source_pin") == "fab935826c898806855376662a8a03317b3ad8f1", "native source pin differs")
@@ -187,4 +214,5 @@ def validate_plan(plan, sealed=False):
             "private native temporary directory required")
     require(plan.get("sab_ff_authorized") is False and plan.get("ready") is False, "build cannot authorize SAB or runtime")
     reviewed_responses(plan, {})
+    reviewed_sdk_tools(plan, {})
     return plan

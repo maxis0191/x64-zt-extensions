@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_contract import COMMON_MEMBERS, PROVIDERS, SCHEMA, json_bytes, key, require, sha, validate_plan
+from build_contract import COMMON_MEMBERS, PROVIDERS, SCHEMA, SDK_BIN, SDK_TOOLS, json_bytes, key, require, sha, validate_plan
 from response_revision import validate_revision
 
 SEAL_SHA = "f52867e7c26d05466ba57d72eef601d42376c1109dfcf61f219a1a028229f388"
@@ -70,7 +70,7 @@ def prepare(repo, python, output, response_revision=None):
     sdk = Path(r"C:\Program Files (x86)\Windows Kits\10")
     tmp = ntpath.join(candidate, "tmp")
     env = {"SystemRoot": r"C:\Windows", "WINDIR": r"C:\Windows", "SystemDrive": "C:",
-           "COMSPEC": r"C:\Windows\System32\cmd.exe", "PATH": str(Path(compiler).parent) + r";C:\Windows\System32",
+           "COMSPEC": r"C:\Windows\System32\cmd.exe", "PATH": str(Path(compiler).parent) + ";" + SDK_BIN + r";C:\Windows\System32",
            "INCLUDE": ";".join([str(vc / "include"), *[str(sdk / "Include/10.0.26100.0" / part)
                                                      for part in ("ucrt", "shared", "um", "winrt", "cppwinrt")]]),
            "LIB": ";".join([str(vc / "lib/x64"), str(sdk / "Lib/10.0.26100.0/ucrt/x64"), str(sdk / "Lib/10.0.26100.0/um/x64")]),
@@ -90,6 +90,15 @@ def prepare(repo, python, output, response_revision=None):
         if relative in helpers["files"]:
             require(sha(raw.replace(b"\r\n", b"\n")) == helpers["files"][relative], "unchanged phase provider required")
         source_pins.append({"path": str(path), "bytes": len(raw), "sha256": sha(raw)})
+    sdk_tools = []
+    for name, (length, digest) in SDK_TOOLS.items():
+        path = Path(SDK_BIN) / name
+        raw = small(path)
+        require(len(raw) == length and sha(raw) == digest and key(path) not in entries,
+                "reviewed new SDK resource tool required")
+        pin = {"path": str(path), "bytes": length, "sha256": digest}
+        sdk_tools.append(pin)
+        source_pins.append(dict(pin))
     plan = {"schema": SCHEMA, "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
             "gsc_provider_revision": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a", "candidate": candidate, "output": candidate,
             "shared_repo": str(repo), "python": str(python), "python_sha256": entries[key(python)]["SHA256"],
@@ -102,6 +111,7 @@ def prepare(repo, python, output, response_revision=None):
             "sealed": True, "seal": str(seal_path), "seal_sha256": SEAL_SHA,
             "seal_result": str(state_path), "seal_result_sha256": STATE_SHA,
             "source_pins": source_pins, "providers": providers, "environment": env, "commands": commands,
+            "sdk_tools": sdk_tools,
             "response_pins": response_pins,
             "response_revision": str(response_revision) if response_revision else None,
             "physical_bytes": 4*1024**3, "commit_bytes": 6*1024**3,

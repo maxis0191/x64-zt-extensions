@@ -9,6 +9,10 @@ and the persistent host exited after its quarantine check. The earlier D8004
 attempt and failed first SAB/FF output remain unchanged. Playback and `Ready`
 remain false; native SAB/FF validation is still pending.
 
+The [SDK resource-tool correction and future Plan F](SDK-RESOURCE-TOOLS.md) bind
+the two existing SDK files to retained guards and the exact native PATH. Source
+and default-Plan checks pass; this plan has not been executed.
+
 The subsequent [Seal C checkpoint](INPUT-SEALING.md) qualifies the retained input
 bytes. The [private executable Build Plan C](BUILD-PLAN.md) records the closed
 failed native attempt, source/mock verification and the response-file correction
