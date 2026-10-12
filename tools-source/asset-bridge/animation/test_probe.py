@@ -69,6 +69,43 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(result['buffers']['randomDataShort']['count'], 16)
         self.assertEqual(result['notetracks'][0]['normalized_time'], 0.5)
 
+    def test_ff_redump_allows_only_explicit_script_id_remap(self):
+        original = independent_native_shape()
+        offset = original.rfind(struct.pack('<If', 3, 0.5))
+        for note_id in (1, 12345, 0xffffffff):
+            data = bytearray(original)
+            struct.pack_into('<I', data, offset, note_id)
+            with self.assertRaises(ValueError):
+                read_probe.read_probe(data, 1.0)
+            result = read_probe.read_probe(data, 1.0, ff_roundtrip=True)
+            self.assertEqual(result['notetrack']['script_string_id'], note_id)
+            self.assertEqual(result['notetrack']['name'], 'probe_contact')
+            self.assertFalse(result['runtime_verified'])
+
+    def test_ff_redump_keeps_note_time_name_and_zero_id_guards(self):
+        original = independent_native_shape()
+        offset = original.rfind(struct.pack('<If', 3, 0.5))
+        for note_id, time in ((0, 0.5), (12345, 0.25), (12345, float('nan'))):
+            data = bytearray(original)
+            struct.pack_into('<If', data, offset, note_id, time)
+            with self.assertRaises(ValueError):
+                read_probe.read_probe(data, 1.0, ff_roundtrip=True)
+        with self.assertRaises(ValueError):
+            read_probe.read_probe(original.replace(b'probe_contact', b'probe_changed'), 1.0, ff_roundtrip=True)
+
+    def test_ff_redump_cli_requires_opt_in(self):
+        data = bytearray(independent_native_shape())
+        struct.pack_into('<I', data, data.rfind(struct.pack('<If', 3, 0.5)), 12345)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'synthetic-redump.xab'
+            path.write_bytes(data)
+            command = [sys.executable, '-B', str(Path(read_probe.__file__)), str(path), '--expected-frequency', '1']
+            refused = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(refused.returncode, 2)
+            accepted = subprocess.run(command + ['--ff-roundtrip'], capture_output=True, text=True, check=False)
+            self.assertEqual(accepted.returncode, 0, accepted.stdout + accepted.stderr)
+            self.assertEqual(json.loads(accepted.stdout)['readback_scope'], 'ff-redump-profile')
+
     def test_every_truncation_fails(self):
         data = independent_native_shape()
         for length in range(len(data)):
