@@ -7,6 +7,50 @@ import sys
 from read_sab import Inputs, SOURCES, ZONE, contract, original, plain, require, sha, strict_json
 from sound_ff_phase import TOOL_SHA, PYTHON_SHA, SOURCE_IDENTITY, validate, verify_helpers
 
+BUILD_RECEIPT_SHA = "a8253c8efa5b315c7870f27c6732eb6893528c0bd4c8ad3ddcbe7dde407faf62"
+BUILD_STATE_SHA = "5a99ed368636d08d1d4407e3125cab73f5da879344880588c6aa54efcb556ed8"
+BUILD_PLAN_SHA = "91280092489387e909516693d4234c60ea0416657166cf6bd8674bd974729c3a"
+
+
+def candidate_metadata(receipt, state):
+    require(receipt.get("schema") == "iw7.sound-checksum-build-receipt/1" and
+            receipt.get("status") == "NativeBuildAndCppProbesPassed" and
+            state.get("Schema") == "iw7.sound-checksum-supervisor/1", "actual sound Build F receipts required")
+    for name in ("Success", "InputsVerifiedBefore", "InputsVerifiedAfter", "FinalArtifactsVerified", "TreeClosed", "LeaseReleased"):
+        require(state.get(name) is True, "completed closed Build F required")
+    require(state.get("Failure") is None and state.get("RetainedLeaseToken") is None and
+            type(state.get("RootExitCode")) is int and state["RootExitCode"] == 0 and
+            type(state.get("JobActiveAtClose")) is int and state["JobActiveAtClose"] == 0,
+            "released successful Build F required")
+    require(state.get("PlanSHA256") == receipt.get("plan_sha256") == BUILD_PLAN_SHA and
+            state.get("RunID") == receipt.get("run_id") and state.get("RunID"), "same completed Build F generation required")
+    require(receipt.get("native_cpp_probes_verified") is True and receipt.get("sab_ff_tested") is False and
+            receipt.get("ready") is False and state.get("Ready") is False and state.get("SABFFVerified") is False,
+            "build provenance cannot grant sound playback")
+    artifact = receipt["artifacts"]["candidate_exe"]
+    require(artifact == state["Artifacts"]["candidate_exe"] and artifact.get("relative") == "bin/zonetool-sound-md5.exe" and
+            type(artifact.get("bytes")) is int and artifact["bytes"] == 21696512 and artifact.get("sha256") == TOOL_SHA,
+            "verified checksum candidate artifact differs")
+    return artifact
+
+
+def read_candidate(candidate_receipt):
+    receipt_path = plain(candidate_receipt)
+    require(receipt_path.name == "build-receipt.json", "actual Build F receipt path required")
+    root, inputs = receipt_path.parent, Inputs()
+    state_path = root / "supervisor-state.json"
+    receipt_raw = inputs.read(receipt_path, 512*1024)
+    state_raw = inputs.read(state_path, 16384)
+    require(sha(receipt_raw) == BUILD_RECEIPT_SHA and sha(state_raw) == BUILD_STATE_SHA, "exact completed Build F hashes required")
+    artifact = candidate_metadata(strict_json(receipt_raw, 512*1024), strict_json(state_raw))
+    exe = root / artifact["relative"]
+    require(plain(exe).is_file() and exe.stat().st_size == artifact["bytes"], "existing checksum candidate unavailable")
+    # Separate bounded metadata collector: the independent SAB reader keeps its
+    # 256 KiB per-file limit; this actual build receipt is 413367 bytes.
+    require(inputs.read(receipt_path, 512*1024) == receipt_raw and inputs.read(state_path, 16384) == state_raw,
+            "Build F metadata changed during preparation")
+    return root, {"path": str(exe), "bytes": artifact["bytes"], "sha256": artifact["sha256"]}, inputs.observed
+
 
 def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sha, candidate_receipt):
     source, run_root, repo = map(plain, (source, run_root, shared_repo))
@@ -32,14 +76,7 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
     require(previous.get("Schema") == "iw7.material-v2-execution-plan/1", "known existing stock plan required")
     for field, amount in (("FFPhysicalBytes", 8 * 1024**3), ("FFCommitBytes", 11 * 1024**3)):
         require(type(previous.get(field)) is int and previous[field] == amount, "native budget differs")
-    receipt_raw = inputs.read(candidate_receipt, 16384)
-    candidate = strict_json(receipt_raw)
-    builder = previous["Source"]["builder"]
-    require(sha(receipt_raw) == builder["receipt_sha256"] and candidate["schema"] == "iw7.zonetool-community-candidate/1",
-            "reviewed existing candidate receipt differs")
-    exe = candidate["executable"]
-    require(exe["sha256"] == TOOL_SHA and type(exe["bytes"]) is int and exe["bytes"] == 21696512, "known existing tool required")
-    require(plain(exe["path"]).is_file() and Path(exe["path"]).stat().st_size == exe["bytes"], "existing tool unavailable")
+    candidate_root, exe, candidate_pins = read_candidate(candidate_receipt)
     # Source-only: do not stage/hash retail files or claim fresh stock identity.
     for name in ("read_sab.py", "read_flac.py", "sound_ff_phase.py", "prepare_sab_ff.py"):
         inputs.read(own / name)
@@ -60,7 +97,9 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
     return {"schema": "iw7.original-sound-ff-review-plan/1", "status": "SourcePlanOnly", "source": str(source),
             "run_root": str(run_root), "shared_repo": str(repo), "source_contract_sha256": sha(contract_raw),
             "prior_codec_checkpoint_sha256": sha(codec_raw), "codec_repeated": False,
-            "existing_candidate": exe, "candidate_binary_hash_recheck_pending": True,
+            "existing_candidate": exe, "candidate_root": str(candidate_root),
+            "candidate_receipt_sha256": BUILD_RECEIPT_SHA, "candidate_state_sha256": BUILD_STATE_SHA,
+            "candidate_binary_hash_recheck_pending": True,
             "historical_stock_plan": str(Path(prior_stock_plan).absolute()), "historical_stock_plan_sha256": prior_stock_plan_sha.lower(),
             "stock_root": previous["StockRoot"], "fresh_stock_identity_and_content_pending": True,
             "stock_staged": False, "physical_bytes": 8 * 1024**3, "commit_bytes": 11 * 1024**3,
@@ -75,7 +114,8 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
                 "Prepare a fresh checkout-bound execution plan for the four specs and FF/SABL/SABS restoration",
                 "Fresh complete 8/11 admission, stock identities and candidate binary hash under guards",
                 "Unique central native GO; no retries"],
-            "input_pins": [{"path": str(path), "bytes": size, "sha256": digest} for path, (size, digest) in inputs.observed.items()],
+            "input_pins": [{"path": str(path), "bytes": size, "sha256": digest}
+                           for path, (size, digest) in {**inputs.observed, **candidate_pins}.items()],
             "native_authorized": False, "native_executions": 0, "ready": False, "playback_verified": False}
 
 

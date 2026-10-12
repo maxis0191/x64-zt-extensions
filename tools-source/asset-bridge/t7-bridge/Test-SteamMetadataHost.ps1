@@ -6,7 +6,7 @@ $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Invoke-SteamMetadata.ps1'),[ref]$tokens,[ref]$errors)
 if($errors.Count){throw ($errors|Out-String)}
-foreach($name in 'Measure-SteamAttempt','Assert-SteamOriginal','Wait-SteamOriginal','Close-SteamAttempt') {
+foreach($name in 'Read-SteamSnapshot','Assert-SteamExecutableFileList','Measure-SteamAttempt','Assert-SteamOriginal','Wait-SteamOriginal','Close-SteamAttempt') {
     $fn=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true)
     if(!$fn){throw ('Missing host function '+$name)}
     . ([scriptblock]::Create($fn.Extent.Text))
@@ -24,6 +24,39 @@ $tool=Join-Path $temporary 'tool';$outer=Join-Path $temporary 'outer'
 $null=[IO.Directory]::CreateDirectory((Join-Path $tool 'cache'));$null=[IO.Directory]::CreateDirectory($outer)
 $settings=[pscustomobject]@{tool_root=$tool;outer_evidence_root=$outer}
 try {
+    $snapshotPath=Join-Path $outer 'snapshot.txt'
+    $replacement=Join-Path $outer 'replacement.txt'
+    $original=[Text.Encoding]::UTF8.GetBytes('observed header and bytes')
+    [IO.File]::WriteAllBytes($snapshotPath,$original)
+    [IO.File]::WriteAllText($replacement,'replacement content')
+    $held=[Collections.Generic.List[IO.FileStream]]::new()
+    try {
+        $snapshot=Read-SteamSnapshot $snapshotPath 64 $held
+        Check ($snapshot.Length -eq $original.Length -and $held.Count -eq 1 -and !$held[0].SafeFileHandle.IsClosed) 'Snapshot guard was not retained.'
+        Check ($snapshot.SHA256 -ceq [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($snapshot.Bytes)).ToLowerInvariant() -and
+            [Text.Encoding]::UTF8.GetString($snapshot.Bytes) -ceq 'observed header and bytes') 'Header and digest did not use the same snapshot.'
+        Refuses {[IO.File]::AppendAllText($snapshotPath,'growth')} '.'
+        Refuses {[IO.File]::Move($replacement,$snapshotPath,$true)} '.'
+        Check ([IO.File]::ReadAllText($snapshotPath) -ceq 'observed header and bytes' -and (Test-Path -LiteralPath $replacement)) 'Guarded file was replaced or grew.'
+    }finally{foreach($guard in $held){$guard.Dispose()};$held.Clear()}
+    [IO.File]::WriteAllBytes($snapshotPath,[byte[]]::new(65))
+    Refuses {Read-SteamSnapshot $snapshotPath 64 $held} 'exceeds byte bound'
+    Check ($held.Count -eq 0 -and $snapshot.Length -eq $original.Length -and
+        [Text.Encoding]::UTF8.GetString($snapshot.Bytes) -ceq 'observed header and bytes') 'Oversize read retained a handle or mutated earlier snapshot.'
+    Remove-Item -LiteralPath $snapshotPath,$replacement
+    $listPath=Join-Path $outer 'filelist.txt'
+    try {
+        [IO.File]::WriteAllText($listPath,"UnrankedServer/BlackOps3_UnrankedDedicatedServer.exe`n",[Text.UTF8Encoding]::new($false))
+        $list=Assert-SteamExecutableFileList $listPath $held
+        Check ($held.Count -eq 1 -and $list.Length -gt 0) 'Literal allowlist was not retained.'
+    }finally{foreach($guard in $held){$guard.Dispose()};$held.Clear()}
+    foreach($bad in @("regex:.*`n","UnrankedServer/BlackOps3_UnrankedDedicatedServer.exe`nUnrankedServer/zone/example.ff`n",'')) {
+        try {
+            [IO.File]::WriteAllText($listPath,$bad,[Text.UTF8Encoding]::new($false))
+            Refuses {Assert-SteamExecutableFileList $listPath $held} 'exact one-file literal'
+        }finally{foreach($guard in $held){$guard.Dispose()};$held.Clear()}
+    }
+    Remove-Item -LiteralPath $listPath
     [IO.File]::WriteAllBytes((Join-Path $tool 'cache/data'),[byte[]](1,2,3))
     [IO.File]::WriteAllBytes((Join-Path $outer 'stdout.log'),[byte[]](4,5))
     $sample=Measure-SteamAttempt $settings 0
@@ -33,6 +66,12 @@ try {
     [IO.File]::WriteAllBytes((Join-Path $outer 'stdout.log'),[byte[]](4,5))
     $script:clock=200000;Refuses {Measure-SteamAttempt $settings 0} 'deadline'
     $script:clock=0
+    [IO.File]::WriteAllBytes((Join-Path $outer 'manifest-test.txt'),[byte[]]::new(1MB))
+    Refuses {Measure-SteamAttempt $settings 0} 'Private output byte cap'
+    $settings|Add-Member NoteProperty operation 'depot-file-manifest'
+    $manifestSample=Measure-SteamAttempt $settings 0
+    Check ($manifestSample.OuterBytes -eq 1MB+2) 'Manifest metadata needs its explicit larger output cap.'
+    Remove-Item -LiteralPath (Join-Path $outer 'manifest-test.txt')
 
     function Measure-SteamAttempt($Settings,$Started){$script:clock+=$script:budgetDelay;[pscustomobject]@{TotalBytes=5}}
     function Get-IW7ResourceSnapshot {[pscustomobject]@{CommitLimit=100;Committed=$script:commit}}

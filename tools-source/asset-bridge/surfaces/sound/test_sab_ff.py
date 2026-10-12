@@ -1,4 +1,5 @@
 """Mocked phase/Plan controls only; all generated files remain below 1 MiB."""
+import copy
 import io
 import json
 from pathlib import Path
@@ -87,9 +88,20 @@ class PlanTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.source, _, _, _ = fixture(self.root)
         self.run = self.root / "native-not-created"
-        self.executable = self.root / "existing-tool.exe"; self.executable.write_bytes(b"fixture")
-        receipt = dict(schema="iw7.zonetool-community-candidate/1", executable=dict(path=str(self.executable), bytes=21696512, sha256=phase.TOOL_SHA))
-        self.receipt = self.root / "receipt.json"; self.receipt.write_text(json.dumps(receipt))
+        candidate = self.root / "candidate"
+        (candidate / "bin").mkdir(parents=True)
+        self.executable = candidate / "bin/zonetool-sound-md5.exe"; self.executable.write_bytes(b"fixture")
+        artifact = dict(relative="bin/zonetool-sound-md5.exe", bytes=21696512, sha256=phase.TOOL_SHA)
+        receipt = dict(schema="iw7.sound-checksum-build-receipt/1", status="NativeBuildAndCppProbesPassed",
+                       plan_sha256=prepare.BUILD_PLAN_SHA, run_id="fixture-generation", native_cpp_probes_verified=True,
+                       sab_ff_tested=False, ready=False, artifacts=dict(candidate_exe=artifact))
+        state = dict(Schema="iw7.sound-checksum-supervisor/1", Success=True, InputsVerifiedBefore=True,
+                     InputsVerifiedAfter=True, FinalArtifactsVerified=True, TreeClosed=True, LeaseReleased=True,
+                     Failure=None, RetainedLeaseToken=None, RootExitCode=0, JobActiveAtClose=0,
+                     PlanSHA256=prepare.BUILD_PLAN_SHA, RunID="fixture-generation", Ready=False, SABFFVerified=False,
+                     Artifacts=dict(candidate_exe=artifact))
+        self.receipt = candidate / "build-receipt.json"; self.receipt.write_text(json.dumps(receipt))
+        self.state = candidate / "supervisor-state.json"; self.state.write_text(json.dumps(state))
         self.prior = self.root / "prior.json"
         self.previous = dict(Schema="iw7.material-v2-execution-plan/1", FFPhysicalBytes=8 * 1024**3,
                              FFCommitBytes=11 * 1024**3, Source=dict(builder=dict(receipt_sha256=sha(self.receipt.read_bytes()))),
@@ -109,6 +121,8 @@ class PlanTests(unittest.TestCase):
             return SimpleNamespace(st_size=21696512, st_mode=value.st_mode, st_file_attributes=0) if path == self.executable else value
         with patch.object(prepare.Inputs, "read", read), patch.object(Path, "stat", stat), \
                 patch.object(prepare, "sha", side_effect=lambda raw: phase.PYTHON_SHA if raw == b"python-placeholder" else real_sha(raw)), \
+                patch.object(prepare, "BUILD_RECEIPT_SHA", real_sha(self.receipt.read_bytes())), \
+                patch.object(prepare, "BUILD_STATE_SHA", real_sha(self.state.read_bytes())), \
                 patch.object(prepare.Inputs, "recheck"):
             return prepare.prepare(self.source, self.run, REPO, self.prior, sha(self.prior.read_bytes()), self.receipt)
 
@@ -144,6 +158,28 @@ class PlanTests(unittest.TestCase):
             return result
         with patch.object(prepare, "strict_json", side_effect=changed), self.assertRaisesRegex(ValueError, "codec checkpoint"):
             self.prepare()
+
+    def test_failed_unclosed_unreleased_or_promoted_build_receipt_refused(self):
+        receipt, state = json.loads(self.receipt.read_text()), json.loads(self.state.read_text())
+        for field, value in (("Success", False), ("TreeClosed", False), ("LeaseReleased", False),
+                             ("FinalArtifactsVerified", False), ("InputsVerifiedAfter", False),
+                             ("RetainedLeaseToken", "held"), ("RootExitCode", 1), ("RootExitCode", False),
+                             ("JobActiveAtClose", 1), ("RunID", "other"), ("Ready", True)):
+            changed = copy.deepcopy(state); changed[field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                prepare.candidate_metadata(receipt, changed)
+        for field, value in (("native_cpp_probes_verified", False), ("sab_ff_tested", True), ("ready", True)):
+            changed = copy.deepcopy(receipt); changed[field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                prepare.candidate_metadata(changed, state)
+        changed = copy.deepcopy(receipt)
+        changed["artifacts"]["candidate_exe"]["sha256"] = "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04"
+        with self.assertRaisesRegex(ValueError, "artifact differs"):
+            prepare.candidate_metadata(changed, state)
+
+    def test_candidate_provenance_cannot_reuse_another_receipt_hash(self):
+        with self.assertRaisesRegex(ValueError, "completed Build F hashes"):
+            prepare.read_candidate(self.receipt)
 
 
 if __name__ == "__main__":

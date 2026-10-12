@@ -5,7 +5,8 @@ $base=Get-Content -LiteralPath $PlanPath -Raw|ConvertFrom-Json
 $temp=[IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('iw7-sound-plan-'+[guid]::NewGuid().ToString('N'))))
 [IO.Directory]::CreateDirectory($temp)|Out-Null
 try {
-    foreach($case in 'Valid','PlanHash','CoreHash','BudgetString','LowerBudget','MissingSABS','WrongPhasePath','HelperRawHash'){
+    foreach($case in 'Valid','PlanHash','CoreHash','BudgetString','LowerBudget','MissingSABS','WrongPhasePath','HelperRawHash',
+        'CandidateReceiptHash','CandidateStateHash','MissingCandidateEvidence','OldToolHash'){
         $plan=$base|ConvertTo-Json -Depth 25|ConvertFrom-Json
         switch($case){
             'CoreHash' {($plan.HashInputs|Where-Object Path -Like '*SoundFF.Core.ps1').SHA256='0'*64}
@@ -14,6 +15,10 @@ try {
             'MissingSABS' {$plan.MutableOutputs=@($plan.MutableOutputs|Where-Object {!$_.EndsWith('.sabs')})}
             'WrongPhasePath' {$plan.Review.phase_specs[2].cwd=$temp}
             'HelperRawHash' {($plan.HashInputs|Where-Object Path -Like '*MaterialV2.Core.ps1').SHA256='0'*64}
+            'CandidateReceiptHash' {$plan.CandidateReceiptSHA256='0'*64}
+            'CandidateStateHash' {$plan.CandidateStateSHA256='0'*64}
+            'MissingCandidateEvidence' {$plan.HashInputs=@($plan.HashInputs|Where-Object Path -INE (Join-Path $plan.CandidateRoot 'supervisor-state.json'))}
+            'OldToolHash' {$plan.Review.phase_specs[0].sha256='e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04'}
         }
         $path=Join-Path $temp ($case+'.json');[IO.File]::WriteAllText($path,($plan|ConvertTo-Json -Depth 25))
         $hash=(Get-FileHash -LiteralPath $path).Hash;if($case -eq 'PlanHash'){$hash='0'*64}
@@ -46,7 +51,7 @@ try {
     $failed=$false;try{Assert-SoundFFHelperSources $PSScriptRoot $fake $pins}catch{$failed=$true}
     if(!$failed){throw 'Rehashed real source mutation bypassed canonical pin'}
     if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7HudFileIdentity' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Default Plan loaded a native type'}
-    '12 default-Plan and source-identity cases passed; no native type, job, lease, stock or RunRoot.'
+    '16 default-Plan and source-identity cases passed; no native type, job, lease, stock or RunRoot.'
 }finally{
     $resolved=[IO.Path]::GetFullPath($temp)
     if(!$resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -or

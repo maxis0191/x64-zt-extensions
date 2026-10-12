@@ -256,6 +256,110 @@ select the minimum executable/dependencies. Repeating AppInfo is unnecessary to
 confirm fields already observed. Reusing this updated installation requires an
 explicit reviewed profile; do not bypass the old fresh-two-files/bootstrap pin.
 
+### File-manifest preparation
+
+No verified documented SteamCMD manifest-only route was found. The selected
+tool is [SteamRE DepotDownloader 3.4.0](https://github.com/SteamRE/DepotDownloader/releases/tag/DepotDownloader_3.4.0),
+source commit `c553ef4d60c00a4f5fd16c9fe017f569001589ff`, not a Valve-issued binary.
+The pinned `Program.cs:87` recognizes `-manifest-only`; `ContentDownloader.cs:865`
+dumps the manifest and returns before file selection/chunk download. The text
+dump includes sizes, chunk counts, SHA1, flags and original filenames.
+
+The framework ZIP is 2,661,253 bytes but this release targets .NET 9; the observed
+system shared runtime is only 8.0.28. The autonomous Windows x64 archive avoids
+a separate runtime installation. Official release metadata and HTTP HEAD agree
+on 33,474,005 compressed bytes. Its SHA256
+`41c9e9f0df54b3ad02e67a11726756e5c73283bd7c2e1b04acfa5ae4c2ed3767`
+is published by the [Microsoft WinGet catalog](https://raw.githubusercontent.com/microsoft/winget-pkgs/master/manifests/s/SteamRE/DepotDownloader/3.4.0/SteamRE.DepotDownloader.installer.yaml);
+the upstream GitHub release API digest is null. A metadata-only HTTP Range
+inspection was refused with 501; no archive body was read in that failed request.
+
+The coordinator subsequently authorized the tool download/extraction alone.
+`prepare_depotdownloader.py` obtained and verified that exact archive, inspected
+all entries before extraction, and enforced 40 MiB transfer / 128 MiB extraction
+caps into a fresh durable directory. Actual contents are just `DepotDownloader.exe`
+(78,840,739 bytes, SHA256
+`6281279efce8f1e20db9532a58e42382f81afb9e3827a8b965ffcb43fbe4531f`)
+and `LICENSE` (18,431 bytes), totaling 78,859,170 extracted bytes. The executable
+has no Authenticode signature; the release/archive hash is the provenance check.
+[Preparation receipt](depotdownloader-preparation-20261012.json). No tool execution,
+system .NET installation or game-payload transfer occurred during preparation.
+
+The existing host now has one additional fixed operation, `depot-file-manifest`,
+attempt `manifest-a`. It starts the pinned portable EXE directly in the same
+NativeJob, using anonymous login with distinct LoginID 20261012, exact app545990 /
+depot545991 / manifest2350066205567669287, `-manifest-only` and one download worker.
+There is no arbitrary-command input or fallback to full-depot download. Its fresh
+working directory isolates `account.config`; `-dir` and the .NET bundle/temp
+location stay under the attempt output. The old AppInfo bootstrap guard is
+unchanged; only the exact 78,840,739-byte DepotDownloader pin may exceed the old
+64 MiB source-binding cap. Manifest/cache/temp evidence has an explicit 32 MiB
+cap, while existing 2/3 GiB admission, 200/5-second deadlines, 64 KiB outer logs,
+512 MiB aggregate observation and original-handle closure remain in force.
+
+The host accepts a closed root0/Active0 result only with the expected manifest
+ID/header and a zero downloaded-content-chunk counter. Actual file selection and
+binary compatibility remain separate. Manifest (16 MiB maximum) and stdout
+(64 KiB maximum) are read through retained `FileStream` handles with
+`FileShare.Read`, with an actual limit-plus-one read and stable-length check.
+Headers, zero-chunk marker and receipt hashes all use those same byte snapshots;
+the guards remain held through final measurement and receipt publication.
+Forty PowerShell assertions pass, including attempted growth/replacement while
+the original file is guarded, oversized snapshot refusal, and the metadata-output
+cap while preserving the smaller AppInfo cap. No native provider is loaded.
+The fixed command and freshly bound plan were prepared under ignored `runtime/`;
+no execution occurred before the separate reviewed GO recorded below.
+
+### File manifest retrieved without game content
+
+The first actual manifest invocation used reviewed plan revision B, SHA256
+`75b90a6e5abe32b788a39a22c6579563de6ead0ad2e44447081bff6658362f3e`,
+at source `a3bc3e42`. It completed in 4,976.78 ms with original root exit0,
+ActiveProcesses0, normal closure and lease release. No forced stop, quarantine
+or retry occurred. A fresh post-run audit found zero leases, no owned root/tool
+or host remnants, and unchanged Main process generation / UDP27016 ownership.
+
+The 18,752-byte text manifest has SHA256
+`4423aa96951c341b32e34e65787b6ef7fda29733c8a11f4f254a6d1531b35eb8`.
+All 174 entries were parsed; their sizes total exactly 3,900,040,220 bytes, matching
+AppInfo and the manifest header. The header declares 3,845 unique chunks and
+3,697,813,104 compressed bytes. The actual content-chunk counter is **zero**.
+Tool plus closed attempt occupies 112,532,097 bytes, including the receipt.
+[Sanitized manifest observation](depot-manifest-observation-20261012.json).
+
+The real EXE entry is `UnrankedServer\BlackOps3_UnrankedDedicatedServer.exe`,
+21,737,352 bytes, 21 chunks, SHA1 `9d5fdd6f44defb8d65f8f5256e4eb83d4547f408`.
+The existing owner's `steam_api64.dll` (235,600 bytes) already matches its manifest
+SHA1 exactly; a targeted read verified this without copying it. The executable
+and other dependencies have **not** been acquired. Select them from the manifest
+against the T7 loader/import needs; reuse BO3's installed FF/XPAK in place.
+This result proves manifest retrieval, not T7 address or asset compatibility.
+
+### First payload selection: dedicated executable only
+
+[The exact selection](bo3-executable-selection.json) contains one file: the
+21,737,352-byte dedicated executable above (21 manifest chunks). The T7 owner's
+source review found that the loader resolves non-intercepted imports from the
+actual PE; the `steamclient64` / `tier0_s64` / `vstdlib_s64` preloads in the Steam
+component are IW7-only. Thus those three DLLs are deferred pending inspection of
+the acquired EXE. The two BAT files and playlist are not referenced by the initial
+T7 loader route; their possible later engine use remains unknown. None is selected.
+The matching existing owner `steam_api64.dll` stays in place.
+
+The same host's fixed `bo3-dedicated-executable` operation uses the literal
+one-line filelist linked to the actual retrieved manifest. It verifies and holds
+both files before starting DepotDownloader; absent lists, regex selectors, extra
+paths and full-depot arguments are refused before execution. The fixed CLI has
+one app, depot, manifest and worker. Its fresh output allows 64 MiB for the selected
+payload plus temporary staging/cache; 2/3 GiB admission and 200/5-second closure
+remain unchanged. A successful result requires exactly the selected payload path,
+the manifest length/SHA1, a SHA256 from the same retained bounded byte snapshot,
+successful filelist logging and 21,737,352 uncompressed bytes in the tool's transfer
+counter (compressed counter capped at 32 MiB). No FF/XPAK or speculative dependency
+is requested, and the host does not execute the downloaded PE. Forty-seven light
+assertions pass, including literal-list acceptance and regex/extra/empty refusal.
+The acquisition command is prepared; no payload invocation has been performed.
+
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is
 not a per-file filter. Evaluate an existing compatible selective downloader

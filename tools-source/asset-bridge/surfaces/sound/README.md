@@ -494,7 +494,10 @@ There was no quarantine because closure, disposal, source integrity and
 restoration were proven; that does not make the failed readback successful.
 The original state, artifacts and logs remain unchanged. `Ready` and
 `PlaybackVerified` remain false. The source-only diagnosis, private writer patch,
-uncompiled native probe and incremental build proposal are recorded in
-[`native-checksum/README.md`](native-checksum/README.md). Six source-model tests
-pass; a corrected native artifact has not been built or run. Another native
-attempt requires separate reviewed source and a new explicit GO.
+native probe and incremental build history are recorded in
+[`native-checksum/README.md`](native-checksum/README.md). Subsequently, Build F
+completed all fourteen native steps, both C++ checksum probes, final artifact
+proof and safe closure; its exact candidate has not yet run the sound transaction.
+[SAB-FF-CANDIDATE-F.md](SAB-FF-CANDIDATE-F.md) records the prepared minimal binding
+to the existing four phases. Another native sound attempt requires separate
+reviewed source, complete admission and a new explicit GO.
