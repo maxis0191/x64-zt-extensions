@@ -807,3 +807,52 @@ receipt. No candidate/engine was launched. Source and exact plan were sent to
 the coordinator and runtime parser owner; Sound F currently owns the heavy slot.
 Review and a separate coordinator build GO are the next actions. A later real
 catalogue invocation must bind the actual resulting artifacts in its own plan.
+
+### Caller build A: Passed and fully closed, candidate unexecuted
+
+Independent review accepted source 39933eb and the exact plan above without
+P1/P2 findings. After Sound F fully closed, the coordinator authorized one build.
+Fresh preflight at 15:34:20.4447517 UTC on 2026-10-12 admitted the unchanged
+4/6 GiB estimates, with zero leases/heavy processes, Main stopped and the exact
+Python PID 23352 generation preserved. A fresh persistent PowerShell host PID
+18716, created at 15:34:26.0478570 UTC, made the single invocation. Its outer
+process was PID 29752. Run returned without error at 15:35:13.5393776 UTC.
+
+Main compiled under /W4 /WX in 3.250 seconds, and Link completed in 2.631 seconds.
+Original roots cl PID 3484 and link PID 16372 both exited zero. The existing H1
+policy verified each root's exit and exact VCTIP residual, then closed each job
+with zero active members. Artefact hashes were stable across closure. Native
+source dependencies identify the reviewed PreparedMain (case normalized by
+MSVC). Final input revalidation passed. The group took 15.931 seconds and
+observed at most 160,584,166 output bytes, below the unchanged 256 MiB cap.
+
+Receipt `runtime/zt-t7-callers-a/receipt.json` is 14,453 bytes, SHA256
+9f8b8bc235bd52429a915bb1f1d3fc3ca0afd6b852e8897dfc312d566166aa99.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+Quarantined false and the exact reviewed ten-field BuildProfile. New artefacts
+under `runtime/zt-t7-callers-a` are:
+
+| Artefact | Bytes | SHA256 |
+| --- | ---: | --- |
+| main/main.obj | 548,659 | c02b70285028b0a7525b8761487ad5153fb2acefae543c1d930d5380e31ad434 |
+| main/compile.pdb | 1,732,608 | 2969e7be44e123245eef655f488603c132c55f04035dbe1803c8141ecdb22dd2 |
+| main/dependencies.json | 61,942 | 3222d5ee5df6d6779ab928324151357098741421809e10e148c48984f423ada5 |
+| link/zonetool-t7.exe | 21,747,200 | 01aa3310e92a1e458005de044c582c302c12149a81bf7fce23b7cc5ae153bbd4 |
+| link/zonetool-t7.pdb | 136,482,816 | e070475db1bd239fb4f7692c63948d8d7c0898a969069157fc96384c783140c9 |
+| link/zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| link/zonetool-t7.exp | 3,917 | 937c3f08a1dd29100f63bdf6926e2c370da9a74883ca54a62e2ba834bf3a2d9c |
+
+Postflight at 15:35:50.5608723 UTC found zero leases/build/telemetry processes,
+Main still stopped and Python's exact identity unchanged. The retained host
+verified the exact receipt and absence of AppDomain quarantine, saved its
+outcome and exited zero. Session 15400 closed. Independent observation at
+15:36:30.9704126 UTC confirmed host 18716, outer 29752, both tool roots and both
+VCTIP residuals absent. All four pre/postflight and host outcome/exit records
+remain under `runtime/t7-callers-build-plan-a`.
+
+The coordinator and runtime parser owner received these artefacts and closure
+proof. No retry, candidate execution or engine launch occurred. CandidateExecuted
+and Ready remain false. Compilation proves C++/SEH syntax and linkage; it does
+not prove real caller captures, the cause of ExitProcess, catalogue generation
+or gameplay. The next action is a separately reviewed runtime plan using these
+actual artefact identities, followed only by its own explicit coordinator GO.
