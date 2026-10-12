@@ -10,12 +10,16 @@ import prepare_native
 OWN = Path(__file__).resolve().parent
 JOB_SHA = "5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8"
 JOB_SOURCE_SHA = "ddefa72ff2b98286cd585d1178c13e67dcd646bbcf39d51365660901366c5ca8"
+CL_SHA = "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619"
+TELEMETRY_SHA = "d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5"
 PROVIDERS = {
     "ops/Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
     "ops/Resource-Memory.ps1": "6a708d2e7fa9803628bfbf5c670068d63d22a2d2cfc157994afa82d56ac9c241",
     "ops/Resource-RecorderOwnedProcess.Core.ps1": "23d6f589a6f973f6d9c56a2ff3dcb66c4df6a0aa9fe0a7125048dd9061f93c54",
     "ops/native/ResourceMemory.cs": "b159804d12ca504cd592f4cdee191a9b68353e9e0117f9045a28a522b25692e9",
     "tools-source/asset-bridge/animation/Probe-NativeJob.cs": JOB_SOURCE_SHA,
+    "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1": "fc024337fdb18c8a759cd6346ad90fe1fb2086d790e4804ade583c30e69d25d6",
+    "tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs": "c8fce6094104eae70442a081654f403739f5315d531c35385021759b74c2abda",
 }
 
 
@@ -59,14 +63,15 @@ def make_plan(source, prepared, fixture, providers, job, vc, sdk, sdk_version, r
         inputs.append(binding(fixture / name))
     for name in ("Run-H1Native.ps1", "H1Native.Core.ps1", "plan_native.py", "prepare_native.py",
                  "generate.py", "inspect_fixture.py", "native_probe.cpp", "native-source-contract.json",
-                 "h1-xsurface-reviewed.patch"):
+                 "h1-xsurface-reviewed.patch", "H1Native.Compiler.ps1", "H1Native.JobMembers.cs"):
         inputs.append(binding(OWN / name))
     inputs += [binding(providers / name, sha) for name, sha in PROVIDERS.items()]
     inputs.append(binding(job, JOB_SHA))
     compiler_dir = vc / "bin/Hostx64/x64"
     # Pin executable/compiler anchors. System/SDK closure is not claimed hermetic.
     for name in ("cl.exe", "link.exe", "c1xx.dll", "c2.dll", "mspdb140.dll", "msobj140.dll"):
-        inputs.append(binding(compiler_dir / name))
+        inputs.append(binding(compiler_dir / name, CL_SHA if name == "cl.exe" else None))
+    inputs.append(binding(compiler_dir / "vctip.exe", TELEMETRY_SHA))
     include = [vc / "include"] + [sdk / "Include" / sdk_version / n for n in ("ucrt", "shared", "um", "winrt")]
     libraries = [vc / "lib/x64", sdk / "Lib" / sdk_version / "ucrt/x64", sdk / "Lib" / sdk_version / "um/x64"]
     for directory in include + libraries:
@@ -79,11 +84,16 @@ def make_plan(source, prepared, fixture, providers, job, vc, sdk, sdk_version, r
             "/I" + str(source / "src/zonetool"), "/I" + str(source / "src/common"),
             "/Fo" + str(compile_root / "native_probe.obj"), "/Fe" + str(compile_root / "native_probe.exe"),
             str(prepared / "native_probe.cpp"), "/link", "/INCREMENTAL:NO", "user32.lib"]
-    return {"Schema": "iw7.h1-native-plan/1", "NativeExecuted": False, "LeaseAcquired": False,
+    return {"Schema": "iw7.h1-native-plan/2", "NativeExecuted": False, "LeaseAcquired": False,
             "Authorization": "Plan is not a native GO; invoke one stage only after coordinator approval",
             "RunRoot": str(run), "FixtureRoot": str(fixture), "PreparedRoot": str(prepared),
             "SourceRoot": str(source), "SourcePin": generate.PIN,
             "Runner": str(OWN / "Run-H1Native.ps1"), "Core": str(OWN / "H1Native.Core.ps1"),
+            "CompilerCore": str(OWN / "H1Native.Compiler.ps1"),
+            "ObserverSource": str(OWN / "H1Native.JobMembers.cs"),
+            "CompilerPolicySource": str(providers / "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1"),
+            "CompilerClosure": "StopOriginalJobAfterVerifiedCompilerAndTelemetry",
+            "RequiredTelemetryCaptures": 2,
             "Scheduler": str(providers / "ops/Resource-Scheduler.Core.ps1"), "JobAssembly": str(job),
             "Compiler": str(compiler_dir / "cl.exe"), "Executable": str(compile_root / "native_probe.exe"),
             "CompileArguments": args, "Include": ";".join(map(str, include)),

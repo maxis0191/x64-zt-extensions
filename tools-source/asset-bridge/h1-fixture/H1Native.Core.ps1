@@ -72,8 +72,10 @@ function Register-H1Original($Lease,$Identity) {
     }
 }
 function New-H1Owner { [IW7.AnimationProbe.NativeJob]::new() }
-function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,[string]$ImageSHA256,[string]$StageRoot) {
-    $started=Get-H1Clock;$State.StartedUtc=[datetime]::UtcNow.ToString('o')
+function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,[string]$ImageSHA256,[string]$StageRoot,[Nullable[double]]$AdmittedStarted=$null) {
+    $started=if($null -eq $AdmittedStarted){Get-H1Clock}else{[double]$AdmittedStarted}
+    $State.StartedUtc=[datetime]::UtcNow.ToString('o')
+    Assert-H1Deadline $started $State.DeadlineSeconds
     $Context.Closed=$false
     $Context.Owner=New-H1Owner # Keep the owner before Start can partially fail.
     $Context.Owner.Start($Start,$ImageSHA256,(Join-Path $StageRoot 'stdout.log'),(Join-Path $StageRoot 'stderr.log'))
@@ -91,11 +93,20 @@ function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,[string]$ImageSHA256,[
     while($true) {
         Test-H1Budget $Plan $State
         Assert-H1Deadline $started $State.DeadlineSeconds
+        if($State.Stage -ceq 'Compile') {
+            $sample=Get-H1OriginalState $Context.Owner
+            $State.LastOriginalSnapshot=$sample
+            Assert-H1Deadline $started $State.DeadlineSeconds
+            if(Complete-H1CompilerTelemetry $Plan $State $Context $sample $started){continue}
+        }
         $empty=$Context.Owner.TreeExited()
         Assert-H1Deadline $started $State.DeadlineSeconds
         if($empty) {
             $Context.Owner.CloseConfirmed();$Context.Closed=$Context.Owner.Closed
             $State.TreeClosureConfirmed=$Context.Closed;$State.ExitCode=$Context.Owner.ExitCode
+            if($State.Stage -ceq 'Compile' -and (!$sample.RootExited -or $sample.RootExitCode -ne 0 -or $sample.ActiveProcesses -ne 0)){
+                throw 'Fresh original compiler root0/Active0 sample required.'
+            }
             Assert-H1Deadline $started $State.DeadlineSeconds
             $State.ElapsedMs=(Get-H1Clock)-$started
             if(!$Context.Closed -or $State.ExitCode -ne 0){throw 'Original stage process failed.'}

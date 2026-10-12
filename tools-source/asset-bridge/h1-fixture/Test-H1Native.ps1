@@ -20,7 +20,7 @@ function New-Case {
     [pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token=[guid]::NewGuid().ToString('N')};Guards=@()}
 }
 function New-State($Context) {
-    [ordered]@{Status='Pending';DeadlineSeconds=15;LeaseToken=$Context.Lease.Token;LeaseReleased=$false;
+    [ordered]@{Status='Pending';Stage='Probe';DeadlineSeconds=15;LeaseToken=$Context.Lease.Token;LeaseReleased=$false;
         Quarantined=$false;TreeClosureConfirmed=$true;MaxObservedOutputBytes=0L}
 }
 function New-H1Owner {if($script:factoryFails){throw 'Factory failed'};$script:fake}
@@ -34,6 +34,10 @@ Invoke-H1OwnedStage $null $state $context $start ('a'*64) 'C:\unused'
 Complete-H1Stage $context $state
 Check ($state.TreeClosureConfirmed -and $state.LeaseReleased -and $script:fake.Stops -eq 0) 'Normal original-tree closure/release failed.'
 Check (($script:events -join ',') -ceq 'register,release') 'Stage registration/release ordering differs.'
+
+$context=New-Case;$state=New-State $context;$script:fake=New-FakeOwner
+Refuses {Invoke-H1OwnedStage $null $state $context $start ('a'*64) 'C:\unused' -15000} 'Expired admitted setup budget must prevent process creation.'
+Check ($script:fake.Starts -eq 0 -and $context.Closed) 'Setup consumed the deadline but still launched a native child.'
 
 $context=New-Case;$state=New-State $context;$script:fake=New-FakeOwner;$script:registrationFails=$true
 Invoke-H1OwnedStage $null $state $context $start ('a'*64) 'C:\unused'

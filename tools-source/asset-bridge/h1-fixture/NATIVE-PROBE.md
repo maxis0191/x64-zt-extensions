@@ -148,7 +148,7 @@ integration, exact-head checks and merge.
 fixture, source checkout, installed MSVC/SDK and reviewed provider directory.
 It writes only the optional create-only `--output` plan, or prints to stdout.
 It never creates the run directory, loads a native provider or acquires a lease.
-The local machine plan has 54 SHA-256/length bindings, including this runner,
+The initial Plan C had 54 SHA-256/length bindings, including this runner,
 its core, all 21 production inputs, all seven prepared files, the two fixture
 files and the relevant providers/compiler anchors. System DLLs and the entire
 installed SDK are **not** claimed to be a hermetic closure.
@@ -158,7 +158,7 @@ The runner reuses `IW7.AnimationProbe.NativeJob` from the existing witnessed
 `5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8`.
 Its source is pinned to
 `ddefa72ff2b98286cd585d1178c13e67dcd646bbcf39d51365660901366c5ca8`.
-No new C# job or identity implementation is introduced. The current shared
+That initial runner introduced no new C# job or identity implementation. The shared
 resource scheduler and its existing memory provider are pinned too; during a
 future Run the scheduler can load its existing `ResourceMemory.cs` as usual.
 That does not happen in Plan mode or in the light tests.
@@ -197,11 +197,11 @@ check. Compile success is not probe success. A probe receipt may establish only
 the extracted production-method observation above; it must keep full CLI,
 engine token, complete material/LOD linking, FF/render and retail claims false.
 
-`Test-H1Native.ps1` exercises 22 assertions with mocked job/scheduler providers:
+At `f8ac21e`, `Test-H1Native.ps1` exercised 22 assertions with mocked providers:
 normal and early closure, unavailable identity, deadline after slow telemetry,
 partial Start failure, throwing owner factory, nonzero exit, failed closure,
 failed release, guarded file mutation and receipt-size failure. `Test-H1Plan.ps1`
-adds nine assertions against the local plan, including immutable-plan, core,
+added nine assertions against Plan C, including immutable-plan, core,
 provider and same-length source drift, lowered budgets and probe-before-compile
 refusals. These are **source/lifecycle checks, not a new real Job witness**.
 Those checks did not launch the H1 compiler or probe. The parent must review the
@@ -259,3 +259,73 @@ post-run checks. No retry, Stage Probe, game, full CLI, FF or render test follow
 The failed Compile receipt deliberately blocks Stage Probe. Next action is a
 source review of compiler ancillary-process handling and a new plan/GO; do not
 edit this receipt to promote the retained EXE into an accepted compile stage.
+
+## Prepared correction: original compiler plus qualified telemetry closure
+
+This revision is **source-tested only**, after the failed attempt above. It does
+not reclassify that attempt or grant a retry/Probe authorization. It reuses the
+MaterialV2/GSC qualified policy: compiler success is necessary, while residual
+membership, identity and fresh post-stop closure need their own evidence.
+
+The retained `NativeJob` public API supplies `TreeExited`, `StopAndConfirm` and
+`CloseConfirmed`; its snapshot primitives/handles are private, and
+`StopAndConfirm` closes them before an independent follow-up snapshot. The
+existing MaterialV2 observer requires `BuildJob`/`IntPtr` and rejects this owner.
+Consequently `H1Native.JobMembers.cs` adapts only the observer's owner/handle
+binding to the pinned `NativeJob`/`SafeFileHandle`. Its bounded member and native
+parent query body remains byte-identical to reviewed MaterialV2 source
+`c8fce6094104eae70442a081654f403739f5315d531c35385021759b74c2abda`.
+Borrowed job handles are protected with `DangerousAddRef`/`DangerousRelease`;
+member handles request query-limited access. No launch, termination, assignment,
+debug attachment or process-memory primitive is added to the C# observer.
+
+`H1Native.Compiler.ps1` calls the pinned owner's existing private query/stop
+methods with protected original handles. This reflection adapter is explicitly
+bound to the existing DLL/source hashes and field/method shape; it is not a
+general API compatibility claim. The reused MaterialV2 policy and member/time
+validators are byte-bound to source
+`fc024337fdb18c8a759cd6346ad90fe1fb2086d790e4804ade583c30e69d25d6`.
+
+For Compile only, qualified cleanup requires all of the following:
+
+1. A fresh original-handle root exit **0**, with the original PID/creation/image
+   identity captured at launch. Here `cl.exe` itself is the original root;
+   no wrapper receipt or guessed parent/compiler identity is substituted.
+2. All reviewed inputs still match. EXE, OBJ and PDB are nonempty, within budget,
+   hashed, tied to this Plan SHA and held with write/delete sharing denied.
+   Both the compiler and sibling `vctip.exe` images are pinned/held too.
+3. Two fresh complete native Job-member captures show exactly one identical
+   `vctip` generation: expected image/hash, direct parent equal to the original
+   compiler PID, plausible native creation time, no query/parent error and
+   explicit membership in that original Job. Captures are retained before
+   validation, including rejection evidence. Unknown or additional children fail.
+4. Only then request the existing native `TerminateJobObject` primitive on the
+   owner's protected original Job. No collected PID is a termination target.
+   Obtain fresh original root0/Active0 **and** an empty native member capture;
+   retain handles and resume normal supervision. The next ordinary poll must
+   independently observe root0/Active0 before `CloseConfirmed` and lease release.
+5. Recheck artifact hashes after closure. Publish Passed only through the normal
+   final receipt gate. Any late/unknown/failed cleanup remains Failed/quarantined
+   according to the existing lifecycle, and cannot enable Probe.
+
+Plan schema v2 binds **59 inputs**: the original 54 plus the local compiler policy
+adapter/observer, their two reviewed MaterialV2 source providers and `vctip.exe`.
+The compiler is pinned to
+`fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619`;
+telemetry to
+`d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5`.
+The ineffective `VCTIP=0` assignment is removed; no environment opt-out is used
+as closure evidence. The existing budgets are unchanged. The 120-second stage
+clock now begins immediately after admission, including observer setup; exhausted
+setup time refuses process creation. Qualified cleanup gets at most five seconds
+inside that original deadline. Failure cleanup still has its existing separate
+five-second allowance and never turns a late result into success.
+
+Pure verification: 69 policy assertions, 24 general lifecycle assertions,
+12 read-only Plan assertions, 12 observer/source assertions (zero Roslyn semantic
+errors, no Emit) and 12 PowerShell adapter assertions using mocked handles and
+method objects. The ordinary wait loop is tested to perform a new zero-active
+poll after the accepted stop; private-method calls and cached `Closed` alone
+are never accepted as closure evidence. None of these checks loads/emits the
+new native observer, acquires a lease, launches a compiler or retries the probe.
+Actual adapter/native behavior remains subject to independent review and a new GO.

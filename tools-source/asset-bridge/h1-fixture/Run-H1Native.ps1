@@ -24,7 +24,7 @@ try {
     $bytes=[byte[]]::new([int]$planGuard.Length);$planGuard.ReadExactly($bytes,0,$bytes.Length)
     if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne $PlanSHA256){throw 'Reviewed plan hash differs.'}
     $plan=[Text.Encoding]::UTF8.GetString($bytes)|ConvertFrom-Json -Depth 20
-    if($plan.Schema -cne 'iw7.h1-native-plan/1' -or $plan.Runner -cne $PSCommandPath -or
+    if($plan.Schema -cne 'iw7.h1-native-plan/2' -or $plan.Runner -cne $PSCommandPath -or
        $plan.Core -cne (Join-Path $PSScriptRoot 'H1Native.Core.ps1')){throw 'Plan/runner/core identity differs.'}
     foreach($path in @($plan.Runner,$plan.Core)) {
         $pin=@($plan.Bindings|Where-Object Path -CEQ $path)
@@ -41,7 +41,8 @@ try {
        $plan.Stages.Compile.DeadlineSeconds -ne 120 -or $plan.Stages.Compile.Kind -cne 'Build' -or
        $plan.Stages.Probe.PhysicalBytes -ne 256MB -or $plan.Stages.Probe.CommitBytes -ne 256MB -or
        $plan.Stages.Probe.DeadlineSeconds -ne 15 -or $plan.Stages.Probe.Kind -cne 'Analysis' -or
-       $plan.ParserPoolBytes -ne 1MB -or $plan.CompilerProcesses -ne 1){throw 'Reviewed fixed budgets differ.'}
+       $plan.ParserPoolBytes -ne 1MB -or $plan.CompilerProcesses -ne 1 -or
+       $plan.CompilerClosure -cne 'StopOriginalJobAfterVerifiedCompilerAndTelemetry' -or $plan.RequiredTelemetryCaptures -ne 2){throw 'Reviewed fixed budgets differ.'}
     $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
     $runtime=[IO.Path]::GetFullPath((Join-Path $repo 'runtime'))+[IO.Path]::DirectorySeparatorChar
     foreach($path in @($plan.RunRoot,$plan.FixtureRoot,$plan.PreparedRoot,$plan.SourceRoot,$plan.Compiler,$plan.Executable,$plan.JobAssembly,$plan.Scheduler)) {Assert-H1Path $path}
@@ -50,7 +51,7 @@ try {
     if(@($plan.Bindings).Count -lt 40 -or @($plan.Bindings).Count -gt 128 -or
        @($plan.Bindings.Path|Sort-Object -Unique).Count -ne @($plan.Bindings).Count){throw 'Bound input set invalid.'}
     foreach($pin in $plan.Bindings){$guards.Add((Open-H1Pin $pin))}
-    foreach($required in @($plan.Scheduler,$plan.JobAssembly,$plan.Compiler)) {
+    foreach($required in @($plan.Scheduler,$plan.JobAssembly,$plan.Compiler,$plan.CompilerCore,$plan.ObserverSource,$plan.CompilerPolicySource)) {
         if(@($plan.Bindings|Where-Object Path -CEQ $required).Count -ne 1){throw 'Executable/provider binding absent.'}
     }
     $stageRoot=Join-Path $plan.RunRoot $Stage.ToLowerInvariant()
@@ -75,46 +76,57 @@ try {
             RunRootCreated=$false;WholeZoneToolValidated=$false;ReadyForCoordinatorReview=$true}|ConvertTo-Json
         return
     }
-    if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'A fresh PowerShell host is required.'}
+    if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]) -or
+       ('IW7.H1Diagnostics.JobMembers' -as [type])){throw 'A fresh PowerShell host is required.'}
     # Existing witnessed DLL only. No new native-job/identity C# implementation.
     $null=[Reflection.Assembly]::LoadFrom($plan.JobAssembly)
     . $plan.Scheduler
+    . $plan.CompilerPolicySource
+    . $plan.CompilerCore
     $budget=$plan.Stages.$Stage
     $state=[ordered]@{Schema='iw7.h1-native-stage/1';Stage=$Stage;PlanSHA256=$PlanSHA256;Status='Pending';
         DeadlineSeconds=$budget.DeadlineSeconds;PhysicalBytes=$budget.PhysicalBytes;CommitBytes=$budget.CommitBytes;
         EstimatesAreMeasured=$false;WholeZoneToolValidated=$false;TreeClosureConfirmed=$true;
-        LeaseReleased=$false;LeaseToken=$null;Quarantined=$false;MaxObservedOutputBytes=0L}
+        LeaseReleased=$false;LeaseToken=$null;Quarantined=$false;MaxObservedOutputBytes=0L;
+        CompilerTelemetry=[ordered]@{Completed=$false;Action=$null}}
     $context.Lease=Enter-IW7ResourceLease -Scope $stageRoot -Kind $budget.Kind -PhysicalBytes $budget.PhysicalBytes `
         -CommitBytes $budget.CommitBytes -Owner ('H1 original fixture '+$Stage)
     $state.LeaseToken=$context.Lease.Token
+    $stageStarted=Get-H1Clock;$state.AdmittedStageStartedUtc=[datetime]::UtcNow.ToString('o')
     if((Test-Path -LiteralPath $stageRoot) -or ($Stage -ceq 'Compile' -and (Test-Path -LiteralPath $plan.RunRoot))){throw 'Stage output appeared during admission.'}
     [IO.Directory]::CreateDirectory($stageRoot)|Out-Null
     $outputCreated=$true
+    if($Stage -ceq 'Compile'){Add-Type -LiteralPath $plan.ObserverSource}
+    Assert-H1Deadline $stageStarted $budget.DeadlineSeconds
     $launcher=Get-Process -Id $PID;$priority=$launcher.PriorityClass;$launcher.PriorityClass='BelowNormal'
     $start=[Diagnostics.ProcessStartInfo]::new($(if($Stage -ceq 'Compile'){$plan.Compiler}else{$plan.Executable}))
     $start.WorkingDirectory=$stageRoot;$start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.WindowStyle='Hidden'
-    # Limit tool discovery to the reviewed toolchain and Windows. Request no
-    # optional telemetry; closure still relies on the job, never this setting.
+    # Limit discovery to the reviewed toolchain and Windows. Telemetry handling
+    # uses exact-job observations, without guessing environment opt-out behavior.
     $start.Environment.Remove('CL')|Out-Null;$start.Environment.Remove('_CL_')|Out-Null
     $start.Environment.Remove('LINK')|Out-Null;$start.Environment.Remove('_LINK_')|Out-Null
-    $start.Environment['VCTIP']='0'
     $start.Environment['PATH']=$plan.CompilerDirectory+';'+[Environment]::GetFolderPath('System')
     $start.Environment['INCLUDE']=$plan.Include;$start.Environment['LIB']=$plan.Lib
     $start.Environment['TEMP']=$stageRoot;$start.Environment['TMP']=$stageRoot
     $arguments=if($Stage -ceq 'Compile'){@($plan.CompileArguments)}else{@($plan.FixtureRoot)}
     foreach($arg in $arguments){$start.ArgumentList.Add([string]$arg)}
-    Invoke-H1OwnedStage $plan $state $context $start $imageHash $stageRoot
+    Invoke-H1OwnedStage $plan $state $context $start $imageHash $stageRoot $stageStarted
     if($Stage -ceq 'Compile') {
-        Assert-H1Path $plan.Executable
-        $file=Get-Item -LiteralPath $plan.Executable
-        if($file.Length -le 0 -or $file.Length -gt 30MB){throw 'Compiled executable size refused.'}
-        $state.Executable=[ordered]@{Path=$plan.Executable;Bytes=$file.Length;SHA256=(Get-FileHash -LiteralPath $plan.Executable).Hash.ToLowerInvariant()}
-        $guards.Add((Open-H1Pin $state.Executable))
+        $state.Artifacts=@(Get-H1CompilerArtifacts $plan $context)
+        if($state.CompilerTelemetry.Completed) {
+            foreach($previous in $state.CompilerTelemetry.Artifacts) {
+                $current=@($state.Artifacts|Where-Object Path -CEQ $previous.Path)
+                if($current.Count -ne 1 -or $current[0].Bytes -ne $previous.Bytes -or $current[0].SHA256 -cne $previous.SHA256){throw 'Compiler artifact changed across accepted job cleanup.'}
+            }
+        }
+        $state.Executable=@($state.Artifacts|Where-Object Path -CEQ $plan.Executable)[0]
     }else{
         $state.Observation=Read-H1SmallJson (Join-Path $stageRoot 'stdout.log') 4096
         Assert-H1Observation $state.Observation
         $state.Executable=$prior.Executable
     }
+    Assert-H1Deadline $stageStarted $budget.DeadlineSeconds
+    $state.AcceptanceElapsedMs=(Get-H1Clock)-$stageStarted
     $state.Status='Passed'
 }catch{
     $failure=$_

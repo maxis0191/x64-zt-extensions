@@ -11,7 +11,7 @@ function Refuses([scriptblock]$Action,[string]$Pattern) {
     Check ($null -ne $message -and $message -like $Pattern) ('Expected refusal: '+$Pattern+'; actual: '+$message)
 }
 $accepted=& $runner -PlanPath $PlanPath -PlanSHA256 $PlanSHA256|ConvertFrom-Json
-Check ($accepted.BindingsVerified -eq 54 -and !$accepted.NativeTypesLoaded -and !$accepted.LeaseAcquired -and !$accepted.RunRootCreated) 'Read-only plan verification changed state.'
+Check ($accepted.BindingsVerified -eq 59 -and !$accepted.NativeTypesLoaded -and !$accepted.LeaseAcquired -and !$accepted.RunRootCreated) 'Read-only plan verification changed state.'
 Refuses {& $runner -PlanPath $PlanPath -PlanSHA256 ('0'*64)} '*Reviewed plan hash differs*'
 Refuses {& $runner -PlanPath $PlanPath -PlanSHA256 $PlanSHA256 -Stage Probe} '*'
 
@@ -46,11 +46,23 @@ try {
     ($changed.Bindings|Where-Object Path -CEQ $plan.JobAssembly).SHA256='0'*64
     $hash=Save-TestPlan $changed
     Refuses {& $runner -PlanPath $copy -PlanSHA256 $hash} '*Bound input hash/length differs*'
+
+    foreach($path in @($plan.ObserverSource,$plan.CompilerPolicySource)) {
+        $changed=$plan|ConvertTo-Json -Depth 20|ConvertFrom-Json -Depth 20
+        ($changed.Bindings|Where-Object Path -CEQ $path).SHA256='0'*64
+        $hash=Save-TestPlan $changed
+        Refuses {& $runner -PlanPath $copy -PlanSHA256 $hash} '*Bound input hash/length differs*'
+    }
+    $changed=$plan|ConvertTo-Json -Depth 20|ConvertFrom-Json -Depth 20
+    $changed.RequiredTelemetryCaptures=1
+    $hash=Save-TestPlan $changed
+    Refuses {& $runner -PlanPath $copy -PlanSHA256 $hash} '*fixed budgets differ*'
 }finally{
     foreach($path in @($copy,$bound)){if([IO.File]::Exists($path)){[IO.File]::Delete($path)}}
     [IO.Directory]::Delete($temp,$false)
 }
 Check (!(Test-Path -LiteralPath $plan.RunRoot)) 'Plan created a runtime output root.'
-Check (!(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]))) 'Plan loaded native types.'
+Check (!(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]) -or
+    ('IW7.H1Diagnostics.JobMembers' -as [type]))) 'Plan loaded native types.'
 [ordered]@{Schema='iw7.h1-native-plan-source-tests/1';Assertions=$checks;NativeTypesLoaded=$false;
     LeaseAcquired=$false;RunRootCreated=$false;RealJobsTested=$false}|ConvertTo-Json
