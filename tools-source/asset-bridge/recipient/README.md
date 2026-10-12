@@ -73,7 +73,7 @@ The spec is a local JSON object with these mandatory fields:
 | `StockRoot` | Canonical absolute retained stock root |
 | `StockReceipt`, `StockReceiptSHA256` | Original 72-entry completed receipt, SHA `4cf67ebe1645c6c0761b9a24cb4e4630edee9c5d737742c704d624fe60cb3850` |
 | `StockBindingReceipt`, `StockBindingReceiptSHA256` | Explicit current durable `iw7.ff-stock-observation/1` and measured hash |
-| `RecipientStockBindingReceipt`, `RecipientStockBindingReceiptSHA256` | Separate four-PAK `iw7.recipient-stock-observation/1` metadata receipt and measured hash; required after C |
+| `RecipientStockBindingReceipt`, `RecipientStockBindingReceiptSHA256` | Explicit separate PAK metadata receipt and measured hash: original four-PAK schema `/1`, or observed 4+1 schema `/2` after E2; never auto-expanded |
 | `ReviewedStockManifest`, `ReviewedStockManifestSHA256` | Reviewed content manifest, SHA `9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4` |
 | `CandidateRoot`, `CandidateArtifactSHA256` | Existing E7 fulltool directory and final artifact hash |
 | `PythonExe`, `PythonExeSHA256` | Absolute interpreter path and measured hash |
@@ -100,10 +100,12 @@ references-only run records `ReferencesObservedScriptNotRun` and leaves
 
 The common binding preserves historical 63-link/9-copy provenance separately
 from the baseline's 71 stock hardlinks and one 77-byte mutable sentinel copy.
-The post-C [supplemental Recipient profile](STOCK-PROFILE.md) adds only four
-previously observed PAKs as hardlinks. It does not alter the common FF binding.
-The combined stock has 75 hardlinks and one sentinel copy; candidate/requests
-bring the transaction to 79 paths. `StockBudget` records the distinct logical
+The post-C [supplemental Recipient profile](STOCK-PROFILE.md) adds four
+previously observed PAKs as hardlinks; the separate post-E2 profile adds only
+pak69 to that exact list. Neither changes the common FF binding. The original
+profile has 75 stock hardlinks and one sentinel copy, totaling 79 transaction
+paths with candidate/requests. The 4+1 profile has 76 stock hardlinks and one
+sentinel copy, totaling 80 transaction paths. `StockBudget` records the distinct logical
 and deduplicated hash-read bytes. Supplemental content is not read during Plan.
 Before staging, the admitted operation holds all source guards, checks observed
 NTFS identities, hashes deduplicated physical stock content, then verifies
@@ -469,3 +471,11 @@ Next authorized work is source and metadata investigation of the single observed
 pak69, followed by a separately named explicit 4+1 profile and its budget/tests.
 No retail hashing without admission, no stock copy and no further native run are
 authorized by E2's exhausted GO.
+
+The source-only [explicit 4+1 profile](STOCK-PROFILE.md#explicit-41-profile-after-e2)
+is now prepared with a new schema/name, E2 fatal-evidence pin and exact
+966,557,876-byte supplemental logical ceiling. The original four-PAK receipt and
+600 MiB ceiling remain unchanged. A fresh metadata-only observation and two
+identical Plan outputs exist locally; no five-PAK staging or native run occurred.
+65 stock fixtures plus 65 source/contract fixtures pass. A separate corrective
+review, complete admission/content verification and GO remain required.

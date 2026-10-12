@@ -137,3 +137,79 @@ zero remaining owned processes/leases were confirmed. No content rehash outside
 admission was performed after restoration. No retry or PAK expansion is allowed
 by D's exhausted GO. The next source-only change captures future exact fatal
 text in normal reference mode; it cannot reconstruct D's missing body.
+
+## Explicit 4+1 profile after E2
+
+The [E2 failure](native-validation-e2-2026-10-12.json) independently captured
+`Could not find asset file assetfile69.pak` with verified original identity and
+no text truncation/read error. The native log still ended at `global_cp` and was
+byte-identical to D. The pinned `load_enemy_source_zones` includes `global_cp`
+in its explicit synchronous sequence after `patch_global_mp` and the available
+`techsets_global_cp`. Its source SHA remains
+`F1C9FB861B81727DC7E3882F5116231E6DC0D1A0E6F5838953A62232171059BC`.
+This links the new request to the observed loading interval; it does not assign
+a serialized asset owner or establish a complete native filesystem search trace.
+The old HUD record does not name pak69. E2 supplies this dependency's evidence.
+
+After E2's independently confirmed closure and the separate proof commit,
+read-only metadata inspection found `assetfile69.pak` directly under both the
+durable Doom root and base-game root:
+
+| Property | Durable Doom | Base game |
+| --- | --- | --- |
+| Bytes | 386465828 | 386465828 |
+| NTFS ID | `D088B64A:001000000007343B` | `D088B64A:000B0000000E2FAC` |
+| Modified UTC | `2026-09-29T21:46:16.7968839Z` | same |
+| Attributes | 32 | 32 |
+
+The pinned reviewed retail manifest already contains pak69, with expected SHA256
+`042C8D62A3A24ACD21A5502A5A111E6E426E870505DA3CDD62ADA3C3A23C496F`.
+This is a historical expected content hash, not a fresh hash of either file.
+Equal metadata and differing identities are not a current content-equality proof.
+The proposed source is durable Doom; the base installation is not staged from.
+
+The new metadata receipt is **schema `iw7.recipient-stock-observation/2`**, profile
+`observed-cp-paks-17-19-37-53-69`. It requires exactly five ordered `zone/` aliases,
+with the same fixed root, reviewed size/hash, identity, attribute and hardlink
+checks. `AdditionalDependencyEvidenceSHA256` must bind the original E2 fatal
+record `867E858ECD4BFFDE50A04E62488E42B73F528177E0E01B51A081BC030DBBB280`.
+Every returned input records its explicit `StockProfileId`; mixed profile IDs
+cannot choose a byte budget. The original four-PAK `/1` schema, profile, receipt
+and 600 MiB ceiling remain valid for their original scope and are not rewritten.
+
+`Get-RecipientSupplementalProfile` has only these two named cases. It does not
+infer a profile from a count, enumerate a directory, append a missing PAK on
+failure or accept a caller-supplied ceiling. Unknown profiles, cross-schema
+receipts, missing evidence, a sixth entry, changed names/order and mixed budgets
+fail before staging. The new local observation reads only the five explicit
+files' metadata and historical expected hashes. Actual SHA-256 requalification
+remains inside fresh admission and existing read guards before any staging.
+
+| Budget | Original four-PAK profile | New explicit 4+1 profile |
+| --- | ---: | ---: |
+| Supplemental logical/hash-read bytes | 580092048 | 966557876 |
+| Additional pak69 bytes | 0 | 386465828 |
+| Supplemental ceiling | 629145600 (600 MiB) | 966557876 (exact observed total) |
+| Supplemental payload-copy bytes | 0 | 0 |
+| Total distinct stock hash-read bytes | 1033031065 | 1419496893 |
+| Distinct stock files | 45 | 46 |
+| Stock hardlinks + sentinel copies | 75 + 1 | 76 + 1 |
+| Managed paths including E7/requests | 79 | 80 |
+
+The new total is about **921.78 MiB**, so the old 600 MiB ceiling cannot be reused.
+Hardlinks add directory entries to existing payloads, not another 386,465,828-byte
+copy. NTFS metadata allocation was not measured and is not claimed to be zero.
+The single 77-byte mutable sentinel copy is unchanged. Logical/hash-read bytes
+are not a measured resident-memory cost: the 8 GiB RAM/11 GiB commit plan remains
+an estimate requiring fresh admission, existing pressure checks and future
+measurement. No new allocation peak or complete stock sufficiency is proven.
+
+65 pure stock fixtures pass, including old-profile regression, exact five-PAK
+budget/zero-copy accounting, schema/profile confusion, missing or incorrect E2
+evidence, unsupported sixth inputs, wrong pak69 metadata and mixed budgets.
+The 65 source/contract fixtures also pass. Two fresh PowerShell hosts produce an
+identical source-only plan with 77 stock inputs and 80 managed paths. That plan,
+the new observation and spec are separate ignored artifacts; no PAK was staged,
+copied or rehashed and no lease/native run occurred during preparation. Further
+review and a separately authorized slot/GO are required. E2 remains failed and
+restored, and none of its proofs are amended into a five-PAK success.

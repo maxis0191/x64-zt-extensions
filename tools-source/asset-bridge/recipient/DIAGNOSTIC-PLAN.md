@@ -359,6 +359,15 @@ utility phase, retry or PAK expansion occurred. E2's GO is exhausted. A future
 explicit 4+1 profile must use distinct metadata/budget and receive its own review
 and admission; the old four-PAK observation is not rewritten as a five-PAK proof.
 
+That explicit 4+1 source profile is prepared. It selects only 17/19/37/53/69,
+requires observation schema `/2`, the separate profile name and E2 fatal hash,
+and pins its exact logical limit to 966,557,876 bytes. Original schema `/1`
+retains its four inputs and 600 MiB limit. No filename wildcard, inferred profile,
+stock copy, new retail hash, native run or automatic retry is introduced. The
+fresh observation uses metadata plus historical expected content hashes; the
+next admitted operation must verify actual content under guards. 65 stock and
+65 source/contract checks pass. Plan remains NO GO pending separate review.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256
