@@ -21,9 +21,13 @@ foreach($name in @('Recipient.Core.ps1','Run-RecipientClosure.ps1')){
         Check ($code.Contains('$owner.Active -eq 0 -and $owner.Exited')) 'Original tree closure required'
         Check ($code.Contains('Wait-RecipientPhase $owner $identity $plan.OuterPhaseSeconds $plan.RootExitDrainSeconds')) 'Original owner passed to bounded drain'
         Check (!$code.Contains('Stop-Process')) 'No PID cleanup'
+        Check ($code.Contains('foreach($phase in $plan.Phases)') -and !$code.Contains('Invoke-RecipientPhase script')) 'Execution follows reviewed phase list only'
+        Check ($code.Contains('ReferencesObservedScriptNotRun')) 'References-only status does not claim script observation'
     }
 }
 . "$PSScriptRoot/Recipient.Core.ps1"
+Check ((@(Get-RecipientPhases) -join ',') -ceq 'references,script') 'Default retains both phases'
+Check ((@(Get-RecipientPhases -ReferencesOnly) -join ',') -ceq 'references') 'Diagnostic explicitly suppresses utility phase'
 $names=@('techsets_global_core_mp','techsets_common_core_mp','code_post_gfx','global','common','techsets_cp_zmb','cp_zmb','patch_cp_zmb')
 $inputs=@(foreach($name in $names){@{Relative=('main/'+$name+'.ff')};@{Relative=('zone/'+$name+'.ff')}})
 $order=@(Get-RecipientZoneOrder $inputs)

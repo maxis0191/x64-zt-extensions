@@ -4,9 +4,10 @@ The first attempt and restoration are fixed in `0007825`. No further ZoneTool,
 debugger, dump or capture process has been started. The coordinator controls
 the next native slot. A new
 diagnostic run requires reviewed source changes, a fresh plan and a separate GO.
-The original `cb3d9ac` commit and failed outputs remain preserved. The only
-implemented follow-up changes are Recipient's pipe visibility and honest capture
-receipts; native flags, stdin policy, stock and E7 remain unchanged.
+The original `cb3d9ac` commit and failed outputs remain preserved. Implemented
+follow-up changes are Recipient's pipe visibility, honest capture receipts,
+explicit references-only mode and read-only light observation helpers. Native
+flags, stdin policy, stock and E7 remain unchanged.
 
 ## What the successful Beacon comparison establishes
 
@@ -72,8 +73,8 @@ live short stdout/stderr, EOF with a short tail, exact 2 MiB prefix/truncation,
 timeout prefix preservation with no invented closure, read failure, and source
 wiring. They also reproduce the reviewed raw-write defect and cover bounded
 write-all, zero/None/invalid returns, partial-prefix errors, flush errors,
-real-file counters and exceptional thread exits. Eleven contract tests and
-29 PowerShell checks also pass. No process was
+real-file counters and exceptional thread exits. Eleven contract tests,
+33 PowerShell checks and 13 pure light-observer identity checks also pass. No process was
 spawned by these stream fixtures. `native-start.json` will record the observed
 PID/parent/image/hash promptly; its observation timestamp is explicitly **not**
 verified process creation time. Future identity-gated diagnostics must obtain
@@ -112,9 +113,9 @@ python -B tools-source/asset-bridge/recipient/check_recipient_streams.py --sdk-d
 
 ## Proposed next observation, before the watchdog
 
-1. Review a narrow diagnostic adapter before execution: the implemented live
-   short-read drain/locator receipt, verified creation identity, one-shot capture scheduling and an explicit
-   references-only diagnostic mode. Use the same E7, 72-entry binding, work layout,
+1. Review the narrow diagnostic adapter before execution: the implemented live
+   short-read drain/locator receipt, verified creation identity and explicit
+   `-ReferencesOnly` mode. Use the same E7, 72-entry binding, work layout,
    stdin pipe, native flags and original job owner. Never reuse failed run-a.
    The original two-phase production runner remains preserved for comparison.
 2. Prefer the existing **8 GiB RAM / 11 GiB commit** group with corrected live
@@ -158,6 +159,48 @@ python -B tools-source/asset-bridge/recipient/check_recipient_streams.py --sdk-d
 These are proposed source changes/limits, not authorization to execute them.
 No generic launcher, native-tool patch, new dependency or broad extraction is
 needed. Keep a changed source pin/new plan separate from the preserved first run.
+
+### Recipient B: first corrected probe, light observations only
+
+The B execution uses `-ReferencesOnly` in the plan and eventual `-Run` command,
+8 GiB RAM / 11 GiB commit, the original reference native CLI, 240/245-second
+phase deadlines, five-second post-root drain, 600-second group and 256 MiB output
+threshold. It retains the existing 2 MiB-per-log cap. A fresh RunRoot is required.
+Utility never starts in this mode, even after a successful reference observation.
+
+The operator imports the source-hash-bound `Recipient.Light.ps1` and obtains
+the exact phase/locator from the bounded state and native-start receipts. Near
+native start, then at approximately 10 and 30 seconds, call
+`Get-RecipientLightObservation` with the plan, original Python phase identity,
+locator, and the first sample's native identity for every subsequent sample.
+Each call checks actual creation time and image for both parent and child before
+and after sampling. Original-handle vs CIM timestamps allow only the existing
+one-microsecond precision difference. The locator observation time is not used
+as process creation. E7 is rehashed and a process handle is held while sampling.
+Direct job membership is explicitly not queried; the known original parent and
+the launcher's non-breakaway job inheritance remain the ownership evidence.
+
+Use at most four samples (initial, 10, 30, optional 45 seconds), at most 128 KiB
+UTF-8 JSON each, with create-new output names inside this run's evidence folder.
+Thread enumeration retains at most 256 entries; exiting threads are unavailable.
+Wait reasons are read only while a thread is waiting. CIM requests have a
+two-second operation timeout each; this is not a hard whole-call deadline.
+Unavailable or exited identities must be recorded as unavailable, never adopted
+again from a replacement process. CPU/IO deltas compare the same bound identity.
+Window handle zero does not prove the absence of dialogs; no UI interaction occurs.
+
+At 45 seconds inspect bounded live stdout/stderr and these observations. The
+existing `stop.request` route can stop the owned group if the coordinator decides
+the collected cause is sufficient. Otherwise the original deadlines still apply.
+No dump, CDB, snapshot helper, added native flag, stdin experiment, stock change
+or automatic retry is part of B. A future full-capture proposal above remains
+separate and requires its own source review, admission and GO.
+
+A plan is neither a reservation nor permission to execute. Recheck source and
+provider hashes and acquire the complete fresh shared admission only after the
+coordinator's one GO. The original job must be closed with zero members before
+source-preserving restoration and release; no successful diagnostic observation
+can substitute for that lifecycle proof.
 
 ## Existing tools and exact constraints
 

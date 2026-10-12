@@ -89,6 +89,12 @@ metadata and returns a plan. It performs no Add-Type, stock inventory/content
 hashing, reservation, directory creation or child launch. A missing/changed pin
 fails; it does not refresh or rewrite historical evidence.
 
+Use the explicit `-ReferencesOnly` switch in both plan and execution for the
+Recipient B diagnostic probe. The native reference CLI is unchanged, and no
+utility process follows it. The default still runs both phases. A completed
+references-only run records `ReferencesObservedScriptNotRun` and leaves
+`ScriptBytesVerified=false`, `Ready=false` and `ClosureComplete=false`.
+
 The common binding preserves historical 63-link/9-copy provenance separately
 from this operation's 71 stock hardlinks and one 77-byte mutable sentinel copy.
 Before staging, the admitted operation holds all source guards, checks observed
@@ -163,9 +169,11 @@ and owner acceptance remain distinct. Every successful observation still sets
 ```powershell
 python -B -m unittest discover -s tools-source/asset-bridge/recipient -p test_recipient.py -v
 pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-Recipient.ps1
+pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-RecipientLight.ps1
 ```
 
-11 Python fixture tests and 29 PowerShell source/contract checks passed. They
+11 Python fixture tests, 33 PowerShell source/contract checks and 13 pure light
+observer identity checks passed. They
 cover exact requests/verbs, CSV shape, missing/default/extra rows, paths, names,
 hashes, lengths, bounds, source-zone order and default-plan/ownership ordering.
 Simulated original owners cover delayed-empty success with retained counts,
@@ -218,3 +226,13 @@ explicitly distinguish observed PID/timing from verified creation/job closure.
 The next proposed native observation uses the existing 8/11 GiB group and light
 diagnostics first. Full snapshot/CDB capture at 10/14 remains an unexecuted plan
 requiring separate review and authorization.
+
+The prepared B plan uses a new RunRoot and the explicit references-only mode.
+`Recipient.Light.ps1` is hash-bound with local runner sources but is not invoked
+by the native launcher. Its read-only observer links the locator to the original
+Python identity, verifies real parent/child creation, image and E7 hash, retains
+a process handle during sampling and rechecks identities afterwards. Later
+samples must pass the first native identity; replacement PIDs are refused.
+It records CPU, memory, IO, up to 256 thread states/waits and the main window.
+It does not enumerate all windows or directly query job membership. See the
+diagnostic plan for sample timing and output limits. No B observation has run.

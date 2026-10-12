@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$ProviderRoot,[Parameter(Mandatory)][string]$SpecPath,[switch]$Run)
+param([Parameter(Mandatory)][string]$ProviderRoot,[Parameter(Mandatory)][string]$SpecPath,[switch]$Run,[switch]$ReferencesOnly)
 # Source-only plan by default. Native execution additionally needs coordinator GO.
 $ErrorActionPreference='Stop'
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
@@ -19,7 +19,7 @@ foreach($name in @('ops/Base-Client.Core.ps1','sdk/modding/BeaconFF.Core.ps1','o
 Assert-AnimationPureImport (Join-Path $PSScriptRoot 'Recipient.Core.ps1')
 . "$PSScriptRoot/Recipient.Core.ps1"
 $specHash=(Get-FileHash -LiteralPath $SpecPath).Hash
-$plan=New-RecipientPlan (Read-BeaconJson $SpecPath) $repo $PSScriptRoot $bindings
+$plan=New-RecipientPlan (Read-BeaconJson $SpecPath) $repo $PSScriptRoot $bindings -ReferencesOnly:$ReferencesOnly
 $plan.SourceHashes[$SpecPath]=$specHash
 if(!$Run){$plan|ConvertTo-Json -Depth 12;return}
 foreach($type in @('IW7.CommunityBuild.BuildJob','IW7HudFileIdentity','IW7ResourceMemoryV1')){
@@ -93,7 +93,8 @@ try {
     $allPins[$plan.Candidate.Path]=$plan.Candidate.SHA256
     foreach($path in $allPins.Keys){$guards.Add([IO.File]::Open($path,'Open','Read','Read'));Assert-BeaconHash $path $allPins[$path]}
     . $bindings['ops/Resource-Scheduler.Core.ps1'].Path
-    $lease=Enter-IW7ResourceLease -Scope $work -Kind Extract -PhysicalBytes $plan.PhysicalBytes -CommitBytes $plan.CommitBytes -Owner 'Recipient four references and compiled utility'
+    $leaseOwner=if($ReferencesOnly){'Recipient references-only diagnostic'}else{'Recipient four references and compiled utility'}
+    $lease=Enter-IW7ResourceLease -Scope $work -Kind Extract -PhysicalBytes $plan.PhysicalBytes -CommitBytes $plan.CommitBytes -Owner $leaseOwner
     $state.RetainedLeaseToken=$lease.Token
     Add-Type -LiteralPath $bindings['tools-source/asset-bridge/model/BuildJob.cs'].Path
     Add-Type -LiteralPath $bindings['ops/hud-lab/HudFileIdentity.cs'].Path
@@ -127,9 +128,12 @@ try {
     }
     Assert-ModelFFInputs $state.Inputs $work
     $state.Status='Observing';Save-RecipientState
-    Invoke-RecipientPhase references;$state.ReferencesVerified=$true
-    Invoke-RecipientPhase script;$state.ScriptBytesVerified=$true
-    $state.Status='ReferenceAndScriptObservationsVerified';Save-RecipientState;Measure-RecipientOutput -Final
+    foreach($phase in $plan.Phases){
+        Invoke-RecipientPhase $phase
+        if($phase -ceq 'references'){$state.ReferencesVerified=$true}else{$state.ScriptBytesVerified=$true}
+    }
+    $state.Status=if($ReferencesOnly){'ReferencesObservedScriptNotRun'}else{'ReferenceAndScriptObservationsVerified'}
+    Save-RecipientState;Measure-RecipientOutput -Final
 } catch {$state.Failure=$_.Exception.Message;$state.Status='Failed';throw}
 finally {
     if($owner){
