@@ -663,3 +663,38 @@ The next gate is independent source review of both producer and reader. A real
 Passed build and separately reviewed exact runtime plan are still required
 before any new native invocation. Captured hex or decoded message text must
 remain in ignored private evidence, never Git checkpoints or public artifacts.
+
+## Plan G: preflight refused after the Main generation changed
+
+Following independent source/build/plan review, the coordinator authorized one
+native invocation of Plan G
+`047ee1aa5df8f514e598b837b835639d843dfc36ae64f69dfff9cb2138c7a4d3`
+(10,750 bytes). It binds the actual message candidate, 21,750,272 bytes with
+SHA256 `57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a`,
+from Passed build receipt
+`4001a1ed0a320bea393bed3e5ca4f17c8a9c0c1feb3ec43f6b4fc0761ccb3ae6`.
+The preparation snapshot at 16:18:48 UTC had observed Main Stopped and an
+allowed 6/8 GiB budget; that snapshot was explicitly not runtime admission.
+
+The fresh preflight passed default text/metadata validation, then refused
+`Stopped Main baseline differs or is ambiguous.` before creating a persistent
+host, taking a runtime lease or invoking Run. At 16:23:17.5341169 UTC, a new
+`iw7-paris-voice.exe` process with PID 19932 and creation time
+16:21:08.1996220 UTC matched the preserved absolute image path and owned UDP
+27016 on `0.0.0.0`. The old PID 27784 was not observed. The start actor and
+occupied state were not established; no inference about them is needed to
+honor the failed baseline guard.
+
+G remains **unconsumed / PreflightRefused**, with zero native invocations,
+no attempt marker and no runtime receipt. There is no G message or catalogue
+result to interpret. No payload was read/hashed, no alias was created, and the
+plan, observed Main process, bank and network were not modified. Both the
+coordinator and build owner were informed. The
+[sanitized refusal checkpoint](catalogue-preflight-g-20261012.json) pins the
+small private observation without publishing machine-specific paths.
+
+Continuing under a different Main baseline requires a separately sealed plan,
+review and exact GO binding the new process identity. Do not silently relabel
+the existing G plan as Running, reuse its prior preparation as admission, or
+stop the observed Main process to satisfy the plan. No further invocation is
+authorized by this refusal checkpoint.
