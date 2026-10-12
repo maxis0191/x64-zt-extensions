@@ -1,0 +1,208 @@
+{
+  "schema": "iw7.original-probe-native-validation/1",
+  "date_utc": "2026-10-12",
+  "status": "NativeSerializerAndReadbackPassed",
+  "source_commit": "4c0f00d0ef42864bac7e9c7d442068a43f69a691",
+  "reviewed_baseline": "24d5c4f799b295cced57abea845fa1c39c753f09",
+  "zonetool_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "runner_sha256": "ae0f5b8e0097b792b647ecaa9036fbdffd9cb57462b36d80a4564493b6f01415",
+  "reader_sha256": "d20d08613bd9c8d7bf69e836b463e0fd7cde09001748f4e78603acc1d615ae84",
+  "writer_sha256": "3b9c1f6873b10dcfcaaea7fe14de53fd90d092c613ec627b5206ccd3cc9aeb6b",
+  "abi_sha256": "d00c5d3be94f09927e60930b2d4fcd64d25610088e01eb87f954c56eb94d292f",
+  "prepared_manifest_sha256": "fa97e39ae9637ef7e5be5b24ecc45bfe465efb34269919168ca8275b3d243de6",
+  "generated_sha256": {
+    "probe_clip.hpp": "6d278bdbe2672e82546b19849f8d4b04e721c64803a318a2d060f45039114a61",
+    "probe_dump.inc": "13012c523d0553fbfba1579d1dc046cb88733143f847e84ca94fd6397ff3e72a",
+    "probe-clip.json": "2e4262413c64b441b1acd362d5ab2f24550a33840cd2e70c41e2eae344e9fb1b",
+    "probe-zone.csv": "7ad4e85029231058e1fa10af0e294720b93cbd129118dd2ce6d26b9756c72eeb"
+  },
+  "started_utc": "2026-10-12T02:11:55.2935697Z",
+  "finished_utc": "2026-10-12T02:11:57.8259813Z",
+  "compiler": {
+    "name": "MSVC cl.exe x64",
+    "toolset": "14.44.35207",
+    "sdk": "10.0.26100.0",
+    "sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619",
+    "flags": [
+      "/nologo",
+      "/std:c++20",
+      "/EHsc",
+      "/MD",
+      "/O1",
+      "/W3",
+      "/link",
+      "/INCREMENTAL:NO"
+    ],
+    "warning": "C4996 strcpy in pinned assetmanager.hpp:580",
+    "multiprocess_flag": false
+  },
+  "admission": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "launcher_priority": "BelowNormal",
+    "resource_helper_sha256": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
+    "leases_after": 0,
+    "compiler_or_writer_processes_after": 0
+  },
+  "processes": [
+    {
+      "label": "compile",
+      "priority": "BelowNormal",
+      "exit_code": 0,
+      "elapsed_ms": 1571
+    },
+    {
+      "label": "emit",
+      "priority": "BelowNormal",
+      "exit_code": 0,
+      "elapsed_ms": 18
+    },
+    {
+      "label": "readback",
+      "priority": "BelowNormal",
+      "exit_code": 0,
+      "elapsed_ms": 70
+    }
+  ],
+  "peak_memory_measurement": "Unavailable from .NET process objects after exit; no peak-memory claim",
+  "artifacts": {
+    "native-receipt.json": {
+      "sha256": "7e123916b8e66433a730390151eee15cd20199a81e1558787fa49460ac06b248",
+      "bytes": 6171
+    },
+    "compile.stdout.log": {
+      "sha256": "36c9c515967d483bc1348301bbd9cbaf730c72ce41e69f174f5bf9fdd6747ead",
+      "bytes": 346
+    },
+    "compile.stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "emit.stdout.log": {
+      "sha256": "f78556358bfe575ba901ce486809f32c37c55ffc5fa12912a12558f9d561eef7",
+      "bytes": 81
+    },
+    "readback.stdout.log": {
+      "sha256": "b94b8b3c76010cee048bbfdd265e2bb7a02d13427a7f8b5912cd2d488c69406f",
+      "bytes": 1463
+    },
+    "resource-after.json": {
+      "sha256": "dd6bdc203639be443b61f61d0855c2259c56766ab46cb9aab80b16d9fc279157",
+      "bytes": 593
+    },
+    "writer_probe.exe": {
+      "sha256": "c247a793faff8aa2872959c388f539a4ec06e7f09f5f4833de4360d09de21c7f",
+      "bytes": 47104
+    },
+    "writer_probe.obj": {
+      "sha256": "905ba5c07f9b2255314d543e18729326a6a2d00bfee9caba94d1dc394525aff1",
+      "bytes": 313734
+    },
+    "emission/xanim/paris_original_probe_bend.xab": {
+      "sha256": "1284b72cf501ae42f77958579610dbcaf692b9153cd06ff66dcf2d1d11eeda7d",
+      "bytes": 281
+    }
+  },
+  "attempt_a": {
+    "error": "The property 'Sum' cannot be found on this object.",
+    "cause": "Empty-directory Measure-Object under StrictMode in runner",
+    "compiler_diagnostics_retained": false,
+    "native_result": "unknown, no artifacts retained",
+    "identity_retained": false,
+    "postcheck_leases": 0,
+    "postcheck_heavy_children": 0,
+    "corrected": "Accumulate file sizes from zero; retain diagnostics and receipt on failure",
+    "retained_bytes": 521
+  },
+  "attempt_b_bytes_including_receipts": 369773,
+  "total_native_group_bytes": 370294,
+  "artifact_budget_bytes": 33554432,
+  "readback": {
+    "schema": "iw7.original-probe-readback/1",
+    "status": "original-probe-data-pass",
+    "sha256": "1284b72cf501ae42f77958579610dbcaf692b9153cd06ff66dcf2d1d11eeda7d",
+    "bytes": 281,
+    "decoded_profile": "four-key-int16-quat4-only",
+    "samples": [
+      {
+        "frame": 0,
+        "quat_xyzw_div32767": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "x_degrees": 0.0,
+        "norm": 1.0
+      },
+      {
+        "frame": 10,
+        "quat_xyzw_div32767": [
+          0.3826715903195288,
+          0.0,
+          0.0,
+          0.9238563188573871
+        ],
+        "x_degrees": 44.99976426267937,
+        "norm": 0.9999740216277617
+      },
+      {
+        "frame": 20,
+        "quat_xyzw_div32767": [
+          -0.3826715903195288,
+          0.0,
+          0.0,
+          0.9238563188573871
+        ],
+        "x_degrees": -44.99976426267937,
+        "norm": 0.9999740216277617
+      },
+      {
+        "frame": 30,
+        "quat_xyzw_div32767": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "x_degrees": 0.0,
+        "norm": 1.0
+      }
+    ],
+    "root_rotation": "identity",
+    "translations": "no authored translation tracks",
+    "notetrack": {
+      "name": "probe_contact",
+      "normalized_time": 0.5
+    },
+    "frequency_input": 1.0,
+    "frequency_runtime_verified": false,
+    "general_xanim_decoder": false,
+    "runtime_verified": false,
+    "input_provenance": "must be bound to actual native writer receipt separately"
+  },
+  "ff_parser_verified": false,
+  "ff_serializer_verified": false,
+  "runtime_verified": false,
+  "owner_gameplay_accepted": false,
+  "lightweight_validation": {
+    "python_unittest_cases": 39,
+    "python_unittest_status": "passed",
+    "runner_syntax": "passed",
+    "runner_artifact_budget_regressions": [
+      "empty directory: 0",
+      "two files: exact sum",
+      "32 MiB: accepted",
+      "32 MiB plus 1: refused"
+    ],
+    "runner_budget_test_method": "AST-extracted actual function with mocked file metadata, no workload",
+    "actual_native_xab_preflight": "envelope-pass",
+    "actual_native_xab_skeleton_binding": [
+      0,
+      1
+    ],
+    "bind_pose_verified": false,
+    "weights_verified": false
+  },
+  "readback_provenance": "Bound to actual native executable and XAB by the retained native receipt hash and artifacts table above."
+}

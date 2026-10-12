@@ -49,7 +49,9 @@ not a binary XModel writer. See `fixtures/two-bone.skeleton.json` for the
 The next decisive experiment and dependency map are in
 [ANIMATION-AI-BRIDGE.md](../../../../docs/ANIMATION-AI-BRIDGE.md).
 
-The next source tranche now prepares an original four-key `tag_probe` clip,
+The companion native tranche provides an original four-key `tag_probe` clip,
 the **actual pinned ZoneTool dump method** and a native writer/independent narrow
-reader. See [PROBE-WRITER.md](PROBE-WRITER.md). Its native build and emission have
-not run; the passing synthetic readback does not upgrade the preflight claims.
+reader. See [PROBE-WRITER.md](PROBE-WRITER.md). Native compilation, emission of a
+281-byte XAB and independent exact readback passed on 2026-10-12. That proof is
+specific to the original profile; it does not upgrade this envelope inspector
+to a decoder or establish FF/runtime acceptance.

@@ -78,7 +78,7 @@ use an existing actor and existing retail replication with a tiny original asset
 Offline names/hashes, a dedicated startup or synthetic snapshots cannot establish
 remote rendering or four-player behavior.
 
-## This tranche's validation
+## Initial preflight checkpoint
 
 23 unittest cases pass with only Python stdlib, including both ABIs, all three
 delta forms in static/keyed variants, frame255/256 widths, truncation at every
@@ -95,19 +95,37 @@ roundtrip checks are pending. These tests were not added to the shared CI workfl
 because this lot's ownership is local; the parent can invoke the exact command in
 the README during integration. No native assertions, pack or game test executed.
 
+## Native original clip checkpoint, 2026-10-12
+
+The source follow-up and bounded native serializer gate have now passed. The
+original `paris_original_probe_bend` authors X rotations 0/+45/-45/0 at frames
+0/10/20/30 on `tag_probe`, an identity `tag_origin`, and `probe_contact` at
+normalized time 0.5. The real pinned ZoneTool IW7 dump method and assetmanager
+compiled with the actual IW7 ABI assertions, then emitted a 281-byte XAB.
+Independent readback recovered every key/value, note and exact EOF. Frequency 1
+is supported by two bounded retained-header observations but remains a runtime
+timing hypothesis. No root motion is authored.
+
+The [writer/readback record](../tools-source/asset-bridge/animation/PROBE-WRITER.md)
+and [sanitized hashes/results](../tools-source/asset-bridge/animation/native-validation-2026-10-12.json)
+retain both the initial launcher failure and the successful correction. Actual
+compile, writer and reader exits were all zero, under one authorized workload
+scope with fresh admission and BelowNormal processes. Artifacts plus receipts
+are below 0.4 MiB; the reservation was released and no heavy child remained.
+39 lightweight tests also pass. This closes native IW7 layout/serializer proof
+for this exact original profile only; H1 conversion, FF and runtime gates remain
+open. Mesh/material work belongs to the other bridge workstream.
+
 ## Next decisive experiment, after the parent's gate
 
-1. Source-only follow-up: expose a tiny original keyed `tag_probe` rotation clip
-   through the pinned ZoneTool writer and add native size/offset assertions for
-   both XAnim headers. Use a retained small IW7 clip only as a read-only codec
-   reference under the agreed budget. Do not infer encoding from this synthetic
-   envelope generator. Require independent decoded key samples and notetrack
-   times to match authoring before packaging.
-2. Under the parent's one heavy reservation, compile the existing two-bone skin
-   writer and that tiny XAnim writer together. Read their real outputs with the
-   independent readers. Compare parent list, binds, asymmetric weights, bone
-   rotation samples, event times and root delta separately. Keep root motion
-   disabled for this first deformation witness. No client-bone/IK/blend-shape work.
+1. Feed the actual native XAB into the smallest existing ZoneTool FF
+   parser/serializer roundtrip under a separate parent's GO and admission.
+   Preserve import/output hashes and prove the exact keys and note survive.
+   Do not rebuild the passed standalone writer without a concrete need.
+2. Combine the clip with the other workstream's original two-bone skin fixture
+   only after its own native/FF gates. Compare parent list, binds, asymmetric
+   weights, rotation samples, event times and root delta separately. Keep root
+   motion disabled. No client-bone/IK/blend-shape work.
 3. Use a retained test dedicated plus the base client, after confirming the owner
    client is free and fresh engine godmode/inactivity protection. Record two
    known poses, a repeated keyed bend, one named notetrack per cycle and a static
@@ -125,8 +143,9 @@ any native object/build growth needs a separate measured cap before admission
 and counts against the program's remaining10 GiB. Native build admission remains
 4 GiB physical/6 GiB commit; sequential full-quality visual test budgets a
 12 GiB client plus2–4 GiB dedicated, retaining independent commit headroom.
-No reservation was requested in this tranche and these estimates are not measured
-maxima. Do not download another Blender SDK or restore a retired stock lab.
+Only the standalone animation writer reservation above has been executed here;
+the later fixture/runtime estimates are not measured maxima. Do not download
+another Blender SDK or restore a retired stock lab.
 
 ## Integration handoff
 
@@ -134,4 +153,5 @@ Ownership is only this document and `tools-source/asset-bridge/animation/`.
 Parent integration should link this tranche in STATE/CHANGELOG/BUGS/VALIDATION/
 PLAN as appropriate, run its exact lightweight suite, preserve dirty historical
 work and complete the private PR/CI/merge record. No direct runtime deployment
-is warranted by this source tool. Gameplay and native-layout gates remain open.
+is warranted by this source tool. FF, rendered animation and gameplay gates remain
+open; native-layout proof applies only to the exact original IW7 writer above.
