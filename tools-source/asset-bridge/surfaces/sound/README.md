@@ -276,3 +276,80 @@ creation, stock preparation, client launch or any action on Main. The next gate
 is a separately reviewed/admitted existing-ZoneTool SAB/FF plan with bounded
 independent bank readback; the small codec budget does not apply to that stage.
 The coordinator owns the private PR, exact-head CI, merge and common documentation.
+
+## Independent original-bank reader and next native review plan
+
+`read_sab.py` is now implemented for the single approved original chime; it does
+not import the PCM encoder, source preparer, native writer or bank builder. It
+shares the separately implemented, previously reviewed `read_flac.py` decoder.
+`sab_contract.json` binds the five original source files and their exact names,
+sizes, hashes, sample metadata and alias/asset IDs. Noninteger JSON counts,
+booleans in integer fields, unknown/duplicate keys and nonfinite numbers fail.
+
+The reader bounds each file to 256 KiB and all reads, including final rechecks,
+to 2 MiB. It rejects linked paths, missing/truncated files, surplus bytes, every
+unexpected header/entry/reserved field, invalid offsets, padding and text. This
+is deliberately a one-entry SABL and empty SABS reader; other banks are refused.
+For this source it expects 114816-byte SABL and 4096-byte SABS. The SAB asset ID
+must match the original alias's File hash. It verifies the complete seek/frame
+payload, frame/header CRCs, sample count, PCM SHA256/equality to the original WAV,
+payload MD5 and source PCM MD5. Source hashes are reread before returning success;
+these are sequential snapshots, not durable locks or protection from concurrent
+writers. A future supervisor must hold the reviewed inputs throughout native work.
+
+The writer's `checksumChecksum` is checked only as its expected 16-byte `0xCC`
+placeholder. `checksum_checksum_verified` stays false. A one-alias native index
+would have value 0 / next 65535, but this is only an expectation: the native CSV
+dump does not expose the index, so `native_alias_index_verified` stays false.
+
+With both `--dump` and `--inventory`, the reader additionally checks exactly one
+soundbank inventory callback, one alias row with all 53 columns in order, exact
+text/enums and decimal numeric values, and the complete dumped FLAC bytes against
+the pinned writer's known header rewrite plus original payload. Numeric formatting
+such as 0.500000 is accepted without accepting changed values or NaN. This writer
+sets the dumped STREAMINFO min/max block size to 1024, unknown frame lengths to
+zero and MD5 to zero, while the original frames use 4096-sample blocks. The reader
+reports that rewrite and never claims the standalone dumped FLAC was validated.
+PCM verification reconstructs the approved original metadata around unchanged SAB
+payload, then decodes it; it does not silently repair a native dump on disk.
+Native FF alias-index/storage correctness and audible acceptance remain separate.
+
+```powershell
+python -B tools-source/asset-bridge/surfaces/sound/read_sab.py --source <original-source-B> --banks <work/zone> --contract tools-source/asset-bridge/surfaces/sound/sab_contract.json --dump <work/dump/sdk_original_sound_v1> --inventory <verify/stdout.log>
+python -B tools-source/asset-bridge/surfaces/sound/test_sab.py
+python -B tools-source/asset-bridge/surfaces/sound/test_sab_ff.py
+```
+
+Eighteen reader tests use only generated original PCM and hand-packed synthetic
+SAB fixtures, with mutations of all 21 header and 17 entry fields, offsets,
+padding, names, checksums, seek/frame bytes, source/dump aliases, inventory,
+JSON types and final-read drift. Ten phase/Plan tests use fake runners and
+candidate metadata. Their fixture trees each remain below 1 MiB; no retail bank,
+tool, job, reservation or stock staging is involved. A successful fixture is a
+parser test, not native SAB evidence.
+
+`prepare_sab_ff.py` produces a source review plan using the existing E7 candidate
+receipt and reviewed historical stock plan, with exact four phase specs and
+source/helper hashes. It binds the completed codec checkpoint to the same source
+FLAC/PCM without repeating FFmpeg. It does not create the proposed RunRoot or stage stock.
+The native estimate remains **8 GiB RAM / 11 GiB commit**, distinct from the
+completed codec test. Native binary hashing under guards and fresh stock identity
+and content checks are explicitly pending. The preparation rereads all small
+inputs and creates only an optional new plan file, refusing overwrite.
+
+`sound_ff_phase.py` is a sound-local adapter around the unchanged
+`material_v2_phase.py` runner. Its pinned shared dependencies are listed in
+`sab_ff_helpers.json`. The wrapper restricts verbs/zone/arguments/typed timeouts,
+catches every drain `BaseException`, records bounded exception types and requires
+two explicit normal returns in addition to the existing native receipt. It emits
+a separate sound receipt without editing the shared provider's receipt. Failure
+inside the shared runner can exit before that extra receipt exists; the outer
+original job owner must treat any nonzero exit or missing receipt as failure.
+
+This delivery intentionally has no native `-Run` orchestration or authorization.
+The review plan names the existing original-job supervision and restoration
+functions to bind next. That future binding must include FF, SABL and SABS in the
+transaction/output accounting, preserve held source/stock identities, stop only
+the original job, qualify closure before restoration/release, and retain evidence
+on failure. One central native GO and complete 8/11 admission are still required.
+No shared provider was modified and no SAB/FF native invocation took place here.

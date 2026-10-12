@@ -1,0 +1,18 @@
+{
+  "tools-source/asset-bridge/surfaces/material_v2_phase.py": "1a98dfae183183707184b7370c94f7b85ef90376d7b1fc71b4c3784eb9e9d02c",
+  "tools-source/asset-bridge/surfaces/inspect_content.py": "4c0103a69d48820bf521b366e7ce9b7dd8ad1eb15caf4d233a2224670912a422",
+  "tools-source/asset-bridge/surfaces/prepare_material_v2.py": "25f4c282eb0756b2c99ec38cec64dc5572e06bdc8712a5b79483795a6de93312",
+  "tools-source/asset-bridge/surfaces/prepare_beacon.py": "c9de92ba9d09a5ee83479e31709573ca9e2364996f2fd3af712de9b908c9247a",
+  "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1": "5bf7a25d7c3337e6cc6e1920584f46eb112555f514e5b205785f97757cff19e8",
+  "tools-source/asset-bridge/model/BuildJob.cs": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
+  "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d",
+  "sdk/modding/BeaconFF.Core.ps1": "b80047875a39731ea54838459fb71e0dca580c5e42284bd2749dc4b39c3a08a8",
+  "ops/Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
+  "ops/Resource-Memory.ps1": "6a708d2e7fa9803628bfbf5c670068d63d22a2d2cfc157994afa82d56ac9c241",
+  "ops/native/ResourceMemory.cs": "b159804d12ca504cd592f4cdee191a9b68353e9e0117f9045a28a522b25692e9",
+  "ops/Resource-RecorderOwnedProcess.Core.ps1": "23d6f589a6f973f6d9c56a2ff3dcb66c4df6a0aa9fe0a7125048dd9061f93c54",
+  "ops/model-lab/ModelFF.Core.ps1": "5ccf97178816706e47e263f4fec2c2e5a74277827e58841e666e58cb30dcd278",
+  "tools-source/asset-bridge/common/StockBinding.Core.ps1": "5c07dfe9adff6527eef3478b153e38f3adf293c85aa732600818cc540ab2bde4",
+  "ops/Base-Client.Core.ps1": "e504a87334fae8f294458c72d7980c3e9b00d3c6549b969d1dfb41f26ca70605",
+  "ops/hud-lab/HudFileIdentity.cs": "61255ad8bbb6b4e2437291d3083811a56c1217ab68484bb1f22a4d5148616dbd"
+}
