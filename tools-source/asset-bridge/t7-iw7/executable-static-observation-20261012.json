@@ -1,0 +1,104 @@
+{
+  "schema": "iw7.t7-static-observation-summary/1",
+  "date": "2026-10-12",
+  "inspector_source_commit": "3953ff4d08dd0b70b350c3c18d41129ee83ecef3",
+  "coordinator_integration_commit": "ee53b948849f1354e20a75c0d5470b9633b6895f",
+  "inspector_sha256": "061c680cbf9a2ad02625f0e9ef8b2e3923bdb6307c5f0ee77f45eaa98042beef",
+  "bounded_reader_sha256": "5d2196f77c9d409f34ff430e118e010f4821eff130d2b92b36c8f22b9cbc38fc",
+  "native_source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "input": {
+    "name": "BlackOps3_UnrankedDedicatedServer.exe",
+    "bytes": 21737352,
+    "app_id": 545990,
+    "depot_id": 545991,
+    "manifest_id": "2350066205567669287",
+    "build_id": 4500243,
+    "acquisition_sha256": "3df511d71e3690b14517379783bbfb713f6fe2ed2f2e73b445b4878216686156",
+    "acquisition_receipt_sha256": "cbe17f14843ac83133d8ab9210bd5d13e6e5b899e347c4c73239d03f8173fdb9",
+    "durable_promotion_confirmed_before_inspection": true,
+    "full_hash_recomputed_by_inspector": false
+  },
+  "execution": {
+    "invocations": 1,
+    "kind": "Analysis",
+    "admission_physical_bytes": 268435456,
+    "admission_commit_bytes": 268435456,
+    "memory_estimates_measured": false,
+    "inspector_exit_code": 2,
+    "wrapper_exit_code": 1,
+    "wrapper_exit_reason": "Reviewed command throws after inspector exit2; finally releases admission",
+    "command_wall_seconds": 1.4104762,
+    "report_written_utc": "2026-10-12T11:58:02.0483861Z",
+    "bytes_read": 671445,
+    "cumulative_read_budget": 4194304,
+    "requested_windows": 38,
+    "capstone_version": "5.0.7",
+    "payload_executed": false,
+    "payload_loaded_as_module": false
+  },
+  "pe": {
+    "machine": "AMD64",
+    "format": "PE32+",
+    "preferred_image_base": "0x140000000",
+    "size_of_image": 189760000,
+    "entrypoint_rva": 11294528,
+    "coff_timestamp": 1576528850,
+    "section_count": 10,
+    "pdata_record_count": 54927,
+    "dynamic_base": false,
+    "relocation_directory": [0, 0],
+    "delay_import_directory": [0, 0],
+    "tls_directory": [16234768, 40],
+    "import_descriptor_count": 13,
+    "import_symbol_count": 300,
+    "import_dlls": [
+      "faultrep.dll", "KERNEL32.dll", "USER32.dll", "GDI32.dll", "ADVAPI32.dll",
+      "SHELL32.dll", "ole32.dll", "DSOUND.dll", "WINMM.dll", "WS2_32.dll",
+      "IPHLPAPI.DLL", "steam_api64.dll", "WindowsCodecs.dll"
+    ],
+    "set_process_dpi_aware_import_present": true,
+    "exit_process_import_present": true,
+    "dynamic_dependency_closure_proven": false
+  },
+  "decision": "stop_before_boot",
+  "disk_conflict_count": 9,
+  "disk_conflicts": [
+    "boot_call: expected direct five-byte CALL not observed",
+    "copy_info_branch_1: expected short branch not observed",
+    "copy_info_branch_2: expected short branch not observed",
+    "image_loader_call: expected direct five-byte CALL not observed",
+    "integrity_intact_1: source-derived pattern differs",
+    "integrity_intact_2: source-derived pattern differs",
+    "integrity_intact_3: site is in non-executable .rdata on disk",
+    "integrity_intact_3: source-derived pattern differs",
+    "integrity_split: source-derived pattern differs"
+  ],
+  "indeterminate_count": 37,
+  "indeterminate_classes": {
+    "unsupported_or_invalid_unwind_header": 25,
+    "instruction_boundary_not_independently_anchored": 7,
+    "zone_global_not_completely_file_backed": 5
+  },
+  "raw_evidence": {
+    "ignored_relative_path": "runtime/t7-static/inspection-a-20261012.json",
+    "bytes": 44444,
+    "sha256": "c4242df724709c747b98156e3b5ded3af6ea5190111b0a1034d1a2b68c65cf18",
+    "observed_read_sequence_sha256": "f5126fdfb7f76a5d950c2841e992700b7abf31040710f0707f33e63c7a8818e8",
+    "game_bytes_or_disassembly_in_this_summary": false
+  },
+  "closure": {
+    "synchronous_inspector_and_wrapper_completed": true,
+    "postflight_utc": "2026-10-12T11:58:40.6939261Z",
+    "remaining_lease_count": 0,
+    "main_generation_and_udp_owner_unchanged": true,
+    "native_job_tree_claimed": false
+  },
+  "limits": {
+    "runtime_compatibility_proven": false,
+    "incompatible_version_proven": false,
+    "runtime_transformation_observed": false,
+    "abi_proven": false,
+    "boot_authorized_by_report": false
+  },
+  "next_question": "Inspect the actual first SetProcessDPIAware rendezvous before any post_unpack absolute patches, under separately reviewed native supervision; disk signatures alone cannot establish transformed runtime code."
+}
