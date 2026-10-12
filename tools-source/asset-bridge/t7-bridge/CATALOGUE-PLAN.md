@@ -966,3 +966,50 @@ native types, lease or runtime files. K's prepared work/evidence/temp directorie
 remain empty. No K Run, new build, catalogue or model export is claimed.
 The next action is independent review and a distinct exact GO after the
 current heavy workload closes; this preparation does not authorize execution.
+
+## Catalogue K: one attempt, no catalogue, closure independently confirmed
+
+Following the distinct coordinator GO, the exact reviewed K host command and
+pinned dispatcher were used once. Fresh preflight at 18:26:13.0381826 UTC
+qualified the unchanged 6/8 GiB reservation at 54.54% commit use. The two
+qualified bootstrap aliases and all other inputs were guarded under admission.
+The run started at 18:26:46.5244504 UTC and finished at
+18:26:50.2309737 UTC. The native root exited naturally with code 0 after
+2,354.75 ms.
+The result is `Failed / NoCatalogue`, not catalogue success or readiness.
+TRACE, EXIT, CALLERS and MSG observations were accepted; the correlated bounded
+message is 43 bytes and NUL terminated. Raw message/code bytes remain private
+for interpretation by the analysis owner.
+
+Tree closure, lease release, output validation and final input revalidation
+completed before wrapper return at 18:26:50.2681373 UTC. Same-host postflight
+at 18:30:36.2771848 UTC confirmed six unchanged metadata records, twelve equal
+original/alias file IDs, no quarantine, and the preserved Python identity.
+Guard disposal is supported by the pinned runner's deterministic finally path
+before return; it is not a separately observed guard counter. No payload hash
+was read after release.
+
+Host session 61384 exited 0 (tool chunk `4c6082`). The independent witness at
+18:31:17.7888245 UTC found host 26988, parent 6072 and native root 30928 absent,
+with zero leases/heavy workloads and Main/image/UDP27016 still absent.
+The initial independent witness command refused a relative JSON path before
+its snapshot; the canonical absolute path passed without another native run.
+The [sanitized K runtime checkpoint](catalogue-runtime-k-20261012.json) pins
+the 15,410-byte receipt, dispatcher, helper, same-host postflight, actual exit
+and independent absence. Its stderr hash was recorded under runtime guards.
+
+The analysis owner independently confirmed the receipt hash and identified
+`en_core_patch` as the newly missing startup zone. J had named `core_pre_gfx`.
+Stdout is still 70 bytes and reports only initialization starting; neither the
+initialization-complete marker nor `T7_IW7_MODEL_CATALOG` is present, and the
+catalogue JSON/directory are absent. The changed first named failure is
+consistent with startup progress, but proves neither complete loading/validity
+of the earlier bootstraps nor an exhaustive dependency sequence.
+
+At 18:32:59.2133576 UTC, the analysis owner observed only the exact
+`en_core_patch.ff` metadata: 624,640 bytes, with no file/ancestor reparse point.
+No payload content, header or hash was read. K is consumed and retained; the
+smallest proposed next action is qualification of that named file through the
+existing guarded protocol, after a separate coordinator decision and exact GO.
+This result authorizes no new bootstrap, payload read, build or engine
+invocation and proves no content compatibility.
