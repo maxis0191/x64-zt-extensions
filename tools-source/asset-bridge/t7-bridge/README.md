@@ -7,6 +7,9 @@ The [catalogue recipe](CATALOGUE-PLAN.md) uses ordinary D2 and one initial FF.
 Its first attempt stopped on unlisted startup outputs (`steam_appid.txt` and
 empty identity directories), with confirmed closure and reservation release.
 This guard refusal establishes neither engine incompatibility nor a missing FF.
+The separately authorized B attempt accepted those startup outputs and exited
+naturally with code 0, but produced no catalogue. Its sole log announces
+`init_zonetool`; the engine-init/command/exit control flow remains to diagnose.
 No BO3 model catalogue, export, conversion, IW7 FF
 build or rendering is proved here. The owner stopped H1 work; its checkpoint
 remains historical and supplies no BO3 proof.

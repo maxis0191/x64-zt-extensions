@@ -211,3 +211,31 @@ locked synthetic identity file refused without reading it. Plan B uses the same
 four inputs, no additional FF/FD/XPAK, and no larger budget. Its native invocation
 requires a new explicit coordinator GO. A's receipt, runtime tree and failure
 remain unchanged.
+
+## Attempt B: natural exit 0 without a catalogue
+
+The coordinator authorized one B invocation at source `5b64e86`, plan SHA256
+`bc5de39e59a5f2ba8a8139570e33cc79075d27d4a46e7a845e36d701c52594ed`.
+The native stage lasted 2,180.25 ms and exited naturally with code 0. The new
+startup-output checks passed; the complete original job closed without a forced
+stop or quarantine. Input hashes, metadata and file IDs were reverified while the
+6/8 GiB reservation and guards remained held, then the lease was released.
+
+No catalogue was created. The runner correctly records Failed/NoCatalogue with
+`No qualified catalogue was produced.` stdout contains only 70 bytes announcing
+`[ INFO ][ zonetool::t7::init_zonetool ]: ZoneTool is initializing...`; stderr is
+empty. This log marks entry into initialization, not its successful completion,
+original-engine-init return or command dispatch. No missing filename was reported.
+The six-byte app-id file and empty identity-directory shape match A; no identity
+payload was present or read. No additional FF, FD or XPAK was added.
+
+Postflight at 13:34:00 UTC found zero leases/heavy workloads and no original root,
+with Main and the preserved Python generation unchanged. Source/alias metadata
+and identities still matched. The host exited normally after its AppDomain
+quarantine check; host and candidate were absent at 13:34:11 UTC. Four hardlinks
+and private logs/receipts remain retained. The
+[sanitized B record](catalogue-runtime-b-20261012.json) binds this evidence.
+
+The build owner is inspecting the actual prepared D2 path from initialization to
+command parsing and exit. No compatible-engine conclusion, automatic retry,
+speculative bootstrap file or new native probe follows from exit 0 alone.
