@@ -66,6 +66,40 @@ function Write-WorldObserverFinalReceipt([string]$Root,$State) {
     Write-WorldObserverJson (Join-Path $Root 'run.json') $State
     if((Measure-WorldObserverOutput $Root -Final) -ne $State.FinalBytes){throw 'Final world receipt byte accounting differs.'}
 }
+function Complete-WorldObserverReservation([string]$Root,$State,$Lease,$Guards) {
+    # The immutable file is an explicitly BEFORE-release snapshot. The returned
+    # state alone reports the subsequent scheduler outcome; no file write after
+    # release is required to qualify the already published/accounted evidence.
+    if($State.LeaseReleased -or $State.LeaseReleaseState -in 'Confirmed','Unconfirmed'){throw 'Never retry a confirmed or ambiguous lease release.'}
+    $State.LeaseReleased=$false;$State.RetainedLeaseToken=$Lease.Token
+    $State.LeaseReleaseState='NotAttempted';$State.ReceiptStage='BeforeLeaseRelease'
+    $State.FinalReceiptVerified=$false;$State.FinalizationFailure=$null
+    $attempted=$false
+    try {
+        if($State.JobClosureVerified -isnot [bool] -or !$State.JobClosureVerified -or
+           $State.SourceHashesUnchanged -isnot [bool] -or !$State.SourceHashesUnchanged){throw 'Closure and source integrity required before finalization/release.'}
+        if($State.Status -ceq 'SyntheticHarnessPassed'){$State.Status='SyntheticHarnessValidatedLeaseHeld'}
+        Write-WorldObserverFinalReceipt $Root $State
+        $path=Join-Path $Root 'run.json'
+        $guard=[IO.File]::Open($path,'Open','Read','Read');$Guards.Add($guard)
+        $expected=[Text.UTF8Encoding]::new($false).GetBytes(($State|ConvertTo-Json -Depth 20))
+        $expectedHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($expected))
+        $actualHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($guard))
+        if($guard.Length -ne $expected.Length -or $actualHash -cne $expectedHash -or
+           (Measure-WorldObserverOutput $Root -Final) -ne $State.FinalBytes){throw 'Published final receipt/accounting verification failed.'}
+        $State.FinalReceiptVerified=$true;$State.FinalReceiptSHA256=$actualHash
+        $attempted=$true;$State.LeaseReleaseState='Unconfirmed'
+        Exit-IW7ResourceLease -Token $Lease.Token
+        $State.LeaseReleased=$true;$State.RetainedLeaseToken=$null;$State.LeaseReleaseState='Confirmed'
+        if($State.Status -ceq 'SyntheticHarnessValidatedLeaseHeld'){$State.Status='SyntheticHarnessPassed'}
+    } catch {
+        $State.Status='Failed';$State.FinalizationFailure=$_.Exception.Message
+        # A throwing release may have changed the registry: preserve the token
+        # for reconciliation and say unconfirmed, never assert it stayed held.
+        $State.LeaseReleaseState=if($attempted){'Unconfirmed'}else{'NotAttempted'}
+        throw
+    }
+}
 function Assert-WorldObserverCompileReceipt($Receipt,$Witness,$Policy) {
     if($Receipt.schema -cne 'iw7.material-v2-phase-result/1' -or $Receipt.phase -cne 'compile' -or
        $Receipt.failure -or ($Receipt.exit_code -isnot [long] -and $Receipt.exit_code -isnot [int]) -or

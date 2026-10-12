@@ -1,6 +1,6 @@
 {
   "schema": "iw7.world-clipmap-harness-plan/2",
-  "status": "executable-adapter-source-awaiting-review-and-native-go",
+  "status": "p2-source-corrections-awaiting-review-and-native-go",
   "heavy_execution_authorized": false,
   "native_compiled": false,
   "native_harness_run": false,
@@ -79,12 +79,13 @@
     "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
     "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
     "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa",
-    "tools-source/asset-bridge/world/Run-ObserverHarness.ps1": "f56ea0af37d8fb75a372f1a07d6185eb4139fc9277ff995eb3b8e36a297be1d0",
-    "tools-source/asset-bridge/world/ObserverHarness.Core.ps1": "cf7edf511c70741ddd8030f74fadf775777b015466f8885748c5b3497b454049",
-    "tools-source/asset-bridge/world/observer_harness_driver.py": "996d64e64ddb87c43f619703b298af5b85a8cd9a5158e667886c4d9f67c7bcac",
+    "tools-source/asset-bridge/world/Run-ObserverHarness.ps1": "9bfc9a3d6277f05f9daef3afeb75d835ce5d181ec7501762470d2c5cb0204779",
+    "tools-source/asset-bridge/world/ObserverHarness.Core.ps1": "760ad94967da428a54d052aa5685f69e79452a6e325b0ca84b2e69fbfc7567a4",
+    "tools-source/asset-bridge/world/observer_harness_driver.py": "6d74a088b8922c41ef7998758d1ccbcb7354e3188ae033a0aebd3a8ae13460c9",
     "tools-source/asset-bridge/world/test_observer_adapter.ps1": "64645c3e23de6b09793ca9b44aa09b8553f3904af9424a2f98c832ff0b6ba89a",
-    "tools-source/asset-bridge/world/test_observer_driver.py": "99d8ccc0558dc7db4cfd6f27229f6f443174c2cc69512a8772bb19bc0b9f8373",
-    "tools-source/asset-bridge/world/test_observer_plan.ps1": "0121e904ce5677ef9ad314fe64b1e951778d2e32750d997ccbb2f76410b93a10"
+    "tools-source/asset-bridge/world/test_observer_driver.py": "779d69e4bbcab81374e7c6f1c65637a6ab59190ff0194519a14b2ad605c99dd6",
+    "tools-source/asset-bridge/world/test_observer_plan.ps1": "0121e904ce5677ef9ad314fe64b1e951778d2e32750d997ccbb2f76410b93a10",
+    "tools-source/asset-bridge/world/test_observer_finalization.ps1": "954aa7df91553629fe766f8918fef18a32fa112569e0d69f38cad53ab3d4f447"
   },
   "provider_sha256": {
     "ops/Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
@@ -111,5 +112,18 @@
   "next_separate_witness": "real matching first CLIPMAP root/fixup; unknown today; collision serializer is subsequent work",
   "entrypoint": "tools-source/asset-bridge/world/Run-ObserverHarness.ps1",
   "default_mode": "Plan: read/hash/pure imports only; no tree, child, resource snapshot, lease or native type load",
-  "run_switch": "-Run only after coordinated native GO"
+  "run_switch": "-Run only after coordinated native GO",
+  "finalization": {
+    "order": [
+      "original job closure",
+      "source integrity",
+      "immutable before-release receipt publication",
+      "exact receipt hash and final byte accounting under read guard",
+      "scheduler release"
+    ],
+    "publication_or_accounting_failure": "release not attempted; token and guards kept",
+    "release_throws": "outcome unconfirmed; token kept for reconciliation; no retry",
+    "immutable_receipt_stage": "BeforeLeaseRelease",
+    "actual_release_outcome": "returned result only; no dependent file write after release"
+  }
 }

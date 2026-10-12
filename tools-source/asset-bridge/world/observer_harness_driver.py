@@ -55,6 +55,15 @@ def load_drain(path, expected):
     return module.copy_bounded
 
 
+def guarded_drain(drain, source, destination, failed):
+    try:
+        drain(source, destination, failed)
+    except BaseException:
+        # A dead worker must never look like successful EOF. Do not stringify
+        # arbitrary stream exceptions (including SystemExit or broken __str__).
+        failed.set()
+
+
 def run_phase(phase, exe, arguments, expected, root, drain, started,
               *, clock=time.monotonic, sleep=time.sleep, popen=subprocess.Popen):
     require(phase in ('compile', 'fixture'), 'Native phase allowlist')
@@ -75,7 +84,7 @@ def run_phase(phase, exe, arguments, expected, root, drain, started,
         for name, source in (('stdout', process.stdout), ('stderr', process.stderr)):
             handle = (root / f'{phase}.{name}.log').open('xb')
             handles.append(handle)
-            worker = threading.Thread(target=drain, args=(source, handle, exceeded), daemon=True)
+            worker = threading.Thread(target=guarded_drain, args=(drain, source, handle, exceeded), daemon=True)
             worker.start(); workers.append(worker)
         while process.poll() is None:
             deadline(clock(), started, phase_start, phase)

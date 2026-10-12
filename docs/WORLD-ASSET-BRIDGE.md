@@ -575,7 +575,7 @@ without creating output, taking a resource snapshot, loading native helper types
 reserving resources or starting a child. `-Run` is the future coordinated native
 entry point; source delivery does not authorize using it.
 World-owned PowerShell sources explicitly use LF through the local
-`.gitattributes`, preserving their exact hash pins after checkout. All ten world
+`.gitattributes`, preserving their exact hash pins after checkout. All eleven world
 source pins were also checked against Git's checkout-filtered committed bytes.
 
 Compile one TU using the existing x64 MSVC/Windows SDK, `/std:c++20 /EHsc /MD /O1
@@ -606,21 +606,44 @@ lease and diagnostics. The full group, receipts included, is capped at 64 MiB;
 each compiler/fixture log stream is capped at 2 MiB and the accepted fixture
 transcript at 128 KiB. These are proposed limits, not measured resource usage.
 
-The driver reuses `beacon_tool_phase.py`'s pinned bounded stream drain. It has no
+The driver reuses `beacon_tool_phase.py`'s pinned bounded stream drain. A local
+`guarded_drain` wrapper catches `BaseException` and signals failure before a
+worker returns; it never formats the thrown exception. This covers non-OS stream
+errors and `SystemExit`, which the provider's `OSError` handler does not catch.
+The driver has no
 job owner, lease API or kill operation. Errors exit the root so the PowerShell
 owner stops only its original job. It requires the independent transcript checker
 before successful exit; the owner then requires fresh root0/Active0, the exact
 fixture receipt and transcript digest. Final byte accounting includes `run.json`
-itself. Failed factory/closure or changed source retains the lease and guarded
-objects; no new attempt is started.
+itself. The owner publishes that immutable **before-release snapshot**, checks
+its exact bytes/hash and total output size, and holds it against writes/deletion
+before calling the scheduler releaser. Publication, accounting or verification
+failure prevents any release attempt. The file says `ReceiptStage:
+BeforeLeaseRelease`, `LeaseReleased: false`, and `LeaseReleaseState: NotAttempted`;
+it does not predict scheduler success. After the call returns, only the returned
+result reports `LeaseReleased: true` / `Confirmed`. No later file write is needed
+to qualify the frozen evidence. A throwing release is `Unconfirmed`, retaining
+the token for registry reconciliation without assuming the lease still exists.
+There is no retry of a confirmed or ambiguous release. Failed factory/closure,
+changed source or failed finalization keeps guarded objects and the token;
+no new attempt is started.
 
-Source validation for this adapter: eight Python tests use fake process objects
+Source validation for this adapter: nine Python tests use fake process objects
 and original data; fifty-six PowerShell checks exercise budgets, pins, receipt/member
 refusals, the reused supervisor with fake clocks, deadline boundaries and failed
-cleanup. An additional real installed-tool Plan check verified 25 bound inputs,
+cleanup. The driver tests include twelve stdout/stderr read/write/flush faults
+using both ordinary exceptions and `SystemExit` with deliberately broken string
+formatting. Forty-five further original-text/mock-scheduler checks cover receipt
+publication, pre/post-write accounting, same-size content corruption, the held
+receipt guard, release order, ambiguous release and faithful closure/lease flags.
+An additional real installed-tool Plan check verified 26 bound inputs,
 zero prohibited calls, no output directory and no native helper types. An early
 pure test found missing parentheses in a mixed PowerShell `-and`/`-or` type gate;
-the grouping was corrected before delivery. All these checks remain **source,
+the grouping was corrected before delivery. Review of `d2d97ca` then identified
+two gaps missed by the earlier tests: unguarded non-OS drain exceptions and
+release before final receipt publication/accounting. Both corrections and their
+fault-injection tests are now source-only; no earlier native pass is implied.
+All these checks remain **source,
 mock or inert Plan evidence**. No native C++ result is claimed.
 
 An actual inert Plan command (the installed compiler pin is also checked):
@@ -628,7 +651,7 @@ An actual inert Plan command (the installed compiler pin is also checked):
 ```powershell
 $world = Join-Path (Get-Location) 'tools-source/asset-bridge/world'
 $planArgs = @{
-    RunRoot = Join-Path (Get-Location) 'runtime/world-observer-harness-01'
+    RunRoot = Join-Path (Get-Location) 'runtime/world-observer-harness-20261012-p2'
     VCToolsRoot = 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207'
     WindowsSdkRoot = 'C:/Program Files (x86)/Windows Kits/10'
     WindowsSdkVersion = '10.0.26100.0'
@@ -642,6 +665,11 @@ review and explicit coordinated GO only, the same command with `-Run` performs
 admission and the single native group. An existing output directory is refused;
 retain failed output and choose a new reviewed run identity for any later attempt.
 The harness executable/transcript are never accepted as a real map observation.
+The exact local Plan JSON and command are exported separately under
+`world/.review/observer-harness-20261012-p2/` for coordinator review. This ignored
+review directory contains machine paths; the proposed runtime directory remains
+absent until a separately authorized Run. Saving the review snapshot does not
+change the inert Plan command's behavior.
 
 After coordinated native GO, perform the following sequentially, using current
 reviewed Resource-Scheduler/stock helpers and preserving occupied owner processes.

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import observer_harness_driver as driver
 
@@ -23,6 +24,33 @@ class FakeProcess:
             return None
         self.returncode = self.code
         return self.returncode
+
+
+class UnformattableError(ValueError):
+    def __str__(self):
+        raise AssertionError('Worker exception formatting is forbidden')
+
+
+class UnformattableExit(SystemExit):
+    def __str__(self):
+        raise AssertionError('Worker exit formatting is forbidden')
+
+
+class FaultyStream:
+    def __init__(self, stream, operation, exception):
+        self.stream, self.operation, self.exception = stream, operation, exception
+    def invoke(self, operation, *args):
+        if operation == self.operation:
+            raise self.exception()
+        return getattr(self.stream, operation)(*args)
+    def read(self, count):
+        return self.invoke('read', count)
+    def write(self, data):
+        return self.invoke('write', data)
+    def flush(self):
+        return self.invoke('flush')
+    def close(self):
+        self.stream.close()
 
 
 class DriverChecks(unittest.TestCase):
@@ -107,6 +135,39 @@ class DriverChecks(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 driver.validate_permit({**permit, key: value}, spec, self.sha)
         self.assertEqual(self.calls, 0)
+
+    def test_guarded_drain_fault_matrix_never_accepts_zero_exit(self):
+        # stdout/stderr x read/write/flush x ordinary/BaseException. The real
+        # pinned drain catches only OSError, so every case needs the local guard.
+        for stream_name in ('stdout', 'stderr'):
+            for operation in ('read', 'write', 'flush'):
+                for exception in (UnformattableError, UnformattableExit):
+                    with self.subTest(stream=stream_name, operation=operation, exception=exception.__name__):
+                        root = self.root / f'{stream_name}-{operation}-{exception.__name__}'
+                        root.mkdir()
+                        process = FakeProcess()
+                        process.stderr = io.BytesIO(b'original stderr fixture\n')
+                        if operation == 'read':
+                            setattr(process, stream_name, FaultyStream(getattr(process, stream_name), operation, exception))
+                        actual_open = Path.open
+                        def open_fault(path, *args, **kwargs):
+                            opened = actual_open(path, *args, **kwargs)
+                            if path == root / f'fixture.{stream_name}.log' and operation != 'read':
+                                return FaultyStream(opened, operation, exception)
+                            return opened
+                        calls = []
+                        def fake_popen(*args, **kwargs):
+                            calls.append(args)
+                            return process
+                        with patch.object(Path, 'open', open_fault), patch('threading.excepthook') as escaped:
+                            with self.assertRaisesRegex(ValueError, 'Drain failure'):
+                                driver.run_phase('fixture', self.exe, [], self.sha, root, self.drain, 0,
+                                                 clock=lambda: 0, popen=fake_popen)
+                            escaped.assert_not_called()
+                        receipt = driver.read_json(root / 'fixture.json')
+                        self.assertEqual(receipt['exit_code'], 0)
+                        self.assertEqual(receipt['failure'], 'Drain failure or inherited pipe')
+                        self.assertEqual(len(calls), 1)
 
 
 if __name__ == '__main__':

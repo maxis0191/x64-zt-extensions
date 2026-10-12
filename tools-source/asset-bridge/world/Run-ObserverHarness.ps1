@@ -85,7 +85,7 @@ try {
     [IO.Directory]::CreateDirectory($RunRoot)|Out-Null;$created=$true
     $state=[ordered]@{Schema='iw7.world-observer-run/1';Plan=$plan;Status='Preparing';RetainedLeaseToken=$lease.Token;
         NativeCompiled=$false;NativeHarnessPassed=$false;EngineObserved=$false;JobClosureVerified=$false;
-        SourceHashesUnchanged=$false;LeaseReleased=$false;CompilerWitness=[ordered]@{CompilerIdentity=$null;Completed=$false};
+        SourceHashesUnchanged=$false;LeaseReleased=$false;LeaseReleaseState='NotAttempted';CompilerWitness=[ordered]@{CompilerIdentity=$null;Completed=$false};
         JobCleanup=$null;FixturePermit=$null;FixtureStartedMs=$null;FinalBytes=$null;Failure=$null}
     Add-Type -LiteralPath "$ProviderRoot/tools-source/asset-bridge/model/BuildJob.cs"
     Assert-WorldObserverTime ((Get-MaterialV2MonotonicMs)-$groupStart) 'compile' 0
@@ -156,19 +156,22 @@ finally {
     try{if(Get-Command Assert-WorldObserverPins -ErrorAction SilentlyContinue){Assert-WorldObserverPins $entries}}catch{$intact=$false;if(!$failure){$failure=$_}}
     if($state){$state.SourceHashesUnchanged=$intact;$state.JobClosureVerified=$closed}
     if($closed -and $owner){$owner.Dispose();$owner=$null}
-    if(!$lease -or ($closed -and $intact)){foreach($guard in $guards){$guard.Dispose()}}
-    else{[AppDomain]::CurrentDomain.SetData(('IW7.WorldHarness.Quarantine.'+$lease.Token),@{Owner=$owner;Guards=$guards;State=$state})}
-    if($lease -and $closed -and $intact){
-        try{Exit-IW7ResourceLease -Token $lease.Token;if($state){$state.LeaseReleased=$true;$state.RetainedLeaseToken=$null}}
-        catch{if(!$failure){$failure=$_}}
-    }
-    if($created -and $state){
+    if($lease -and $created -and $state){
         try{
             if($failure){$state.Status='Failed';$state.Failure=$failure.Exception.Message}
-            Write-WorldObserverFinalReceipt $RunRoot $state
+            Complete-WorldObserverReservation $RunRoot $state $lease $guards
         }catch{if(!$failure){$failure=$_}}
     }
+    if(!$lease -or ($state -and $state.LeaseReleased)){foreach($guard in $guards){$guard.Dispose()}}
+    else{[AppDomain]::CurrentDomain.SetData(('IW7.WorldHarness.Quarantine.'+$lease.Token),@{Owner=$owner;Guards=$guards;State=$state;Failure=$failure})}
 }
-if($failure){throw $failure}
+if($failure){
+    if($lease -and (!$state -or !$state.LeaseReleased)){
+        $releaseState=if($state){$state.LeaseReleaseState}else{'NotAttempted'}
+        $finalization=if($state -and $state.FinalizationFailure){" Finalization: $($state.FinalizationFailure)"}else{''}
+        throw "World run failed; lease release $releaseState; reconcile token $($lease.Token). $($failure.Exception.Message)$finalization"
+    }
+    throw $failure
+}
 if(!$closed -or !$intact -or !$state.LeaseReleased){throw 'World cleanup/source proof incomplete; inspect retained lease.'}
 $state|ConvertTo-Json -Depth 20
