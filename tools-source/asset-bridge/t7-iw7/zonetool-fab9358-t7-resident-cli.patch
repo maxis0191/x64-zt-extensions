@@ -4,7 +4,7 @@
  
  int main()
  {
-+	if (utils::flags::has_flag("t7-iw7-model") && !utils::io::file_exists(T7_BINARY))
++	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-catalog")) && !utils::io::file_exists(T7_BINARY))
 +	{
 +		std::fputs("T7 resident export requires the pinned unranked dedicated engine.\n", stderr);
 +		return EXIT_FAILURE;
@@ -16,7 +16,7 @@
  		MessageBoxA(nullptr, "no game binary found!\nmake sure your zonetool.exe is in the game directory!", "NO BINARY", MB_ICONERROR);
  	}
  
-+	if (utils::flags::has_flag("t7-iw7-model") && game::get_mode() != game::t7)
++	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-catalog")) && game::get_mode() != game::t7)
 +	{
 +		std::fputs("T7 resident export refuses competing engine mode.\n", stderr);
 +		return EXIT_FAILURE;
@@ -26,13 +26,15 @@
  
 --- a/src/zonetool/zonetool/t7/zonetool.cpp
 +++ b/src/zonetool/zonetool/t7/zonetool.cpp
-@@ -6,6 +6,14 @@
+@@ -6,6 +6,16 @@
  #include "converter/converter.hpp"
  
  #include "common/xpak.hpp"
 +#include <utils/cryptography.hpp>
 +#include <utils/flags.hpp>
 +#include "t7_iw7_resident_model.hpp"
++#include <atomic>
++#include <mutex>
 +
 +namespace zonetool::iw7
 +{
@@ -41,7 +43,53 @@
  
  namespace zonetool::t7
  {
-@@ -736,10 +744,199 @@
+@@ -348,6 +358,37 @@
+ 		zonetool::taskbar::clear();
+ 	}
+ 
++	// Existing DB hook: copy bounded names, never throw or retain engine pointers.
++	static std::atomic_bool resident_catalog_active{false};
++	static std::atomic_bool resident_catalog_failed{false};
++	static std::mutex resident_catalog_mutex;
++	static std::vector<std::string> resident_catalog_names;
++	static size_t resident_catalog_name_bytes = 0;
++	static constexpr size_t resident_catalog_max_names = 1024;
++	static constexpr size_t resident_catalog_max_name_bytes = 256u * 1024u;
++
++	static void resident_catalog_capture(XAssetType type, XAssetHeader header) noexcept
++	{
++	    if (type != ASSET_TYPE_XMODEL || !resident_catalog_active.load()) return;
++	    try
++	    {
++	        std::lock_guard<std::mutex> lock(resident_catalog_mutex);
++	        if (!resident_catalog_active.load() || resident_catalog_failed.load()) return;
++	        const auto& model = resident_iw7::detail::object(reinterpret_cast<const XModel*>(header.data));
++	        auto name = resident_iw7::detail::name(model.name);
++	        if (std::find(resident_catalog_names.begin(), resident_catalog_names.end(), name) != resident_catalog_names.end()) return;
++	        if (resident_catalog_names.size() >= resident_catalog_max_names ||
++	            name.size() + 1 > resident_catalog_max_name_bytes - resident_catalog_name_bytes)
++	        {
++	            resident_catalog_failed.store(true);
++	            return;
++	        }
++	        resident_catalog_name_bytes += name.size() + 1;
++	        resident_catalog_names.push_back(std::move(name));
++	    }
++	    catch (...) { resident_catalog_failed.store(true); }
++	}
++
+ 	utils::hook::detour db_add_xasset_hook;
+ 	XAssetHeader db_add_xasset_stub(XAssetType type, XAssetHeader header)
+ 	{
+@@ -357,6 +398,7 @@
+ 			header
+ 		};
+ 
++		resident_catalog_capture(type, header);
+ 		dump_asset(&xasset);
+ 
+ 		if (type == ASSET_TYPE_IMAGE)
+@@ -736,10 +778,272 @@
  		return args;
  	}
  
@@ -109,14 +157,8 @@
 +	        reinterpret_cast<const uint8_t*>(bytes.data()), bytes.size(), true)}};
 +	}
 +
-+	static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
-+	    const std::string& lod_arg)
++	static void resident_export_load_zone(const std::string& zone)
 +	{
-+	    const auto zone = resident_export_name(zone_arg.c_str(), true);
-+	    const auto name = resident_export_name(model_arg.c_str());
-+	    if (lod_arg.size() != 1 || lod_arg[0] < '0' || lod_arg[0] > '5')
-+	        throw std::runtime_error("Explicit canonical LOD 0..5 required");
-+	    const auto lod = static_cast<unsigned int>(lod_arg[0] - '0');
 +	    if (game::get_mode() != game::t7) throw std::runtime_error("T7 engine mode required");
 +	    // Irreversible for this short-lived process; protects against any later
 +	    // accidental fall-through into the existing global package enumeration.
@@ -130,6 +172,17 @@
 +	        throw std::runtime_error("A fresh exact donor zone load is required");
 +	    wait_for_database();
 +	    if (!is_zone_loaded(zone)) throw std::runtime_error("Exact donor zone did not finish loading");
++	}
++
++	static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
++	    const std::string& lod_arg)
++	{
++	    const auto zone = resident_export_name(zone_arg.c_str(), true);
++	    const auto name = resident_export_name(model_arg.c_str());
++	    if (lod_arg.size() != 1 || lod_arg[0] < '0' || lod_arg[0] > '5')
++	        throw std::runtime_error("Explicit canonical LOD 0..5 required");
++	    const auto lod = static_cast<unsigned int>(lod_arg[0] - '0');
++	    resident_export_load_zone(zone);
 +	    const auto header = db_find_x_asset_header(ASSET_TYPE_XMODEL, name.c_str());
 +	    if (!header.data || DB_IsXAssetDefault(ASSET_TYPE_XMODEL, name.c_str()))
 +	        throw std::runtime_error("Exact nondefault source model required");
@@ -207,12 +260,78 @@
 +	    ZONETOOL_INFO("T7_IW7_RESIDENT_EXPORT name=%s lod=%u root=%s ready=false", name.c_str(), lod, key.c_str());
 +	}
 +
++	static void catalog_resident_models_iw7(const std::string& zone_arg)
++	{
++	    const auto zone = resident_export_name(zone_arg.c_str(), true);
++	    {
++	        std::lock_guard<std::mutex> lock(resident_catalog_mutex);
++	        if (resident_catalog_active.load() || !resident_catalog_names.empty())
++	            throw std::runtime_error("Fresh catalogue process required");
++	        resident_catalog_failed.store(false);
++	        resident_catalog_name_bytes = 0;
++	        resident_catalog_active.store(true);
++	    }
++	    const auto reset = gsl::finally([] { resident_catalog_active.store(false); });
++	    resident_export_load_zone(zone);
++	    std::vector<std::string> names;
++	    size_t name_bytes = 0;
++	    {
++	        std::lock_guard<std::mutex> lock(resident_catalog_mutex);
++	        resident_catalog_active.store(false);
++	        if (resident_catalog_failed.load())
++	            throw std::runtime_error("Catalogue capture failed or exceeded its bound; no result published");
++	        name_bytes = resident_catalog_name_bytes;
++	        names = std::move(resident_catalog_names);
++	    }
++	    std::sort(names.begin(), names.end());
++	    auto models = nlohmann::ordered_json::array();
++	    for (const auto& name : names)
++	    {
++	        const bool reference = name.front() == ',';
++	        nlohmann::ordered_json row = {{"name", name}, {"reference", reference},
++	            {"resolved_nondefault", false}, {"counts", nullptr}};
++	        if (!reference)
++	        {
++	            const auto header = db_find_x_asset_header(ASSET_TYPE_XMODEL, name.c_str());
++	            if (header.data && !DB_IsXAssetDefault(ASSET_TYPE_XMODEL, name.c_str()))
++	            {
++	                const auto& model = resident_iw7::detail::object(reinterpret_cast<const XModel*>(header.data));
++	                if (resident_iw7::detail::name(model.name) != name)
++	                    throw std::runtime_error("Catalogue stable DB name differs");
++	                row["resolved_nondefault"] = true;
++	                // Header counts only: no mesh, surface, bone array or payload read.
++	                row["counts"] = {{"bones", static_cast<unsigned int>(model.numBones)},
++	                    {"roots", static_cast<unsigned int>(model.numRootBones)},
++	                    {"cosmetic_bones", static_cast<unsigned int>(model.numCosmeticBones)},
++	                    {"lods", static_cast<unsigned int>(model.numLods)}};
++	            }
++	        }
++	        models.push_back(std::move(row));
++	    }
++	    const nlohmann::ordered_json report = {{"schema", "iw7.t7-iw7-model-catalog/1"},
++	        {"requested_zone", zone}, {"provenance", "observed_during_requested_zone_load"},
++	        {"model_count", names.size()}, {"name_bytes", name_bytes}, {"models", std::move(models)},
++	        {"truncated", false}, {"asset_zone_ownership_verified", false},
++	        {"zonetool_xpak_helper_reads_allowed", false}, {"engine_io_verified", false},
++	        {"geometry_verified", false}, {"runtime_verified", false}, {"ready", false}};
++	    const auto bytes = report.dump() + "\n";
++	    if (bytes.size() > 512u * 1024u) throw std::runtime_error("Catalogue publication exceeds 512 KiB");
++	    const auto key = "t7_iw7_catalog_" + utils::string::to_lower(utils::cryptography::sha256::compute(
++	        reinterpret_cast<const uint8_t*>(zone.data()), zone.size(), true));
++	    const auto root = std::filesystem::current_path() / key;
++	    resident_export_ancestry(root.parent_path());
++	    if (!CreateDirectoryW(root.c_str(), nullptr)) throw std::runtime_error("Catalogue root must be absent");
++	    resident_export_ancestry(root);
++	    zonetool::iw7::write_enemy_reference_output(root / "catalog.json", bytes);
++	    ZONETOOL_INFO("T7_IW7_MODEL_CATALOG models=%zu root=%s ready=false", names.size(), key.c_str());
++	}
++
  	void handle_params()
  	{
  		// Execute command line commands
  		auto args = get_command_line_arguments();
 +		// Dedicated, exact target: never fall through to the old T7-only parser.
-+		if (utils::flags::has_flag("t7-iw7-model"))
++		if (utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-catalog"))
 +		{
 +			try
 +			{
@@ -220,13 +339,15 @@
 +				auto wide_args = CommandLineToArgvW(GetCommandLineW(), &wide_count);
 +				if (!wide_args) throw std::runtime_error("Could not inspect exact export arguments");
 +				const auto free_args = gsl::finally([&] { LocalFree(wide_args); });
-+				if (wide_count != 5) throw std::runtime_error("Exactly four export arguments required");
++				const bool catalog = args.size() == 3 && args[1] == "-t7-iw7-catalog";
++				if (wide_count != (catalog ? 3 : 5)) throw std::runtime_error("Exact catalogue/export argument count required");
 +				for (int a = 1; a < wide_count; ++a)
 +					for (const wchar_t* p = wide_args[a]; *p; ++p)
 +						if (*p < 0x20 || *p > 0x7e) throw std::runtime_error("ASCII export arguments required");
-+				if (args.size() != 5 || args[1] != "-t7-iw7-model")
++				if (catalog) catalog_resident_models_iw7(args[2]);
++				else if (args.size() != 5 || args[1] != "-t7-iw7-model")
 +					throw std::runtime_error("usage: -t7-iw7-model <zone> <exact-model-name> <lod 0..5>");
-+				export_resident_model_iw7(args[2], args[3], args[4]);
++				else export_resident_model_iw7(args[2], args[3], args[4]);
 +				std::fflush(nullptr);
 +				std::quick_exit(EXIT_SUCCESS);
 +			}
