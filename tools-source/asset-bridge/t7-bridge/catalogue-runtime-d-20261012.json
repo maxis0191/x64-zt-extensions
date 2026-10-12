@@ -81,6 +81,7 @@
     "host_pid": 2492,
     "host_quarantine_absent": true,
     "host_normal_exit_code": 0,
+    "host_exit_code_evidence": "Worker observed the retained exec session 34424 complete with exit_code 0; the host-absence JSON independently proves absence, not an exit code.",
     "host_and_candidate_absent_utc": "2026-10-12T14:23:20.7968576Z",
     "host_present": false,
     "candidate_present": false,

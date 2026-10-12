@@ -347,6 +347,8 @@ Main remained Stopped before/after. Postflight at 14:22:51 UTC confirmed zero
 leases/heavy workloads/original root, unchanged source/alias metadata and IDs,
 the preserved Python generation and no host quarantine. The persistent host
 exited normally with code 0; host and candidate were absent at 14:23:20 UTC.
+The host's code 0 is the worker's retained exec-session 34424 result. The small
+host-outcome/absence JSONs establish closure and absence, not that exit code.
 
 The [sanitized D checkpoint](catalogue-runtime-d-20261012.json) binds C's refusal,
 D's trace, receipt and postflight evidence. A/B/D remain Failed and C unconsumed.
