@@ -698,3 +698,36 @@ review and exact GO binding the new process identity. Do not silently relabel
 the existing G plan as Running, reuse its prior preparation as admission, or
 stop the observed Main process to satisfy the plan. No further invocation is
 authorized by this refusal checkpoint.
+
+## Plan H: Running baseline prepared, commit headroom refused
+
+H is a separately sealed preparation, 10,774 bytes with SHA256
+`1ebd9196d18f6f2182ab4a2544eac68c704776e8dcb15fe48a44c19c3a494433`.
+It reuses G's message candidate/build receipt, source bindings, zone, arguments
+and 6/8 GiB, 200/120/5-second limits. The existing parameterized Running helper
+needs no source change. At 16:27:42.6037227 UTC on 2026-10-12, PID 19932,
+created at 16:21:08.1996220 UTC, matched the expected image path and owned UDP
+27016. This establishes the process generation and endpoint, not its binary
+contents, start actor or occupied state.
+
+The preparation snapshot at 16:27:43.5288340 UTC refused the unchanged budget:
+commit was 43,075,686,400 / 47,564,615,680 bytes (90.56%), physical usage 77.4%,
+and HighWater true. Physical reserve remained zero and commit reserve remained
+9,512,923,136 bytes. Zero leases/heavy workloads and the preserved Python
+generation were observed. This dated preparation check is **not runtime
+admission**. Default validation returned PlanCheckedPendingGO; the 52 light
+Main checks passed during preparation.
+
+The sealed G-to-H delta has seven intentional field changes for the new paths
+and Running identity. Its eighth textual difference only removes a trailing
+zero from the candidate metadata timestamp; equality at 100 ns precision was
+verified. All other fields and bindings are unchanged. The
+[sanitized H checkpoint](catalogue-preparation-h-20261012.json) retains the
+plan, delta and snapshot pins without private absolute paths or payloads.
+
+H has **zero invocations**, no persistent host, runtime lease, attempt marker,
+runtime receipt or captured message. No GO H has been given. G remains
+unconsumed; its authorization does not transfer. Preserve H and the candidate,
+without repeated measurements, reduced safeguards or changes to processes or
+pagefile. A distinct exact GO and a fresh admitted preflight are still required
+before a future invocation. This checkpoint only records existing evidence.

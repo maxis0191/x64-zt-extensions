@@ -1,0 +1,106 @@
+{
+  "schema": "iw7.t7-catalogue-preparation-checkpoint/1",
+  "date": "2026-10-12",
+  "plan": "H",
+  "source_commit": "973a1cbc9f6d0b3c44d05fe52bf4463abd5b01a1",
+  "checkpoint_base_commit": "7564a0f29d04edcbd4a505fc757d1430f34ca892",
+  "status": "PreparedBudgetRefused",
+  "default_plan_validation": "PlanCheckedPendingGO",
+  "main_light_checks_passed_during_preparation": 52,
+  "reused_pins": {
+    "candidate_bytes": 21750272,
+    "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+    "build_plan_sha256": "0b1d6f29cb6b02f81d78e2d11f46bbc3679a635a943cca232b7be72d0643a28a",
+    "build_receipt_sha256": "4001a1ed0a320bea393bed3e5ca4f17c8a9c0c1feb3ec43f6b4fc0761ccb3ae6",
+    "catalogue_profile_sha256": "cb83eecaecea8ac5f0a01571fdd754a149d0c40128ee7842a707511f78ac0cc8",
+    "catalogue_runner_sha256": "fbee20c1568c125745cde106235b0fb0baf63ccc06efe76146fc93ae6d6692de",
+    "prepatch_profile_sha256": "0ddc1b20378b82990f530104bc070e51618145b4e4f11ba7335f446a152a0b11",
+    "bindings_zone_arguments_limits_unchanged": true,
+    "running_helper_source_changed": false
+  },
+  "main_observation": {
+    "observed_utc": "2026-10-12T16:27:42.6037227Z",
+    "baseline": "Running",
+    "pid": 19932,
+    "created_utc": "2026-10-12T16:21:08.1996220Z",
+    "image_name": "iw7-paris-voice.exe",
+    "image_matches_expected_absolute_path": true,
+    "udp_local_address": "0.0.0.0",
+    "udp_local_port": 27016,
+    "udp_owning_process": 19932,
+    "binary_content_identity_asserted": false,
+    "start_actor_known": false,
+    "occupied_state_checked": false
+  },
+  "preparation_snapshot": {
+    "purpose": "PreparationSnapshotNotAdmission",
+    "snapshot_utc": "2026-10-12T16:27:43.5288340Z",
+    "evidence_assembled_utc": "2026-10-12T16:27:44.2048786Z",
+    "physical_total_bytes": 34142842880,
+    "physical_available_bytes": 7714738176,
+    "committed_bytes": 43075686400,
+    "commit_limit_bytes": 47564615680,
+    "physical_used_percent": 77.4,
+    "commit_used_percent": 90.56,
+    "additional_physical_bytes": 6442450944,
+    "additional_commit_bytes": 8589934592,
+    "physical_reserve_bytes": 0,
+    "commit_reserve_bytes": 9512923136,
+    "high_water": true,
+    "allowed": false,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "preserved_python_identity_unchanged": true
+  },
+  "sealed_delta": {
+    "from_plan": "G",
+    "from_plan_sha256": "047ee1aa5df8f514e598b837b835639d843dfc36ae64f69dfff9cb2138c7a4d3",
+    "intentional_changed_fields": [
+      "Image",
+      "MainBaseline",
+      "MainBaselineObservation",
+      "PreservedMain",
+      "RunRoot",
+      "StageRoot",
+      "WorkingDirectory"
+    ],
+    "serialization_only_field": "InputMetadata[0].LastWriteUtc",
+    "serialization_before": "2026-10-12T16:13:37.1126920Z",
+    "serialization_after": "2026-10-12T16:13:37.112692Z",
+    "equal_at_100_nanosecond_precision": true,
+    "all_other_plan_fields_equal": true,
+    "bindings_identical": true
+  },
+  "private_evidence": [
+    {
+      "name": "t7-catalog-plan-h.local.json",
+      "bytes": 10774,
+      "sha256": "1ebd9196d18f6f2182ab4a2544eac68c704776e8dcb15fe48a44c19c3a494433"
+    },
+    {
+      "name": "t7-catalog-h-sealed-delta.local.json",
+      "bytes": 7239,
+      "sha256": "ee99b413abd73ab71695c72493d053e3d6bf41cd046081282ece505a50b1605c"
+    },
+    {
+      "name": "t7-catalog-h-preflight-preparation.local.json",
+      "bytes": 2098,
+      "sha256": "4ce7608e9f3623dc0509796199f6c1b2887257990f107f3dbf1246ff76cd5432"
+    }
+  ],
+  "execution": {
+    "go_h_received": false,
+    "native_invocations": 0,
+    "persistent_host_started": false,
+    "runtime_lease_acquired": false,
+    "binary_inputs_hashed": false,
+    "attempt_marker_present": false,
+    "runtime_receipt_present": false,
+    "message_captured": false,
+    "runtime_attempt_consumed": false,
+    "main_or_network_modified": false,
+    "candidate_or_stock_modified": false,
+    "ready": false
+  },
+  "next_action": "Preserve H and its candidate. No repeated measurement or native execution. A distinct exact GO and fresh admitted preflight are required; G remains unconsumed."
+}
