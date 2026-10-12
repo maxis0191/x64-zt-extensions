@@ -23,6 +23,11 @@ class StandardModTests(unittest.TestCase):
             old.unlink(); (self.banks / ("mod." + suffix)).write_bytes(raw)
         (self.banks / "mod.ff").write_bytes(b"Synthetic opaque FF; format proof belongs to native verify/dump")
         bank = json.loads((self.source / reader.BANK_PATH).read_bytes()); bank["zone"] = "mod"
+        for key, (relative, content) in reader.AUXILIARY.items():
+            bank[key] = [relative]
+            auxiliary = self.dump / relative; auxiliary.parent.mkdir(parents=True, exist_ok=True)
+            auxiliary.write_bytes(content)
+        (self.dump / "mod").write_bytes(b"Compiled using x64 ZoneTool.")
         path = self.dump / reader.BANK_PATH; path.parent.mkdir(); path.write_text(json.dumps(bank))
         flac = self.dump / reader.FLAC_PATH
         raw = bytearray(flac.read_bytes()); raw[8:12] = b"\x10\x00" * 2; flac.write_bytes(raw)

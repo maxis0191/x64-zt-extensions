@@ -4,6 +4,7 @@ All extents are exact for this fixture. A general/retail bank is unsupported.
 This separate reader shares only the previously reviewed FLAC subset decoder.
 """
 import argparse
+import base64
 import csv
 from decimal import Decimal
 import hashlib
@@ -32,6 +33,32 @@ MAX_TOTAL = 2 * 1024 * 1024
 EMPTY_TABLES = ("ADSRSettings", "AmbientDefs", "AmbientElements", "AmbientEvents", "FilterDefs",
                 "FullOcclusionDefs", "MixDefs", "NPCAdsrZoneEntry", "OccludeDefs", "PLRAdsrZoneEntry",
                 "PlayerBreathStateDefs", "ReverbDefs", "TimescaleEntrys", "Unks", "ZoneDefs", "sendEffectParams")
+# Pinned fab9358 sound_bank.cpp dump paths/headers, including its adjacent
+# "Alias" "Range_Min" literals. These empty exports are not SDK asset nodes.
+AUXILIARY = {
+    "ADSRSettings": ("adsr", "ADSR_Name,Att_Len,Att_Curve,Dec_Len,Dec_Curve,Rel_Len,Rel_Curve,Sus_Len,Sus_Level"),
+    "AmbientDefs": ("ambient", "ambient_name,Time_Min,Time_Max,EventIndex,NumEvents"),
+    "AmbientElements": ("ambientElement", "ambient_element,AliasRange_Min,Range_Max,Cone_Min,Cone_Max"),
+    "AmbientEvents": ("ambientEvent", "idString,Weight,ElementIndex"),
+    "FilterDefs": ("filters", "idString,Channel,Band,Type,Freq,Gain,Q"),
+    "FullOcclusionDefs": ("fullOcclusions", "idString,PresetName,Channel"),
+    "MixDefs": ("mixes", "idString,VolMod,Volume,Fade"),
+    "NPCAdsrZoneEntry": ("adsrZoneNPC", "Adsr_Zone_NPC,idString,ADSRIndex,Weapon"),
+    "OccludeDefs": ("occlusionFilters", "idString,Channel,CutoffLevel1,CutoffLevel2,CutoffLevel3,CutoffLevel4,DbLevel1,DbLevel2,DbLevel3,DbLevel4"),
+    "PLRAdsrZoneEntry": ("adsrZonePlayer", "Adsr_Zone_Player,idString,ADSRIndex,Weapon"),
+    "PlayerBreathStateDefs": ("playerBreathStates", "StateType,InhaleAlias,ExhaleAlias,MinBreaths"),
+    "ReverbDefs": ("reverbs", "reverb_name,idString,Roomtype,DryLevel,WetLevel,Fade"),
+    "TimescaleEntrys": ("timescales", "idString,Timescale_Name,Channel,Scale"),
+    "ZoneDefs": ("zone", "ReverbIndex,OcclusionIndex,NumOcclusion,FilterIndex,NumFilter,MixIndex,NumMix,PlrADSRZoneIndex,NumPlrADSRZone,NPCADSRZoneIndex,NumNPCADSRZone,AmbientIndex,UnkIndex,DisableFullOccIndex,NumDisableFullOcc,PlayerBreathStateIndex,NumPlayerBreathStates,EntityContextType1,EntityContextValue1,EntityContextType2,EntityContextValue2,EntityContextType3,EntityContextValue3,EntityContextType4,EntityContextValue4,Zone_Name,State,Ambience,Ambient_Name,Mix,Reverb,Filter,Occlusion,Player_Adsr,NPC_Adsr,Weapon_Reflection,Disable_Full_Occ,PlayerBreathState"),
+    "sendEffectParams": ("sendEffectParams", "name,smoothing,earlyTime,lateTime,earlyGain,lateGain,lateGainProx,returnGain,earlyLpf,lateLpf,inputLpf,dampLpf,wallReflect,dryGain,earlySize,lateSize,diffusion,rearLevel"),
+}
+AUXILIARY = {key: ("sound/" + BANK + "." + suffix + ".csv", (header + "\n").encode("ascii"))
+             for key, (suffix, header) in AUXILIARY.items()}
+AUXILIARY["Unks"] = ("sound/unk/" + BANK + ".json", b"null")
+RAWFILE = b"Compiled using x64 ZoneTool."
+CLOSURE_LIMIT = 14 * 1024
+READER_LIMIT = 16 * 1024
+SOURCE_ALIAS_SHA = "a1db885270d7ca0e4cfe46ad7eb37ca6334544a73798740d8498fa2532ab7c65"
 NUMERIC = {"vol_min", "vol_max", "pitch_min", "pitch_max", "donut_fadeend", "dist_min", "dist_max",
            "Velocity_Min", "Probability", "StartDelay", "reverb_multiplier", "far_reverb_multiplier",
            "lfe_percentage", "center_percentage", "envelop_min", "envelop_max", "envelop_percentage",
@@ -227,6 +254,91 @@ def inventory(raw, disk_zone=ZONE):
     require(len(found) == 2 and set(found) == expected, "exact soundbank and native branding rawfile inventory required")
 
 
+def measurement(raw):
+    return {"bytes": len(raw), "sha256": sha(raw)}
+
+
+def representation(path, raw):
+    return {"path": path, **measurement(raw), "content_base64": base64.b64encode(raw).decode("ascii")}
+
+
+def checked_pin(value, limit, exact=None):
+    require(type(value) is dict and set(value) == {"bytes", "sha256"}, "exact measurement fields required")
+    require(type(value["bytes"]) is int and 0 < value["bytes"] <= limit, "bounded measurement required")
+    require(exact is None or value["bytes"] == exact, "exact measurement size required")
+    require(type(value["sha256"]) is str and re.fullmatch(r"[0-9a-f]{64}", value["sha256"]), "measurement SHA required")
+
+
+def checked_representation(value, path, limit):
+    require(type(value) is dict and set(value) == {"path", "bytes", "sha256", "content_base64"},
+            "exact representation fields required")
+    require(value["path"] == path, "closed representation path required")
+    pin = {key: value[key] for key in ("bytes", "sha256")}
+    checked_pin(pin, limit)
+    encoded = value["content_base64"]
+    require(type(encoded) is str and len(encoded) <= 4 * ((limit + 2) // 3), "bounded representation encoding required")
+    raw = base64.b64decode(encoded, validate=True)
+    require(base64.b64encode(raw).decode("ascii") == encoded, "canonical base64 required")
+    require(measurement(raw) == pin, "representation bytes/hash mismatch")
+    return raw
+
+
+def validate_closure_evidence(result):
+    """Pure metadata validation; no file IO, FF/SAB decode or receipt authentication.
+
+    Caller must separately bind this Reader result to the pinned producer Run,
+    successful phases, source hashes and artifact measurements. Embedded bytes
+    can prove their own semantics/hash, never that a native process emitted them.
+    """
+    require(type(result) is dict, "reader object required")
+    for key, wanted in {"schema": "iw7.original-sound-sab-read/1", "status": "SABBytesVerified",
+                        "dump_profile": "StandardModC", "disk_zone": "mod", "bank_zone": "mod",
+                        "inventory_provenance": "CurrentVerifyPhase", "inventory_asset_count": 2,
+                        "standard_source_verified": True, "standard_filenames_verified": True,
+                        "dump_bank_zone_verified": True, "source_alias_verified": True,
+                        "source_alias_matches_sab_asset": True, "dump_alias_values_verified": True,
+                        "inventory_verified": True, "dump_seek_frame_bytes_verified": True,
+                        "dump_streaminfo_rewritten": True, "dump_streaminfo_block_size": 4096,
+                        "ready": False, "playback_verified": False, "native_alias_index_verified": False,
+                        "dump_standalone_flac_validated": False}.items():
+        require(type(result.get(key)) is type(wanted) and result[key] == wanted, "closure reader field differs: " + key)
+    require(result.get("standard_filenames") == ["mod.ff", "mod.sabl", "mod.sabs"], "standard artifact names required")
+    evidence = result.get("closure_evidence")
+    require(type(evidence) is dict and set(evidence) == {"schema", "representations", "dependencies", "artifacts"},
+            "exact closure evidence fields required")
+    require(evidence["schema"] == "iw7.original-sound-static-closure/1", "closure evidence schema differs")
+    require(len(json.dumps(evidence, allow_nan=False).encode("utf-8")) <= CLOSURE_LIMIT, "closure evidence bound exceeded")
+    reps, deps, artifacts = (evidence[key] for key in ("representations", "dependencies", "artifacts"))
+    require(type(reps) is dict and set(reps) == {"soundbank", "rawfile"}, "exact node representations required")
+    require(type(deps) is dict and set(deps) == {"source_alias", "aliases", "sample", "auxiliary", "inventory"},
+            "exact bank dependencies required")
+    bank = strict_json(checked_representation(reps["soundbank"], BANK_PATH, 16384))
+    wanted = dict(name=BANK, zone="mod", gameLanguage="all", soundLanguage="all", aliases=[ALIAS_PATH])
+    wanted.update({key: [path] for key, (path, _) in AUXILIARY.items()})
+    require(bank == wanted, "dump bank.zone/identity or auxiliary references differ")
+    require(checked_representation(reps["rawfile"], "mod", len(RAWFILE)) == RAWFILE, "exact rawfile marker required")
+    source_alias = checked_representation(deps["source_alias"], ALIAS_PATH, 8192)
+    require(len(source_alias) == 947 and sha(source_alias) == SOURCE_ALIAS_SHA, "approved source alias required")
+    compare_alias_dump(checked_representation(deps["aliases"], ALIAS_PATH, 8192), alias_row(source_alias))
+    aux = deps["auxiliary"]
+    require(type(aux) is dict and set(aux) == set(AUXILIARY), "exact auxiliary inventory required")
+    for key, (path, expected) in AUXILIARY.items():
+        require(checked_representation(aux[key], path, 1024) == expected, "nonempty or changed auxiliary export: " + key)
+    checked_pin(deps["sample"], MAX_FILE, 96394)
+    checked_pin(deps["inventory"], MAX_FILE)
+    require(type(artifacts) is dict and set(artifacts) == {"mod.ff", "mod.sabl", "mod.sabs"}, "exact closure artifacts required")
+    for filename, field, size in (("mod.ff", "fastfile", None), ("mod.sabl", "loaded", 114816), ("mod.sabs", "streamed", 4096)):
+        checked_pin(artifacts[filename], MAX_FILE, size)
+        measured = result.get(field)
+        require(type(measured) is dict and artifacts[filename] == {key: measured.get(key) for key in ("bytes", "sha256")},
+                "closure artifact differs from reader: " + filename)
+    # Existing native supervisor consumes read/stdout.log with a 16 KiB cap.
+    # Include indentation and worst-case Windows line endings, without raising it.
+    require(len((json.dumps(result, indent=2, allow_nan=False) + "\n").replace("\n", "\r\n").encode("utf-8")) <= READER_LIMIT,
+            "reader receipt exceeds existing 16 KiB bound")
+    return evidence
+
+
 def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_profile="NativeDumpF"):
     require(dump_profile in ("NativeDumpF", "DumpOnlyC", "StandardModC"), "closed dump profile required")
     require(dump_profile == "NativeDumpF" or dump is not None, "C profiles require actual dump bytes")
@@ -245,7 +357,8 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_p
         require(inputs.read(overlay / "zone_source/mod.csv") == files["zone_source/" + ZONE + ".csv"], "standard zone CSV differs")
         ff = inputs.read(Path(banks) / "mod.ff")
         require(0 < len(ff) <= MAX_FILE, "bounded nonempty standard FF required")
-        dumped_bank = strict_json(inputs.read(Path(dump) / BANK_PATH))
+        bank_raw = inputs.read(Path(dump) / BANK_PATH, 16384)
+        dumped_bank = strict_json(bank_raw)
         require(type(dumped_bank) is dict and all(dumped_bank.get(key) == expected_bank[key] for key in ("name", "zone", "gameLanguage", "soundLanguage", "aliases")),
                 "dump bank.zone/identity differs")
         standard_proof = {"standard_source_verified": True, "dump_bank_zone_verified": True,
@@ -255,7 +368,8 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_p
     loaded = read_bank(inputs.read(Path(banks) / (disk_zone + ".sabl")), False, files[FLAC_PATH], pcm, spec, bank_zone)
     streamed = read_bank(inputs.read(Path(banks) / (disk_zone + ".sabs")), True, files[FLAC_PATH], pcm, spec, bank_zone)
     if dump is not None:
-        compare_alias_dump(inputs.read(Path(dump) / ALIAS_PATH, 8192), alias)
+        alias_raw = inputs.read(Path(dump) / ALIAS_PATH, 8192)
+        compare_alias_dump(alias_raw, alias)
         actual = inputs.read(Path(dump) / FLAC_PATH)
         # Native dump knowingly rewrites these fields. Verify that behavior but
         # do not call the resulting standalone FLAC or alias index validated.
@@ -264,9 +378,23 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_p
         expected[8:18] = block * 2 + bytes(6)
         expected[26:42] = bytes(16)
         require(actual == expected, "dump FLAC header/payload or trailing bytes differ")
-        inventory(inputs.read(inventory_path), disk_zone)
+        inventory_raw = inputs.read(inventory_path)
+        inventory(inventory_raw, disk_zone)
+        if standard:
+            standard_proof["closure_evidence"] = {
+                "schema": "iw7.original-sound-static-closure/1",
+                "representations": {"soundbank": representation(BANK_PATH, bank_raw),
+                                    "rawfile": representation("mod", inputs.read(Path(dump) / "mod", len(RAWFILE)))},
+                "dependencies": {"source_alias": representation(ALIAS_PATH, files[ALIAS_PATH]),
+                                 "aliases": representation(ALIAS_PATH, alias_raw), "sample": measurement(actual),
+                                 "inventory": measurement(inventory_raw),
+                                 "auxiliary": {key: representation(path, inputs.read(Path(dump) / path, 1024))
+                                               for key, (path, _) in AUXILIARY.items()}},
+                "artifacts": {"mod.ff": measurement(ff),
+                              "mod.sabl": {key: loaded[key] for key in ("bytes", "sha256")},
+                              "mod.sabs": {key: streamed[key] for key in ("bytes", "sha256")}}}
     inputs.recheck()
-    return {**standard_proof, "schema": "iw7.original-sound-sab-read/1", "status": "SABBytesVerified", "loaded": loaded,
+    result = {**standard_proof, "schema": "iw7.original-sound-sab-read/1", "status": "SABBytesVerified", "loaded": loaded,
             "streamed": streamed, "alias": ALIAS, "source_alias_verified": True, "alias_id": spec["alias_id"],
             "asset_id": spec["asset_id"], "source_alias_matches_sab_asset": True,
             "dump_alias_values_verified": dump is not None, "inventory_verified": dump is not None,
@@ -279,6 +407,9 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_p
             "checksum_checksum_verified": False, "checksum_checksum_kind": "writer 16xCC placeholder",
             "separate_reader": True, "source_recheck": "sequential size/hash snapshots",
             "input_bytes_read_including_recheck": inputs.total, "playback_verified": False, "ready": False}
+    if standard:
+        validate_closure_evidence(result)
+    return result
 
 
 def main():
