@@ -18,7 +18,8 @@ no material/image dependency has silently become complete.
   address overflow/null and changed metadata are refused. The result owns its
   pixel vector and has no exported process pointer, shader or GPU handle.
 
-The native header is prepared but **not compiled or executed** in this change.
+The native header has **not passed native compilation**; attempt A below failed
+before any fixture execution.
 Its five source-contract checks are not runtime tests of pointer readability.
 The callback must throw for an unreadable range; a no-op callback is invalid.
 The caller must keep the source allocation/database stable through copying.
@@ -136,7 +137,8 @@ It requires x64, a 264-byte image header and name offset 248. The two assertion
 macros have the same semantics as the pinned `std_include.hpp`, without pulling
 in that application's unrelated dependencies.
 
-The fixture prepares **54 native cases, not yet compiled or executed**:
+The fixture prepares **54 native cases**. Attempt A below failed compilation;
+no native case has executed yet:
 
 - Six exact-byte copies cover linear RGBA/R8 rows, odd dimensions, BC1/BC3 block
   rounding, multiple mips and complete sub-block tails. Expected sizes are literal
@@ -211,3 +213,29 @@ The same Python discovery command above passed **36 tests**: the previous 22,
 eight executable transcript-checker tests and six fixture/proposal source checks.
 These checks are separate from the 54 intended native cases; they cannot certify
 compilation or native behavior.
+
+### Native attempt A: compile refusal retained
+
+The one authorized A invocation on 2026-10-12 ran from 14:40:41.669 to
+14:40:55.328 UTC. MSVC exited 2 with C2220 under `/WX` and C4702 (unreachable
+code) at `resident_image_copy.hpp:109`, immediately after the readability call.
+The two null/header-overflow cases instantiated that template with a callback
+whose body always threw. Their expected early refusal does not prevent MSVC
+from diagnosing the rest of the template instantiation. This source diagnosis
+does not turn the failed compile into successful native validation.
+
+The fixture now passes its existing stateful synthetic allowlist to those two
+cases and asserts the callback count stays zero after each. If an early refusal
+regresses, the same allowlist still throws before the invalid address can be
+dereferenced. `/WX`, ABI checks and the production helper are unchanged. No
+warning suppression or no-op memory callback was added. This correction has not
+yet been compiled; it requires a fresh reviewed B Plan and a separate GO.
+
+The original compiler job closed after failure cleanup. The immutable receipt
+records `Failed`, source hashes unchanged, and closure confirmed **before** lease
+release. The retained host subsequently observed an empty registry and no
+AppDomain quarantine; postflight preserved stopped Main and the protected Python.
+The host exited normally and its absence was confirmed at 14:43:53.183 UTC.
+Link, Fixture and Check never ran. The 54 intended cases remain unexecuted.
+`resident_image_fixture_validation-20261012-a.json` preserves the sanitized
+failure, evidence hashes and closure boundaries. There was no retry.
