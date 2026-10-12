@@ -4,11 +4,11 @@ This narrow runner requests four non-default recipient references, followed by
 one compiled `scripts/engine/utility` export. It does **not** complete a mod
 package. Source preparation and synthetic tests were performed on 2026-10-12;
 the first authorized native attempt subsequently timed out before producing
-reference results. A separately authorized references-only B probe exposed live
-logs and a Fatal Error window, then stopped with confirmed restoration. Effective
-reference resolution and compiled retail bytes remain
-unobserved by this runner. Coordinator adoption/admission is required before
-each `-Run`; there is no automatic retry. See the failed-attempt record below.
+reference results. The later H run verified all four requested stock references
+after loading all 25 zones, then confirmed restoration. Compiled retail script
+bytes remain unobserved by this runner. Coordinator adoption/admission is required
+before each `-Run`; there is no automatic retry. See the historical attempts below
+and the [next script Plan and Beacon evidence boundaries](SCRIPT-PLAN.md).
 
 ## Confirmed retained native API
 
@@ -49,7 +49,9 @@ with the exact donor, pack, module, path, `dumped` status, size and SHA256. The
 native exporter indexes `ScriptFile::name`, rejects ambiguous pointers with the
 same requested name, compares the dump to loaded bytes and hashes the result.
 The Python verifier independently checks name, lengths, exact size and streaming
-SHA256. No second copy of a potentially large export is made.
+SHA256 using one original descriptor with stable before/after file metadata.
+Manifest parsing and hashing also use one bounded byte snapshot. No second copy
+of a potentially large export is made; see [reader limits](SCRIPT-PLAN.md#bounded-output-reader).
 
 The serialization contains the 22-byte ASCII name, NUL, three little-endian
 signed int32 lengths (`compressedLen`, `len`, `bytecodeLen`), compressed buffer

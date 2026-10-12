@@ -2,7 +2,9 @@
 import csv
 import hashlib
 import io
+import os
 from pathlib import Path
+import stat
 import struct
 
 EXE_SHA = 'e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04'
@@ -32,10 +34,38 @@ def sha(path):
 
 
 def text(path, limit=16384):
-    with Path(path).open('rb') as stream:
-        data = stream.read(limit+1)
-    require(len(data) <= limit, 'Text exceeds fixed recipient bound')
-    return data.decode('utf-8-sig')
+    return text_snapshot(path, limit)[0]
+
+
+def file_state(stream):
+    info = os.fstat(stream.fileno())
+    require(stat.S_ISREG(info.st_mode), 'Ordinary recipient file required')
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+
+def read_up_to(stream, limit):
+    """Accumulate short reads without requesting more than the remaining cap."""
+    parts = []
+    remaining = limit
+    while remaining:
+        block = stream.read(remaining)
+        if not block:
+            break
+        require(len(block) <= remaining, 'Recipient stream exceeded requested bytes')
+        parts.append(block)
+        remaining -= len(block)
+    return b''.join(parts)
+
+
+def text_snapshot(path, limit=16384):
+    """Digest and parse text from one bounded original descriptor snapshot."""
+    with Path(path).open('rb', buffering=0) as stream:
+        before = file_state(stream)
+        require(before[2] <= limit, 'Text exceeds fixed recipient bound')
+        data = read_up_to(stream, limit+1)
+        require(len(data) <= limit, 'Text exceeds fixed recipient bound')
+        require(before == file_state(stream) and len(data) == before[2], 'Recipient text changed during snapshot')
+    return data.decode('utf-8-sig'), hashlib.sha256(data).hexdigest()
 
 
 def validate_requests(materials, scripts):
@@ -67,16 +97,26 @@ def script_result(work, manifest):
     require(row['donor_map'] == 'cp_zmb' and row['pack_name'] == PACK and row['module'] == MODULE and
             row['status'] == 'dumped' and row['path'] == SCRIPT_PATH, 'Exact successful utility export required')
     path = Path(work)/SCRIPT_PATH
-    size = path.stat().st_size
-    require(str(size) == row['size_bytes'] and 35 <= size <= MAX_SCRIPT, 'Script byte size differs/exceeds native bound')
-    with path.open('rb') as stream:
-        require(stream.read(23) == MODULE.encode()+b'\0', 'Script content name differs')
-        lengths = stream.read(12)
-        require(len(lengths) == 12, 'Truncated ScriptFile lengths')
-        compressed, source, bytecode = struct.unpack('<iii', lengths)
-    require(all(0 <= n <= MAX_BUFFER for n in (compressed,source,bytecode)), 'ScriptFile length outside native bounds')
-    require(size == 35+compressed+bytecode, 'ScriptFile representation has extra or missing bytes')
-    actual = sha(path)
+    with path.open('rb', buffering=0) as stream:
+        before = file_state(stream)
+        size = before[2]
+        require(str(size) == row['size_bytes'] and 35 <= size <= MAX_SCRIPT, 'Script byte size differs/exceeds native bound')
+        header = read_up_to(stream, 35)
+        require(len(header) == 35, 'Truncated ScriptFile header')
+        require(header[:23] == MODULE.encode()+b'\0', 'Script content name differs')
+        compressed, source, bytecode = struct.unpack('<iii', header[23:])
+        require(all(0 <= n <= MAX_BUFFER for n in (compressed,source,bytecode)), 'ScriptFile length outside native bounds')
+        require(size == 35+compressed+bytecode, 'ScriptFile representation has extra or missing bytes')
+        digest = hashlib.sha256(header)
+        remaining = size-35
+        while remaining:
+            block = stream.read(min(1024*1024, remaining))
+            require(block and len(block) <= remaining, 'Truncated/invalid ScriptFile payload read')
+            digest.update(block)
+            remaining -= len(block)
+        require(not stream.read(1), 'ScriptFile grew beyond its bounded representation')
+        require(before == file_state(stream), 'ScriptFile identity/metadata changed during snapshot')
+        actual = digest.hexdigest()
     require(actual == row['sha256'].lower(), 'Exact serialized ScriptFile hash differs')
     return {'module':MODULE, 'path':SCRIPT_PATH, 'bytes':size, 'sha256':actual,
             'compressed_len':compressed, 'source_len':source, 'bytecode_len':bytecode,
@@ -87,10 +127,12 @@ def check_output(phase, work):
     work = Path(work)
     if phase == 'references':
         path = work/'enemy-catalog'/f'{REFERENCE_NAME}.csv'
-        result = reference_result(text(path))
+        manifest, manifest_hash = text_snapshot(path)
+        result = reference_result(manifest)
     else:
         require(phase == 'script', 'Unknown recipient phase')
         path = work/'dump'/PACK/'scriptfile-manifest.csv'
-        result = script_result(work,text(path))
-    return {**result, 'manifest_path':path.relative_to(work).as_posix(), 'manifest_sha256':sha(path),
+        manifest, manifest_hash = text_snapshot(path)
+        result = script_result(work,manifest)
+    return {**result, 'manifest_path':path.relative_to(work).as_posix(), 'manifest_sha256':manifest_hash,
             'closure_complete':False, 'package_ready':False}
