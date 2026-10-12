@@ -1,6 +1,8 @@
-# Next animation gate: original XAB through the existing full ZoneTool
+# Original XAB through the existing full ZoneTool
 
-**First FF attempt failed before ZoneTool; no animation FF is built yet.** The input is
+**FF build, exact inventory and decoded roundtrip passed on attempt B.** Attempt A
+failed before ZoneTool and remains preserved below. No runtime playback is proved.
+The input is
 the actual 281-byte `paris_original_probe_bend.xab` from the native witness,
 SHA256 `1284b72cf501ae42f77958579610dbcaf692b9153cd06ff66dcf2d1d11eeda7d`.
 Do not rebuild the writer or substitute synthetic test bytes. Recheck that input
@@ -29,7 +31,8 @@ build log's `Parsing xanim "paris_original_probe_bend"...` marker to establish
 that the original file was consumed. No model, material, netconststrings, GSC,
 animtree, CP map preload or reference comma belongs in this first pack.
 
-Under the next coordinator GO, run these **sequential phases inside one guarded
+The independently reviewed, separately authorized attempt B ran these
+**sequential phases inside one guarded
 transaction**, from its fresh work directory (not as unguarded shell commands):
 
 ```text
@@ -94,7 +97,7 @@ If those historical paths disappear, use the separate
 unchanged and supply the new binding path/hash; another stock root cannot be
 accepted by just replacing path strings in the old transaction.
 
-## Executable specialization, not yet run
+## Executable specialization
 
 [Build-AnimationFF.ps1](Build-AnimationFF.ps1) defaults to a read-only plan.
 It imports only parsed function definitions from the three pure shared cores;
@@ -128,8 +131,8 @@ stock duplicates/escape/size, inventory extras/unresolved rows, unsupported comm
 arguments, and wrong reader scope. Simulated restoration tests prove the shared
 restore coordinator runs source-final proof before release and retains the lease
 on either restoration or source-final failure; an unclosed tree does neither.
-These are pure tests, not a native FF result. Independent review and a separate
-coordinator GO remain pending.
+These are pure tests, separate from the subsequent native FF result below.
+Independent review and a separate coordinator GO preceded each native attempt.
 
 Example using the local reviewed argument file (its hashes must be refreshed and
 reviewed whenever an imported provider changes):
@@ -170,11 +173,54 @@ receipt recorded 110278. That two-byte discrepancy remains in the original
 evidence. The source correction now persists/re-measures final counters until
 their serialized size converges, at most four passes, including the last receipt.
 
-The [sanitized failure record](ff-validation-2026-10-12.json) preserves hashes and
+The [sanitized validation record](ff-validation-2026-10-12.json) preserves hashes and
 validation limits. 55 source checks pass, including delayed identity availability,
 unrelated errors, deadline, short/already-finished roots and exact final serialized
-accounting. No corrected native attempt has run; it needs independent review and
-a new coordinator GO in a fresh directory. Old receipts were not edited.
+accounting. After independent review and a new coordinator GO, attempt B exercised
+the corrected source in a fresh directory. Old receipts were not edited.
+
+## Corrected attempt B: measured offline pass
+
+The single authorized `animation-ff-roundtrip-20261012-b` used source commit
+`54a897bbf08e92ddc9ab064eb59f47c7538f89fe`. Build, verify, dump and read each exited
+0 with `JobActiveAtClose=0`; all four original roots registered successfully on
+their first post-Resume attempt. Original-handle identity was still captured
+before Resume. The complete 8/11 GiB reservation and source guards were active.
+
+| Retained evidence | Bytes | SHA256 |
+| --- | ---: | --- |
+| FF | 512 | `9bbe2314bc1b2efa7d45d741ed6e565ebaf5e38a2160e7135473ff60d95b57b6` |
+| Exact two-row inventory | 62 | `f3f8b5d20e4abc8a19a6746a5ae7787f130fda261d884e5f87c9a6c97acb9f72` |
+| FF-redumped XAB | 281 | `a357ae4d2269e14be43f2e4222bc2d8b00712d371f2cab7d21133a823729c221` |
+| Transaction state | 105192 | `060ece52910cb6a0e2fe99ca7ce07561080f6db6cd4d8ada17f69838e6070951` |
+
+The build consumed the named original XAB. Inventory contains exactly the XAnim
+and branding rawfile listed above. Independent readback returned
+`original-probe-data-pass` in `ff-redump-profile`: frames 0/10/20/30 retain
+X rotations 0/+44.999764/-44.999764/0 degrees, the root stays identity, and no
+translation track appears. `probe_contact` remains at normalized time 0.5; its
+script-string ID changes from 3 to 4036 through FF interning, as allowed by the
+explicit reader profile. Frequency 1 remains an input, not a measured engine loop.
+
+Restoration and source preservation are confirmed; cleanup error and retained
+lease token are null. The fresh registry is empty and Main's original process
+identity is unchanged. Postchecks distinguish original phase identities from
+PID reuse: a later `conhost.exe` reused the read root's PID with a different image
+and creation time. No original phase process remained.
+
+The final receipt reports 1218884 bytes, exactly the independent recursive total
+of all 25 retained files including hidden files. Maximum observed output was
+1219502 bytes, below 64 MiB. The first external snapshot omitted hidden
+`work/__iw7_ship` (4 bytes); it is preserved and superseded by the separate
+all-files snapshot, SHA256
+`903925a7469cd938cc0f8517a7d88c3e3859a8f18569de8862ec31db2f236a08`.
+This was a snapshot enumeration omission, not a run counter discrepancy. Attempt
+A's state hash is unchanged. Optional bootstrap language-zone warnings remain
+in the native logs; the exact custom inventory and phase gates passed.
+
+This closes only the original XAB-to-FF-to-XAB gate. `RuntimeVerified=false` and
+`Ready=false` remain explicit. No model deformation, note delivery, loop duration,
+AI, attack or damage behavior has been observed in the engine.
 
 ## Complete proposed admission and bounds
 
@@ -189,8 +235,8 @@ Each stdout/stderr stream is capped at 2 MiB, at most 16 MiB across four phases.
 Keep the existing 64 MiB generated-output stop threshold, including TOC caches,
 all logs/receipts, retained FF and redump. Exclude only verified stock/source
 hardlinks from physical-growth accounting; metadata restoration is still required.
-Expected output is small (Beacon's measured run retained about 1.2 MiB), but that
-is not this animation's measured size. Stop on timeout, coordinator stop file,
+Attempt B retained 1218884 bytes; that observation does not relax the cap for
+another attempt. Stop on timeout, coordinator stop file,
 85% commit pressure, cap violation or failed phase. Retain failed evidence; an
 unconfirmed owned tree or restoration keeps its lease and staging quarantined.
 

@@ -38,6 +38,67 @@
       "independently_measured_final_bytes": 110280,
       "final_counter_difference_bytes": 2,
       "original_receipts_modified": false
+    },
+    {
+      "label": "animation-ff-roundtrip-20261012-b",
+      "source_commit": "54a897bbf08e92ddc9ab064eb59f47c7538f89fe",
+      "arguments_sha256": "e74be18da39be556c5c9be883328bed21dd6921b98292e69550ece8d0dc81851",
+      "plan_sha256": "530051a7522327106e84bef5e3f7ecfa38f60ecad73f530dca981b59e11eef63",
+      "state_sha256": "060ece52910cb6a0e2fe99ca7ce07561080f6db6cd4d8ada17f69838e6070951",
+      "after_all_files_snapshot_sha256": "903925a7469cd938cc0f8517a7d88c3e3859a8f18569de8862ec31db2f236a08",
+      "after_all_files_snapshot_utc": "2026-10-12T04:18:02.5660908Z",
+      "status": "FFInventoryAndAnimationRoundtripVerified",
+      "resource_physical_bytes": 8589934592,
+      "resource_commit_bytes": 11811160064,
+      "admission_acquired": true,
+      "stock_content_and_identity_guard_checks_passed": true,
+      "staged_inputs": 75,
+      "staging_copied_bytes": 77,
+      "python_priority": "BelowNormal",
+      "phases": [
+        {"phase": "build", "created_utc": "2026-10-12T04:15:21.3319719Z", "exit_code": 0, "job_active_at_close": 0, "resource_registered": true, "registration_attempts": 1},
+        {"phase": "verify", "created_utc": "2026-10-12T04:15:25.8518954Z", "exit_code": 0, "job_active_at_close": 0, "resource_registered": true, "registration_attempts": 1},
+        {"phase": "dump", "created_utc": "2026-10-12T04:15:31.0633581Z", "exit_code": 0, "job_active_at_close": 0, "resource_registered": true, "registration_attempts": 1},
+        {"phase": "read", "created_utc": "2026-10-12T04:15:35.322749Z", "exit_code": 0, "job_active_at_close": 0, "resource_registered": true, "registration_attempts": 1}
+      ],
+      "ff": {"bytes": 512, "sha256": "9bbe2314bc1b2efa7d45d741ed6e565ebaf5e38a2160e7135473ff60d95b57b6"},
+      "inventory": {
+        "bytes": 62,
+        "sha256": "f3f8b5d20e4abc8a19a6746a5ae7787f130fda261d884e5f87c9a6c97acb9f72",
+        "rows": ["xanim,paris_original_probe_bend", "rawfile,sdk_animation_probe"],
+        "verified": true
+      },
+      "redump": {
+        "bytes": 281,
+        "sha256": "a357ae4d2269e14be43f2e4222bc2d8b00712d371f2cab7d21133a823729c221",
+        "reader_status": "original-probe-data-pass",
+        "reader_scope": "ff-redump-profile",
+        "frames": [0, 10, 20, 30],
+        "x_degrees": [0, 44.99976426267937, -44.99976426267937, 0],
+        "root_rotation": "identity",
+        "translations": "no authored translation tracks",
+        "notetrack": {"name": "probe_contact", "normalized_time": 0.5, "original_script_string_id": 3, "ff_script_string_id": 4036},
+        "frequency_input": 1.0,
+        "frequency_runtime_verified": false
+      },
+      "restored": true,
+      "stock_preserved": true,
+      "restoration_status": "Confirmed",
+      "cleanup_error": null,
+      "retained_lease_token": null,
+      "fresh_registry_lease_count": 0,
+      "original_phase_process_identities_absent_after": true,
+      "main_original_process_identity_unchanged": true,
+      "postcheck_pid_reuse": "The later snapshot contains a new conhost.exe sharing the read root PID, with a different image and creation time; it is not the original Python root.",
+      "retained_files_including_hidden": 25,
+      "reported_max_bytes": 1219502,
+      "reported_final_bytes": 1218884,
+      "independently_measured_final_bytes_including_hidden": 1218884,
+      "final_counter_difference_bytes": 0,
+      "first_after_snapshot_scope": "The preserved first snapshot omitted the hidden 4-byte work/__iw7_ship file. The separate all-files snapshot supersedes its incomplete byte total; neither run receipt was edited.",
+      "prior_attempt_state_hash_unchanged": true,
+      "runtime_animation_verified": false,
+      "ready": false
     }
   ],
   "source_correction": {
@@ -49,7 +110,8 @@
     "short_root_exit_requires_empty_job_exit_and_phase_receipt": true,
     "final_serialized_byte_counters_must_converge": true,
     "light_checks": 55,
-    "corrected_native_run_executed": false
+    "corrected_native_run_executed": true,
+    "corrected_native_run_label": "animation-ff-roundtrip-20261012-b"
   },
   "runtime_animation_verified": false,
   "ready": false
