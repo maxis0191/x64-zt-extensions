@@ -204,7 +204,9 @@ def main():
     for name in REFERENCES:
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-output-bytes", type=int, default=LIMITS["output_bytes"])
     args = parser.parse_args()
+    require(1 <= args.max_output_bytes <= LIMITS["output_bytes"], "fixed maximum report ceiling")
     require(args.output.is_absolute() and not args.output.exists() and args.output.parent.is_dir(), "fresh absolute existing-parent output")
     data, read_count = {}, 0
     for name, (size, digest) in REFERENCES.items():
@@ -218,6 +220,7 @@ def main():
         data[name] = payload
     locator = Locator(data["text"], data["pdata"])
     result = {"schema": "iw7.rig-first-write-static/1", "limits": LIMITS,
+              "report_limit_bytes": args.max_output_bytes,
               "reference_hashes_verified": True, "file_read_bytes": read_count,
               "reference_live_provenance": False, "process_attached": False,
               "game_or_zonetool_launched": False, "acceptance_changed": False}
@@ -232,7 +235,7 @@ def main():
                       actual_first_writer_established=False, live_breakpoint_established=False)
         code = 2
     payload = (json.dumps(result, indent=2, allow_nan=False) + "\n").encode()
-    require(len(payload) <= LIMITS["output_bytes"], "output byte bound")
+    require(len(payload) <= args.max_output_bytes, "output byte bound")
     with args.output.open("xb") as target:
         target.write(payload)
     print(json.dumps({"status": result["status"], "output_bytes": len(payload),

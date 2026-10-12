@@ -1,0 +1,43 @@
+{
+  "schema": "iw7.rig-locator-supervisor-validation/1",
+  "source_only": true,
+  "powershell_mock_checks": 111,
+  "python_static_tests": 12,
+  "all_passed": true,
+  "real_admission_exercised": false,
+  "native_job_exercised": false,
+  "reference_scan_executed": false,
+  "game_launched": false,
+  "plan_b": {
+    "sha256": "ee98e9a6bb73b231b2658dcce79e86c5e6a064a7dbce3250c98105a3a85cc6b6",
+    "bytes": 12105,
+    "executor_evidence_sha256": "6716b61e5b2451bd40ad4d0dee0e60b0287b1cd9f0b283fc9526192fba2492d3",
+    "command_sha256": "1c0ddea0fdff11b8e0aa55647d845b8417d49736fd35d61c0abc8bf9eaec2da1",
+    "native_types_absent": true,
+    "forbidden_action_traps_not_triggered": true,
+    "retail_content_not_read": true,
+    "run_root_absent": true
+  },
+  "source_hashes": {
+    "Run-Locator.ps1": "ee0e86d167370e9d92d3eacbf5708f18530fc8d73efa528883d918c803403eae",
+    "Locator.Supervisor.Core.ps1": "092191443315acfc257273d90110eba66e135860c0b0db02046373d24fb6f6bb",
+    "locate_static.py": "ae396c2f2ee5415d30e8439708fb7b96d7636223dfb8bc976baa9d7378f9f498",
+    "test_locate_static.py": "46d7340c6489747ee699b333ff5ba9bc53465137666be6c8bbe72597428b22bb",
+    "test_locator_supervisor.ps1": "8e1fd460f8da303ae8ea9d0236cea49f8271ee4b3685f6c876cfa5765e306d26"
+  },
+  "runtime_files": 42,
+  "runtime_bytes": 15178078,
+  "guarded_bytes": 40534637,
+  "known_guard_hash_and_child_read_bytes": 106232122,
+  "maximum_known_input_content_bytes": 134217728,
+  "physical_bytes": 1073741824,
+  "commit_bytes": 2147483648,
+  "root_deadline_seconds": 60,
+  "stop_cleanup_seconds": 15,
+  "report_limit_bytes": 3145728,
+  "state_limit_bytes": 131072,
+  "combined_output_limit_bytes": 4194304,
+  "acceptance_changed": false,
+  "actual_first_writer_established": false,
+  "run_go_received": false
+}

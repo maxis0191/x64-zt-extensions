@@ -130,6 +130,11 @@ and call stack. A mismatch refuses the candidate address. Static lookup alone
 does not establish the field's engine meaning or authorize accepting nonzero
 values in the rig reader.
 
+The concrete [locator-only supervisor](SUPERVISOR.md) now provides an inert
+default Plan and the reviewed-provider/F6 ownership route for a future Run.
+Its source/mock checks and trapped Plan are separate from native validation;
+no scan or live probe has been authorized by their completion.
+
 ## Existing tools and boundaries
 
 Python 3.12 already provides pefile 2024.8.26 and Capstone 5.0.7. Microsoft
