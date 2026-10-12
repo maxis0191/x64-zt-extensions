@@ -188,6 +188,35 @@ drain. These checks never started SteamCMD. Prepare the outer launch plan with c
 Python, this adapter, its imported helper, scheduler and original NativeJob DLL;
 do not invoke the adapter directly as an unsupervised process.
 
+`Invoke-SteamMetadata.ps1` now provides that one-attempt executable host. It
+verifies a coordinator-reviewed local plan SHA256 and retains the bound source,
+interpreter and provider files. Without `-Run` it only checks the plan; it loads
+no native type, obtains no lease and creates no attempt directory. With the
+separate coordinator GO, the fixed invocation reserves Analysis 2 GiB physical /
+3 GiB commit, uses the existing witnessed NativeJob DLL and exact original-handle
+registration/closure primitives, and launches only the Python AppInfo phase.
+The outer acceptance deadline is 200 seconds; failed-tree cleanup has 5 seconds.
+Outer logs have 64 KiB caps, phase logs have 2 MiB caps, and metadata accounting
+checks the combined tool/cache/evidence tree against 512 MiB with receipt space.
+These are sampled limits, not kernel quotas. Generic helpers stored under
+`h1-fixture` are reused without running an H1 stage or compiler policy.
+
+The host never accepts Python exit alone: it checks fresh original root identity,
+exit status and zero active job members before closing handles. Failure stops
+only that original job, and forced stop remains failure. Ambiguous closure or
+lease release keeps the owner/guards in the live host and retains the lease;
+the coordinator must preserve that host for recovery. Closed successful process
+execution remains pending review of the actual Steam AppInfo response. Bootstrap
+file guards are released before SteamCMD self-update; the updated image hash,
+version and signature status are captured after closure. No rerun is implicit.
+
+`Test-SteamMetadataHost.ps1` runs pure PowerShell fault injection with fake owners
+and snapshots. Its 27 assertions cover output accounting/caps, late observation,
+live children after root exit, identity mismatch, commit pressure, fresh forced
+closure, failed stop/release and pre-create failure. They load no native provider
+and never start SteamCMD. The final machine-specific plan and exact command stay
+under ignored `runtime/`; they require review and GO before `-Run`.
+
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is
 not a per-file filter. Evaluate an existing compatible selective downloader
