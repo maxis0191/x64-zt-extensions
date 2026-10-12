@@ -5,6 +5,15 @@ snapshot content read, admission, game, ZoneTool or debugger action is authorize
 by this checkpoint. The SDK runtime demonstration keeps priority for the heavy
 slot. [Run F](run-f-validation-2026-10-12.json) is closed and remains unchanged.
 
+Owner direction, 2026-10-12: the import target is now **BO3/T7x to IW7**;
+H1 is abandoned as the new import target. Future model and animation work must
+use T7 skeletons, skinning weights and xanim as its starting point, with their
+formats and compatibility still to be established. Do not extend the H1 import
+route or bulk-read the BO3 files while their download is in progress. G remains
+an IW7-side investigation and its exact seed, source pins, Plan and budgets are
+unchanged. Existing H1-era helpers and evidence are retained; this direction
+does not authorize a new donor read or alter the independent SDK runtime demo.
+
 ## Selection from the retained F report
 
 G selects **only `0x140dd1f90`**, the direct target recorded at F's visited
