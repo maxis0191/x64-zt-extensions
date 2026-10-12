@@ -1492,3 +1492,42 @@ The first named failure changed from O's `en_core_post_gfx`; this does not prove
 complete dependency closure or compatibility of previous bootstraps. No path or
 metadata for the newly named dependency was consulted, and no new qualification
 or Run followed. Further action remains the coordinator's decision.
+
+## CorePostGfx A and possible Q: prepared for a bounded delegation
+
+After P, the coordinator separately authorized analysis owner 51 to read only
+`core_post_gfx.ff` metadata, then authorized source preparation here. The recorded
+file is 267,200 bytes without a reparse component. Its payload hash and qualified
+identity remain unknown; preparation reads the pinned metadata JSON, not the
+game payload.
+
+CorePostGfx A reuses the exact EnCorePostGfx qualification skeleton with only
+data literals and the size comment changed. All 367 variable occurrences,
+73 command occurrences, 1,990 nonliteral tokens and five lifecycle functions
+are unchanged. Default source-only validation and captured host arguments pass;
+the inherited 54 lifecycle checks were not rerun for byte-identical functions.
+No live preflight, lease, payload read, qualification or native Run occurred.
+
+The [CorePostGfx/Q preparation checkpoint](catalogue-core-post-gfx-preparation-q-20261012.json)
+pins the source, literal diff, manifest, launch, wiring and proposed delegation.
+It proposes exactly one CorePostGfx A qualification and one Q, zero runtime
+retries, unchanged V2 and full fresh 6/8 GiB admission for each phase. Qualification
+must close completely, with actual PTY exit and independent absence, before Q
+is formed from its real hash and identity. The corrected P preparation is the
+reference: its redundant old-text-binding loop remains removed, while the
+unchanged runner default validates every declared text binding under the
+existing 1 MiB ceiling.
+
+Q is projected at eight inputs / 75,726,016 bytes, 46 bindings (33 text and
+13 binary), 12 metadata rows, 24 original/alias IDs and a 203,535,448-byte output
+limit. The Plan and dispatch are not materialized with invented values. If the
+coordinator accepts the proposal, only actually measured data substitutions may
+proceed under exact full-diff, AST, variable/command, pin and receipt-coherence
+checks, published before runtime. The successful P closure helper remains the
+frozen reference with unchanged N globals and L locals; actual identity binding
+must change exactly three literals.
+
+No runtime GO has been given yet. The old two-phase and P-only GOs stay closed.
+Any refusal, runtime error, source/identity drift or uncertain closure stops the
+proposed delegation. Q consumes the eighth V2 slot and ends this proposal even
+if another name is reported: no ninth input, next metadata, R or export follows.
