@@ -1,8 +1,10 @@
-# Content surfaces bridge — source checkpoint 2026-10-12
+# Content surfaces bridge — source checkpoints 2026-10-12
 
-The new dependency inspector, pinned ZoneTool reader patch and small beacon surface
-are prepared. Native compilation, FF construction, rendering, content-audio playback
-and client HKS execution were **not run**. None is a qualified import capability.
+The dependency inspector, pinned ZoneTool reader patch and small beacon surface
+were prepared at the first checkpoint. Native compilation, FF construction,
+rendering, content-audio playback and client HKS execution were **not run by this
+lot**. Later parent-owned full-tool and first-beacon evidence is distinguished in
+the material-v2 section below. None establishes a qualified custom-material import.
 The owner admin/lag investigations still gate heavy work; the parent coordinates
 admission and integration. Main27016, the occupied client, banks, runtime installs
 and shared source checkouts were not changed.
@@ -157,6 +159,116 @@ menu. A real LUI route is a later client HKS capability and needs separate
 deployment/lifecycle/input testing. Content sound events likewise remain separate
 from microphone transport/native voice; this work changes no Windows audio state.
 
+## Distinct material-v2 source preparation
+
+The parent subsequently supplied the full ZoneTool build receipt with executable
+SHA-256 `e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04`
+and receipt SHA-256 `f0d4d7db132d51c789a999e33ab0ce905b2df749db453029f91356b9aa2e2165`.
+The receipt records413 translation units, the experimental macro, fresh PCH and
+the exact strict-content patch `4d7049216f24474e077ab704dac625c7f335c8264434b7de525e56a96a988d08`.
+This preparation hashes/reads only the2430B receipt. The future execution wrapper
+must independently verify the existing executable; no executable/PDB/toolchain is
+copied and no native tool is run here.
+
+The parent's first `sdk_beacon` FF is1048B, SHA-256
+`76ed0701dc1480c501604db04999f300394c65877aa24a70dfe7afc2cd662d4a`.
+Its separately owned build/verify/dump/read evidence is recorded in
+`sdk/modding/beacon-ff-validation-2026-10-12.json` when integrated by the parent.
+The native PNG `vertical-after/pre-action.png` in run
+`20261012-025611-746-c01d8ac6` was visually inspected: a dark cube is visible and
+the HUD reads `BEACON | YOU: 1 | TEAM: 1`. The parent reports that this run used
+reduced graphics, including changed normal/specular/picmip settings. Darkness
+alone does not diagnose a broken material, incorrect normals or missing lighting.
+The native model observer currently requires exact `fs_game=mods/paris_model_probe`;
+it supplies no material DB snapshot for this SDK path. No missing snapshot is
+reinterpreted as successful resolution.
+
+`prepare_material_v2.py` prepares an independent candidate while retaining the
+first beacon and the earlier `community_beacon_surface_a` preparation unchanged:
+
+| Asset | Distinct identity |
+| --- | --- |
+| Zone | `sdk_beacon_material_v2` |
+| Model / surface | `community_beacon_model_v2` / `community_beacon_model_v2_lod0` |
+| Material / image | `community_beacon_material_v2` / `community_beacon_color_v2` |
+| Netconststrings | `ncs_mdl_community_beacon_model_v2` |
+
+The generator checks the exact four retained writer inputs and six measured
+material inputs. It renames the eight model-name occurrences in the writer,
+changes only the geometry header's material binding, and emits a distinct native
+report schema/model identity. All serialization, reread assertions, packed
+vertices, UVs, tangent/normal encoding, rigid weights and LOD values stay unchanged.
+The original geometry JSON is retained byte-for-byte as `geometry.baseline.json`;
+its original model name is provenance, not the new binding. No H1 donor is needed.
+
+The original asymmetric32x32 opaque color image has red/green/blue/yellow corners,
+a white top bar and a magenta left bar. The material preserves the exact measured
+state/constants/sidecars. It still references the recipient's technique and packed
+normal image. This is an original **color-image/material-binding witness**, not a
+claim of wholly original shaders or a newly authored normal map. The packed-normal
+channel mapping and actual selected draw pass remain unmeasured; RGB normal-map
+guesses or an unmeasured unlit technique would add variables to this experiment.
+
+```powershell
+python -B "$surface/prepare_material_v2.py" `
+  --writer-root <retained-model-lod1m-source> `
+  --checker-root <retained-original-checker-a> `
+  --builder-receipt <reviewed-full-tool-build-artifact.local.json> `
+  --output <fresh-material-v2-source>
+```
+
+The output has14files/46262B including the plan. The generated writer is13948B,
+SHA-256 `91f3d70ff1cd24467a806b2130671f31948accb52d9d1be823fc169f073d8781`;
+the header is2264B, SHA-256
+`a569018b4f33b51e72f372d582fa7064cd788afa264481342d348eeb44036e88`.
+Static material inspection reports0errors/4pending/ready=false. It does not decode
+native CBT or prove recipient resolution. The FF input directory intentionally
+contains no XMB/XSB and must not be treated as a runnable build input. The plan's
+source-hash inventory describes preparation, not native execution provenance.
+
+The concrete next sequence is:
+
+1. After parent GO/admission, compile the distinct writer using the ten exact
+   interface hashes in the plan. Preserve compiler, source and executable hashes.
+   Run its real native roundtrip on a fresh output and require
+   `iw7.content-material-roundtrip/1`, the exact new model/material, all geometry
+   assertions and only the two bounded expected XMB/XSB files.
+2. The parent supplies a distinct execution/staging adapter. Recompute source
+   bytes and bind native process success/report/artifact hashes before staging.
+   Do not change the variant1 `Build-BeaconFF` or `ops/model-lab/prepare_ff.stage`
+   acceptance rules and do not accept a JSON report alone as native execution.
+3. Reuse the final E7C956 full tool with `-strict-content-sources` in the SDK's
+   bounded child-job lifecycle. Enforce the eight-entry plan inventory: two comma
+   recipient references plus custom image/material/model/surface/NCS/rawfile.
+   Build, verify, dump, then independently run this variant's exact writer with
+   `--verify-existing` against the fresh FF dump. Bound FF to1MiB and each model
+   artifact to8192B; re-evaluate an overrun rather than silently raising a limit.
+4. Independently inspect the dumped material and decode the resident image:
+   image name,32x32 dimensions, actual RGBA pixels, color semantic14, normal
+   semantic15, constants/state and reference resolution. Pointer presence and
+   filenames do not prove image correctness. Native negative strict-reader cases
+   below still need execution; the prior source tests are not that execution.
+5. Scope the native diagnostic to the exact new package/model before using its
+   output as evidence. Under the current privacy workflow, require a fresh random
+   password, launch+config `sv_lanOnly`, loopback default, native master-heartbeat
+   suppression and fresh privacy telemetry before any join. Establish fresh engine
+   godmode/inactivity protection. Reserve full-quality base client12GiB plus
+   dedicated2–4GiB (combined14–16GiB RAM/commit); compare the same poses and show
+   checker colors/orientation/opacity. Retain cold join/rejoin and owner acceptance
+   separately. Use the current privacy/instance helpers, not this preparation code.
+
+The writer estimate is2GiB RAM/3GiB commit; the proven SDK FF wrapper reserves8GiB
+RAM/11GiB commit. These are separate sequential jobs under the shared scheduler,
+not permission for concurrent native work. This phase performs no native build,
+Add-Type, FF creation, game launch, lease, audio operation or download. Source
+output is capped at128KiB, within the parent's2MiB preparation budget.
+
+Python tests now total38 unique cases: the original29 plus9 new source-gate tests
+covering byte-preserving renames, exact binding, absent/duplicate anchors, variant1
+inventory exclusion, changed/missing pinned input, unknown builder receipt and
+existing-output refusal. Actual retained-input preparation also passed. Rendering,
+recipient closure and native v2 compilation remain pending.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual
@@ -192,7 +304,11 @@ exposes unrelated aliases and is not a microphone fix. [Doom textures](DOOM-TEXT
 retires the390.03MiB inversion pack. Do not retry whole-map loading or that oversized
 pack for this surface witness.
 
-## Next decisive experiment and budget
+## Original experiment plan and remaining native negative cases
+
+The subsequent full-tool/first-beacon work above advances this original plan.
+Its native negative strict-reader matrix remains outstanding; do not rebuild the
+full tool just to repeat already supplied compilation evidence.
 
 After parent GO, combine the generic strict-reader patch with the separately
 reviewed H1 work in an isolated owner fork. Build under the single scheduler lease
