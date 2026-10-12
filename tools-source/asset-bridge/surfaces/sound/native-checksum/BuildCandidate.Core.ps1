@@ -19,6 +19,31 @@ function Assert-ChecksumBuildPath([string]$Path) {
         if((Test-Path -LiteralPath $p) -and (Get-Item -LiteralPath $p -Force).Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)){throw 'Redirected build path refused.'}
     }
 }
+function Assert-ChecksumBuildSdkTools($Plan,$SealedPaths) {
+    $sdk='C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64'
+    $expected=@{
+        'rc.exe'=@{bytes=55640;sha256='43da1503c262c30894c851589bf0155f8365d77e63a5f7bc13982320e3a6b42d'}
+        'rcdll.dll'=@{bytes=264536;sha256='9a11e4759adc48abe1fa9e3082ad7db4b53f4d6d77701c13729f4ffd47ae934c'}
+    }
+    $pins=@($Plan.sdk_tools|Where-Object {$null -ne $_})
+    if($pins.Count -ne 2){throw 'Two exact SDK resource tools required.'}
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($pin in $pins){
+        Assert-ChecksumBuildPath $pin.path
+        $name=[IO.Path]::GetFileName($pin.path);$path=[IO.Path]::GetFullPath($pin.path)
+        if($pin.Count -ne 3 -or !$expected.ContainsKey($name) -or $path -ine (Join-Path $sdk $name) -or
+            !$seen.Add($path) -or $SealedPaths.Contains($path) -or
+            ($pin.bytes -isnot [int] -and $pin.bytes -isnot [long]) -or
+            $pin.bytes -ne $expected[$name].bytes -or $pin.sha256 -cne $expected[$name].sha256){throw 'Exact new SDK resource tool identity required.'}
+        $source=@($Plan.source_pins|Where-Object path -IEQ $pin.path)
+        if($source.Count -ne 1 -or $source[0].bytes -ne $pin.bytes -or $source[0].sha256 -cne $pin.sha256){
+            throw 'SDK tool must be guarded as one bootstrap source.'
+        }
+    }
+    if($Plan.environment.PATH -cne ((Split-Path $Plan.compiler -Parent)+';'+$sdk+';C:\Windows\System32')){
+        throw 'Exact compiler/SDK/system PATH required.'
+    }
+}
 function Assert-ChecksumBuildPlan($Plan,$Seal,$SealState) {
     if($Plan.schema -cne 'iw7.sound-checksum-build-plan/1' -or $Plan.sealed -isnot [bool] -or !$Plan.sealed -or
         $Plan.physical_bytes -ne 4GB -or $Plan.commit_bytes -ne 6GB -or $Plan.stop_bytes -ne 512MB -or $Plan.planning_ceiling_bytes -ne 768MB -or
@@ -56,6 +81,7 @@ function Assert-ChecksumBuildPlan($Plan,$Seal,$SealState) {
         $bytes+=$entry.Bytes
     }
     if($bytes -ne $Seal.TotalBytes -or $bytes -gt 2GB){throw 'Sealed byte accounting differs.'}
+    Assert-ChecksumBuildSdkTools $Plan $seen
     $responses=@($Plan.response_pins|Where-Object {$null -ne $_})
     if($responses.Count -notin 0,12){throw 'Zero or twelve reviewed response sources required.'}
     if($responses.Count){
@@ -169,6 +195,7 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
         RootExitObservedMs=$null;PeakObservedOutputBytes=0L;OutputBytes=0L;ProofBytesRead=0L;InputsVerifiedBefore=$false;InputsVerifiedAfter=$false;
         InputGuardsOpened=0;InputGuardsDisposed=0;
         ReviewedResponseSources=@($Plan.response_pins|Where-Object {$null -ne $_}).Count;
+        ReviewedSdkTools=@($Plan.sdk_tools|Where-Object {$null -ne $_}).Count;
         TreeClosed=$true;LeaseReleased=$false;RetainedLeaseToken=$null;Ready=$false;SABFFVerified=$false}
     $c=@{Plan=$Plan;Record=$record;Started=(Get-ChecksumBuildClock);LastPressurePoll=0L;
         InputGuards=[Collections.Generic.List[IDisposable]]::new();GuardedInputs=[Collections.Generic.List[object]]::new()}

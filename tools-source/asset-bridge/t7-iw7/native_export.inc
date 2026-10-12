@@ -62,14 +62,8 @@ static nlohmann::ordered_json resident_export_file(const std::filesystem::path& 
         reinterpret_cast<const uint8_t*>(bytes.data()), bytes.size(), true)}};
 }
 
-static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
-    const std::string& lod_arg)
+static void resident_export_load_zone(const std::string& zone)
 {
-    const auto zone = resident_export_name(zone_arg.c_str(), true);
-    const auto name = resident_export_name(model_arg.c_str());
-    if (lod_arg.size() != 1 || lod_arg[0] < '0' || lod_arg[0] > '5')
-        throw std::runtime_error("Explicit canonical LOD 0..5 required");
-    const auto lod = static_cast<unsigned int>(lod_arg[0] - '0');
     if (game::get_mode() != game::t7) throw std::runtime_error("T7 engine mode required");
     // Irreversible for this short-lived process; protects against any later
     // accidental fall-through into the existing global package enumeration.
@@ -83,6 +77,17 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
         throw std::runtime_error("A fresh exact donor zone load is required");
     wait_for_database();
     if (!is_zone_loaded(zone)) throw std::runtime_error("Exact donor zone did not finish loading");
+}
+
+static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
+    const std::string& lod_arg)
+{
+    const auto zone = resident_export_name(zone_arg.c_str(), true);
+    const auto name = resident_export_name(model_arg.c_str());
+    if (lod_arg.size() != 1 || lod_arg[0] < '0' || lod_arg[0] > '5')
+        throw std::runtime_error("Explicit canonical LOD 0..5 required");
+    const auto lod = static_cast<unsigned int>(lod_arg[0] - '0');
+    resident_export_load_zone(zone);
     const auto header = db_find_x_asset_header(ASSET_TYPE_XMODEL, name.c_str());
     if (!header.data || DB_IsXAssetDefault(ASSET_TYPE_XMODEL, name.c_str()))
         throw std::runtime_error("Exact nondefault source model required");

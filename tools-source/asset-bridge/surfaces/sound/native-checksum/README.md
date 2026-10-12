@@ -1,10 +1,17 @@
 # Native source-checksum correction proposal
 
-This is a private source patch, not a rebuilt ZoneTool. The one authorized native
-build attempt stopped at its first compiler invocation with MSVC D8004. No C++
-probe, linker, librarian, FFmpeg or ZoneTool ran for this correction. The failed
-first SAB/FF attempt remains unchanged. The independent reader still rejects its
-checksum. Playback and `Ready` remain false.
+The private patch now has a built candidate and two verified actual C++ checksum
+probes in [Build F](BUILD-F-RESULT.md). All fourteen native steps passed, including
+the final link. The original probe reproduces `7800...`; the corrected header
+preserves the expected sixteen MD5 bytes. Input and artifact proofs, original-job
+closure, lease release and host exit all passed. Main stayed unchanged. The earlier
+D8004 attempt, [Build E link failure](BUILD-E-RESULT.md), and failed first SAB/FF
+output remain intact. Playback and `Ready` remain false; native SAB/FF validation
+of the corrected candidate is still pending.
+
+The [SDK resource-tool correction used by Plan F](SDK-RESOURCE-TOOLS.md) binds
+the two existing SDK files to retained guards and the exact native PATH. Its
+preparation record is preserved separately from the completed native evidence.
 
 The subsequent [Seal C checkpoint](INPUT-SEALING.md) qualifies the retained input
 bytes. The [private executable Build Plan C](BUILD-PLAN.md) records the closed
@@ -12,10 +19,11 @@ failed native attempt, source/mock verification and the response-file correction
 needed before another review/GO. The earlier preparation descriptions below are
 historical proposal evidence.
 
-The [response-file revision and future Plan E](RESPONSE-REVISION.md) attach each
-macro to `/D`, preserve all existing flags and use a fresh private output path.
-Only source/default-Plan tests have run for this revision; native execution is
-still separately gated.
+The [response-file revision used by Plan E](RESPONSE-REVISION.md) attaches each
+macro to `/D`, preserves all existing flags and uses a fresh private output path.
+Its successful compilation evidence and failed final link are recorded above.
+The remaining preparation descriptions below are retained historical proposals,
+not instructions to repeat execution.
 
 ## Observed defect and source boundary
 

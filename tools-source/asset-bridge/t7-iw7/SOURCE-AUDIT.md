@@ -235,3 +235,34 @@ stock, job closure and restoration. Those fields are not duplicated in this
 asset manifest. Material references remain unresolved and requested-zone
 ownership remains unverified. The CLI does not export or modify the SDK's
 SelfContained GSC.
+
+## Bounded donor catalogue (source only)
+
+The retained console `dumpcsv <zone>` writes all asset types without a byte or
+count bound. The retained CLI has no `-dumpcsv` route; `-loadzone` only loads.
+Neither is the reviewed discovery path. The separate `-t7-iw7-catalog <zone>`
+route shares the exact dedicated boot checks, ASCII arguments, flat zone rule,
+irreversible XPAK-helper denial and fresh synchronous load/database wait with
+the model exporter. Existing command behavior is retained.
+
+The existing DB-add hook copies distinct printable ASCII XMODEL names only
+while this request is active. It retains no engine pointers, catches errors
+before returning to the engine, and bounds captured names to 1,024 and name
+storage (including terminators) to 256 KiB. Failure or overflow stops capture
+and refuses publication after the load; it never publishes a truncated success.
+Sorted names are resolved again in the stable database. Only the model-header
+bone/root/cosmetic-bone/LOD counts are read. Surface counts are deliberately
+absent because they require reading a mesh header; no mesh or bone arrays,
+geometry, converters or package payloads are accessed by the catalogue code.
+Referenced aliases and unresolved/default names keep null counts.
+
+One create-only `t7_iw7_catalog_<zone-sha256>/catalog.json` is limited to 512 KiB
+before the output directory is created, using the retained exclusive writer.
+Provenance says only `observed_during_requested_zone_load`: it does not establish
+zone ownership or completeness of the zone's asset inventory. Engine IO remains
+unverified, as do geometry and runtime acceptance. The Python contract checks
+invented receipts; no real donor name has been established and no native run or
+stock read occurred. All 27 source tests and the four-file patch apply check pass.
+This addition still changes only the same three translation units plus xpak.hpp;
+the prior export-only plan/pins remain historical evidence and must not be reused
+as the catalogue build identity.

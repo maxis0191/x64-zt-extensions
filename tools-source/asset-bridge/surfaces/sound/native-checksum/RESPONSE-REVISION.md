@@ -1,4 +1,9 @@
-# D8004 response correction: Plan E, not executed
+# D8004 response correction: Plan E preparation record
+
+Update: the single subsequently authorized Plan E invocation is recorded in
+[BUILD-E-RESULT.md](BUILD-E-RESULT.md). All eight compilations passed, both native
+checksum probes passed, and the final link failed with LNK1158. The preparation
+and pre-execution validation below are retained as historical evidence.
 
 The failed Plan C / host D attempt is committed separately in `ac93d18` before
 this correction. Its response files, Seal C manifest, logs and 1872-byte failed

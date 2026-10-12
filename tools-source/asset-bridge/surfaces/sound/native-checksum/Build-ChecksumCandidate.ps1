@@ -58,6 +58,7 @@ try {
         [ordered]@{Status='PlanOnly';PlanSHA256=$PlanSHA256;Files=$seal.FileCount;InputBytes=$seal.TotalBytes;
             Commands=14;PhysicalBytes=4GB;CommitBytes=6GB;StopBytes=512MB;PlanningCeilingBytes=768MB;
             ReviewedResponseSources=@($plan.response_pins|Where-Object {$null -ne $_}).Count;
+            ReviewedSdkTools=@($plan.sdk_tools|Where-Object {$null -ne $_}).Count;
             NativeStarted=$false;NativeTypesLoaded=$false;AdmissionRequested=$false;Ready=$false}|ConvertTo-Json
         return
     }

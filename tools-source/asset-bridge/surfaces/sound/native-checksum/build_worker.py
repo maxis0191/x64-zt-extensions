@@ -12,7 +12,7 @@ import sys
 import threading
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_contract import (COMMON_MEMBERS, ORDER, compare_archive, include_report, json_bytes, reviewed_responses,
+from build_contract import (COMMON_MEMBERS, ORDER, compare_archive, include_report, json_bytes, reviewed_responses, reviewed_sdk_tools,
                             key, probe_result, require, sha, validate_plan)
 
 
@@ -61,6 +61,12 @@ def import_runner(plan):
     return module, runner, drain
 
 
+def verify_sdk_tools(plan, inputs):
+    for pin in reviewed_sdk_tools(plan, inputs):
+        raw = bounded(pin["path"], 1024 * 1024)
+        require(len(raw) == pin["bytes"] and sha(raw) == pin["sha256"], "guarded SDK resource tool changed")
+
+
 def native_phase(plan, command, expected, adapter, runner, drain):
     name = command["phase"]
     is_probe = command["kind"] == "probe_run"
@@ -99,6 +105,7 @@ def run(plan, plan_sha):
     require(run_id and len(run_id) == 32 and token and owner and owner.isdecimal(), "owned build generation missing")
     inputs = verify_seal(plan)
     response_sources = reviewed_responses(plan, inputs)
+    verify_sdk_tools(plan, inputs)
     for path in [plan["original_common_library"], plan["original_header"], plan["patched_header"],
                  plan["shared_original_header"], *plan["common_objects"].values()]:
         require(key(path) in inputs, "native source/library/object binding is outside the input seal")
@@ -134,7 +141,11 @@ def run(plan, plan_sha):
                 response_pin = response_sources.get(key(command["response_path"]), inputs.get(key(command["response_path"])))
                 require(response_pin and len(response) == response_pin["Bytes"] and
                         sha(response) == response_pin["SHA256"] == command["response_sha256"], "response file changed")
+            if name == "link-candidate":
+                verify_sdk_tools(plan, inputs)
             step = native_phase(plan, command, expected, adapter, runner, drain)
+            if name == "link-candidate":
+                verify_sdk_tools(plan, inputs)
             receipt["steps"].append(step)
             stdout = root / "logs" / name / "stdout.log"
             if command["kind"] == "probe_run":
