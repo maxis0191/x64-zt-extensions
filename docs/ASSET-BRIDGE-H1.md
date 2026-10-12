@@ -1,15 +1,19 @@
-# H1 -> IW7 model bridge: bounded source checkpoint, 2026-10-12
+# H1 -> IW7 model bridge: converter checkpoint, 2026-10-12
 
 The owner-fork converter has a prepared correction for silent blend truncation,
 unaligned H1 bone offsets and a subdivision flag read before its count is copied.
-The patch is reproducible and applies to the pinned real converter. It has **not
-been compiled or executed natively** in this lot. The standalone Python bridge
+The patch is reproducible and applies to the pinned real converter. Its exact
+validator, packer and converter bodies now compile and execute in the bounded
+native fixture: **52 assertions pass**. The full ZoneTool application, FF loading
+and rendering remain untested by this task. The standalone Python bridge
 converts and verifies raw blend records; it is not a complete H1 model importer.
 
 The parent coordinates integration, private PR/CI/merge and the heavy-work GO.
-No game, native compilation, extraction, audio capture, native Add-Type, lease,
-SDK copy or change to Main/client/bank/config occurred. Existing owner-fork and
-historical worktrees were read only. Source preparation stays below 100 MB.
+The initial source lot performed no heavy work. A later explicit parent GO
+authorized one 4/6 GiB native-fixture group, completed and released below. No
+game, extraction, audio capture, SDK copy or change to Main/client/bank/config
+occurred. Existing owner-fork and historical worktrees were read only. Source
+preparation stays below 100 MB; new native artifacts stay below 10 MiB.
 
 ## Delivered code and how to use it
 
@@ -29,6 +33,8 @@ All files are under `tools-source/asset-bridge/model/`:
   their retained independent reader, check exact hashes, compare actual blend
   data with the H1 bridge. It does not rebuild or re-emit them.
 - `validation-2026-10-12.json`: sanitized light-test and retained-output evidence.
+- `native-validation-2026-10-12.json`: actual compile/link/fixture result, hashes,
+  admission and release evidence, with the preserved compiler warning.
 
 The raw bridge metadata is intentionally narrow:
 
@@ -164,13 +170,15 @@ this fresh readback; the historical files themselves were preserved.
 
 ## Next decisive experiments and budgets
 
-1. After the parent's GO, apply the checked patch in a separately owned source
-   checkout of the same owner-fork pin. Build with the reviewed resource helper,
+1. The minimal real-function native fixture now passes; do not repeat its build
+   without changed inputs or a new unresolved concern. After a further parent
+   GO, integrate the checked patch in a separately owned source checkout of the
+   same owner-fork pin and build the full tool with the reviewed resource helper,
    one compiler node, estimated **4 GiB physical / 6 GiB commit**. Exercise the
    real converter on original 1/2/3/4-influence fixtures and every refused case,
    including zero-blend rigid input and both subdivision-count branches. Compare
-   output words with the literal/Python oracle. Gate any H1 asset work on this;
-   light Python tests and Git patch application are not native-test evidence.
+   output words with the literal/Python oracle. Gate general H1 asset work on
+   this integration; the isolated fixture does not exercise dump/FF emission.
 2. Use the already emitted two-bone XMB/XSB to prepare a distinct minimal FF
    closure; do not rebuild the writer. Require explicit names, matching hashes,
    material binding, FF fixups and no optional streams. Plan **6 GiB physical /
@@ -221,5 +229,46 @@ existing include roots and explicit OBJ/EXE output paths). It never invokes them
 After parent GO, recheck the recorded source/header hashes, use the existing x64
 compiler environment and the admitted native-job wrapper, then compile and run
 the resulting exact fixture. Budget up to 4/6 GiB physical/commit and <=10 MiB
-generated build files. The current checkpoint proves source preparation and
-overwrite refusal only: **no native compile or execution has occurred**.
+generated build files. The original preparation proved source consistency and
+overwrite refusal. The subsequent native result below supersedes the earlier
+no-execution state for this fixture only.
+
+## Actual bounded native run, 2026-10-12 02:03 UTC
+
+The parent lifted the gate for this one fixture group after the two priority
+sessions ended. Current private `origin/main=24d5c4f799b295cced57abea845fa1c39c753f09`
+was fetched and merged before action; the resource/memory helpers match that
+revision. RESOURCE, INSTANCE and STORAGE were refreshed. Atomic admission
+reserved **4 GiB physical / 6 GiB commit**, with RAM reserve zero and unchanged
+20% commit headroom. No second group was requested or started.
+
+MSVC 14.44.35207 x64 compiled the prepared file with `/c /std:c++20 /EHsc /W4 /MT`,
+without `/MP`, followed by a separate synchronous link with `/INCREMENTAL:NO` and
+then the fixture. All three processes were observed BelowNormal, exited zero
+and had their exits confirmed through their retained original process objects
+and handles. The parent priority/PATH were restored. The reservation was released;
+the 02:03:03.5125170Z snapshot contains zero leases and no high-water condition.
+
+All **52 runtime assertions** passed. These include allocator-budget assertions,
+golden 1..4-influence output/preserved input, 18 malformed-input refusals before
+blend allocation, empty rigid input and both subdivision flag branches through
+the real `convert()`. Real H1/IW7 headers and their size assertions were compiled.
+The checked production LF hash remains
+`f0910695382533abf9aed8a0c03f2f0da9d9af1ce2baee0efb5e78d252218a15`.
+
+- EXE: 320,512 bytes, SHA-256
+  `a88052927daec4a4c343076368d2946e660771a2c6db802acdf6fd7abcce3d65`.
+- OBJ: 374,912 bytes, SHA-256
+  `ac9e386db07d8a1bf1e6d96c468e8fe0afc3186509235aa2b5333eda596341d6`.
+- First attempt succeeded; no failed candidate or corrective rebuild occurred.
+  Compiler warning C4244 at fixture line 144 reports the `{0,1}` int initializer
+  conversion to unsigned char. Both values are representable and both branches
+  passed. The original source/log is preserved; no warning-free build is claimed.
+
+The execution directory, including logs and before/after receipts, is about
+0.71 MB. The EXE/OBJ and raw local diagnostics remain ignored; Git receives only
+sanitized evidence. Native allocation/free use the documented test adapter;
+optional codecs deliberately throw if reached. This proves the selected real
+converter functions under that fixture, not the full tool allocator, arbitrary
+dump safety, optional stream compatibility, FF relocation/loading, bone-weight
+interpretation, shader correctness, visual deformation or owner acceptance.
