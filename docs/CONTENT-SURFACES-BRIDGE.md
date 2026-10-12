@@ -233,7 +233,7 @@ The concrete next sequence is:
    Run its real native roundtrip on a fresh output and require
    `iw7.content-material-roundtrip/1`, the exact new model/material, all geometry
    assertions and only the two bounded expected XMB/XSB files.
-2. The parent supplies a distinct execution/staging adapter. Recompute source
+2. Use the distinct execution/staging adapter below after parent review/GO. Recompute source
    bytes and bind native process success/report/artifact hashes before staging.
    Do not change the variant1 `Build-BeaconFF` or `ops/model-lab/prepare_ff.stage`
    acceptance rules and do not accept a JSON report alone as native execution.
@@ -257,17 +257,113 @@ The concrete next sequence is:
    checker colors/orientation/opacity. Retain cold join/rejoin and owner acceptance
    separately. Use the current privacy/instance helpers, not this preparation code.
 
-The writer estimate is2GiB RAM/3GiB commit; the proven SDK FF wrapper reserves8GiB
+The writer requires4GiB RAM/6GiB commit; the proven SDK FF wrapper reserves8GiB
 RAM/11GiB commit. These are separate sequential jobs under the shared scheduler,
 not permission for concurrent native work. This phase performs no native build,
 Add-Type, FF creation, game launch, lease, audio operation or download. Source
 output is capped at128KiB, within the parent's2MiB preparation budget.
+
+The earlier source-only plan recorded an unqualified2/3GiB writer estimate. The
+coordinator rejected it before any native execution. The current generator and
+adapter enforce the RESOURCE-WORKFLOW4/6GiB native minimum; regenerate a fresh
+preparation rather than modifying the retained old plan. Geometry/header bytes
+and their hashes above are unchanged by this admission correction.
 
 Python tests now total38 unique cases: the original29 plus9 new source-gate tests
 covering byte-preserving renames, exact binding, absent/duplicate anchors, variant1
 inventory exclusion, changed/missing pinned input, unknown builder receipt and
 existing-output refusal. Actual retained-input preparation also passed. Rendering,
 recipient closure and native v2 compilation remain pending.
+
+### Executable adapter, pure-test checkpoint
+
+`Build-MaterialV2.ps1` now implements the six native phases, but defaults to a
+read-only execution plan. No native phase was run in this checkpoint. The adapter
+accepts explicit retained source/stock/toolchain paths; machine paths are stored
+only in ignored local parameter/plan files. It recomputes all14 prepared files
+from the exact original inputs and verifies the pinned writer/material interfaces.
+It rejects the old2/3GiB preparation plan, altered inputs and an existing run root.
+
+The seven shared helpers are used directly from a reviewed `SharedRepo`, with
+hashes in `material_v2_helpers.json`; none was modified or copied:
+
+| Shared helper | Reused responsibility |
+| --- | --- |
+| `ops/Base-Client.Core.ps1` | Unredirected bounded paths and reversible file transaction |
+| `ops/Resource-Scheduler.Core.ps1` | Exclusive admission, independent RAM/commit and process registration |
+| `ops/model-lab/ModelFF.Core.ps1` | NTFS source/target identity, final stock checks and guarded restore/release |
+| `ops/hud-lab/HudFileIdentity.cs` | Existing NTFS file identity implementation |
+| `sdk/modding/BeaconFF.Core.ps1` | Exact full-tool qualification, hashes, original-handle identity and64MiB output accounting |
+| `sdk/modding/beacon_tool_phase.py` | Existing bounded2MiB-per-stream log drain |
+| `tools-source/asset-bridge/model/BuildJob.cs` | Suspended BelowNormal child creation, non-breakaway kill-on-close job, original handles |
+
+The v2 driver owns orchestration and source-specific gates; it adds no scheduler,
+stock clone, native job implementation or shared SDK framework. Changing a shared
+helper hash requires review, not an automatic pin refresh. Its source is in the
+post-PR147 tranche, independently of the first-beacon proof.
+
+The writer lease uses4/6GiB. Compilation uses installed MSVC/Windows SDK, one fixed
+translation unit, no `/MP`, and fresh output paths. The controller retains the
+actual compiler/source/writer hashes, child identity, exit code and zero-active-job
+proof. Only a successful exact v2 native report and two bounded new XMB/XSB files
+advance to FF staging. A JSON receipt supplied from another run is not an input.
+The writer lease is released before requesting the FF8/11GiB lease.
+
+The FF work area links the72 retained bootstrap inputs and prepared sources;
+only the mutable77-byte sentinel is copied. It links the already qualified full
+ZoneTool executable, builds the distinct zone with strict sources, verifies the
+eight assets, dumps, and rereads the dumped XMB/XSB using the same newly compiled
+writer's `--verify-existing` mode. The adapter does not invoke any game client,
+test dedicated, SDK install or package deployment.
+
+`material_v2_checks.py` compares material fields, state JSON/152-byte indices,
+requires dumped constant-buffer data, and decodes only the pinned native IW7
+resident image shape:32x32, one mip,4096 opaque RGBA8/BGRA8 bytes. It compares every
+pixel against the original asymmetric diffuse, including orientation and alpha.
+It does not substitute image names, accept a changed technique, decode compressed
+foreign formats, prove native CBT semantics, or count the recipient normal as an
+original texture. Recipient resolution and rendering stay false even on success.
+Exact-reference dump behavior must be observed at the future run; any name/state
+disagreement stops for evidence review rather than silently normalizing it.
+
+All native phases run inside the reused shared job. A phase error, timeout,
+surviving descendant, log overflow, output above64MiB, commit pressure above85%,
+or `stop.request` stops only that original job. Restoration and lease release
+require confirmed closure and unchanged source hashes; the existing ModelFF helper
+then checks stock identity before restoring. An unresolved closure/source/stock
+conflict preserves the transaction/evidence and reservation. The FF cap is1MiB;
+model artifacts remain bounded to8192B. No captured pointer is a render proof.
+
+```powershell
+$v2 = Get-Content <reviewed-material-v2-parameters.local.json> -Raw | ConvertFrom-Json -AsHashtable
+& "$surface/Build-MaterialV2.ps1" @v2          # plan only
+# Only after parent review, explicit GO and successful current admission:
+& "$surface/Build-MaterialV2.ps1" @v2 -Run
+```
+
+The actual read-only plan passed on retained inputs: six phases,72stock inputs,
+writer4/6GiB and FF8/11GiB, with the run directory still absent. The corrected
+preparation is retained separately as `runtime/content-surfaces/material-v2-b`;
+`material-v2-a` preserves the earlier source-only estimate. The generated
+writer/header and geometry are identical across that budget-only correction.
+
+A later pre-commit plan refresh refused `StockRoot`: the retained `runtime/dt`
+directory in the `doom-negative-textures` worktree was no longer present. The
+existing stock receipt still describes that historical location. The earlier
+successful plan is dated evidence, not current launchability. No replacement
+stock, receipt rewrite or restoration was attempted; the coordinator must supply
+a suitable existing stock root with valid transaction evidence before native GO.
+This environmental refusal occurs before Add-Type, staging, lease or native launch.
+
+Validation now passes54 Python tests (38prior plus16 adapter cases), two PowerShell
+parses, pure compiler/quoting/budget gates and14 refusal fixtures. Native processes
+in the new Python tests are mocks: they exercise tamper refusal, nonzero exit,
+drain failure and timeout without spawning any executable. Synthetic images cover
+RGBA/BGRA, wrong channels/orientation/alpha, truncated payload, unsupported format,
+streaming and wrong name; they are not a decoded FF from a real native run.
+No Add-Type, native compilation, FF execution, resource lease, download or game
+was performed. The first native GO run must still validate process closure,
+stock restoration, exact output semantics and independently rendered pixels.
 
 ## Validation record and failures retained
 

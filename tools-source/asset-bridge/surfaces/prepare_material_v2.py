@@ -141,7 +141,7 @@ def payloads(writer_root, checker_root, receipt_path):
         "new_pixels": "original 32x32 opaque BGRA8 asymmetric color witness, resident FF without PAK",
         "recipient_references_verified": False, "normal_encoding_runtime_verified": False,
         "limits": {"source_bytes": LIMIT, "ff_bytes": 1048576, "per_model_artifact_bytes": 8192},
-        "next_run_admission": {"writer_ram_gib": 2, "writer_commit_gib": 3,
+        "next_run_admission": {"writer_ram_gib": 4, "writer_commit_gib": 6,
                                "ff_ram_gib": 8, "ff_commit_gib": 11,
                                "full_quality_client_plus_dedicated_ram_commit_gib": [14, 16],
                                "sequential_shared_lease": True},

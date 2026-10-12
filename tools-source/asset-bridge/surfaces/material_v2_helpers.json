@@ -1,0 +1,9 @@
+{
+  "ops/Base-Client.Core.ps1": "0b30aa6f32d6f261299805d9becfd524a3b98e79c82bbb436278d11abe1f5845",
+  "ops/Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
+  "ops/model-lab/ModelFF.Core.ps1": "5ccf97178816706e47e263f4fec2c2e5a74277827e58841e666e58cb30dcd278",
+  "ops/hud-lab/HudFileIdentity.cs": "61255ad8bbb6b4e2437291d3083811a56c1217ab68484bb1f22a4d5148616dbd",
+  "sdk/modding/BeaconFF.Core.ps1": "b80047875a39731ea54838459fb71e0dca580c5e42284bd2749dc4b39c3a08a8",
+  "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d",
+  "tools-source/asset-bridge/model/BuildJob.cs": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387"
+}
