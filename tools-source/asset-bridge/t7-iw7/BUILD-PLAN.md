@@ -889,3 +889,29 @@ source; both headers already belong to the qualified input set. No native type,
 build child, lease, executable/PDB read or hash was used by this preparation.
 No C++ compilation or actual message capture is claimed. The coordinator owns
 independent review, integration, and the distinct future build/runtime GO gates.
+
+### Exact message build plan A, awaiting review and GO
+
+Source ff488654f9f7f0a0d7752ca2ffc669839e8deea0 produced
+`runtime/t7-message-build-plan-a/build-plan.local.json` (298,664 bytes), SHA256
+0b1d6f29cb6b02f81d78e2d11f46bbc3679a635a943cca232b7be72d0643a28a.
+Its default source/metadata validation passes with 1,083 inputs and no missing
+pin. BuildProfile has exactly the eleven fields specified above.
+
+| Text binding | Bytes | SHA256 |
+| --- | ---: | --- |
+| Wiring | 31,337 | 25284eabad7d3818c302700234f93f767f8d47c9fd403473a7a82b2670550e46 |
+| PreparedMain | 38,500 | a601ef1449eaa4c3ec2c85ea561ed4cc5c1aa75769a4ad1def002d348a971e68 |
+| Ordinary D2 plan | 296,330 | daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa |
+| Ordinary D2 receipt | 7,136 | c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2 |
+
+Inputs equal callers A exactly. The 413-object Link response changes only its
+21st object (main.obj, response-file line 22); 412 objects are reused. Stages
+remain main and Link with the existing 4/6 GiB, 120/600-second and 256 MiB limits.
+No dependency or common provider was added. The future `runtime/zt-t7-message-a`
+root is absent. NativeTypesLoaded, BinaryInputsHashed, LeaseAcquired and
+RunRootCreated are false. There is no message candidate or build receipt yet.
+
+The coordinator and runtime parser owner received the exact source, plan and
+pins for review. No build, engine execution, new payload read or binary/PDB hash
+occurred during preparation. Build and runtime still need distinct GO decisions.
