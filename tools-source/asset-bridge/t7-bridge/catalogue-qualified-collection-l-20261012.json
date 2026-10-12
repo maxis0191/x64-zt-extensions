@@ -1,0 +1,227 @@
+{
+  "schema": "iw7.t7-qualified-collection-checkpoint/1",
+  "date": "2026-10-12",
+  "qualification": {
+    "name": "En Core Patch A",
+    "status": "IdentityAndHashObservedCompatibilityUnknown",
+    "input_name": "en_core_patch.ff",
+    "input_bytes": 624640,
+    "sha256": "241f1154237ca5459b98e948156f2138a546968a63f92cd13f70cb2e9794906e",
+    "hash_provenance": "ObservedUnderLeaseNotDepotVerified",
+    "native_invocations": 0,
+    "qualification_invocations": 1,
+    "guarded_read_bytes_per_pass": 624640,
+    "guarded_read_passes": 2,
+    "total_payload_read_bytes": 1249280,
+    "metadata_and_identity_reverified": true,
+    "hash_reverified": true,
+    "preflight_utc": "2026-10-12T18:42:49.6349641Z",
+    "preflight_commit_used_percent": 56.32,
+    "physical_reserve": 0,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "deadline_seconds": 200,
+    "started_utc": "2026-10-12T18:42:48.4254029Z",
+    "finished_utc": "2026-10-12T18:42:50.6266957Z",
+    "script": {
+      "name": "Qualify-T7EnCorePatchA.local.ps1",
+      "bytes": 13328,
+      "sha256": "4cf9034ffd0abe34707b514ba947482f4c2e4ffa1fd3763a438f2e4a8d92b68d"
+    },
+    "receipt": {
+      "name": "t7-en-core-patch-qualification-a.local.json",
+      "bytes": 4427,
+      "sha256": "ab6ece7b9ba0e604c83fb591bdd0e8a693e0340696e39c763de70faefc80df92"
+    },
+    "preparation": {
+      "name": "t7-en-core-patch-qualification-a-preparation.local.json",
+      "bytes": 4802,
+      "sha256": "2b8e2ebe353f395ad1cc754558941302e638cd1796a612c267c4715e75a64704"
+    },
+    "source_manifest": {
+      "name": "t7-en-core-patch-qualification-a-source-pins.local.json",
+      "bytes": 2491,
+      "sha256": "c3daf5cf28c070affe5e8942cbc0ae36ea921ecadb7962f5b6d15e1044378458"
+    },
+    "source_delta": {
+      "name": "t7-en-core-patch-qualification-a-source-delta.local.patch",
+      "bytes": 10090,
+      "sha256": "6d3b1d8c35c9643ad4223402c50300863678a3ac2230ef46e50b010ee08b99fa"
+    },
+    "pure_tests": {
+      "checks": 54,
+      "deadline_cases": 4,
+      "release_refusal_cases": 2,
+      "tool_chunk": "b8ce87",
+      "exit_code": 0,
+      "native_types_loaded": false,
+      "owner_stock_read": false
+    },
+    "lifecycle_functions_identical_to_core_a": [
+      "Save-QualificationText",
+      "Assert-QualificationPersistentHost",
+      "Complete-QualificationGuards",
+      "Publish-QualificationReceipt",
+      "Wait-QualificationRetention"
+    ],
+    "compatibility_proven": false,
+    "engine_lookup_proven": false,
+    "header_semantics_known": false,
+    "header_prefix_captured": false,
+    "depot_verified": false,
+    "payload_copied": false
+  },
+  "closure": {
+    "tree_confirmed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "guards_closed": true,
+    "same_host_utc": "2026-10-12T18:43:17.2784906Z",
+    "host_pid": 6888,
+    "host_created_utc": "2026-10-12T18:42:47.841282Z",
+    "parent_pid": 30648,
+    "source_guard_count": 0,
+    "payload_guard_count": 0,
+    "metadata_and_id_unchanged": true,
+    "actual_pty_session": 31860,
+    "actual_pty_exit_code": 0,
+    "actual_pty_exit_tool_chunk": "b834c8",
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T18:44:00.0263747Z",
+    "host_and_parent_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "main_baseline": "Stopped",
+    "main_process_image_udp_absent": true,
+    "preserved_python_identity_unchanged": true,
+    "payload_hashes_read_after_release": false,
+    "same_host_proof": {
+      "name": "t7-en-core-patch-a-host-closure.local.json",
+      "bytes": 787,
+      "sha256": "d55b7396a63afb67d6e4a09c3136b7d87041da586f9ff9f1ec7bd27ed6dc7551"
+    },
+    "independent_proof": {
+      "name": "t7-en-core-patch-a-host-absence.local.json",
+      "bytes": 712,
+      "sha256": "937058d40cddfab8bec5658195c6661b2e2cc512512f47b2b5f8a8b1a446c6ae"
+    },
+    "witness_correction": {
+      "first_refusal_chunk": "12ccb7",
+      "cause": "Independent shell omitted the H1 core import required by Assert-H1Path.",
+      "correction": "Import the reviewed H1 core before the read-only independent witness.",
+      "passed_chunk": "b51bf3",
+      "additional_qualification_or_native_invocation": false
+    }
+  },
+  "collection": {
+    "policy": "QualifiedCollectionV1",
+    "proposal": {
+      "name": "t7-qualified-bootstrap-collection-v1-proposal.local.json",
+      "bytes": 8050,
+      "sha256": "5e8c6189d9587683a025aa082b035759d6e09667ddc77d043bfd7da419e65750"
+    },
+    "implemented_after_qualification_closed": true,
+    "minimum_items": 1,
+    "maximum_items": 8,
+    "maximum_total_bytes": 33554432,
+    "rationale": "The existing qualification reader bounds one snapshot to 32 MiB; the aggregate cap prevents multiplying payload growth. Eight bounds review/handles to sixteen qualification texts and twenty-four original/alias ID checks, not an engine dependency claim.",
+    "binding_formula": "22 + 3*N",
+    "maximum_bindings": 46,
+    "legacy_binding_limit": 32,
+    "legacy_j_k_semantics_unchanged": true,
+    "safe_ascii_names": true,
+    "paths_aliases_qualified_ids_unique": true,
+    "all_items_validated_before_publication": true,
+    "all_receipts_validated_before_run": true,
+    "actual_original_input_ids_distinct_before_first_alias": true,
+    "scanner_added": false,
+    "automatic_dependency_addition": false,
+    "execution_closure_quarantine_code_changed": false,
+    "runner": {
+      "name": "Run-T7Catalogue.ps1",
+      "bytes": 12525,
+      "sha256": "fd710da6538378b93f29b22930a0e61fd6163ef7541cae8dc5d1e89eda21d94a"
+    },
+    "profile": {
+      "name": "T7Catalogue.Profile.ps1",
+      "bytes": 74649,
+      "sha256": "9e8c1abd7bce28544bf8c25233530619c12fa3b87460af8479e99fb43c7c21d8"
+    }
+  },
+  "source_tests": {
+    "total_checks": 1489,
+    "collection": 283,
+    "legacy_bootstrap": 177,
+    "catalogue": 188,
+    "trace": 209,
+    "exit_context": 161,
+    "main": 52,
+    "callers": 209,
+    "message": 210,
+    "tool_chunks": [
+      "f188de",
+      "691021",
+      "ef86e7",
+      "0f1fa1",
+      "3c97fe",
+      "0b4d11",
+      "b22c9d",
+      "9fcf44"
+    ],
+    "source_only": true,
+    "retail_payload_read": false,
+    "native_types_loaded": false,
+    "lease_acquired": false,
+    "collection_test": {
+      "name": "Test-T7CatalogueBootstraps.ps1",
+      "bytes": 21567,
+      "sha256": "93fb5b0fa86b49da2d5a6b7e87903017efdd0fb0e88cfac708300e19e4f0ad5a"
+    }
+  },
+  "plan_l": {
+    "pin": {
+      "name": "t7-catalog-plan-l.local.json",
+      "bytes": 17136,
+      "sha256": "1f8f2567708c0bc6318f82c18b7806dde6e207cd85435fccf006ffc806a006a6"
+    },
+    "policy": "QualifiedCollectionV1",
+    "bootstrap_names": [
+      "en_core_pre_gfx.ff",
+      "core_pre_gfx.ff",
+      "en_core_patch.ff"
+    ],
+    "bootstrap_bytes": 22976640,
+    "bindings": 31,
+    "text_bindings": 23,
+    "binary_bindings": 8,
+    "input_metadata": 7,
+    "expected_aliases": 7,
+    "expected_original_and_alias_ids": 14,
+    "output_limit_bytes": 150786072,
+    "candidate_bytes": 21750272,
+    "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "group_native_cleanup_seconds": [
+      200,
+      120,
+      5
+    ],
+    "stderr_limit_bytes": 8192,
+    "main_snapshot": "Reused the completed qualification independent witness; fresh preflight is still required before any Run.",
+    "default_validation": {
+      "status": "PlanCheckedPendingGO",
+      "tool_chunk": "b6040d",
+      "exit_code": 0,
+      "binary_inputs_hashed": false,
+      "native_types_loaded": false,
+      "lease_acquired": false,
+      "runtime_files_created": false
+    },
+    "prepared_directories_empty": true,
+    "attempt_marker_absent": true,
+    "catalogue_run_invoked": false,
+    "ready": false
+  },
+  "next_action": "Independent source/Plan review and coordinator-owned exact-head CI/integration. Plan L remains unconsumed; a distinct exact GO and fresh preflight are required before any catalogue Run."
+}

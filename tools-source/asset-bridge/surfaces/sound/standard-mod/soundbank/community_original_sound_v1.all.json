@@ -1,0 +1,25 @@
+{
+  "ADSRSettings": [],
+  "AmbientDefs": [],
+  "AmbientElements": [],
+  "AmbientEvents": [],
+  "FilterDefs": [],
+  "FullOcclusionDefs": [],
+  "MixDefs": [],
+  "NPCAdsrZoneEntry": [],
+  "OccludeDefs": [],
+  "PLRAdsrZoneEntry": [],
+  "PlayerBreathStateDefs": [],
+  "ReverbDefs": [],
+  "TimescaleEntrys": [],
+  "Unks": [],
+  "ZoneDefs": [],
+  "aliases": [
+    "sound/community_original_sound_v1.all.aliases.csv"
+  ],
+  "gameLanguage": "all",
+  "name": "community_original_sound_v1.all",
+  "sendEffectParams": [],
+  "soundLanguage": "all",
+  "zone": "mod"
+}

@@ -6,14 +6,15 @@ param(
     [Parameter(Mandatory,ParameterSetName='Build')][string]$StockParametersSHA256,
     [Parameter(Mandatory)][string]$OutputPath,
     [Parameter(Mandatory,ParameterSetName='DumpOnly')][switch]$DumpOnly,
-    [Parameter(Mandatory,ParameterSetName='DumpOnly')][string]$ImmutablePlanPath,
-    [Parameter(Mandatory,ParameterSetName='DumpOnly')][string]$ImmutableStatePath,
-    [Parameter(Mandatory,ParameterSetName='DumpOnly')][string]$CandidateRoot,
-    [Parameter(Mandatory,ParameterSetName='DumpOnly')][string]$RunRoot
+    [Parameter(Mandatory,ParameterSetName='StandardMod')][switch]$StandardMod,
+    [Parameter(Mandatory,ParameterSetName='DumpOnly')][Parameter(Mandatory,ParameterSetName='StandardMod')][string]$ImmutablePlanPath,
+    [Parameter(Mandatory,ParameterSetName='DumpOnly')][Parameter(Mandatory,ParameterSetName='StandardMod')][string]$ImmutableStatePath,
+    [Parameter(Mandatory,ParameterSetName='DumpOnly')][Parameter(Mandatory,ParameterSetName='StandardMod')][string]$CandidateRoot,
+    [Parameter(Mandatory,ParameterSetName='DumpOnly')][Parameter(Mandatory,ParameterSetName='StandardMod')][string]$RunRoot
 )
 $ErrorActionPreference='Stop'
 . "$PSScriptRoot/SoundFF.Core.ps1"
-if($DumpOnly){
+if($DumpOnly -or $StandardMod){
     # Qualification is checked before other input reads or any output creation.
     $receiptSHA='dfe3d7d1ed0d9b3c4ad334fc64d1f3f277508c468df034f05cffd2505f3944f4'
     $stateSHA='99c5c35fe43ad90bb192db8902dc718402fb901dd2cc6f6689d790e82a5ba149'
@@ -49,17 +50,34 @@ if($DumpOnly){
     $review=[pscustomobject]@{source=$f.Plan.Review.source;stock_root=$f.Plan.Review.stock_root;candidate_root=$CandidateRoot;
         existing_candidate=[pscustomobject]@{path=$candidate.Path;bytes=$candidate.Bytes;sha256=$candidate.SHA256};
         phase_adapter=(Join-Path $PSScriptRoot 'sound_ff_phase.py');source_stage_relatives=@();phase_specs=$phases}
-    $plan=[pscustomobject][ordered]@{Schema='iw7.original-sound-ff-execution/1';Profile='DumpOnly';Review=$review;RunRoot=$RunRoot;Work=$work;
+    $profile='DumpOnly';$outputs=@()
+    if($StandardMod){
+        $profile='StandardMod';$zone='mod'
+        $review.source_stage_relatives=@('sound/community_original_sound_v1.all.aliases.csv','sound_assets/community/original_chime_v1.flac',
+            'soundbank/community_original_sound_v1.all.json','zone_source/mod.csv')
+        foreach($relative in 'soundbank/community_original_sound_v1.all.json','zone_source/mod.csv'){
+            $pins.Add((Get-SoundFFPin (Join-Path $PSScriptRoot ('standard-mod/'+$relative))))
+        }
+        $review.phase_specs=@(foreach($phase in 'build','verify','dump'){
+            [pscustomobject]@{schema='iw7.material-v2-phase/1';phase=$phase;exe=(Join-Path $work 'zonetool.exe');sha256=$candidate.SHA256;
+                arguments=@('-headless','-unbuffered-io','-strict-content-sources',('-'+$phase+'zone'),$zone);cwd=$work;logs=(Join-Path $RunRoot ('logs/'+$phase));timeout=240}
+        })+@([pscustomobject]@{schema='iw7.material-v2-phase/1';phase='read';exe=$f.Plan.Python;sha256=$pythonPin.SHA256.ToLowerInvariant();
+            arguments=@('-B',(Join-Path $PSScriptRoot 'read_sab.py'),'--source',$f.Plan.Review.source,'--banks',(Join-Path $work 'zone'),
+                '--contract',(Join-Path $PSScriptRoot 'sab_contract.json'),'--dump',(Join-Path $work 'dump/mod'),
+                '--inventory',(Join-Path $RunRoot 'logs/verify/stdout.log'),'--dump-profile','StandardModC');cwd=$work;logs=(Join-Path $RunRoot 'logs/read');timeout=30})
+        $outputs=@('zone/mod.ff','zone/mod.sabl','zone/mod.sabs')
+    }
+    $plan=[pscustomobject][ordered]@{Schema='iw7.original-sound-ff-execution/1';Profile=$profile;Review=$review;RunRoot=$RunRoot;Work=$work;
         SharedRepo=$f.Plan.SharedRepo;Python=$f.Plan.Python;CandidateRoot=$CandidateRoot;CandidateReceiptSHA256=$receiptSHA;CandidateStateSHA256=$stateSHA;
         ImmutableFF=$evidence;StockInputs=$f.Plan.StockInputs;HashInputs=@($pins|Sort-Object Path);PayloadInputs=$payload;
-        PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=@();
+        PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=$outputs;
         HeavyExecutionAuthorizedByPlan=$false;Ready=$false}
     Assert-SoundFFExecutionPlan $plan $PSScriptRoot
     $json=$plan|ConvertTo-Json -Depth 25
     if([Text.Encoding]::UTF8.GetByteCount($json) -gt 256KB){throw 'Dump Plan exceeds 256 KiB.'}
     $stream=[IO.File]::Open($OutputPath,'CreateNew','Write','None')
     try{$raw=[Text.UTF8Encoding]::new($false).GetBytes($json+[Environment]::NewLine);$stream.Write($raw,0,$raw.Length)}finally{$stream.Dispose()}
-    [pscustomobject]@{Path=$OutputPath;SHA256=(Get-FileHash -LiteralPath $OutputPath).Hash;Profile='DumpOnly';NativeExecuted=$false;PayloadRead=$false;Ready=$false}|ConvertTo-Json
+    [pscustomobject]@{Path=$OutputPath;SHA256=(Get-FileHash -LiteralPath $OutputPath).Hash;Profile=$profile;NativeExecuted=$false;PayloadRead=$false;Ready=$false}|ConvertTo-Json
     return
 }
 Assert-SoundFFPath $ReviewPlanPath;Assert-SoundFFPath $StockParametersPath;Assert-SoundFFPath $OutputPath

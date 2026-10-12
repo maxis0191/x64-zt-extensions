@@ -158,7 +158,8 @@ def pad_text(value, size):
     return raw + bytes(size - len(raw))
 
 
-def read_bank(raw, streamed, flac, pcm, spec):
+def read_bank(raw, streamed, flac, pcm, spec, bank_zone=ZONE):
+    require(bank_zone in (ZONE, "mod"), "closed SAB bank zone required")
     require(type(streamed) is bool, "explicit bank kind required")
     require(type(raw) is bytes and HEADER.size <= len(raw) <= MAX_FILE, "bounded complete SAB required")
     fields = HEADER.unpack_from(raw)
@@ -167,7 +168,7 @@ def read_bank(raw, streamed, flac, pcm, spec):
      zone, platform, language, converted, section_size, padding) = fields
     require((magic, version, entry_size, checksum_size, dependency_size, dependency_count, build_version, converted)
             == (0x23585532, 4, 44, 16, 64, 8, 4, 4), "SAB header fields differ")
-    require(zone == pad_text(ZONE, 64) and platform == pad_text("pc", 8) and language == b"all", "SAB identity differs")
+    require(zone == pad_text(bank_zone, 64) and platform == pad_text("pc", 8) and language == b"all", "SAB identity differs")
     require(placeholder == b"\xcc" * 16, "expected writer placeholder differs; not a checksum")
     require(dependencies == bytes(512) and padding == bytes(5), "SAB dependency/reserved fields differ")
     require(raw[HEADER.size:4096] == bytes(4096 - HEADER.size), "SAB header padding differs")
@@ -209,10 +210,11 @@ def compare_alias_dump(raw, expected):
             require(value == wanted, "dump alias text differs: " + name)
 
 
-def inventory(raw):
+def inventory(raw, disk_zone=ZONE):
+    require(disk_zone in (ZONE, "mod"), "closed inventory disk zone required")
     require(len(raw) <= 256 * 1024, "bounded inventory required")
     text = raw.decode("utf-8", errors="strict")
-    require('Loading zone "' + ZONE + '"' in text and
+    require('Loading zone "' + disk_zone + '"' in text and
             not re.search(r"could not be found|could not find referenced|\[\s*(?:ERROR|FATAL)\s*\]", text, re.I),
             "unresolved or absent sound inventory")
     found = []
@@ -221,19 +223,37 @@ def inventory(raw):
             match = re.search(r'Loading asset "([^"\r\n]+)" of type ([a-z0-9]+)\.$', line)
             require(match is not None, "malformed inventory callback")
             found.append((match[2], match[1]))
-    expected = {("soundbank", BANK), ("rawfile", ZONE)}
+    expected = {("soundbank", BANK), ("rawfile", disk_zone)}
     require(len(found) == 2 and set(found) == expected, "exact soundbank and native branding rawfile inventory required")
 
 
 def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_profile="NativeDumpF"):
-    require(dump_profile in ("NativeDumpF", "DumpOnlyC"), "closed dump profile required")
-    require(dump_profile == "NativeDumpF" or dump is not None, "DumpOnlyC requires actual dump bytes")
+    require(dump_profile in ("NativeDumpF", "DumpOnlyC", "StandardModC"), "closed dump profile required")
+    require(dump_profile == "NativeDumpF" or dump is not None, "C profiles require actual dump bytes")
     require((dump is None) == (inventory_path is None), "dump and inventory must be supplied together")
     inputs = Inputs()
     spec = contract(inputs.read(contract_path, 16384))
     files, alias, pcm = original(inputs, source, spec)
-    loaded = read_bank(inputs.read(Path(banks) / (ZONE + ".sabl")), False, files[FLAC_PATH], pcm, spec)
-    streamed = read_bank(inputs.read(Path(banks) / (ZONE + ".sabs")), True, files[FLAC_PATH], pcm, spec)
+    standard = dump_profile == "StandardModC"
+    disk_zone = "mod" if standard else ZONE
+    bank_zone = "mod" if standard else ZONE
+    standard_proof = {}
+    if standard:
+        overlay = Path(__file__).with_name("standard-mod")
+        expected_bank = strict_json(files[BANK_PATH]); expected_bank["zone"] = "mod"
+        require(strict_json(inputs.read(overlay / BANK_PATH)) == expected_bank, "standard source bank.zone/fields differ")
+        require(inputs.read(overlay / "zone_source/mod.csv") == files["zone_source/" + ZONE + ".csv"], "standard zone CSV differs")
+        ff = inputs.read(Path(banks) / "mod.ff")
+        require(0 < len(ff) <= MAX_FILE, "bounded nonempty standard FF required")
+        dumped_bank = strict_json(inputs.read(Path(dump) / BANK_PATH))
+        require(type(dumped_bank) is dict and all(dumped_bank.get(key) == expected_bank[key] for key in ("name", "zone", "gameLanguage", "soundLanguage", "aliases")),
+                "dump bank.zone/identity differs")
+        standard_proof = {"standard_source_verified": True, "dump_bank_zone_verified": True,
+                          "standard_filenames_verified": True, "standard_filenames": ["mod.ff", "mod.sabl", "mod.sabs"],
+                          "disk_zone": disk_zone, "bank_zone": bank_zone,
+                          "fastfile": {"bytes": len(ff), "sha256": sha(ff)}}
+    loaded = read_bank(inputs.read(Path(banks) / (disk_zone + ".sabl")), False, files[FLAC_PATH], pcm, spec, bank_zone)
+    streamed = read_bank(inputs.read(Path(banks) / (disk_zone + ".sabs")), True, files[FLAC_PATH], pcm, spec, bank_zone)
     if dump is not None:
         compare_alias_dump(inputs.read(Path(dump) / ALIAS_PATH, 8192), alias)
         actual = inputs.read(Path(dump) / FLAC_PATH)
@@ -244,9 +264,9 @@ def inspect(source, banks, contract_path, dump=None, inventory_path=None, dump_p
         expected[8:18] = block * 2 + bytes(6)
         expected[26:42] = bytes(16)
         require(actual == expected, "dump FLAC header/payload or trailing bytes differ")
-        inventory(inputs.read(inventory_path))
+        inventory(inputs.read(inventory_path), disk_zone)
     inputs.recheck()
-    return {"schema": "iw7.original-sound-sab-read/1", "status": "SABBytesVerified", "loaded": loaded,
+    return {**standard_proof, "schema": "iw7.original-sound-sab-read/1", "status": "SABBytesVerified", "loaded": loaded,
             "streamed": streamed, "alias": ALIAS, "source_alias_verified": True, "alias_id": spec["alias_id"],
             "asset_id": spec["asset_id"], "source_alias_matches_sab_asset": True,
             "dump_alias_values_verified": dump is not None, "inventory_verified": dump is not None,
@@ -268,7 +288,7 @@ def main():
     parser.add_argument("--contract", required=True, type=Path)
     parser.add_argument("--dump", type=Path)
     parser.add_argument("--inventory", type=Path)
-    parser.add_argument("--dump-profile", choices=("NativeDumpF", "DumpOnlyC"), default="NativeDumpF")
+    parser.add_argument("--dump-profile", choices=("NativeDumpF", "DumpOnlyC", "StandardModC"), default="NativeDumpF")
     args = parser.parse_args()
     print(json.dumps(inspect(args.source, args.banks, args.contract, args.dump, args.inventory, args.dump_profile), indent=2))
 
