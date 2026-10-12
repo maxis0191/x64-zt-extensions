@@ -132,3 +132,68 @@ route; a coupling failure requires a revised source plan before expanding it.
 
 No private PR is opened by this sub-lot; the coordinating branch owns its
 integration, exact-head checks and merge.
+
+## Prepared runner and immutable review plan
+
+`plan_native.py` now produces a local JSON plan from the existing preparation,
+fixture, source checkout, installed MSVC/SDK and reviewed provider directory.
+It writes only the optional create-only `--output` plan, or prints to stdout.
+It never creates the run directory, loads a native provider or acquires a lease.
+The local machine plan has 54 SHA-256/length bindings, including this runner,
+its core, all 21 production inputs, all seven prepared files, the two fixture
+files and the relevant providers/compiler anchors. System DLLs and the entire
+installed SDK are **not** claimed to be a hermetic closure.
+
+The runner reuses `IW7.AnimationProbe.NativeJob` from the existing witnessed
+13,312-byte DLL, SHA-256
+`5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8`.
+Its source is pinned to
+`ddefa72ff2b98286cd585d1178c13e67dcd646bbcf39d51365660901366c5ca8`.
+No new C# job or identity implementation is introduced. The current shared
+resource scheduler and its existing memory provider are pinned too; during a
+future Run the scheduler can load its existing `ResourceMemory.cs` as usual.
+That does not happen in Plan mode or in the light tests.
+
+Review-only invocation (also the default without `-Run`):
+
+```powershell
+pwsh -NoProfile -File tools-source/asset-bridge/h1-fixture/Run-H1Native.ps1 `
+  -PlanPath <absolute-local-plan.json> -PlanSHA256 <reviewed-sha256> -Stage Compile
+```
+
+After a separate coordinator GO, `-Run -Stage Compile` reserves 4/6 GiB for
+one compiler/linker group and records closure before releasing that lease.
+`-Run -Stage Probe` is a **separate fresh-host invocation**: it requires the
+successful compile receipt bound to the same reviewed plan, checks/holds the
+compiled executable hash, and requests a new 0.25/0.25 GiB Analysis lease.
+There is no automatic transition, admission downgrade or direct unsupervised
+fallback. The compiled executable and every reviewed file stay open with
+write/delete sharing denied while relevant work runs.
+
+Both stages use the original process/job handles, a BelowNormal process tree,
+create-only logs, the original PID/creation/image tuple for scheduler
+registration, a fresh monotonic deadline after telemetry, a combined 32 MiB
+output cap (including temporary compiler outputs/logs/receipts), a 1 MiB final
+metadata reserve and the scheduler's 85% commit high water. These are admission
+estimates and monitored limits, not hard kernel memory/output quotas or measured
+peaks. A synchronous filesystem/CIM operation may delay a deadline observation;
+late completion is rejected. Cleanup allows five additional seconds and proves
+original-root exit plus zero active job descendants before lease release.
+Unknown ownership/closure or failed release retains the reservation and owner
+context; no PID/name-based kill or lease deletion is used. The supervisor's
+existing kill-on-close is a fallback, never substituted for observed closure.
+
+Each stage publishes its receipt only after cleanup and a final output-size
+check. Compile success is not probe success. A probe receipt may establish only
+the extracted production-method observation above; it must keep full CLI,
+engine token, complete material/LOD linking, FF/render and retail claims false.
+
+`Test-H1Native.ps1` exercises 22 assertions with mocked job/scheduler providers:
+normal and early closure, unavailable identity, deadline after slow telemetry,
+partial Start failure, throwing owner factory, nonzero exit, failed closure,
+failed release, guarded file mutation and receipt-size failure. `Test-H1Plan.ps1`
+adds nine assertions against the local plan, including immutable-plan, core,
+provider and same-length source drift, lowered budgets and probe-before-compile
+refusals. These are **source/lifecycle checks, not a new real Job witness**.
+The H1 compiler and probe have still never run. The parent must review the final
+plan hash and grant the relevant native stage before either can execute.
