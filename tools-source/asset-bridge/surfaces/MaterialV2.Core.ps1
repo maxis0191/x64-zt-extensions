@@ -21,11 +21,12 @@ function Assert-MaterialV2CopyIdentity($Entry,[string]$TargetId) {
        !$Entry.SourceId -or !$TargetId -or $TargetId -ceq $Entry.SourceId){throw 'Independent owned sentinel copy identity required before attribute change.'}
 }
 function Get-MaterialV2UtcNow {[datetime]::UtcNow}
+function Get-MaterialV2MonotonicMs {[Environment]::TickCount64}
 function Start-MaterialV2OwnedPhase($Owner,[string]$LeaseToken) {
     # Caller already holds the lease/job and verifies original-handle identity.
     # CIM cannot reliably identify a never-resumed process on this host.
     $Owner.Resume()
-    $started=Get-MaterialV2UtcNow;$attached=$false
+    $startedMs=Get-MaterialV2MonotonicMs;$started=Get-MaterialV2UtcNow;$attached=$false
     while(!$Owner.Exited -and !$attached){
         try{Add-IW7ResourceProcess -Token $LeaseToken -ProcessId $Owner.PID;$attached=$true}
         catch{
@@ -37,7 +38,71 @@ function Start-MaterialV2OwnedPhase($Owner,[string]$LeaseToken) {
     }
     # A short root can finish before CIM sees it. Caller still requires its exact
     # handle exit code and zero active job members before accepting phase output.
-    [pscustomobject]@{StartedUtc=$started;SchedulerAttached=$attached}
+    [pscustomobject]@{StartedUtc=$started;StartedMonotonicMs=$startedMs;SchedulerAttached=$attached}
+}
+function Get-MaterialV2JobSnapshot($Owner,[long]$StartedMs) {
+    # These original-handle reads are sequential, not an atomic Windows snapshot.
+    # Read each property once per poll; a later poll can confirm accounting drain.
+    $exited=$Owner.Exited;$active=$Owner.Active
+    $exitCode=if($exited){$Owner.ExitCode}else{$null}
+    [pscustomobject]@{Utc=(Get-MaterialV2UtcNow).ToString('o');ElapsedMs=((Get-MaterialV2MonotonicMs)-$StartedMs);
+        RootExited=$exited;ActiveProcesses=$active;RootExitCode=$exitCode}
+}
+function Update-MaterialV2JobEvidence($Evidence,$Snapshot) {
+    $previous=$Evidence.LastSnapshot
+    $changed=$null -eq $previous -or $previous.RootExited -ne $Snapshot.RootExited -or
+        $previous.ActiveProcesses -ne $Snapshot.ActiveProcesses -or $previous.RootExitCode -ne $Snapshot.RootExitCode
+    $Evidence.PollCount++;$Evidence.LastSnapshot=$Snapshot
+    if($changed){$Evidence.Transitions+=,$Snapshot}
+    $changed
+}
+function Wait-MaterialV2OwnedPhase($Owner,$Identity,[long]$StartedMs,[int]$TimeoutSeconds,[scriptblock]$OnPoll) {
+    if($TimeoutSeconds -notin 30,240){throw 'Known phase timeout required.'}
+    $evidence=[ordered]@{PollCount=0;DrainLimitMs=2000;PhaseLimitMs=($TimeoutSeconds+5)*1000;
+        RootExitObservedMs=$null;DrainElapsedMs=0;DecisionElapsedMs=0;LastSnapshot=$null;Transitions=@();Outcome='Waiting'}
+    $Identity.Supervision=$evidence
+    try {
+        while($true){
+            $sample=Get-MaterialV2JobSnapshot $Owner $StartedMs
+            $changed=Update-MaterialV2JobEvidence $evidence $sample
+            if($sample.RootExited -and $null -eq $evidence.RootExitObservedMs){$evidence.RootExitObservedMs=$sample.ElapsedMs}
+            if($null -ne $evidence.RootExitObservedMs){$evidence.DrainElapsedMs=$sample.ElapsedMs-$evidence.RootExitObservedMs}
+            & $OnPoll $sample $changed | Out-Null
+            # Output/pressure checks consume time too. A delayed poll or callback
+            # must not accept a zero count first observed after the drain bound.
+            $evidence.DecisionElapsedMs=(Get-MaterialV2MonotonicMs)-$StartedMs
+            if($null -ne $evidence.RootExitObservedMs){$evidence.DrainElapsedMs=$evidence.DecisionElapsedMs-$evidence.RootExitObservedMs}
+            if($evidence.DecisionElapsedMs -ge $evidence.PhaseLimitMs){throw 'Phase deadline expired; close original job.'}
+            if($sample.RootExited -and $evidence.DrainElapsedMs -gt $evidence.DrainLimitMs){
+                throw 'Job drain deadline expired after root exit; close original job.'
+            }
+            if($sample.RootExited -and $sample.ActiveProcesses -eq 0){
+                $Identity.ExitCode=$sample.RootExitCode;$Identity.JobActiveAtClose=$sample.ActiveProcesses
+                $Identity.JobRootExitedAtClose=$sample.RootExited;$evidence.Outcome='Closed'
+                return
+            }
+            if($sample.RootExited -and $evidence.DrainElapsedMs -ge $evidence.DrainLimitMs){
+                throw 'Job drain deadline expired after root exit; close original job.'
+            }
+            Start-Sleep -Milliseconds 100
+        }
+    } catch {$evidence.Outcome='Failed';$evidence.Failure=$_.Exception.Message;throw}
+}
+function Stop-MaterialV2OwnedPhase($Owner,$Evidence) {
+    $Evidence.StopRequested=$true;$Evidence.PollCount=0;$Evidence.Transitions=@();$Evidence.LastSnapshot=$null
+    $Evidence.LimitMs=15000;$Evidence.Closed=$false;$Evidence.Error=$null
+    try {
+        $startedMs=Get-MaterialV2MonotonicMs
+        $Owner.Stop()
+        while($true){
+            $sample=Get-MaterialV2JobSnapshot $Owner $startedMs
+            $null=Update-MaterialV2JobEvidence $Evidence $sample
+            if($sample.ElapsedMs -gt $Evidence.LimitMs){throw 'Original job closure was not confirmed before cleanup deadline.'}
+            if($sample.RootExited -and $sample.ActiveProcesses -eq 0){$Evidence.Closed=$true;return $true}
+            if($sample.ElapsedMs -ge $Evidence.LimitMs){throw 'Original job closure was not confirmed before cleanup deadline.'}
+            Start-Sleep -Milliseconds 100
+        }
+    } catch {$Evidence.Error=$_.Exception.Message;return $false}
 }
 function Set-MaterialV2SourceIdentity($Entry,[string]$Observed) {
     # ModelFF's existing SourceId field may already be supplied by the stock
@@ -68,5 +133,8 @@ function Assert-MaterialV2PhaseResult($Result,[string]$Phase,[string]$Hash,$Iden
     if($Result.schema -cne 'iw7.material-v2-phase-result/1' -or $Result.phase -cne $Phase -or
        $Result.executable_sha256 -ine $Hash -or $Result.failure -or
        ($Result.exit_code -isnot [int] -and $Result.exit_code -isnot [long]) -or $Result.exit_code -ne 0 -or
+       ($Identity.ExitCode -isnot [uint32] -and $Identity.ExitCode -isnot [int] -and $Identity.ExitCode -isnot [long]) -or
+       ($Identity.JobActiveAtClose -isnot [uint32] -and $Identity.JobActiveAtClose -isnot [int] -and $Identity.JobActiveAtClose -isnot [long]) -or
+       $Identity.JobRootExitedAtClose -isnot [bool] -or !$Identity.JobRootExitedAtClose -or
        $Identity.ExitCode -ne 0 -or $Identity.JobActiveAtClose -ne 0){throw 'Closed successful exact native phase required.'}
 }

@@ -87,7 +87,7 @@ $state=[ordered]@{Schema='iw7.material-v2-build/1';Work=$work;Inputs=$inputs;Pla
     Restored=$false;StockPreserved=$false;StockContentAndIdentityVerified=$false;RestorationStatus='Pending';CleanupError=$null;RetainedLeaseToken=$null;
     WriterLeaseReleased=$false;GeometryRoundtripVerified=$false;InventoryVerified=$false;DiffuseBytesVerified=$false;
     RecipientReferenceResolved=$false;NativeCBTSemanticsVerified=$false;PixelsVerified=$false;Ready=$false;
-    MaxObservedBytes=0L;FinalObservedBytes=$null}
+    MaxObservedBytes=0L;FinalObservedBytes=$null;JobCleanup=$null}
 $statePath=Join-Path $RunRoot 'state.local.json'
 $lease=$null;$owner=$null;$closed=$true;$saved=$false;$sourceIntact=$true
 function Save-MaterialState {if(Test-Path -LiteralPath $RunRoot){$state|ConvertTo-Json -Depth 25|Set-Content -LiteralPath $statePath -Encoding utf8}}
@@ -111,15 +111,14 @@ function Invoke-MaterialPhase([string]$Phase,[string]$Exe,[string]$Hash,$Argumen
     $identity.SpecSHA256=$specHash;$identity.NativeExecutableSHA256=$Hash
     $state.Phases+=,$identity;Save-MaterialState
     $resumed=Start-MaterialV2OwnedPhase $owner $lease.Token
-    $start=$resumed.StartedUtc;$identity.SchedulerAttached=$resumed.SchedulerAttached;Save-MaterialState
-    while(!$owner.Exited -or $owner.Active -ne 0){
-        if(($owner.Exited -and $owner.Active -ne 0) -or [datetime]::UtcNow -gt $start.AddSeconds($spec.timeout+5)){throw 'Phase timeout or orphan descendants; close original job.'}
+    $identity.StartedUtc=$resumed.StartedUtc;$identity.SchedulerAttached=$resumed.SchedulerAttached;Save-MaterialState
+    Wait-MaterialV2OwnedPhase $owner $identity $resumed.StartedMonotonicMs $spec.timeout {
+        param($snapshot,$changed)
+        if($changed){Save-MaterialState}
         if(Test-Path -LiteralPath (Join-Path $RunRoot 'stop.request')){throw 'Coordinator requested owned stop.'}
         Measure-MaterialOutput
         $memory=Get-IW7ResourceSnapshot;if($memory.Committed -gt $memory.CommitLimit*0.85){throw 'Commit pressure exceeded85 percent.'}
-        Start-Sleep -Milliseconds 100
     }
-    $identity.ExitCode=$owner.ExitCode;$identity.JobActiveAtClose=$owner.Active
     $script:closed=$true;$owner.Dispose();$script:owner=$null
     Save-MaterialState;Measure-MaterialOutput
     Assert-MaterialV2PhaseResult (Read-BeaconJson (Join-Path $logs 'phase.json')) $Phase $Hash $identity
@@ -206,7 +205,8 @@ try {
 } catch {$state.Failure=$_.Exception.Message;$state.Status='Failed';throw}
 finally {
     if($owner){
-        try{$owner.Stop();$until=[datetime]::UtcNow.AddSeconds(15);while(($owner.Active -ne 0 -or !$owner.Exited) -and [datetime]::UtcNow -lt $until){Start-Sleep -Milliseconds 100};$closed=($owner.Active -eq 0 -and $owner.Exited)}catch{$closed=$false}
+        $state.JobCleanup=[ordered]@{}
+        $closed=Stop-MaterialV2OwnedPhase $owner $state.JobCleanup
         $owner.Dispose()
     }
     foreach($entry in $hashInputs){try{Assert-BeaconHash $entry.Path $entry.SHA256}catch{$sourceIntact=$false;$state.CleanupError=$_.Exception.Message}}

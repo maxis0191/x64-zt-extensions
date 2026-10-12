@@ -474,6 +474,67 @@ Mocked tests cover delayed WMI, both short-phase timings, timeout, unrelated
 scheduler refusal and Resume failure. No Resource-Scheduler or provider API was
 changed, and these mocks do not constitute a new native lifecycle validation.
 
+## Material-v2 attempt A and bounded job drain correction
+
+The centrally authorized single attempt on2026-10-12 reached writer compilation
+under the4/6GiB lease, then failed supervision after about4.6seconds. The native
+compiler receipt reports exit0 and no failure; the original Python-root exit code
+and active-job count at the failure were not recorded. Preserve both facts:
+successful native compilation is not a successful supervised phase.
+
+The old loop immediately threw when its separate handle/accounting reads saw
+`RootExited && Active != 0`. Its message also mentioned a timeout, but the run
+did not reach the240-second compilation deadline. Without the missing snapshots,
+attempt A cannot distinguish a brief accounting transition from a descendant
+that remained alive. Do not describe either explanation as measured fact.
+
+The untouched local attempt-A state has SHA256
+`664E969A554ABFF84026D0CEA214606A93919A3D625525D03D0287EDC46FC8B0`.
+The compile receipt SHA256 is
+`5EC0178FDE731A6B6A887E5D7CF37B12D5CD8ACE75236D23A15634DAA035F5C2`.
+Compilation produced a125952-byte writer, SHA256
+`4C7D67DEE092E0CF4553CCBA8B84DA79A6787973ED9D775653E6575BF7451864`;
+it was never executed. No writer assets, FF staging directory or FF were created.
+No8/11GiB admission or stock identity/content hashing was reached.
+
+Cleanup recorded `JobClosureVerified=true`, `SourceHashesUnchanged=true` and no
+retained lease. A separate post-run observation confirmed an empty scheduler
+registry, absent exact phase process identities,52/52 unchanged source hashes,
+and the existing Main process still owning UDP27016. The historical state retains
+`Restored=false`, `StockPreserved=false`, `RestorationStatus=Pending`: restoration
+was never entered because stock staging never started. The separate closure
+observation states this explicitly; it does not rewrite these flags or pretend
+stock content was measured. Local runtime receipts remain ignored, with no
+machine paths, process identifiers or game assets committed.
+
+The corrected local supervisor samples original-handle `Exited`, `Active` and,
+only after exit, `ExitCode` once per poll. These reads remain sequential, not
+atomic. It allows at most2000ms from the first observed root exit for active-job
+accounting to reach zero; the original phase deadline30/240+5seconds also applies
+and is never extended. Deadlines use a monotonic clock. Existing stop requests,
+output limits and commit-pressure checks run during draining as well.
+
+New evidence records poll count, state/count transitions, last snapshot, observed
+root-exit time, drain duration and the precise failure. Successful phase acceptance
+still requires the exact root to have exited0, zero active job members and a valid
+native receipt with exit0. Null/string closure fields are refused. On failure,
+the same original job receives Stop, and a separately recorded cleanup poll must
+confirm root exit and zero members within15seconds; otherwise closure stays false
+and the existing reservation-retention rule applies. Shared BuildJob, scheduler
+and stock helpers are unchanged.
+
+Pure tests cover running -> root-exited/Active1 -> Active0, persistent Active1
+reaching the drain deadline followed by exact-owner Stop/confirmed0, a valid
+native receipt unable to bypass an active job, nonzero root exit, empty accounting
+before root exit, the unchanged global deadline, a late drain, slow guard callback,
+guard failure and
+unconfirmed/failed cleanup. The54 Python tests and both PowerShell source parses
+also pass. A fresh read-only Plan still binds52 source inputs and72 stock entries,
+reports77 copied bytes and pending stock rechecks, leaves its run root absent and
+does not load the native job class. These are source/mocked checks only. There is no implicit attempt B;
+a new native run requires a fresh central GO and a newly hash-bound plan after
+integration. Rendered material and recipient-reference acceptance remain pending.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual

@@ -17,15 +17,18 @@ if('/IC:\ZT\src\zonetool' -cnotin $arguments -or '/FeC:\writer\material-v2-write
    'C:\prepared\writer-source\writer.cpp' -cnotin $arguments -or '/MP' -in $arguments){throw 'Fixed compiler/output/include contract differs.'}
 Refuse {Get-MaterialV2CompilerArguments 'C:\VC' 'C:\SDK' '../10' 'C:\ZT' 'C:\prepared' 'C:\writer'}
 $valid=[pscustomobject]@{schema='iw7.material-v2-phase-result/1';phase='read';executable_sha256=('a'*64);failure=$null;exit_code=0}
-$identity=[pscustomobject]@{ExitCode=0;JobActiveAtClose=0}
+$identity=[pscustomobject]@{ExitCode=0;JobActiveAtClose=0;JobRootExitedAtClose=$true}
 Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) $identity
 foreach($pair in @(@('schema','iw7.beacon-tool-phase/1'),@('phase','write'),@('failure','timeout'),@('exit_code',1),@('exit_code',$null),@('exit_code','0'))){
     $bad=$valid|ConvertTo-Json|ConvertFrom-Json;$bad.($pair[0])=$pair[1]
     Refuse {Assert-MaterialV2PhaseResult $bad 'read' ('a'*64) $identity}
 }
 Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('b'*64) $identity}
-Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) ([pscustomobject]@{ExitCode=1;JobActiveAtClose=0})}
-Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) ([pscustomobject]@{ExitCode=0;JobActiveAtClose=1})}
+foreach($pair in @(@('ExitCode',1),@('ExitCode',$null),@('ExitCode','0'),@('JobActiveAtClose',1),
+    @('JobActiveAtClose',$null),@('JobActiveAtClose','0'),@('JobRootExitedAtClose',$false),@('JobRootExitedAtClose',$null))){
+    $bad=$identity.PSObject.Copy();$bad.($pair[0])=$pair[1]
+    Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) $bad}
+}
 # SourceId semantics are the existing ModelFF contract, not a new stock schema.
 $entry=[pscustomobject]@{Relative='one.ff'}
 Set-MaterialV2SourceIdentity $entry 'volume:file'
@@ -104,4 +107,93 @@ foreach($mode in @('timeout','other-error','resume-failure')){
     Refuse {Start-MaterialV2OwnedPhase $owner 'mock-token'}
     if($script:identityFixture.Calls -gt 1 -or $script:identityFixture.Sleeps -ne 0){throw 'Unrelated error or expired retry was swallowed.'}
 }
-'PASS: two parses, native4/6 and FF8/11 budgets, 24 refusals, mode/identity/copy gates and mocked resumed-process WMI/short-phase cases; no Add-Type, lease or native process.'
+# Mock the exact owner's handle getters, stop operation and monotonic clock.
+# Root exit and job accounting are sampled once each, including during cleanup.
+function New-DrainFixture($Samples,[string]$Cleanup='closed') {
+    if($Samples[0] -isnot [array]){$Samples=,@($Samples)}
+    $script:drainFixture=[pscustomobject]@{Samples=$Samples;Index=0;Tick=10000L;Polls=0;Sleeps=0;Stops=0;
+        RootReads=0;ActiveReads=0;ExitReads=0;Stopped=$false;Cleanup=$Cleanup}
+    $owner=[pscustomobject]@{}
+    $owner|Add-Member ScriptProperty Exited {
+        $script:drainFixture.RootReads++
+        if($script:drainFixture.Stopped){return $true}
+        $script:drainFixture.Samples[$script:drainFixture.Index][0]
+    }
+    $owner|Add-Member ScriptProperty Active {
+        $script:drainFixture.ActiveReads++
+        if($script:drainFixture.Stopped){return $(if($script:drainFixture.Cleanup -ceq 'stuck'){1}else{0})}
+        $script:drainFixture.Samples[$script:drainFixture.Index][1]
+    }
+    $owner|Add-Member ScriptProperty ExitCode {
+        $script:drainFixture.ExitReads++
+        if($script:drainFixture.Stopped){return 122}
+        $script:drainFixture.Samples[$script:drainFixture.Index][2]
+    }
+    $owner|Add-Member ScriptMethod Stop {
+        $script:drainFixture.Stops++
+        if($script:drainFixture.Cleanup -ceq 'stop-error'){throw 'Mock original job stop failure'}
+        $script:drainFixture.Stopped=$true
+    }
+    $owner
+}
+function Get-MaterialV2MonotonicMs {$script:drainFixture.Tick}
+function Get-MaterialV2UtcNow {[datetime]::new(2026,10,12,4,0,0,[DateTimeKind]::Utc).AddMilliseconds($script:drainFixture.Tick)}
+function Start-Sleep {param($Milliseconds)
+    $script:drainFixture.Tick+=$Milliseconds;$script:drainFixture.Sleeps++
+    $script:drainFixture.Index=[math]::Min($script:drainFixture.Index+1,$script:drainFixture.Samples.Count-1)
+}
+$onPoll={param($snapshot,$changed) $script:drainFixture.Polls++}
+$owner=New-DrainFixture @(@($false,2,0),@($true,1,0),@($true,0,0))
+$identity=[ordered]@{}
+Wait-MaterialV2OwnedPhase $owner $identity 10000 30 $onPoll
+Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) $identity
+if($identity.Supervision.PollCount -ne 3 -or $identity.Supervision.Transitions.Count -ne 3 -or
+   $identity.Supervision.RootExitObservedMs -ne 100 -or $identity.Supervision.DrainElapsedMs -ne 100 -or
+   $identity.Supervision.LastSnapshot.ActiveProcesses -ne 0 -or $script:drainFixture.RootReads -ne 3 -or
+   $script:drainFixture.ActiveReads -ne 3 -or $script:drainFixture.ExitReads -ne 2 -or
+   $script:drainFixture.Polls -ne 3 -or $script:drainFixture.Stops -ne 0){throw 'Observed transition did not drain with one handle read per poll.'}
+# A valid compiler receipt cannot authorize a still-active job. Deadline failure
+# passes through the same original-owner Stop/closure helper used by the adapter.
+$owner=New-DrainFixture @(@($true,1,0));$identity=[ordered]@{};$cleanup=[ordered]@{};$caught=$false
+try{Wait-MaterialV2OwnedPhase $owner $identity 10000 30 $onPoll}catch{
+    if($_.Exception.Message -notlike 'Job drain deadline*'){throw};$caught=$true
+}finally{$closed=Stop-MaterialV2OwnedPhase $owner $cleanup}
+if(!$caught -or !$closed -or $script:drainFixture.Stops -ne 1 -or $identity.Supervision.DrainElapsedMs -ne 2000 -or
+   $identity.Supervision.LastSnapshot.ActiveProcesses -ne 1 -or $cleanup.LastSnapshot.ActiveProcesses -ne 0 -or
+   !$cleanup.LastSnapshot.RootExited -or $cleanup.LastSnapshot.RootExitCode -ne 122){throw 'Persistent descendants were not stopped and closure confirmed.'}
+Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) $identity}
+$owner=New-DrainFixture @(@($false,0,0),@($true,0,0));$identity=[ordered]@{}
+Wait-MaterialV2OwnedPhase $owner $identity 10000 30 $onPoll
+if($script:drainFixture.Polls -ne 2){throw 'Zero accounting without root exit was accepted.'}
+foreach($exitCode in 0,7){
+    $owner=New-DrainFixture @(@($true,0,$exitCode));$identity=[ordered]@{}
+    Wait-MaterialV2OwnedPhase $owner $identity 10000 30 $onPoll
+    if($exitCode -eq 0){Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) $identity}
+    else{Refuse {Assert-MaterialV2PhaseResult $valid 'read' ('a'*64) $identity}}
+}
+$owner=New-DrainFixture @(@($false,1,0));$identity=[ordered]@{}
+Refuse {Wait-MaterialV2OwnedPhase $owner $identity 10000 30 $onPoll}
+if($identity.Supervision.LastSnapshot.ElapsedMs -ne 35000 -or $identity.Supervision.Failure -notlike 'Phase deadline*'){
+    throw 'Drain logic extended the original phase deadline.'
+}
+# A late root exit still has only the remainder of the original phase deadline.
+$owner=New-DrainFixture @(@($true,1,0));$identity=[ordered]@{};$script:drainFixture.Tick=44900
+Refuse {Wait-MaterialV2OwnedPhase $owner $identity 10000 30 $onPoll}
+if($identity.Supervision.LastSnapshot.ElapsedMs -ne 35000 -or $identity.Supervision.DrainElapsedMs -ne 100){throw 'Late drain extended phase bound.'}
+$owner=New-DrainFixture @(@($true,0,0));$identity=[ordered]@{}
+Refuse {Wait-MaterialV2OwnedPhase $owner $identity 10000 30 {throw 'Mock guard stop'}}
+if($identity.Supervision.Failure -cne 'Mock guard stop'){throw 'Closure bypassed stop/output/memory callback.'}
+$owner=New-DrainFixture @(@($true,1,0),@($true,0,0));$identity=[ordered]@{}
+Refuse {Wait-MaterialV2OwnedPhase $owner $identity 10000 30 {
+    param($snapshot,$changed)
+    if($snapshot.ActiveProcesses -eq 0){$script:drainFixture.Tick+=2500}
+}}
+if($identity.Supervision.LastSnapshot.ActiveProcesses -ne 0 -or $identity.Supervision.DrainElapsedMs -ne 2600 -or
+   $identity.Supervision.Failure -notlike 'Job drain deadline*'){throw 'Slow callback let a late zero count bypass drain bound.'}
+foreach($mode in 'stuck','stop-error'){
+    $owner=New-DrainFixture @(@($true,1,0)) $mode;$cleanup=[ordered]@{}
+    if((Stop-MaterialV2OwnedPhase $owner $cleanup) -or $cleanup.Closed -or !$cleanup.Error -or
+       $script:drainFixture.Stops -ne 1){throw 'Unconfirmed original job closure was accepted.'}
+    if($mode -ceq 'stuck' -and $cleanup.LastSnapshot.ElapsedMs -ne 15000){throw 'Cleanup deadline changed.'}
+}
+'PASS: two parses; unchanged4/6 and8/11 budgets; source/receipt refusals; mocked WMI, bounded drain, exact owner stop and cleanup failure cases. No Add-Type, lease or native process.'
