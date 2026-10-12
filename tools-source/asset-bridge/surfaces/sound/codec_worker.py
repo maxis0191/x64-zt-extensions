@@ -15,6 +15,8 @@ PCM_SHA = "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9"
 WAV_SHA = "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4"
 FLAC_SHA = "9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb"
 DUMP_F_SHA = "a4e9276568dfeaf42d39deefe243b1efc2b9095b2f558bcb3512b98c417154d9"
+# Qualified DumpOnly A: observed and revalidated under its original lease.
+DUMP_ONLY_C_SHA = "1f20e4e3d2ea9160c833ba2f188950908573c9bf677e63e10edf639efd40c725"
 CODEC_SHA = "ad8f211bc894755e0061c55ab280ae00e8d3d4f15a8cc4372b24cfa247b5942e"
 DRAIN_SHA = "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d"
 
@@ -34,6 +36,11 @@ def input_profile(plan):
     profiles = {"OriginalSource": (FLAC_SHA, "ThirdPartyPCMVerified"),
                 "NativeDumpF": (DUMP_F_SHA, "DumpDecodedByFFmpeg")}
     name = plan.get("InputProfile")
+    if name == "NativeDumpOnlyC":
+        check(type(DUMP_ONLY_C_SHA) is str and len(DUMP_ONLY_C_SHA) == 64
+              and all(c in "0123456789abcdef" for c in DUMP_ONLY_C_SHA),
+              "qualified DumpOnly receipt identity differs")
+        profiles[name] = (DUMP_ONLY_C_SHA, "DumpDecodedByFFmpeg")
     check(type(name) is str and name in profiles, "explicit closed codec profile required")
     return name, *profiles[name]
 

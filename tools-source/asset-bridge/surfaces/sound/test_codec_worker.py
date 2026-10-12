@@ -82,17 +82,18 @@ class CodecTests(unittest.TestCase):
             self.assertFalse(result["pcm_verified"])
 
     def test_native_dump_profile_has_separate_status_without_conformance_claim(self):
-        with tempfile.TemporaryDirectory() as root:
-            result, launch, _ = self.run_mock(root, profile="NativeDumpF")
-            self.assertEqual(result["status"], "DumpDecodedByFFmpeg")
-            self.assertEqual(result["input_flac_sha256"], worker.DUMP_F_SHA)
-            self.assertEqual(result["input_profile"], "NativeDumpF")
-            self.assertTrue(result["pcm_verified"])
-            self.assertFalse(result["standalone_flac_conformance_verified"])
-            self.assertFalse(result["playback_verified"])
-            args = launch.call_args.args[0]
-            self.assertNotIn("-ar", args)
-            self.assertNotIn("-ac", args)
+        for profile, expected in (("NativeDumpF", worker.DUMP_F_SHA), ("NativeDumpOnlyC", worker.DUMP_ONLY_C_SHA)):
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as root:
+                result, launch, _ = self.run_mock(root, profile=profile)
+                self.assertEqual(result["status"], "DumpDecodedByFFmpeg")
+                self.assertEqual(result["input_flac_sha256"], expected)
+                self.assertEqual(result["input_profile"], profile)
+                self.assertTrue(result["pcm_verified"])
+                self.assertFalse(result["standalone_flac_conformance_verified"])
+                self.assertFalse(result["playback_verified"])
+                args = launch.call_args.args[0]
+                self.assertNotIn("-ar", args)
+                self.assertNotIn("-ac", args)
 
     def test_closed_profiles_reject_unknown_or_missing_before_any_payload_read(self):
         for value in (None, "nativedumpf", "Other", True, {}, 1):
@@ -106,7 +107,9 @@ class CodecTests(unittest.TestCase):
                     launch.assert_not_called()
 
     def test_profiles_cannot_exchange_input_hashes(self):
-        for name, wrong_sha in (("OriginalSource", worker.DUMP_F_SHA), ("NativeDumpF", worker.FLAC_SHA)):
+        for name, wrong_sha in (("OriginalSource", worker.DUMP_F_SHA), ("NativeDumpF", worker.FLAC_SHA),
+                                ("NativeDumpOnlyC", worker.FLAC_SHA), ("NativeDumpOnlyC", worker.DUMP_F_SHA),
+                                ("NativeDumpF", worker.DUMP_ONLY_C_SHA)):
             with self.subTest(profile=name), tempfile.TemporaryDirectory() as root:
                 plan, hashes, _ = self.fixture(root, name)
                 hashes[plan["InputFLAC"]] = wrong_sha
