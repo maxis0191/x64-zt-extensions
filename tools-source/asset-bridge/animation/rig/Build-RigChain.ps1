@@ -96,7 +96,10 @@ function Invoke-RigPhase([string]$Name,[string]$Hash) {
     if($group -ceq 'native'){Assert-RigToolchainInventory $toolchain $recipe.freeze_roots}
     Assert-RigBaselines $baselines
     $seconds=switch -Exact ($Name){compile {120} build {240} verify {240} dump {240} default {30}}
-    $logs=Join-Path $runRoot $Name;$specPath=Join-Path $runRoot ($Name+'.spec.json')
+    # Compiler artifacts live in build/. Every phase, including FF "build",
+    # gets a fresh directory below logs/; the namespaces must never alias.
+    $logs=Join-Path $runRoot ('logs/'+$Name);$specPath=Join-Path $runRoot ($Name+'.spec.json')
+    [IO.Directory]::CreateDirectory((Split-Path $logs))|Out-Null
     $spec=[ordered]@{schema='iw7.rig-chain-phase-spec/1';phase=$Name;exe=$phase.command[0];sha256=$Hash;
         arguments=@($phase.command|Select-Object -Skip 1);cwd=$phase.working_directory;logs=$logs;timeout=$seconds;environment=$environment}
     Write-RigNewJson $spec $specPath
@@ -128,13 +131,13 @@ function Invoke-RigPhase([string]$Name,[string]$Hash) {
         param($sample)
         & $observe
         if($Name -ceq 'compile' -and $sample.RootExited -and $sample.ActiveProcesses -gt 0){
-            $receipt=Read-BeaconJson (Join-Path $logs 'phase.json')
+            $receipt=Read-RigPhaseResult $logs $specPath $specHash $identity $Name -RootExitCode $sample.RootExitCode
             $null=Complete-RigCompilerTelemetry $owner $sample $compilerEvidence.LastObservation $receipt $compilerEvidence $policy
         }
     }
     $script:closed=$true;$owner.Dispose();$script:owner=$null
     Save-RigState;Assert-RigRunningBudget
-    $receipt=Read-BeaconJson (Join-Path $logs 'phase.json')
+    $receipt=Read-RigPhaseResult $logs $specPath $specHash $identity $Name
     Assert-RigPhaseResult $receipt $Name $Hash $specHash $identity
     $identity['ReceiptSHA256']=(Get-FileHash -LiteralPath (Join-Path $logs 'phase.json')).Hash
     Save-RigState

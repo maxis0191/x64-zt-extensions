@@ -1,5 +1,6 @@
 """Literal environment/command and failure tests: Popen/job calls are mocked."""
 import copy
+import contextlib
 import hashlib
 import io
 import json
@@ -9,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 
-from rig_phase import PHASES, parse, run, validate, load_drain
+from rig_phase import PHASES, parse, run, validate, load_drain, main
 
 
 class PhaseTests(unittest.TestCase):
@@ -144,6 +145,41 @@ class PhaseTests(unittest.TestCase):
         source.write_text('raise RuntimeError("must never import")')
         with self.assertRaisesRegex(ValueError, 'pinned shared drain'):
             load_drain(source)
+
+    def test_bootstrap_collision_retains_original_error_without_phase_receipt(self):
+        (self.root / 'logs').mkdir()
+        spec_file = self.root / 'build.spec.json'
+        raw = json.dumps(self.spec).encode()
+        spec_file.write_bytes(raw)
+        spec_hash = hashlib.sha256(raw).hexdigest()
+        def mocked_run(spec, digest, drain):
+            return run(spec, digest, drain, ensure_job=self.job, popen=self.popen)
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            code = main(['--spec', str(spec_file), '--spec-sha256', spec_hash, '--sdk-phase', str(self.root / 'unused.py')],
+                        runner=mocked_run, drain_loader=Mock(return_value=self.drain))
+        self.assertEqual(code, 2)
+        self.assertFalse((self.root / 'logs/phase.json').exists())
+        report = json.loads(spec_file.with_suffix('.launch-error.json').read_text())
+        self.assertEqual(report['error'], 'fresh phase log directory required')
+        self.assertEqual(report['spec_sha256'], spec_hash)
+        self.assertEqual(report['root_pid'], os.getpid())
+        self.assertIn(report['error'], stderr.getvalue())
+        self.popen.assert_not_called()
+
+    def test_launch_error_never_overwrites_existing_evidence(self):
+        spec_file = self.root / 'build.spec.json'
+        raw = json.dumps(self.spec).encode()
+        spec_file.write_bytes(raw)
+        error_file = spec_file.with_suffix('.launch-error.json')
+        error_file.write_text('original evidence')
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            code = main(['--spec', str(spec_file), '--spec-sha256', hashlib.sha256(raw).hexdigest(),
+                         '--sdk-phase', str(self.root / 'unused.py')],
+                        runner=Mock(side_effect=OSError('initial disk refusal')), drain_loader=Mock())
+        self.assertEqual(code, 2)
+        self.assertEqual(error_file.read_text(), 'original evidence')
+        self.assertIn('initial disk refusal', stderr.getvalue())
+        self.assertIn('Could not retain launch error', stderr.getvalue())
 
 
 if __name__ == '__main__':

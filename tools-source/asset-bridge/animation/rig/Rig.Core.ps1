@@ -56,6 +56,25 @@ function Assert-RigPhaseResult($Result,[string]$Phase,[string]$Hash,[string]$Spe
        $Identity.JobRootExitedAtClose -isnot [bool] -or !$Identity.JobRootExitedAtClose -or
        $Identity.ExitCode -ne 0 -or $Identity.JobActiveAtClose -ne 0){throw 'Exact rig phase receipt and original exit0/Active0 required.'}
 }
+function Read-RigPhaseResult([string]$Logs,[string]$SpecPath,[string]$SpecHash,$Identity,[string]$Phase,$RootExitCode=$null) {
+    $receipt=Join-Path $Logs 'phase.json'
+    if(Test-Path -LiteralPath $receipt){return Read-BeaconJson $receipt}
+    $exitCode=if($null -eq $RootExitCode){$Identity.ExitCode}else{$RootExitCode}
+    $prefix="Rig phase $Phase exited $exitCode without phase.json."
+    $errorPath=[IO.Path]::ChangeExtension($SpecPath,'launch-error.json')
+    if(Test-Path -LiteralPath $errorPath){
+        $failure=Read-BeaconJson $errorPath 65536
+        if($failure.schema -cne 'iw7.rig-chain-launch-error/1' -or $failure.phase -cne $Phase -or
+           $failure.spec_sha256 -ine $SpecHash -or
+           ($failure.root_pid -isnot [int] -and $failure.root_pid -isnot [long]) -or $failure.root_pid -ne $Identity.PID -or
+           $failure.error_type -isnot [string] -or !$failure.error_type -or $failure.error_type.Length -gt 128 -or
+           $failure.error -isnot [string] -or !$failure.error -or $failure.error.Length -gt 8192){
+            throw "$prefix Unbound launch-error receipt preserved at $errorPath"
+        }
+        throw "$prefix Bootstrap $($failure.error_type): $($failure.error)"
+    }
+    throw "$prefix No launch-error receipt is available; preserve original root and phase evidence."
+}
 function Set-RigSourceIdentity($Entry,[string]$Identity) {
     if(!$Identity){throw 'Fresh source identity required.'}
     if($Entry.PSObject.Properties['SourceId']){

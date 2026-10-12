@@ -8,7 +8,10 @@ The printed plan is review data, not an executable success receipt.
 `Build-RigChain.ps1` consumes that exact hash-bound recipe. Its default action
 reproduces the full recipe from current sources and inspects toolchain metadata.
 Only a separately authorized `-Run` enters admission or invokes native helpers.
-The executable Run branch is implemented; it has not been exercised natively.
+One authorized attempt passed all four native phases, then stopped before
+ZoneTool because FF logs aliased the compiler artifact directory. The failed
+attempt is preserved and restored. The source correction has not been rerun;
+see [the run record](RIG-RUN-2026-10-12-A.md).
 
 The planner binds the nine reviewed providers from the successful animation FF,
 the existing full ZoneTool candidate and BuildJob, original clip, prepared rig
@@ -62,7 +65,9 @@ timer notification substitutes for semantic verification.
 The old strict XMB/XSB profile is not weakened for hypothetical FF changes. If
 a real redump gains an alias, material-name variant or runtime field, the reader
 must refuse it until observed bytes/source justify a separately reviewed profile.
-Synthetic test dumps only test this reader; no actual model FF has run here.
+Synthetic test dumps only test the FF reader; no actual model FF has run here.
+The first authorized native writer outputs passed the complete model/surface read
+and CPU oracle. That is native serialization/data evidence, not engine playback.
 `native_execution_verified`, `ff_execution_verified`, material resolution,
 restoration, runtime and ready flags remain false in data-reader output. The
 outer runner binds all output hashes to successful phase receipts and
@@ -78,6 +83,14 @@ outer original job, drains two capped log streams and records a hash-bound phase
 receipt. It owns no lease and never kills a PID. Local native wrapper functions
 are exercised by mocks; their real implementation calls the pinned BuildJob and
 the read-only original-job member observer.
+
+Compiler artifacts stay under `build/`; all eight phase log directories are
+fresh children of `logs/`. A bootstrap failure writes a fresh sibling
+`<phase>.spec.launch-error.json`, bound to the spec SHA and original Python PID.
+If `phase.json` is absent, the runner reports that original error and root exit
+instead of replacing them with a file-not-found exception. Unbound error records
+are retained but cannot supply accepted failure text; existing evidence is never
+overwritten. A launch-error receipt never substitutes for job closure or success.
 
 The compiler uses explicit include/library paths and `/X`; `CL`, `_CL_`,
 `PYTHONPATH` and `PYTHONHOME` are absent from the child environment. Python roots
@@ -119,14 +132,20 @@ material binding, animation cadence, notetrack delivery and render stay open.
 
 ## Current source verification
 
-The rig suite now has 108 passing Python tests: the previous 93, thirteen phase
+The initial source checkpoint had 108 passing Python tests: the previous 93, thirteen phase
 adapter tests and two Windows executor tests. The latter invoke four PowerShell
 source/mock suites with 187 internal checks, covering compiler/telemetry refusal,
 fresh closure sampling, actual phase orchestration, factory/Resume/registration/
 budget/receipt failures, source/restoration gates, frozen inventory changes,
 physical output-hash bindings and final serialized byte accounting. C# is parsed
 with Roslyn only; no native helper assembly is compiled or loaded. The tests use
-original synthetic geometry/clip bytes and do not prove native writer execution.
+original synthetic geometry/clip bytes and did not prove native writer execution.
+After the real failed attempt, focused correction checks passed: 15 Python phase
+tests, 65 mocked phase-orchestration checks and 64 pure runner/parser checks.
+The regression executes the real PowerShell phase function with a populated
+compiler `build/` directory and a simulated child; logs remain independent.
+Missing/bound/unbound bootstrap receipts are covered. Other unchanged suites
+were not repeated for this correction.
 
 A real read-only Plan rechecks existing providers, prepared source, compiler and
 inputs; it creates no run directory and reads/copies no stock. Historical

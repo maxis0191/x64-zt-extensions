@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import threading
 import time
 
@@ -139,15 +140,39 @@ def run(spec, spec_sha256, drain, *, ensure_job=assert_outer_job, popen=subproce
     return (2 if failure else 0 if process.returncode == 0 else 1), receipt
 
 
-if __name__ == "__main__":
+def main(argv=None, *, runner=run, drain_loader=load_drain, hard_exit=os._exit):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--spec", required=True, type=Path)
     parser.add_argument("--spec-sha256", required=True)
     parser.add_argument("--sdk-phase", required=True, type=Path)
-    args = parser.parse_args()
-    raw = bounded(args.spec, 65536)
-    require(hashlib.sha256(raw).hexdigest() == args.spec_sha256.lower(), "phase spec changed")
-    code, receipt = run(parse(raw), args.spec_sha256.lower(), load_drain(args.sdk_phase))
+    args = parser.parse_args(argv)
+    spec = None
+    try:
+        raw = bounded(args.spec, 65536)
+        require(hashlib.sha256(raw).hexdigest() == args.spec_sha256.lower(), "phase spec changed")
+        spec = parse(raw)
+        code, receipt = runner(spec, args.spec_sha256.lower(), drain_loader(args.sdk_phase))
+    except Exception as error:
+        # Errors before child/log creation still need a durable, distinct record.
+        # This sibling of the bound spec is fresh and never overwrites phase.json
+        # or an existing log directory. The outer owner validates PID/spec binding.
+        failure = {'schema': 'iw7.rig-chain-launch-error/1',
+                   'phase': spec.get('phase') if isinstance(spec, dict) else None,
+                   'spec_sha256': args.spec_sha256.lower(), 'root_pid': os.getpid(),
+                   'error_type': type(error).__name__[:128], 'error': str(error)[:8192]}
+        try:
+            target = no_links(args.spec.with_suffix('.launch-error.json'))
+            with target.open('x', encoding='utf-8', newline='\n') as stream:
+                json.dump(failure, stream, indent=2, ensure_ascii=False)
+                stream.write('\n')
+        except (OSError, ValueError) as publication_error:
+            print('Could not retain launch error: ' + str(publication_error), file=sys.stderr, flush=True)
+        print('Rig phase bootstrap failed: ' + str(error), file=sys.stderr, flush=True)
+        return 2
     if receipt["failure"]:
-        os._exit(code)  # Parent closes its original job; no PID-based kill here.
-    raise SystemExit(code)
+        hard_exit(code)  # Parent closes its original job; no PID-based kill here.
+    return code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

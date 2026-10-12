@@ -113,9 +113,13 @@ GSC route are in [RUNTIME-CONTRACT.md](RUNTIME-CONTRACT.md).
 
 The [chain adapter and specialized runner](CHAIN-PLAN.md) now implement the
 complete native/FF sequence with an independent reader using actual model/surface
-binds and blends. The suite has 108 Python tests, including four PowerShell
-source/mock suites (187 internal checks). The default runner action is an inert
-Plan. The `-Run` branch is implemented but has never run; native execution still
-requires coordinator review and a separate explicit GO. The measured animation
-FF runner/providers and recovered source bytes remain unchanged. Every engine
-weight, animation cadence, material and rendered-output convention remains open.
+binds and blends. The initial source checkpoint passed 108 Python tests, including
+four PowerShell suites (187 internal checks). One authorized attempt then passed
+native compile, both model emissions and independent native reading, before an
+FF log-directory collision stopped the chain. The failed attempt was restored;
+see [the preserved run and correction](RIG-RUN-2026-10-12-A.md).
+The corrected runner uses separate compiler artifacts and phase logs, retaining
+bootstrap errors even without `phase.json`. Its focused checks passed; it has not
+been rerun. Default remains inert Plan, and a new Run needs separate coordinator
+GO. Measured AnimationFF/shared providers and recovered source bytes are unchanged.
+Every engine weight, cadence, material and rendered-output convention remains open.
