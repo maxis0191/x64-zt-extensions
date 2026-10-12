@@ -91,10 +91,36 @@ Correlate the observation TID with the later exit winner; do not assume a match.
 A proposed separate message schema adds one install and one buffer record.
 Using [T7_CATALOG_MSG], schema=iw7.t7-catalog-message/1, numeric TID/error,
 status strings capped at 32 ASCII characters, and buffer read/length/nul/data
-fields, maximum widths including CRLF are 135 and 934 bytes. Together with the
-unchanged 6,911-byte trace/EXIT/CALLER bound, the total is 7,980 bytes and fourteen
+fields plus requested count, maximum widths including CRLF are 135 and 948 bytes.
+Together with the unchanged 6,911-byte trace/EXIT/CALLER bound, the total is 7,994
+bytes and fourteen
 lines, within 8,192 bytes. Hex payload remains private; a prefix without NUL is
 explicitly incomplete. These are proposal bounds, not an implemented parser.
+
+The proposed distinct profile is t7-catalog-message, with the existing ten
+fields plus MessageSchema=iw7.t7-catalog-message/1. The two formats are:
+
+```text
+[T7_CATALOG_MSG] schema=iw7.t7-catalog-message/1 kind=install tid=%lu status=%s error=%lu
+[T7_CATALOG_MSG] schema=iw7.t7-catalog-message/1 kind=buffer tid=%lu status=%s requested=%zu read=%zu length=%zu nul=%u error=%lu data=%s
+```
+
+Buffer states proposed are ok, prefix, partial, argument_invalid, stack_invalid,
+query_failed, region_invalid, read_failed and exception. Complete read plus NUL
+is ok; complete read without NUL is prefix. Partial requires 0<read<requested.
+Always require requested<=384, read<=requested and length<=read. With nul=1,
+length<read; with nul=0, length=read. Data encodes exactly length bytes, or `-`
+for zero. Refusals before reading have all counts zero and nul=0. Exceptions
+remain failures even if bounded bytes survive; impossible counts clamp to zero
+with read_failed/error 13. The buffer TID must match the later exit winner for
+correlation. Installation occurs on the bootstrap TID, not that worker TID.
+
+Install states proposed are installed, module_missing, module_mismatch,
+query_failed, region_invalid, read_failed, signature_mismatch, call_mismatch,
+wrapper_far, compare_mismatch, rolled_back, rollback_failed and exception.
+Installation refusal can produce only the install record. The parser must not
+label missing/failed observation as Observed or change NoCatalogue. These draft
+states must be reconciled with the implementation before sealing any build.
 
 Next: coordinator review of this narrow ABI/installation/capture proposal, then
 source preparation and parser synchronization under a distinct profile. Build
