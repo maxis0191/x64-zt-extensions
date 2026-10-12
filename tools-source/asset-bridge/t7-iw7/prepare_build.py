@@ -8,6 +8,7 @@ import re
 import prepare_cli
 import prepare_prepatch
 import prepare_catalog_trace
+import prepare_message_publication
 
 HERE = Path(__file__).resolve().parent
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
@@ -115,7 +116,8 @@ def read_records(text):
     return records
 
 
-def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False):
+def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False,
+                      recompile_zonetool=False):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -133,6 +135,9 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     expected_payloads = {'prepared/'+name for name in ('main.cpp','zonetool.cpp','common/xpak.cpp',
         'common/xpak.hpp','t7_iw7_resident_model.hpp','t7_asset_name.hpp','test_t7_asset_name.cpp')}
     require(not catalog_trace or recompile_main, 'Catalogue trace requires a fresh main')
+    require(type(recompile_zonetool) is bool and
+            (not recompile_zonetool or (recompile_main is True and catalog_trace is True)),
+            'CLI rebuild requires the explicit two-TU catalogue path')
     if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
     require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
             'Exact native payload inventory required for reuse')
@@ -144,16 +149,17 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             continue
         path = prepared/name.removeprefix('prepared/')
         pin = prior_bindings.get(key(path))
-        if recompile_main and name == 'prepared/main.cpp':
+        if (recompile_main and name == 'prepared/main.cpp') or (recompile_zonetool and name == 'prepared/zonetool.cpp'):
             require(pin and pin['SHA256'] != hashlib.sha256(raw).hexdigest(),
-                    'Diagnostic main must differ from retained non-instrumented main')
+                    'Recompiled TU must differ from its retained source: '+name)
             old_text.append(pin)
             continue
         require(pin and pin['Bytes'] == len(raw) and pin['SHA256'] == hashlib.sha256(raw).hexdigest(),
                 'Native source/header/fixture differs from compiled prior stage')
         old_text.append(pin)
     inputs = []
-    reused_units = tuple(u for u in UNITS if not recompile_main or u[1] != 'main.obj')
+    reused_units = tuple(u for u in UNITS if not (recompile_main and u[1] == 'main.obj')
+                         and not (recompile_zonetool and u[1] == 'zonetool11.obj'))
     required = {'helper':['native_probe.obj','native_probe.exe','native_probe.pdb','dependencies.json'],
                 **{obj[:-4]:[obj,'compile.pdb','dependencies.json'] for _,obj,_ in reused_units}}
     for stage in stages:
@@ -165,6 +171,13 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
                     re.fullmatch('[0-9a-f]{64}',pin['SHA256']), 'Prior artifact pin invalid')
             inputs.append(pin)
     response = payloads['link.rsp'].decode()
+    if recompile_zonetool:
+        for obj in ('main.obj', 'zonetool11.obj'):
+            expected = quote(PureWindowsPath(run)/obj[:-4]/obj)
+            matches = [line for line in response.splitlines() if
+                       line.startswith('"') and line.endswith('"') and
+                       PureWindowsPath(line[1:-1]).name.casefold() == obj]
+            require(matches == [expected], 'Two-TU link requires each fresh object exactly once: '+obj)
     for _, obj, _ in reused_units:
         source = quote(PureWindowsPath(run)/obj[:-4]/obj)
         require(response.splitlines().count(source) == 1, 'One new object path required before reuse')
@@ -172,7 +185,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     payloads['link.rsp'] = response.encode()
     return {'OriginalStatus':'Failed','SourcePlanSHA256':receipt['PlanSHA256'],
             'ReceiptSHA256':hashlib.sha256(receipt_raw).hexdigest(),'Checks':51,
-            'RecompiledMain':recompile_main,
+            'RecompiledMain':recompile_main, **({'RecompiledZonetool':True} if recompile_zonetool else {}),
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
@@ -190,13 +203,15 @@ def prepare(args):
     payloads, replaced = command_payloads(cl, link, source, output/'prepared', run)
     _, patched = prepare_cli.render(source)
     prepatch_helper = getattr(args, 'prepatch_helper', None)
-    catalog_message = getattr(args, 'catalog_message', False)
+    catalog_publication = bool(getattr(args, 'catalog_message_publication', False))
+    catalog_message = bool(getattr(args, 'catalog_message', False) or catalog_publication)
     catalog_callers = bool(getattr(args, 'catalog_callers', False) or catalog_message)
     catalog_exit = bool(getattr(args, 'catalog_exit', False) or catalog_callers)
     catalog_trace = bool(getattr(args, 'catalog_trace', False) or catalog_exit)
     require(sum(map(bool, (prepatch_helper, getattr(args, 'catalog_trace', False),
-                          getattr(args, 'catalog_exit', False), getattr(args, 'catalog_callers', False), catalog_message))) <= 1,
-            'Pre-patch, catalogue trace, exit-context, caller and message profiles are exclusive')
+                          getattr(args, 'catalog_exit', False), getattr(args, 'catalog_callers', False),
+                          getattr(args, 'catalog_message', False), catalog_publication))) <= 1,
+            'Pre-patch and catalogue diagnostic profiles are exclusive')
     require(bool(getattr(args, 'ordinary_plan', None)) == catalog_trace and
             bool(getattr(args, 'ordinary_receipt', None)) == catalog_trace,
             'Catalogue trace requires both ordinary D2 text proofs')
@@ -221,6 +236,9 @@ def prepare(args):
     for name in ('prepare_build.py', 'prepare_prepatch.py', 'Run-T7Build.ps1', 'T7Build.Profile.ps1'):
         read(HERE/name)
     if catalog_trace: read(HERE/'prepare_catalog_trace.py')
+    if catalog_publication:
+        read(HERE/'prepare_message_publication.py',64*1024)
+        read(HERE/'native_message_publication.inc',16*1024)
     read(HERE.parent/'recipient/script-names/prepare_observer.py')
     roles = {'Core': 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1',
              'CompilerCore': 'tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1',
@@ -315,8 +333,13 @@ def prepare(args):
                     prepare_catalog_trace.wire_callers_main if catalog_callers else
                     prepare_catalog_trace.wire_exit_main if catalog_exit else prepare_catalog_trace.wire_main)
             payloads['prepared/main.cpp'] = wire(payloads['prepared/main.cpp'].decode()).encode()
+            if catalog_publication:
+                main, cli = prepare_message_publication.overlay(payloads['prepared/main.cpp'].decode(),
+                                                                payloads['prepared/zonetool.cpp'].decode())
+                payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'] = main.encode(), cli.encode()
         reuse, reused_inputs, reused_text = reuse_compilation(prior_raw,
-            prior_receipt_raw, payloads, run, recompile_main=recompile_main, catalog_trace=catalog_trace)
+            prior_receipt_raw, payloads, run, recompile_main=recompile_main, catalog_trace=catalog_trace,
+            recompile_zonetool=catalog_publication)
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
                       'Receipt':str(path_checked(args.reuse_compile_receipt))})
         for pin in reused_inputs:
@@ -324,7 +347,8 @@ def prepare(args):
         for pin in reused_text:
             read(pin['Path'],256*1024,pin['SHA256'])
         inputs += reused_inputs
-        stages = [s for s in stages if s['Name'] in (('main','link') if recompile_main else ('link',))]
+        stages = [s for s in stages if s['Name'] in (('main','zonetool11','link') if catalog_publication
+                                                   else ('main','link') if recompile_main else ('link',))]
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -347,7 +371,8 @@ def prepare(args):
                            ('Wiring',HERE/'prepare_prepatch.py'),('PreparedMain',output/'prepared/main.cpp')]:
             profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     elif catalog_trace:
-        profile = {'Name':(prepare_catalog_trace.MESSAGE_NAME if catalog_message else
+        profile = {'Name':('t7-catalog-message-publication' if catalog_publication else
+                          prepare_catalog_trace.MESSAGE_NAME if catalog_message else
                           prepare_catalog_trace.CALLERS_NAME if catalog_callers else
                           prepare_catalog_trace.EXIT_NAME if catalog_exit else prepare_catalog_trace.NAME),
                    'Option':prepare_catalog_trace.OPTION,'ArgumentCount':3,
@@ -358,6 +383,14 @@ def prepare(args):
         for name, path in [('Wiring',HERE/'prepare_catalog_trace.py'),('PreparedMain',output/'prepared/main.cpp'),
                            ('BaseBuildPlan',args.ordinary_plan),('BaseBuildReceipt',args.ordinary_receipt)]:
             profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+        if catalog_publication:
+            profile['PublicationSchema'] = 'iw7.t7-message-publication-build/1'
+            for name, path in [('PublicationWiring',HERE/'prepare_message_publication.py'),
+                               ('PublicationSource',HERE/'native_message_publication.inc'),
+                               ('PreparedCLI',output/'prepared/zonetool.cpp'),
+                               ('MainResponse',output/'main.obj.rsp'),('CLIResponse',output/'zonetool11.obj.rsp'),
+                               ('LinkResponse',output/'link.rsp')]:
+                profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     plan = {'Schema':'iw7.t7-minimal-build-plan/1','SourceCommit':contract['native_source_commit'],
         'RunRoot':str(run),'PreparedRoot':str(output/'prepared'),'Runner':str(HERE/'Run-T7Build.ps1'),
         'Profile':str(HERE/'T7Build.Profile.ps1'), **{k:str(providers/v) for k,v in roles.items()},
@@ -391,6 +424,7 @@ if __name__ == '__main__':
     parser.add_argument('--catalog-exit',action='store_true')
     parser.add_argument('--catalog-callers',action='store_true')
     parser.add_argument('--catalog-message',action='store_true')
+    parser.add_argument('--catalog-message-publication',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

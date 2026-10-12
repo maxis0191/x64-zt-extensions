@@ -1,7 +1,7 @@
 # Fixed catalogue adapter. Ownership, pin readers and closure stay in H1Native.Core.
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
 function Get-T7CatalogueMainBaseline($Plan) {
@@ -93,7 +93,7 @@ function Get-T7CatalogueBootstraps($Plan) {
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
             throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
         }
-        if((Get-T7CatalogueCandidateProfile $Plan) -cne 't7-catalog-message'){throw 'Qualified collection requires MSG profile.'}
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication')){throw 'Qualified collection requires MSG profile.'}
         $items=@($Plan.Bootstraps);$total=0L
         $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -163,7 +163,7 @@ function Get-T7CatalogueBootstraps($Plan) {
     for($index=0;$index -lt $items.Count;$index++){
         $bootstrap=$items[$index];$spec=$specs[$index]
         Assert-T7CatalogueFields $bootstrap @('Path','Bytes','SHA256','FileId','RelativePath','HashProvenance','QualificationReceipt','QualificationScript')
-        if((Get-T7CatalogueCandidateProfile $Plan) -cne 't7-catalog-message' -or
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication') -or
            !(Test-T7CatalogueInteger $bootstrap.Bytes $spec.Bytes) -or $bootstrap.Bytes -ne $spec.Bytes -or
            $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) $spec.Name) -or
            $bootstrap.RelativePath -cne ('zone/'+$spec.Name) -or
@@ -331,6 +331,8 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         $shared=Get-T7CatalogueSharedQualification $Plan
         $bindingCount=22+3*$bootstraps.Count
         if($shared){$bindingCount=24+2*$bootstraps.Count+@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count}
+        # Five new profile text pins (link.rsp already exists), plus CLI dependencies.
+        if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingCount+=6}
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
            !(Test-T7CatalogueInteger $Plan.OutputLimitBytes (106059160L+64MB+$limits.TotalBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
@@ -348,7 +350,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
     if($candidateProfile -cne 'ordinary-d2') {
-        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192}}
+        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192}}
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
@@ -370,6 +372,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if(@([IO.Directory]::EnumerateFileSystemEntries($dir)).Count){throw 'Prepared work/evidence/temp must be empty.'}
     }
     $bindingLimit=if($qualified){22+3*$limits.ItemCount+$(if($shared){2}else{0})}else{32}
+    if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingLimit+=6}
     if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
     $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
@@ -427,6 +430,7 @@ function Assert-T7CatalogueTextPin($Pin,$Bindings) {
 }
 function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
+    $publication=$candidateProfile -ceq 't7-catalog-message-publication'
     $buildPin=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.BuildPlan -and $_.IsText})
     if($buildPin.Count -ne 1 -or $buildPin[0].SHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or
        $buildPin[0].Bytes -gt 1MB -or $Plan.ExpectedBuildPlanSHA256 -ceq 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'){throw 'Trace requires its own guarded build plan.'}
@@ -435,19 +439,25 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
        $build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1'){throw 'Trace build source/schema differs.'}
     $profile=$build.BuildProfile
     $fields=@('Name','Option','ArgumentCount','TraceSchema','Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
-    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')){$fields+=@('ContextSchema')}
-    if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message')){$fields+=@('CallerSchema')}
-    if($candidateProfile -ceq 't7-catalog-message'){$fields+=@('MessageSchema')}
+    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')){$fields+=@('ContextSchema')}
+    if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')){$fields+=@('CallerSchema')}
+    if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication')){$fields+=@('MessageSchema')}
+    $pinNames=@('Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
+    if($publication){
+        $extraPins=@('PublicationWiring','PublicationSource','PreparedCLI','MainResponse','CLIResponse','LinkResponse')
+        $fields+=@('PublicationSchema')+$extraPins;$pinNames+=$extraPins
+    }
     foreach($p in @($profile,$Receipt.BuildProfile)) {
         Assert-T7CatalogueFields $p $fields
         if($p.Name -cne $candidateProfile -or $p.Option -cne '-t7-iw7-catalog' -or
            ($p.ArgumentCount -isnot [long] -and $p.ArgumentCount -isnot [int]) -or $p.ArgumentCount -ne 3 -or
            $p.TraceSchema -cne 'iw7.t7-catalog-trace/1'){throw 'Exact catalogue trace profile required.'}
-        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
-        if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message') -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
-        if($candidateProfile -ceq 't7-catalog-message' -and $p.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
+        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
+        if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
+        if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication') -and $p.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
+        if($publication -and $p.PublicationSchema -cne 'iw7.t7-message-publication-build/1'){throw 'Exact publication build schema required.'}
     }
-    foreach($name in 'Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt') {
+    foreach($name in $pinNames) {
         $pin=$profile.$name;$other=$Receipt.BuildProfile.$name
         Assert-T7CatalogueTextPin $pin $Plan.Bindings
         Assert-T7CatalogueTextPin $pin $build.Bindings
@@ -470,6 +480,8 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
             Assert-T7CatalogueTextPin ([pscustomobject]@{Path=$pin[0].Path;Bytes=$pin[0].Bytes;SHA256=$pin[0].SHA256}) $build.Bindings
         }
     }
+    if($publication){Assert-T7CataloguePublicationBuild $Plan $Receipt $build $base;return}
+    if($reuse.PSObject.Properties['RecompiledZonetool']){throw 'CLI rebuild marker requires the publication profile.'}
     $retained=@($old.StageRoots|Where-Object {[IO.Path]::GetFileName($_) -cne 'main'})
     if(@($reuse.StageRoots).Count -ne 2 -or (@($retained|ForEach-Object {[IO.Path]::GetFileName($_)}) -join '|') -cne 'zonetool11|xpak' -or
        (@($reuse.StageRoots) -join '|') -cne ($retained -join '|')){throw 'Exact retained zonetool11/xpak roots required.'}
@@ -500,6 +512,108 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
     Assert-T7CatalogueTextPin ([pscustomobject]@{Path=$rsp;Bytes=$rspPin[0].Bytes;SHA256=$rspPin[0].SHA256}) $Plan.Bindings
     if(@([IO.File]::ReadAllLines($rsp)|Where-Object {$_ -ceq ('"'+$mainObject+'"')}).Count -ne 1){throw 'Trace Link must consume the newly compiled main object exactly once.'}
     if(@($Receipt.Stages[1].Artifacts|Where-Object Path -CEQ $Plan.CandidateSource).Count -ne 1){throw 'Trace candidate absent from Link artifacts.'}
+}
+function Split-T7CatalogueResponseArguments([string]$Text) {
+    # Same bounded generated-response syntax as the publication build validator.
+    if($Text -match '[\x00-\x08\x0a-\x1f\x7f]|\\+"|""' -or $Text.Contains('@')){throw 'Unsupported or indirect publication response syntax.'}
+    $arguments=[Collections.Generic.List[string]]::new();$token=[Text.StringBuilder]::new();$quoted=$false
+    foreach($character in $Text.ToCharArray()) {
+        if($character -eq '"'){$quoted=!$quoted;continue}
+        if(!$quoted -and ($character -eq ' ' -or $character -eq "`t")) {
+            if($token.Length){$arguments.Add($token.ToString());$null=$token.Clear()}
+        }else{$null=$token.Append($character)}
+    }
+    if($quoted){throw 'Unclosed publication response quote.'}
+    if($token.Length){$arguments.Add($token.ToString())}
+    return ,$arguments.ToArray()
+}
+function Assert-T7CatalogueResponseOutputs([string[]]$Arguments,[System.Collections.IDictionary]$Outputs) {
+    $seen=@{}
+    for($index=0;$index -lt $Arguments.Count;$index++) {
+        $argument=$Arguments[$index];if($argument -notmatch '^[-/]'){continue};$option=$argument.Substring(1)
+        if($option -ieq 'PDBCompress'){continue}
+        foreach($name in $Outputs.Keys) {
+            if(!$option.StartsWith($name,[StringComparison]::OrdinalIgnoreCase)){continue}
+            if($seen.ContainsKey($name)){throw 'Duplicate publication output option.'};$seen[$name]=$true
+            $value=$option.Substring($name.Length);if($value.StartsWith(':')){$value=$value.Substring(1)}
+            if(!$value){$index++;if($index -ge $Arguments.Count){throw 'Missing publication output value.'};$value=$Arguments[$index]}
+            if($value -cne $Outputs[$name]){throw 'Publication output must belong to its exact fresh stage.'}
+            break
+        }
+    }
+    if($seen.Count -ne $Outputs.Count){throw 'Missing publication output option.'}
+}
+function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
+    # Only guarded source/response/dependency text is read here. Binary artifacts
+    # are receipt metadata; their actual verification remains under admission.
+    $profile=$Build.BuildProfile;$reuse=$Build.ReuseCompile
+    if(!$reuse.PSObject.Properties['RecompiledZonetool'] -or $reuse.RecompiledZonetool -isnot [bool] -or
+       !$reuse.RecompiledZonetool){throw 'Publication requires a fresh CLI compilation.'}
+    $retained=@($Base.ReuseCompile.StageRoots|Where-Object {[IO.Path]::GetFileName($_) -ceq 'xpak'})
+    if($retained.Count -ne 1 -or @($reuse.StageRoots).Count -ne 1 -or $reuse.StageRoots[0] -cne $retained[0]){throw 'Publication retains only the qualified xpak root.'}
+    if($Plan.BuildReceipt -cne (Join-Path $Build.RunRoot 'receipt.json')){throw 'Publication requires its own build receipt.'}
+    $receiptPin=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.BuildReceipt -and $_.IsText})
+    if($receiptPin.Count -ne 1 -or $receiptPin[0].SHA256 -cne $Plan.ExpectedBuildReceiptSHA256){throw 'Publication receipt pin differs.'}
+    $sourceRoot=Split-Path $Build.Runner -Parent;$responseRoot=Split-Path $Build.PreparedRoot -Parent
+    $paths=[ordered]@{PublicationWiring=(Join-Path $sourceRoot 'prepare_message_publication.py');
+        PublicationSource=(Join-Path $sourceRoot 'native_message_publication.inc');PreparedCLI=(Join-Path $Build.PreparedRoot 'zonetool.cpp');
+        MainResponse=(Join-Path $responseRoot 'main.obj.rsp');CLIResponse=(Join-Path $responseRoot 'zonetool11.obj.rsp');LinkResponse=(Join-Path $responseRoot 'link.rsp')}
+    foreach($name in $paths.Keys) {
+        $limit=if($name -ceq 'PublicationSource'){16KB}elseif($name -ceq 'LinkResponse'){256KB}else{64KB}
+        if($profile.$name.Path -cne $paths[$name] -or $profile.$name.Bytes -gt $limit){throw 'Publication source/response path or bound differs.'}
+    }
+    foreach($rows in @(@{Value=@($Build.Stages)},@{Value=@($Receipt.Stages)})) {
+        if($rows.Value.Count -ne 3 -or ($rows.Value.Name -join '|') -cne 'main|zonetool11|link' -or
+           ($rows.Value.Stage -join '|') -cne 'Compile|Compile|Link'){throw 'Publication requires two actual Compile stages then Link.'}
+    }
+    for($index=0;$index -lt 3;$index++) {
+        $stage=$Build.Stages[$index];$proof=$Receipt.Stages[$index];$stageRoot=Join-Path $Build.RunRoot $stage.Name
+        $names=@(if($index -eq 2){'zonetool-t7.exe','zonetool-t7.pdb','zonetool-t7.lib','zonetool-t7.exp'}
+            else{($stage.Name+'.obj'),'compile.pdb','dependencies.json'})
+        if(($stage.Artifacts -join '|') -cne ($names -join '|') -or @($proof.Artifacts).Count -ne $names.Count){throw 'Publication artifact guards differ.'}
+        if($proof.PlanSHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or !(Test-T7CatalogueInteger $proof.ExitCode 0) -or
+           $proof.TreeClosureConfirmed -isnot [bool] -or !$proof.TreeClosureConfirmed){throw 'Publication compile/link proof is not successful and closed.'}
+        $response=$profile.(@('MainResponse','CLIResponse','LinkResponse')[$index])
+        $image=if($index -eq 2){Join-Path (Split-Path $Build.Compiler -Parent) 'link.exe'}else{$Build.Compiler}
+        if($stage.Image -cne $image -or @($stage.Arguments).Count -ne 1 -or $stage.Arguments[0] -cne ('@'+$response.Path)){throw 'Publication compiler/response command differs.'}
+        foreach($name in $names) {
+            $path=Join-Path $stageRoot $name;Assert-H1Path $path
+            $pins=@($proof.Artifacts|Where-Object Path -CEQ $path)
+            if($pins.Count -ne 1 -or !(Test-T7CatalogueInteger $pins[0].Bytes 256MB) -or $pins[0].Bytes -le 0 -or
+               $pins[0].SHA256 -cnotmatch '\A[0-9a-f]{64}\z'){throw 'Publication artifact metadata differs.'}
+            if($name -ceq 'dependencies.json') {
+                Assert-T7CatalogueTextPin $pins[0] $Plan.Bindings
+                $deps=Read-H1SmallJson $path 1MB
+                $source=$profile.(@('PreparedMain','PreparedCLI')[$index]).Path
+                if([IO.Path]::GetFullPath($deps.Data.Source) -ine $source){throw 'Publication compiler dependencies identify a different TU.'}
+            }
+        }
+        if($index -lt 2) {
+            $text=[IO.File]::ReadAllText($response.Path)
+            if(($text.TrimEnd("`r","`n") -split "`n").Count -ne 1 -or $text.Contains('@')){throw 'Publication requires one direct compile response.'}
+            $arguments=Split-T7CatalogueResponseArguments $text.TrimEnd("`r","`n")
+            Assert-T7CatalogueResponseOutputs $arguments ([ordered]@{Fo=(Join-Path $stageRoot ($stage.Name+'.obj'));
+                Fd=(Join-Path $stageRoot 'compile.pdb');sourceDependencies=(Join-Path $stageRoot 'dependencies.json')})
+            $source=$profile.(@('PreparedMain','PreparedCLI')[$index]).Path
+            if(!$arguments.Count -or $arguments[-1] -cne $source){throw 'Publication response compiles a different TU.'}
+        }
+    }
+    $lines=@([IO.File]::ReadAllText($profile.LinkResponse.Path).TrimEnd("`r","`n") -split "`r?`n")
+    if($lines.Count -ne 414 -or $lines[0] -match '(?i)\.obj\b|@'){throw 'Publication requires exactly 413 direct link objects.'}
+    Assert-T7CatalogueResponseOutputs (Split-T7CatalogueResponseArguments $lines[0]) ([ordered]@{
+        OUT=(Join-Path $Build.RunRoot 'link/zonetool-t7.exe');PDB=(Join-Path $Build.RunRoot 'link/zonetool-t7.pdb');
+        IMPLIB=(Join-Path $Build.RunRoot 'link/zonetool-t7.lib')})
+    $objects=[Collections.Generic.List[string]]::new();$unique=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($line in $lines[1..413]) {
+        if($line -notmatch '^"([^"\r\n]+\.obj)"$' -or !$unique.Add($Matches[1])){throw 'Publication link object is indirect or duplicated.'}
+        $objects.Add($Matches[1])
+    }
+    foreach($name in 'main','zonetool11','xpak') {
+        $matches=@($objects|Where-Object {[IO.Path]::GetFileName($_) -ieq ($name+'.obj')})
+        $expected=if($name -ceq 'xpak'){Join-Path $retained[0] 'xpak.obj'}else{Join-Path (Join-Path $Build.RunRoot $name) ($name+'.obj')}
+        if($matches.Count -ne 1 -or $matches[0] -cne $expected){throw 'Publication link must consume both fresh objects and exact retained xpak.'}
+    }
+    if($Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe')){throw 'Publication candidate is not the new link output.'}
 }
 function Get-T7CatalogueFileId([string]$Path) { [IW7HudFileIdentity]::Read($Path) }
 function Open-T7CatalogueV3Pin($Plan,$Pin,[scriptblock]$DefaultReader) {
@@ -644,11 +758,12 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $profile=Get-T7CatalogueCandidateProfile $Plan
     if($profile -ceq 'ordinary-d2'){return}
     $State.TraceOutcome='NoTrace'
-    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message')
-    $hasCallers=$profile -cin @('t7-catalog-callers','t7-catalog-message')
+    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')
+    $hasCallers=$profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')
+    $hasMessage=$profile -cin @('t7-catalog-message','t7-catalog-message-publication')
     if($hasContext){$State.ExitContextOutcome='Absent';$State.ExitContext=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
     if($hasCallers){$State.CallersOutcome='Absent';$State.Callers=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
-    if($profile -ceq 't7-catalog-message'){$State.MessageOutcome='Absent';$State.Message=[ordered]@{Captures=@();IncompleteTrailingLine=$false;ExitCorrelated=$false}}
+    if($hasMessage){$State.MessageOutcome='Absent';$State.Message=[ordered]@{Captures=@();IncompleteTrailingLine=$false;ExitCorrelated=$false}}
     $path=Join-Path $Plan.StageRoot 'stderr.log'
     if(!(Test-Path -LiteralPath $path)){return}
     $State.TraceOutcome='TracePresentUnqualified'
@@ -656,13 +771,14 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $size=(Get-Item -LiteralPath $path).Length
     if($hasContext -and $size -gt 0){$State.ExitContextOutcome='PresentUnqualified'}
     if($hasCallers -and $size -gt 0){$State.CallersOutcome='PresentUnqualified'}
-    if($profile -ceq 't7-catalog-message' -and $size -gt 0){$State.MessageOutcome='PresentUnqualified'}
+    if($hasMessage -and $size -gt 0){$State.MessageOutcome='PresentUnqualified'}
     Assert-T7CatalogueTraceSize $profile $size
     $pin=[pscustomobject]@{Path=$path;Bytes=$size;SHA256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}
     $Context.Guards.Add((Open-H1Pin $pin));$State.TraceReport=$pin
     $text=[Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($path))
     $result=switch($profile){
         't7-catalog-message'{ConvertFrom-T7CatalogueMessage $text}
+        't7-catalog-message-publication'{ConvertFrom-T7CatalogueMessage $text}
         't7-catalog-callers'{ConvertFrom-T7CatalogueCallers $text}
         't7-catalog-exit-context'{ConvertFrom-T7CatalogueExitContext $text}
         default{ConvertFrom-T7CatalogueTrace $text}
@@ -670,12 +786,12 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $State.TraceOutcome=$result.Outcome;$State.TraceEvents=$result.Events
     if($hasContext){$State.ExitContextOutcome=$result.ContextOutcome;$State.ExitContext=$result.Context}
     if($hasCallers){$State.CallersOutcome=$result.CallersOutcome;$State.Callers=$result.Callers}
-    if($profile -ceq 't7-catalog-message'){$State.MessageOutcome=$result.MessageOutcome;$State.Message=$result.Message}
+    if($hasMessage){$State.MessageOutcome=$result.MessageOutcome;$State.Message=$result.Message}
 }
 function Assert-T7CatalogueTraceSize([string]$Profile,[long]$Bytes) {
     if(($Profile -ceq 't7-catalog-trace' -and $Bytes -ge 1536) -or
        ($Profile -ceq 't7-catalog-exit-context' -and $Bytes -gt 4096) -or
-       ($Profile -cin @('t7-catalog-callers','t7-catalog-message') -and $Bytes -gt 8192)){throw 'Trace stderr cap exceeded.'}
+       ($Profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $Bytes -gt 8192)){throw 'Trace stderr cap exceeded.'}
 }
 function Get-T7CatalogueContextNumber($Match,[string]$Name,[ulong]$Maximum=[uint]::MaxValue) {
     $value=[ulong]::Parse($Match.Groups[$Name].Value,[Globalization.CultureInfo]::InvariantCulture)

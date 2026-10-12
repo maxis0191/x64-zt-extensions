@@ -109,4 +109,165 @@ $fixture=New-MessageFixture;$fixture.BuildProfile.Name='t7-catalog-callers';Must
 $fixture=New-MessageFixture;$fixture.BuildProfile.PreparedMain.SHA256=('b'*64);Must-Refuse $fixture
 $fixture=New-MessageFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
 $fixture=New-MessageFixture;$fixture.BuildProfile|Add-Member -NotePropertyName MessageBytes -NotePropertyValue 4096;Must-Refuse $fixture
+function New-PublicationFixture {
+    $fixture=New-MessageFixture
+    $fixture.BuildProfile.Name='t7-catalog-message-publication'
+    $fixture.BuildProfile|Add-Member NoteProperty PublicationSchema 'iw7.t7-message-publication-build/1'
+    $fixture.ReuseCompile|Add-Member NoteProperty RecompiledZonetool $true
+    $fixture.ReuseCompile|Add-Member NoteProperty StageRoots @('C:\old\xpak')
+    $fixture|Add-Member NoteProperty RunRoot 'C:\fresh'
+    $fixture|Add-Member NoteProperty Compiler 'C:\compiler\cl.exe'
+    $responseRoot=Split-Path $fixture.PreparedRoot -Parent
+    foreach($row in @(@('PublicationWiring',(Join-Path $PSScriptRoot 'prepare_message_publication.py')),
+        @('PublicationSource',(Join-Path $PSScriptRoot 'native_message_publication.inc')),
+        @('PreparedCLI',(Join-Path $fixture.PreparedRoot 'zonetool.cpp')),
+        @('MainResponse',(Join-Path $responseRoot 'main.obj.rsp')),
+        @('CLIResponse',(Join-Path $responseRoot 'zonetool11.obj.rsp')),@('LinkResponse',(Join-Path $responseRoot 'link.rsp')))) {
+        $pin=[pscustomobject]@{Path=$row[1];Bytes=1024;SHA256=('a'*64)}
+        $fixture.BuildProfile|Add-Member NoteProperty $row[0] $pin
+        $fixture.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+    }
+    $stages=@(foreach($row in @(@('main','MainResponse'),@('zonetool11','CLIResponse'),@('link','LinkResponse'))) {
+        [pscustomobject]@{Name=$row[0];Arguments=@('@'+$fixture.BuildProfile.($row[1]).Path);
+            Image=$(if($row[0] -ceq 'link'){'C:\compiler\link.exe'}else{$fixture.Compiler});
+            Artifacts=@(if($row[0] -ceq 'link'){'zonetool-t7.exe','zonetool-t7.pdb','zonetool-t7.lib','zonetool-t7.exp'}
+                else{($row[0]+'.obj'),'compile.pdb','dependencies.json'})}
+    })
+    $fixture|Add-Member NoteProperty Stages $stages
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-PublicationFixture) $PSScriptRoot)){throw 'Qualified two-TU publication fixture refused.'};$checks++
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool=$false;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool='true';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.PSObject.Properties.Remove('RecompiledZonetool');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile.Name='t7-catalog-message';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile=$null;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile.PublicationSchema='other';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages=@($fixture.Stages[0],$fixture.Stages[2]);Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages=@($fixture.Stages[1],$fixture.Stages[0],$fixture.Stages[2]);Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Arguments=@('@C:\old\zonetool11.obj.rsp');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Arguments+=@('/FoC:\old\zonetool11.obj');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Image='C:\other\cl.exe';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Artifacts=@('compile.pdb','dependencies.json');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[0].Artifacts=@('main.obj','compile.pdb','dependencies.json','other.obj');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[2].Artifacts=@('zonetool-t7.exe');Must-Refuse $fixture
+foreach($name in 'PublicationWiring','PublicationSource','PreparedCLI','MainResponse','CLIResponse','LinkResponse') {
+    $fixture=New-PublicationFixture;$fixture.BuildProfile.$name.SHA256=('b'*64);Must-Refuse $fixture
+    $fixture=New-PublicationFixture;$fixture.BuildProfile.PSObject.Properties.Remove($name);Must-Refuse $fixture
+}
+$fixture=New-PublicationFixture;$fixture.BuildProfile.PublicationSource.Bytes=16385;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile.LinkResponse.Bytes=262145;Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.ReuseCompile|Add-Member NoteProperty RecompiledZonetool $false;Must-Refuse $fixture
+
+foreach($functionName in 'Split-T7ResponseArguments','Assert-T7ResponseOutputs','Assert-T7PublicationResponses') {
+    $responseFunction=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -ceq $functionName},$true)
+    if(!$responseFunction){throw 'Actual response validator or helper missing.'}
+    . ([scriptblock]::Create($responseFunction.Extent.Text))
+}
+function New-Responses($Fixture) {
+    $texts=@(foreach($row in @(@('main','main.cpp'),@('zonetool11','zonetool.cpp'))) {
+        $stage=Join-Path $Fixture.RunRoot $row[0]
+        '/c /Fo"'+(Join-Path $stage ($row[0]+'.obj'))+'" /Fd"'+(Join-Path $stage 'compile.pdb')+
+            '" /sourceDependencies "'+(Join-Path $stage 'dependencies.json')+'" "'+(Join-Path $Fixture.PreparedRoot $row[1])+"`"`n"
+    })
+    $objects=@('C:\fresh\main\main.obj','C:\fresh\zonetool11\zonetool11.obj','C:\old\xpak\xpak.obj')+
+        @(0..409|ForEach-Object {'C:\e7\object'+$_+'.OBJ'})
+    $linkRoot=Join-Path $Fixture.RunRoot 'link'
+    $flags='/INCREMENTAL:NO /OUT:"'+(Join-Path $linkRoot 'zonetool-t7.exe')+
+        '" /PDB:"'+(Join-Path $linkRoot 'zonetool-t7.pdb')+'" /IMPLIB:"'+(Join-Path $linkRoot 'zonetool-t7.lib')+'" /PDBCompress'
+    $texts+=@($flags+"`n"+(($objects|ForEach-Object {'"'+$_+'"'}) -join "`n")+"`n")
+    return ,$texts
+}
+function Must-RefuseResponses($Fixture,$Texts) {
+    $refused=$false
+    try{Assert-T7PublicationResponses $Fixture $Texts[0] $Texts[1] $Texts[2]}catch{$refused=$true}
+    if(!$refused){throw 'Stale or redirected publication objects accepted.'}
+    $script:checks++
+}
+$fixture=New-PublicationFixture;$texts=New-Responses $fixture
+Assert-T7PublicationResponses $fixture $texts[0] $texts[1] $texts[2];$checks++
+foreach($name in 'main','zonetool11') {
+    $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+    $texts[2]=$texts[2].Replace(('C:\fresh\'+$name+'\'),('C:\old\'+$name+'\'));Must-RefuseResponses $fixture $texts
+}
+foreach($mode in 'duplicate','missing','extra-root','old-in-flags','nested-response','wrong-xpak') {
+    $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+    switch($mode) {
+        duplicate {$texts[2]=$texts[2].Replace('C:\e7\object0.OBJ','C:\old\zonetool11\zonetool11.obj')}
+        missing {$texts[2]=$texts[2].Replace(('"C:\fresh\zonetool11\zonetool11.obj"'+"`n"),'')}
+        extra-root {$fixture.ReuseCompile.StageRoots+=@('C:\old\zonetool11')}
+        old-in-flags {$texts[2]=$texts[2].Replace('/INCREMENTAL:NO','/INCREMENTAL:NO "C:\old\zonetool11\zonetool11.obj"')}
+        nested-response {$texts[2]=$texts[2].Replace('/INCREMENTAL:NO','@C:\old\link.rsp')}
+        wrong-xpak {$texts[2]=$texts[2].Replace('C:\old\xpak\xpak.obj','C:\other\xpak.obj')}
+    }
+    Must-RefuseResponses $fixture $texts
+}
+foreach($index in 0,1) {
+    foreach($mode in 'object','pdb','deps','source','duplicate-fo','nested','multiline') {
+        $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+        switch($mode) {
+            object {$texts[$index]=$texts[$index].Replace('/Fo"C:\fresh\','/Fo"C:\old\')}
+            pdb {$texts[$index]=$texts[$index].Replace('/Fd"C:\fresh\','/Fd"C:\old\')}
+            deps {$texts[$index]=$texts[$index].Replace('/sourceDependencies "C:\fresh\','/sourceDependencies "C:\old\')}
+            source {$texts[$index]=$texts[$index].Replace('C:\invented-t7-prepared\','C:\old\')}
+            duplicate-fo {$texts[$index]='/Fo"C:\old\bad.obj" '+$texts[$index]}
+            nested {$texts[$index]='@C:\old\compile.rsp '+$texts[$index]}
+            multiline {$texts[$index]="/c`n"+$texts[$index]}
+        }
+        Must-RefuseResponses $fixture $texts
+    }
+}
+# Independent-review P2 reproductions: an extra unquoted compile output and a
+# redirected link output with every one of the 413 required objects unchanged.
+$fixture=New-PublicationFixture;$texts=New-Responses $fixture
+$texts[0]=$texts[0].Replace('/Fd','/FoC:\outside\stolen.obj /Fd');Must-RefuseResponses $fixture $texts
+$texts=New-Responses $fixture
+$texts[2]=$texts[2].Replace('/OUT:"C:\fresh\link\zonetool-t7.exe"','/OUT:C:\outside\stolen.exe')
+Must-RefuseResponses $fixture $texts
+
+$outputCases=@(foreach($index in 0,1) {
+    $stage=if($index -eq 0){'main'}else{'zonetool11'}
+    foreach($entry in @(@('Fo',($stage+'.obj'),''),@('Fd','compile.pdb',''),@('sourceDependencies','dependencies.json',' '))) {
+        $path='C:\fresh\'+$stage+'\'+$entry[1]
+        ,@($index,$entry[0],('/'+$entry[0]+$entry[2]+'"'+$path+'"'),$path)
+    }
+})
+$outputCases+=@(foreach($entry in @(@('OUT','exe'),@('PDB','pdb'),@('IMPLIB','lib'))) {
+    $path='C:\fresh\link\zonetool-t7.'+$entry[1]
+    ,@(2,$entry[0],('/'+$entry[0]+':"'+$path+'"'),$path)
+})
+foreach($entry in $outputCases) {
+    $index=$entry[0];$name=$entry[1];$canonical=$entry[2];$path=$entry[3]
+    # All output options are checked across quoting, separators, switch prefixes
+    # and case. Duplicate identical destinations are also refused.
+    foreach($variant in @(('/'+$name+$path),('/'+$name+':'+$path),('/'+$name+' "'+$path+'"'),
+        ('/'+$name+': "'+$path+'"'),('"/'+$name+':'+$path+'"'),('-'+$name.ToUpperInvariant()+':'+$path),
+        ('/'+$name.Substring(0,1)+'"'+$name.Substring(1)+'":'+$path))) {
+        $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+        $texts[$index]=$texts[$index].Replace($canonical,$variant)
+        Assert-T7PublicationResponses $fixture $texts[0] $texts[1] $texts[2];$checks++
+        $texts=New-Responses $fixture
+        $texts[$index]=$texts[$index].Replace($canonical,($canonical+' '+$variant))
+        Must-RefuseResponses $fixture $texts
+        $texts=New-Responses $fixture
+        $texts[$index]=$texts[$index].Replace($canonical,$variant.Replace($path,'C:\outside\stolen.file'))
+        Must-RefuseResponses $fixture $texts
+    }
+    foreach($replacement in @('',('/'+$name+':'),('/'+$name+':""'),('/'+$name+':"'+$path),
+        ('/'+$name+':"'+$path+'\"'),('/'+$name+':"'+$path+'""'),('/'+$name+':'+"`r"+$path),
+        ('/'+$name+':'+[char]0+$path))) {
+        $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+        $texts[$index]=$texts[$index].Replace($canonical,$replacement)
+        Must-RefuseResponses $fixture $texts
+    }
+}
+# Spaces inside quoted paths and the existing manifest/PDBCompress flags must
+# not be mistaken for output switches or separators.
+$fixture=New-PublicationFixture;$fixture.RunRoot='C:\fresh space';$fixture.PreparedRoot='C:\prepared space'
+$texts=New-Responses $fixture
+$texts[2]=$texts[2].Replace('C:\fresh\','C:\fresh space\').Replace('/INCREMENTAL:NO',
+    '/INCREMENTAL:NO /MANIFESTUAC:"level=''asInvoker'' uiAccess=''false''"')
+Assert-T7PublicationResponses $fixture $texts[0] $texts[1] $texts[2];$checks++
 "T7_BUILD_PROFILE_CHECKS=$checks"
