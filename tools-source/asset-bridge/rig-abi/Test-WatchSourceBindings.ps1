@@ -1,10 +1,10 @@
 $ErrorActionPreference='Stop'
-# Extract only two pure definitions from the real runner AST. Do not invoke its
+# Extract only three pure definitions from the real runner AST. Do not invoke its
 # entry point, import providers, generate a revised Plan, or load native types.
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-WatchFixture.ps1'),[ref]$tokens,[ref]$errors)
 if($errors.Count){throw 'Runner AST invalid.'}
-foreach($name in @('Assert-WatchPath','Get-ReviewedWatchSourceBindings')){
+foreach($name in @('Assert-WatchPath','Get-ReviewedWatchSourceBindings','Assert-WatchFixtureSpec')){
     $definition=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name},$true)
     if(!$definition){throw 'Pure binding definition missing.'}
     Invoke-Expression $definition.Extent.Text
@@ -26,7 +26,18 @@ try{
         [IO.File]::WriteAllText($path,$payloads[$name]);$hashes[$name]=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()
     }
     $expected=[pscustomobject]$hashes
-    $spec=[ordered]@{Schema='iw7.rig-watch-fixture-plan/2';SourceBindings=$expected}
+    $spec=[ordered]@{Schema='iw7.rig-watch-fixture-plan/3';Mode='fixture';ResourceProfile='iw7.rig-watch-python-cdb-fixture/1';
+        Nonce=('b'*32);RunRoot='C:\synthetic\runtime\fresh';ProviderRoot='C:\synthetic';PythonExe='C:\synthetic\python.exe';
+        PythonSHA256=('a'*64);CdbExe='C:\synthetic\cdb.exe';SourceBindings=$expected}
+    $profile=Assert-WatchFixtureSpec ([pscustomobject]$spec)
+    if($profile.PhysicalBytes -ne 4GB -or $profile.CommitBytes -ne 6GB -or !$profile.EstimateOnly -or $profile.MeasuredPeaks -or $profile.RetailCompatible){throw 'Plan fixed fixture envelope differs.'}
+    foreach($change in @(@{Schema='iw7.rig-watch-fixture-plan/1'},@{Schema='iw7.rig-watch-fixture-plan/2'},
+        @{Mode='retail'},@{ResourceProfile='retail-10-14'},@{ResourceProfile='custom'},@{PhysicalBytes=1GB},@{CommitBytes=1GB},@{TargetExe='zonetool.exe'})){
+        $bad=$spec|ConvertTo-Json -Depth 5|ConvertFrom-Json
+        foreach($key in $change.Keys){$bad|Add-Member -NotePropertyName $key -NotePropertyValue $change[$key] -Force}
+        $refused=$false;try{Assert-WatchFixtureSpec $bad|Out-Null}catch{$refused=$true}
+        if(!$refused){throw 'Old schema, retail profile or arbitrary budget/target accepted.'}
+    }
     $specText=$spec|ConvertTo-Json -Depth 4 -Compress
     $specHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($specText)))
     $bindings=Get-ReviewedWatchSourceBindings $expected $taskTemp $guards
@@ -51,7 +62,7 @@ try{
     $blocked=$false
     try{[IO.File]::AppendAllText((Join-Path $taskTemp 'capture.py'),'late mutation')}catch{$blocked=$true}
     if(!$blocked){throw 'Late edit was allowed while reviewed source guards were held.'}
-    'PASS 7 independent source mutations with unchanged SpecSHA; 3 incomplete maps; early-import ordering; 7 held guards and late-edit refusal. No Plan or native execution.'
+    'PASS fixed fixture4/6 and 8 profile/schema/override refusals; 7 independent source mutations with unchanged SpecSHA; 3 incomplete maps; early-import ordering; 7 held guards and late-edit refusal. No Plan or native execution.'
 }finally{
     foreach($guard in $guards){$guard.Dispose()}
     # Delete only the known files and then the now-empty synthetic directory.

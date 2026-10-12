@@ -29,6 +29,19 @@ function Write-WatchJson([string]$Path,$Value) {
     [IO.File]::WriteAllText($temporary,$raw,[Text.UTF8Encoding]::new($false))
     [IO.File]::Move($temporary,$Path,$true)
 }
+function Assert-WatchFixtureSpec($Spec) {
+    $names=@('Schema','Mode','ResourceProfile','Nonce','RunRoot','ProviderRoot','PythonExe','PythonSHA256','CdbExe','SourceBindings')
+    $properties=@($Spec.PSObject.Properties)
+    if(!$Spec -or $properties.Count -ne $names.Count -or @($properties|Where-Object {$_.Name -cnotin $names}).Count){
+        throw 'Exact fixture v3 fields required; free budgets, target paths and commands are unavailable.'
+    }
+    if($Spec.Schema -cne 'iw7.rig-watch-fixture-plan/3' -or $Spec.Mode -cne 'fixture' -or
+       $Spec.ResourceProfile -cne 'iw7.rig-watch-python-cdb-fixture/1' -or $Spec.Nonce -cnotmatch '^[a-f0-9]{32}$'){
+        throw 'Only the fixed Python/CDB fixture profile is supported; retail mode is unavailable.'
+    }
+    [ordered]@{Id='iw7.rig-watch-python-cdb-fixture/1';Mode='fixture';PhysicalBytes=4GB;CommitBytes=6GB;
+        EstimateOnly=$true;MeasuredPeaks=$false;RetailCompatible=$false}
+}
 function Get-ReviewedWatchSourceBindings($Expected,[string]$Root,$Guards,[switch]$Hold) {
     $names=@('Run-WatchFixture.ps1','Watchpoint.Core.ps1','WatchpointDeadline.cs','capture.py',
         'cdb_transport.py','debug_fixture.py','fixture-providers.json')
@@ -58,9 +71,7 @@ $SpecPath=Assert-WatchPath $SpecPath
 if((Get-Item -LiteralPath $SpecPath -Force).Length -gt 16384){throw 'Spec exceeds 16 KiB.'}
 if((Get-FileHash -LiteralPath $SpecPath).Hash -ine $SpecSHA256){throw 'Spec binding differs.'}
 $spec=Read-WatchJson $SpecPath
-if($spec.Schema -cne 'iw7.rig-watch-fixture-plan/2' -or $spec.Mode -cne 'fixture' -or $spec.Nonce -cnotmatch '^[a-f0-9]{32}$'){
-    throw 'Only the explicit original-job fixture recipe is supported; retail mode is unavailable.'
-}
+$fixtureProfile=Assert-WatchFixtureSpec $spec
 $sourceGuards=[Collections.Generic.List[IDisposable]]::new();$state=$null
 try{
 $reviewedSources=Get-ReviewedWatchSourceBindings $spec.SourceBindings $PSScriptRoot $sourceGuards -Hold:$Run
@@ -84,7 +95,8 @@ $pins[$cdb]='5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67'
 $pins[(Join-Path (Split-Path $cdb) 'dbgeng.dll')]='4352756685e7325288e54abb3281e768637987517be8575ec4450e4b4421842f'
 $pins[(Join-Path (Split-Path $cdb) 'dbghelp.dll')]='ea639fc67cc1430b66b71ef63a2ec72ea92879cca7e665bb10ae33c4468094f9'
 if(!$Run){
-    [ordered]@{Schema='iw7.rig-watch-fixture-source-plan/2';RunRoot=$runRoot;SourceBindings=$pins;PhysicalBytes=10GB;CommitBytes=14GB;
+    [ordered]@{Schema='iw7.rig-watch-fixture-source-plan/3';RunRoot=$runRoot;SourceBindings=$pins;
+        ResourceProfile=$fixtureProfile;PhysicalBytes=$fixtureProfile.PhysicalBytes;CommitBytes=$fixtureProfile.CommitBytes;
         OverallMilliseconds=240000;ArmedMilliseconds=10000;CleanupMilliseconds=30000;OutputBytes=1MB;
         Mode='fixture';Ready=$false;NativeExecuted=$false;NativeTypesLoaded=$false;LeaseAcquired=$false;
         Next='Independent source review, then separate GO for owned CDB syntax/protocol qualification.'}|ConvertTo-Json -Depth 8
@@ -98,13 +110,16 @@ foreach($path in @((Join-Path $provider 'sdk/modding/BeaconFF.Core.ps1'),"$PSScr
     Assert-AnimationPureImport $path;. $path
 }
 . (Join-Path $provider 'ops/Resource-Scheduler.Core.ps1')
-$state=New-RigWatchState $spec.Nonce
+$state=New-RigWatchFixtureState $spec.Nonce
 $state.Context.Guards=$sourceGuards
 $state.Context.Baselines=[Collections.Generic.List[object]]::new()
 $state.Context.Transport=$null;$state.Context.SpecPath=$null
 $hooks=[ordered]@{
     Now={[Environment]::TickCount64}
-    Acquire={param($s,$physical,$commit) Enter-IW7ResourceLease -Scope $runRoot -Kind Extract -PhysicalBytes $physical -CommitBytes $commit -Owner 'Rig CDB fixture qualification only'}
+    Acquire={param($s,$physical,$commit)
+        if($physical -ne $fixtureProfile.PhysicalBytes -or $commit -ne $fixtureProfile.CommitBytes){throw 'Fixture profile/transaction budget differs.'}
+        Enter-IW7ResourceLease -Scope $runRoot -Kind Extract -PhysicalBytes $physical -CommitBytes $commit -Owner 'Rig Python CDB fixture qualification only'
+    }
     Stage={param($s)
         foreach($path in $pins.Keys){
             $null=Assert-WatchPath $path
@@ -208,7 +223,7 @@ $hooks=[ordered]@{
     }
     Delay={Start-Sleep -Milliseconds 50}
 }
-$result=Invoke-RigWatchTransaction $hooks $state
+$result=Invoke-RigWatchFixtureTransaction $hooks $state
 [ordered]@{Status=$result.Status;DiagnosticCaptured=$result.DiagnosticCaptured;Closed=$result.Closed;Restored=$result.Restored;
     LeaseReleased=$result.LeaseReleased;Quarantined=$result.Quarantined;FixtureOnly=$true;RetailRuntimeReady=$false;
     StatePath=(Join-Path $runRoot 'state.local.json');Failure=$result.Failure;CleanupFailure=$result.CleanupFailure}|ConvertTo-Json

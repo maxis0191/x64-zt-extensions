@@ -1,7 +1,9 @@
 # Functions only. No type loading, process creation or resource observation on import.
-function New-RigWatchState([string]$Nonce) {
+function New-RigWatchFixtureState([string]$Nonce) {
     if($Nonce -cnotmatch '^[a-f0-9]{32}$'){throw 'Exact session nonce required.'}
-    [ordered]@{Schema='iw7.rig-watch-transaction/1';Nonce=$Nonce;Status='Preparing';Failure=$null;CleanupFailure=$null;
+    [ordered]@{Schema='iw7.rig-watch-fixture-transaction/1';Mode='fixture';ResourceProfile='iw7.rig-watch-python-cdb-fixture/1';
+        PhysicalBytes=4GB;CommitBytes=6GB;MeasuredResourcePeaks=$false;
+        Nonce=$Nonce;Status='Preparing';Failure=$null;CleanupFailure=$null;
         StartedMs=$null;LastMs=$null;DueMs=$null;CleanupDueMs=$null;Lease=$null;AcquireAttempted=$false;
         StageStarted=$false;FactoryStarted=$false;Owner=$null;Deadline=$null;Context=[ordered]@{};
         Identity=$null;Snapshot=$null;Capture=$null;Continued=$false;Closed=$false;Restored=$false;
@@ -40,7 +42,11 @@ function Assert-RigWatchWorkers($Workers) {
         }
     }
 }
-function Invoke-RigWatchTransaction($Hooks,$State) {
+function Invoke-RigWatchFixtureTransaction($Hooks,$State) {
+    # Fixed fixture-only envelope; no generic/retail budget parameter or fallback.
+    if($State.Schema -cne 'iw7.rig-watch-fixture-transaction/1' -or $State.Mode -cne 'fixture' -or
+       $State.ResourceProfile -cne 'iw7.rig-watch-python-cdb-fixture/1' -or
+       $State.PhysicalBytes -ne 4GB -or $State.CommitBytes -ne 6GB){throw 'Exact fixed fixture resource profile required.'}
     foreach($name in @('Now','Acquire','Stage','Prepare','Identity','Deadline','Register','Poll','Continue','Seal',
         'Budget','Save','VerifySources','Restore','Release','Quarantine','Delay')){
         if(!$Hooks.Contains($name) -or $Hooks[$name] -isnot [scriptblock]){throw "Missing concrete provider: $name"}
@@ -49,7 +55,7 @@ function Invoke-RigWatchTransaction($Hooks,$State) {
     $State.DueMs=$State.StartedMs+240000L
     try {
         $State.AcquireAttempted=$true
-        $State.Lease=& $Hooks.Acquire $State 10GB 14GB
+        $State.Lease=& $Hooks.Acquire $State 4GB 6GB
         if(!$State.Lease -or !$State.Lease.Token){throw 'Admission did not return a bound lease.'}
         Assert-RigWatchTime $State $Hooks
         $State.StageStarted=$true

@@ -22,7 +22,7 @@ function Fixture {
     $script:watch|Add-Member ScriptMethod CloseAfterJobClosed {$this.Closed=$true;$script:calls.Add('Disarm')}
     $script:hooks=[ordered]@{
         Now={return $script:tick}
-        Acquire={param($state,$physical,$commit) Check ($physical -eq 10GB -and $commit -eq 14GB) 'Incomplete budget';$script:calls.Add('Acquire');[pscustomobject]@{Token='synthetic-lease'}}
+        Acquire={param($state,$physical,$commit) Check ($physical -eq 4GB -and $commit -eq 6GB) 'Incomplete fixed fixture budget';$script:calls.Add('Acquire');[pscustomobject]@{Token='synthetic-lease'}}
         Stage={param($state) $script:calls.Add('Stage')}
         Prepare={param($state) $script:calls.Add('Prepare');return $script:job}
         Identity={param($state) [pscustomobject]@{OriginalHandles=$true;PID=100;CreationUtc='synthetic'}}
@@ -42,7 +42,7 @@ function Fixture {
 }
 function RunCase([string]$Name,[scriptblock]$Edit,[scriptblock]$Verify){
     Fixture;& $Edit
-    $state=Invoke-RigWatchTransaction $script:hooks (New-RigWatchState ('b'*32))
+    $state=Invoke-RigWatchFixtureTransaction $script:hooks (New-RigWatchFixtureState ('b'*32))
     & $Verify $state
     $script:cases++;Write-Output "PASS $Name"
 }
@@ -148,6 +148,12 @@ RunCase 'persistent stopped debugger reaches global timeout' {$script:hooks.Poll
     param($s) Check (!$s.DiagnosticCaptured -and $s.Closed -and $s.Restored -and $script:job.StopCount -eq 1) 'Persistent debugger was not recovered'
 }
 $workers=@{stdout=@{Terminated=$false;Outcome='running'};stderr=@{Terminated=$false;Outcome='running'};stdin=@{Terminated=$false;Outcome='running'}}
+foreach($field in @('Mode','ResourceProfile','PhysicalBytes','CommitBytes')){
+    Fixture;$state=New-RigWatchFixtureState ('b'*32)
+    $state[$field]=if($field -in @('PhysicalBytes','CommitBytes')){1GB}else{'retail'}
+    $refused=$false;try{Invoke-RigWatchFixtureTransaction $script:hooks $state|Out-Null}catch{$refused=$true}
+    Check ($refused -and !$script:calls.Contains('Acquire')) 'Foreign mode or free budget reached admission'
+}
 Assert-RigWatchWorkers $workers
 foreach($name in @('stdout','stderr','stdin')){
     foreach($bad in @(@{Terminated=$true;Outcome='failed'},@{Terminated=$false;Outcome='eof'},@{Terminated='false';Outcome='running'},$null)){
@@ -157,4 +163,4 @@ foreach($name in @('stdout','stderr','stdin')){
         $workers[$name]=$saved
     }
 }
-Write-Output "Source-only transaction cases: $script:cases passed; 12 worker-state refusals passed; no native types, debugger, fixture or process launched."
+Write-Output "Source-only transaction cases: $script:cases passed; 12 worker-state refusals and 4 fixed-profile refusals passed; no native types, debugger, fixture or process launched."

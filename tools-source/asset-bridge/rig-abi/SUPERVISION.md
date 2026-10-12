@@ -17,7 +17,8 @@ be retained. Root exit plus Active0 and timely cleanup remain required.
 Its close method refuses to disarm over a live job or a pending Stop call.
 
 The pure core's hooks are implemented by the concrete runner/transport, not by
-untrusted serialized scriptblocks. They acquire the complete 10/14 GiB group,
+untrusted serialized scriptblocks. They acquire the complete fixed fixture
+4/6 GiB group (see [resource profiles](RESOURCE-PROFILES.md)),
 hold source pins, stage/restore the reviewed files, create the root in BuildJob,
 bind its original-handle identity, register it, read nonblocking transport state,
 authorize exactly one continuation, seal the bounded witness, save, and release.
@@ -50,7 +51,7 @@ required before any retail GO and is not authorized by these source artifacts.
 `Run-WatchFixture.ps1` defaults to Plan. It validates the small spec, local paths
 and exact pinned provider sources, then returns without loading a native helper,
 taking admission, creating the future run root or launching anything. `-Run`
-exists for a future explicit coordinator GO. It reserves the complete 10/14 GiB
+exists for a future explicit coordinator GO. It reserves the complete fixture 4/6 GiB
 group, guards source and tool files, loads the existing BuildJob and member
 observer plus the new deadline helper, and starts the Python transport as the
 suspended original root. It does not create or copy retail stock or a PDB.
@@ -92,10 +93,13 @@ transaction and its own locator binding, and is currently absent.
 
 ## Future GO input and current verification
 
-The private spec schema is `iw7.rig-watch-fixture-plan/2` with fields `Mode`
-(`fixture` only), `Nonce` (32 lowercase hex), `RunRoot` (fresh below this checkout's
+The private spec schema is `iw7.rig-watch-fixture-plan/3` with fields `Mode`
+(`fixture` only), `ResourceProfile` (`iw7.rig-watch-python-cdb-fixture/1` only),
+`Nonce` (32 lowercase hex), `RunRoot` (fresh below this checkout's
 runtime), `ProviderRoot`, `PythonExe`, `PythonSHA256`, `CdbExe`, and `SourceBindings`. It contains
-paths/pins only, never serialized callbacks or arbitrary debugger commands.
+paths/pins and the fixed fixture identity only, never serialized callbacks,
+arbitrary debugger commands, budget values or alternative target paths. Unknown
+fields are refused. The Plan returns `iw7.rig-watch-fixture-source-plan/3`.
 The runner takes `-SpecPath` and `-SpecSHA256`; **omit `-Run` for Plan**.
 The provider root must include the current source-bound rig member observer.
 `SourceBindings` binds exactly seven reviewed basename-to-SHA256 pairs:
@@ -105,14 +109,17 @@ must come from the reviewed revision and are part of the immutable SpecSHA256.
 Plan and Run compare them before any provider import or Add-Type. Run additionally
 holds read-only file guards from that comparison through transaction cleanup,
 closing the edit window before imports; it never blesses current local hashes as
-new approval. The old v1 spec is refused and its prior Plan is preserved for the
+new approval. The old v1/v2 specs are refused and their Plans are preserved for the
 review record, not upgraded or executed automatically.
 There is no game, client, Main, locator address, build toolchain or installation
-in this qualification recipe. Keep the 10/14 estimate; no admission was measured.
+in this qualification recipe. The earlier 10/14 fixture estimate inherited the
+retail rig envelope by mistake. The new fixed 4/6 component estimate is separate,
+unmeasured and subject to review; retail remains 10/14. Old preflight refusals
+remain intact. No new resource preflight or native execution follows this change.
 
 Current verification is 42 Python source tests (20 capture/identity, 22 concrete
-protocol/pipe simulations), 19 PowerShell transaction simulations, 12 worker-state
-refusals and PowerShell
+protocol/pipe simulations), 23 PowerShell transaction simulations, 12 worker-state
+refusals, four pre-admission mode/budget refusals and PowerShell
 AST parsing. A real default Plan against the retained sources returned
 NativeExecuted=false, NativeTypesLoaded=false, LeaseAcquired=false, Ready=false,
 and did not create its future run directory. The first Plan exposed hidden
@@ -129,16 +136,19 @@ processing/publication, and exports all three worker states. The PowerShell
 consumer independently rejects missing, ended or non-running workers. Regressions
 include valid stdout combined with a failed stderr worker, writer failures at
 queue/read/write/flush boundaries, hostile formatting, and a failed error handler.
-The prior Plan is preserved unchanged pending the complete independent verdict;
+The prior Plan is preserved unchanged in the independent review history;
 its old source bindings do not describe this corrective revision.
 
 The second review finding was that the previous runner recalculated its seven
 local hashes without comparing them with reviewed input, so an unchanged
-SpecSHA256 could accept edits between Plan and Run. Spec v2 fixes that binding.
+SpecSHA256 could accept edits between Plan and Run. Spec v2 fixed that binding;
+v3 retains it and distinguishes the fixed fixture resource profile.
 `Test-WatchSourceBindings.ps1` invokes only extracted pure source/path validators:
 each of seven synthetic source mutations is refused with an unchanged spec hash,
 incomplete maps fail, all imports follow binding, and held guards reject a later
-edit. No actual Plan has been regenerated pending the complete review verdict.
+edit. It also verifies the fixed 4/6 Plan envelope and eight old-schema, retail,
+foreign-profile and arbitrary-budget/target refusals. This profile change needs
+a new v3 source Plan and independent review before a separate future GO.
 
 Source corrections include the documented `r $t0` destination syntax and the
 positive `$bp3` acknowledgement. Actual command quoting, console/pipe behavior,

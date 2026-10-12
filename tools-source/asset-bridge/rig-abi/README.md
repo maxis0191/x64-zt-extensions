@@ -178,7 +178,7 @@ reviewed. The fixture must validate CDB syntax and original-job behavior under a
 future separate GO. Python/PowerShell simulations do not validate CDB parsing,
 hardware thread coverage, asynchronous break or Windows job behavior.
 
-| Budget per serialized offline observation | Proposal / required behavior |
+| Budget per serialized retail offline observation | Proposal / required behavior |
 | --- | --- |
 | Physical / commit | **10 GiB / 14 GiB** complete group: existing rig FF 8/11 plus documented debugger 2/3; estimate, not measured peak or admission |
 | Admission | One account-wide heavy group; available RAM must fit, no RAM reserve; independent 20% commit reserve with 4 GiB minimum; fresh policy/preflight required |
@@ -196,6 +196,12 @@ outside it. Current estimates cannot be reduced to evade admission. Retained
 staging manifests include 71 stock hardlinks and a 77-byte sentinel copy among
 79 entries; reuse the reviewed per-file restoration protocol, not a wholesale
 workspace copy. Do not modify the original failed run's state or receipts.
+
+The separate Python/CDB protocol fixture has a fixed **4/6 GiB** estimate under
+`iw7.rig-watch-python-cdb-fixture/1`. It does not load the retail workload above.
+See [the component accounting and unmeasured limits](RESOURCE-PROFILES.md).
+This distinction preserves the retail 10/14 estimate and the old refused fixture
+Plans; it does not authorize a smaller retail run or any native execution.
 
 The supervisor starts its deadline outside the debuggee, stops logging at the
 cap, and owns both debugger and debuggee in a registered job. On a hit, refusal,
