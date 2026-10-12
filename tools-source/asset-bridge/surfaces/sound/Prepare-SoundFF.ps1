@@ -26,11 +26,21 @@ if($DumpOnly -or $StandardMod){
     if(Test-Path -LiteralPath $OutputPath){throw 'Fresh dump Plan required.'}
     $payload=@($f.Plan.HashInputs|Where-Object {[IO.Path]::GetExtension($_.Path) -iin @('.exe','.wav','.flac')})
     $pins=[Collections.Generic.List[object]]::new()
-    $pins.Add((Get-SoundFFPin (Join-Path $PSScriptRoot 'SoundBuildJob.cs')))
+    $projection=$null
+    if($StandardMod){
+        $projection=New-SoundFFSourceProjection $f.Plan $evidence.PlanSHA256
+        foreach($row in $projection.Entries){$pins.Add($row.CurrentPin)}
+    }else{$pins.Add((Get-SoundFFPin (Join-Path $PSScriptRoot 'SoundBuildJob.cs')))}
+    $oldCandidate=@('build-receipt.json','supervisor-state.json'|ForEach-Object {Join-Path $f.Plan.CandidateRoot $_})
     foreach($old in $f.Plan.HashInputs){
-        if($old.Path -iin $payload.Path -or $old.Path.StartsWith($f.Plan.CandidateRoot+'\',[StringComparison]::OrdinalIgnoreCase)){continue}
-        if(!$old.Path.StartsWith($PSScriptRoot+'\',[StringComparison]::OrdinalIgnoreCase)){Assert-SoundFFPin $old}
-        $pins.Add((Get-SoundFFPin $old.Path))
+        if($old.Path -iin $payload.Path -or $old.Path -iin $oldCandidate){continue}
+        if($StandardMod){
+            if($old.Path -iin $projection.Entries.CurrentPin.Path){continue}
+            Assert-SoundFFPin $old;$pins.Add($old)
+        }else{
+            if(!$old.Path.StartsWith($PSScriptRoot+'\',[StringComparison]::OrdinalIgnoreCase)){Assert-SoundFFPin $old}
+            $pins.Add((Get-SoundFFPin $old.Path))
+        }
     }
     $inventory=Join-Path $f.Plan.RunRoot 'logs/verify/stdout.log'
     if((Get-Item -LiteralPath $inventory).Length -gt 256KB){throw 'Bounded preserved inventory required.'}
@@ -73,6 +83,7 @@ if($DumpOnly -or $StandardMod){
         ImmutableFF=$evidence;StockInputs=$f.Plan.StockInputs;HashInputs=@($pins|Sort-Object Path);PayloadInputs=$payload;
         PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=$outputs;
         HeavyExecutionAuthorizedByPlan=$false;Ready=$false}
+    if($StandardMod){$plan|Add-Member NoteProperty SourceProjection $projection}
     Assert-SoundFFExecutionPlan $plan $PSScriptRoot
     $json=$plan|ConvertTo-Json -Depth 25
     if([Text.Encoding]::UTF8.GetByteCount($json) -gt 256KB){throw 'Dump Plan exceeds 256 KiB.'}
