@@ -36,10 +36,10 @@ prove that a fresh `/Y-` compilation will consume exactly this closure.
 The metadata inventory is local, 560366 bytes, SHA-256
 `c97bbd45fd9b7d5284ca329db215e27210149d1869810d9bf9f9543a34cc12c3`.
 It lives under `runtime/content-surfaces/original-sound-checksum-seal-plan-a`.
-Recipe B is `seal-recipe-b.local.json`, 2457 bytes, SHA-256
-`1544b9b5419c0e93af5a5ef69e6ab8a723aaded2576dc314c6c91a3eb2c9b031`.
-The short entry is `seal-command-b.local.ps1`, SHA-256
-`eeead4246b98b9ad440f6f6dc989dc904d085da1f9f76b39fb406ac30a5b0aa8`.
+Current Recipe C is `seal-recipe-c.local.json`, 2457 bytes, SHA-256
+`62bc96ad05af9f111ff63928be7d1c74ff2786e2309d3f4147441b77ee7cef1c`.
+The short entry is `seal-command-c.local.ps1`, 565 bytes, SHA-256
+`ce0ab2bb0204ab0633d9ffce250768f77856adc9f7e13d15d893eb9967b85cc5`.
 It starts a fresh PowerShell 7.6.5 host with `-NoProfile -NonInteractive`, the exact
 recipe path/hash and `-Seal`. This command is prepared for coordinator review;
 its presence is not authorization to invoke it.
@@ -67,7 +67,7 @@ Eight actual PowerShell source/mock cases pass 35 assertions: JSON integer
 round-tripping, real FileStream write denial, two-pass byte accounting including
 an empty file, metadata/digest drift, a slow read, a slow final state write,
 read failure, duplicate refusal and release failure. No real reservation or
-native type is used. An actual default Recipe B Plan also passed with Add-Type,
+native type is used. An actual default Recipe C Plan also passed with Add-Type,
 admission, CIM, process creation and reusable-input hashing trapped; native types
 and the output directory remained absent.
 
@@ -75,3 +75,19 @@ Recipe A remains an obsolete, unexecuted preparation. Default Plan exposed that
 PowerShell JSON reads attributes as Int64; the bounded attribute contract now
 accepts Int32 or Int64, and the success test round-trips its fixture through JSON.
 No input hashing, native build or native probe occurred during that correction.
+
+Independent review then found that B checked source/recipe hashes before opening
+its guards and importing the core. C opens recipe, entry and core read-sharing
+handles before the first hash/parse. After discovering the inventory/helper paths
+from the guarded recipe, it opens those handles before their hash/parse/import.
+Hashing and JSON reads use the same retained streams. All guards remain open
+through either Plan output or sealing completion and are disposed in one finally
+block. No default-Plan exception releases them before import or output.
+
+The added `test_seal_entry_guards.ps1` passes eleven assertions on disposable
+copies. Seven attempted mutation intervals are denied: recipe/core at recipe
+parse, core/inventory after successful hashing but before core import, and all
+three at Plan output. The source stays unchanged, the Plan creates no output,
+and a subsequent write succeeds only after Plan has returned and disposed its
+guards. It uses no native type, reservation or large input. Recipes A and B stay
+preserved, obsolete and unexecuted; the exact native-input inventory is unchanged.
