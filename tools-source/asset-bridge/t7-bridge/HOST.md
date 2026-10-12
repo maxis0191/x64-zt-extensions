@@ -59,6 +59,11 @@ attempts finalization. A runner error such as `NoCatalogue` is recorded without
 changing the underlying result. A native quarantine keeps the existing runner
 and its original owner/lease/guards alive; this wrapper creates no supervisor.
 
+The executable identity is checked independently through `MainModule.FileName`.
+The installed managed PowerShell reports `pwsh.dll` in `GetCommandLineArgs()[0]`;
+that element is not treated as the executable path. Argument count and every
+argument from index 1 remain exact, including the host flags, script and inputs.
+
 ## Finalization and retained ambiguity
 
 Finalization requires the same in-memory host, a returned runner, intact wrapper
@@ -98,6 +103,14 @@ closed host do not establish catalogue success, compatibility or owner acceptanc
 ## Source-only validation evidence
 
 `Test-T7CatalogueHost.ps1` uses synthetic small text fixtures and fault injection.
+It also launches a lightweight PowerShell probe with the actual fixed argument
+vector, verifies the observed `pwsh.dll`/`pwsh.exe` distinction and exits it
+explicitly, closing its standard input for the subsequent `-NoExit` prompt.
+The probe reads a separate bounded JSON receipt: an initial stdout-only reader
+was rejected because PowerShell appended that prompt after the JSON.
+The probe imports only the host functions; it never invokes the
+catalogue runner, admission or native lifecycle. Wrong executable identity,
+count, and changes at every argument position from index 1 remain refusals.
 It exercises a safely closable `Failed / NoCatalogue`, bad Plan/receipt/lifetime
 and alias mappings, native/host/preserved PID reuse, remaining guard/lease/
 quarantine, metadata/file-ID/Main/source drift, publication failure, exact launch

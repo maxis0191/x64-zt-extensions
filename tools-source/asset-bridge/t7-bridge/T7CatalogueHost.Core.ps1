@@ -71,7 +71,8 @@ function Assert-T7CatalogueHostArguments($State,[string[]]$ActualArguments,$Host
         '-PlanPath',$State.PlanPath,'-PlanSHA256',$State.PlanSHA256,'-RunRoot',$State.RunRoot,
         '-HostContractPath',$State.ContractPath,'-HostContractSHA256',$State.ContractSHA256,'-Run')
     if($HostIdentity.Image -cne $State.Contract.HostImage -or $ActualArguments.Count -ne $expected.Count){throw 'Fresh exact NoProfile/NoExit host arguments required.'}
-    for($index=0;$index -lt $expected.Count;$index++){
+    # Managed pwsh reports pwsh.dll in argv[0]; the executable is checked above.
+    for($index=1;$index -lt $expected.Count;$index++){
         if($ActualArguments[$index] -cne $expected[$index]){throw 'Fresh exact NoProfile/NoExit host arguments required.'}
     }
 }

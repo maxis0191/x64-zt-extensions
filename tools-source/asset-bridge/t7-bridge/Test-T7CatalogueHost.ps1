@@ -1,4 +1,5 @@
-# Synthetic source/lifecycle tests. No engine, payload, native type or lease is opened.
+# Synthetic lifecycle tests plus a real lightweight pwsh argument probe.
+# No engine, payload, native runtime type or lease is opened.
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 . (Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1')
@@ -16,6 +17,58 @@ try {
     foreach($name in @('Invoke-T7CatalogueHost.ps1','T7CatalogueHost.Core.ps1')){
         $tokens=$null;$errors=$null;$null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $name),[ref]$tokens,[ref]$errors)
         Check (!$errors.Count) ('Parse error in '+$name)
+    }
+    # Exercise the installed host's actual .NET argv interface, not invented argv[0].
+    $probePath=Join-Path $temporary 'argv-probe.ps1';$probeSpecPath=Join-Path $temporary 'argv-spec.json'
+    $probeSource=@'
+param($PlanPath,$PlanSHA256,$RunRoot,$HostContractPath,$HostContractSHA256,[switch]$Run)
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+try {
+    $spec=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'argv-spec.json') -Raw|ConvertFrom-Json
+    . $spec.CorePath
+    $hostIdentity=Get-T7CatalogueHostIdentity
+    $actual=[Environment]::GetCommandLineArgs()
+    Assert-T7CatalogueHostArguments $spec.State $actual $hostIdentity
+    $result=[ordered]@{Status='Passed';HostImage=$hostIdentity.Image;Arguments=$actual;
+        NativeTypesLoaded=[bool](('IW7HudFileIdentity' -as [type]) -or ('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]));
+        HostStatePresent=($null -ne [AppDomain]::CurrentDomain.GetData('IW7.T7CatalogueHost'))}
+    [IO.File]::WriteAllText($spec.ResultPath,($result|ConvertTo-Json -Depth 4))
+    exit 0
+}catch{Write-Error $_ -ErrorAction Continue;exit 1}
+'@
+    [IO.File]::WriteAllText($probePath,$probeSource)
+    $probeState=[pscustomobject]@{Contract=[pscustomobject]@{HostImage=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName};EntryPath=$probePath;
+        PlanPath=(Join-Path $temporary 'unopened-plan.json');PlanSHA256=('b'*64);RunRoot=(Join-Path $temporary 'uncreated-run');
+        ContractPath=(Join-Path $temporary 'unopened-contract.json');ContractSHA256=('c'*64)}
+    $probeResultPath=Join-Path $temporary 'argv-result.json'
+    [IO.File]::WriteAllText($probeSpecPath,([ordered]@{CorePath=(Join-Path $PSScriptRoot 'T7CatalogueHost.Core.ps1');State=$probeState;ResultPath=$probeResultPath}|ConvertTo-Json -Depth 5))
+    $probeArguments=@('-NoLogo','-NoProfile','-NoExit','-File',$probePath,'-PlanPath',$probeState.PlanPath,'-PlanSHA256',$probeState.PlanSHA256,
+        '-RunRoot',$probeState.RunRoot,'-HostContractPath',$probeState.ContractPath,'-HostContractSHA256',$probeState.ContractSHA256,'-Run')
+    $start=[Diagnostics.ProcessStartInfo]::new($probeState.Contract.HostImage)
+    $start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true;$start.RedirectStandardInput=$true
+    foreach($argument in $probeArguments){$start.ArgumentList.Add($argument)}
+    $probe=[Diagnostics.Process]::new();$probe.StartInfo=$start;$probeStarted=$false
+    try {
+        $probeStarted=$probe.Start();if(!$probeStarted){throw 'Argument probe did not start.'}
+        $probe.StandardInput.Close() # EOF also closes the NoExit prompt after this source-only probe.
+        $probeOutput=$probe.StandardOutput.ReadToEndAsync();$probeError=$probe.StandardError.ReadToEndAsync()
+        if(!$probe.WaitForExit(10000)){throw 'Lightweight argument probe timed out.'}
+        $stdout=$probeOutput.GetAwaiter().GetResult();$stderr=$probeError.GetAwaiter().GetResult()
+        Check ($probe.ExitCode -eq 0) ('Actual pwsh argument probe failed: '+$stderr)
+        # -NoExit can append a prompt to stdout; read the separate bounded receipt.
+        $probeResult=Read-H1SmallJson $probeResultPath 16KB
+        Check ($probeResult.Status -ceq 'Passed' -and $probeResult.HostImage -ceq $probeState.Contract.HostImage) 'Actual executable identity differs.'
+        Check ([IO.Path]::GetFileName($probeResult.Arguments[0]) -ceq 'pwsh.dll') 'Expected installed pwsh managed argv[0] was not observed.'
+        Check ($probeResult.Arguments[0] -cne $probeResult.HostImage) 'Probe no longer reproduces the original argv[0]/executable mismatch.'
+        Check ($probeResult.Arguments.Count -eq $probeArguments.Count+1) 'Actual host argument count differs.'
+        for($index=1;$index -lt $probeResult.Arguments.Count;$index++){
+            Check ($probeResult.Arguments[$index] -ceq $probeArguments[$index-1]) ('Actual host argument differs at '+$index)
+        }
+        Check (!$probeResult.NativeTypesLoaded -and !$probeResult.HostStatePresent -and !(Test-Path -LiteralPath $probeState.RunRoot)) 'Argument probe touched runtime state.'
+    }finally{
+        # This is only the exact Process object created above, never a PID lookup.
+        if($probeStarted -and !$probe.HasExited){$probe.Kill();if(!$probe.WaitForExit(5000)){throw 'Argument probe closure unconfirmed.'}}
+        $probe.Dispose()
     }
     & {
         function Test-IW7ResourceIdentity($Expected,$Actual){$Expected.PID -eq $Actual.PID -and $Expected.Image -ceq $Actual.Image -and ([datetimeoffset]$Expected.CreatedUtc).UtcTicks -eq ([datetimeoffset]$Actual.CreatedUtc).UtcTicks}
@@ -138,6 +191,15 @@ try {
         $argsExact=@($script:state.Contract.HostImage,'-NoLogo','-NoProfile','-NoExit','-File',$script:state.EntryPath,'-PlanPath',$script:state.PlanPath,
             '-PlanSHA256',$script:state.PlanSHA256,'-RunRoot',$script:state.RunRoot,'-HostContractPath',$script:state.ContractPath,'-HostContractSHA256',$script:state.ContractSHA256,'-Run')
         Assert-T7CatalogueHostArguments $script:state $argsExact $script:currentHost;Check $true 'Exact arguments refused.'
+        $argsManaged=$argsExact.Clone();$argsManaged[0]='C:\synthetic\pwsh.dll'
+        Assert-T7CatalogueHostArguments $script:state $argsManaged $script:currentHost;Check $true 'Managed argv[0] refused.'
+        $wrongImage=[pscustomobject]@{PID=$script:currentHost.PID;CreatedUtc=$script:currentHost.CreatedUtc;Image='C:\other\pwsh.exe'}
+        Refuses {Assert-T7CatalogueHostArguments $script:state $argsManaged $wrongImage} 'NoProfile/NoExit'
+        Refuses {Assert-T7CatalogueHostArguments $script:state ($argsManaged+@('extra')) $script:currentHost} 'NoProfile/NoExit'
+        for($index=1;$index -lt $argsManaged.Count;$index++){
+            $changed=$argsManaged.Clone();$changed[$index]='wrong'
+            Refuses {Assert-T7CatalogueHostArguments $script:state $changed $script:currentHost} 'NoProfile/NoExit'
+        }
         $argsBad=$argsExact.Clone();$argsBad[3]='-NonInteractive';Refuses {Assert-T7CatalogueHostArguments $script:state $argsBad $script:currentHost} 'NoProfile/NoExit'
         $argsBad=$argsExact.Clone();$argsBad[7]='C:\other-plan.json';Refuses {Assert-T7CatalogueHostArguments $script:state $argsBad $script:currentHost} 'NoProfile/NoExit'
         Close-T7CatalogueHostGuards $script:state;[AppDomain]::CurrentDomain.SetData('IW7.T7CatalogueHost',$null)
@@ -177,7 +239,7 @@ try {
     [AppDomain]::CurrentDomain.SetData('IW7.T7CatalogueHost',[pscustomobject]@{Consumed=$true})
     Refuses {& $entry @parameters -Run} 'no Run re-entry'
     [AppDomain]::CurrentDomain.SetData('IW7.T7CatalogueHost',$null)
-    [ordered]@{Status='Passed';Checks=$script:checks;SyntheticOnly=$true;NativeRun=$false;NativeTypesLoaded=$false;LeaseAcquired=$false}|ConvertTo-Json
+    [ordered]@{Status='Passed';Checks=$script:checks;SyntheticLifecycle=$true;ActualPwshArgumentProbe=$true;NativeRun=$false;NativeTypesLoaded=$false;LeaseAcquired=$false}|ConvertTo-Json
 }finally{
     $left=[AppDomain]::CurrentDomain.GetData('IW7.T7CatalogueHost')
     if($left -and $left.PSObject.Properties['Guards']){foreach($guard in $left.Guards){$guard.Dispose()}}
