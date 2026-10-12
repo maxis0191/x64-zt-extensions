@@ -10,9 +10,10 @@ by SHA-256. It contains no game assets or machine paths.
 The successful run used the runner hash recorded in that historical evidence.
 Subsequent review found process-tree cleanup and final-receipt budget defects.
 The [source corrections](RUNNER-CORRECTIONS.md) add an atomic Windows Job owner
-and reserve final metadata space; their native helper remains uncompiled and
-unexecuted pending a separately admitted witness. Do not apply the historical
-success claim to the revised launcher's failure paths.
+and reserve final metadata space. The helper subsequently passed the separate
+[three-case native ownership witness](NATIVE-JOB-WITNESS.md). The full revised
+animation runner has not been rerun; its historical 281-byte proof still belongs
+to the earlier runner hash, and untested failure paths remain explicitly open.
 
 This source tranche prepares `paris_original_probe_bend` for the existing original
 `tag_origin` / `tag_probe` rig. It authors four X-axis rotation keys:

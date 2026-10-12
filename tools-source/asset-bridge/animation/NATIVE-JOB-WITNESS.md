@@ -1,6 +1,21 @@
-# Prepared native Job Object witness — not executed
+# Native Job Object witness — three cases passed
 
-The next command targets the corrected launcher helper only. It does not
+The authorized run on 2026-10-12 passed on its first attempt, from 03:04:39 to
+03:04:43 UTC. The helper compiled with Add-Type under PowerShell 7.6.5; normal
+tree closure, root-first exit/descendant termination and launcher kill-on-close
+all passed, with the separate witness surviving each cleanup. The original
+11 fixture identities were absent from a fresh post-run process inventory.
+The reservation was released and two subsequent snapshots showed an empty
+registry. Main's original process identity remained unchanged.
+
+All 31 files, including both final receipts and the 13312-byte helper DLL, total
+**22593 bytes**. The [sanitized validation record](job-witness-validation-2026-10-12.json)
+binds every artifact and source by hash. The native receipt SHA-256 is
+`cf07725dc8293a65617dc62cc481b0f187b76ece46e671b63b0af2872dbda1cb`.
+No correction/retry, animation writer rebuild, FF, Add-Type beyond the one helper
+library, or game execution was needed for this group.
+
+The reproducible command below targets the corrected launcher helper only. It does not
 recompile or emit the already-proved 281-byte animation writer, build ZoneTool,
 read game assets or launch a game. It compiles `Probe-NativeJob.cs` once using
 Add-Type into an ignored DLL, then uses the existing PowerShell executable for
@@ -66,14 +81,16 @@ ignored runtime. The runner records exact source/helper/executable hashes.
 
 ## Current evidence boundary
 
-The command has **not run**. The helper remains uncompiled after its review
-corrections. `Test-NativeProbeSource.ps1` passes 32 lightweight checks, including
+The exact command ran under source commit `908869d`, with reviewed main
+`4d705f6`. `Test-NativeProbeSource.ps1` also passes 32 lightweight checks, including
 AST parsing of both fixture scripts and admission-before-Add-Type ordering;
-these checks never execute the new witness or any of its P/Invoke methods.
+those separate checks do not execute the witness or any of its P/Invoke methods.
 
-The planned witness establishes only the cases above if it passes. It does not
+The native witness establishes only the three cases above. It does not
 inject a failure precisely between suspended creation and resume, force kernel
 accounting failures, test the full native animation runner, or validate animation
 FF/runtime behavior. Unconfirmed-owner release refusal is currently supported
 by mocked light tests, not a deliberately broken live kernel query. Those limits
-remain explicit even after a future three-case pass.
+remain open after this three-case pass. Near-cap rejection uses scaled file
+tests, not a native output flood. No peak-memory or PowerShell 7.0 runtime claim
+is made; compatibility with 7.0 was addressed in source but not exercised here.

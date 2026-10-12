@@ -4,7 +4,10 @@ Independent review of `42b5d27` accepted the historical 281-byte XAB/readback
 evidence and identified two defects in the runner. This source correction does
 not replace or rewrite `native-validation-2026-10-12.json`, its raw receipts or
 the writer/ABI sources. The successful run remains bound to its earlier runner
-hash. The corrected native helper has **not been compiled or executed**.
+hash. The correction was initially source-only. Its separate native witness now
+passes the three bounded cases recorded in
+[NATIVE-JOB-WITNESS.md](NATIVE-JOB-WITNESS.md); the complete revised animation
+runner has not been rerun.
 
 ## P1: own and confirm the complete process tree
 
@@ -76,19 +79,24 @@ growth before publication, normal closure, failed cleanup, cleanup returning
 without proof, and recovery which explicitly confirms closure. The 39 existing
 Python tests still cover the unchanged clip/preflight paths.
 
-These tests do not establish native job ABI, successful launch or actual process
-tree termination. Under a separately authorized heavy slot, first compile the
+The lightweight tests alone do not establish native job ABI, successful launch
+or actual process tree termination. The original proposal for a separately
+authorized heavy slot was to compile the
 helper and use a tiny purpose-built parent/child/grandchild fixture to verify:
 root exit with a surviving child does not complete the job; timeout kills all
 owned descendants; unrelated witness processes survive; suspended-start failure
 leaves no executable running; forced launcher exit triggers kill-on-close; and
 an unconfirmed native closure preserves its lease. Then validate file-backed
 diagnostics and the normal writer path. Preserve original handles/identities,
-logs and final directory accounting. No part of that next witness ran here.
+logs and final directory accounting. At that initial source checkpoint none of
+the native witness had run.
 
 The [prepared native witness command](NATIVE-JOB-WITNESS.md) now provides the
 normal/root-exit/kill-on-close tree cases, foreign witness and final accounting
-without rebuilding the original writer. It remains unexecuted. The lightweight
+without rebuilding the original writer. It passed on 2026-10-12 with the exact
+limits documented there: three native cases, 22593 total bytes, all owned trees
+closed and the lease released. Suspended-start/accounting fault injection and
+the full animation runner are still untested. The lightweight
 suite is now 32 checks after adding both fixture scripts' syntax and admission
 ordering checks. The helper's hash encoding uses BitConverter for PowerShell
 7.0 / .NET Core 3.1 compatibility; this does not expand the native evidence.
