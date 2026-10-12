@@ -1,0 +1,353 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-checkpoint/1",
+  "date": "2026-10-12",
+  "attempt": "N",
+  "plan": {
+    "name": "t7-catalog-plan-n.local.json",
+    "bytes": 21177,
+    "sha256": "2a5922e68190a0da12df5ebb9fd899d2621a984a6263eeca35d7ef534a7aba75"
+  },
+  "candidate_bytes": 21750272,
+  "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+  "source_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+  "dispatch": {
+    "name": "Invoke-T7CatalogueN.local.ps1",
+    "bytes": 3851,
+    "sha256": "dee0e0c32b8e41a2b7ffb67a83c78a0619cdc2560afff56e06f4fec9072b64a3"
+  },
+  "dispatch_review": {
+    "name": "t7-catalog-n-dispatch-review.local.json",
+    "bytes": 5361,
+    "sha256": "fc62914cbcee36c798d823c8762f033700fd1a7dfe7cbbab819f2ba77d5dedb4"
+  },
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "trace_outcome": "TraceObserved",
+  "exit_context_outcome": "Observed",
+  "callers_outcome": "Observed",
+  "message": {
+    "outcome": "Observed",
+    "captures": [
+      {
+        "Kind": "install",
+        "ThreadId": 14968,
+        "Status": "installed",
+        "Error": 0
+      },
+      {
+        "Kind": "buffer",
+        "ThreadId": 35140,
+        "Status": "ok",
+        "Error": 0,
+        "Requested": 384,
+        "ReadBytes": 384,
+        "Length": 38,
+        "NulTerminated": true
+      }
+    ],
+    "incomplete_trailing_line": false,
+    "install_boundary_observed": true,
+    "exit_correlated": true,
+    "correlation": "SameThreadBeforeExit",
+    "decoded_or_interpreted_by_adapter": false
+  },
+  "exit_code": 0,
+  "elapsed_ms": 3000.1623000204563,
+  "started_utc": "2026-10-12T19:34:52.1336965Z",
+  "finished_utc": "2026-10-12T19:34:56.8374559Z",
+  "runner_returned_utc": "2026-10-12T19:34:56.8592603Z",
+  "native_root": {
+    "pid": 31708,
+    "created_utc": "2026-10-12T19:34:52.1685999Z"
+  },
+  "trace_events": [
+    {
+      "Phase": "enabled",
+      "StdoutUnbuffered": true,
+      "StderrUnbuffered": true,
+      "ThreadId": 14968
+    },
+    {
+      "Phase": "before_entry_point",
+      "Code": 0,
+      "ThreadId": 14968,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "before_post_unpack",
+      "Code": 0,
+      "ThreadId": 14968,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "after_post_unpack",
+      "Code": 0,
+      "ThreadId": 14968,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "exit_hook",
+      "Code": 0,
+      "ThreadId": 35140,
+      "ReturnAddress": "0000000140AC00C4"
+    }
+  ],
+  "stderr_evidence_under_guards": {
+    "name": "stderr.log",
+    "bytes": 4874,
+    "sha256": "93dfa1e7fa92fa6ac8df7c5154c8b96f63b8dc383cf4c2d8d23763e02729a248",
+    "hash_recalculated_after_release": false
+  },
+  "stdout_bytes": 70,
+  "receipt": {
+    "name": "receipt.json",
+    "bytes": 19001,
+    "sha256": "492a665fda1ed3832ad77629e305fabbe31918c0d0712dd91c19e8d229900bc7"
+  },
+  "bootstraps": [
+    {
+      "name": "en_core_pre_gfx.ff",
+      "bytes": 832,
+      "sha256": "37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c",
+      "relative_alias": "zone/en_core_pre_gfx.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "core_pre_gfx.ff",
+      "bytes": 22351168,
+      "sha256": "5016669dba3eab765999bd2d0fdcda01c336f4fe2ea6ee8670c61c48107d97ce",
+      "relative_alias": "zone/core_pre_gfx.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "en_core_patch.ff",
+      "bytes": 624640,
+      "sha256": "241f1154237ca5459b98e948156f2138a546968a63f92cd13f70cb2e9794906e",
+      "relative_alias": "zone/en_core_patch.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "core_patch.ff",
+      "bytes": 45217664,
+      "sha256": "270b267de51f64f6fafc22b0f2047a544fdb83dc02b919b863d45688e3be3bdc",
+      "relative_alias": "zone/core_patch.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "en_core_gfx.ff",
+      "bytes": 768,
+      "sha256": "65806087b6cf757c9eb616587592565588ecd67bb821089f86a0451531187764",
+      "relative_alias": "zone/en_core_gfx.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    }
+  ],
+  "preflight": {
+    "captured_utc": "2026-10-12T19:34:11.7051389Z",
+    "decision": true,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "commit_used_percent": 56.91,
+    "physical_reserve": 0,
+    "commit_reserve": 9512923136
+  },
+  "closure": {
+    "tree_confirmed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "termination_requested": false,
+    "inputs_reverified_under_lease": true,
+    "engine_outputs_validated": true,
+    "original_metadata_unchanged": true,
+    "postflight_utc": "2026-10-12T19:35:50.8855771Z",
+    "metadata_equal_count": 9,
+    "file_ids_equal_count": 18,
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "host_pid": 24460,
+    "host_created_utc": "2026-10-12T19:34:18.5623195Z",
+    "host_parent_pid": 9544,
+    "session_id": 8109,
+    "tool_exit_chunk": "a2a705",
+    "actual_host_exit_code": 0,
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T19:36:13.7775674Z",
+    "host_parent_and_root_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "payload_hashes_read_after_release": false,
+    "guard_disposal_evidence": "Pinned runner finally disposes and clears every guard after Context.Closed and Lease=null, before the observed wrapper return."
+  },
+  "closure_helper": {
+    "name": "Finish-T7CatalogueNVerified.local.ps1",
+    "bytes": 5446,
+    "sha256": "e594d9200e2ce3a912681e7edf060b498021062dde7845ea5ab8cc90000daa42"
+  },
+  "preflight_correction": "None; known IW7/BlackOps3 client filter preserved.",
+  "private_evidence": [
+    {
+      "name": "t7-catalog-n-preflight.local.json",
+      "bytes": 1249,
+      "sha256": "20804a72912abb3eda47d9e5dbbaef86255fc98beb3066446a7803f639ed62fb"
+    },
+    {
+      "name": "t7-catalog-n-host-start.local.json",
+      "bytes": 269,
+      "sha256": "9dc52dfe3fdd35a88f3df3841a826b2871d2b4ea38fc49b083b24eba7091b9b0"
+    },
+    {
+      "name": "t7-catalog-n-host-return.local.json",
+      "bytes": 434,
+      "sha256": "c959c8d508bf477a1778a9b629ff07b46cc5f729fae2a07e25a6aa5ad1d341f2"
+    },
+    {
+      "name": "t7-catalog-n-postflight.local.json",
+      "bytes": 5873,
+      "sha256": "688ef57d19b4ac8033fc65152748a944c0f5f1dbdb1ec91ec4ef3d29712841e1"
+    },
+    {
+      "name": "t7-catalog-n-host-outcome.local.json",
+      "bytes": 372,
+      "sha256": "7f34f28da01be3f1c687366f2235b20954d03f19da9d58d50b673265b773e8d8"
+    },
+    {
+      "name": "t7-catalog-n-host-exit.local.json",
+      "bytes": 215,
+      "sha256": "80776f1928c60257964452a7d034bb773e119f709b3eb7a691c3f238edf43b29"
+    },
+    {
+      "name": "t7-catalog-n-host-absence.local.json",
+      "bytes": 824,
+      "sha256": "934cd10640af081727e4f1d8772b2e85bed7df3a93dfa13389e525987b308bee"
+    }
+  ],
+  "limits": {
+    "native_invocations": 1,
+    "runtime_attempt_consumed": true,
+    "catalogue_success": false,
+    "compatibility_proven": false,
+    "ready": false,
+    "plan_m_preserved": true,
+    "new_probe_added": false,
+    "speculative_dependency_added": false
+  },
+  "next_action": "Coordinator reviews the completed N evidence and exact core_gfx metadata, then decides any future authorization. No further qualification, plan preparation, payload read or catalogue invocation under this stopped batch.",
+  "batch": {
+    "protocol": {
+      "name": "t7-named-dependency-delegation-proposal.local.json",
+      "bytes": 4976,
+      "sha256": "aa4b12860d837feac5800b9df3010e18099eadfaceee6944f47bf4e98e563248"
+    },
+    "coordinator_acceptance_received": true,
+    "accepted_after_proposal": true,
+    "proposal_file_retained_unchanged": true,
+    "source_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+    "profile_sha256": "4c5ba9c0ccfd9bdbf7d6b2a46930ed560d4ced322f2e164d04fc2b1be57a1a47",
+    "reader_sha256": "28382d32673b059eee2de63f22543ce1dc63dafcb136be62ec93319e50b8df20",
+    "dependency_cycles_max": 3,
+    "closed_cycles": 2,
+    "closed_phases": 4,
+    "heavy_phases_max": 6,
+    "retry": false,
+    "bootstrap_bytes": 68195072,
+    "aggregate_limit_bytes": 134217728,
+    "next_analysis_pending": false,
+    "continuation_authority": "Revoked by coordinator after phase 4; no phase 5 or 6 without a new exact authorization.",
+    "stop_reason": "Repeated prefix substitution defects in local closure helpers; freeze adaptation. This is not a native-engine failure or payload incompatibility finding.",
+    "phase_5_or_6_prepared_or_invoked": false
+  },
+  "en_core_gfx_qualification": {
+    "status": "IdentityAndHashObservedCompatibilityUnknown",
+    "file_name": "en_core_gfx.ff",
+    "bytes": 768,
+    "sha256": "65806087b6cf757c9eb616587592565588ecd67bb821089f86a0451531187764",
+    "hash_provenance": "ObservedUnderLeaseNotDepotVerified",
+    "started_utc": "2026-10-12T19:32:11.6626655Z",
+    "finished_utc": "2026-10-12T19:32:13.8806229Z",
+    "passes": 2,
+    "read_bytes_per_pass": 768,
+    "total_read_bytes": 1536,
+    "metadata_identity_and_hash_reverified_under_guard": true,
+    "tree_closed": true,
+    "lease_released": true,
+    "guards_closed": true,
+    "quarantined": false,
+    "receipt": {
+      "name": "t7-en-core-gfx-qualification-a.local.json",
+      "bytes": 4414,
+      "sha256": "ee80cbf7027aacc10bc4285e3f56f465fb5854c4b5053310e939dd1091eeb6c0"
+    },
+    "closure": {
+      "name": "t7-en-core-gfx-a-host-closure.local.json",
+      "bytes": 809,
+      "sha256": "577e38dd18810a48b5cc4e182156c5e855a1156ad908246a0fca5c1ef6e2dca0"
+    },
+    "absence": {
+      "name": "t7-en-core-gfx-a-host-absence.local.json",
+      "bytes": 734,
+      "sha256": "3e0775e2163859965378e084fbbc427cee2d7b2425f8294f3bf2213b1be2e39b"
+    },
+    "session": 34106,
+    "actual_exit_code": 0,
+    "exit_tool_chunk": "0062b2",
+    "host_and_parent_absent": true,
+    "independent_absence_utc": "2026-10-12T19:32:56.6187059Z",
+    "payload_hashes_after_release": false,
+    "native_engine_executed": false,
+    "header_captured": false,
+    "depot_verified": false,
+    "compatibility_proven": false
+  },
+  "retained_closure_correction": {
+    "failed_helper": {
+      "name": "Finish-T7CatalogueN.local.ps1",
+      "bytes": 5446,
+      "sha256": "f9c8ac734f78bfe7e1eea9a9358c70cd924013e4dbedaca841d8f3363fbfbc05"
+    },
+    "reason": "A prefix replacement for attempt globals also changed Main and Metadata function names. The first invocation refused at the nonexistent Main helper before postflight or writes.",
+    "correction": "Restore only the two original function names; inspect full diff against the prior successful helper and validate exact T7 command names in AST before the corrected invocation.",
+    "corrected_helper": {
+      "name": "Finish-T7CatalogueNVerified.local.ps1",
+      "bytes": 5446,
+      "sha256": "e594d9200e2ce3a912681e7edf060b498021062dde7845ea5ab8cc90000daa42"
+    },
+    "corrected_postflight_passed": true,
+    "runtime_or_qualification_repeated": false,
+    "operational_source_changed": false,
+    "future_adaptation": "Replace full exact global variable names, never their overlapping function-name prefix; inspect complete diff before invoking."
+  },
+  "analysis_owner_followup": {
+    "same_missing_startup_zone_category": true,
+    "new_named_zone": "core_gfx",
+    "message_bytes": 38,
+    "complete_correlated_nul": true,
+    "only_named_path_metadata_observed": true,
+    "bytes": 6105536,
+    "ordinary_file_and_ancestors": true,
+    "payload_read": false,
+    "metadata_observed_utc": "2026-10-12T19:37:11.4696258Z",
+    "metadata_evidence_name": "t7-message-n-startup-metadata.local.json",
+    "metadata_evidence_bytes": 2029,
+    "metadata_evidence_sha256": "090edc5047685a57191d55afd4ff4fec0050c5b381d0ba4bf584aaef7f4e8c9f",
+    "projected_bootstrap_count": 6,
+    "projected_bootstrap_bytes": 74300608,
+    "within_size_and_count_limits": true,
+    "qualification_prepared": false,
+    "qualification_invoked": false,
+    "compatibility_proven": false
+  }
+}

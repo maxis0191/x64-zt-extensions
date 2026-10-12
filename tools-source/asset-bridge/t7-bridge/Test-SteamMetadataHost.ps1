@@ -24,6 +24,23 @@ $tool=Join-Path $temporary 'tool';$outer=Join-Path $temporary 'outer'
 $null=[IO.Directory]::CreateDirectory((Join-Path $tool 'cache'));$null=[IO.Directory]::CreateDirectory($outer)
 $settings=[pscustomobject]@{tool_root=$tool;outer_evidence_root=$outer}
 try {
+    # Probe argument gates before the existing path/stream code; no large buffer.
+    & {
+        $script:readerPathCalls=0
+        function Assert-H1Path([string]$Path){$script:readerPathCalls++;throw 'BeforeStreamSentinel'}
+        foreach($limit in @(33554433,45217664,67108864)){
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null} 'explicit 64 MiB opt-in'
+        }
+        foreach($limit in @(0,67108865)){
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow64MiB} 'validate argument'
+        }
+        Check ($script:readerPathCalls -eq 0) 'Oversize/default bounds reached the path or reader.'
+        Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' 33554432 $null} 'BeforeStreamSentinel'
+        foreach($limit in @(33554433,45217664,67108864)){
+            Refuses {Read-SteamSnapshot 'C:\synthetic\never-opened.ff' $limit $null -Allow64MiB} 'BeforeStreamSentinel'
+        }
+        Check ($script:readerPathCalls -eq 4) 'Explicit reader boundary dispatch differs.'
+    }
     $snapshotPath=Join-Path $outer 'snapshot.txt'
     $replacement=Join-Path $outer 'replacement.txt'
     $original=[Text.Encoding]::UTF8.GetBytes('observed header and bytes')
@@ -35,6 +52,8 @@ try {
         Check ($snapshot.Length -eq $original.Length -and $held.Count -eq 1 -and !$held[0].SafeFileHandle.IsClosed) 'Snapshot guard was not retained.'
         Check ($snapshot.SHA256 -ceq [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($snapshot.Bytes)).ToLowerInvariant() -and
             [Text.Encoding]::UTF8.GetString($snapshot.Bytes) -ceq 'observed header and bytes') 'Header and digest did not use the same snapshot.'
+        $opted=Read-SteamSnapshot $snapshotPath 64 $held -Allow64MiB
+        Check ($opted.SHA256 -ceq $snapshot.SHA256 -and $opted.Length -eq $snapshot.Length -and $held.Count -eq 2) 'Opt-in changed the existing guarded snapshot implementation.'
         Refuses {[IO.File]::AppendAllText($snapshotPath,'growth')} '.'
         Refuses {[IO.File]::Move($replacement,$snapshotPath,$true)} '.'
         Check ([IO.File]::ReadAllText($snapshotPath) -ceq 'observed header and bytes' -and (Test-Path -LiteralPath $replacement)) 'Guarded file was replaced or grew.'

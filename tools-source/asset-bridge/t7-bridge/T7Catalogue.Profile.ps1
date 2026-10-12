@@ -52,19 +52,27 @@ function Get-T7CatalogueBootstrap($Plan) {
 }
 function Get-T7CatalogueBootstrapPolicy($Plan) {
     if(!$Plan.PSObject.Properties['BootstrapPolicy']){return 'Legacy'}
-    if($Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cne 'QualifiedCollectionV1'){
+    if($Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cnotin @('QualifiedCollectionV1','QualifiedCollectionV2')){
         throw 'Unknown bootstrap collection policy.'
     }
-    'QualifiedCollectionV1'
+    $Plan.BootstrapPolicy
+}
+function Get-T7CatalogueBootstrapLimits($Plan) {
+    switch -CaseSensitive (Get-T7CatalogueBootstrapPolicy $Plan) {
+        'QualifiedCollectionV1' {[pscustomobject]@{ItemBytes=32MB;TotalBytes=32MB}}
+        'QualifiedCollectionV2' {[pscustomobject]@{ItemBytes=64MB;TotalBytes=128MB}}
+        default {throw 'Explicit qualified collection policy required for byte limits.'}
+    }
 }
 function Get-T7CatalogueBootstraps($Plan) {
     $single=[bool]$Plan.PSObject.Properties['Bootstrap']
     $plural=[bool]$Plan.PSObject.Properties['Bootstraps']
-    $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'QualifiedCollectionV1'
+    $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -cne 'Legacy'
     if($single -and $plural){throw 'Mixed bootstrap schemas are forbidden.'}
     if($qualified -and ($single -or !$plural)){throw 'Qualified collection requires only Bootstraps.'}
     if(!$single -and !$plural){return}
     if($qualified){
+        $limits=Get-T7CatalogueBootstrapLimits $Plan
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt 8){
             throw 'Qualified collection requires one through eight explicit items.'
         }
@@ -89,8 +97,8 @@ function Get-T7CatalogueBootstraps($Plan) {
                $stem -match '\A(con|prn|aux|nul|com[1-9]|lpt[1-9])\z' -or $name -ieq 'mp_freerun_04.ff' -or
                $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) $name) -or
                $bootstrap.RelativePath -cne ('zone/'+$name)) {throw 'Unsafe or noncanonical qualified bootstrap name/path.'}
-            if(!(Test-T7CatalogueInteger $bootstrap.Bytes 32MB) -or $bootstrap.Bytes -le 0 -or
-               $bootstrap.Bytes -gt 32MB-$total){throw 'Qualified bootstrap bytes exceed the aggregate 32 MiB bound.'}
+            if(!(Test-T7CatalogueInteger $bootstrap.Bytes $limits.ItemBytes) -or $bootstrap.Bytes -le 0 -or
+               $bootstrap.Bytes -gt $limits.TotalBytes-$total){throw 'Qualified bootstrap bytes exceed the item or aggregate policy bound.'}
             $total+=[long]$bootstrap.Bytes
             if($bootstrap.SHA256 -cnotmatch '\A[0-9a-f]{64}\z' -or $bootstrap.FileId -cnotmatch '\A[0-9A-F]{8}:[0-9A-F]{16}\z' -or
                $bootstrap.HashProvenance -cne 'ObservedUnderLeaseNotDepotVerified'){throw 'Qualified bootstrap provenance differs.'}
@@ -207,7 +215,7 @@ function Assert-T7CatalogueBootstrapIdentity($Plan) {
     }
 }
 function Assert-T7CatalogueDistinctInputIds($Plan,$InputFileIds) {
-    if((Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV1'){return}
+    if((Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'Legacy'){return}
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
     $expected=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.Zone.Path)+@($bootstraps.Path)
     if(@($InputFileIds).Count -ne $expected.Count){throw 'Complete original input IDs required before aliases.'}
@@ -227,10 +235,14 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     $null=Get-T7CatalogueMainBaseline $Plan
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
-    $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'QualifiedCollectionV1'
+    $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -cne 'Legacy'
     $bootstrapBytes=0L;foreach($bootstrap in $bootstraps){$bootstrapBytes+=$bootstrap.Bytes}
-    if($qualified -and (!(Test-T7CatalogueInteger $Plan.OutputLimitBytes 206722456L) -or
-        @($Plan.Bindings).Count -ne 22+3*$bootstraps.Count)){throw 'Exact qualified collection budget/binding count required.'}
+    if($qualified){
+        $limits=Get-T7CatalogueBootstrapLimits $Plan
+        if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
+           !(Test-T7CatalogueInteger $Plan.OutputLimitBytes (106059160L+64MB+$limits.TotalBytes)) -or
+           @($Plan.Bindings).Count -ne 22+3*$bootstraps.Count){throw 'Exact qualified collection budget/binding count required.'}
+    }
     if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
        $Plan.EngineOutputProfile -cne 'ObservedStartupA' -or
        $Plan.PhysicalBytes -ne 6GB -or $Plan.CommitBytes -ne 8GB -or

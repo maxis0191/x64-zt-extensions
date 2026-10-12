@@ -1123,3 +1123,149 @@ validity of the three earlier files or an exhaustive dependency list. No new
 asset path or metadata was consulted. The smallest proposed next decision is
 an exact metadata observation of `core_patch.ff`, then bounded qualification
 only if separately authorized. No dependency is inferred from name symmetry.
+
+## CorePatchA preparation: explicit 64/128 MiB policy
+
+The separately authorized exact metadata observation found `core_patch.ff`
+at 45,217,664 bytes, with ordinary file/ancestors. Metadata and an OS file ID
+were observed; content/header/hash were not read. It exceeds the original
+32 MiB reader limit by itself. Added to the three qualified files it would
+total 68,194,304 bytes, exceeding even a 64 MiB aggregate by 1,085,440 bytes.
+Preparation stopped on that old boundary before a qualification script or
+payload read. This refusal is retained in the
+[sanitized CorePatchA preparation checkpoint](catalogue-core-patch-preparation-m-20261012.json).
+
+A distinct source authorization then set 64 MiB **per file** and 128 MiB
+**aggregate**, still one through eight explicitly named/qualified files.
+`QualifiedCollectionV2` makes that choice explicit. V1 remains at 32/32 MiB;
+the exact legacy J/K rules remain unchanged. Names, paths, receipts, IDs,
+remaining-cap arithmetic and validation-before-alias requirements are shared.
+The 6/8 GiB reservation, deadlines, stderr cap and execution/closure paths
+are unchanged. The four-file output ceiling would be 196,003,736 bytes;
+the policy maxima are 262,027,160 for the current candidate or 307,385,752
+for a 64 MiB candidate.
+
+The existing `Read-SteamSnapshot` range now permits at most 64 MiB, with an
+explicit `Allow64MiB` switch required above 32 MiB. Without that switch the
+old limit refuses before path validation, opening a stream or allocating its
+buffer. CorePatchA passes the switch explicitly and retains the existing
+snapshot/hash/guard implementation. Its two exact 45,217,664-byte passes
+would read 90,435,328 bytes in total. All five qualification lifecycle
+functions are byte-for-byte identical to the predecessor.
+
+All 1,585 source checks pass: 311 collection, 68 reader and 1,206 remaining
+catalogue checks. The 54 separate qualification lifecycle checks also pass.
+Boundary fixtures cover the actual four-file arithmetic, exact 64/128 MiB
+limits, V1's unchanged refusal, and rejection before a reader path/stream or
+partial collection can escape. No large fixture allocation, retail content,
+native support or real lease is used. CorePatchA default returns
+`QualificationScriptCheckedPendingGO`; the future persistent-host command's
+actual arguments were captured without launching that host. Its scope,
+attempt marker and result receipt are absent.
+
+A small delegation protocol was proposed, not activated: at most three more
+dependencies named by complete correlated MSG failures, one qualification and
+one catalogue each, no retry and complete closure between stages. A new error
+category, repeated/ambiguous name, limit/admission/identity failure or any
+uncertain lifecycle stops the batch. It introduces no discovery engine or
+scheduler. A separate coordinator acceptance would be needed to delegate
+those stages; source authorization alone does not authorize them.
+
+CorePatchA awaits targeted review and a distinct qualification GO. Plan M
+does not yet exist: it can use the fourth file only after qualification has
+fully closed with a real hash/identity. No runtime compatibility is claimed.
+
+## Accepted bounded batch: CorePatchA and catalogue M closed
+
+The coordinator subsequently accepted the exact three-dependency protocol,
+source commit `22bbaa184c583c7d579b991def9b79c73b2a19e4`, V2 profile, reader and
+unchanged MSG candidate. The proposal JSON remains immutable historical evidence.
+This permits at most six sequential heavy phases, no retries, and continuation
+only from the analysis owner's complete correlated message naming one new safe
+startup zone. Every existing admission, identity, size and lifecycle stop remains.
+
+CorePatchA ran once at 19:20:48 UTC. Two guarded passes of 45,217,664 bytes
+established the actual hash and stable identity; compatibility, headers, depot
+integrity and engine lookup remain unproved. Guards closed, the tree closed,
+the lease released and quarantine was absent. PTY 98502 exited 0 (`d9fa11`);
+the independent 19:25:14 UTC witness found host and parent absent, no clients,
+heavy workloads or leases, Main/UDP absent and the preserved Python unchanged.
+An interactive proof-write path error was corrected using the explicit absolute
+path, without repeating qualification or changing its result.
+
+Plan M declares four qualified inputs totaling 68,194,304 bytes, 34 bindings,
+eight metadata rows and an output ceiling of 196,003,736 bytes. Source-only
+default and actual host/runner argument capture passed before publication of
+the sealed plan and dispatch. Fresh admission passed at 55.11% commit usage,
+with the unchanged 6/8 GiB reservation and no RAM reserve.
+
+The unique M run exited naturally with code 0 after 3,025.71 ms, but finalized
+as `Failed / NoCatalogue` at 19:27:42 UTC. The correlated private MSG awaits
+interpretation by its analysis owner. Under-lease input hashes and identities
+revalidated; same-host postflight checked eight metadata rows and sixteen IDs.
+The guards' disposal follows the pinned runner's finally path before wrapper
+return. PTY 48452 actually exited 0 (`e14b7c`); the independent 19:28:47 UTC
+witness confirmed host, parent and native root absent, zero heavy/client/lease
+counts, unchanged stopped Main baseline and preserved Python identity.
+No payload hash was read after release.
+
+A draft closure helper's cosmetic variable-renaming expression failed parsing
+before invocation. The failed draft is retained privately. The corrected helper
+kept predecessor variable names, changed only exact attempt values, passed
+parsing and the same-host closure checks. No operational source or Run changed.
+Future closure helpers should likewise change only fixed attempt values.
+
+The [M checkpoint](catalogue-runtime-m-20261012.json) records both completed
+phases and their private evidence pins. One of three dependency cycles is
+consumed. Further execution remains conditional on the separately accepted
+protocol; no catalogue, export, conversion or rendering has been established.
+
+The analysis owner then confirmed M's complete correlated 41-byte message names
+`en_core_gfx`, a new startup-zone failure in the same category. Its single exact
+path is an ordinary 768-byte file; only metadata and an OS file ID were read.
+Five declared inputs would total 68,195,072 bytes. These observations satisfy the
+batch's name/metadata bounds for dependency two; they prove no content validity.
+
+## EnCoreGfxA and catalogue N: second cycle closed
+
+The accepted batch qualified the single 768-byte `en_core_gfx.ff` input with
+unchanged lifecycle functions, 54 passing pure checks, source-only default and
+captured exact host arguments. Two guarded passes completed at 19:32:13 UTC.
+The receipt proves stable identity/hash only. Guards and lease closed without
+quarantine; PTY 34106 exited 0 (`0062b2`) and the independent 19:32:56 UTC witness
+confirmed host/parent absence and unchanged protected processes.
+
+Plan N contains five qualified bootstraps totaling 68,195,072 bytes, 37 bindings,
+nine metadata rows and an output ceiling of 196,004,504 bytes. Its default and
+actual argument capture passed before publication. Admission passed at 56.91%
+commit with the unchanged 6/8 GiB budget. Its single native invocation exited
+naturally 0 after 3,000.16 ms, finalizing `Failed / NoCatalogue` at 19:34:56 UTC.
+The receipt revalidated all inputs under the lease and confirmed tree closure,
+release and no quarantine. Same-host postflight checked nine metadata rows and
+eighteen file IDs. PTY 8109 actually exited 0 (`a2a705`); the independent
+19:36:13 UTC witness found host, parent and root absent, zero client/heavy/lease
+counts and unchanged Main/Python state. No payload hash was read after release.
+
+The first closure helper invocation refused because a prefix replacement for
+attempt globals also altered the Main/Metadata function names. The original
+helper and refusal are retained. Restoring those two names, inspecting the full
+diff and checking exact command names allowed the same host's postflight to
+pass. No native or qualification invocation was repeated. Future adaptations
+must replace full global variable names and inspect the complete diff.
+
+The [N checkpoint](catalogue-runtime-n-20261012.json) records phases three and
+four. The analysis owner alone interprets the retained MSG; one further
+named dependency cycle remains possible only under all existing batch limits.
+
+The analysis owner subsequently decoded N's complete correlated 38-byte MSG:
+its new missing startup zone is `core_gfx`. Exact-path metadata found an ordinary
+6,105,536-byte file, giving a hypothetical six-file total of 74,300,608 bytes.
+No content, header or payload hash was read; the file is not qualified.
+
+The coordinator then revoked continuation of the batch after phase four because
+of the repeated closure-helper substitution defects. This explicit stop takes
+precedence over the unused third dependency cycle. No CoreGfx qualification
+script or next Plan was prepared, and phases five/six were not invoked. Retain
+all evidence and return the next policy decision to the coordinator. The helper
+incident is distinct from N's natural exit and absent catalogue. Do not rename
+global prefixes in closure helpers or repeat N.
