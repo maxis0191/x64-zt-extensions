@@ -6,8 +6,10 @@ work; compilation and execution need separate parent GO/resource admission.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 
 import generate
@@ -16,6 +18,7 @@ from inspect_fixture import inspect_pair
 BASE = "src/zonetool/zonetool/"
 PATCH_SHA = "e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0"
 PATCHED_SHA = "f0910695382533abf9aed8a0c03f2f0da9d9af1ce2baee0efb5e78d252218a15"
+READ_LIMIT = 1024 * 1024
 
 
 def digest(data):
@@ -23,9 +26,37 @@ def digest(data):
 
 
 def raw_bounded(path):
+    """Bound allocation even if a regular source grows/replaces between checks."""
     generate.regular_ancestry(path)
-    generate.require(path.is_file() and path.stat().st_size <= 1024*1024, "bounded source required")
-    return path.read_bytes()
+    def regular(info):
+        generate.require(stat.S_ISREG(info.st_mode) and
+                         not getattr(info,"st_file_attributes",0) & 0x400,
+                         "regular non-reparse source required")
+        generate.require(0 <= info.st_size <= READ_LIMIT,"bounded source required")
+    def state(info):
+        return (info.st_dev,info.st_ino,info.st_mode,info.st_size,
+                info.st_mtime_ns,getattr(info,"st_birthtime_ns",None),info.st_nlink,
+                getattr(info,"st_file_attributes",None))
+    entry = path.lstat()
+    regular(entry)
+    # Unbuffered read on this single handle: at most LIMIT+1 bytes can be read
+    # or allocated, regardless of growth since lstat/fstat. SHA happens later.
+    with path.open("rb",buffering=0) as stream:
+        before = os.fstat(stream.fileno())
+        regular(before)
+        generate.require(state(entry) == state(before),"source changed while opening")
+        content = stream.read(READ_LIMIT + 1)
+        generate.require(len(content) <= READ_LIMIT,"source exceeded bounded read limit")
+        after = os.fstat(stream.fileno())
+        current = path.lstat()
+        regular(after); regular(current)
+        # Python 3.12 Windows lstat/fstat expose different ctime semantics.
+        # Compare ctime within each API; use identity/birth/mtime across APIs.
+        generate.require(state(before) == state(after) == state(current) and
+                         entry.st_ctime_ns == current.st_ctime_ns and
+                         before.st_ctime_ns == after.st_ctime_ns and
+                         len(content) == before.st_size,"source changed during bounded read")
+    return content
 
 
 def bounded(path):
@@ -36,7 +67,7 @@ def checked_sources(repo):
     generate.regular_ancestry(repo)
     head = subprocess.run(["git","-C",str(repo),"rev-parse","HEAD"],
                           capture_output=True,text=True,check=True).stdout.strip()
-    contract = json.loads(Path(__file__).with_name("native-source-contract.json").read_text())
+    contract = json.loads(raw_bounded(Path(__file__).resolve().with_name("native-source-contract.json")))
     generate.require(head == contract["pin"] == generate.PIN, "native source pin mismatch")
     result = {}
     for name, expected in contract["lf_sha256"].items():

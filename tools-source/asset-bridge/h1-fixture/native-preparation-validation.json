@@ -2,7 +2,7 @@
   "schema": "iw7.h1-native-source-validation/1",
   "date": "2026-10-12",
   "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
-  "source_preparation_tests_passed": 10,
+  "source_preparation_tests_passed": 12,
   "original_fixture_tests_passed": 12,
   "source_files_verified": 21,
   "prepared_file_bytes_verified": 6,
@@ -106,5 +106,16 @@
     "parser_pool_bytes": 1048576,
     "compile_deadline_seconds": 120,
     "run_deadline_seconds": 15
+  },
+  "bounded_read_review_correction": {
+    "limit_bytes": 1048576,
+    "maximum_read_request_bytes": 1048577,
+    "single_open_handle": true,
+    "regular_file_identity_and_state_before_after": true,
+    "real_concurrent_oversized_growth_rejected": true,
+    "real_concurrent_in_bound_growth_rejected": true,
+    "real_replacement_before_open_rejected": true,
+    "windows_ctime_compared_within_same_api": true,
+    "preflight_rechecked": true
   }
 }

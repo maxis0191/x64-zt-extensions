@@ -105,6 +105,16 @@ Use the same preparation command with `--verify` for a read-only preflight:
 it regenerates the expected source in memory, checks every prepared source
 byte and fragment/source hash, and still grants no execution authorization.
 
+Review correction: `raw_bounded` no longer performs `stat` followed by an
+unlimited `read_bytes`. It opens one unbuffered handle, requests at most
+1 MiB + 1 byte, rejects excess length and checks regular-file identity/state
+before and after reading against the current pathname. Tests perform a real
+concurrent append after `fstat` (both oversized and within the cap), and a real
+path replacement before open. An initial check exposed differing Windows
+Python 3.12 `ctime` semantics in `lstat` and `fstat`; identity/birth/mtime are
+compared across APIs and `ctime` within each API. This remains a cooperative
+file guard, not protection against an attacker restoring every metadata field.
+
 Proposed future budget, subject to the parent's plan/GO and live scheduler:
 
 | Group | RAM / commit estimate | Bound |

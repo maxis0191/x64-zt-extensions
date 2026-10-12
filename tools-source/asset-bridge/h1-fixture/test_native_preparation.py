@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 import re
 import tempfile
+import threading
 import unittest
+from unittest import mock
 
 import prepare_native as native
 
@@ -118,6 +120,68 @@ class NativePreparationTests(unittest.TestCase):
                     native.verify_prepared(SOURCE,output)
             target.write_bytes(original)
             native.verify_prepared(SOURCE,output)
+
+    def test_same_handle_read_is_bounded_when_source_grows_concurrently(self):
+        # Deterministic real concurrent append after the pre-read fstat, before
+        # read. This is the old stat-small/read-unbounded review reproduction.
+        with tempfile.TemporaryDirectory(prefix=".native-check-",dir=self.root) as tmp:
+            self.assertEqual(Path(tmp).parent,self.root)
+            target = Path(tmp)/"growing.cpp"
+            original_open = Path.open
+            for growth, error in ((b"x"*(native.READ_LIMIT+64),"bounded read limit"),
+                                  (b"x","changed during bounded read")):
+                target.write_bytes(b"a")
+                start, done = threading.Event(),threading.Event()
+                writer_errors, requests = [],[]
+                def writer():
+                    try:
+                        if not start.wait(5):
+                            raise AssertionError("reader did not reach bounded read")
+                        with original_open(target,"ab",buffering=0) as stream:
+                            stream.write(growth)
+                    except Exception as exc:
+                        writer_errors.append(exc)
+                    finally:
+                        done.set()
+                class ReadBarrier:
+                    def __init__(self,stream): self.stream=stream
+                    def __enter__(self): return self
+                    def __exit__(self,*args): self.stream.close()
+                    def fileno(self): return self.stream.fileno()
+                    def read(self,count):
+                        requests.append(count)
+                        start.set()
+                        if not done.wait(5):
+                            raise AssertionError("concurrent writer did not finish")
+                        return self.stream.read(count)
+                def guarded_open(path,*args,**kwargs):
+                    stream = original_open(path,*args,**kwargs)
+                    return ReadBarrier(stream) if path == target and args[0] == "rb" else stream
+                thread = threading.Thread(target=writer)
+                thread.start()
+                try:
+                    with mock.patch.object(Path,"open",guarded_open):
+                        with self.assertRaisesRegex(ValueError,error):
+                            native.raw_bounded(target)
+                finally:
+                    start.set(); thread.join(5)
+                self.assertFalse(thread.is_alive())
+                self.assertEqual(writer_errors,[])
+                self.assertEqual(requests,[native.READ_LIMIT+1])
+
+    def test_replacement_between_path_check_and_open_is_rejected(self):
+        with tempfile.TemporaryDirectory(prefix=".native-check-",dir=self.root) as tmp:
+            self.assertEqual(Path(tmp).parent,self.root)
+            target, replacement = Path(tmp)/"source.cpp",Path(tmp)/"replacement.cpp"
+            target.write_bytes(b"first"); replacement.write_bytes(b"other")
+            original_open = Path.open
+            def replace_before_open(path,*args,**kwargs):
+                if path == target and args[0] == "rb":
+                    replacement.replace(target)
+                return original_open(path,*args,**kwargs)
+            with mock.patch.object(Path,"open",replace_before_open):
+                with self.assertRaisesRegex(ValueError,"changed while opening"):
+                    native.raw_bounded(target)
 
 
 if __name__ == "__main__":
