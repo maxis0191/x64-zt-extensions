@@ -27,7 +27,7 @@ in place; no SDK/header tree is copied. Source hashes are in
 | x64 ABI | `h1/structs.hpp:3975` vertex (32 B), `:4037` rigid list (16 B), `:4160` surface (264 B), `:4199` surface group (56 B), `:4333` model (680 B) |
 | Typed stream | `zonetool/utils/io/assetmanager.hpp`: ARRAY=8, STRING=6, ASSET=7, RAW=10; one-byte presence; uint32 array count; null-terminated ASCII names |
 | H1 frame packing | `src/zonetool/game/shared.cpp:400-408`, `Vec3PackUnitVec_H1`; UVs use exactly representable half-float 0/1 |
-| Actual conversion | `h1/converter/iw7/assets/xmodel.cpp:15`, `xsurface.cpp:78`; ordinary vertices and self-visibility path, no reactive-motion shortcut |
+| Actual conversion | `h1/converter/iw7/assets/xmodel.cpp:15`, `xsurface.cpp:82`; ordinary vertices and self-visibility path, no reactive-motion shortcut |
 | Dispatch boundary | `h1/zonetool.cpp:390-454`, `dump_asset_iw7` receives already loaded H1 XAssets |
 
 Paths in the ABI/conversion rows are relative to `src/zonetool/zonetool/`.
