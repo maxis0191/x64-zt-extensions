@@ -45,7 +45,7 @@ try {
     $owner.Dispose();$owner=$null
     for($attempt=1;$attempt -le 8;$attempt++) {
         $log=Join-Path $root "build-$attempt.log"
-        $argsText='"{0}" /m:1 /nr:false /nologo /noconsolelogger /p:Configuration=Release /p:Platform=x64 /p:MultiProcessorCompilation=false /p:BuildProjectReferences=false "/flp:LogFile={1};Verbosity=normal"' -f $project,$log
+        $argsText='"{0}" /m:1 /nr:false /nologo /noconsolelogger /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64 /p:MultiProcessorCompilation=false /p:BuildProjectReferences=false "/flp:LogFile={1};Verbosity=normal"' -f $project,$log
         $owner=[IW7.CommunityBuild.BuildJob]::Prepare($MSBuild,$argsText,$root)
         Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID
         $record=[ordered]@{Attempt=$attempt;PID=$owner.PID;StartedUtc=[datetime]::UtcNow.ToString('o');Priority=$owner.Priority;Arguments=$argsText;ExitCode=$null;JobActiveAtClose=$null}
