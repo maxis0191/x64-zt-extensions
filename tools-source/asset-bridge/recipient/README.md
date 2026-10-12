@@ -511,3 +511,12 @@ complete dependency index cannot be established from retained evidence, assess
 an explicit inventory of existing Doom `assetfile*.pak`, separately from image
 PAKs, with measured logical/identity counts and a newly reviewed I/O budget.
 No retail hashing or native execution is authorized during that investigation.
+
+The [complete-scope note](COMPLETE-PAK-SCOPE.md) now records that investigation
+and the subsequently authorized source preparation. A distinct `/3` profile
+covers all 33 reviewed asset PAKs, with pak1 kept in the baseline, 32 additions,
+an independent pinned metadata inventory and a 5,148,447,113-byte total stock
+hash-read budget. All 59 new, 65 earlier-profile and 65 source/contract checks
+pass. A deterministic references-only Plan describes 107 managed paths and an
+absent run root. No retail hash, staging or native run was performed. Plan review,
+new-profile binder agreement and a separately granted GO remain required.

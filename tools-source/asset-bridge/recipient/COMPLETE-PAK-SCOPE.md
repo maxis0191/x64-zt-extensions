@@ -1,6 +1,8 @@
 # Complete asset-PAK scope proposal after F
 
-This is a source and filesystem-metadata investigation, not a runnable profile.
+This begins with the source and filesystem-metadata investigation archived in
+`f57b530`. The preparation checkpoint below supersedes its then-unsupported
+runner status; the original proposal JSON remains an unchanged snapshot.
 F remains failed on `assetfile101.pak`, with confirmed original-job closure and
 restoration of all 80 managed paths. Its GO is exhausted. The existing four/five
 profiles and all earlier evidence remain unchanged.
@@ -11,7 +13,7 @@ Review a new explicit profile covering **all 33 existing, reviewed `assetfile`
 PAKs in durable Doom**, retaining the original 72-entry FF/tool baseline. Pak1
 is already in that baseline, so this means 32 additional `zone/` hardlinks.
 The [fixed proposal](asset-pak-scope-proposal-2026-10-12.json) lists every name,
-size and historical reviewed SHA256. It is not accepted by the current runner.
+size and historical reviewed SHA256. That proposal JSON is not a runner receipt.
 No wildcard, failure-driven append, new directory clone or payload copy should
 become an execution input. A future implementation must accept only the exact
 ordered scope and totals, preserve the previous profiles, and require a new
@@ -159,3 +161,47 @@ non-default reference results, original-tree closure, all 107 paths restored,
 source preservation and released resources. Script bytes, package qualification
 and gameplay remain separate gates. Coordinator owns central docs and GitHub
 integration; this investigation launches nothing.
+
+## Source preparation checkpoint
+
+The coordinator subsequently authorized source and Plan preparation only.
+`Recipient.Stock.ps1` now supports the distinct
+`doom-reviewed-all-asset-paks-20261012` profile with observation schema `/3`, the
+exact 32 ordered supplemental names and the exact 4,695,508,096-byte limit.
+The earlier `/1` and `/2` profiles remain unchanged. No discovery or automatic
+growth runs inside the producer. Budget calculation independently rechecks the
+named ordered scope, rejecting substitutions even if total bytes were preserved.
+
+The `/3` observation binds F's fatal SHA256
+`67995123AB95D54DE3DDB9FFB0F52015DAA0978F3C782C977A7C9A3A3C9F58F3`
+and the independent complete-inventory SHA256 above. The spec supplies
+`RecipientCompleteInventoryReceipt` and its SHA256. Plan construction requires
+the fixed hash, a bounded receipt of at most 128 KiB, then compares the exact
+asset names, bytes, IDs, modification times, attributes and historical hashes.
+The baseline pak1 must also match that inventory. The independent inventory is
+added to `SourceHashes`, so execution would recheck and hold its normal read
+guard. An earlier profile rejects these extra complete-inventory bindings.
+Normal admitted live identity/content guards remain unchanged.
+
+All 33 current source identities, lengths, timestamps and attributes still
+matched the retained metadata inventory during preparation. No retail contents
+were read. New checks pass for malformed/missing/mixed profiles, wrong F or
+inventory evidence, missing/duplicate/reordered names, imagefile substitution,
+unexpected names, copied PAKs, changed sizes/hashes/attributes/timestamps/IDs,
+baseline pak1 disagreement and a changed live identity before staging.
+Results: **59 complete-profile, 65 earlier-profile and 65 source/contract checks**.
+These are synthetic/source checks, not a real restoration or reference result.
+
+Two fresh PowerShell hosts produced the same references-only Plan: 104 stock
+inputs, 107 managed paths, 73 distinct stock files, 5,148,447,113 stock hash-read
+bytes, 20 source pins and 12 unchanged provider pins. The run root remains absent,
+and `NativeExecuted`, `ClosureComplete` and `Ready` are false. The 8/11 GiB
+reservation and 240/245/600-second deadlines are retained estimates requiring
+review; no admission, staging, retail hash or native run occurred. Distribution
+binder compatibility with this new profile remains an independent review gate.
+
+Run the additional pure checks with:
+
+```powershell
+pwsh -NoProfile -File tools-source/asset-bridge/recipient/Test-RecipientCompleteStock.ps1 -StockBindingPath <reviewed-provider>/tools-source/asset-bridge/common/StockBinding.Core.ps1
+```

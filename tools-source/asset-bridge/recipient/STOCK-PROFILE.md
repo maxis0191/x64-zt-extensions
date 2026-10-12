@@ -229,4 +229,6 @@ newly measured read budget before any further profile proposal or admission.
 The resulting [complete-scope investigation](COMPLETE-PAK-SCOPE.md) identifies
 33 reviewed asset PAKs and 49 separate image PAKs using metadata only. It proposes
 an explicit all-asset list with 5,148,447,113 total stock hash-read bytes, without
-implementing another runner profile or authorizing a run.
+authorizing a run. The later source-preparation checkpoint in that note records
+the distinct `/3` runner profile, independent inventory binding and pure tests.
+Its exact Plan still requires review and a separately granted GO.

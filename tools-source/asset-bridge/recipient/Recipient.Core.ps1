@@ -76,7 +76,20 @@ function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$
     $reviewed=Read-BeaconJson $Spec.ReviewedStockManifest
     $inputs=@(Get-FFStockBindingInputs $stock $observation $reviewed $Spec.StockRoot $Spec.StockReceiptSHA256 $Spec.ReviewedStockManifestSHA256)
     foreach($entry in $inputs){$entry|Add-Member NoteProperty BaselineMode $entry.Mode;$entry.Mode=if($entry.Relative -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'}}
-    $supplemental=@(Get-RecipientSupplementalStockInputs (Read-BeaconJson $Spec.RecipientStockBindingReceipt) $reviewed $Spec.StockRoot $Spec.ReviewedStockManifestSHA256)
+    $recipientObservation=Read-BeaconJson $Spec.RecipientStockBindingReceipt
+    $recipientProfile=Get-RecipientSupplementalProfile $recipientObservation.Profile
+    $completeInventory=$null
+    if($recipientProfile.InventoryEvidenceSHA256){
+        if(![IO.Path]::IsPathFullyQualified($Spec.RecipientCompleteInventoryReceipt) -or
+           $Spec.RecipientCompleteInventoryReceiptSHA256 -ine $recipientProfile.InventoryEvidenceSHA256 -or
+           (Get-Item -LiteralPath $Spec.RecipientCompleteInventoryReceipt).Length -gt 128KB){throw 'Exact bounded complete inventory receipt required.'}
+        Assert-BeaconHash $Spec.RecipientCompleteInventoryReceipt $Spec.RecipientCompleteInventoryReceiptSHA256
+        $completeInventory=Read-BeaconJson $Spec.RecipientCompleteInventoryReceipt
+        Assert-RecipientCompleteBaseline $inputs $completeInventory $Spec.StockRoot $Spec.ReviewedStockManifestSHA256
+    }elseif($Spec.RecipientCompleteInventoryReceipt -or $Spec.RecipientCompleteInventoryReceiptSHA256){
+        throw 'Complete inventory spec cannot be mixed into an earlier profile.'
+    }
+    $supplemental=@(Get-RecipientSupplementalStockInputs $recipientObservation $reviewed $Spec.StockRoot $Spec.ReviewedStockManifestSHA256 $completeInventory)
     $stockBudget=Get-RecipientStockBudget $inputs $supplemental
     $inputs+=@($supplemental)
     $requests=@(
@@ -93,6 +106,7 @@ function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$
         $path=Join-Path $Spec.CandidateRoot $name;$sourceHashes[$path]=(Get-FileHash -LiteralPath $path).Hash
     }
     foreach($field in @('StockReceipt','StockBindingReceipt','RecipientStockBindingReceipt','ReviewedStockManifest','PythonExe')){$sourceHashes[$Spec.$field]=$Spec.($field+'SHA256')}
+    if($completeInventory){$sourceHashes[$Spec.RecipientCompleteInventoryReceipt]=$Spec.RecipientCompleteInventoryReceiptSHA256}
     foreach($entry in $requests){$sourceHashes[$entry.Source]=$entry.SHA256}
     foreach($name in @('recipient_phase.py','recipient_contract.py','recipient_dialog.py','Recipient.Core.ps1','Recipient.Stock.ps1','Recipient.Light.ps1','Run-RecipientClosure.ps1','provider-pins.json')){
         $path=Join-Path $Root $name;$sourceHashes[$path]=(Get-FileHash -LiteralPath $path).Hash
