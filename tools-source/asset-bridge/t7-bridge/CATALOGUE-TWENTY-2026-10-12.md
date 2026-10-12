@@ -70,3 +70,43 @@ length, final eight-byte regular-file identity under an admitted read guard,
 and no semantic claim. `ObservedStartupA` must retain its original behavior.
 The host also needs a distinct failed-incident closure path that preserves the
 normal success gates. Neither change authorizes another native attempt.
+
+## Subsequent B attempt: normal closure, no catalogue
+
+After those source changes merged as a21ab024, a new plan retained the same
+twenty bootstraps, 24 inputs and native candidate. Only the execution paths,
+reviewed source pins and explicit ObservedStartupManifestA profile changed.
+Its 51244-byte plan hash is
+`7be3417b502fc5e04419029dc9a1970852d6c271230ca559d3f4a2d9eb936c27`.
+The declared known-entry count was corrected from 44 to 46: the optional
+manifest and the previously omitted generated TLS file. The dynamic cap stayed
+64. Independent DEFAULT validation passed before the single authorized run.
+
+Under unchanged 6/8 GiB admission, the native process started at 22:33:36.8297664Z
+and exited one after about 5.56 seconds, **without requested termination**.
+The result remains Failed / NoCatalogue. InputsReverified,
+EngineOutputsValidated, original metadata preservation, native tree closure and
+lease release are true; no quarantine remains. The eight-byte manifest was
+observed only as opaque file metadata and identity, never read or hashed.
+The 31684-byte receipt hash is
+`b30e0ddbce9e29ced1afa9c4b02df37580362f73a03b849d12c9e859cb7d6d84`.
+
+The wrapper's normal automatic completion passed: 24 original metadata records,
+48 original/alias IDs, no remaining native processes or lease, CanExit=true and
+zero retained wrapper guards. No manual Finish or CloseIncident was needed.
+The actual host and outer terminal exited one; an independent witness at
+22:37:44.6761627Z confirmed their absence, preserved Python and stopped Main.
+Its 3805-byte receipt hash is
+`2297504f60f48e38f62ebd1b65dae8420deaa16ad12b4295452fcc85ee62d586`.
+
+B retained 250115 new bytes across 18 files, including preparation and both
+independent witnesses. The 24 hardlinks represent 808835800 existing logical
+bytes and are excluded from that new-data count. These are scoped counts.
+
+The engine still reports that the exact donor zone did not finish loading.
+The 683-byte stderr ends mid-record after requested=384/read=; the complete
+message and cause of load failure remain unknown. Source inspection identifies
+a plausible race between the message worker's publication and CLI quick_exit,
+which bypasses the instrumented exit hook. The observed ordering does not prove
+that hypothesis. Correct and test bounded diagnostic publication before another
+native candidate; do not infer missing message bytes or retry B.
