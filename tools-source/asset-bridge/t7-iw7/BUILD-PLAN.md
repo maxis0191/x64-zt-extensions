@@ -170,7 +170,7 @@ identity, artifact, two-capture and original-job closure checks, with no deadlin
 increase. Any further native invocation requires a separately reviewed new plan
 and coordinator GO; Plan C remains Failed.
 
-## Link-only correction and Plan D2 (not executed)
+## Link-only correction and Plan D2 preparation
 
 Invoke-T7OwnedStage is a small adapter around the unchanged H1 controller. For
 Link only, it supplies the pinned sibling link.exe identity (SHA256
@@ -213,3 +213,42 @@ changed artifacts and unpinned linker identity. The original cl policy remains
 unchanged outside the adapter. All three retained dependency reports also pass
 the new plan's source-only check. These tests perform no native execution or
 reservation. Independent review and a new coordinator GO remain required.
+
+## Plan D2 result: qualified link, candidate not executed
+
+After favorable independent review and an explicit coordinator GO, exactly one
+Link-only D2 invocation ran on 2026-10-12 with source
+ba365d4ba100128094d7de821da95f1516516c88 and the plan SHA above. Fresh admission
+followed the preceding workload's confirmed closure. The linker completed in
+2.753 seconds; the complete guarded group took 13.791 seconds. The original
+linker exited zero. H1 qualified the exact VCTIP child in two original-job
+captures, stopped only that original job, and confirmed root exit zero with
+zero active members afterward. No compile or helper fixture was rerun.
+
+The create-only receipt is `runtime/zt-t7-b/receipt.json`, SHA256
+c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2.
+It records Passed, InputsReverified, TreeClosureConfirmed and LeaseReleased,
+with Quarantined false. All 1,086 expected inputs, including the E7 preservation
+anchors and reused C artifacts, passed final revalidation. Link output before
+receipt was 158,225,555 bytes. Qualified outputs under `runtime/zt-t7-b/link`:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| zonetool-t7.exe | 21,740,032 | 94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15 |
+| zonetool-t7.pdb | 136,474,624 | b533dd414ebe395885f03dfddb4fb5c43fafdf8f51de33e5ec1b5b3afa1fd5c2 |
+| zonetool-t7.lib | 6,744 | f922f8b672d7483ac5d4e056e45f3dcdfbda7db51a4f80451d478fbe512d453d |
+| zonetool-t7.exp | 3,901 | b390095aaa172e81ca1cecd15c10b35c27faf08303157a478bb638ab574a9c8f |
+
+Postflight at 12:08:53 UTC found zero leases, no compiler/linker/ZoneTool/telemetry
+processes and unchanged owner Main identity. The persistent host verified the
+receipt and absence of AppDomain quarantine, saved
+`runtime/t7-build-plan-d2/host-outcome.local.json`, then exited normally. Its
+absence was verified separately. The failed Plan C and frozen E7 artifacts
+remain preserved; C is not relabelled as successful.
+
+This qualifies the build only: CandidateExecuted and Ready remain false.
+Neither the candidate nor the dedicated engine was launched. Fixed-address
+engine compatibility, catalogue/export execution and owner gameplay remain
+unproved. The next authorized work is source-only wiring of a separate bounded
+pre-patch rendezvous probe before `component_loader::post_unpack`; any new
+native build or runtime experiment requires its own reviewed plan and GO.
