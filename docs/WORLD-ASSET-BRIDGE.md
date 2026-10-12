@@ -345,3 +345,96 @@ three-section v11 envelope and reports `shape_graph_validated: false`,
 `fixups_validated: false`, `runtime_ready: false` even for structurally accepted
 input. Rechecking retained metadata confirms the values above; no native test
 or collision generation was performed.
+
+### World-consumer chain resolved in the retained snapshot
+
+A subsequent targeted pass advanced the chain from names to actual field
+consumption. It followed the source-known DB registration entry and its direct
+calls/table entry, reading selected function windows only. It did not scan the
+whole executable or invoke any address. The reproducible check is
+`world/inspect_world_consumer.py`, using the already installed Capstone 5.0.7.
+It reads **2,690 selected text bytes** plus the pinned rdata/pdata metadata,
+checks nine exact SHA-256 signatures, decodes every selected byte, and verifies
+the call targets, CLIPMAP dispatch entry and two world-buffer field accesses.
+The result is stored under `world_consumer` in the existing audit receipt.
+
+All addresses here are preferred-image addresses in the historical patched
+snapshot. They are **not approved live bindings**. In particular, the entry at
+`0x140A76520` already jumps outside the captured text; the retained body after
+that patch remains inspectable. Source `iw7/zonetool.cpp:590-603,2804` supplies
+the DB-add hook anchor and its forward-to-original behavior. This is source and
+snapshot evidence, not a claim that an unobserved live call executed this chain.
+
+| Step | Verified relation |
+| --- | --- |
+| DB-add retained body | `0x140A76557` calls `0x140A782B0`. |
+| Asset linking | `0x140A783CB` calls `0x1403B7430`, passing the asset pointer and type. |
+| Type dispatch | `0x1403B7430` reads the function table at `0x1414672D0`; index 22 (`ASSET_TYPE_CLIPMAP`, pinned `iw7/structs.hpp:147`) contains `0x1403B72F0`. |
+| CLIPMAP wrapper/thunk | `0x1403B72F4` calls `0x14054BEB0`, whose five-byte tail jump targets `0x140571D50`. |
+| **World consumer** | `0x140571D50` reads the size at asset `+0xF8`; when nonzero, it reads the pointer at `+0x100` and calls `0x140572C30` at `0x140571D79`. These are the two `havokWorldShapeData` fields in the pinned source layout. |
+| World shape/tag helper | `0x140572C30` zeroes R8/R9 and calls `0x140F2DA80`, then processes the returned root's array at `+0x68`, count at `+0x70`, stride 24. |
+| Packfile load in place | `0x140F2DA80` calls header checker `0x140F2E120`, tests/sets bit 0 at packfile `+0x38`, processes section relocations/finishing callbacks, and returns a pointer into the supplied buffer. |
+
+This gives a concrete answer for **where the world bytes are consumed**. It
+does not identify a creation or save function. The generic packfile loader is a
+load-in-place path, not a cooker or serializer. Its use of a thread allocator,
+global registry and virtual callbacks means that calling it with a hand-written
+prototype outside the initialized engine would be unsupported.
+
+The returned world root is stored at global `0x144BDF458`. The consumer accesses
+an array of name pointers at root `+0x20`, count at `+0x28`, masks each pointer's
+low bit and lowercases nonempty names **in place**. The tag helper compares the
+32-bit value at record `+4` against a runtime table, then writes a 16-bit value
+to record `+8`. This is consistent with the observed `materialCRC`/`materialId`
+names, but the semantic field naming remains an inference until root metadata
+is observed. The global table and registry values are outside the retained
+rdata/pdata slices. They were not read from a running process.
+
+Consequences for a future original collision are concrete: its backing storage
+and name strings must permit the normal loader's mutations, it needs valid
+relocations/finishing metadata, and its tags must match initialized runtime
+material/filter data. Reusing an already fixed-up live buffer as a portable HKX
+is unsafe: this loader rejects the already-set loaded flag. The root accesses
+strongly support the `HavokPhysicsShapeList` lead, but **the actual world root
+class name is still unobserved**. No Rhino `HavokPhysicsAsset` was substituted.
+
+The initial read also exposed a tooling detail: the CLIPMAP thunk has no pdata
+owner, while the generic loader spans five adjacent unwind records. The
+reproducer includes the exact five-byte thunk and the full observed loader
+range through its return; it does not confuse one unwind-record boundary with
+a complete function. No instruction bytes or disassembly are committed.
+
+### Small next observation before attempting original shape generation
+
+The next useful native observation is now narrowly specified. After coordinated
+native GO, extend the existing DB-add observer for **one allowlisted CLIPMAP
+asset** during one normal offline registration. Place it before the existing
+hook forwards to the original routine, so it sees pre-fixup bytes. No full map
+dump, repeated manual loader call or geometry extraction is needed.
+
+1. Bind the binary identity and reviewed hook signature; verify the asset type
+   is 22 and the name matches the single requested asset. Check pointer/size
+   ranges before reading. Observe only; forward the normal call exactly once.
+2. Before forwarding, read the 64-byte packfile header, bounded section table
+   and at most 128 bytes of the root class name. Require the known platform,
+   version, supported section layout, in-bounds offsets and unloaded flag.
+   Refuse ambiguous/already-fixed-up data. Limit raw inspection to 2 KiB and
+   emitted metadata to 4 KiB for that one asset; emit no geometry or raw bytes.
+3. Record the root class string, section count/offsets, declared blob size and
+   metadata digest. After normal registration, record the loaded-flag change
+   and whether the returned/stored root points at the header-derived contents
+   offset, plus only the two observed bounded array counts. The matching root
+   relation must be observed, not assumed from a string in rdata.
+4. Stop after this one observation. If the root is confirmed as
+   `HavokPhysicsShapeList`, the next source target is its finish/constructor
+   registration and an actual convex-builder/save call chain. If it differs,
+   revise the original-box plan before building anything.
+
+Creation and serialization remain **unbound**, despite the earlier save-related
+diagnostic strings. This observation advances the missing world-container
+contract; it is not collision generation or gameplay evidence. No observer was
+installed or run in this source-only pass.
+
+```powershell
+python -B "$world/inspect_world_consumer.py" --reference-root "C:/Users/ezvalo/Documents/IW7-Paris-Server/tools/references"
+```

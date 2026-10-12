@@ -11,7 +11,8 @@
     "src/zonetool/zonetool/iw7/common/havok.cpp": "a4b9642c91629ecf8b3a30c25b2d59ed4a0ccf7d1bf368fd1c29ba519028f930",
     "src/zonetool/zonetool/iw7/assets/physics_asset.cpp": "bacaac7e5b1e9c4ee9e4f357a869c0df5527bc65190b8332e4d32372c6c47003",
     "src/zonetool/zonetool/iw7/assets/physics_library.cpp": "7f918a0d4caefbab28126a7982f7fbf9fe9816249ac6e6acee23584f14d92845",
-    "src/zonetool/zonetool/iw7/assets/clipmap.cpp": "c56d8922ef6b5aff2f63f7ae853b0f80e20d44e312339075702c6a354740645e"
+    "src/zonetool/zonetool/iw7/assets/clipmap.cpp": "c56d8922ef6b5aff2f63f7ae853b0f80e20d44e312339075702c6a354740645e",
+    "src/zonetool/zonetool/iw7/zonetool.cpp": "5abd5c9b0c4a71e665c052cd51db0003c089fdb40f88380baaa4b59a2f8c6a78"
   },
   "retained_physics_asset": {
     "schema": "iw7.asset-bridge.hkx-envelope-inspection/1",
@@ -135,5 +136,185 @@
   },
   "native_executed": false,
   "world_hkx_observed": false,
-  "generation_ready": false
+  "generation_ready": false,
+  "world_consumer": {
+    "schema": "iw7.asset-bridge.world-consumer-inspection/1",
+    "snapshot": "Existing patched capture; not a live binary ABI or pristine retail image",
+    "rdata_sha256": "28b66189c1f35442d3e32ea5077e785e7cb8fbf45ed420094dc6b2795afd04e5",
+    "pdata_sha256": "8ff97607018c0c531a9d6851282701074a50b141729060f9f23ae728c9fad41e",
+    "whole_text_hash_recomputed": false,
+    "selected_text_bytes": 2690,
+    "windows": [
+      {
+        "name": "db_add_patched",
+        "start": "0x140a76520",
+        "bytes": 121,
+        "sha256": "23f37d5c81eea00330ad7e31ca92b2639f27e8a5795fd34f7850cefa6de3faa2",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140a76520",
+            "end": "0x140a76599"
+          }
+        ]
+      },
+      {
+        "name": "asset_link",
+        "start": "0x140a782b0",
+        "bytes": 568,
+        "sha256": "95f7074da74f208ddf427949d451905c3bf1f81ca25758759985c7c65bc0f32f",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140a782b0",
+            "end": "0x140a784e8"
+          }
+        ]
+      },
+      {
+        "name": "type_dispatch",
+        "start": "0x1403b7430",
+        "bytes": 34,
+        "sha256": "8bac3192200b7cc05a18a5f9f3b02782c3e5a87dea62b65d5ea40d436212c23e",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x1403b7430",
+            "end": "0x1403b7452"
+          }
+        ]
+      },
+      {
+        "name": "clipmap_wrapper",
+        "start": "0x1403b72f0",
+        "bytes": 14,
+        "sha256": "3ffcf4a7d534e80a7ab3126240c646f2c0d694e022fc0bbc1c460ad4d8b01575",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x1403b72f0",
+            "end": "0x1403b72fe"
+          }
+        ]
+      },
+      {
+        "name": "clipmap_thunk",
+        "start": "0x14054beb0",
+        "bytes": 5,
+        "sha256": "bed2f0bc5652a6ae9482680e20b96d1081ce233d4826c278fead39ea071ec3c1",
+        "overlapping_unwind_ranges": []
+      },
+      {
+        "name": "world_consumer",
+        "start": "0x140571d50",
+        "bytes": 432,
+        "sha256": "12d99ba73e2078af560f1096c03c84b0a994c457fe7238cd79bb1793bcba35b6",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140571d50",
+            "end": "0x140571f00"
+          }
+        ]
+      },
+      {
+        "name": "shape_tags_loader",
+        "start": "0x140572c30",
+        "bytes": 143,
+        "sha256": "926f1458422a1f58ac65243b9f53f3fe6f4ccaccc8fed23039496267f1f7f0db",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140572c30",
+            "end": "0x140572cbf"
+          }
+        ]
+      },
+      {
+        "name": "packfile_inplace",
+        "start": "0x140f2da80",
+        "bytes": 966,
+        "sha256": "01e53078c7ab6cd0be20812f2ca919528c3232cf74d1a14664adad6f980a3048",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140f2da80",
+            "end": "0x140f2dacf"
+          },
+          {
+            "start": "0x140f2dacf",
+            "end": "0x140f2dae5"
+          },
+          {
+            "start": "0x140f2dae5",
+            "end": "0x140f2dd71"
+          },
+          {
+            "start": "0x140f2dd71",
+            "end": "0x140f2dddc"
+          },
+          {
+            "start": "0x140f2dddc",
+            "end": "0x140f2de46"
+          }
+        ]
+      },
+      {
+        "name": "packfile_header_check",
+        "start": "0x140f2e120",
+        "bytes": 407,
+        "sha256": "8cb2ab453ae56a0e78ce22912f2570e0983b0034a898d8158896eef0a16f4576",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140f2e120",
+            "end": "0x140f2e2b7"
+          }
+        ]
+      }
+    ],
+    "capstone_version": "5.0.7",
+    "call_chain": [
+      {
+        "site": "0x140a76557",
+        "kind": "call",
+        "target": "0x140a782b0"
+      },
+      {
+        "site": "0x140a783cb",
+        "kind": "call",
+        "target": "0x1403b7430"
+      },
+      {
+        "site": "0x1403b72f4",
+        "kind": "call",
+        "target": "0x14054beb0"
+      },
+      {
+        "site": "0x14054beb0",
+        "kind": "jmp",
+        "target": "0x140571d50"
+      },
+      {
+        "site": "0x140571d79",
+        "kind": "call",
+        "target": "0x140572c30"
+      },
+      {
+        "site": "0x140572c3a",
+        "kind": "call",
+        "target": "0x140f2da80"
+      },
+      {
+        "site": "0x140f2daae",
+        "kind": "call",
+        "target": "0x140f2e120"
+      }
+    ],
+    "dispatch": {
+      "table": "0x1414672d0",
+      "asset_type": 22,
+      "entry": "0x1403b72f0"
+    },
+    "world_blob_fields": {
+      "size_offset": "0xf8",
+      "pointer_offset": "0x100"
+    },
+    "root_class_identified": false,
+    "creator_identified": false,
+    "serializer_identified": false,
+    "native_executed": false
+  }
 }
