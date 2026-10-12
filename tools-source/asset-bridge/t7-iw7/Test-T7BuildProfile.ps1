@@ -109,4 +109,109 @@ $fixture=New-MessageFixture;$fixture.BuildProfile.Name='t7-catalog-callers';Must
 $fixture=New-MessageFixture;$fixture.BuildProfile.PreparedMain.SHA256=('b'*64);Must-Refuse $fixture
 $fixture=New-MessageFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
 $fixture=New-MessageFixture;$fixture.BuildProfile|Add-Member -NotePropertyName MessageBytes -NotePropertyValue 4096;Must-Refuse $fixture
+function New-PublicationFixture {
+    $fixture=New-MessageFixture
+    $fixture.BuildProfile.Name='t7-catalog-message-publication'
+    $fixture.BuildProfile|Add-Member NoteProperty PublicationSchema 'iw7.t7-message-publication-build/1'
+    $fixture.ReuseCompile|Add-Member NoteProperty RecompiledZonetool $true
+    $fixture.ReuseCompile|Add-Member NoteProperty StageRoots @('C:\old\xpak')
+    $fixture|Add-Member NoteProperty RunRoot 'C:\fresh'
+    $fixture|Add-Member NoteProperty Compiler 'C:\compiler\cl.exe'
+    $responseRoot=Split-Path $fixture.PreparedRoot -Parent
+    foreach($row in @(@('PublicationWiring',(Join-Path $PSScriptRoot 'prepare_message_publication.py')),
+        @('PublicationSource',(Join-Path $PSScriptRoot 'native_message_publication.inc')),
+        @('PreparedCLI',(Join-Path $fixture.PreparedRoot 'zonetool.cpp')),
+        @('MainResponse',(Join-Path $responseRoot 'main.obj.rsp')),
+        @('CLIResponse',(Join-Path $responseRoot 'zonetool11.obj.rsp')),@('LinkResponse',(Join-Path $responseRoot 'link.rsp')))) {
+        $pin=[pscustomobject]@{Path=$row[1];Bytes=1024;SHA256=('a'*64)}
+        $fixture.BuildProfile|Add-Member NoteProperty $row[0] $pin
+        $fixture.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+    }
+    $stages=@(foreach($row in @(@('main','MainResponse'),@('zonetool11','CLIResponse'),@('link','LinkResponse'))) {
+        [pscustomobject]@{Name=$row[0];Arguments=@('@'+$fixture.BuildProfile.($row[1]).Path);
+            Image=$(if($row[0] -ceq 'link'){'C:\compiler\link.exe'}else{$fixture.Compiler});
+            Artifacts=@(if($row[0] -ceq 'link'){'zonetool-t7.exe','zonetool-t7.pdb','zonetool-t7.lib','zonetool-t7.exp'}
+                else{($row[0]+'.obj'),'compile.pdb','dependencies.json'})}
+    })
+    $fixture|Add-Member NoteProperty Stages $stages
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-PublicationFixture) $PSScriptRoot)){throw 'Qualified two-TU publication fixture refused.'};$checks++
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool=$false;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool='true';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.PSObject.Properties.Remove('RecompiledZonetool');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledMain=$false;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile.Name='t7-catalog-message';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile=$null;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile.PublicationSchema='other';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages=@($fixture.Stages[0],$fixture.Stages[2]);Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages=@($fixture.Stages[1],$fixture.Stages[0],$fixture.Stages[2]);Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Arguments=@('@C:\old\zonetool11.obj.rsp');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Arguments+=@('/FoC:\old\zonetool11.obj');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Image='C:\other\cl.exe';Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[1].Artifacts=@('compile.pdb','dependencies.json');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[0].Artifacts=@('main.obj','compile.pdb','dependencies.json','other.obj');Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.Stages[2].Artifacts=@('zonetool-t7.exe');Must-Refuse $fixture
+foreach($name in 'PublicationWiring','PublicationSource','PreparedCLI','MainResponse','CLIResponse','LinkResponse') {
+    $fixture=New-PublicationFixture;$fixture.BuildProfile.$name.SHA256=('b'*64);Must-Refuse $fixture
+    $fixture=New-PublicationFixture;$fixture.BuildProfile.PSObject.Properties.Remove($name);Must-Refuse $fixture
+}
+$fixture=New-PublicationFixture;$fixture.BuildProfile.PublicationSource.Bytes=16385;Must-Refuse $fixture
+$fixture=New-PublicationFixture;$fixture.BuildProfile.LinkResponse.Bytes=262145;Must-Refuse $fixture
+$fixture=New-MessageFixture;$fixture.ReuseCompile|Add-Member NoteProperty RecompiledZonetool $false;Must-Refuse $fixture
+
+$responseFunction=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+    $node.Name -ceq 'Assert-T7PublicationResponses'},$true)
+if(!$responseFunction){throw 'Actual response validator missing.'}
+. ([scriptblock]::Create($responseFunction.Extent.Text))
+function New-Responses($Fixture) {
+    $texts=@(foreach($row in @(@('main','main.cpp'),@('zonetool11','zonetool.cpp'))) {
+        $stage=Join-Path $Fixture.RunRoot $row[0]
+        '/c /Fo"'+(Join-Path $stage ($row[0]+'.obj'))+'" /Fd"'+(Join-Path $stage 'compile.pdb')+
+            '" /sourceDependencies "'+(Join-Path $stage 'dependencies.json')+'" "'+(Join-Path $Fixture.PreparedRoot $row[1])+"`"`n"
+    })
+    $objects=@('C:\fresh\main\main.obj','C:\fresh\zonetool11\zonetool11.obj','C:\old\xpak\xpak.obj')+
+        @(0..409|ForEach-Object {'C:\e7\object'+$_+'.OBJ'})
+    $texts+=@('/INCREMENTAL:NO'+"`n"+(($objects|ForEach-Object {'"'+$_+'"'}) -join "`n")+"`n")
+    return ,$texts
+}
+function Must-RefuseResponses($Fixture,$Texts) {
+    $refused=$false
+    try{Assert-T7PublicationResponses $Fixture $Texts[0] $Texts[1] $Texts[2]}catch{$refused=$true}
+    if(!$refused){throw 'Stale or redirected publication objects accepted.'}
+    $script:checks++
+}
+$fixture=New-PublicationFixture;$texts=New-Responses $fixture
+Assert-T7PublicationResponses $fixture $texts[0] $texts[1] $texts[2];$checks++
+foreach($name in 'main','zonetool11') {
+    $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+    $texts[2]=$texts[2].Replace(('C:\fresh\'+$name+'\'),('C:\old\'+$name+'\'));Must-RefuseResponses $fixture $texts
+}
+foreach($mode in 'duplicate','missing','extra-root','old-in-flags','nested-response','wrong-xpak') {
+    $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+    switch($mode) {
+        duplicate {$texts[2]=$texts[2].Replace('C:\e7\object0.OBJ','C:\old\zonetool11\zonetool11.obj')}
+        missing {$texts[2]=$texts[2].Replace(('"C:\fresh\zonetool11\zonetool11.obj"'+"`n"),'')}
+        extra-root {$fixture.ReuseCompile.StageRoots+=@('C:\old\zonetool11')}
+        old-in-flags {$texts[2]=$texts[2].Replace('/INCREMENTAL:NO','/INCREMENTAL:NO "C:\old\zonetool11\zonetool11.obj"')}
+        nested-response {$texts[2]=$texts[2].Replace('/INCREMENTAL:NO','@C:\old\link.rsp')}
+        wrong-xpak {$texts[2]=$texts[2].Replace('C:\old\xpak\xpak.obj','C:\other\xpak.obj')}
+    }
+    Must-RefuseResponses $fixture $texts
+}
+foreach($index in 0,1) {
+    foreach($mode in 'object','pdb','deps','source','duplicate-fo','nested','multiline') {
+        $fixture=New-PublicationFixture;$texts=New-Responses $fixture
+        switch($mode) {
+            object {$texts[$index]=$texts[$index].Replace('/Fo"C:\fresh\','/Fo"C:\old\')}
+            pdb {$texts[$index]=$texts[$index].Replace('/Fd"C:\fresh\','/Fd"C:\old\')}
+            deps {$texts[$index]=$texts[$index].Replace('/sourceDependencies "C:\fresh\','/sourceDependencies "C:\old\')}
+            source {$texts[$index]=$texts[$index].Replace('C:\invented-t7-prepared\','C:\old\')}
+            duplicate-fo {$texts[$index]='/Fo"C:\old\bad.obj" '+$texts[$index]}
+            nested {$texts[$index]='@C:\old\compile.rsp '+$texts[$index]}
+            multiline {$texts[$index]="/c`n"+$texts[$index]}
+        }
+        Must-RefuseResponses $fixture $texts
+    }
+}
 "T7_BUILD_PROFILE_CHECKS=$checks"

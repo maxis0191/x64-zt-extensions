@@ -121,6 +121,53 @@ class ReuseTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,recompile_main=True,catalog_trace=True)
 
+    def publication_fixture(self):
+        prior,r,payloads,run=self.fixture()
+        payloads['prepared/main.cpp']=b'bounded publication main'
+        payloads['prepared/zonetool.cpp']=b'two close-aware CLI exits'
+        return prior,r,payloads,run
+
+    def publication_reuse(self, fixture):
+        prior,r,payloads,run=fixture
+        return p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,
+                                   recompile_main=True,catalog_trace=True,recompile_zonetool=True)
+
+    def test_publication_reuses_only_xpak_and_helper_with_two_fresh_link_objects(self):
+        fixture=self.publication_fixture();prior,r,payloads,run=fixture
+        reuse,pins,text=self.publication_reuse(fixture)
+        self.assertEqual((len(pins),len(text),reuse['RecompiledZonetool']),(7,7,True))
+        self.assertEqual(reuse['StageRoots'],[r'C:\old\xpak'])
+        response=payloads['link.rsp'].decode()
+        for name in ('main','zonetool11'):
+            self.assertIn(p.quote(run/name/(name+'.obj')),response)
+            self.assertNotIn('C:\\old\\'+name+'\\',response)
+            self.assertFalse(any('\\old\\'+name+'\\' in pin['Path'] for pin in pins))
+        self.assertEqual(response.count('C:\\old'),1)
+        self.assertEqual(r['Status'],'Failed')
+
+    def test_publication_requires_changed_main_and_cli_and_unchanged_other_sources(self):
+        for name in ('main.cpp','zonetool.cpp','common/xpak.cpp','common/xpak.hpp','t7_asset_name.hpp'):
+            fixture=self.publication_fixture()
+            fixture[2]['prepared/'+name]=b'unchanged source' if name in ('main.cpp','zonetool.cpp') else b'changed'
+            with self.assertRaises(ValueError): self.publication_reuse(fixture)
+
+    def test_publication_cannot_be_selected_without_main_and_catalogue_or_with_truthy_string(self):
+        for main,trace,cli in ((False,False,True),(True,False,True),(False,True,True),(True,True,'true')):
+            prior,r,payloads,run=self.publication_fixture()
+            with self.assertRaises(ValueError):
+                p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,
+                                   recompile_main=main,catalog_trace=trace,recompile_zonetool=cli)
+
+    def test_publication_refuses_stale_duplicate_or_missing_fresh_link_object(self):
+        for name in ('main','zonetool11'):
+            for mode in ('stale','duplicate','missing'):
+                fixture=self.publication_fixture();payloads,run=fixture[2:]
+                fresh=p.quote(run/name/(name+'.obj'))+'\n'
+                replacement={'stale':p.quote(PureWindowsPath(r'C:\old')/name/(name+'.obj'))+'\n',
+                             'duplicate':fresh+fresh,'missing':''}[mode]
+                payloads['link.rsp']=payloads['link.rsp'].decode().replace(fresh,replacement).encode()
+                with self.assertRaises(ValueError): self.publication_reuse(fixture)
+
 
 @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE') and os.environ.get('IW7_T7_E7_BUILD'),
                      'Retained T7 source and E7 build paths not supplied')
