@@ -1,0 +1,95 @@
+{
+  "schema": "iw7.t7-resident-image-fixture-stage-proposal/1",
+  "status": "source-only-stage-data-not-a-sealed-executable-plan",
+  "execution_authorized": false,
+  "native_compiled": false,
+  "native_executed": false,
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "reuse": {
+    "stage_entry": "Invoke-WorldStage",
+    "direct_compile_link_adapter": "Invoke-T7OwnedStage",
+    "original_owner_loop": "Invoke-H1OwnedStage",
+    "ownership_provider": "existing qualified IW7.AnimationProbe.NativeJob DLL",
+    "world_cli_accepts_this_profile_unchanged": false,
+    "profile_delta": "TU/include path/artifact names/exact fixture transcript and checker only; preserve qualified ownership, closure, deadlines and receipt/release code",
+    "new_supervisor": false
+  },
+  "budgets": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "compile_plus_link_seconds": 90,
+    "fixture_seconds": 10,
+    "check_seconds": 5,
+    "group_seconds": 120,
+    "cleanup_seconds": 5,
+    "live_total_sampled_threshold_bytes": 66060288,
+    "final_acceptance_bytes": 67108864,
+    "log_sampled_threshold_per_stream_bytes": 2097152,
+    "strict_log_write_cap": false,
+    "fixture_stdout_acceptance_bytes": 1024,
+    "fixture_stderr_acceptance_bytes": 0,
+    "largest_synthetic_pixel_buffer_bytes": 128,
+    "largest_successful_pixel_copy_bytes": 96,
+    "native_peaks_measured": false
+  },
+  "stages": [
+    {
+      "name": "compile",
+      "kind": "Compile",
+      "tool": "<VC>/bin/Hostx64/x64/cl.exe",
+      "arguments": [
+        "/nologo", "/std:c++20", "/EHsc", "/MD", "/O1", "/W4", "/WX", "/external:W0",
+        "/I<VC>/include", "/external:I<SDK>/Include/<SDK_VERSION>/ucrt",
+        "/external:I<SDK>/Include/<SDK_VERSION>/shared", "/external:I<SDK>/Include/<SDK_VERSION>/um",
+        "/external:I<NATIVE_SOURCE>/src/zonetool", "/I<FIXTURE_SOURCE>",
+        "/sourceDependencies", "<RUN_ROOT>/compile/dependencies.json", "/c",
+        "<FIXTURE_SOURCE>/resident_image_fixture.cpp", "/Fo<RUN_ROOT>/compile/resident_image_fixture.obj"
+      ],
+      "artifacts": ["resident_image_fixture.obj", "dependencies.json"]
+    },
+    {
+      "name": "link",
+      "kind": "Link",
+      "tool": "<VC>/bin/Hostx64/x64/link.exe",
+      "arguments": [
+        "/NOLOGO", "/MACHINE:X64", "/SUBSYSTEM:CONSOLE", "/INCREMENTAL:NO",
+        "/OUT:<RUN_ROOT>/link/resident_image_fixture.exe", "<RUN_ROOT>/compile/resident_image_fixture.obj",
+        "/LIBPATH:<VC>/lib/x64", "/LIBPATH:<SDK>/Lib/<SDK_VERSION>/ucrt/x64",
+        "/LIBPATH:<SDK>/Lib/<SDK_VERSION>/um/x64", "kernel32.lib"
+      ],
+      "artifacts": ["resident_image_fixture.exe"]
+    },
+    {
+      "name": "fixture",
+      "kind": "Fixture",
+      "tool": "<RUN_ROOT>/link/resident_image_fixture.exe",
+      "arguments": [],
+      "artifacts": []
+    },
+    {
+      "name": "check",
+      "kind": "Check",
+      "tool": "<PYTHON>",
+      "arguments": ["-I", "-S", "-B", "<FIXTURE_SOURCE>/resident_image_fixture_check.py", "<RUN_ROOT>/fixture/stdout.log"],
+      "artifacts": []
+    }
+  ],
+  "required_bindings_before_go": [
+    "fixture TU, resident_image_copy.hpp and independent transcript checker",
+    "stage profile proposal and existing supervisor/profile/provider transitive source bindings",
+    "native_source/src/zonetool/zonetool/t7/structs.hpp from the pinned source tree",
+    "exact x64 compiler/linker, telemetry helper, native owner DLL and Python from reviewed receipts",
+    "installed MSVC/Windows SDK include and library roots; guard sourceDependencies provenance",
+    "fresh private RunRoot, sanitized child environment and exact per-stage output contract"
+  ],
+  "gates": {
+    "priority": "catalogue C before any admission for this fixture",
+    "stage_advance": "root0 and original job closed; artifacts guarded before next stage",
+    "fixture_acceptance": "root0, empty stderr, exact 1KiB-bounded checker result plus closure receipt",
+    "release": "reuse existing immutable receipt/closure/release/quarantine rules",
+    "retry_authorized": false,
+    "engine_observed": false,
+    "atomic_snapshot_proven": false,
+    "seh_verified": false
+  }
+}
