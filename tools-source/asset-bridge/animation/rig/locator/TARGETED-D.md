@@ -1,9 +1,26 @@
 # Targeted Plan D: one per-record callee, explicit refusal frontiers
 
-This is source, synthetic-test and inert-Plan preparation. No Run D, new snapshot
-read, process attachment or live acceptance is authorized by this document.
+The original checkpoint below was source, synthetic-test and inert-Plan
+preparation. A later separate GO authorized one Run D; the result follows.
+This document grants no retry, process attachment or live acceptance.
 Run C remains a failed, closed and released attempt at its original source and
 Plan. Its original state, report and after-check receipts are unchanged.
+
+## Run D: the deliberate 2 KiB bound refused before decoding
+
+The [sanitized receipt](run-d-validation-2026-10-12.json) records one invocation
+at source `9ec880e`. The report is `bounded-refusal` / `fragment byte bound`,
+with the current entry frontier exactly `0x140a17e70`. The selected unique
+`.pdata` range exceeded 2,048 bytes. The old report did not serialize its actual
+endpoints or size; these remain unknown, not inferred retroactively.
+
+Zero fragments, bytes or instructions were decoded; zero instructions were
+visited and no control edge or global scan was recorded. Input hashes were
+verified under the full Analysis reservation. The original root exited 2 with
+job Active=0; guarded inputs were unchanged, the job closed and the reservation
+was released. Main was unchanged. The two preserved output files total 3,350
+bytes; the earlier longer state accounts for the 3,358-byte maximum.
+No retry, stock modification, extra callee or debugger attachment occurred.
 
 ## Candidate from the existing report only
 
