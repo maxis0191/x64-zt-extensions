@@ -3,9 +3,10 @@
 This narrow runner requests four non-default recipient references, followed by
 one compiled `scripts/engine/utility` export. It does **not** complete a mod
 package. Source preparation and synthetic tests were performed on 2026-10-12;
-native execution, source-zone resolution and compiled retail bytes remain
+the first authorized native attempt subsequently timed out before producing
+reference results. Source-zone resolution and compiled retail bytes remain
 unobserved by this runner. Coordinator adoption/admission is required before
-`-Run`. Animation B has priority, then Material. No stock was staged or copied.
+each `-Run`; there is no automatic retry. See the failed-attempt record below.
 
 ## Confirmed retained native API
 
@@ -170,5 +171,30 @@ hashes, lengths, bounds, source-zone order and default-plan/ownership ordering.
 Simulated original owners cover delayed-empty success with retained counts,
 five-second persistent-member failure, root-not-exited failure and late closure.
 They do not prove native execution, resource peaks, restoration or package
-closure. The next action is coordinator review/adoption and an explicit durable
-stock binding, followed by admission when the prioritized work has completed.
+closure.
+
+## First native attempt: timeout, restored
+
+The [sanitized evidence](native-validation-2026-10-12.json) records the single
+coordinator-approved execution of `cb3d9ac` with reviewed durable stock and E7.
+The native references process started but emitted no stdout/stderr or result CSV.
+Its adapter reported `phase timeout` at 240 seconds and exited 2. The original
+job still reported two active members during 42 observations through 244.9996
+seconds. The outer 245-second deadline then stopped the original job; root exit
+and zero members were confirmed. The script phase never started.
+
+Restoration and source preservation passed, all recorded staging paths were
+removed, the lease was released and the registry was observed empty. Main's
+process identity was unchanged. Final retained output was 1,218,874 bytes,
+including two 549,664-byte cache indexes. No CLI, stock, binary or deadline was
+changed and no retry occurred. These are failure/lifecycle observations, not
+reference, utility, package or rendering validation.
+
+Three exact-process CPU/memory snapshots were retained; native CPU increased
+from 4.234375 to 4.46875 seconds between 04:44:24 and 04:46:51 UTC. Thread waits,
+stacks and window inventory were not captured before closure. The cause remains
+unknown. The unchanged outer state keeps `NativeExecuted=null` because failure
+preceded receipt validation; the retained native PID receipt and process
+observations independently prove the launch. Next: compare the successful Beacon
+bootstrap/stdio and prepare bounded existing-tool diagnostics for review, without
+another native execution until separately authorized.
