@@ -377,6 +377,22 @@ CP asset-PAK scope, with assetfile/imagefile families kept distinct, actual
 counts/logical sizes/identities and a new explicit I/O budget. No retail hashes
 or native process may be launched under F's exhausted GO.
 
+The [complete-scope investigation and source preparation](COMPLETE-PAK-SCOPE.md)
+now supplies an explicit 33-asset-PAK profile, separate from 49 image PAKs. Its
+schema `/3` checks independent inventory metadata, baseline pak1 and the exact
+32 supplemental names. The new deterministic references-only Plan retains
+unqualified status and describes 107 managed paths / 5,148,447,113 hash-read
+bytes. It has not been executed; no retail contents were read or staged.
+
+After the separately reviewed snapshot correction, Plan H was authorized and
+executed once. [H](native-validation-h-2026-10-12.json) loaded all 25 expected
+zones and verified all four requested non-default references. Original-job exit
+0/zero members, all 107 paths restored, source preservation, unchanged Main and
+zero remaining leases were confirmed. This resolves the recorded reference-load
+failure for the complete asset-PAK profile. No utility/script phase or serialized
+content was observed; package/runtime acceptance remains false. No additional
+diagnostic run is authorized by H's exhausted GO.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256

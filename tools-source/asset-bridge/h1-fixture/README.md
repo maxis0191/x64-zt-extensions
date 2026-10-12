@@ -1,4 +1,4 @@
-# Original H1 parser fixture, source-only checkpoint
+# Original H1 parser fixture and bounded native observation
 
 This directory can emit a tiny original H1-format cube without a donor game.
 The bytes target the actual pinned `h1::xmodel::parse` and
@@ -32,7 +32,8 @@ in place; no SDK/header tree is copied. Source hashes are in
 
 Paths in the ABI/conversion rows are relative to `src/zonetool/zonetool/`.
 The source structs' field order and explicit `assert_sizeof` values establish
-the serialized layout. Native `offsetof`/ABI acceptance is still pending.
+the serialized layout. Native `offsetof`/ABI assertions now pass for the bounded
+consumer documented in [NATIVE-PROBE.md](NATIVE-PROBE.md); full CLI linkage is not covered.
 
 The original cube is 16 units wide, centered at the origin: 24 face-local
 vertices, 12 outward triangles, 1 surface, 1 LOD, 1 root bone (`tag_origin`),
@@ -75,15 +76,18 @@ reproducibility, not native acceptance.
 
 ## Precise remaining gaps and next observation
 
-1. **Actual parser-to-converter invocation.** A separately authorized native
-   consumer must register the fixture directory in the real file search path,
-   call production `h1::xmodel::parse(MODEL, zone_memory)` and
-   `h1::xsurface::parse(SURFACE, zone_memory)`, check actual ABI/counts/references,
-   then pass those returned objects to the real
-   `h1::converter::iw7::{xmodel,xsurface}::convert` functions. Use the reviewed
-   surface patch already owned by the model branch. No handwritten reader,
-   converted struct constructor or replacement converter can establish this
-   witness. The existing command-line dump route instead loads the H1 game
+A separately admitted consumer now passes 111 native checks in
+[NATIVE-PROBE.md](NATIVE-PROBE.md). It uses exact production parser/converter
+bodies with a documented declaration adapter. Compile B and the separate Probe
+both closed their original process trees and released their distinct leases.
+Compile A remains a preserved failed deadline attempt.
+
+1. **Whole application and export remain open.** Actual parsing of the two
+   original files into production structs, followed directly by the real
+   converters with the reviewed surface patch, has now passed. The consumer
+   verifies counts/references, ABI, geometry field transfer and aliases without
+   a handwritten reader or converted input constructor. Its declaration adapter
+   omits unrelated class/engine/vtable coupling. The command-line dump route loads the H1 game
    binary (`main.cpp:180`) and database assets; writing XMB/XSB alone does not
    create a donor-free command-line conversion route.
 2. **Bone strings before any IW7 dump.** H1 `xmodel::parse` records `tag_origin`
@@ -103,7 +107,8 @@ reproducibility, not native acceptance.
    authoring or an explicit, verified recipient-material binding; the latter
    tests geometry/reference mapping, not H1 material conversion.
 
-No native compilation, binary execution, FF build, extraction, game, download,
-retail data read, shared-source modification or Main/voice change occurred.
-This source-only sub-lot is handed to the coordinating branch for review and
-the project's private integration/CI/merge workflow.
+The original source-only validation files remain historical records; the new
+native checkpoint is separate and does not rewrite those receipts. No FF build,
+extraction, game, download, retail data read or shared-source modification occurred
+for this fixture. Main's original process identity and image hash stayed unchanged.
+The coordinating branch owns the private integration/CI/merge workflow.

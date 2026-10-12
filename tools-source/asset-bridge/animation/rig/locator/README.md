@@ -42,7 +42,33 @@ is exactly 7 (`iw7/structs.hpp:132`). Thus a type-7 registration caller is a
 specific reverse-search anchor. Registration/dump is already too late to set
 the first-write watchpoint: E's alias exists by then.
 
-## Proposed bounded static phase
+## Run B result, 2026-10-12
+
+One separately authorized Plan B invocation completed as
+`CandidateRouteNeedsReview`. The [sanitized receipt](run-b-validation-2026-10-12.json)
+binds the reviewed source, Plan, original state, report and final local check.
+It decoded 59 instructions in three `.pdata` ranges (248 bytes), with four
+linear opcode scans. The original job exited zero with no active processes;
+guarded inputs were unchanged, the reservation was released, and Main was
+unchanged. No stock was staged, game or ZoneTool launched, or process attached.
+
+The unique evidenced type-7 registration wrapper is `0x1403b8ff0`. Its two
+direct callers both call `0x140a17970` immediately before that wrapper.
+The latter is a candidate for a separately reviewed targeted analysis, not
+an established `Load_`/`Postload_` symbol. No `+0x58` write candidate appeared
+in the three examined ranges; that does not prove an absence elsewhere.
+
+Both caller ranges end with a branch beyond their `.pdata` endpoint. Treat
+them as possible fragments, not complete logical functions. Direct reverse
+edges to their start cannot establish complete caller coverage. The capture's
+source-binary provenance remains unattested, and no first writer, live address
+compatibility or gameplay acceptance has been established.
+
+The subsequent [targeted Plan C](TARGETED.md) prepares one seeded continuation
+walk from `0x140a17970`, with zero global opcode scans and no called targets
+followed. Its source/tests/inert Plan are separate from a still-unapproved Run.
+
+## Original bounded static preparation (before Run B)
 
 Reuse the existing `unpacked-text.bin` (21,135,360 bytes, mapped at
 `0x140001000`) and `unpacked-pdata.bin` (832,608 bytes, image-relative unwind
@@ -67,7 +93,8 @@ repeated file IO. It decodes at most 16 unwind-owned windows.
 Twelve synthetic tests cover real versus embedded-immediate edges, argument
 clobbers and branch bypasses, ambiguous unwind entries, hard caps and the
 difference between an offset match and a proved writer. All twelve passed.
-This tool has not been executed against the retained code.
+These twelve tests originally preceded execution against the retained code;
+the separately authorized Run B above is the subsequent evidence.
 
 Independent review of the first source revision found three missed cases:
 LOOP-family control flow could bypass the type assignment, separate E8/E9 loops
@@ -76,8 +103,8 @@ could exceed its cap. The correction uses decoder control-flow groups (including
 relative branches), one combined opcode search and a pre-acceptance instruction
 limit. LOOP/LOOPE/LOOPNE/JRCXZ/JECXZ and exact-limit regressions now pass. The
 earlier command manifest is obsolete because its source pin changed; the new
-supervisor Plan must bind this corrected revision. Neither revision has scanned
-retail code or established a first writer.
+supervisor Plan binds this corrected revision. These corrections were tested
+before the separately authorized scan; no first writer was established.
 The follow-up review also reproduced an internal direct CALL entering after the
 type assignment. It is now included in incoming-edge refusal; an ordinary
 external call before a fresh type assignment remains supported.
@@ -132,8 +159,8 @@ values in the rig reader.
 
 The concrete [locator-only supervisor](SUPERVISOR.md) now provides an inert
 default Plan and the reviewed-provider/F6 ownership route for a future Run.
-Its source/mock checks and trapped Plan are separate from native validation;
-no scan or live probe has been authorized by their completion.
+Its source/mock checks and trapped Plan are separate from the subsequent Run B;
+their completion alone did not authorize a scan or live probe.
 
 ## Existing tools and boundaries
 

@@ -1,0 +1,10 @@
+diff --git a/src/common/utils/bit_buffer.hpp b/src/common/utils/bit_buffer.hpp
+--- a/src/common/utils/bit_buffer.hpp
++++ b/src/common/utils/bit_buffer.hpp
+@@ -32,5 +32,5 @@
+             for(auto i = 0; i < num_bits / 8; i++)
+             {
+-                buffer[i] = read_bits<std::uint8_t>(num_bits);
++                buffer[i] = read_bits<std::uint8_t>(8);
+             }
+         }

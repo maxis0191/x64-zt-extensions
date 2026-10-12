@@ -13,6 +13,7 @@ import re
 TOOL_SHA = "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04"
 FF_SHA = "ea7ba4be1d5e6f0878431b51e7b9b1ba9d2b10bf74b1ad21da14d55c414e145d"
 SCHEMA = "iw7.rig-abi.watch-context/1"
+FIXTURE_SCHEMA = "iw7.rig-abi.fixture-context/1"
 MAX_LOG = 256 * 1024
 
 
@@ -49,22 +50,30 @@ def address(value):
 
 
 def validate(context):
-    require(isinstance(context, dict) and context.get("schema") == SCHEMA, "wrong context schema")
+    require(isinstance(context, dict) and context.get("schema") in (SCHEMA, FIXTURE_SCHEMA), "wrong context schema")
+    fixture = context["schema"] == FIXTURE_SCHEMA
     require(context.get("profile") in ("first", "second"), "unknown original rig profile")
     require(isinstance(context.get("run_id"), str) and re.fullmatch(r"[0-9a-f]{32}", context["run_id"]),
             "run_id must be 32 lowercase hex digits")
-    require(context.get("tool_sha256") == TOOL_SHA and context.get("ff_sha256") == FF_SHA,
-            "original rig/tool pins do not match")
+    if fixture:
+        expected = hashlib.sha256(bounded(Path(__file__).with_name("debug_fixture.py"), 16384)).hexdigest()
+        require(context.get("fixture_source_sha256") == expected and context.get("ff_sha256") is None and
+                isinstance(context.get("tool_sha256"), str) and
+                re.fullmatch(r"[a-f0-9]{64}", context["tool_sha256"]), "fixture source/python binding required")
+    else:
+        require(context.get("tool_sha256") == TOOL_SHA and context.get("ff_sha256") == FF_SHA,
+                "original rig/tool pins do not match")
     pid = context.get("pid")
     require(type(pid) is int and 0 < pid <= 0xFFFFFFFF, "positive process ID required")
     require(isinstance(context.get("image_path"), str) and
             PureWindowsPath(context["image_path"]).is_absolute() and
-            PureWindowsPath(context["image_path"]).name.lower() == "zonetool.exe", "offline image path required")
+            PureWindowsPath(context["image_path"]).name.lower() == ("python.exe" if fixture else "zonetool.exe"), "offline image path required")
     require(isinstance(context.get("creation_utc"), str) and
             re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,7})?Z", context["creation_utc"]),
             "process creation identity required")
     review = context.get("review")
-    require(isinstance(review, dict) and review.get("phase") == "after-initial-copy-before-postload",
+    require(isinstance(review, dict) and review.get("phase") ==
+            ("fixture-after-allocation-before-write" if fixture else "after-initial-copy-before-postload"),
             "reviewed loader arm point is missing")
     require(isinstance(review.get("evidence_sha256"), str) and
             re.fullmatch(r"[0-9a-f]{64}", review["evidence_sha256"]) and
@@ -123,6 +132,8 @@ def emit(context):
             'old=%I64x name_before=%I64x\\n", '
             '@$tpid, @$tid, @rip, @$t0, @$t1, @$t2, @$t3; '
             f'ba3 w 8 /1 0x{xs+0x58:x} "{quoted_hit}"; bl 3; '
+            f'.if (@$bp3 == 0x{xs+0x58:x}) {{ .echo {prefix}BP_PRESENT }} '
+            '.else { .echo RIG58_REFUSED_BP_NOT_SET }; '
             f'.echo {prefix}ARM_ATTEMPT_STOPPED')
     body = guard(f"poi(0x{xs+0x58:x}) == 0 && poi(0x{xs+0x60:x}) == 0", body, "TOO_LATE_OR_NONZERO")
     body = guard(same_bytes(f"poi(0x{ms:x})", name), body, "NAME")
@@ -139,7 +150,7 @@ def emit(context):
         f"@$tpid == 0x{pid:x} && @$t0 == 0x{xs:x} && @$t1 == 0x{ms:x}",
         f"bc 3; .echo {prefix}CLEARED_STOPPED", "CLEAR_IDENTITY") + "\n"
     canonical = json.dumps(context, sort_keys=True, separators=(",", ":")).encode()
-    receipt = {"schema": "iw7.rig-abi.fragments/1", "run_id": nonce,
+    receipt = {"schema": "iw7.rig-abi.fragments/2", "run_id": nonce,
                "context_sha256": hashlib.sha256(canonical).hexdigest(),
                "max_write_hits": 1, "watch_bytes": 8, "stack_frames_requested": 6,
                "launches": 0, "auto_resume": False, "runtime_validated": False,
@@ -193,7 +204,7 @@ def parse_capture(context, raw):
         elif collecting:
             stack.append(line)
             require(sum(len(item.encode("utf-8")) + 1 for item in stack) <= 8192, "stack text exceeds limit")
-    require(events == ["ARM", "ARM_ATTEMPT_STOPPED", "WRITE", "STACK_BEGIN", "STACK_END", "STOP"],
+    require(events == ["ARM", "BP_PRESENT", "ARM_ATTEMPT_STOPPED", "WRITE", "STACK_BEGIN", "STACK_END", "STOP"],
             "incomplete, repeated or out-of-order one-write capture")
     require(stack_seen and not collecting and bool(stack), "missing stack output")
     arm, write = records["ARM"], records["WRITE"]
@@ -205,7 +216,8 @@ def parse_capture(context, raw):
         require(row["tid"] > 0 and row["rip"] > 0 and row["name_before"] > 0, "missing identity values")
     require(arm["rip"] == rip and arm["old"] == write["old"] == 0 and
             arm["name_before"] == write["name_before"] and write["name_now"] > 0, "capture continuity mismatch")
-    return {"schema": "iw7.rig-abi.write-witness/1", "run_id": nonce,
+    return {"schema": "iw7.rig-abi.write-witness/2", "run_id": nonce,
+            "fixture_only": context["schema"] == FIXTURE_SCHEMA,
             "context_sha256": hashlib.sha256(json.dumps(context, sort_keys=True,
                                                         separators=(",", ":")).encode()).hexdigest(),
             "arm": arm, "write": write,

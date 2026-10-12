@@ -133,8 +133,9 @@ The generated `arm.cdb` uses explicit MASM evaluation and nested readable-range,
 identity, code-byte, array/count, exact NUL-terminated name and zero-field guards.
 It reserves only pseudo-registers t0..t3 and breakpoint ID 3 in a fresh session.
 It attempts `ba3 w 8 /1` on XSurface+0x58, prints that breakpoint and **stays
-stopped**. `ARM_ATTEMPT_STOPPED` is not proof that CDB accepted the breakpoint:
-the supervisor must inspect `bl 3` and any debugger errors before issuing `g`.
+stopped**. It emits `BP_PRESENT` only if `@$bp3` equals the exact watch address.
+`ARM_ATTEMPT_STOPPED` alone is not proof that CDB accepted the breakpoint:
+the supervisor must also require the acknowledgement and absence of debugger errors before issuing `g`.
 No resume, native launch/attach, target memory write, kill or detach command is
 generated. If any guard fails the process remains stopped.
 
@@ -169,14 +170,15 @@ or valid engine field from an address equality, module name or stack alone.
 
 ## Required supervisor, bounds and closure
 
-No supervising native runner is implemented in this source lot. Before execution,
-the parent must review an owner-job adapter using the existing rig phase and
-resource helpers, with a launch-owned process tree rather than PID-only attach.
-It must validate CDB syntax in a future admitted disposable fixture before using
-these fragments on retail code. Python tests do not validate CDB command parsing,
+A source-only original-job supervisor and concrete CDB/Python qualification
+runner now exist; see [SUPERVISION.md](SUPERVISION.md). Its only executable
+recipe is an explicitly requested fixture. Retail mode is rejected before launch
+and remains unavailable until locator, mapping and stopped-identity bindings are
+reviewed. The fixture must validate CDB syntax and original-job behavior under a
+future separate GO. Python/PowerShell simulations do not validate CDB parsing,
 hardware thread coverage, asynchronous break or Windows job behavior.
 
-| Budget per serialized offline observation | Proposal / required behavior |
+| Budget per serialized retail offline observation | Proposal / required behavior |
 | --- | --- |
 | Physical / commit | **10 GiB / 14 GiB** complete group: existing rig FF 8/11 plus documented debugger 2/3; estimate, not measured peak or admission |
 | Admission | One account-wide heavy group; available RAM must fit, no RAM reserve; independent 20% commit reserve with 4 GiB minimum; fresh policy/preflight required |
@@ -194,6 +196,12 @@ outside it. Current estimates cannot be reduced to evade admission. Retained
 staging manifests include 71 stock hardlinks and a 77-byte sentinel copy among
 79 entries; reuse the reviewed per-file restoration protocol, not a wholesale
 workspace copy. Do not modify the original failed run's state or receipts.
+
+The separate Python/CDB protocol fixture has a fixed **4/6 GiB** estimate under
+`iw7.rig-watch-python-cdb-fixture/1`. It does not load the retail workload above.
+See [the component accounting and unmeasured limits](RESOURCE-PROFILES.md).
+This distinction preserves the retail 10/14 estimate and the old refused fixture
+Plans; it does not authorize a smaller retail run or any native execution.
 
 The supervisor starts its deadline outside the debuggee, stops logging at the
 cap, and owns both debugger and debuggee in a registered job. On a hit, refusal,
@@ -226,7 +234,7 @@ For future reviewed contexts, the generator interface is `capture.py emit
 `capture.py report --context <same-context.json> --log <bounded-cdb.log>`.
 Keep outputs in ignored runtime; emitting files never grants native GO.
 
-Current checks: 20 synthetic tests pass, including malformed PE/PDB tables,
+Capture/identity checks: 20 synthetic tests pass, including malformed PE/PDB tables,
 bounded reads, mismatched symbol ages, context/address injection, unresolved
 gates, one-hit continuity, replay/truncation refusal and name-value categories.
 The initial test run exposed prompt echoes being mistaken for refusal output;

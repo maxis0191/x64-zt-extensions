@@ -1,0 +1,2 @@
+# Unified-diff context prefixes must remain byte-exact; prepare_native checks SHA.
+h1-xsurface-reviewed.patch -whitespace

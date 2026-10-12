@@ -225,3 +225,22 @@ and Main preserved and zero owned process/lease remaining. This proves neither
 complete CP stock nor accepted references. No sixth entry or retry is introduced.
 The next investigation assesses the complete existing asset-PAK scope and its
 newly measured read budget before any further profile proposal or admission.
+
+The resulting [complete-scope investigation](COMPLETE-PAK-SCOPE.md) identifies
+33 reviewed asset PAKs and 49 separate image PAKs using metadata only. It proposes
+an explicit all-asset list with 5,148,447,113 total stock hash-read bytes, without
+authorizing a run. The later source-preparation checkpoint in that note records
+the distinct `/3` runner profile, independent inventory binding and pure tests.
+Its exact Plan still requires review and a separately granted GO.
+
+## H execution checkpoint
+
+The subsequent reviewed Plan H executed once on source `e0654a74`, using schema
+`/3` and the complete fixed asset-PAK profile. All 25 expected zones loaded and
+the four exact requested references were verified without missing/default rows.
+[H's evidence](native-validation-h-2026-10-12.json) confirms original-job closure,
+107 paths restored/removed, source preservation, unchanged owner/Main identities
+and zero remaining process/lease. The stock profile suffices for this recorded
+reference check; its minimal dependency subset, image export, scripts and package
+closure are not established. Earlier profiles and failures are unchanged. No
+additional native operation follows from H's exhausted single-execution GO.

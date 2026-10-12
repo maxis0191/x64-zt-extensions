@@ -29,7 +29,7 @@ def context():
 def witness(new=0x40000, now=0x40000):
     prefix = "RIG58 " + "a" * 32 + " "
     return (prefix + "ARM pid=1234 tid=2 rip=140001000 xs=20000 ms=30000 old=0 name_before=40000\n" +
-            prefix + "ARM_ATTEMPT_STOPPED\n" +
+            prefix + "BP_PRESENT\n" + prefix + "ARM_ATTEMPT_STOPPED\n" +
             prefix + f"WRITE pid=1234 tid=3 rip=140002010 xs=20000 ms=30000 old=0 new={new:x} "
                      f"name_before=40000 name_now={now:x}\n" +
             prefix + "STACK_BEGIN\n00 synthetic_frame_only\n" +
@@ -56,6 +56,8 @@ class CaptureTests(unittest.TestCase):
         self.assertIn("CODE_BYTES", arm)
         self.assertIn("TOO_LATE_OR_NONZERO", arm)
         self.assertIn("ARM_ATTEMPT_STOPPED", arm)
+        self.assertIn("@$bp3 == 0x20058", arm)
+        self.assertNotIn("r @$", arm)
         self.assertNotIn("; g", arm)
         self.assertNotIn("; q", arm)
         self.assertNotIn(".attach", arm)
