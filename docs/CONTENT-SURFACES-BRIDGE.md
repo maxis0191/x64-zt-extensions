@@ -716,12 +716,14 @@ the subsequent ordinary supervision poll independently observed root exit 0 /
 Active0 at 2094 ms, with 156 ms drain elapsed. Only then did the normal receipt
 gate allow writer execution. No other phase needed an explicit Stop.
 
-The independent reader consumed the dumped XMB/XSB through `--verify-existing`.
+The writer's readback path consumed the dumped XMB/XSB through `--verify-existing`.
 It confirmed 24 vertices, 12 triangles, one bone/surface/LOD, distance 1000000,
 shadow cutoff 6, collision LOD 255 and the custom material reference. This is a
 semantic roundtrip: serialized model/surface hashes differ between writer and
 dump and are retained in the closure receipt; byte-identical serialization is
-not claimed. The exact eight-entry inventory passed. Material fields and state
+not claimed. This reuses the writer executable and is not an independent geometry
+parser implementation. The separate pixel decoder and exact eight-entry inventory
+passed. Material fields and state
 sidecars passed their checks, constant-buffer data was present, and the dumped
 32x32, one-mip format-28 image decoded to the original RGBA bytes, including
 orientation and alpha. Decoded RGBA SHA256 is
@@ -737,7 +739,7 @@ orientation and alpha. Decoded RGBA SHA256 is
 | Original writer executable | 125952 | 521C3EBA9E3A1358B288B411964A844CCAA50C0487A8ED81D9095677C2AC3269 |
 | mod.ff | 1956 | B37C7564722AF8E88AFE8503E2A6F5D2BDD69B6EE13C921843C051E7070F7A72 |
 | Dumped custom image | 4248 | 18FDB350064CA5177DA304EC88DB7A0F86EF201D8B40649BC2BD5A794883550A |
-| Independent reader output | 473 | 5F6379E67F4C0065BE6D32F8A98B244ED304555E312DFFFD7480E70185DCE7C3 |
+| Writer readback output | 473 | 5F6379E67F4C0065BE6D32F8A98B244ED304555E312DFFFD7480E70185DCE7C3 |
 
 The parent retains the run under
 `runtime/content-surfaces/material-v2-durable-run-c`; the surface worktree retains
