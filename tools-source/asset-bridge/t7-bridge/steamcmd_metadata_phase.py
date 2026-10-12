@@ -79,6 +79,15 @@ def output_copy_function():
     return module.copy_bounded
 
 
+def guarded_copy(copy_bounded, source, destination, exceeded):
+    # Thread failures do not propagate to the caller. Every failure, including
+    # SystemExit, must mark the phase unsuccessful before this worker ends.
+    try:
+        copy_bounded(source, destination, exceeded, LOG_LIMIT)
+    except BaseException:
+        exceeded.set()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tool-root", required=True)
@@ -113,8 +122,8 @@ def main():
     for label, source in (("stdout", process.stdout), ("stderr", process.stderr)):
         destination = (logs / f"{label}.log").open("xb")
         handles.append(destination)
-        worker = threading.Thread(target=copy_bounded,
-                                  args=(source, destination, exceeded, LOG_LIMIT), daemon=True)
+        worker = threading.Thread(target=guarded_copy,
+                                  args=(copy_bounded, source, destination, exceeded), daemon=True)
         worker.start()
         workers.append(worker)
     try:
@@ -125,11 +134,16 @@ def main():
                 break
             time.sleep(0.25)
         if failure is None:
+            if time.monotonic() - started >= DEADLINE_SECONDS:
+                failure = "phase deadline"
+        if failure is None:
             for worker in workers:
                 worker.join(2)
             if exceeded.is_set() or any(worker.is_alive() for worker in workers):
                 failure = "output error or inherited pipe remains open"
             maximum_bytes = max(maximum_bytes, tree_bytes(root))
+            if time.monotonic() - started >= DEADLINE_SECONDS:
+                failure = "phase deadline"
     except (OSError, ValueError) as error:
         failure = str(error)
     result = {

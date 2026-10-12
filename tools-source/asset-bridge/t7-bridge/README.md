@@ -179,9 +179,12 @@ uncertain or still-active original job retains/quarantines its reservation.
 observes the whole private tool/cache/temp tree against 512 MiB with 1 MiB
 reserved for final metadata, and applies a 180-second phase deadline. The disk
 limit is sampled, not an OS quota; the outer retained job must stop all children
-on failure and confirm closure before lease release. Seven light Python checks
-passed for refusals, disk accounting and the existing bounded-output helper.
-They never started SteamCMD. Prepare the outer launch plan with current pins of
+on failure and confirm closure before lease release. Twelve light Python checks
+passed for refusals, disk accounting, the existing bounded-output helper,
+thread failures including `SystemExit`, and zero-exit/deferred output completing
+at or beyond the deadline. Worker failures set the shared failure event before
+returning; the phase rechecks its deadline after child exit and after output
+drain. These checks never started SteamCMD. Prepare the outer launch plan with current pins of
 Python, this adapter, its imported helper, scheduler and original NativeJob DLL;
 do not invoke the adapter directly as an unsupervised process.
 
