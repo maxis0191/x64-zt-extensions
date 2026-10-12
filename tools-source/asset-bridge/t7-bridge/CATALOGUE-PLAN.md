@@ -1364,3 +1364,131 @@ analysis owner inspected only that file's metadata: 1,158,208 bytes, no reparse,
 and no payload content or hash read. The coordinator subsequently requested
 source preparation for one qualification and possible seven-input P, subject to
 review and a distinct GO; the old batch and O remain closed.
+
+## EnCorePostGfx A and possible P: source preparation only
+
+The separate preparation request covers only the newly named 1,158,208-byte
+`en_core_post_gfx.ff`. The fixed CoreGfx A template now has only changed data
+literals and its size comment: all 367 variable occurrences, 73 command
+occurrences, 1,990 nonliteral tokens and five lifecycle functions are unchanged.
+Default source-only validation and captured launch-argument wiring pass without
+payload access, live admission, native types, lease or Run. The prior 54 pure
+lifecycle checks remain evidence for the identical functions and were not rerun.
+
+The [preparation checkpoint](catalogue-en-core-post-gfx-preparation-p-20261012.json)
+pins the qualification, exact literal diff, source manifest, launch, wiring and
+proposal. The proposed delegation is limited to this one qualification followed
+by one P, at most two heavy stages and zero retries, under independent review and
+a distinct coordinator GO. Each stage requires fresh 6/8 GiB admission and full
+closure, actual PTY exit and independent absence before the next stage. Any
+refusal, changed error/identity/source or uncertain closure stops the delegation.
+
+P is projected at seven bootstraps / 75,458,816 bytes, 43 bindings (31 text and
+12 binary), 11 metadata rows, 22 original/alias IDs and a 203,268,248-byte output
+limit. Its Plan and dispatch do not yet exist: the new hash and qualified ID stay
+unknown until a successful, fully closed qualification. V2 and existing budgets
+remain unchanged. The successful O closure helper is frozen as a reference;
+future adaptation may change only specified data literals, with exact AST/diff
+comparison and no identifier renaming. No next dependency, export or automatic
+continuation follows P, regardless of its result.
+
+## EnCorePostGfx qualified; P preparation stopped before Run
+
+The coordinator accepted the reviewed two-phase proposal and delegated acceptance
+of the permitted literal-only helper changes, with one invocation per phase and
+zero retries. Current resource workflow and scheduler source matched. Fresh
+6/8 GiB admission passed at 20:14:23 UTC; the unique qualification completed at
+20:14:31 UTC as `IdentityAndHashObservedCompatibilityUnknown`. The two guarded
+1,158,208-byte passes matched SHA-256
+`6b3b94fbda04ea0053c3703b55e475bb4caa6a4297b9bc9209992ba4d9f8feff`
+and the exact original file identity. No header, compatibility or depot claim
+follows that result.
+
+Source/payload guards were both observed at zero, tree and reservation closed,
+and quarantine absent. PTY 32104 actually exited 0 (`5d4d71`). The independent
+20:15:22 UTC witness confirmed host 34620 and parent 9252 absent, no client/heavy
+process or reservation, unchanged stopped Main/UDP baseline and preserved Python.
+No payload hash was read after release.
+
+P did not run. Its local preparation helper's added old-source verification loop
+encountered `ResourceMemory.cs`, but the helper's small-text extension allowlist
+contained only `.ps1`, `.json` and `.patch`. It refused with `Small text only.`
+before creating the P Plan, run root, dispatch or closure draft. This preparation
+defect is separate from the successful qualification and is not a native failure
+or evidence of operational source drift. The delegation stopped immediately;
+no correction or retry was applied. The
+[closed-phase and stopped-preparation checkpoint](catalogue-en-core-post-gfx-qualified-p-stopped-20261012.json)
+preserves the actual exit/absence and refusal pins. Any correction or continuation
+requires a new coordinator decision; the valid qualification must not be repeated.
+
+## P preparation corrected and sealed; separate Run GO still required
+
+The coordinator authorized a source-only correction after inspecting the complete
+old text bindings: `.cs`, `.py`, `.cpp`, `.rsp` and two approximately 299 KiB JSON
+documents all belong to the existing reviewed collection. A new preparation
+script removes only its redundant old-`IsText` loop. The refused script and
+refusal receipt remain immutable; the small-local-document 128 KiB helper and
+its extension list are unchanged. The existing runner's default path retains
+the actual validation, guards and hashes for every text binding, within its
+existing 1 MiB ceiling. No runner/profile/runtime gate changed.
+
+The corrected preparation creates an immutable P Plan from the actual closed
+qualification. Complete O-to-P comparison confirms all 40 old bindings, six
+bootstraps and ten metadata rows unchanged. Only the qualification receipt,
+qualification script, new binary input and its metadata are appended, alongside
+the P attempt paths, corresponding output limit and qualification closure's Main
+observation. The real runner default reports `PlanCheckedPendingGO`; all 31 text
+bindings and seven qualification receipts pass. Captured host/runner arguments
+also match. No binary was hashed, runtime type loaded, lease acquired or Run
+invoked by this validation.
+
+The dispatcher retains all 78 variable occurrences, 13 command occurrences and
+464 nonliteral tokens. The closure draft retains all 140/32/850 corresponding
+occurrences from the successful O helper, including its N globals and L locals.
+Only authorized data literals and attempt labels changed; historical O identity
+literals intentionally remain until an actual P return. The draft was never
+invoked. The [corrected P checkpoint](catalogue-preparation-p-corrected-20261012.json)
+pins the complete diff, actual default/argument evidence and source comparisons.
+The old two-phase GO remains closed. A distinct P-only GO is still required.
+
+## Catalogue P: distinct Run consumed and fully closed
+
+The coordinator issued a new P-only GO after reviewing the corrected source
+preparation. Fresh 6/8 GiB admission at 20:24:08 UTC passed with 57.48% commit
+usage, no client/heavy process or lease, unchanged Main baseline and preserved
+Python. Current resource workflow and scheduler source still matched. P used
+the sealed seven-input Plan and unchanged V2, reader, runner and candidate.
+
+The unique Run finalized at 20:25:01 UTC as `Failed / NoCatalogue`, with natural
+native exit 0 and 3,330.77 ms reported elapsed. TRACE, EXIT, CALLERS and MSG were
+observed. Input identities, hashes and metadata revalidated under reservation;
+the tree closed and lease released without termination or quarantine. The
+4,884-byte stderr pin comes from the guarded receipt; stdout is 70 bytes.
+No payload was rehashed after release.
+
+Only the actual host PID, native PID and native creation UTC were bound into
+the frozen closure draft. Exact token comparison found those three changes and
+no others; 140 variable occurrences, 32 command occurrences and 850 nonliteral
+tokens remained identical. Under the coordinator's expressly delegated gate,
+the coherent receipt/identity proof, exact diff and hash were published before
+one bound-helper invocation. The draft was never invoked and no helper incident
+occurred. Guard disposal is supported by the pinned runner's finalization path
+before wrapper return, not by a separately observed guard counter.
+
+Same-host postflight passed 11 metadata rows and 22 original/alias file IDs.
+PTY 45743 actually exited 0 (`b0aba5`). The independent 20:26:49 UTC witness
+confirmed host 23236, parent 16072 and native 8508 absent, no client/heavy process
+or lease, unchanged stopped Main/UDP baseline and preserved Python. The
+[P runtime checkpoint](catalogue-runtime-p-20261012.json) pins full closure,
+literal-only review and actual exit/absence evidence. Analysis owner 51 was
+then asked to interpret only the retained MSG. No Q, new metadata, qualification,
+export or automatic continuation is authorized by this closed P GO.
+
+After full closure, analysis owner 51 confirmed a complete 43-byte ASCII
+missing-zone message naming `core_post_gfx`, correlated on the same thread before
+exit. The name comes from the actual capture, not an inferred localized pair.
+The entry-point return, initialization-complete and catalogue markers were absent.
+The first named failure changed from O's `en_core_post_gfx`; this does not prove
+complete dependency closure or compatibility of previous bootstraps. No path or
+metadata for the newly named dependency was consulted, and no new qualification
+or Run followed. Further action remains the coordinator's decision.

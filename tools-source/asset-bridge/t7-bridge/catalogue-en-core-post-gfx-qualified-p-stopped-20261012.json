@@ -1,0 +1,140 @@
+{
+  "schema": "iw7.t7-en-core-post-gfx-qualified-p-stopped/1",
+  "date": "2026-10-12",
+  "status": "QualificationClosedPPreparationStopped",
+  "authorization": {
+    "distinct_two_phase_GO": true,
+    "protocol": {
+      "name": "t7-en-core-post-gfx-p-delegation-proposal.local.json",
+      "bytes": 7905,
+      "sha256": "587a9c1811d1e1949b6f2255217c3370c1d18ee26d3f125d84df3f65118b722b"
+    },
+    "independent_review": "Favorable, no P1/P2 relayed by coordinator",
+    "qualification_max": 1,
+    "catalogue_max": 1,
+    "retry_max": 0,
+    "literal_only_acceptance_delegated": true,
+    "stop_on_unexpected_error": true,
+    "previous_batch_stopped": true
+  },
+  "qualification": {
+    "script": {
+      "name": "Qualify-T7EnCorePostGfxA.local.ps1",
+      "bytes": 13366,
+      "sha256": "ea6992b84a437953dbf7675b4a044fb67711fb1d0004600a24329d9e3159682c"
+    },
+    "receipt": {
+      "name": "t7-en-core-post-gfx-qualification-a.local.json",
+      "bytes": 4435,
+      "sha256": "fde0c883f7f9f619a7c3a7513abd068a8938b0263a2088d99cd7b10dc11ddd5d"
+    },
+    "input_name": "en_core_post_gfx.ff",
+    "input_bytes": 1158208,
+    "sha256": "6b3b94fbda04ea0053c3703b55e475bb4caa6a4297b9bc9209992ba4d9f8feff",
+    "hash_provenance": "ObservedUnderLeaseNotDepotVerified",
+    "status": "IdentityAndHashObservedCompatibilityUnknown",
+    "started_utc": "2026-10-12T20:14:29.6071464Z",
+    "finished_utc": "2026-10-12T20:14:31.9873292Z",
+    "host_pid": 34620,
+    "host_created_utc": "2026-10-12T20:14:29.0229038Z",
+    "parent_pid": 9252,
+    "guarded_passes": 2,
+    "guarded_bytes_per_pass": 1158208,
+    "guarded_bytes_total": 2316416,
+    "metadata_and_identity_reverified": true,
+    "hash_reverified_under_guards": true,
+    "tree_closed": true,
+    "guards_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "native_engine_executed": false,
+    "content_compatibility_proven": false,
+    "depot_verified": false,
+    "header_captured": false,
+    "payload_copied_to_disk": false,
+    "payload_hashes_read_after_release": false
+  },
+  "closure": {
+    "same_host_evidence": {
+      "name": "t7-en-core-post-gfx-a-host-closure.local.json",
+      "bytes": 808,
+      "sha256": "9f594499103d232fa54c2c7524b9accf3ca5710a058f4a2f361aa539417bffbb"
+    },
+    "independent_absence_evidence": {
+      "name": "t7-en-core-post-gfx-a-host-absence.local.json",
+      "bytes": 840,
+      "sha256": "1a1a05577a3ca6d0ffd22a60433b0a58fedc141c74d6b64d7d19056bf9a5e2d2"
+    },
+    "same_host_utc": "2026-10-12T20:15:03.1630924Z",
+    "source_guard_count": 0,
+    "payload_guard_count": 0,
+    "metadata_and_id_equal": true,
+    "session_id": 32104,
+    "actual_exit_code": 0,
+    "actual_exit_tool_chunk": "5d4d71",
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T20:15:22.9546253Z",
+    "host_and_parent_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "client_count": 0,
+    "main_baseline": "Stopped",
+    "udp27016_absent": true,
+    "preserved_python_identity_unchanged": true
+  },
+  "preflight": {
+    "evidence": {
+      "name": "t7-en-core-post-gfx-a-preflight.local.json",
+      "bytes": 1565,
+      "sha256": "d4b3e461ec84954828c42e65044ea3c94bac114b34e1eba284edb5d493195705"
+    },
+    "allowed": true,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "fresh_resource_workflow_read": true,
+    "scheduler_drift": false,
+    "initial_commit_used_percent": 56.75,
+    "initial_physical_used_percent": 56.27
+  },
+  "P_preparation_incident": {
+    "evidence": {
+      "name": "t7-catalog-p-preparation-refusal.local.json",
+      "bytes": 1403,
+      "sha256": "ea3f3e5e914b6bbbb34de7647b867ba9d221b0cc8d3c299f6b76ca0cdd802c20"
+    },
+    "script": {
+      "name": "Prepare-T7CatalogueP.local.ps1",
+      "bytes": 9668,
+      "sha256": "4f75a9547780be0373a8306cc4c9dba8536391b7087e7c52183d2f0cf2820bc6"
+    },
+    "tool_chunk": "58c976",
+    "exit_code": 1,
+    "error": "Small text only.",
+    "line": 5,
+    "first_existing_source_binding_refused": "ResourceMemory.cs",
+    "cause": "The local preparation helper allowed .ps1/.json/.patch while its added verification loop also visits existing .cs source bindings.",
+    "native_runtime_failure": false,
+    "qualification_failure": false,
+    "operational_source_drift_observed": false,
+    "plan_created": false,
+    "dispatch_created": false,
+    "closure_helper_created": false,
+    "run_root_created": false,
+    "native_invoked": false,
+    "lease_acquired": false,
+    "correction_applied": false,
+    "retry_invoked": false,
+    "delegation_stopped": true
+  },
+  "limits": {
+    "qualification_invocations": 1,
+    "catalogue_P_invocations": 0,
+    "compatibility_proven": false,
+    "catalogue_success": false,
+    "export_performed": false,
+    "new_dependency_discovered": false,
+    "V3_adopted": false,
+    "ready": false
+  },
+  "next_action": "Coordinator reviews the stopped preparation incident and decides any narrowly authorized correction. Preserve the valid closed qualification; do not repeat it or continue P automatically."
+}
