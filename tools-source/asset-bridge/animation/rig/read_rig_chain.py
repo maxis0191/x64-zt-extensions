@@ -10,6 +10,9 @@ from pathlib import Path
 import struct
 import sys
 
+# Isolated Python (-I) deliberately omits the script directory. Import only the
+# source-bound sibling readers, whose complete paths/hashes the runner guards.
+sys.path.insert(0, str(Path(__file__).absolute().parent))
 from read_skin_fixture import SIZES, parse, verify_payloads
 from read_skin_native import read_model, read_surface
 from verify_clip_rig import read_bounded, verify as verify_clip

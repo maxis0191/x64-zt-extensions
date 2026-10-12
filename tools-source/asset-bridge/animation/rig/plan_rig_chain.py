@@ -9,7 +9,9 @@ import json
 from pathlib import Path
 import re
 import sys
+from types import SimpleNamespace
 
+sys.path.insert(0, str(Path(__file__).absolute().parent))
 from prepare_skin_writer import geometry_header, source_report, OWN_FILES
 from read_rig_chain import MODELS, PROFILES, load_inputs
 from verify_clip_rig import read_bounded
@@ -111,12 +113,16 @@ def compose(base, run, inputs, prepared, source, compiler, sdk, rig):
     writer = run / "build/two-bone-writer.exe"
     python, clip = base["PythonExe"], base["NativeInput"]
     reader = str(rig / "read_rig_chain.py")
-    model_read = [python, "-B", reader, "--inputs", str(inputs), "--native-root", str(native), "--native-xab", clip]
+    model_read = [python, "-I", "-B", reader, "--inputs", str(inputs), "--native-root", str(native), "--native-xab", clip]
+    vc = Path(compiler["Compiler"]).parents[3]
+    includes = [vc / "include"] + [sdk / "Include" / compiler["WindowsSdk"] / sub for sub in ("ucrt", "shared", "um", "winrt")]
+    libraries = [vc / "lib/x64"] + [sdk / "Lib" / compiler["WindowsSdk"] / sub / "x64" for sub in ("ucrt", "um")]
     phases = [{"id": "compile", "group": "native", "depends_on": [], "command": [compiler["Compiler"],
-               "/nologo", "/std:c++20", "/EHsc", "/MD", "/W4", "/WX", "/bigobj",
+               "/nologo", "/std:c++20", "/EHsc", "/MD", "/W4", "/WX", "/bigobj", "/X", "/D_CRT_SECURE_NO_WARNINGS",
                "/I" + str(source / "src/zonetool"), "/I" + str(prepared),
                str(prepared / "writer_skin_two_bone.cpp"), "/Fo" + str(run / "build/writer.obj"),
-               "/Fe" + str(writer), "/link", "/INCREMENTAL:NO"],
+               "/Fe" + str(writer), "/Fd" + str(run / "build/writer.pdb"), *["/I" + str(p) for p in includes],
+               "/link", "/INCREMENTAL:NO", *["/LIBPATH:" + str(p) for p in libraries], "kernel32.lib", "user32.lib"],
                "requires": ["reviewed native runner with frozen compiler/SDK environment", "original-handle job ownership", "complete reservation", "source guards"]}]
     for i, h in enumerate(PROFILES):
         phases.append({"id": "emit-" + h, "group": "native", "depends_on": ["compile" if i == 0 else "emit-first"],
@@ -153,15 +159,17 @@ def compose(base, run, inputs, prepared, source, compiler, sdk, rig):
             "stock_binding": {"inputs": base["StockInputs"], "copy_bytes": 77, "source_metadata_mutation_allowed": False},
             "provider_bindings": base["Bindings"], "job_source": {"path": base["JobSource"], "sha256": JOB_SHA},
             "candidate": base["Candidate"], "compiler_receipt": compiler,
-            "compiler_environment_recipe": {"remove": ["CL", "_CL_"], "vc_root": str(Path(compiler["Compiler"]).parents[3]),
-                "windows_sdk_root": str(sdk), "windows_sdk_version": compiler["WindowsSdk"], "transitive_freeze_pending": True},
+            "compiler_environment_recipe": {"remove": ["CL", "_CL_", "PYTHONPATH", "PYTHONHOME"], "vc_root": str(vc),
+                "windows_sdk_root": str(sdk), "windows_sdk_version": compiler["WindowsSdk"], "transitive_freeze_pending": True,
+                "include_paths": [str(p) for p in includes], "library_paths": [str(p) for p in libraries],
+                "freeze_roots": [str(Path(compiler["Compiler"]).parent), str(source / "src/zonetool"), str(prepared), *[str(p) for p in includes], *[str(p) for p in libraries]]},
             "limits": {"native_proposed_physical_bytes": 4 * 1024**3, "native_proposed_commit_bytes": 6 * 1024**3,
                 "ff_physical_bytes": base["PhysicalBytes"], "ff_commit_bytes": base["CommitBytes"],
                 "native_artifact_stop_bytes": 32 * 1024**2, "ff_output_stop_bytes": 64 * 1024**2,
                 "ff_artifact_max_bytes": 1024**2, "each_redump_max_bytes": 65536, "stream_max_bytes": 2 * 1024**2,
                 "native_compile_seconds": 120, "native_emit_seconds": 30,
                 "ff_phase_seconds": 240, "reader_seconds": 30, "ff_group_seconds": 900},
-            "executor_integration_pending": True, "native_and_ff_groups_sequential": True,
+            "executor_integration_pending": False, "executor_native_validation_pending": True, "native_and_ff_groups_sequential": True,
             "acceptance_requires": ["all exact owned jobs closed before restoration", "all source hashes and IDs preserved", "stock restored before lease release", "final hidden-file byte accounting converged", "bind data readback hashes to actual phase receipts"],
             "material_binding_verified": False, "engine_animation_conventions_verified": False,
             "runtime_render_verified": False, "compiled": False, "ff_built": False, "ready": False}
@@ -213,6 +221,43 @@ def inspect(args):
     result["prepared_receipt_sha256"] = sha(read_bounded(args.prepared / "skin-writer-source.json", 16384))
     result["physical_provider_and_input_hashes_rechecked"] = True
     result["stock_files_read_or_copied"] = False
+    # The executor does not trust commands from JSON. It asks this source-only
+    # planner to reproduce the entire plan byte-semantically before every Run.
+    path_keys = ("ff_base_plan", "inputs", "prepared", "source", "compiler_receipt", "sdk_root", "run_root")
+    result["revalidation"] = {key: str(getattr(args, key)) for key in path_keys}
+    result["revalidation"].update(ff_base_sha256=args.ff_base_sha256.lower(), compiler_receipt_sha256=args.compiler_receipt_sha256.lower())
+    result["python"] = {"path": base["PythonExe"], "sha256": base["PythonSHA256"]}
+    frozen = dict(base["SourceHashes"])
+    frozen[str(args.ff_base_plan)] = args.ff_base_sha256.lower()
+    frozen[str(args.compiler_receipt)] = args.compiler_receipt_sha256.lower()
+    candidate_root = Path(base["Candidate"]["Path"]).parent.parent
+    artifact_path = candidate_root / "build-artifact.local.json"
+    artifact = load_json(artifact_path, base["Candidate"]["ArtifactSHA256"])
+    frozen[str(artifact_path)] = base["Candidate"]["ArtifactSHA256"]
+    for filename, digest in (("preparation.local.json", artifact["preparation_sha256"]),
+                             ("result.local.json", artifact["result_sha256"])):
+        pinned(candidate_root / filename, digest)
+        frozen[str(candidate_root / filename)] = digest
+    command_evidence = Path(artifact["commands_tlog"]["path"])
+    require(command_evidence.is_absolute() and command_evidence.is_relative_to(candidate_root), "candidate-owned compiler evidence required")
+    pinned(command_evidence, artifact["commands_tlog"]["sha256"], 16 * 1024**2)
+    frozen[str(command_evidence)] = artifact["commands_tlog"]["sha256"]
+    for name in (*files, "fixture-input.json"):
+        frozen[str(args.inputs / name)] = sha(read_bounded(args.inputs / name, 16384))
+    for name, payload in expected_sources.items():
+        frozen[str(args.prepared / name)] = sha(payload)
+    frozen[str(args.prepared / "skin-writer-source.json")] = result["prepared_receipt_sha256"]
+    for name, digest in expected_interfaces.items():
+        relative = "src/zonetool/game/shared.cpp" if name == "../game/shared.cpp" else "src/zonetool/zonetool/" + name
+        frozen[str(args.source / relative)] = digest
+    for path in rig.iterdir():
+        if path.is_file() and path.suffix in (".ps1", ".py", ".cs", ".hpp", ".cpp"):
+            frozen[str(path)] = sha(read_bounded(path, 131072))
+    result["execution_input_hashes"] = frozen
+    observation = load_json(Path(base["StockBindingReceipt"]), base["StockBindingReceiptSHA256"])
+    result["stock_receipts"] = {"binding": base["StockBindingReceipt"], "binding_sha256": base["StockBindingReceiptSHA256"],
+        "baseline": observation["BaselineReceipt"], "baseline_sha256": observation["BaselineReceiptSHA256"],
+        "reviewed": observation["ReviewedStockManifest"], "reviewed_sha256": observation["ReviewedStockManifestSHA256"], "root": observation["StockRoot"]}
     require(not args.run_root.exists(), "planning must not create run root")
     return result
 
@@ -220,12 +265,26 @@ def inspect(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("ff-base-plan", "inputs", "prepared", "source", "compiler-receipt", "sdk-root", "run-root"):
-        parser.add_argument("--" + name, type=Path, required=True)
-    parser.add_argument("--ff-base-sha256", required=True)
-    parser.add_argument("--compiler-receipt-sha256", required=True)
+        parser.add_argument("--" + name, type=Path)
+    parser.add_argument("--ff-base-sha256")
+    parser.add_argument("--compiler-receipt-sha256")
+    parser.add_argument("--check-plan", type=Path)
+    parser.add_argument("--check-plan-sha256")
     args = parser.parse_args()
     try:
-        print(json.dumps(inspect(args), indent=2, allow_nan=False))
+        if args.check_plan:
+            require(args.check_plan_sha256 is not None, "checked plan hash required")
+            supplied = load_json(args.check_plan, args.check_plan_sha256)
+            values = supplied["revalidation"]
+            expected_keys = {"ff_base_plan", "inputs", "prepared", "source", "compiler_receipt", "sdk_root", "run_root", "ff_base_sha256", "compiler_receipt_sha256"}
+            require(set(values) == expected_keys and all(isinstance(v, str) and v for v in values.values()), "exact plan revalidation inputs required")
+            bound = SimpleNamespace(**{k: v if k.endswith("sha256") else Path(v) for k, v in values.items()})
+            result = inspect(bound)
+            require(json.dumps(supplied, sort_keys=True) == json.dumps(result, sort_keys=True), "plan differs from current exact recipe; regeneration/review required")
+        else:
+            require(all(getattr(args, k) is not None for k in ("ff_base_plan", "inputs", "prepared", "source", "compiler_receipt", "sdk_root", "run_root", "ff_base_sha256", "compiler_receipt_sha256")), "all plan arguments required")
+            result = inspect(args)
+        print(json.dumps(result, indent=2, allow_nan=False))
         return 0
     except (ValueError, OSError, KeyError, TypeError, IndexError) as error:
         print(json.dumps({"status": "invalid-rig-chain-plan", "error": str(error)}))

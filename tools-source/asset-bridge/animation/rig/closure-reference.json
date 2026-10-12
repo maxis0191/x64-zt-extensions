@@ -1,0 +1,14 @@
+{
+  "schema": "iw7.rig-local-closure-reference/1",
+  "reference_commit": "b08fc1e",
+  "reference_directory": "tools-source/asset-bridge/surfaces",
+  "upstream_source_hashes": {
+    "MaterialV2.Compiler.ps1": "604a3d286e45bc09503971742a289f9af7c2124295567f3f255f9171d31d35e5",
+    "MaterialV2.JobMembers.cs": "c8fce6094104eae70442a081654f403739f5315d531c35385021759b74c2abda",
+    "MaterialV2.Core.ps1": "5bf7a25d7c3337e6cc6e1920584f46eb112555f514e5b205785f97757cff19e8",
+    "material_v2_phase.py": "1a98dfae183183707184b7370c94f7b85ef90376d7b1fc71b4c3784eb9e9d02c"
+  },
+  "local_adaptation": "Read-only observer namespace changed to IW7.AnimationRig. Compiler witness/telemetry predicates retained with rig phase schema and local stop helper. No dynamic Material import; execution requires separate review/admission.",
+  "cross_module_runtime_import": false,
+  "native_execution": false
+}

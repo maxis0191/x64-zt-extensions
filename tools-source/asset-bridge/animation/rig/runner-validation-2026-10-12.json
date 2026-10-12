@@ -1,0 +1,96 @@
+{
+  "schema": "iw7.original-rig-runner-source-validation/1",
+  "captured_utc": "2026-10-12T05:43:30.678343+00:00",
+  "source_base_commit": "8d14cdf070c92529037f40dd9248f86f3c92c13d",
+  "scope": "Source, mocks and default Plan only; Run branch has never executed.",
+  "python_tests": {
+    "total": 108,
+    "passed": 108,
+    "includes_windows_powershell_wrappers": true
+  },
+  "powershell_checks": {
+    "compiler_closure": 61,
+    "runner_predicates_and_managed_syntax": 64,
+    "actual_phase_orchestrator_with_mock_ownership": 44,
+    "independent_reader_and_synthetic_physical_hash_binding": 18,
+    "total": 187
+  },
+  "csharp_validation": "Roslyn syntax parsing only; no helper compilation or native type load.",
+  "source_hashes": {
+    "Build-RigChain.ps1": "9c4ae55334f0c2401759c160e7affe20bdbbd921aea2621fbb8e076b8a5e73fa",
+    "Rig.Compiler.ps1": "4a0bf1bef388f4bd09df535a6f1a87581683c2914d3ca0675a786a260b30e3ac",
+    "Rig.Core.ps1": "350d27c6ee20ffb4f822d23194348aa0a71b95a7c854101385e60d0a415bc7ec",
+    "Rig.JobMembers.cs": "5a02254764277b62f752792f1ec4f5b93b85237b171a3381a78d58f6af190e91",
+    "plan_rig_chain.py": "34ff3d2fe3390624528de0c069c11c4a5f38bf53948146b24b3c8826b5a8851f",
+    "read_rig_chain.py": "8f85840bce713beeb9d30978915c27e86829c24d2d5a10ab1001801a7bac8786",
+    "rig_phase.py": "70a5a9b2d5148536dd9f2cdbcee7ebc642124f9a2471c5cc45d2ddf0dfdbfc9c",
+    "test_rig_chain.py": "8172b8f799b603bfcaa9f8a98a15cdd20608e3009ff2eb21890c664e3d0a1af6",
+    "test_rig_compiler.ps1": "cd712a75015fd5670fdfda47d39c59ec7319245ffa3a89a7c997687cc76d148e",
+    "test_rig_executor.py": "c1cb0aa93066dc6ee7f9c70135c1a5f656b57caaf86b140d08cf510ded24b38c",
+    "test_rig_owned_phase.ps1": "dcbd3fd5fdeb1d2c37147aeec420dda39229a89f58a3b107132318d06c86fed5",
+    "test_rig_phase.py": "db4a4ff85cf40f95bd4cf69b22e93b1dd167d42ec1c356aae422d99e5d1ecc76",
+    "test_rig_readback.ps1": "9e474293f5528bc6afcd7d1fa0f7829e2e08345127b86c64b6296fd4f4ab5488",
+    "test_rig_runner.ps1": "56c6333fd3c07181090c4db63fb14e83e98f7848ac240fa6e0f6ed33c736a466"
+  },
+  "source_index_matches_physical_bytes": true,
+  "recovered_files_unchanged_physical_and_index": 12,
+  "physical_recipe": {
+    "label": "animation-rig-chain-plan-20261012-d.local.json",
+    "bytes": 76422,
+    "sha256": "e2d3ab1fc34d51afe96e9a449994bcca69992413b4e3dd341274fbb91e0d17bd",
+    "phases": [
+      "compile",
+      "emit-first",
+      "emit-second",
+      "read-native",
+      "build",
+      "verify",
+      "dump",
+      "read-ff"
+    ],
+    "run_root_absent": true
+  },
+  "default_executor_plan": {
+    "label": "animation-rig-executor-plan-d.local.json",
+    "bytes": 11327,
+    "sha256": "6c958cf6fbd3d546f0048e071ff8d9354d525e5e23d7b570b1c1b2793c1bee30",
+    "forbidden_mutation_commands_not_called": true,
+    "native_helper_types_unloaded": true,
+    "toolchain_metadata_files": 5442,
+    "toolchain_metadata_bytes": 1131905184,
+    "toolchain_hashes_and_ntfs_freeze_pending": true
+  },
+  "recipe_refusals": {
+    "label": "animation-rig-plan-refusals-d.local.json",
+    "sha256": "10509ca1f3fb023d2063ddeeac02dd6b95eaa904b3dfbeb2657790e105b855e5",
+    "passed": 3,
+    "cases": [
+      "changed-command",
+      "reduced-budget",
+      "changed-source-pin"
+    ]
+  },
+  "corrected_source_test_setup": [
+    "Extracted function initially lacked automatic PSScriptRoot; runner now binds its local rig root explicitly, with no native-contract relaxation.",
+    "Local Plan invocation initially joined an option and value into one argv string; the local invocation was corrected and all three negative recipe cases then passed."
+  ],
+  "compiler_closure_reference_commit": "b08fc1e",
+  "material_runtime_import": false,
+  "shared_provider_edits": false,
+  "measured_animation_ff_runner_edits": false,
+  "native_compilation": false,
+  "native_execution": false,
+  "ff_execution": false,
+  "resource_lease_created": false,
+  "stock_files_read_or_copied": false,
+  "sdk_download_or_copy": false,
+  "game_execution": false,
+  "independent_coordinator_review_pending": true,
+  "coordinator_native_go_received": false,
+  "material_binding_verified": false,
+  "engine_weight_direction_verified": false,
+  "engine_animation_playback_verified": false,
+  "notetrack_delivery_verified": false,
+  "runtime_render_verified": false,
+  "ready": false
+}

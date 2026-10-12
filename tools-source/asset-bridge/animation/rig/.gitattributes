@@ -1,4 +1,8 @@
 # Preserve recovered source bytes (including historical CRLF) for provenance.
+*.ps1 text eol=lf
+*.py text eol=lf
+Rig.JobMembers.cs text eol=lf
+rig_phase.py text eol=lf
 prepare_skin_fixture.py -text
 read_skin_fixture.py -text
 skin_oracle.py -text

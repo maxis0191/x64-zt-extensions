@@ -111,8 +111,11 @@ native launch scripts. Future native/FF/runtime work requires separate coordinat
 GO and current resource/ownership/restoration helpers. The next recipe and real
 GSC route are in [RUNTIME-CONTRACT.md](RUNTIME-CONTRACT.md).
 
-The subsequent [chain adapter](CHAIN-PLAN.md) prepares the complete native/FF
-phase graph without executing it, and adds a reader using actual model/surface
-binds and blends. Its 14 additional tests bring the light suite to 93. It keeps
-the measured FF runner/providers unchanged; native and FF executor integration
-and every runtime/material convention remain explicit pending gates.
+The [chain adapter and specialized runner](CHAIN-PLAN.md) now implement the
+complete native/FF sequence with an independent reader using actual model/surface
+binds and blends. The suite has 108 Python tests, including four PowerShell
+source/mock suites (187 internal checks). The default runner action is an inert
+Plan. The `-Run` branch is implemented but has never run; native execution still
+requires coordinator review and a separate explicit GO. The measured animation
+FF runner/providers and recovered source bytes remain unchanged. Every engine
+weight, animation cadence, material and rendered-output convention remains open.
