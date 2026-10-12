@@ -1323,3 +1323,44 @@ The [qualification and O preparation checkpoint](catalogue-core-gfx-qualified-o-
 records the distinct authorization, actual closure/PTY/absence proof and sealed
 Plan/dispatch/helper-draft pins. Operational V2 source, reader and candidate
 remain unchanged. No compatibility, catalogue or export is claimed.
+
+## Catalogue O: one distinct Run, reviewed closure, no catalogue
+
+The coordinator authorized only O after independent review; the prior batch
+remains stopped. Fresh admission at 19:56:09 UTC passed with 6/8 GiB, 56.28%
+commit usage, unchanged owner identities and no heavy/client/lease overlap.
+All 29 text bindings and the reader pin matched. V3 was not adopted.
+
+O ran once and exited naturally 0 after 3,113.33 ms, finalizing at 19:56:54 UTC
+as `Failed / NoCatalogue`. Inputs and aliases revalidated under reservation;
+the original tree closed, lease released and quarantine was absent. TRACE,
+EXIT, CALLERS and MSG were retained. The 4,890-byte stderr hash comes from the
+under-guard receipt; stdout is 70 bytes. No payload hash was read after release.
+
+The NoExit host was retained while the independent reviewer checked the bound
+closure helper. Exactly three literal values changed from the reviewed O draft:
+host PID, native PID and native creation UTC. All 140 variable occurrences,
+32 command occurrences and 850 nonliteral tokens stayed identical. The exact N
+identifiers were retained. Only after favorable review and the coordinator's
+closure instruction was the bound helper invoked once. The historical draft
+was never invoked, and no closure-helper incident occurred.
+
+Same-host postflight passed ten metadata rows and twenty original/alias IDs.
+PTY 56537 actually exited 0 (`3eff29`); the independent 20:02:37 UTC witness
+confirmed host 17760, parent 32288 and native root 14524 absent, no heavy/client
+process or lease, unchanged stopped Main/UDP baseline and preserved Python.
+The [O runtime checkpoint](catalogue-runtime-o-20261012.json) pins the receipt,
+exact identity-only diff, reviewed helper, postflight and actual exit/absence.
+Only the analysis owner may interpret the retained MSG now. This GO authorizes
+no new metadata, dependency qualification, catalogue retry, export or automatic
+continuation. No compatibility or usable asset catalogue has been proved.
+
+After complete closure, the analysis owner confirmed a complete 46-byte ASCII
+message requesting `en_core_post_gfx`, correlated on the same thread before exit.
+Neither initialization completion nor a catalogue marker/file/directory was
+observed. This changed first named failure does not prove complete dependency
+closure or donor compatibility. Under a separate coordinator instruction, the
+analysis owner inspected only that file's metadata: 1,158,208 bytes, no reparse,
+and no payload content or hash read. The coordinator subsequently requested
+source preparation for one qualification and possible seven-input P, subject to
+review and a distinct GO; the old batch and O remain closed.
