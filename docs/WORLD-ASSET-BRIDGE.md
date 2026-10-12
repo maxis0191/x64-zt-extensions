@@ -332,8 +332,8 @@ is implied by a single original physics box.
 ```powershell
 $world = (Resolve-Path tools-source/asset-bridge/world).Path
 python -B "$world/test_havok_probe.py"
-python -B "$world/havok_probe.py" --rdata "C:/Users/ezvalo/Documents/IW7-Paris-Server/tools/references/unpacked-rdata.bin"
-python -B "$world/havok_probe.py" --hkx "C:/Users/ezvalo/.codex/worktrees/rhino-animclass/IW7-Paris-Server/runtime/rhino-packs-build-20261003-164037-424/work/zonetool/paris_rhino/physicsasset/ragdoll_alien_queen.hkx"
+python -B "$world/havok_probe.py" --rdata "<retained-reference-root>/unpacked-rdata.bin"
+python -B "$world/havok_probe.py" --hkx "<retained-physicsasset-root>/ragdoll_alien_queen.hkx"
 ```
 
 Five new tests pass using only original synthetic envelopes, covering short
