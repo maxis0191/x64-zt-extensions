@@ -1,5 +1,12 @@
 # Recipient I preparation: compiled utility observation
 
+Execution update: the separately authorized I invocation completed and restored
+its inputs, but script export failed with an empty ScriptFile index. References
+passed; no utility bytes or imports were observed. See the
+[I result](native-validation-i-2026-10-12.json) and [failure boundary](README.md#i-references-verified-utility-index-empty-restoration-confirmed).
+The preparation below is retained as the reviewed pre-run plan. Its GO is now
+exhausted; no retry follows from this document.
+
 Source and Plan only, 2026-10-12. H's single-execution authorization is exhausted.
 No script run, retry, source-stock expansion or native rebuild is authorized by
 this document. The coordinator owns adoption, the next distinct GO and central

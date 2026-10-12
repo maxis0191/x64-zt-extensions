@@ -1,0 +1,366 @@
+{
+  "schema": "iw7.recipient-native-validation/1",
+  "attempt": "I",
+  "date": "2026-10-12",
+  "status": "references-verified-script-index-empty-confirmed-restored",
+  "source_commit": "da643954aeb073c19200361f1f07d01d1aaa30a1",
+  "origin_main": "7bd9b5379336c182c2695f939c3e0bf3019a4a4b",
+  "plan_sha256": "0FAC7695612D3B16570A0B92AEBEF0105DA0B1950868B20444BB4CC5CB9C9FBF",
+  "spec_sha256": "99FEA6397BC83796C36731EB627ECCDA9DC2038B2C4B108ED722CBAFB20D6985",
+  "command_sha256": "B88803B245AA2112EF08E65C40D8700656B72AC721E6BF492547B7D7EE0B2228",
+  "stock_observation_sha256": "0D38DD171A0DC03F382F8FBA33CCA9BCD32A43C6B6132CBEF517EC920D04D829",
+  "complete_inventory_sha256": "683C8A39B6BD289A2ACC0A27129A038361D5A217D6EF129D07DA739FEB6F76BF",
+  "native_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "authorized_invocations": 1,
+  "actual_invocations": 1,
+  "phases": [
+    "references",
+    "script"
+  ],
+  "diagnostic_only": false,
+  "utility_invoked": true,
+  "admission": {
+    "physical_bytes": 8589934592,
+    "commit_bytes": 11811160064,
+    "preflight_utc": "2026-10-12T09:13:25.0862786Z",
+    "physical_available": 16364191744,
+    "committed": 24621035520,
+    "commit_limit": 47564615680,
+    "physical_reserve": 0,
+    "commit_reserve": 9512923136,
+    "preflight_lease_count": 0,
+    "preflight_foreign_count": 0,
+    "atomic_run_registrations": [
+      {
+        "phase": "references",
+        "Registered": true,
+        "Outcome": "Registered",
+        "Attempts": 1
+      },
+      {
+        "phase": "script",
+        "Registered": true,
+        "Outcome": "Registered",
+        "Attempts": 1
+      }
+    ],
+    "guarded_content_gate_passed": true,
+    "memory_peak_measured": false
+  },
+  "stock_profile": {
+    "BaselineEntries": 72,
+    "SupplementalEntries": 32,
+    "SupplementalProfile": "doom-reviewed-all-asset-paks-20261012",
+    "SupplementalLogicalBytes": 4695508096,
+    "SupplementalLimitBytes": 4695508096,
+    "AdditionalBytesBeyondFourPAKs": 4115416048,
+    "SupplementalCopiedBytes": 0,
+    "UniqueHashReadBytes": 5148447113,
+    "UniqueHashReadFiles": 73,
+    "StockHardLinks": 103,
+    "StockCopiedBytes": 77,
+    "ContentVerified": false,
+    "AdditionalResidentBytesMeasured": false
+  },
+  "stock_asset_pak_count": 33,
+  "image_paks_staged": 0,
+  "managed_paths": 107,
+  "pak_payload_copy_bytes": 0,
+  "timing": {
+    "command_started_utc": "2026-10-12T09:13:43.0753787Z",
+    "command_finished_utc": "2026-10-12T09:14:13.9349312Z",
+    "command_elapsed_seconds": 30.8595525,
+    "phase_limit_seconds": 240,
+    "outer_limit_seconds": 245,
+    "group_active_limit_seconds": 600,
+    "root_exit_drain_limit_seconds": 5,
+    "phases": [
+      {
+        "phase": "references",
+        "python_created_utc": "2026-10-12T09:13:54.0750439Z",
+        "native_spawn_observed_utc": "2026-10-12T09:13:54.209613+00:00",
+        "native_creation_time_verified": false,
+        "original_closure_observations": [
+          {
+            "PhaseSeconds": 8.3058097,
+            "Active": 0,
+            "DrainSeconds": 0.002102700000000013,
+            "RootExitCode": 0
+          }
+        ]
+      },
+      {
+        "phase": "script",
+        "python_created_utc": "2026-10-12T09:14:02.4357561Z",
+        "native_spawn_observed_utc": "2026-10-12T09:14:02.550306+00:00",
+        "native_creation_time_verified": false,
+        "original_closure_observations": [
+          {
+            "PhaseSeconds": 7.6457504,
+            "Active": 0,
+            "DrainSeconds": 2.630000000003463e-05,
+            "RootExitCode": 1
+          }
+        ]
+      }
+    ]
+  },
+  "references": {
+    "verified": 4,
+    "missing": 0,
+    "default": 0,
+    "rows": [
+      {
+        "type": "material",
+        "name": "mopw/character_park_clown_zombie_shoes",
+        "status": "verified"
+      },
+      {
+        "type": "techset",
+        "name": "mopw_l_sm_replace_i0c0s0o0n0p0",
+        "status": "verified"
+      },
+      {
+        "type": "image",
+        "name": "park_clown_zombie_shoes_n_3e46d100_packed_nog",
+        "status": "verified"
+      },
+      {
+        "type": "image",
+        "name": "park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs",
+        "status": "verified"
+      }
+    ],
+    "source_zone_count": 25,
+    "source_zone_order": [
+      "techsets_global_core_mp",
+      "techsets_common_core_mp",
+      "code_post_gfx",
+      "patch_code_post_gfx",
+      "techsets_global",
+      "global",
+      "patch_global",
+      "techsets_common",
+      "common",
+      "patch_common",
+      "techsets_global_mp",
+      "global_mp",
+      "patch_global_mp",
+      "techsets_global_cp",
+      "global_cp",
+      "patch_global_cp",
+      "techsets_common_mp",
+      "common_mp",
+      "patch_common_mp",
+      "techsets_common_cp",
+      "common_cp",
+      "patch_common_cp",
+      "techsets_cp_zmb",
+      "cp_zmb",
+      "patch_cp_zmb"
+    ],
+    "csv_bytes": 265,
+    "csv_sha256": "f14d3326c4038a0289cc7316c3e26a29e12bc801eee26abf9750bdff36780a4d",
+    "serialized_content_observed": false
+  },
+  "script": {
+    "index_available": 0,
+    "manifest_rows": [
+      {
+        "donor_map": "cp_zmb",
+        "pack_name": "paris_enemy_cp_zmb_sdk_beacon_recipient_scripts",
+        "module": "scripts/engine/utility",
+        "status": "missing_asset",
+        "path": "dump/paris_enemy_cp_zmb_sdk_beacon_recipient_scripts/scripts/engine/utility.gscbin",
+        "size_bytes": "0",
+        "sha256": ""
+      }
+    ],
+    "module_output_exists": false,
+    "serialized_bytes_verified": false,
+    "source_zone_marker_count": 25,
+    "source_zone_order": [
+      "techsets_global_core_mp",
+      "techsets_common_core_mp",
+      "code_post_gfx",
+      "patch_code_post_gfx",
+      "techsets_global",
+      "global",
+      "patch_global",
+      "techsets_common",
+      "common",
+      "patch_common",
+      "techsets_global_mp",
+      "global_mp",
+      "patch_global_mp",
+      "techsets_global_cp",
+      "global_cp",
+      "patch_global_cp",
+      "techsets_common_mp",
+      "common_mp",
+      "patch_common_mp",
+      "techsets_common_cp",
+      "common_cp",
+      "patch_common_cp",
+      "techsets_cp_zmb",
+      "cp_zmb",
+      "patch_cp_zmb"
+    ],
+    "source_zone_order_independently_observed": true,
+    "phase_accepted": false,
+    "native_exit_code": 3765269347,
+    "native_exit_code_hex": "0xE06D7363",
+    "native_failure_field": null,
+    "native_error": "Requested donor scriptfile was not found: scripts/engine/utility",
+    "cpp_exception": "Enemy script dump incomplete; inspect scriptfile-manifest.csv and the errors above",
+    "fatal_dialog_body_capture_in_scope": false,
+    "headless_error_artifact_retained": true,
+    "minidump_message_present": true,
+    "minidump_artifact_observed": false,
+    "imports_or_complete_consumption_observed": false
+  },
+  "closure": {
+    "command_exit_code": 1,
+    "phases": [
+      {
+        "Phase": "references",
+        "RootPID": 28424,
+        "RootCreatedUtc": "2026-10-12T09:13:54.0750439Z",
+        "RootExitCode": 0,
+        "JobActiveAtClose": 0,
+        "NativePID": 14708,
+        "NativeExitCode": 0,
+        "NativeFailureField": null,
+        "DrainsClosed": true,
+        "StdoutBytes": 2497,
+        "StderrBytes": 0
+      },
+      {
+        "Phase": "script",
+        "RootPID": 32260,
+        "RootCreatedUtc": "2026-10-12T09:14:02.4357561Z",
+        "RootExitCode": 1,
+        "JobActiveAtClose": 0,
+        "NativePID": 19352,
+        "NativeExitCode": 3765269347,
+        "NativeFailureField": null,
+        "DrainsClosed": true,
+        "StdoutBytes": 2687,
+        "StderrBytes": 189
+      }
+    ],
+    "post_run_owned_process_count": 0,
+    "post_run_lease_count": 0,
+    "inner_phase_does_not_attest_tree_closure": true
+  },
+  "restoration": {
+    "restored": true,
+    "stock_preserved": true,
+    "status": "Confirmed",
+    "cleanup_error": null,
+    "retained_lease_token": null,
+    "managed_paths_removed": 107,
+    "source_metadata_identity_matches": 107,
+    "owner_identities_unchanged": true,
+    "main_identity_matches": true,
+    "post_run_retail_content_rehashed": false
+  },
+  "acceptance": {
+    "run_status": "Failed",
+    "native_executed": true,
+    "references_verified": true,
+    "script_bytes_verified": false,
+    "closure_complete": false,
+    "ready": false,
+    "runtime_verified": false,
+    "binder_qualification_claimed": false,
+    "gameplay_acceptance_claimed": false
+  },
+  "generated_output": {
+    "maximum_bytes": 1274000,
+    "final_bytes": 1273958,
+    "limit_bytes": 268435456
+  },
+  "local_artifact_hashes": [
+    {
+      "Relative": "state.local.json",
+      "Bytes": 153634,
+      "SHA256": "F5F8ADCC7F26CFAF07D67293BF0A35CAF0837DE70FC4B95EBDEF4DCDF4931B4A"
+    },
+    {
+      "Relative": "backup/recovery.local.json",
+      "Bytes": 11392,
+      "SHA256": "27FB9092DBED5A7D94D55BA53885505034110C45E98B642C31CE6AA298108636"
+    },
+    {
+      "Relative": "references/native-start.json",
+      "Bytes": 543,
+      "SHA256": "CF5EBF67E6E8FEF198D6773F14FA5E89C4758EECEF19AB0032BB2138239FE667"
+    },
+    {
+      "Relative": "references/phase.json",
+      "Bytes": 812,
+      "SHA256": "C8DC6FD6E7924C797B6C52CEA6F2BA3A4AB3186EC6719BAB83C6A0D0D8ADA954"
+    },
+    {
+      "Relative": "references/stdout.log",
+      "Bytes": 2497,
+      "SHA256": "E0279A45F25413D72DA53B7980449983659AB3A1C0C973941B508D9B7BD78912"
+    },
+    {
+      "Relative": "references/stderr.log",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Relative": "script/native-start.json",
+      "Bytes": 539,
+      "SHA256": "4F4CD00D3D07589D55D8CDC7B0C5C63164E877B2C72674D9195542B59CA25E93"
+    },
+    {
+      "Relative": "script/phase.json",
+      "Bytes": 525,
+      "SHA256": "9BABA17BEA0106256DD5F4AFE29BC04ECD8A925722C7AE90ADA4071F1E39AEAD"
+    },
+    {
+      "Relative": "script/stdout.log",
+      "Bytes": 2687,
+      "SHA256": "D986D5E1D6A80F303FD797919EDF1D92DDA2D5576F50B89A0AB2948A783C3D78"
+    },
+    {
+      "Relative": "script/stderr.log",
+      "Bytes": 189,
+      "SHA256": "208CF5B23ED23159EEA2F7F6C7D9761C7F5CDE84D3CED80BB0CA4A59959CBC37"
+    },
+    {
+      "Relative": "work/enemy-catalog/sdk_beacon_recipient_a.csv",
+      "Bytes": 265,
+      "SHA256": "F14D3326C4038A0289CC7316C3E26A29E12BC801EEE26ABF9750BDFF36780A4D"
+    },
+    {
+      "Relative": "work/dump/paris_enemy_cp_zmb_sdk_beacon_recipient_scripts/scriptfile-manifest.csv",
+      "Bytes": 235,
+      "SHA256": "270D6B11A9FE66D8736DC92DCC88836B718DCF1D78BADC92B159249D0DB27FFC"
+    },
+    {
+      "Relative": "work/zonetool-headless-error.txt",
+      "Bytes": 186,
+      "SHA256": "5F20BC6EF7A672924D2A095B606C010C8E68C78EC299ABC45F1C82B06960F47B"
+    }
+  ],
+  "preflight_sha256": "B1D30EE6F129B2B1F983C80AD4283B0BDEB2A237975F463F09654791D6BA83EE",
+  "final_observation_sha256": "C8F4B0EFB75C9AAFD71688649A3BD092DEC834135A02E1F2C9A27DAC4315E55A",
+  "log_supplement_sha256": "E1AA007526C7E47CB23E056EB5E62D0D9235CEFF7CDD23DA985413D57B4BD2F3",
+  "limits": [
+    "Four reference rows establish stock receiver presence, not serialized material/techset/image content or transitive closure.",
+    "An empty observed ScriptFile index is not proof utility is absent from retail CP data; the precise indexing/loading cause remains unresolved.",
+    "The script native exception has failure=null in the capture receipt but a nonzero native/root exit, no accepted observation and an explicit missing_asset manifest. It is a failed phase.",
+    "Both native jobs closed with zero members and closed drains. Native kernel creation time was not verified; original Python owner creation and native spawn-observed times are distinct.",
+    "The initial independent observation counted 20 Loading markers only; the immutable log supplement adds five already-loaded markers, matching all 25 planned zones without accepting the failed script phase.",
+    "The minidump wording is emitted before headless C++ termination; no minidump exists in the documented output directory. Retain the actual logs and headless error instead of claiming a dump.",
+    "The complete stock hash gate read 5148447113 bytes once before staging. Peak RAM/commit and total native I/O were not measured.",
+    "Source preservation after release used identity, size, modification time and attributes, without post-release retail content rehash.",
+    "H and earlier evidence remain unchanged. This GO was consumed by exactly one two-phase invocation. No retry, broadened stock, utility substitution, rebuild, package promotion or Main change followed.",
+    "SelfContained composition remains independent of this original-Beacon utility route. Imports, serialized dependency closure and gameplay remain unproved."
+  ]
+}

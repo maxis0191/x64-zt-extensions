@@ -550,3 +550,39 @@ bytes, serialized asset content, package closure, binder qualification and
 gameplay remain unproven. `ClosureComplete`, `Ready` and `RuntimeVerified` stay
 false. H's single-execution GO is exhausted; no utility phase or retry followed.
 The coordinator owns the next separate gate and central GitHub integration.
+
+## I: references verified, utility index empty, restoration confirmed
+
+After independent reader/Plan review, the coordinator authorized exactly one
+two-phase invocation of source `da643954`. The [I record](native-validation-i-2026-10-12.json)
+retains the actual result: references again passed 4/4 with the same 265-byte CSV,
+then the script process printed `ENEMY_SCRIPT_INDEX map=cp_zmb available=0`.
+Its one-row manifest reports utility `missing_asset`, size 0, no hash; no
+`utility.gscbin` was produced. The native C++ exception is `0xE06D7363` with message
+`Enemy script dump incomplete; inspect scriptfile-manifest.csv and the errors above`.
+This is not evidence that utility is absent from the game; the index construction
+and effective load mode still need source investigation.
+
+Both logs contain all 25 planned zone markers in order: 20 load messages and
+five already-loaded messages. The first independent post-run observation listed
+only the 20 load messages; its immutable supplement records all 25. The failed
+script phase is not accepted by this independent log count. Its capture receipt
+has `failure=null`, but native exit 3,765,269,347, root exit 1 and no observation;
+the outer runner correctly rejects it. The reference native/root exits are 0.
+
+Both original jobs reached zero members, with closed stdout/stderr drains.
+All 107 managed paths were removed and all source identity/size/time/attribute
+observations matched. Restoration and stock preservation passed, zero owned
+process or lease remained, and owner/Main identities were unchanged. Invocation
+time was 30.8595525 seconds; final generated output was 1,273,958 bytes.
+
+The retained 186-byte headless error and 189-byte stderr say a minidump was written,
+but no dump exists under the documented output path. Source inspection shows the
+C++ headless handler terminates before the dump-writing call; that text is not a
+dump witness. No fatal-dialog observer was added to the script phase.
+
+`ReferencesVerified=true`; `ScriptBytesVerified`, imports, asset/script closure,
+package readiness and runtime acceptance remain false/unobserved. I's GO is
+exhausted. Next authorized work is source plus these small logs only: inspect
+where and when the script index is populated and compare reference/script load
+paths. No retry, retail reread or automatic stock expansion is authorized.
