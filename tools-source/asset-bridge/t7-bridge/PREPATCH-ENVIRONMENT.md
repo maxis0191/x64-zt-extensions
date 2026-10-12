@@ -69,3 +69,59 @@ from a future run must be checked before claiming restoration complete.
 After this diagnostic is qualified, the separate catalogue still needs its
 actual engine/zone compatibility and startup stock decisions. A memory-window
 receipt by itself proves neither a real model name nor conversion or rendering.
+
+## Existing-owner invocation now implemented, not executed
+
+`Run-T7Prepatch.ps1 -PlanPath <private-plan> -PlanSHA256 <reviewed-sha256>` checks
+source pins, input metadata and the fixed command without hashing binary inputs,
+loading native providers, taking a lease, creating files or starting a process.
+A pending candidate is explicitly reported; it cannot run. `-Run` additionally
+requires the separate coordinator GO and consumes one create-only attempt marker.
+The plan and every source pin are retained through the existing `Open-H1Pin` /
+`Read-H1SmallJson` helpers. No new pin reader, process owner or scheduler is added.
+
+The candidate must occur in the actual successful, closed build receipt with
+the exact expected build-plan SHA256. Its `BuildProfile` must identify
+`t7-prepatch-probe`, argc 2, fixed option/report, and the guarded Helper/Wiring/
+PreparedMain pins. Ordinary D2 is refused. Only after admission are binary pins
+hashed/guarded and the one candidate hardlink created; the two existing aliases
+remain. The child gets private TEMP/TMP/profile environment paths, with no claim
+that all Windows known-folder or engine I/O honors those variables.
+
+The actual launch and cleanup call `H1Native.Core.ps1::Invoke-H1OwnedStage` and
+`Complete-H1Stage`, using the same witnessed NativeJob assembly. NativeJob's
+`CloseConfirmed` rechecks its original process exit and ActiveProcesses0 before
+releasing handles and retains the original exit code. No H1 compiler or fixture
+policy is run. One Extract reservation is 6/8 GiB, the root gets 120 seconds, and
+the one total clock is 200 seconds including input checks/finalization; failure
+cleanup remains 5 seconds. The generic 64-entry tree guard stays in force. Mutable
+outputs get 64 MiB, receipt reserve 64 KiB, each outer log 1 MiB and report 256 KiB;
+the three pinned binary aliases are separately added to the accounting ceiling.
+Unexpected work-directory output stops the attempt and is preserved.
+
+After ordinary root0 or root2 closure, bounded JSON validation and binary input
+reverification occur while the lease and input guards remain held. The JSON is
+guarded through receipt publication. The launcher verifies schema/phase, process
+generation, module path, counts/read bounds, the 12 exact windows and false
+compatibility claims. Results distinguish `NoCapture`, `CapturePartial`,
+`CaptureComplete` and a present but unqualified report. Exit2 remains failed as
+a diagnostic run even when it produced useful partial evidence. Complete capture
+becomes only `CaptureCompletePendingReview` after normal closure, input checks
+and lease release; it never authorizes subsequent engine initialization.
+
+On failed runtime cleanup, only the retained job is stopped. Uncertain closure
+or release keeps the existing H1 quarantine context and host alive. After forced
+closure only the small JSON may be inspected outside admission, never binary
+inputs rehashed or a failed run accepted. Original input metadata and Main
+generation/UDP27016 ownership are rechecked on the ordinary closed path. Aliases
+are retained; the launcher performs no destructive cleanup or source-attribute
+change. The record does not assert absence of all possible external engine I/O.
+
+Validation: 47 light PowerShell checks exercise the actual H1 stage with fake
+owners/clocks, including root2 normal closure, deadline before start, retained
+quarantine on stop/release failure, and the real runner finalization block after
+late release or publication. Bounded JSON guard/refusals, exact windows/identity,
+ordinary-D2 rejection and candidate/build-plan mismatch also pass. The default
+local check reports pending instrumented candidate with no binary hash/provider/
+lease/file creation. These tests and preparation do not compile, start or qualify
+a native candidate. The final candidate hash remains pending its real build.

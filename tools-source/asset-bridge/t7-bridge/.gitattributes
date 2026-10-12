@@ -1,0 +1,3 @@
+Run-T7Prepatch.ps1 text eol=lf
+T7Prepatch.Profile.ps1 text eol=lf
+Test-T7Prepatch.ps1 text eol=lf
