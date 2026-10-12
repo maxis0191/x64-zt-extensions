@@ -84,7 +84,8 @@ interpretation. This assumes normalized quaternions and linear blend skinning;
 it does not prove interpolation, engine weight direction or visible deformation.
 The note remains data at 0.5, not a delivered gameplay event.
 
-79 light tests pass: the recovered 69 and ten new tests for four-key binding,
+The initial checkpoint passed 79 light tests: the recovered 69 and ten new tests
+for four-key binding,
 negative pose, explicit note remapping, channel/geometry/parent/weight mutations,
 neutral bind, retained hashes, byte limits and exact recovery provenance. Real
 source preparation generated and re-read only raw inputs, C++ source/header
@@ -109,3 +110,9 @@ generate no XMB/XSB/FF and never invoke a compiler. Do not use retained historic
 native launch scripts. Future native/FF/runtime work requires separate coordinator
 GO and current resource/ownership/restoration helpers. The next recipe and real
 GSC route are in [RUNTIME-CONTRACT.md](RUNTIME-CONTRACT.md).
+
+The subsequent [chain adapter](CHAIN-PLAN.md) prepares the complete native/FF
+phase graph without executing it, and adds a reader using actual model/surface
+binds and blends. Its 14 additional tests bring the light suite to 93. It keeps
+the measured FF runner/providers unchanged; native and FF executor integration
+and every runtime/material convention remain explicit pending gates.
