@@ -96,6 +96,14 @@ Save the bounded qualification receipt, revalidate while guarded, then dispose
 guards and close/release the reservation with the usual host closure evidence.
 This is a proposed qualification phase; none of these content reads occurred.
 
+No qualified T7 fastfile header layout, magic or version rule was found in the
+consulted pinned T7 sources. They delegate loading to the engine through
+DB_LoadXAssets at 0x1401D8740. The available H1/H2/S1/IW6/IW7 fastfile headers
+and the T7 XPAK magic describe other formats and must not be reused as a T7
+fastfile check. If a bounded prefix observation is separately authorized, it
+must remain opaque, with header semantics and content compatibility explicitly
+unproven. Hash identity alone is not a format or compatibility check.
+
 A fresh runtime plan can then bind that qualification receipt and exact input
 pin, proposed relative path and metadata. Its default validation stays limited
 to source/metadata. The actual runtime must reopen/revalidate the new pin under
