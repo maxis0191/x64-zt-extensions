@@ -213,3 +213,15 @@ the new observation and spec are separate ignored artifacts; no PAK was staged,
 copied or rehashed and no lease/native run occurred during preparation. Further
 review and a separately authorized slot/GO are required. E2 remains failed and
 restored, and none of its proofs are amended into a five-PAK success.
+
+## F execution checkpoint
+
+F subsequently executed the five-PAK profile once after its own review/GO and
+fresh admission. Its guarded hashes/staging passed, but native loading failed
+with the exact captured `Could not find asset file assetfile101.pak`. Stdout
+remained at the same `global_cp` boundary as E2. The [F record](native-validation-f-2026-10-12.json)
+confirms the original job closed and all 80 paths were restored/removed, sources
+and Main preserved and zero owned process/lease remaining. This proves neither
+complete CP stock nor accepted references. No sixth entry or retry is introduced.
+The next investigation assesses the complete existing asset-PAK scope and its
+newly measured read budget before any further profile proposal or admission.

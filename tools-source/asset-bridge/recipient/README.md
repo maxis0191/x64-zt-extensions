@@ -479,3 +479,35 @@ is now prepared with a new schema/name, E2 fatal-evidence pin and exact
 identical Plan outputs exist locally; no five-PAK staging or native run occurred.
 65 stock fixtures plus 65 source/contract fixtures pass. A separate corrective
 review, complete admission/content verification and GO remain required.
+
+### F result: pak101 fatal, five-PAK transaction restored
+
+The [F record](native-validation-f-2026-10-12.json) retains one authorized
+references-only execution of `a8c16c0`, exact plan/command pins and fresh 8/11
+admission. The five-PAK profile passed guarded content requalification and
+source/target identity checks. Normal fatal capture then returned:
+
+```text
+Could not find asset file assetfile101.pak
+```
+
+Original identities were verified before/after; three controls contained 77
+total text bytes without truncation, saturation, error or interaction. The
+fatal record was written about 5.34 seconds after native creation. Stdout remains
+1,665 bytes, byte-identical to E2/D and ending at `global_cp`; no new completed
+zone or qualified reference is inferred from the new missing-file request.
+
+Automatic stop confirmed original root exit 2 and zero job members. Independent
+checks confirmed all 80 managed paths removed, source identities/metadata
+preserved, restoration/source preservation, no remaining owned process or lease,
+and unchanged owner/Main identities. Final generated output was 1,225,406 bytes.
+Status remains Failed, DiagnosticOnly=false. No script export, retry, dependency
+addition or promotion followed. Binder and package qualification remain separate
+unpassed gates. F's single-execution GO is exhausted.
+
+Next: investigate existing source/index evidence and metadata for the complete
+CP asset-PAK requirement, rather than automatically adding a sixth PAK. If a
+complete dependency index cannot be established from retained evidence, assess
+an explicit inventory of existing Doom `assetfile*.pak`, separately from image
+PAKs, with measured logical/identity counts and a newly reviewed I/O budget.
+No retail hashing or native execution is authorized during that investigation.

@@ -368,6 +368,15 @@ fresh observation uses metadata plus historical expected content hashes; the
 next admitted operation must verify actual content under guards. 65 stock and
 65 source/contract checks pass. Plan remains NO GO pending separate review.
 
+The resulting F plan received one separate GO and failed on the exact captured
+`assetfile101.pak` request. [F's evidence](native-validation-f-2026-10-12.json)
+confirms restoration of all 80 paths, preserved sources/Main and released
+resources. It supplies no qualified references. No sixth PAK or retry was added.
+The next authorized work is source/index and metadata investigation of the full
+CP asset-PAK scope, with assetfile/imagefile families kept distinct, actual
+counts/logical sizes/identities and a new explicit I/O budget. No retail hashes
+or native process may be launched under F's exhausted GO.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256
