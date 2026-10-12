@@ -766,3 +766,40 @@ validation without Run. I, its budgets and candidate remain unchanged. That
 correction is pending independent wiring review and a **new explicit GO**;
 the refused dispatch does not authorize a silent retry or establish a native
 catalogue result. The original erroneous wrapper remains preserved.
+
+## Plan I: corrected dispatch captured the complete MSG record
+
+After independent wiring review and a distinct exact GO, the unchanged Plan I
+was invoked once through the explicitly pinned corrected wrapper. Fresh
+preflight at 17:04:27.3879210 UTC on 2026-10-12 found Main Stopped, Python
+preserved, zero leases/heavy workloads and the unchanged 6/8 GiB budget allowed
+at 53.26% commit usage. The runner then performed its own atomic admission.
+The previous dispatch refusal and its evidence remain intact.
+
+I remains **Failed / NoCatalogue**, with a natural native exit 0 after
+2,246.6043 ms. Trace, EXIT, CALLERS and **MSG are Observed**. Installation is
+installed/error 0 on thread 25272. The buffer is ok/error 0 on thread 28892,
+with 384 bytes requested and read, 45 useful bytes before NUL, no incomplete
+trailing line, and SameThreadBeforeExit correlation. The exit hook has code 0,
+thread 28892 and return address `0x140AC00C4`. No entry_point_return or catalogue
+was observed. The 4,888-byte stderr hash retained by the runner under guards is
+`56f2538ecb2d2b4c3b31a545f9412d099b1942a101bcca27a743a41f46314dd7`.
+No binary or capture-payload hash was recalculated after lease release.
+
+The runner confirmed job closure, lease release, input revalidation and engine
+output checks without forced termination or quarantine. Postflight at
+17:05:07.5548030 UTC confirmed four unchanged input metadata records and eight
+matching source/alias identities, zero leases/heavy workloads/original root,
+Main Stopped and Python preserved. Native root 33572 was created at
+17:04:56.1519471 UTC; host 35524 at 17:04:35.1377251 UTC. Actual host completion
+for session 13977, chunk `f4269b`, reported exit 0. Independent observation at
+17:05:51.4233562 UTC found that host, parent 35188 and native root absent, with
+zero leases. All closure helpers imported their dependencies explicitly.
+
+The [sanitized runtime checkpoint](catalogue-runtime-i-20261012.json) contains
+only qualified metadata and small-evidence pins. The private receipt and stderr
+were handed to worker 51 after closure for exclusive decoding and interpretation;
+the adapter did not decode the capture. Raw hex and decoded message text remain
+outside Git. I is now consumed. The next step is review of worker 51's finding
+and a separately authorized response; this checkpoint authorizes no retry,
+extra input, new build or further native invocation.
