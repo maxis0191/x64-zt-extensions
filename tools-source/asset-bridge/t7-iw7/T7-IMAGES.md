@@ -1,7 +1,7 @@
 # Selected resident T7 image to DDS
 
-This is executable **offline pixel serialization**, plus a source-only native
-copy adapter. Neither is connected to `native_export.inc`. The existing
+This is executable **offline pixel serialization**, plus a native copy adapter
+qualified against a synthetic fixture. Neither is connected to `native_export.inc`. The existing
 `iw7.t7-iw7-resident-export/1` model contract still emits its two geometry files;
 no material/image dependency has silently become complete.
 
@@ -18,8 +18,8 @@ no material/image dependency has silently become complete.
   address overflow/null and changed metadata are refused. The result owns its
   pixel vector and has no exported process pointer, shader or GPU handle.
 
-The native header has **not passed native compilation**; attempt A below failed
-before any fixture execution.
+The native adapter passed standalone x64 MSVC compilation and all 54 synthetic
+fixture cases in attempt B below. Attempt A remains a recorded compile failure.
 Its five source-contract checks are not runtime tests of pointer readability.
 The callback must throw for an unreadable range; a no-op callback is invalid.
 The caller must keep the source allocation/database stable through copying.
@@ -120,15 +120,16 @@ against the installed Windows SDK `dxgiformat.h`. No game bytes were read.
 python -B -S -m unittest discover -s tools-source/asset-bridge/t7-iw7 -p "test_resident_image*.py" -v
 ```
 
-22 tests pass:17 executable Python tests (including independent fixed-offset
+The initial source-only checkpoint passed 22 tests:17 executable Python tests (including independent fixed-offset
 DDS parsing, original checkerboard/BC1 red data, all18 typed formats, mip tails,
 sRGB preservation and malformed inputs), plus5 C++ source-contract checks.
-No native build, engine import, real-image capture, material completeness or
-visual acceptance is claimed. The separate synthetic validation receipt records
+That checkpoint did not perform a native build, engine import or real-image
+capture and did not establish material completeness or visual acceptance.
+The separate initial synthetic validation receipt records
 the checked sources. Native synthetic qualification below comes before a bounded
 selected-image capture/publication extension under its own reviewed native plan.
 
-## Prepared native fixture (source only, 2026-10-12)
+## Native fixture qualification (2026-10-12)
 
 `resident_image_fixture.cpp` includes the production copy adapter, which includes
 the **actual pinned T7 structs** through the native tree's include path. It does
@@ -137,8 +138,8 @@ It requires x64, a 264-byte image header and name offset 248. The two assertion
 macros have the same semantics as the pinned `std_include.hpp`, without pulling
 in that application's unrelated dependencies.
 
-The fixture prepares **54 native cases**. Attempt A below failed compilation;
-no native case has executed yet:
+The fixture covers **54 native cases**, all executed successfully by attempt B.
+Attempt A below remains a failed compilation:
 
 - Six exact-byte copies cover linear RGBA/R8 rows, odd dimensions, BC1/BC3 block
   rounding, multiple mips and complete sub-block tails. Expected sizes are literal
@@ -211,8 +212,8 @@ The source bundle stays below 1 MiB.
 
 The same Python discovery command above passed **36 tests**: the previous 22,
 eight executable transcript-checker tests and six fixture/proposal source checks.
-These checks are separate from the 54 intended native cases; they cannot certify
-compilation or native behavior.
+These Python checks are separate from the 54 native cases; they cannot by
+themselves certify compilation or native behavior. B supplies that evidence.
 
 ### Native attempt A: compile refusal retained
 
@@ -228,14 +229,51 @@ The fixture now passes its existing stateful synthetic allowlist to those two
 cases and asserts the callback count stays zero after each. If an early refusal
 regresses, the same allowlist still throws before the invalid address can be
 dereferenced. `/WX`, ABI checks and the production helper are unchanged. No
-warning suppression or no-op memory callback was added. This correction has not
-yet been compiled; it requires a fresh reviewed B Plan and a separate GO.
+warning suppression or no-op memory callback was added. The correction was
+subsequently qualified by B, under its fresh reviewed Plan and separate GO.
 
 The original compiler job closed after failure cleanup. The immutable receipt
 records `Failed`, source hashes unchanged, and closure confirmed **before** lease
 release. The retained host subsequently observed an empty registry and no
 AppDomain quarantine; postflight preserved stopped Main and the protected Python.
 The host exited normally and its absence was confirmed at 14:43:53.183 UTC.
-Link, Fixture and Check never ran. The 54 intended cases remain unexecuted.
+Link, Fixture and Check never ran in A; it supplies no native case results.
 `resident_image_fixture_validation-20261012-a.json` preserves the sanitized
 failure, evidence hashes and closure boundaries. There was no retry.
+
+### Native attempt B: 54 cases passed, all jobs closed
+
+The separately authorized B invocation used fixture source `f1e0d357` and ran
+from 14:51:34.387 to 14:51:44.829 UTC on 2026-10-12. All four stages exited 0:
+Compile retained `/WX`, Link produced the guarded 23,552-byte executable, Fixture
+executed the 6 copy +18 format +30 expected-refusal cases, and Check accepted its
+exact 298-byte JSON. Every stage's stderr was empty. The actual T7 header measured
+264 bytes with name offset 248; the largest copied pixel payload was 96 bytes.
+Compiler dependency evidence lists 263 includes, all within the guarded set.
+
+Compile and Link used the existing qualified same-job telemetry cleanup, then
+confirmed fresh root0/Active0. The very short Fixture and Check processes had
+already left their original jobs empty before scheduler CIM registration; the
+unchanged owner confirmed closure and exit0 through their retained handles.
+This registration observation is retained in the receipt, not hidden as an error.
+
+The immutable receipt was verified before release; returned state then confirmed
+`SyntheticHarnessPassed` and `LeaseReleaseState=Confirmed`. Final run output was
+463,606 bytes. All four jobs closed, source/input revalidation passed under the
+lease, and the retained host found no AppDomain quarantine. Postflight found no
+other heavy process or remaining known child, with stopped Main and the protected
+Python preserved. The host exited normally; its absence and that of all six known
+children were confirmed at 14:53:45.886 UTC. No binary was rehashed after release.
+
+`resident_image_fixture_validation-20261012-b.json` records the sanitized stage
+results, guarded artifact hashes and text/JSON evidence hashes. The executable
+hash is taken from the original guarded receipt, not recomputed after release.
+The standalone checker still correctly reports `native_execution_verified=false`:
+the original-job receipt supplies execution evidence that a transcript alone cannot.
+
+This establishes standalone compilation and synthetic copy/validation behavior.
+It does not establish a stable engine DB scope, an atomic snapshot, SEH protection,
+real T7 image residency, DirectXTex import, material completeness or rendered
+quality. The next work is a reviewed bounded selected-image capture/publication
+integration using the existing exporter and stable DB scope. No further native
+invocation is authorized by this checkpoint.
