@@ -190,8 +190,10 @@ def prepare(args):
     payloads, replaced = command_payloads(cl, link, source, output/'prepared', run)
     _, patched = prepare_cli.render(source)
     prepatch_helper = getattr(args, 'prepatch_helper', None)
-    catalog_trace = getattr(args, 'catalog_trace', False)
-    require(not (prepatch_helper and catalog_trace), 'Pre-patch and catalogue trace profiles are exclusive')
+    catalog_exit = getattr(args, 'catalog_exit', False)
+    catalog_trace = bool(getattr(args, 'catalog_trace', False) or catalog_exit)
+    require(sum(map(bool, (prepatch_helper, getattr(args, 'catalog_trace', False), catalog_exit))) <= 1,
+            'Pre-patch, catalogue trace and exit-context profiles are exclusive')
     require(bool(getattr(args, 'ordinary_plan', None)) == catalog_trace and
             bool(getattr(args, 'ordinary_receipt', None)) == catalog_trace,
             'Catalogue trace requires both ordinary D2 text proofs')
@@ -306,7 +308,8 @@ def prepare(args):
                 read(args.ordinary_plan,2*1024**2,prepare_catalog_trace.BASE_PLAN_SHA),
                 read(args.ordinary_receipt,128*1024,prepare_catalog_trace.BASE_RECEIPT_SHA),
                 prior_raw, prior_receipt_raw, payloads)
-            payloads['prepared/main.cpp'] = prepare_catalog_trace.wire_main(payloads['prepared/main.cpp'].decode()).encode()
+            wire = prepare_catalog_trace.wire_exit_main if catalog_exit else prepare_catalog_trace.wire_main
+            payloads['prepared/main.cpp'] = wire(payloads['prepared/main.cpp'].decode()).encode()
         reuse, reused_inputs, reused_text = reuse_compilation(prior_raw,
             prior_receipt_raw, payloads, run, recompile_main=recompile_main, catalog_trace=catalog_trace)
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
@@ -339,8 +342,10 @@ def prepare(args):
                            ('Wiring',HERE/'prepare_prepatch.py'),('PreparedMain',output/'prepared/main.cpp')]:
             profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     elif catalog_trace:
-        profile = {'Name':prepare_catalog_trace.NAME,'Option':prepare_catalog_trace.OPTION,'ArgumentCount':3,
+        profile = {'Name':prepare_catalog_trace.EXIT_NAME if catalog_exit else prepare_catalog_trace.NAME,
+                   'Option':prepare_catalog_trace.OPTION,'ArgumentCount':3,
                    'TraceSchema':prepare_catalog_trace.SCHEMA}
+        if catalog_exit: profile['ContextSchema'] = prepare_catalog_trace.EXIT_SCHEMA
         for name, path in [('Wiring',HERE/'prepare_catalog_trace.py'),('PreparedMain',output/'prepared/main.cpp'),
                            ('BaseBuildPlan',args.ordinary_plan),('BaseBuildReceipt',args.ordinary_receipt)]:
             profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
@@ -374,6 +379,7 @@ if __name__ == '__main__':
     parser.add_argument('--reuse-compile-receipt',type=Path)
     parser.add_argument('--prepatch-helper',type=Path)
     parser.add_argument('--catalog-trace',action='store_true')
+    parser.add_argument('--catalog-exit',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

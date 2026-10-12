@@ -532,3 +532,93 @@ CandidateExecuted and Ready remain false. This build did not run the EXE or
 engine, observe any trace marker, produce a catalogue, or validate export or
 gameplay. The next action belongs to the catalogue runner owner: qualify these
 new artifacts, prepare a real catalogue plan and obtain its separate runtime GO.
+
+## Loaded exit context: source preparation after catalogue D
+
+The catalogue owner's D evidence records five /1 markers: buffering enabled and
+entry_point/post_unpack entered on TID 31804, post_unpack returned, then exit_hook
+received code zero on TID 18184 with return address 0x140AC00C4. There was no
+entry_point_return and no catalogue. The original job exited naturally and closed;
+the run receipt is f518bf36f08eeb01f9d89ead6f8d0f5b79fe48501864e0cb93801652f7b9e3b4.
+This establishes an exit from another thread, not its cause. Source review found
+no name for this RVA or matching saved byte window. Console/scheduler sources do
+not explicitly request ExitProcess; attributing the exit to anti-tamper, the CRT,
+or missing files would be speculation. The packed disk image was not reread.
+
+The coordinator authorized a source-only extension at the existing exit_hook.
+`wire_main` and its six /1 markers are preserved exactly; an identity test matches
+the previously built 14,426-byte main. `wire_exit_main` adds context without
+changing arguments, dispatch, engine patches, exit code or cleanup. The build
+selector `--catalog-exit` is mutually exclusive with `--catalog-trace` and the
+pre-patch build variant. It is not a new runtime argument or command mode.
+
+The distinct BuildProfile Name is `t7-catalog-exit-context`, retaining Option
+`-t7-iw7-catalog`, ArgumentCount 3 and TraceSchema `iw7.t7-catalog-trace/1`, plus
+ContextSchema `iw7.t7-catalog-exit-context/1`. Its same four text pins are Wiring,
+PreparedMain, BaseBuildPlan and BaseBuildReceipt. The base remains ordinary D2,
+with the exact same checked C compilation chain and two retained dependency roots;
+main Compile and Link must produce their own new Passed receipt and EXE. The /1
+candidate, its receipt and catalogue failures remain separate historical evidence.
+
+A single InterlockedOr selection owns the exit marker **and** its three context
+lines. Only the selected invocation calls the generic /1 exit marker, then captures
+code/TID/RA locally. Other exit invocations proceed directly to the original
+cleanup/exit without waiting for the capture. Concurrent termination can therefore
+leave partial output, which must not be treated as a complete observation.
+
+The selected thread attempts these three independently SEH-guarded observations:
+
+- Memory: 256 bytes at RA minus 0x40. The named existing T7 module must have base
+  0x140000000, allocation must match, and the entire window must fit one committed
+  region without guard/no-access protection. VirtualQuery metadata is recorded;
+  ReadProcessMemory uses the current process only. Partial bytes remain labeled.
+- Stack: RtlCaptureStackBackTrace requests at most eight addresses from the current
+  thread. This is a best-effort runtime stack observation, not validated unwind/ABI.
+- Function: RtlLookupFunctionEntry is called only for RA minus one, after checking
+  that address's allocation. If present, its image base must match T7 and only the
+  accessible 12-byte RUNTIME_FUNCTION is copied. Begin/End must contain RA minus
+  one for status ok; UnwindData is recorded as metadata, never dereferenced.
+
+Each observation is serialized and flushed before attempting the next, retaining
+the window if stack walking fails or the process exits concurrently. All three
+errors are non-fatal to this instrumentation; original pre_destroy/exit follows.
+The observer restores the calling thread's saved LastError. Fixed local buffers
+are clamped again after guarded calls, before serialization. No file read/write,
+process attachment, worker hook, engine offset patch or new supervisor is added.
+
+Context prefix is `[T7_CATALOG_EXIT] schema=iw7.t7-catalog-exit-context/1`.
+Each of memory, stack and function occurs at most once, following the /1 exit_hook
+marker with matching signed int32 code, DWORD TID and pointer RA. Exact formats
+are the three fprintf literals in prepare_catalog_trace.py, shared with the
+catalogue parser owner. Integers are decimal except pointer hex16 and function
+RVAs hex8; data is uppercase hex (two characters per copied byte), stack addresses
+are uppercase hex16 separated by commas, and an empty data/list is `-`.
+Each fprintf LF may become CRLF under Windows text mode.
+
+Memory is at most 1,024 bytes per line, stack and function 512 each, and the six
+unchanged markers 256 each. The entire stderr contract is at most 4 KiB/nine lines.
+Raw captured bytes belong only to ignored runtime stderr/receipts; committed
+evidence must retain metadata, states and pins without byte windows.
+
+Memory status ok requires 256 copied bytes, partial 1..255. read_failed has zero
+bytes, or a full count if the API anomalously reports failure despite that count.
+Exception retains bounded metadata/bytes already obtained. Function partial has
+1..11 copied bytes, read_failed zero or 12, and both have zeroed RVA fields.
+Function exception also zeroes RVAs; record_invalid can preserve a full record
+that fails containment. Early refusals have zero bytes and zero RVAs. Stack ok
+has 1..8 frames; empty/invalid_count/exception have none. API/SEH errors are
+explicit. Absent or incomplete contexts are not success; even three ok records
+prove neither the cause of ExitProcess nor a successful catalogue.
+
+Source tests verify unchanged /1 output/control flow, single-invocation ownership,
+per-API SEH guards, allocation/read/array bounds, incremental publication, original
+exit/LastError preservation and actual maximum-width fprintf sizes. The runner's
+profile tests keep /1 strict and refuse unknown/mixed context schemas. These are
+source/synthetic tests only; C++ compilation and actual capture behavior remain
+unverified pending independent review and separate build/runtime GO decisions.
+
+Local validation on 2026-10-12 passes 68 Python tests using the pinned retained
+native source/E7 command records and 45 PowerShell checks (32 profile, 3 deadline,
+10 Link telemetry). The current SDK header confirms the declared lookup API;
+no dependency, compiler option or common provider changed. These checks loaded
+no native diagnostic type, launched no child and acquired no heavy lease.
