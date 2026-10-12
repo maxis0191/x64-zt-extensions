@@ -731,3 +731,38 @@ unconsumed; its authorization does not transfer. Preserve H and the candidate,
 without repeated measurements, reduced safeguards or changes to processes or
 pagefile. A distinct exact GO and a fresh admitted preflight are still required
 before a future invocation. This checkpoint only records existing evidence.
+
+## Plan I: dispatch refused before reading a runtime plan
+
+The single requested availability check at 16:48:58 UTC on 2026-10-12 found
+Main's recorded PID/image and UDP 27016 absent, with cause unknown. The 6/8 GiB
+budget was then available (55.87% committed), but H's Running baseline was
+invalid. H and its evidence were preserved. I was separately sealed with a
+Stopped baseline using that observation, unchanged original Main identity,
+bindings, candidate and limits, and new private directories. Its 10,833-byte
+plan hash is `234dc0d788c769e5ddb83cb9d6daa2e9a09d677baf6b4b4aaaef99590e4ff03f`.
+Default validation and the 52 pure Main checks passed; replay of the saved
+observation accepted I and refused H without a new live measurement.
+
+After exact GO, the real preflight passed at 16:55:06.0316135 UTC: Main Stopped,
+Python preserved, no lease/heavy workload, unchanged 6/8 GiB allowed and 53.88%
+commit usage. The private dispatch wrapper contained an operator error: its
+PlanPath still named F while its supplied hash named I. The runner refused
+`Bound input hash/length differs.` in its first text-pin check, before reading
+a runtime plan, creating runtime state, taking a lease or loading a native job.
+**No native invocation or MSG capture occurred; I remains unconsumed.**
+
+Host 28228, created at 16:55:14.4756166 UTC, returned the refusal and was closed.
+The first closure helper omitted the H1 core import; a separate corrected
+closure helper completed the checks without rerunning the candidate. The real
+session 96726 completion, chunk `0b2ef0`, reported exit 0. An independent
+inventory at 16:57:53.9477501 UTC found host and parent 36592 absent, no lease,
+and zero I runtime files, attempt markers or candidate aliases.
+
+The [sanitized dispatch checkpoint](catalogue-dispatch-i-20261012.json) pins
+the retained erroneous wrapper, refusal, actual exit and independent absence.
+A distinct explicit I wrapper passed AST path/argument checks and real default
+validation without Run. I, its budgets and candidate remain unchanged. That
+correction is pending independent wiring review and a **new explicit GO**;
+the refused dispatch does not authorize a silent retry or establish a native
+catalogue result. The original erroneous wrapper remains preserved.
