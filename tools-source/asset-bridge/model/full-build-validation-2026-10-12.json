@@ -1,0 +1,108 @@
+{
+  "schema": "iw7.asset-bridge.full-build-validation/1",
+  "date": "2026-10-12",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "patch_sha256": {
+    "zonetool-fab9358-h1-xsurface.patch": "e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0",
+    "strict-content-sources.patch": "4d7049216f24474e077ab704dac625c7f335c8264434b7de525e56a96a988d08",
+    "zonetool-fab9358-h1-map-layout.patch": "75c26c4eb9d2260dc71a722d4e54aaa49fea03a4e8c0e8554f3643231d0e3cd7"
+  },
+  "success": true,
+  "source_helper_commit_executed": "e120154a87600b0f6ad0b76dd24672b432829553",
+  "preflights": [
+    {
+      "failure": "Owned job containment fixture did not close.",
+      "build_attempts": 0,
+      "closed": true,
+      "lease_released": true
+    },
+    {
+      "failure": "Child identity unavailable; reservation retained.",
+      "build_attempts": 0,
+      "closed": true,
+      "lease_released": true
+    }
+  ],
+  "first_compile": {
+    "exit_code": 1,
+    "errors": 12,
+    "warnings": 0,
+    "diagnostic": "C2039 in H1 clipmap.cpp; obsolete IW7 member names",
+    "duration_ms": 179750,
+    "bytes": 489571617,
+    "closed": true,
+    "lease_released": true,
+    "retained_log_sha256": "9a6d1b201e5e5488e131edca8201a3240e53c2068bb90a3e130a2812ceba4147"
+  },
+  "final_compile": {
+    "exit_code": 0,
+    "errors": 0,
+    "warnings": 0,
+    "duration_ms": 555080,
+    "started_utc": "2026-10-12T02:38:21.4336411Z",
+    "ended_utc": "2026-10-12T02:47:36.6626507Z",
+    "lease_released_utc": "2026-10-12T02:47:37.2995116Z",
+    "priority": "BelowNormal",
+    "msbuild_nodes": 1,
+    "node_reuse": false,
+    "compiler_mp": false,
+    "compile_units_verified": 413,
+    "fresh_candidate_pch": true,
+    "macro_compiled": "EXPERIMENTAL_IW7",
+    "patched_translation_units": 5,
+    "retained_dependency_libraries": 18,
+    "owned_helpers_at_root_exit": 1,
+    "owned_active_at_close": 0,
+    "owned_tree_closed": true,
+    "lease_released": true,
+    "readonly_inputs_unchanged": true,
+    "audit_errors": []
+  },
+  "outputs": {
+    "executable": {
+      "bytes": 21696512,
+      "sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04"
+    },
+    "pdb": {
+      "bytes": 135532544,
+      "sha256": "62b90fd57ec853f6366a768ae43f86186fba8d6b7d4443b9a5ae89221c41a1de"
+    },
+    "commands_tlog": {
+      "bytes": 3115768,
+      "sha256": "a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333"
+    },
+    "build_log": {
+      "bytes": 1123477,
+      "sha256": "7002126ace12ccc4263b1cb9e2aa52c8d285acc76bdbb49961350038cdb6ba79"
+    }
+  },
+  "budget": {
+    "physical_reserved_bytes": 4294967296,
+    "commit_reserved_bytes": 6442450944,
+    "stop_threshold_bytes": 1677721600,
+    "hard_ceiling_bytes": 2147483648,
+    "candidate_receipt_observation_bytes": 1049067760,
+    "candidate_with_final_receipt_bytes": 1049071985,
+    "small_replay_preparation_bytes": 452754,
+    "combined_artifact_bytes": 1049524739,
+    "measurement_is_not_filesystem_quota": true
+  },
+  "local_receipt_sha256": "f0d4d7db132d51c789a999e33ab0ce905b2df749db453029f91356b9aa2e2165",
+  "preparation_sha256": "d913d9bac9fc22a1457f1b54f2ce49fb5976b736373d6d4ab3d438d645b27a68",
+  "result_sha256": "63e0724cc194288473730e1a808b81d83415291b705c9226cb3b4c4a15fc598d",
+  "build_job_source_sha256": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
+  "actual_executed_source_hashes": {
+    "Build-FullZoneTool.ps1": "e132f9601641d0bf42e72f29c3da78dd908e7663d82336e6783f972aea23bc17",
+    "BuildJob.cs": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387"
+  },
+  "limitations": [
+    "No executable runtime or FF build performed.",
+    "H1 map layout compatibility was repaired from history; maps/collision/scriptables remain experimental and runtime-unvalidated.",
+    "Model native fixture coverage is separate from FF loading, rendering, animation and owner acceptance."
+  ],
+  "runtime_executable_started": false,
+  "ff_built": false,
+  "game_started": false,
+  "owner_acceptance": false,
+  "next_action": "Parent integration/CI, then separately admitted original SDK beacon FF build using the bound local receipt."
+}

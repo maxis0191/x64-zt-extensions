@@ -46,7 +46,7 @@ try {
     $previousAttempts=@(Get-ChildItem -LiteralPath $root -Filter 'build-*.log' | ForEach-Object {
         if($_.Name -match '^build-(\d+)\.log$'){[int]$Matches[1]}
     })
-    $firstAttempt=if($previousAttempts.Count){1+($previousAttempts|Measure-Object -Maximum).Maximum}else{1}
+    [int]$firstAttempt=if($previousAttempts.Count){1+($previousAttempts|Measure-Object -Maximum).Maximum}else{1}
     for($attempt=$firstAttempt;$attempt -lt $firstAttempt+8;$attempt++) {
         $log=Join-Path $root "build-$attempt.log"
         $argsText='"{0}" /m:1 /nr:false /nologo /noconsolelogger /p:Configuration=Release /p:Platform=x64 /p:PreferredToolArchitecture=x64 /p:MultiProcessorCompilation=false /p:BuildProjectReferences=false "/flp:LogFile={1};Verbosity=normal"' -f $project,$log

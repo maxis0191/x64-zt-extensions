@@ -403,3 +403,92 @@ preserved the failure receipt, verified retained inputs unchanged and released
 the lease (`0078def8e24542bfa02589aa722115a5`). No compiler ran. The correction
 waits for both job emptiness and the original process signal, including cleanup;
 a fresh coordinator allocation is required before its native revalidation.
+
+The renewed allocation exposed a second launch-only problem: CIM did not provide
+the image of a never-resumed MSBuild process. The owner now captures image and
+creation time through the original suspended handle, assigns the job before
+resuming, then registers the live process with the scheduler using a bounded CIM
+retry. That failed launch was also closed and released before a new admission.
+The final runner additionally captures post-build input-audit errors instead of
+letting them prevent release/receipt creation, checks the final artifact size,
+and closes any owned helpers remaining after the MSBuild root exits. Source
+changes were made between runs, not inside the running script.
+
+### Compile failure and historically proven map-layout repair
+
+The first real full-tool attempt ran for 2m59.75s and returned exit 1 with zero
+warnings and twelve C2039 errors, all in H1 `converter/iw7/assets/clipmap.cpp`.
+It produced 133 objects and about 467 MiB of candidate files. Its source,
+project/receipt and compiler-command/log witnesses are retained locally. It
+establishes that enabling `EXPERIMENTAL_IW7` exposes stale map field names; it
+does not implicate the blend or strict-source patches.
+
+Independent historical review located the direct structure rename in
+[fork commit 8ff0c552](https://github.com/bigmangeekf/x64-zt/commit/8ff0c552b029b3625eae7ed17fc86d8fef02b281),
+whose parent is `021936c95d2272e93697597eb6b1824a9cc8385a`. The converter from
+`0e75f7db04f5f5b4149a6f682ced00db46caa292`, blob
+`4475b51ae2021574331813983e7310912db07f85`, is unchanged at the retained pin.
+`map-layout-source.json` records this provenance; the replayable
+`zonetool-fab9358-h1-map-layout.patch` repairs the proven names:
+
+- `scriptableMapIndex` became signed `instanceIndex` at offset 76. The reserved
+  value 500 and final copied-entity value zero are representable with identical
+  bytes. The old input-index assignment was immediately overwritten by zero;
+  removing that dead assignment preserves the final value without truncation or
+  an invented signed conversion.
+- `unk2` became `spawnEnabled` at offset 98 and remains true.
+- `short unkIndexes[8]` became unsigned head/tail `[2][2]` arrays at offsets
+  456/464. Explicit `0xFFFFu` preserves all sixteen historical sentinel bytes.
+- The count/pointer/runtime/state fields became named transient-group fields at
+  offsets 496/504/512/528; their empty zero/null state is preserved.
+
+No converter was removed and the feature macro stays active. An initial draft
+that would have refused map conversion was retained locally but never compiled;
+the historical evidence superseded it. A native warning at H1 map dump states
+that collision, dynamic entities and scriptables remain unvalidated. These are
+compile-compatibility repairs, not proof that complex map conversion works.
+The final overlay therefore has five patched translation units and three pinned
+patches. The second build reuses only its own private candidate objects/PCH,
+with unchanged compiler options and the same feature macro.
+
+### Full candidate build completed
+
+The second attempt completed on 2026-10-12 at 02:47:36Z: **exit 0, zero warnings,
+zero errors**, 9m15.08s. All **413** project inputs have real CL command records
+containing `EXPERIMENTAL_IW7` and `/WX`, with no `/MP`. The fresh candidate PCH's
+`/Yc` command is present. Eighteen existing dependency libraries were linked in
+place. No dependency, SDK, stock, old object or old PDB was copied to seed it.
+
+| Output | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `zonetool-community.exe` | 21,696,512 | `e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04` |
+| `zonetool-community.pdb` | 135,532,544 | `62b90fd57ec853f6366a768ae43f86186fba8d6b7d4443b9a5ae89221c41a1de` |
+
+The actual build used source helper commit `e120154`. One owned job member
+remained after MSBuild exited; the original job was terminated and observed empty
+with the root handle signaled before release at **02:47:37Z**. Retained-input
+hashes are unchanged, the post-build audit has no errors, and a fresh scheduler
+snapshot at 02:47:47Z contained no leases. The reservation was 4 GiB physical and
+6 GiB commit, one MSBuild node, node reuse disabled and BelowNormal priority.
+This is reservation/closure evidence, not a measured peak-memory claim.
+
+The end-of-run receipt measured 1,049,067,760 bytes in the candidate; adding the
+final receipt and the 452,754-byte source-only replay preparation gives
+**1,049,524,739 bytes** (about 1,001 MiB) at final audit. The failed attempt's
+logs/project/receipts remain included. Both the 1,600 MiB conservative threshold
+and 2 GiB ceiling are respected. The monitor is not a filesystem quota.
+
+`finalize_full_build.py` independently binds actual EXE/PDB, preparation/result,
+compiler command log and successful build log hashes in the ignored
+`runtime/zt-full-a/build-artifact.local.json`, schema
+`iw7.zonetool-community-candidate/1`. Its first read found that PowerShell had
+serialized the attempt counter as `2.0`; the reader now verifies an integral
+positive value and the runner explicitly creates an integer. That metadata-only
+correction required no recompilation; the original build receipt is preserved.
+
+Sanitized evidence is in
+`tools-source/asset-bridge/model/full-build-validation-2026-10-12.json`.
+EXE/PDB and local receipts remain in place for the coordinated SDK consumer.
+**No execution of this EXE, FF build, game test, map port or owner acceptance
+occurred in this group.** The next action is parent integration/exact-head CI,
+then a separately admitted original SDK beacon FF build using the bound receipt.

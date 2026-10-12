@@ -44,7 +44,9 @@ def finalize(root):
         assert re.search(r'(^|\s)/WX(?:\s|$)', command)
     pch_inputs = [p for p in inputs if p.endswith('\\STD_INCLUDE.CPP')]
     assert len(pch_inputs) == 1 and '/Yc"std_include.hpp"'.lower() in entries[pch_inputs[0]].lower()
-    log = root / f"build-{attempt['Attempt']}.log"
+    attempt_number = int(attempt['Attempt'])
+    assert attempt_number == attempt['Attempt'] and attempt_number > 0
+    log = root / f'build-{attempt_number}.log'
     log_text = log.read_text(encoding='utf-8-sig')
     assert re.search(r'\b0 Warning\(s\)', log_text) and re.search(r'\b0 Error\(s\)', log_text)
     artifact = {'schema':'iw7.zonetool-community-candidate/1',
