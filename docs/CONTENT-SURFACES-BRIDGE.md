@@ -684,8 +684,80 @@ checks, the existing PowerShell drain/registration suite and55 Python tests. The
 new Python fixture confirms CL and VSCMD_SKIP_SENDTELEMETRY values are forwarded
 unchanged in a copied child environment, only PATH is locally prepended as before,
 and the parent environment stays identical. This is **not** evidence that either
-variable disables vctip. No corrected native compile/FF execution has occurred;
-the source correction requires independent review and a fresh explicit GO.
+variable disables vctip. At this source-only checkpoint, corrected native
+compile/FF execution still required independent review and a fresh explicit GO.
+The separately authorized Material C witness below now supplies that execution.
+
+### Material C: complete native pipeline and restoration confirmed
+
+The unique central GO on 2026-10-12 admitted the complete six-phase pipeline
+against clean integrated HEAD e4e5bdebbf209e1142d4ff131c1a1f2def736cb6. The
+reviewed wrapper rechecked all 58 source hashes. Writer admission was 4 GiB RAM /
+6 GiB commit; its reservation was released before the separate 8/11 GiB FF
+admission. No retry was performed. The final status is
+`FFGeometryAndDiffuseBytesVerified`, with process exit 0.
+
+| Phase | Native / root exit | Active at close | Decision time |
+| --- | --- | --- | --- |
+| compile | 0 / 0 | 0 | 2094 ms |
+| write | 0 / 0 | 0 | 219 ms |
+| build | 0 / 0 | 0 | 5078 ms |
+| verify | 0 / 0 | 0 | 4219 ms |
+| dump | 0 / 0 | 0 | 4203 ms |
+| read | 0 / 0 | 0 | 188 ms |
+
+Compiler telemetry cleanup was exercised, not merely available in source. The
+observer witnessed the exact compiler as a direct child of the original Python
+root. After the compiler receipt and root both reported exit 0, the only remaining
+member was the pinned sibling vctip, with complete image, creation, parentage and
+original-job membership evidence. `StopOriginalJobAfterVerifiedCompilerAndTelemetry`
+stopped that original job. Cleanup observed root exit 0 / Active0 after 15 ms;
+the subsequent ordinary supervision poll independently observed root exit 0 /
+Active0 at 2094 ms, with 156 ms drain elapsed. Only then did the normal receipt
+gate allow writer execution. No other phase needed an explicit Stop.
+
+The independent reader consumed the dumped XMB/XSB through `--verify-existing`.
+It confirmed 24 vertices, 12 triangles, one bone/surface/LOD, distance 1000000,
+shadow cutoff 6, collision LOD 255 and the custom material reference. This is a
+semantic roundtrip: serialized model/surface hashes differ between writer and
+dump and are retained in the closure receipt; byte-identical serialization is
+not claimed. The exact eight-entry inventory passed. Material fields and state
+sidecars passed their checks, constant-buffer data was present, and the dumped
+32x32, one-mip format-28 image decoded to the original RGBA bytes, including
+orientation and alpha. Decoded RGBA SHA256 is
+5adea89781ea82efc34ff463ca2e0ad55975f5b8bfe96e0bf57982e7daa0d431.
+
+| Retained evidence / artifact | Bytes where relevant | SHA256 |
+| --- | --- | --- |
+| Central C parameters | | 11E3A45463050C379E7DE9D80697C0D1A6834EF0B8E3A8F5F4685B075D5E3E73 |
+| Central C plan | | 6E76C970904FF66B344B19650B15C5D250B13EFD8C1F7C8A484554B07C393E28 |
+| Unique C wrapper | | B81898012A7CE4E7074EB05BC511511D942A654B50924CE31E01FAD09E442839 |
+| Final C state | | 50D5A90BB1AB8A8DF53A2DC5F893B369A5D2EAD22986FA808B2A903088ED7D3C |
+| Independent C closure observation | | 2C33473DE6B6C6FDDFEC03C2DC9056C1955D1F798B0F1610343809DB29D9E42E |
+| Original writer executable | 125952 | 521C3EBA9E3A1358B288B411964A844CCAA50C0487A8ED81D9095677C2AC3269 |
+| mod.ff | 1956 | B37C7564722AF8E88AFE8503E2A6F5D2BDD69B6EE13C921843C051E7070F7A72 |
+| Dumped custom image | 4248 | 18FDB350064CA5177DA304EC88DB7A0F86EF201D8B40649BC2BD5A794883550A |
+| Independent reader output | 473 | 5F6379E67F4C0065BE6D32F8A98B244ED304555E312DFFFD7480E70185DCE7C3 |
+
+The parent retains the run under
+`runtime/content-surfaces/material-v2-durable-run-c`; the surface worktree retains
+`runtime/content-surfaces/material-v2-closure-observation-c.local.json`. That
+separate audit includes all six phase/spec hashes, exports and recovery receipt.
+All 58 source hashes and all 85 staged source identities/size/time/attributes were
+independently rechecked. All 86 transaction entries returned to their originally
+absent state. Stock content was checked under FF admission; the later independent
+closure audit repeated metadata/identity checks without another stock hash load.
+`StockContentAndIdentityVerified`, `Restored`, `StockPreserved` and
+`JobClosureVerified` are true; restoration is Confirmed, retained lease is null,
+the shared scheduler has zero leases and all observed run process IDs are absent.
+Main's exact process identity and UDP27016 are unchanged. Failed A/B/diagnostic-A
+receipts remain unchanged and retain their original failed classifications.
+
+This confirms native offline assembly, inventory, semantic geometry and original
+diffuse-byte readback. `Ready`, `PixelsVerified`, `RecipientReferenceResolved`,
+`NativeCBTSemanticsVerified` and IW7 normal-encoding acceptance remain false.
+Remaining work is the separately authorized recipient/rendered witness and native
+negative strict-reader matrix; this result authorizes no game launch or retry.
 
 ## Validation record and failures retained
 
