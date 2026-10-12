@@ -462,3 +462,72 @@ The checkpoint includes only statuses, addresses, sizes and evidence hashes.
 Raw captured bytes, full stderr/receipt and disassembly remain in ignored local
 evidence. A/B/D/E remain Failed, C remains unconsumed, and no additional runtime,
 capture expansion, dependency input or automatic retry is authorized.
+
+## Caller reader: source-only qualification after E
+
+The coordinator authorized the build owner to instrument the three caller
+addresses already observed in E, and this adapter to qualify the separate
+`t7-catalog-callers` profile. Producer source is
+`39933eb35f85c0267a75138330ecf9da81a90ed4`. This checkpoint only changes source,
+tests and this document; no caller candidate, native capture or runtime plan is
+created by the adapter. The build owner owns any build plan and candidate.
+
+BuildProfile has exactly ten fields: the eight original trace fields plus
+`ContextSchema=iw7.t7-catalog-exit-context/1` and
+`CallerSchema=iw7.t7-catalog-callers/1`, with Name `t7-catalog-callers`.
+The option, argc 3, four guarded source/base pins, retained D2 compile chain,
+new main Compile/Link provenance and actual candidate-artifact checks remain
+required. The original trace and EXIT /1 parsers and their caps are unchanged.
+
+Only this new profile permits stderr up to 8,192 bytes and twelve lines. Its
+three `[T7_CATALOG_CALLER]` records follow all three EXIT records, in index order
+0/1/2, and target only `0x140584FD8`, `0x1401DA015` and `0x140526D02` respectively.
+Each record is capped at 2,048 bytes. Producer format tests calculate at most
+1,546 bytes per caller and 6,911 bytes for all twelve lines including CRLF.
+
+The reader checks code, thread and exit return address against the original
+exit_hook, and frame against the first matching occurrence in the existing
+stack capture. An unavailable stack requires stack_unavailable; a missing
+target requires absent. Both have frame -1 and zero lookup/read metadata.
+No target is accepted merely because it appeared in the historical E stack.
+
+For an attempted code copy, the complete 12-byte function record must contain
+RA minus 1. Expected module, image and allocation are `0x140000000`; the code
+region must be committed and readable, with checked address arithmetic. A
+function of at most 512 bytes wholly inside that region uses scope full.
+Otherwise scope window must equal the intersection of `[RA-448, RA+64)`, the
+function and the region. The intersection must contain RA minus 1. Exactly
+`2 * read` uppercase hex characters accompany a nonzero copy, up to 512 bytes
+per caller; a zero copy uses `-`. No unwind payload or RF-region observation is
+inferred from fields that the producer does not expose.
+
+Explicit refusals remain diagnostic evidence. Partial/failed RF copies zero
+RVAs; record_invalid can retain an invalid complete record. A post-RF
+region_invalid may retain the valid complete RF but has no code window.
+SEH exceptions preserve bounded metadata/copies while zeroing RVAs. The
+producer's serialization clamp is represented by read_failed/error 13 with
+start/requested/read zero and scope none. None of these statuses is Observed.
+
+CallersOutcome is independent of TraceOutcome, ExitContextOutcome and
+CatalogueOutcome: Absent without caller evidence, Partial for incomplete or
+non-ok captures, and Observed only with three complete correlated ok records.
+A recognizable final caller line without its newline preserves preceding
+complete records as Partial. An ambiguous truncated prefix before the three
+EXIT records remains the legacy reader's responsibility. Malformed completed
+records, duplicate/reordered indices and unrelated stderr are refused.
+
+All 756 light checks pass: catalogue/lifecycle 169, trace/provenance 165,
+EXIT 161, Main 52 and callers 209. The initial empty-stderr test exposed
+PowerShell empty-array unrolling; an explicit array wrapper corrected it.
+Review also identified and corrected ambiguous short-prefix truncation, with
+regression cases. Tests use invented AB bytes and ranges, synthetic private
+stderr and in-memory provenance objects. They load no native type, create no
+native job or lease, and read no stock. Caller Observed/Partial and forced-close
+paths are exercised through the existing finalizer; NoCatalogue stays Failed,
+and forced closure does not rehash stock after release.
+
+Run-T7Catalogue and all shared ownership/resource helpers are unchanged. The
+new profile is dispatched by the already guarded adapter. Raw code bytes stay
+in ignored private stderr/receipts only; they must not enter Git checkpoints or
+public artifacts. Independent source review and a real Passed build receipt
+are still required before any separately authorized runtime plan can be sealed.
