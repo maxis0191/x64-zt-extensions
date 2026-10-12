@@ -1,8 +1,11 @@
 # BO3 / T7 to IW7: selected static model
 
 Status, 2026-10-12: exact dedicated EXE acquired, then one bounded entrypoint
-diagnostic completed under the instrumented T7 loader. Its 12-window capture
-awaits compatibility review. No BO3 model catalogue, export, conversion, IW7 FF
+diagnostic completed under the instrumented T7 loader. The offline review found
+no concrete refusal among its sampled sites; ABI compatibility remains unproved.
+The [next catalogue recipe](CATALOGUE-PLAN.md) uses ordinary D2 and one initial FF,
+with missing bootstrap inputs to be observed in a separately admitted attempt.
+No BO3 model catalogue, export, conversion, IW7 FF
 build or rendering is proved here. The owner stopped H1 work; its checkpoint
 remains historical and supplies no BO3 proof.
 
