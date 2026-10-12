@@ -213,3 +213,135 @@ including a temporary existing host file whose bytes remain unchanged and whose
 named output stream remains absent. Mocked filesystem calls also establish
 that all enumerated invalid spellings are rejected before access. No retail or
 provider file was involved in the reproduction tests.
+
+## Targeted Havok follow-up: format, available code and next original test
+
+The follow-up remained read-only against retained ZoneTool and existing engine
+references. No upstream refresh, download, extraction, heavy analysis, native
+build or provider edit occurred. The separate
+`world/havok-audit-2026-10-12.json` records source hashes and sanitized observations.
+`world/havok_probe.py` reproduces the two bounded observations without loading
+native code or writing an asset.
+
+### What the retained data establishes
+
+The previously captured `tools/references/unpacked-rdata.bin` is 3,194,880 bytes,
+SHA-256 `28b66189c1f35442d3e32ea5077e785e7cb8fbf45ed420094dc6b2795afd04e5`.
+It is a **previously patched runtime snapshot**, not a newly captured or pristine
+retail image. Its strings include `hk_2014.2.5-r1`, `hknpPhysicsSystemData`,
+`hknpConvexPolytopeShape`, `hknpCompressedMeshShapeData`, `hkGeometry`, and the
+IW7-specific `HavokPhysicsAsset` and `HavokPhysicsShapeList` names. These support
+an **hknp/Physics 2014** route; an old `hkpBoxShape` tutorial or a generic HKX
+extension is not sufficient compatibility evidence. Some `hkp` constraint
+classes also coexist in the inspected asset, so this is not an assertion that
+every runtime class uses the `hknp` prefix.
+
+A retained, read-only `ragdoll_alien_queen.hkx` from the 2026-10-03 Rhino build
+supplies concrete serialized-envelope evidence: 47,152 bytes, SHA-256
+`4827c1d86cad3cf7065fd5b24bf1fd09dbec88ea7ff495b008407aaaf0fbb112`.
+This is a physics-model reference, not original map data and not a new runtime
+acceptance test.
+
+| Item | Observed value |
+| --- | --- |
+| Magic words | `0x57E0E057`, `0x10C0C010` |
+| Packfile format version | 11 |
+| Contents version | `hk_2014.2.5-r1` |
+| Platform tuple | pointer size 8, little-endian 1, reuse-base-padding 0, empty-base-optimization 1 |
+| Header / section-record sizes | 64 / 64 bytes in this observed v11 layout |
+| Sections | `__classnames__` at byte 256; empty `__types__` at 640; `__data__` at 640 |
+| Data section | 42,320 bytes before local fixups; global fixups at relative 43,104; virtual fixups at 45,072; section ends at 46,512 |
+| Root | `HavokPhysicsAsset`, section 2, relative offset 0 |
+| Relevant contained names | `hknpPhysicsSystemData`, `hknpCapsuleShape`, `hknpConvexPolytopeShape`, connectivity and mass-properties classes |
+
+The 64-byte header field layout comes from `iw7/common/havok.cpp:26-43`.
+The section-record interpretation is corroborated by this retained v11 file;
+it is not asserted for other packfile versions. There are no serialized type
+definitions in this sample's empty `__types__` section. Class names alone do not
+provide class layouts, signatures, finishing callbacks or a replacement runtime
+registry.
+
+The runtime also contains `HavokPhysicsShapeList` and nearby names `shapes`,
+`shapeIndices`, `shapeNames`, `vertCounts`, `triCounts`, `minMaxes`,
+`numWorldGeoShapes`, `shapeTagData`, `shapeContents`, and `convexCounts`.
+Nearby shape-tag names include `collisionFilterInfo`, `materialCRC`,
+`materialId`, and `userData`. They are a concrete lead for the world container,
+**not proof of its member offsets, types or use by the world loader**.
+No `.colmap.hkx` was found in the inspected retained runtime/reference roots.
+The world loader's required root, class graph and tag/scale rules therefore
+remain unverified; the ragdoll root must not be substituted for them.
+
+### Available locally versus still missing
+
+| Component | Current evidence | Classification |
+| --- | --- | --- |
+| Copy an existing compatible HKX into a zone | `iw7/assets/clipmap.cpp:78-79,243-247` and `physics_asset.cpp:35-38,114-118` read existing bytes and write them aligned to 16 bytes. PhysicsAsset metadata separately stores rigid-body/constraint/event counts (`iw7/structs.hpp:655-668`). | Implemented packaging; not collision generation. |
+| H1 brush/patch conversion | The H1 converter emits zero world/entity Havok bytes. | Bridge code is not implemented; merely filling the data pointer cannot solve the format/schema dependency. |
+| Havok headers, libraries or standalone cooker | ZoneTool's `.gitmodules`, `deps` build descriptions and bound IW7 symbol/function headers contain no Havok SDK dependency, convex builder or serializer binding. Targeted filename searches found no `hk*.lib`, `hknp*.h` or `hkSerializeUtil.h` in the inspected project tool/runtime roots. | No ready authoring toolchain found **in those roots**. This is not a whole-machine or licensing inventory. A compatible external SDK must not be presumed installed. |
+| Runtime geometry and serialization code | The pinned rdata contains `hkGeometry`, convex/mesh classes, `Util\\hkSerializeUtil.cpp`, `Packfile\\hkPackfileWriter.cpp`, and a diagnostic mentioning `hkSerializeUtil::savePackfile`. | A plausible local in-process route worth investigating. String presence does not prove callable addresses, signatures, allocator ownership, enabled save path or safe teardown. No usable wrapper was found. |
+| Original hand-written HKX encoder | No local encoder or complete class graph schema was identified. | Substantial format/registry/collision code remains to be established. Writing a v11 header and eight vertices is insufficient. |
+| World linkage | Capacities, shape/filter/material/content tags, world root, submodels and unit conversion are not established by this sample. | Engine-specific integration still unimplemented/unverified even with a generic shape cooker. |
+
+The filename search covered the retained modular-agent-platform runtime,
+rhino-animclass runtime and primary project tools. It did not scan the entire
+machine, fetch a package, infer license rights or recover removed worktrees.
+The exact source files checked are hash-bound in the audit receipt.
+
+There is also a native parser boundary to fix before feeding new or malformed
+files to ZoneTool: `parse_havok_data` reads arbitrary file bytes and casts their
+start to `hkxHeaderData*` without a 64-byte minimum (`havok.cpp:116-121`);
+`validate_header` uses `strcmp` on `contentsVersion[16]` without first proving
+termination (`:85-87`). It does not validate the file-format version, sections,
+fixups or object graph. This source finding is not a native crash reproduction.
+The new inspector bounds its own reads and strings; it does **not** patch that
+native reader or make untrusted HKX safe for it.
+
+### Smallest useful original-collision test
+
+The next investigation should establish bindings for the existing runtime's
+convex builder, serializer/class registry and world loader, including allocator,
+scale and tag ownership. If those functions cannot be bound safely from the
+retained reference, the alternative is a legitimately available compatible
+Havok 2014.2.5 authoring SDK plus IW7's custom container definitions. Neither
+route is ready to execute locally today.
+
+Once that prerequisite is met and the parent grants native GO, the smallest
+meaningful test is **one original static convex box in a private temporary
+physics world**. It avoids needing a general triangle-mesh/BVH cooker as the
+first milestone. `fixtures/original-collision-box-plan.json` supplies eight
+original corners, bounds `(-64,-64,-8)` to `(64,64,0)`, and three exact geometric
+ray expectations: top hit, outside miss, side hit. It is a test specification,
+not an input format accepted by ZoneTool and not a cooked asset.
+
+The native fixture must explicitly set/verify scale and convex margin, build
+the actual `hknp` shape, attach supported filter/material/content tags and use
+the **verified** world container. Serialize using the matched registry, reload
+the created bytes, repeat the three queries and check object cleanup. Preserve
+the output hash, shape/body counts, hit fractions/normals, rejection diagnostics
+and teardown result. Do not guess a function address, class signature or memory
+layout from the strings above. Header acceptance or successful zone registration
+alone cannot pass this test.
+
+Only after this isolated test should an original `.colmap`/world fixture be
+integrated under resource/instance guards. Rendering, visibility/Umbra, lighting,
+MapEnts, pathing and owner gameplay remain separate work. No custom-map readiness
+is implied by a single original physics box.
+
+### Reproduce the bounded source checks
+
+```powershell
+$world = (Resolve-Path tools-source/asset-bridge/world).Path
+python -B "$world/test_havok_probe.py"
+python -B "$world/havok_probe.py" --rdata "C:/Users/ezvalo/Documents/IW7-Paris-Server/tools/references/unpacked-rdata.bin"
+python -B "$world/havok_probe.py" --hkx "C:/Users/ezvalo/.codex/worktrees/rhino-animclass/IW7-Paris-Server/runtime/rhino-packs-build-20261003-164037-424/work/zonetool/paris_rhino/physicsasset/ragdoll_alien_queen.hkx"
+```
+
+Five new tests pass using only original synthetic envelopes, covering short
+headers/tables, file budgets, version/layout mismatches, bad root indices and
+ranges, overlapping/nonmonotonic sections, missing string termination and an
+unpinned runtime snapshot. The synthetic bytes are deliberately nonfunctional
+and are never written as an HKX file. The inspector accepts only the observed
+three-section v11 envelope and reports `shape_graph_validated: false`,
+`fixups_validated: false`, `runtime_ready: false` even for structurally accepted
+input. Rechecking retained metadata confirms the values above; no native test
+or collision generation was performed.

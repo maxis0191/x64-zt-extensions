@@ -1,0 +1,139 @@
+{
+  "schema": "iw7.asset-bridge.havok-audit/1",
+  "date": "2026-10-12",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_lf_sha256": {
+    ".gitmodules": "f7c293a59681b22810f86027f35507cf37320368221d6d0eab84be5d5b927c9d",
+    "premake5.lua": "1da8d19b6a525404dd9d36b5c39fc5fc402c1093877912b4cc3775b1f7656386",
+    "src/zonetool/game/iw7/symbols.hpp": "fed035755c380f72cb902081691f5f339eca03c57766b5e84f313bdf4a0c6c7d",
+    "src/zonetool/zonetool/iw7/functions.hpp": "8e14052e7281da176e1b6ff01ff457ccee58cae7469f77b22a80f368e18c23e9",
+    "src/zonetool/zonetool/iw7/common/havok.hpp": "b163b9e3f857163d99a2132540bdf5b1ade97588764d647e5e9abc8b3fe6460c",
+    "src/zonetool/zonetool/iw7/common/havok.cpp": "a4b9642c91629ecf8b3a30c25b2d59ed4a0ccf7d1bf368fd1c29ba519028f930",
+    "src/zonetool/zonetool/iw7/assets/physics_asset.cpp": "bacaac7e5b1e9c4ee9e4f357a869c0df5527bc65190b8332e4d32372c6c47003",
+    "src/zonetool/zonetool/iw7/assets/physics_library.cpp": "7f918a0d4caefbab28126a7982f7fbf9fe9816249ac6e6acee23584f14d92845",
+    "src/zonetool/zonetool/iw7/assets/clipmap.cpp": "c56d8922ef6b5aff2f63f7ae853b0f80e20d44e312339075702c6a354740645e"
+  },
+  "retained_physics_asset": {
+    "schema": "iw7.asset-bridge.hkx-envelope-inspection/1",
+    "bytes": 47152,
+    "sha256": "4827c1d86cad3cf7065fd5b24bf1fd09dbec88ea7ff495b008407aaaf0fbb112",
+    "file_version": 11,
+    "contents_version": "hk_2014.2.5-r1",
+    "layout": [
+      8,
+      1,
+      0,
+      1
+    ],
+    "root_section": 2,
+    "root_offset": 0,
+    "root_class": "HavokPhysicsAsset",
+    "sections": [
+      {
+        "name": "__classnames__",
+        "start": 256,
+        "data_bytes": 384,
+        "local_fixups": 384,
+        "global_fixups": 384,
+        "virtual_fixups": 384,
+        "exports": 384,
+        "imports": 384,
+        "end": 384
+      },
+      {
+        "name": "__types__",
+        "start": 640,
+        "data_bytes": 0,
+        "local_fixups": 0,
+        "global_fixups": 0,
+        "virtual_fixups": 0,
+        "exports": 0,
+        "imports": 0,
+        "end": 0
+      },
+      {
+        "name": "__data__",
+        "start": 640,
+        "data_bytes": 42320,
+        "local_fixups": 42320,
+        "global_fixups": 43104,
+        "virtual_fixups": 45072,
+        "exports": 46512,
+        "imports": 46512,
+        "end": 46512
+      }
+    ],
+    "class_names": [
+      "HavokPhysicsAsset",
+      "hknpCapsuleShape",
+      "hknpConvexPolytopeShape",
+      "hknpConvexPolytopeShapeConnectivity",
+      "hknpPhysicsSystemData",
+      "hknpShapeMassProperties",
+      "hkpLimitedHingeConstraintData",
+      "hkpRagdollConstraintData",
+      "hkpSpringDamperConstraintMotor"
+    ],
+    "shape_graph_validated": false,
+    "fixups_validated": false,
+    "runtime_ready": false
+  },
+  "retained_runtime": {
+    "schema": "iw7.asset-bridge.havok-runtime-markers/1",
+    "bytes": 3194880,
+    "sha256": "28b66189c1f35442d3e32ea5077e785e7cb8fbf45ed420094dc6b2795afd04e5",
+    "markers_at_file_offsets": {
+      "hk_2014.2.5-r1": [
+        1337312,
+        1337328
+      ],
+      "HavokPhysicsAsset": [
+        448056,
+        448081
+      ],
+      "HavokPhysicsShapeList": [
+        451000,
+        451025
+      ],
+      "HavokPhysicsShapeListShapeTagData": [
+        450760
+      ],
+      "hknpConvexPolytopeShape": [
+        1408720,
+        1408745
+      ],
+      "hknpPhysicsSystemData": [
+        1431736,
+        1431761
+      ],
+      "hknpCompressedMeshShapeData": [
+        1392584,
+        1392617
+      ],
+      "hkGeometry": [
+        1313344,
+        1313361
+      ],
+      "hkRootLevelContainer": [
+        1335440,
+        1335465
+      ],
+      "Util\\hkSerializeUtil.cpp": [
+        1981512
+      ],
+      "Packfile\\hkPackfileWriter.cpp": [
+        1983480
+      ]
+    },
+    "meaning": "String presence in a previously patched runtime snapshot; no function ABI proof",
+    "runtime_ready": false
+  },
+  "source_tests": {
+    "havok_probe": 5,
+    "result": "PASS",
+    "synthetic_envelope_is_not_valid_shape_data": true
+  },
+  "native_executed": false,
+  "world_hkx_observed": false,
+  "generation_ready": false
+}
