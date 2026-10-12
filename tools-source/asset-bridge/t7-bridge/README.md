@@ -392,6 +392,9 @@ implicit in this successful acquisition.
 The [catalogue preparation](CATALOGUE-PLAN.md) records the proposed private
 working directory, exact CLI, existing input identities, resource/closure limits
 and unresolved startup/address gates. It creates no links and authorizes no Run.
+The coordinator subsequently chose an earlier
+[pre-patch diagnostic environment](PREPATCH-ENVIRONMENT.md): two existing binary
+aliases, no zone, and no execution. The catalogue remains a later stage.
 
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is

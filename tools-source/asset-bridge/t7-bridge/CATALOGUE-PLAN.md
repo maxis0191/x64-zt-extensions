@@ -7,6 +7,11 @@ review. No native process, game link, asset copy or new supervisor was created
 for this preparation. Acquisition evidence is in
 [bo3-executable-observation-20261012.json](bo3-executable-observation-20261012.json).
 
+The next experiment is now the separate [pre-patch witness](PREPATCH-ENVIRONMENT.md),
+which stops before ZoneTool initialization and requests no zone. This catalogue
+proposal remains deferred; its stock closure is not a prerequisite for that
+earlier diagnostic stage.
+
 ## Working directory and fixed request
 
 Use a new ordinary directory `runtime/t7-catalog-a/work` in the conversion
@@ -79,7 +84,7 @@ preparation must start no provider, lease or process.
   retained original job; uncertain closure retains/quarantines its live host,
   handles and lease. Never stop the owner's client or Main.
 - Catalogue maximum 512 KiB, at most 1,024 names and 256 KiB name storage, matching
-  the CLI. Outer stdout/stderr at most1 MiB each; proposed aggregate mutable
+  the CLI. Outer stdout/stderr at most 1 MiB each; proposed aggregate mutable
   output 64 MiB and 128 entries, reserving 64 KiB for receipt. Sampled caps are not
   OS quotas. Immutable bound input aliases are accounted separately.
 - Accept only root exit0 plus a fresh original ActiveProcesses0 observation,
