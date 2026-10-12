@@ -119,6 +119,32 @@ def include_report(raw, allowed, expected_header, forbidden_header):
     return sorted(observed)
 
 
+def reviewed_responses(plan, sealed_inputs):
+    """New tiny response sources are Plan-pinned, never relabelled as Seal C."""
+    responses = plan.get("response_pins", [])
+    require(type(responses) is list and len(responses) in (0, 12), "zero or twelve reviewed response sources required")
+    if not responses:
+        return {}
+    source_list = plan["source_pins"]
+    sources = {key(p["path"]): p for p in source_list}
+    require(len(sources) == len(source_list), "duplicate source pin")
+    expected = {key(c["response_path"]) for c in plan["commands"] if c["kind"] != "probe_run"}
+    result = {}
+    for pin in responses:
+        path = key(pin["path"])
+        require(ntpath.isabs(pin["path"]) and path not in result and path not in sealed_inputs,
+                "unique new response path required")
+        require(type(pin["bytes"]) is int and 0 < pin["bytes"] <= 128*1024 and
+                re.fullmatch("[0-9a-f]{64}", pin["sha256"]), "bounded exact response pin required")
+        require(path in sources and sources[path] == pin, "response must be guarded as a bootstrap source")
+        result[path] = {"Path": pin["path"], "Bytes": pin["bytes"], "SHA256": pin["sha256"]}
+    require(set(result) == expected and len(expected) == 12, "exact twelve command responses must be reviewed")
+    for command in plan["commands"]:
+        if command["kind"] != "probe_run":
+            require(result[key(command["response_path"])]["SHA256"] == command["response_sha256"], "command response pin differs")
+    return result
+
+
 def validate_plan(plan, sealed=False):
     require(type(plan) is dict and plan.get("schema") == SCHEMA, "sound build plan schema differs")
     require(plan.get("source_pin") == "fab935826c898806855376662a8a03317b3ad8f1", "native source pin differs")
@@ -160,4 +186,5 @@ def validate_plan(plan, sealed=False):
     require(key(env["TEMP"]) == key(ntpath.join(plan["candidate"], "tmp")) and env["TMP"] == env["TEMP"],
             "private native temporary directory required")
     require(plan.get("sab_ff_authorized") is False and plan.get("ready") is False, "build cannot authorize SAB or runtime")
+    reviewed_responses(plan, {})
     return plan

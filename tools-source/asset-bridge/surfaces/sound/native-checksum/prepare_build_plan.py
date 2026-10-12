@@ -7,6 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_contract import COMMON_MEMBERS, PROVIDERS, SCHEMA, json_bytes, key, require, sha, validate_plan
+from response_revision import validate_revision
 
 SEAL_SHA = "f52867e7c26d05466ba57d72eef601d42376c1109dfcf61f219a1a028229f388"
 STATE_SHA = "fc502fb025a87278c9d9b9854b5186383d94b98add0c230ea39124404247c582"
@@ -20,7 +21,7 @@ def small(path, maximum=1024*1024):
     return raw
 
 
-def prepare(repo, python, output):
+def prepare(repo, python, output, response_revision=None):
     root = repo / "runtime/content-surfaces"
     seal_path = root / "original-sound-checksum-seal-a/sealed-inputs.local.json"
     state_path = seal_path.with_name("state.local.json")
@@ -36,6 +37,11 @@ def prepare(repo, python, output):
     require(sha(raw) == REVIEW_SHA, "reviewed fourteen command draft changed")
     review = json_bytes(raw)
     candidate = review["candidate_path"]
+    response_pins = []
+    if response_revision:
+        revised_candidate, commands, response_pins = validate_revision(repo, response_revision)
+        candidate = str(revised_candidate)
+        review["commands"] = commands
     require(not Path(candidate).exists() and not output.exists(), "fresh Plan and candidate paths required")
     source = Path(__file__).resolve().parent
     original_header = root / "original-sound-checksum-source-a/src/common/utils/bit_buffer.hpp"
@@ -48,7 +54,11 @@ def prepare(repo, python, output):
         if item["kind"] != "probe_run":
             c["response_path"] = item["arguments"][0][1:]
             c["response_sha256"] = item["response_sha256"]
-            require(entries[key(c["response_path"])]["SHA256"] == c["response_sha256"], "response is outside Seal C")
+            if response_pins:
+                require(any(key(p["path"]) == key(c["response_path"]) and p["sha256"] == c["response_sha256"]
+                            for p in response_pins), "response is outside reviewed revision")
+            else:
+                require(entries[key(c["response_path"])]["SHA256"] == c["response_sha256"], "response is outside Seal C")
             c["executable_sha256"] = entries[key(c["executable"])]["SHA256"]
         commands.append(c)
     providers = json_bytes(small(root / "original-sound-checksum-providers-v6/providers.local.json"))
@@ -68,9 +78,11 @@ def prepare(repo, python, output):
            "VSLANG": "1033", "NUMBER_OF_PROCESSORS": "1", "TEMP": tmp, "TMP": tmp}
     helpers = json_bytes(small(source.parent / "sab_ff_helpers.json"))
     sources = [source / name for name in ("Build-ChecksumCandidate.ps1", "BuildCandidate.Core.ps1", "BuildReceipt.Core.ps1",
-                                        "build_contract.py", "build_worker.py", "prepare_build_plan.py")]
+                                        "build_contract.py", "build_worker.py", "prepare_build_plan.py", "response_revision.py")]
     sources += [source.parent / name for name in ("sound_ff_phase.py", "sab_ff_helpers.json", "read_sab.py", "read_flac.py")]
     sources += [repo / relative for relative in helpers["files"]]
+    if response_revision:
+        sources += [response_revision, *[Path(p["path"]) for p in response_pins]]
     source_pins = []
     for path in sorted(set(sources), key=lambda p: key(p)):
         raw = small(path)
@@ -90,6 +102,8 @@ def prepare(repo, python, output):
             "sealed": True, "seal": str(seal_path), "seal_sha256": SEAL_SHA,
             "seal_result": str(state_path), "seal_result_sha256": STATE_SHA,
             "source_pins": source_pins, "providers": providers, "environment": env, "commands": commands,
+            "response_pins": response_pins,
+            "response_revision": str(response_revision) if response_revision else None,
             "physical_bytes": 4*1024**3, "commit_bytes": 6*1024**3,
             "stop_bytes": 512*1024**2, "planning_ceiling_bytes": 768*1024**2,
             "sab_ff_authorized": False, "ready": False}
@@ -109,5 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--python", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--response-revision", type=Path)
     args = parser.parse_args()
-    print(json.dumps(prepare(args.repo.resolve(), args.python.resolve(), args.output.resolve()), indent=2))
+    print(json.dumps(prepare(args.repo.resolve(), args.python.resolve(), args.output.resolve(),
+                             args.response_revision.resolve() if args.response_revision else None), indent=2))

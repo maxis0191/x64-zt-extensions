@@ -56,6 +56,24 @@ function Assert-ChecksumBuildPlan($Plan,$Seal,$SealState) {
         $bytes+=$entry.Bytes
     }
     if($bytes -ne $Seal.TotalBytes -or $bytes -gt 2GB){throw 'Sealed byte accounting differs.'}
+    $responses=@($Plan.response_pins|Where-Object {$null -ne $_})
+    if($responses.Count -notin 0,12){throw 'Zero or twelve reviewed response sources required.'}
+    if($responses.Count){
+        $responsePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach($pin in $responses){
+            Assert-ChecksumBuildPath $pin.path
+            $path=[IO.Path]::GetFullPath($pin.path)
+            if(!$responsePaths.Add($path) -or $seen.Contains($path) -or
+                ($pin.bytes -isnot [int] -and $pin.bytes -isnot [long]) -or $pin.bytes -le 0 -or $pin.bytes -gt 128KB -or
+                $pin.sha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'Unique bounded new response source required.'}
+            $source=@($Plan.source_pins|Where-Object path -IEQ $pin.path)
+            $command=@($Plan.commands|Where-Object response_path -IEQ $pin.path)
+            if($source.Count -ne 1 -or $source[0].bytes -ne $pin.bytes -or $source[0].sha256 -cne $pin.sha256 -or
+                $command.Count -ne 1 -or $command[0].response_sha256 -cne $pin.sha256 -or $command[0].kind -ceq 'probe_run'){
+                throw 'Response must match one command and one guarded bootstrap source.'
+            }
+        }
+    }
 }
 function Measure-ChecksumBuildOutput([string]$Root) {
     $bytes=0L
@@ -150,6 +168,7 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
         RunID=[guid]::NewGuid().ToString('N');StartedUtc=[datetime]::UtcNow.ToString('o');ElapsedMs=0L;Failure=$null;
         RootExitObservedMs=$null;PeakObservedOutputBytes=0L;OutputBytes=0L;ProofBytesRead=0L;InputsVerifiedBefore=$false;InputsVerifiedAfter=$false;
         InputGuardsOpened=0;InputGuardsDisposed=0;
+        ReviewedResponseSources=@($Plan.response_pins|Where-Object {$null -ne $_}).Count;
         TreeClosed=$true;LeaseReleased=$false;RetainedLeaseToken=$null;Ready=$false;SABFFVerified=$false}
     $c=@{Plan=$Plan;Record=$record;Started=(Get-ChecksumBuildClock);LastPressurePoll=0L;
         InputGuards=[Collections.Generic.List[IDisposable]]::new();GuardedInputs=[Collections.Generic.List[object]]::new()}

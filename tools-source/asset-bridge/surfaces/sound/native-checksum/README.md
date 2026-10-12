@@ -12,6 +12,11 @@ failed native attempt, source/mock verification and the response-file correction
 needed before another review/GO. The earlier preparation descriptions below are
 historical proposal evidence.
 
+The [response-file revision and future Plan E](RESPONSE-REVISION.md) attach each
+macro to `/D`, preserve all existing flags and use a fresh private output path.
+Only source/default-Plan tests have run for this revision; native execution is
+still separately gated.
+
 ## Observed defect and source boundary
 
 The original 34-byte FLAC STREAMINFO contains 18 metadata bytes followed by the

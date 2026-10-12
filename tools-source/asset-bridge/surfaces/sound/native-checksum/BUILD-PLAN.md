@@ -1,5 +1,8 @@
 # Private checksum build Plan C: first compile failed
 
+This page preserves Plan C and its failed attempt. The subsequent source-only
+[response revision / Plan E](RESPONSE-REVISION.md) is the next review candidate.
+
 The coordinator reviewed Plan C and authorized one native attempt on 2026-10-12.
 It stopped at the first compilation with MSVC D8004: `'/D' requires an argument`.
 No C++ probe ran and no candidate was produced. The run, its failure logs and the

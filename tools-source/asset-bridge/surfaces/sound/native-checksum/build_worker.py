@@ -12,7 +12,7 @@ import sys
 import threading
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_contract import (COMMON_MEMBERS, ORDER, compare_archive, include_report, json_bytes,
+from build_contract import (COMMON_MEMBERS, ORDER, compare_archive, include_report, json_bytes, reviewed_responses,
                             key, probe_result, require, sha, validate_plan)
 
 
@@ -98,6 +98,7 @@ def run(plan, plan_sha):
     owner = os.environ.get("IW7_SOUND_BUILD_OWNER")
     require(run_id and len(run_id) == 32 and token and owner and owner.isdecimal(), "owned build generation missing")
     inputs = verify_seal(plan)
+    response_sources = reviewed_responses(plan, inputs)
     for path in [plan["original_common_library"], plan["original_header"], plan["patched_header"],
                  plan["shared_original_header"], *plan["common_objects"].values()]:
         require(key(path) in inputs, "native source/library/object binding is outside the input seal")
@@ -130,8 +131,9 @@ def run(plan, plan_sha):
                 expected = inputs[key(exe)]["SHA256"]
                 require(command["arguments"] == ["@" + command["response_path"]], "literal response-file command required")
                 response = bounded(command["response_path"], 128 * 1024)
-                require(key(command["response_path"]) in inputs
-                        and sha(response) == inputs[key(command["response_path"])]["SHA256"], "response file changed")
+                response_pin = response_sources.get(key(command["response_path"]), inputs.get(key(command["response_path"])))
+                require(response_pin and len(response) == response_pin["Bytes"] and
+                        sha(response) == response_pin["SHA256"] == command["response_sha256"], "response file changed")
             step = native_phase(plan, command, expected, adapter, runner, drain)
             receipt["steps"].append(step)
             stdout = root / "logs" / name / "stdout.log"

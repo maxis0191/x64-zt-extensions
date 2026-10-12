@@ -20,6 +20,14 @@ try {
         foreach($pin in $plan.source_pins){if($pin.path -ieq $from){$pin.path=$to;$pin.bytes=(Get-Item $to).Length;$pin.sha256=(Get-FileHash $to).Hash.ToLowerInvariant()}}
     }
     $plan.worker=$global:SoundBuildEntryFixture.Paths['build_worker.py']
+    if(@($plan.response_pins).Count -eq 12){
+        $pin=$plan.response_pins[0];$from=$pin.path;$to=Join-Path $temp 'reviewed-response.rsp'
+        [IO.File]::WriteAllBytes($to,[IO.File]::ReadAllBytes($from))
+        $pin.path=$to
+        foreach($source in $plan.source_pins){if($source.path -ieq $from){$source.path=$to}}
+        foreach($command in $plan.commands){if($command.response_path -ieq $from){$command.response_path=$to;$command.arguments=@('@'+$to)}}
+        $global:SoundBuildEntryFixture.Paths['reviewed-response.rsp']=$to
+    }
     $copy=Join-Path $temp 'plan.json';$global:SoundBuildEntryFixture.Paths['plan']=$copy
     [IO.File]::WriteAllText($copy,($plan|ConvertTo-Json -Depth 30))
     $hash=(Get-FileHash -LiteralPath $copy).Hash.ToLowerInvariant()
@@ -45,11 +53,12 @@ try {
     function Start-Process {throw 'Default Plan started a child'}
     function Get-FileHash {throw 'Default Plan hashed a reusable input'}
     $result=& $global:SoundBuildEntryFixture.Paths['Build-ChecksumCandidate.ps1'] -PlanPath $copy -PlanSHA256 $hash
-    if($global:SoundBuildEntryFixture.Denied -ne 14 -or $global:SoundBuildEntryFixture.JsonReads -ne 3 -or $global:SoundBuildEntryFixture.PlanOutput -ne 1){throw 'Expected guarded intervals not observed'}
+    $expected=8+$global:SoundBuildEntryFixture.Paths.Count
+    if($global:SoundBuildEntryFixture.Denied -ne $expected -or $global:SoundBuildEntryFixture.JsonReads -ne 3 -or $global:SoundBuildEntryFixture.PlanOutput -ne 1){throw 'Expected guarded intervals not observed'}
     if(Test-Path -LiteralPath $plan.candidate){throw 'Default Plan created native candidate'}
     foreach($path in $global:SoundBuildEntryFixture.Paths.Values){$s=[IO.File]::Open($path,'Open','ReadWrite','ReadWrite');$s.Dispose()}
     if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7.AnimationRig.JobMembers' -as [type])){throw 'Default Plan loaded native type'}
-    Write-Output ('Default Plan passed; 14 denied writes across parse/output, 6 handles released afterward, no native types/admission/output.')
+    Write-Output ("Default Plan passed; $expected denied writes across parse/output, $($global:SoundBuildEntryFixture.Paths.Count) handles released afterward, no native types/admission/output.")
 }finally{
     $resolved=[IO.Path]::GetFullPath($temp);$parent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')+'\'
     if(!$resolved.StartsWith($parent,[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($resolved) -notlike 'sound-build-entry-*'){throw 'Unsafe fixture cleanup path'}
