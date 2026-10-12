@@ -26,6 +26,7 @@ if($DumpOnly -or $StandardMod){
     if(Test-Path -LiteralPath $OutputPath){throw 'Fresh dump Plan required.'}
     $payload=@($f.Plan.HashInputs|Where-Object {[IO.Path]::GetExtension($_.Path) -iin @('.exe','.wav','.flac')})
     $pins=[Collections.Generic.List[object]]::new()
+    $pins.Add((Get-SoundFFPin (Join-Path $PSScriptRoot 'SoundBuildJob.cs')))
     foreach($old in $f.Plan.HashInputs){
         if($old.Path -iin $payload.Path -or $old.Path.StartsWith($f.Plan.CandidateRoot+'\',[StringComparison]::OrdinalIgnoreCase)){continue}
         if(!$old.Path.StartsWith($PSScriptRoot+'\',[StringComparison]::OrdinalIgnoreCase)){Assert-SoundFFPin $old}
@@ -91,7 +92,7 @@ if($review.schema -cne 'iw7.original-sound-ff-review-plan/1' -or $review.physica
 $repo=$review.shared_repo
 $pins=[Collections.Generic.List[object]]::new()
 foreach($entry in $review.input_pins){Assert-SoundFFPin $entry;$pins.Add($entry)}
-foreach($path in @($ReviewPlanPath,$StockParametersPath)+@('Prepare-SoundFF.ps1','Build-SoundFF.ps1','SoundFF.Core.ps1'|ForEach-Object {Join-Path $PSScriptRoot $_})){
+foreach($path in @($ReviewPlanPath,$StockParametersPath)+@('Prepare-SoundFF.ps1','Build-SoundFF.ps1','SoundFF.Core.ps1','SoundBuildJob.cs'|ForEach-Object {Join-Path $PSScriptRoot $_})){
     $pins.Add((Get-SoundFFPin $path))
 }
 Assert-SoundFFHelperSources $PSScriptRoot $repo $pins

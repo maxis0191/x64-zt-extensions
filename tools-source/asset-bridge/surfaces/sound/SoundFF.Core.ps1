@@ -179,6 +179,11 @@ function Assert-SoundFFDumpOnlyInputs($Plan) {
     }
     Assert-SoundFFReadback $f.State.Reader $f.State.Artifacts
 }
+function Assert-SoundFFJobSource($HashInputs,[string]$SoundRoot) {
+    $pin=@($HashInputs|Where-Object Path -IEQ (Join-Path $SoundRoot 'SoundBuildJob.cs'))
+    if($pin.Count -ne 1){throw 'Exact sound-local job source pin required.'}
+    Assert-SoundFFPin $pin[0]
+}
 function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     $dumpOnly=$Plan.Profile -ceq 'DumpOnly'
     $standard=$Plan.Profile -ceq 'StandardMod';$qualifiedC=$dumpOnly -or $standard
@@ -235,6 +240,7 @@ function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     $required=@('read_sab.py','read_flac.py','sound_ff_phase.py','sab_contract.json','sab_ff_helpers.json','SoundFF.Core.ps1','Build-SoundFF.ps1')|ForEach-Object {Join-Path $SoundRoot $_}
     Assert-SoundFFHelperSources $SoundRoot $Plan.SharedRepo $Plan.HashInputs
     foreach($path in $required){if(@($Plan.HashInputs|Where-Object Path -IEQ $path).Count -ne 1){throw 'Required sound source pin missing.'}}
+    Assert-SoundFFJobSource $Plan.HashInputs $SoundRoot
 }
 function Get-SoundFFStageSource($Plan,[string]$Relative,[string]$SoundRoot=$PSScriptRoot) {
     if($Plan.Profile -ceq 'StandardMod' -and $Relative -cin @('soundbank/community_original_sound_v1.all.json','zone_source/mod.csv')){
@@ -276,7 +282,7 @@ function Save-SoundFFState($Context) {
     if(Test-Path -LiteralPath $Context.Plan.RunRoot){[IO.File]::WriteAllText($Context.StatePath,($Context.State|ConvertTo-Json -Depth 25))}
 }
 function Get-SoundFFFileId([string]$Path) {[IW7HudFileIdentity]::Read($Path)}
-function New-SoundFFJob([string]$Python,[string]$Arguments,[string]$Work) {[IW7.CommunityBuild.BuildJob]::Prepare($Python,$Arguments,$Work)}
+function New-SoundFFJob([string]$Python,[string]$Arguments,[string]$Work) {[IW7.SoundFFTelemetryV1.BuildJob]::Prepare($Python,$Arguments,$Work)}
 function Assert-SoundFFReadback($Read,$Artifacts) {
     if($Read.schema -cne 'iw7.original-sound-sab-read/1' -or $Read.status -cne 'SABBytesVerified' -or
         $Read.loaded.pcm_sha256 -cne '72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9'){throw 'Independent SAB receipt differs.'}
@@ -299,7 +305,7 @@ function Import-SoundFFHelpers([string]$Repo) {
     }
 }
 function Initialize-SoundFFNativeTypes([string]$Repo) {
-    Add-Type -LiteralPath (Join-Path $Repo 'tools-source/asset-bridge/model/BuildJob.cs')
+    Add-Type -LiteralPath (Join-Path $PSScriptRoot 'SoundBuildJob.cs')
     Add-Type -LiteralPath (Join-Path $Repo 'ops/hud-lab/HudFileIdentity.cs')
 }
 function Measure-SoundFFOutputs($Context,[switch]$RecordBudgetFailure) {

@@ -27,7 +27,6 @@ public sealed class BuildJob : IDisposable {
     static extern IntPtr CreateJobObject(IntPtr attributes, string name);
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool SetInformationJobObject(IntPtr job,int cls,ref ExtendedLimits info,int size);
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool QueryInformationJobObject(IntPtr job,int cls,out Accounting info,int size,IntPtr returned);
-    [DllImport("kernel32.dll", SetLastError=true)] static extern bool QueryInformationJobObject(IntPtr job,int cls,out ExtendedLimits info,int size,out uint returned);
     [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
     static extern bool CreateProcess(string app,StringBuilder cmd,IntPtr pa,IntPtr ta,bool inherit,uint flags,IntPtr env,string cwd,ref Startup si,out ProcessInfo pi);
     [DllImport("kernel32.dll", SetLastError=true)] static extern bool AssignProcessToJobObject(IntPtr job,IntPtr process);
@@ -48,15 +47,6 @@ public sealed class BuildJob : IDisposable {
     public bool Exited { get { var value=WaitForSingleObject(process,0); if(value==0xffffffff) Fail(); return value==0; } }
     public uint ExitCode { get { uint value; if(!Exited || !GetExitCodeProcess(process,out value)) throw new InvalidOperationException("Original process has no exit"); return value; } }
     public uint Active { get { Accounting info; if(!QueryInformationJobObject(job,1,out info,Marshal.SizeOf(typeof(Accounting)),IntPtr.Zero)) Fail(); return info.active; } }
-    // Class 9: JOBOBJECT_EXTENDED_LIMIT_INFORMATION.PeakJobMemoryUsed.
-    // Query only our original handle; NULL would query the caller's job instead.
-    public ulong PeakJobCommitBytes { get {
-        if(job==IntPtr.Zero) throw new ObjectDisposedException("BuildJob");
-        ExtendedLimits info; uint returned; int size=Marshal.SizeOf(typeof(ExtendedLimits));
-        if(!QueryInformationJobObject(job,9,out info,size,out returned)) Fail();
-        if(returned!=(uint)size) throw new InvalidOperationException("Incomplete job memory information");
-        return info.peakJob.ToUInt64();
-    } }
     static void Fail() { throw new Win32Exception(Marshal.GetLastWin32Error()); }
     private BuildJob() {}
     public static BuildJob Prepare(string application,string arguments,string cwd) {

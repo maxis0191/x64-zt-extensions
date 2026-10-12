@@ -7,7 +7,10 @@ if($InteropOnly){
     # and no kernel query is called. This does not measure real Windows memory.
     Check ([IntPtr]::Size -eq 8) 'The reviewed interop layout is x64.'
     Add-Type -LiteralPath (Join-Path $repo 'tools-source/asset-bridge/model/BuildJob.cs')
-    $ownerType=[IW7.CommunityBuild.BuildJob]
+    Add-Type -LiteralPath (Join-Path $PSScriptRoot 'SoundBuildJob.cs')
+    $ownerType=[IW7.SoundFFTelemetryV1.BuildJob]
+    Check ($ownerType -ne [IW7.CommunityBuild.BuildJob]) 'Sound job must have its own versioned type.'
+    Check ($null -eq [IW7.CommunityBuild.BuildJob].GetProperty('PeakJobCommitBytes')) 'Shared job was modified.'
     foreach($pair in @(@('BasicLimits',64),@('IoCounters',48),@('ExtendedLimits',144))){
         $type=$ownerType.GetNestedType($pair[0],[Reflection.BindingFlags]::NonPublic)
         Check ([Runtime.InteropServices.Marshal]::SizeOf([Activator]::CreateInstance($type)) -eq $pair[1]) ('Layout differs: '+$pair[0])
@@ -21,12 +24,22 @@ if($InteropOnly){
     }
     Check $rejected 'Zero handle must refuse before QueryInformationJobObject can select the caller job.'
     $empty.Dispose()
-    '5 managed layout/zero-handle checks passed; no kernel call, native process or real peak measurement.'
+    '7 managed layout/zero-handle/type-isolation checks passed; no kernel call, native process or real peak measurement.'
     return
 }
 . "$PSScriptRoot/SoundFF.Core.ps1"
 . "$repo/sdk/modding/BeaconFF.Core.ps1"
 . "$PSScriptRoot/../MaterialV2.Core.ps1"
+# Real source gate, text only. No historical Plan is rewritten or rebound.
+$sourcePin=Get-SoundFFPin (Join-Path $PSScriptRoot 'SoundBuildJob.cs')
+foreach($sourceCase in 'Valid','Missing','Duplicate','ChangedHash'){
+    $pins=@($sourcePin.PSObject.Copy())
+    if($sourceCase -ceq 'Missing'){$pins=@()}
+    if($sourceCase -ceq 'Duplicate'){$pins+=,$sourcePin.PSObject.Copy()}
+    if($sourceCase -ceq 'ChangedHash'){$pins[0].SHA256='0'*64}
+    $rejected=$false;try{Assert-SoundFFJobSource $pins $PSScriptRoot}catch{$rejected=$true}
+    Check ($rejected -eq ($sourceCase -cne 'Valid')) ('Sound-local job source gate differs: '+$sourceCase)
+}
 $temp=Join-Path ([IO.Path]::GetTempPath()) ('iw7-sound-job-memory-'+[guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($temp)|Out-Null
 try {
@@ -119,8 +132,8 @@ try {
         if($case -eq 'WaitAndQueryFailure'){Check ($saved.Failure -ceq 'Original phase failure') 'Telemetry hid original failure.'}
         if($case -eq 'StopThrows'){Check (!$events.Contains('Dispose') -and $saved.CleanupError -ceq 'Original stop failure') 'Telemetry changed failed-stop ownership.'}
     }
-    Check (!('IW7.CommunityBuild.BuildJob' -as [type]) -and !('IW7ResourceMemoryV1' -as [type])) 'Mock suite loaded native helpers.'
-    '12 actual sound phase/cleanup-flow cases passed using synthetic counters and mock ownership; no admission, kernel query or measured peak.'
+    Check (!('IW7.SoundFFTelemetryV1.BuildJob' -as [type]) -and !('IW7.CommunityBuild.BuildJob' -as [type]) -and !('IW7ResourceMemoryV1' -as [type])) 'Mock suite loaded native helpers.'
+    '4 real source-pin gates and 12 sound phase/cleanup-flow cases passed using synthetic counters and mock ownership; no admission, kernel query or measured peak.'
 }finally{
     $resolved=[IO.Path]::GetFullPath($temp)
     if(!$resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -or

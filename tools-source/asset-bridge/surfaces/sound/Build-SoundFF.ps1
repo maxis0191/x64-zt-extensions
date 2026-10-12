@@ -11,5 +11,5 @@ Assert-SoundFFPath $PlanPath
 Assert-SoundFFExecutionPlan $plan $PSScriptRoot
 foreach($entry in $plan.HashInputs){Assert-SoundFFPin $entry}
 if(!$Run){$plan|ConvertTo-Json -Depth 25;return}
-if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7HudFileIdentity' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Fresh source-bound native host required.'}
+if(('IW7.SoundFFTelemetryV1.BuildJob' -as [type]) -or ('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7HudFileIdentity' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Fresh source-bound native host required.'}
 Invoke-SoundFFTransaction $plan $PlanPath $PlanSHA256|ConvertTo-Json -Depth 25

@@ -9,17 +9,36 @@ been captured with this implementation.
 
 Microsoft documents `JobObjectExtendedLimitInformation` as information class 9
 for [QueryInformationJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject).
-The existing `BuildJob.ExtendedLimits` layout already contains the corresponding
+The `SoundBuildJob.cs` copy of the original `BuildJob.ExtendedLimits` layout contains the corresponding
 [`PeakJobMemoryUsed`](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information)
 field. Windows tracks this job memory high-water counter continuously; no memory
 limit flag needs to be enabled for this read. This is committed job memory, not
 working set, output-file size or a single process's private-memory snapshot.
 
-`BuildJob.PeakJobCommitBytes` queries class 9 on the original owned job handle,
+`IW7.SoundFFTelemetryV1.BuildJob.PeakJobCommitBytes` queries class 9 on the original owned job handle,
 requires API success and the exact returned structure length, then preserves the
 unsigned byte value. A zero/disposed handle throws before the query: passing NULL
 to Windows could select the calling process's job instead. Existing job flags,
 process creation and ownership operations are unchanged.
+
+## Sound-only source ownership
+
+The initial commit `24fea42` added the getter to the shared `model/BuildJob.cs`.
+Cross-consumer review found that other pipelines pin that file independently,
+including MaterialV2, animation, rig, locator and codec/build tooling. Updating
+only the sound manifest did not preserve those contracts.
+
+The correction restores the shared source byte-for-byte to the `963f8b8` base,
+SHA-256 `f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387`,
+and restores its original sound-manifest entry. No other consumer pin changes.
+`SoundBuildJob.cs` differs from that pinned base only by the versioned namespace
+and the ten-line class-9 declaration/getter addition. A source test checks this
+exact relationship. There is no reflection over another owner's private handle.
+
+The sound factory and `Add-Type` use this local type. Both preparation paths add
+its own source pin; the execution-plan gate requires exactly one matching pin
+and checks its bytes. The existing transaction guards retain that source with
+the other inputs. The Run entry also rejects a preloaded sound-local type.
 
 `SoundFF.Core.ps1` reads the counter once before disposing each phase's job. On
 success this follows the existing closed-job wait. On error it follows the
@@ -57,18 +76,28 @@ smaller whole-transaction reservation.
 synthetic unsigned counters and mock owners. Cases cover zero, unavailable or
 invalid values, original errors, stop/dispose failures, a missing owner, capture
 ordering and an exact maximum above the floating-point integer precision limit.
-Its `-InteropOnly` mode compiles the C# source as a managed assembly, checks x64
-structure sizes/offset and the zero-handle rejection, and calls no kernel query.
+Its `-InteropOnly` mode compiles both C# sources as managed assemblies, checks x64
+structure sizes/offset, the zero-handle rejection and independent types, and
+calls no kernel query. Its default mode also checks the real local-source gate
+with valid, missing, duplicate and changed-hash pins.
 These checks are not native workload execution or real memory measurements.
 
-Source validation on 2026-10-12 passed: the 12 mock memory-flow cases and five
-managed interop checks above; existing transaction suites (21 StandardMod,
+Corrected-source validation on 2026-10-12 passed: four source-pin gates, the
+12 mock memory-flow cases and seven managed interop checks above; transaction suites (21 StandardMod,
 12 DumpOnly and 14 legacy cases); and 11 deadline cases. The six Python helper
-source tests and the PowerShell binding check for all 16 text helpers also
-passed. Only the `BuildJob.cs` canonical source digest was changed in
-`sab_ff_helpers.json`; the other 15 entries and all retained runtime plans remain
-unchanged. No native build, Run, admission, new resource preflight or retained
-payload read was part of this validation.
+source tests plus the new exact-base/delta test passed (seven total). All eight
+current MaterialV2 helper pins matched their actual source bytes with its
+manifest untouched. No native build, Run, admission, new resource preflight or
+retained payload read was part of this validation.
+
+The separate real-metadata StandardMod preparation test refused before producing
+a plan: `Sound input metadata differs.` The restored shared source has the exact
+6,224 bytes and SHA-256 required by retained F, but its current `ModifiedUtc`
+differs from F's source pin. This is a recorded preparation blocker, not a passing
+end-to-end Plan test. No timestamp was falsified, no F/A/B plan was rewritten,
+and no historical metadata check was relaxed. A separately reviewed preparation
+change must explicitly bind current helper sources in a new plan while retaining
+the immutable F payload/evidence contract. This correction does not implement it.
 
 A future admitted execution must bind the changed sources in a newly reviewed
 plan and retain all phase records plus normal closure evidence. Historical plans

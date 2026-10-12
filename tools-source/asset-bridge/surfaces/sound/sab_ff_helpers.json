@@ -7,7 +7,7 @@
     "tools-source/asset-bridge/surfaces/prepare_material_v2.py": "25f4c282eb0756b2c99ec38cec64dc5572e06bdc8712a5b79483795a6de93312",
     "tools-source/asset-bridge/surfaces/prepare_beacon.py": "c9de92ba9d09a5ee83479e31709573ca9e2364996f2fd3af712de9b908c9247a",
     "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1": "5bf7a25d7c3337e6cc6e1920584f46eb112555f514e5b205785f97757cff19e8",
-    "tools-source/asset-bridge/model/BuildJob.cs": "0a34c58f2959cb50b0327fa7cab6461c0564504ef620e9d30cf3151a64030bcb",
+    "tools-source/asset-bridge/model/BuildJob.cs": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
     "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d",
     "sdk/modding/BeaconFF.Core.ps1": "955704ed1aa1c2cb3cc6227fba0ccce8c6e07bf92deed46cc158a74127f84f91",
     "ops/Resource-Scheduler.Core.ps1": "ff56faa5c991c95db66cdd1b65ff340e298820741c69c15c15b91147cc46fc20",
