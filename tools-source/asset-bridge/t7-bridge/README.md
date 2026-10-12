@@ -307,8 +307,33 @@ the guards remain held through final measurement and receipt publication.
 Forty PowerShell assertions pass, including attempted growth/replacement while
 the original file is guarded, oversized snapshot refusal, and the metadata-output
 cap while preserving the smaller AppInfo cap. No native provider is loaded.
-The fixed command and freshly bound plan are prepared under ignored `runtime/`;
-DepotDownloader has not been executed and requires a separate reviewed GO.
+The fixed command and freshly bound plan were prepared under ignored `runtime/`;
+no execution occurred before the separate reviewed GO recorded below.
+
+### File manifest retrieved without game content
+
+The first actual manifest invocation used reviewed plan revision B, SHA256
+`75b90a6e5abe32b788a39a22c6579563de6ead0ad2e44447081bff6658362f3e`,
+at source `a3bc3e42`. It completed in 4,976.78 ms with original root exit0,
+ActiveProcesses0, normal closure and lease release. No forced stop, quarantine
+or retry occurred. A fresh post-run audit found zero leases, no owned root/tool
+or host remnants, and unchanged Main process generation / UDP27016 ownership.
+
+The 18,752-byte text manifest has SHA256
+`4423aa96951c341b32e34e65787b6ef7fda29733c8a11f4f254a6d1531b35eb8`.
+All 174 entries were parsed; their sizes total exactly 3,900,040,220 bytes, matching
+AppInfo and the manifest header. The header declares 3,845 unique chunks and
+3,697,813,104 compressed bytes. The actual content-chunk counter is **zero**.
+Tool plus closed attempt occupies 112,532,097 bytes, including the receipt.
+[Sanitized manifest observation](depot-manifest-observation-20261012.json).
+
+The real EXE entry is `UnrankedServer\BlackOps3_UnrankedDedicatedServer.exe`,
+21,737,352 bytes, 21 chunks, SHA1 `9d5fdd6f44defb8d65f8f5256e4eb83d4547f408`.
+The existing owner's `steam_api64.dll` (235,600 bytes) already matches its manifest
+SHA1 exactly; a targeted read verified this without copying it. The executable
+and other dependencies have **not** been acquired. Select them from the manifest
+against the T7 loader/import needs; reuse BO3's installed FF/XPAK in place.
+This result proves manifest retrieval, not T7 address or asset compatibility.
 
 Select the minimum legitimate server executable/dependencies only after a
 manifest establishes exact paths and sizes. SteamCMD's full app/depot update is

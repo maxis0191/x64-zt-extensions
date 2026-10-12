@@ -1,0 +1,91 @@
+{
+  "schema": "iw7.depot-file-manifest-observation/1",
+  "date": "2026-10-12",
+  "source_commit": "a3bc3e42be09285ba45d419bf3c37abe4f34539f",
+  "plan_sha256": "75b90a6e5abe32b788a39a22c6579563de6ead0ad2e44447081bff6658362f3e",
+  "plan_revision": "b",
+  "actual_attempt": "manifest-a",
+  "invocations": 1,
+  "status": "ManifestRetrievedPendingFileSelection",
+  "root_exit_code": 0,
+  "elapsed_milliseconds": 4976.782199978828,
+  "tool_version": "DepotDownloader 3.4.0",
+  "operation": "anonymous manifest-only",
+  "app_id": 545990,
+  "depot_id": 545991,
+  "manifest_id": "2350066205567669287",
+  "manifest_bytes": 18752,
+  "manifest_sha256": "4423aa96951c341b32e34e65787b6ef7fda29733c8a11f4f254a6d1531b35eb8",
+  "parsed_entries": 174,
+  "unique_chunks_declared": 3845,
+  "sum_entry_bytes": 3900040220,
+  "declared_compressed_bytes": 3697813104,
+  "content_chunk_bytes_downloaded": 0,
+  "snapshot_guards_retained_through_receipt": true,
+  "closure": {
+    "root_exited": true,
+    "active_processes": 0,
+    "forced_stop": false,
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "fresh_audit_utc": "2026-10-12T11:34:16.6256828Z",
+    "fresh_lease_count": 0,
+    "original_root_present": false,
+    "tool_or_host_leftovers": 0,
+    "main_generation_and_udp_owner_unchanged": true
+  },
+  "storage": {
+    "tool_bytes": 112334444,
+    "attempt_before_receipt_bytes": 195777,
+    "receipt_bytes": 1876,
+    "closed_tool_plus_attempt_bytes": 112532097,
+    "limit_is_os_quota": false
+  },
+  "executable_manifest_entry": {
+    "bytes": 21737352,
+    "chunks": 21,
+    "sha1": "9d5fdd6f44defb8d65f8f5256e4eb83d4547f408",
+    "flags": 0,
+    "path": "UnrankedServer\\BlackOps3_UnrankedDedicatedServer.exe"
+  },
+  "local_reusable_steam_api": {
+    "name": "steam_api64.dll",
+    "bytes": 235600,
+    "sha1": "f5e437ee0e6ceab67f97b1741a32f47a4fbc22e2",
+    "sha256": "71af8666392acad2080a816b9f1196fe9ccb950e1db8a549f8312c4d231f55a8",
+    "manifest_match": true,
+    "copied": false
+  },
+  "scope": {
+    "game_payload_downloaded": false,
+    "dedicated_executable_downloaded": false,
+    "dependency_selection_reviewed": false,
+    "t7_binary_compatibility_proven": false,
+    "bo3_export_performed": false,
+    "ff_or_render_proven": false
+  },
+  "evidence": [
+    {
+      "name": "receipt.json",
+      "bytes": 1876,
+      "sha256": "ef9165eb5af93c5f1427ce30a0991901cbaa28ac477dce5c17e9117ce510ee88"
+    },
+    {
+      "name": "stdout.log",
+      "bytes": 601,
+      "sha256": "0b13aecabef93095bb2e7b9e6a5c4a91e1fe3c7ad1463bedce41868944b3f6eb"
+    },
+    {
+      "name": "manifest.txt",
+      "bytes": 18752,
+      "sha256": "4423aa96951c341b32e34e65787b6ef7fda29733c8a11f4f254a6d1531b35eb8"
+    },
+    {
+      "name": "closure-b.local.json",
+      "bytes": 321,
+      "sha256": "37249dc8b3efd6a38a6ee1f0d81e5b9097e17d45a5b38a40261952008e0cb723"
+    }
+  ],
+  "next_action": "Review exact minimum executable/dependency allowlist against the real manifest and loader source; reuse installed BO3 assets, never download FF/XPAK redundantly."
+}
