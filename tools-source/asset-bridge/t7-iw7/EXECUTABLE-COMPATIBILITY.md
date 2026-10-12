@@ -189,3 +189,12 @@ or complete ABI test. An absent rendezvous is an incomplete experiment, not
 permission to fall back to ordinary boot. Reuse existing native supervision
 and its separately reviewed budget; the static reader's256/256 MiB estimate
 does not cover unknown engine initialization. No new runtime GO is implied.
+
+The proposed witness subsequently completed on 2026-10-12. The
+[saved-JSON comparison](PREPATCH-COMPARISON.md) observes changed bytes in all12
+windows, all8 expected patterns and executable actual pages, including the
+previously non-executable `.rdata` site. Six bounded forward decodes also match
+the relevant instruction boundaries. Those results supersede the disk-only
+refusals at these sampled sites; they do not establish the entire ABI. The next
+useful experiment is a separately planned single-zone catalogue with explicit
+bootstrap stock and runtime bounds, not an automatic repeat of this probe.

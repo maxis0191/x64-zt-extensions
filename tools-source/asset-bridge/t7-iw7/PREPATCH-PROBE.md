@@ -1,7 +1,9 @@
 # Single T7 observation before post_unpack patches
 
-This is source preparation, following the [disk observation](executable-static-observation-20261012.json).
-`native_prepatch_probe.inc` has not been compiled or run at this checkpoint.
+Initial source preparation followed the [disk observation](executable-static-observation-20261012.json).
+The later diagnostic completed on 2026-10-12; see the
+[bounded comparison and next experiment](PREPATCH-COMPARISON.md). The observations
+below describe the helper contract, not a general ABI approval.
 The separate CLI owner controls main.cpp wiring/build; the coordinator controls
 review and native GO. No build, launch or compatible ABI is implied by this file.
 
@@ -80,7 +82,8 @@ always false. Review the observed code/metadata offline before choosing any
 subsequent native experiment. No automatic retry, unpack assumption or fallback
 to ordinary boot is permitted by this contract.
 
-Validation at preparation:10 stdlib source-contract checks pass, including fixed
+Validation at initial preparation:10 stdlib source-contract checks pass, including fixed
 window correspondence, non-mutating API surface, caps, output binding and
 fail-closed entry/exit requirements. They neither compile the C++ nor prove
-Win32 behavior. Native compile and runtime remain separate future gates.
+Win32 behavior. Native compilation and the single diagnostic now have separate
+build/runner receipts; neither establishes normal startup or catalogue success.
