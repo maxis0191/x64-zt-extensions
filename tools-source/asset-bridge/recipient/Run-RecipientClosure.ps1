@@ -54,6 +54,7 @@ function Assert-RecipientBudget {
     if($overall.Elapsed.TotalSeconds -gt $plan.OverallSeconds){throw 'Recipient group active-work deadline exceeded.'}
     if(Test-Path -LiteralPath (Join-Path $runRoot 'stop.request')){throw 'Coordinator requested owned stop.'}
     if($plan.FatalTextDiagnostic -and (Test-Path -LiteralPath (Join-Path $runRoot 'diagnostic-stop.request'))){throw 'Fatal-text diagnostic finished; original job stop required.'}
+    if(Test-Path -LiteralPath (Join-Path $runRoot 'fatal-stop.request')){throw 'Fatal-text capture failed reference phase; original job stop required.'}
     if($created){Measure-RecipientOutput}
     $memory=Get-IW7ResourceSnapshot
     if($memory.Committed -gt $memory.CommitLimit*0.85){throw 'Commit pressure exceeded 85 percent.'}

@@ -330,6 +330,15 @@ change must enable the existing identity-bound body reader during normal
 references mode, retaining successful results only when no fatal is detected.
 Keep DiagnosticOnly separate; do not broaden PAKs before exact fatal evidence.
 
+That source correction is prepared. Normal references now use the same existing
+bounded reader, preserving normal success when it sees no fatal/reader error.
+A failure saves dialog and phase receipts before `fatal-stop.request`; the
+original owner stops the job. Forced diagnostics retain their distinct marker
+and unconditional qualification failure. The reader implementation and PAK set
+are unchanged. 143 light checks pass; the new wiring has no native-run evidence.
+Review the source before generating the next exact plan. A separate GO is still
+required before execution; do not reuse D's exhausted command/plan approval.
+
 ## Existing tools and exact constraints
 
 `iw7_capture.py` SHA256

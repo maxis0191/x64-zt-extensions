@@ -165,15 +165,19 @@ def run(spec, drain):
         except BaseException as error:
             dialog_record = {'schema':'iw7.recipient-fatal-dialog/1','fatal_window_observed':False,
                              'identity_verified_after':False,'errors':[type(error).__name__[:128]]}
-            return 'fatal-text diagnostic observer failed'
-        return 'fatal-text diagnostic observed fatal window' if dialog_record is not None else None
-    failure,workers,handles = capture_streams(process,logs,drain,spec['timeout'],observe_dialog if diagnostic else None)
+            return 'fatal-text observer failed'
+        return 'fatal-text observer captured fatal window' if dialog_record is not None else None
+    # The normal reference phase needs the same first-fatal evidence as the
+    # forced diagnostic. Script export remains outside this observer's scope.
+    observe_fatal = spec['phase'] == 'references'
+    failure,workers,handles = capture_streams(process,logs,drain,spec['timeout'],observe_dialog if observe_fatal else None)
     if diagnostic:
-        from recipient_dialog import save_record
         failure = failure or 'fatal-text diagnostic ended without fatal window; references not accepted'
         if dialog_record is None:
             dialog_record = {'schema':'iw7.recipient-fatal-dialog/1','fatal_window_observed':False,
                              'identity_verified_after':False,'errors':[], 'outcome':failure}
+    if dialog_record is not None:
+        from recipient_dialog import save_record
         save_record(logs/'fatal-dialog.json',dialog_record)
     result = {'schema':'iw7.recipient-phase-result/1','phase':spec['phase'],'pid':process.pid,
               'exit_code':process.poll(),'failure':failure,'executable_sha256':EXE_SHA,
@@ -190,6 +194,10 @@ def run(spec, drain):
         # The original PowerShell job owner sees this only after both receipts.
         # Never terminate a process from the diagnostic reader or via a PID.
         (logs.parent/'diagnostic-stop.request').write_text('Fatal-text diagnostic finished; stop original job.\n',encoding='utf-8')
+    elif dialog_record is not None:
+        # Normal mode can succeed with no fatal. A fatal or reader/identity
+        # failure instead preserves both receipts before requesting owned stop.
+        (logs.parent/'fatal-stop.request').write_text('Fatal-text capture failed reference phase; stop original job.\n',encoding='utf-8')
     if failure:
         os._exit(2)  # Outer owner stops its original job; never PID-based cleanup.
     for handle in handles: handle.close()

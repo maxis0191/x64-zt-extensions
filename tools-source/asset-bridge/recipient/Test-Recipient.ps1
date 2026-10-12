@@ -72,8 +72,8 @@ $runner=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptR
 $budgetFunction=$runner.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Assert-RecipientBudget'},$false)
 Invoke-Expression $budgetFunction.Extent.Text
 $plan=@{OverallSeconds=600;FatalTextDiagnostic=$false};$overall=@{Elapsed=@{TotalSeconds=1}}
-$runRoot='C:\recipient-pure-budget-fixture';$created=$false;$script:measureCalls=0;$script:committed=80
-function Test-Path {param($LiteralPath) $false}
+$runRoot='C:\recipient-pure-budget-fixture';$created=$false;$script:measureCalls=0;$script:committed=80;$script:marker=$null
+function Test-Path {param($LiteralPath) $LiteralPath -ceq (Join-Path $runRoot ([string]$script:marker))}
 function Measure-RecipientOutput {$script:measureCalls++}
 function Get-IW7ResourceSnapshot {@{Committed=$script:committed;CommitLimit=100}}
 Assert-RecipientBudget
@@ -84,4 +84,9 @@ $created=$false;$script:committed=86
 Refuses {Assert-RecipientBudget} 'Pre-staging budget refuses fresh commit pressure'
 $script:committed=80;$overall.Elapsed.TotalSeconds=601
 Refuses {Assert-RecipientBudget} 'Pre-staging budget refuses elapsed deadline'
+$overall.Elapsed.TotalSeconds=1;$script:marker='fatal-stop.request'
+Refuses {Assert-RecipientBudget} 'Normal-mode fatal marker requests original-owner stop'
+$script:marker='diagnostic-stop.request';Assert-RecipientBudget;$checks++
+$plan.FatalTextDiagnostic=$true
+Refuses {Assert-RecipientBudget} 'Diagnostic marker still requires diagnostic mode'
 "$checks source/contract checks passed; native execution untested."

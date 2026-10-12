@@ -91,6 +91,6 @@ function New-RecipientPlan($Spec,[string]$Repo,[string]$Root,$Bindings,[switch]$
         ProviderBindings=$Bindings;PythonExe=$Spec.PythonExe;PythonSHA256=$Spec.PythonExeSHA256;
         Adapter=(Join-Path $Root 'recipient_phase.py');PhysicalBytes=8GB;CommitBytes=11GB;
         OutputStopBytes=256MB;LogBytesPerStream=2MB;PhaseSeconds=$limits.PhaseSeconds;OuterPhaseSeconds=$limits.OuterPhaseSeconds;RootExitDrainSeconds=5;OverallSeconds=$limits.OverallSeconds;
-        FatalTextDiagnostic=[bool]$FatalTextDiagnostic;DiagnosticPollMilliseconds=250;DiagnosticTextBytes=16KB;DiagnosticControlLimit=8;DiagnosticMessageTimeoutMilliseconds=200;DiagnosticRecordBytes=64KB;
+        FatalTextDiagnostic=[bool]$FatalTextDiagnostic;FatalTextCapturePhases=@('references');DiagnosticPollMilliseconds=250;DiagnosticTextBytes=16KB;DiagnosticControlLimit=8;DiagnosticMessageTimeoutMilliseconds=200;DiagnosticRecordBytes=64KB;
         Phases=@(Get-RecipientPhases -ReferencesOnly:($ReferencesOnly -or $FatalTextDiagnostic));NativeExecuted=$false;ClosureComplete=$false;Ready=$false}
 }

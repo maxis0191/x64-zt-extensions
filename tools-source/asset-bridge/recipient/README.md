@@ -370,3 +370,38 @@ Next source-only correction: reuse the existing bounded fatal-body reader in
 normal references mode while preserving normal success when no fatal exists.
 D's failure record will not be rewritten as a body-capture result. A new plan,
 review and GO are required before any further native execution.
+
+## Post-D source correction: fatal text during normal references
+
+The existing `recipient_dialog.py` reader is now invoked every 250 ms during
+the normal references phase as well as the explicit diagnostic. Its implementation
+and limits are unchanged: original parent/child handles and identities, one fatal
+capture, at most eight controls, 16 KiB text, 200 ms per WM_GETTEXT, a 64 KiB
+record and no UI interaction. The plan explicitly declares
+`FatalTextCapturePhases=['references']`; script export is unchanged.
+
+Normal mode still validates and accepts a successful reference observation when
+no fatal or reader failure is observed. On a fatal or an identity/reader error,
+it saves `references/fatal-dialog.json` and a failed `references/phase.json`
+before emitting `fatal-stop.request`. The existing original PowerShell job owner
+checks this marker in its budget loop and stops its original job. The reader
+never terminates a process, follows a replacement PID or clicks a dialog.
+A native zero exit does not override the captured failure. Missing/unattributable
+body text stays missing, with the reader error recorded. Evidence-write failure
+also cannot reach reference validation; ordinary outer failure cleanup applies.
+
+`FatalTextDiagnostic` and `DiagnosticOnly` remain distinct: the forced diagnostic
+still uses 45/50/60 seconds, always fails qualification, writes its existing
+`diagnostic-stop.request`, and cannot accept a no-fatal zero exit. Normal mode
+keeps 240/245/600 seconds and may succeed. Normal fatal status is Failed, not a
+diagnostic-only success. Both modes require original tree closure and restoration.
+
+143 light checks pass: 37 Python contract/dialog fixtures, 25 unchanged-provider
+stream fixtures, 42 PowerShell source/contract checks and 39 supplemental-stock
+checks. New full-phase fixtures use fake process/capture/Win32 dependencies and
+real tiny receipt files to exercise normal success, normal fatal even with zero
+exit, diagnostic fatal/no-fatal, invalid identity, persistence failure and
+unchanged script success. They verify both receipts and the appropriate marker
+exist before the intercepted failure exit. No real native execution validates
+this post-D wiring yet. PAK scope, native E7/CLI, loader, provider pins, resource
+budgets and D's original evidence remain unchanged.
