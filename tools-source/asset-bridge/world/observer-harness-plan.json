@@ -1,6 +1,6 @@
 {
-  "schema": "iw7.world-clipmap-harness-plan/1",
-  "status": "source-plan-awaiting-coordinator-adapter-review-and-native-go",
+  "schema": "iw7.world-clipmap-harness-plan/2",
+  "status": "executable-adapter-source-awaiting-review-and-native-go",
   "heavy_execution_authorized": false,
   "native_compiled": false,
   "native_harness_run": false,
@@ -11,7 +11,7 @@
     "leases": 1,
     "original_jobs": 1,
     "native_parallelism": 1,
-    "root": "source-bound coordinator driver, pending review",
+    "root": "observer_harness_driver.py under the reused BuildJob; PowerShell grants a hash-bound fixture permit",
     "descendants": [
       "one x64 MSVC compilation/link",
       "one exact compiled fixture launch"
@@ -42,7 +42,8 @@
     "existing_supervisor_envelope_seconds": 240,
     "drain_seconds": 2,
     "cleanup_seconds": 15,
-    "native_peaks_measured": false
+    "native_peaks_measured": false,
+    "group_clock_start": "lease acquired; check after each helper import, before launch, both sides of every poll and before success"
   },
   "compiler": {
     "architecture": "x64",
@@ -77,7 +78,13 @@
     "tools-source/asset-bridge/world/world_clipmap_observer.hpp": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
     "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
     "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
-    "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa"
+    "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa",
+    "tools-source/asset-bridge/world/Run-ObserverHarness.ps1": "f56ea0af37d8fb75a372f1a07d6185eb4139fc9277ff995eb3b8e36a297be1d0",
+    "tools-source/asset-bridge/world/ObserverHarness.Core.ps1": "cf7edf511c70741ddd8030f74fadf775777b015466f8885748c5b3497b454049",
+    "tools-source/asset-bridge/world/observer_harness_driver.py": "996d64e64ddb87c43f619703b298af5b85a8cd9a5158e667886c4d9f67c7bcac",
+    "tools-source/asset-bridge/world/test_observer_adapter.ps1": "64645c3e23de6b09793ca9b44aa09b8553f3904af9424a2f98c832ff0b6ba89a",
+    "tools-source/asset-bridge/world/test_observer_driver.py": "99d8ccc0558dc7db4cfd6f27229f6f443174c2cc69512a8772bb19bc0b9f8373",
+    "tools-source/asset-bridge/world/test_observer_plan.ps1": "0121e904ce5677ef9ad314fe64b1e951778d2e32750d997ccbb2f76410b93a10"
   },
   "provider_sha256": {
     "ops/Resource-Scheduler.Core.ps1": "0d0ebef0f434c4e1ecc2614a4061f7e0685988adefcae596ff5a7891b1f3e25b",
@@ -85,10 +92,15 @@
     "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1": "70b26a3cc7c20f70825dff7212e9cd5f7bf25602645ed00a95a70ac3f5b2c874",
     "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1": "fc024337fdb18c8a759cd6346ad90fe1fb2086d790e4804ade583c30e69d25d6",
     "tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs": "c8fce6094104eae70442a081654f403739f5315d531c35385021759b74c2abda",
-    "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d"
+    "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d",
+    "ops/Base-Client.Core.ps1": "e504a87334fae8f294458c72d7980c3e9b00d3c6549b969d1dfb41f26ca70605",
+    "sdk/modding/BeaconFF.Core.ps1": "b80047875a39731ea54838459fb71e0dca580c5e42284bd2749dc4b39c3a08a8",
+    "ops/Resource-Memory.ps1": "6a708d2e7fa9803628bfbf5c670068d63d22a2d2cfc157994afa82d56ac9c241",
+    "ops/Resource-RecorderOwnedProcess.Core.ps1": "23d6f589a6f973f6d9c56a2ff3dcb66c4df6a0aa9fe0a7125048dd9061f93c54",
+    "ops/native/ResourceMemory.cs": "b159804d12ca504cd592f4cdee191a9b68353e9e0117f9045a28a522b25692e9"
   },
   "qualification_gates": [
-    "fresh review of adapter bound to listed helpers; plan does not implement a launcher",
+    "review exact Run-ObserverHarness.ps1, ObserverHarness.Core.ps1 and driver before native GO",
     "atomic full-group resource admission before native helper type loading or compile",
     "input/provider/tool read guards and exact hashes; no alteration to shared providers",
     "one compiler exit0 and same-job compiler/telemetry identity witness",
@@ -96,5 +108,8 @@
     "independent bounded JSON reader accepts retained raw stdout",
     "final source integrity, byte accounting and fresh original job closure before lease release"
   ],
-  "next_separate_witness": "real matching first CLIPMAP root/fixup; unknown today; collision serializer is subsequent work"
+  "next_separate_witness": "real matching first CLIPMAP root/fixup; unknown today; collision serializer is subsequent work",
+  "entrypoint": "tools-source/asset-bridge/world/Run-ObserverHarness.ps1",
+  "default_mode": "Plan: read/hash/pure imports only; no tree, child, resource snapshot, lease or native type load",
+  "run_switch": "-Run only after coordinated native GO"
 }
