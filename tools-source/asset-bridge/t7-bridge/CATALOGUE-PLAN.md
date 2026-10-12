@@ -1391,3 +1391,32 @@ remain unchanged. The successful O closure helper is frozen as a reference;
 future adaptation may change only specified data literals, with exact AST/diff
 comparison and no identifier renaming. No next dependency, export or automatic
 continuation follows P, regardless of its result.
+
+## EnCorePostGfx qualified; P preparation stopped before Run
+
+The coordinator accepted the reviewed two-phase proposal and delegated acceptance
+of the permitted literal-only helper changes, with one invocation per phase and
+zero retries. Current resource workflow and scheduler source matched. Fresh
+6/8 GiB admission passed at 20:14:23 UTC; the unique qualification completed at
+20:14:31 UTC as `IdentityAndHashObservedCompatibilityUnknown`. The two guarded
+1,158,208-byte passes matched SHA-256
+`6b3b94fbda04ea0053c3703b55e475bb4caa6a4297b9bc9209992ba4d9f8feff`
+and the exact original file identity. No header, compatibility or depot claim
+follows that result.
+
+Source/payload guards were both observed at zero, tree and reservation closed,
+and quarantine absent. PTY 32104 actually exited 0 (`5d4d71`). The independent
+20:15:22 UTC witness confirmed host 34620 and parent 9252 absent, no client/heavy
+process or reservation, unchanged stopped Main/UDP baseline and preserved Python.
+No payload hash was read after release.
+
+P did not run. Its local preparation helper's added old-source verification loop
+encountered `ResourceMemory.cs`, but the helper's small-text extension allowlist
+contained only `.ps1`, `.json` and `.patch`. It refused with `Small text only.`
+before creating the P Plan, run root, dispatch or closure draft. This preparation
+defect is separate from the successful qualification and is not a native failure
+or evidence of operational source drift. The delegation stopped immediately;
+no correction or retry was applied. The
+[closed-phase and stopped-preparation checkpoint](catalogue-en-core-post-gfx-qualified-p-stopped-20261012.json)
+preserves the actual exit/absence and refusal pins. Any correction or continuation
+requires a new coordinator decision; the valid qualification must not be repeated.
