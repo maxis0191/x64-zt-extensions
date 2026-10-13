@@ -1,0 +1,53 @@
+name: Selected XPAK fixture
+on:
+  push:
+    branches: [main, "codex/**"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixture:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Acquire hash-pinned LZ4 source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path runtime/selected-xpak/lz4 -Force | Out-Null
+          $revision = '1b0fc692949cf474eb0d89db5f0dfa3698e9aa56'
+          $files = @{
+            'lz4.c' = 'D8D5DC603D2157266C8A41285CCAF69EBE6432CBD92D40D3917D15A988E89888'
+            'lz4.h' = '774F26AFE507C3EA4E781FACA51DFCAD719F60804526CEF7FE223E3C3E534EEF'
+          }
+          foreach ($entry in $files.GetEnumerator()) {
+            $outputFile = Join-Path 'runtime/selected-xpak/lz4' $entry.Key
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/lz4/lz4/$revision/lib/$($entry.Key)" -OutFile $outputFile
+            if ((Get-FileHash -LiteralPath $outputFile -Algorithm SHA256).Hash -ne $entry.Value) {
+              throw "LZ4 source hash mismatch: $($entry.Key)"
+            }
+          }
+      - name: Compile and run synthetic fixture
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $installation = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ($LASTEXITCODE -or !$installation) { throw 'VS2022 C++ toolchain unavailable' }
+          $devCmd = Join-Path $installation 'Common7/Tools/VsDevCmd.bat'
+          $environment = & $env:ComSpec /d /s /c "`"$devCmd`" -no_logo -arch=x64 -host_arch=x64 && set"
+          if ($LASTEXITCODE) { throw 'VS2022 environment initialization failed' }
+          foreach ($line in $environment) {
+            if ($line -match '^([^=]+)=(.*)$') {
+              [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process')
+            }
+          }
+          cl /nologo /c /TC /O2 /MT /W3 /I runtime/selected-xpak/lz4 /Fo:runtime/selected-xpak/lz4.obj runtime/selected-xpak/lz4/lz4.c
+          if ($LASTEXITCODE) { throw 'Pinned LZ4 compilation failed' }
+          cl /nologo /std:c++20 /EHsc /O2 /MT /W4 /WX /I runtime/selected-xpak/lz4 /Fo:runtime/selected-xpak/fixture.obj /Fe:runtime/selected-xpak/fixture.exe tools-source/asset-bridge/t7-iw7/test_streamed_mesh_payload.cpp runtime/selected-xpak/lz4.obj
+          if ($LASTEXITCODE) { throw 'Selected XPAK fixture compilation failed' }
+          & ./runtime/selected-xpak/fixture.exe
+          if ($LASTEXITCODE) { throw 'Selected XPAK synthetic fixture failed' }
