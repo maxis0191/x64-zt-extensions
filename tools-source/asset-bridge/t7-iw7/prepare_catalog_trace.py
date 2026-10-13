@@ -15,6 +15,16 @@ MESSAGE_NAME = 't7-catalog-message'
 MESSAGE_SCHEMA = 'iw7.t7-catalog-message/1'
 BASE_PLAN_SHA = 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'
 BASE_RECEIPT_SHA = 'c609bc56523654d8bca4b855024a463393185aab8e19ed4eae94c1ff8f6a09c2'
+SURFACE_COUNT_HEADER = 'prepared/t7_iw7_resident_model.hpp'
+SURFACE_COUNT_OLD_PIN = (13444, '6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777')
+SURFACE_COUNT_NEW_PIN = (13545, '701e3d1eccb0e98ecccfd2012215aaf7eff8db7bd974b184e86648a138b6e3c3')
+
+
+def surface_count_header_delta(name, raw, pin):
+    """Only the reviewed diagnostic; never a general changed-header allowance."""
+    return (name == SURFACE_COUNT_HEADER and isinstance(raw, bytes) and isinstance(pin, dict) and
+            (pin.get('Bytes'), pin.get('SHA256')) == SURFACE_COUNT_OLD_PIN and
+            (len(raw), hashlib.sha256(raw).hexdigest()) == SURFACE_COUNT_NEW_PIN)
 
 SUPPORT = r'''
 namespace
@@ -586,11 +596,12 @@ def wire_message_main(source):
         '\t\t\tcatalog_trace_once(2, "before_post_unpack");\n\t\t\tcatalog_message_initialize();')
 
 
-def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads):
+def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *, surface_count_diagnostic=False):
     """Compare small text manifests only; never open retained binary inputs."""
     def require(ok, message):
         if not ok: raise ValueError(message)
     def key(path): return str(PureWindowsPath(path)).casefold()
+    require(type(surface_count_diagnostic) is bool, 'Surface-count diagnostic flag must be boolean')
     require(hashlib.sha256(plan_raw).hexdigest() == BASE_PLAN_SHA and
             hashlib.sha256(receipt_raw).hexdigest() == BASE_RECEIPT_SHA, 'Exact ordinary D2 proof required')
     base, receipt, prior, old_receipt = map(json.loads, (plan_raw, receipt_raw, prior_raw, prior_receipt_raw))
@@ -609,9 +620,14 @@ def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads):
     for plan in (base, prior):
         bindings = {key(p['Path']):p for p in plan['Bindings']}
         root = PureWindowsPath(plan['PreparedRoot'])
+        if surface_count_diagnostic:
+            require(surface_count_header_delta(SURFACE_COUNT_HEADER, payloads.get(SURFACE_COUNT_HEADER),
+                    bindings.get(key(root/SURFACE_COUNT_HEADER.removeprefix('prepared/')))),
+                    'Exact surface-count diagnostic transition required')
         for name, raw in payloads.items():
             if not name.startswith('prepared/'): continue
             pin = bindings.get(key(root/name.removeprefix('prepared/')))
+            if surface_count_diagnostic and surface_count_header_delta(name, raw, pin): continue
             require(pin and pin['Bytes'] == len(raw) and pin['SHA256'] == hashlib.sha256(raw).hexdigest(),
                     'Ordinary D2/C native source differs: '+name)
     inputs = {key(p['Path']):p for p in base['Inputs']}
