@@ -6,6 +6,19 @@ witness. Doom Slayer, the Super Shotgun and an Eternal enemy remain separate ope
 content goals; no generic model silently replaces them. Source/format compatibility,
 file integrity, runtime behavior and owner acceptance are separate gates.
 
+> **Current visual status — 2026-10-13.** Original rigid geometry is visibly
+> documented. Case `20261007-010207-340-356f8823` corrected LOD0 distance from
+> zero to 1,000,000: the 1040-byte FF `0EC7544D…3685063` rendered the cube at
+> both swapped poses and restored fully. See the [STATE checkpoint](STATE.md#original-geometry-renders-after-lod-correction---2026-10-07)
+> and [runtime validation](VALIDATION.md#visible-original-cube-and-isolated-native-observer-build---2026-10-07).
+> The [12 October UseRejoin Plan B](SELF-CONTAINED-BEACON-RUNTIME.md#userejoin-plan-b-targeted-runtime-pass-2026-10-12)
+> reused the 1048-byte Beacon FF `3FA49BCD…F8B71DA8`; review saw the cuboid and
+> HUD in five views, while one nearly black frame was unusable. Its recipient
+> material is `mopw/character_park_clown_zombie_shoes`, not a custom texture.
+> These observations do not prove custom textures, UV/normal/lighting conformity,
+> overall pixels or owner acceptance, or the new T7 asset port. The earlier
+> invisible-cube result below is retained as history.
+
 ## Named content and author evidence
 
 Public author pages were inspected once for this content search on2026-10-06/07.
@@ -272,7 +285,7 @@ preservation, injected owned-session identity, stale GET/duplicate markers and
 false pixel/material acceptance. GSC parse passed; no model client/game was
 launched in this preparation step.
 
-## Invisible cube: isolated shadow sentinel candidate
+## Historical invisible cube: isolated shadow sentinel candidate
 
 The protected run `runtime/agent-lab/20261007-000759-331-f456a89f` loaded
 the measured 1036-byte FF, requested a script model and captured fresh frames.
