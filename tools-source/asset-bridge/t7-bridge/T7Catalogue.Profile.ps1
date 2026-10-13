@@ -321,6 +321,7 @@ function Assert-T7CatalogueDistinctInputIds($Plan,$InputFileIds) {
     if((Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'Legacy'){return}
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
     $expected=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.Zone.Path)+@($bootstraps.Path)
+    if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1' -and (Get-T7SelectedStreamedExport $Plan)){$expected+=@($Plan.SelectedXpakProvider.Metadata.Path,$Plan.ExportRequestFile.Path)}
     if(@($InputFileIds).Count -ne $expected.Count){throw 'Complete original input IDs required before aliases.'}
     $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $ids=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -346,6 +347,8 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($diagnostic -and !$export){throw 'Surface-count diagnostic is restricted to ResidentExportV1.'}
     if($Plan.PSObject.Properties['ResidentMultiSurfaceV2'] -and !$export){throw 'Resident multi-surface v2 is restricted to the export operation.'}
     if($Plan.PSObject.Properties['SelectedMeshMaterialObservation'] -and !$export){throw 'Selected observation probe is restricted to the export operation.'}
+    if($Plan.PSObject.Properties['SelectedStreamedStaticV1'] -and !$export){throw 'Selected-streamed E3 is restricted to the export operation.'}
+    $streamed=$export -and [bool](Get-T7SelectedStreamedExport $Plan)
     $schema=if($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
     $reportLimit=if($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
@@ -362,6 +365,8 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $fixedBytes=$zoneSpec.FixedBytes+[long]$Plan.CandidateBytes
     if($bootstrapBytes -gt [long]::MaxValue-$fixedBytes){throw 'Output budget exceeds integer range.'}
     $expectedOutputBytes=$fixedBytes+$bootstrapBytes
+    $selectedExtraBytes=0L
+    if($streamed){$selectedExtraBytes=[long]$Plan.SelectedXpakProvider.Metadata.Bytes+[long]$Plan.ExportRequestFile.Bytes;$expectedOutputBytes+=$selectedExtraBytes}
     if($qualified){
         $limits=Get-T7CatalogueBootstrapLimits $Plan
         $shared=Get-T7CatalogueSharedQualification $Plan
@@ -373,8 +378,9 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
         if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
         if($export -and (Get-T7SelectedObservationProbe $Plan)){$bindingCount+=3} # E2 source/probe pins and distinct closure bundle.
+        if($streamed){$bindingCount+=9} # Eight E3 build text pins beyond D plus the operational streamed reader contract.
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
-           !(Test-T7CatalogueInteger $Plan.OutputLimitBytes ($zoneSpec.FixedBytes+64MB+$limits.TotalBytes)) -or
+           !(Test-T7CatalogueInteger $Plan.OutputLimitBytes ($zoneSpec.FixedBytes+64MB+$limits.TotalBytes+$selectedExtraBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
     }
     if($Plan.Schema -cne $schema -or $Plan.Runner -cne $Runner -or
@@ -417,6 +423,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingLimit+=6}
     if($export){$bindingLimit+=9}
     if($diagnostic){$bindingLimit++}
+    if($streamed){$bindingLimit+=9}
     if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
     $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
@@ -438,9 +445,11 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($pin.Count -ne 1 -or $pin[0].IsText -or $pin[0].Bytes -ne $row[1] -or $pin[0].SHA256 -cne $row[2]){throw 'Exact qualified D2/engine/Steam binding required.'}
     }
     $inputCount=4+$bootstraps.Count
+    if($streamed){$inputCount+=2}
     if(@($Plan.InputMetadata).Count -ne $inputCount -or @($Plan.InputMetadata.Path|Sort-Object -Unique).Count -ne $inputCount){throw 'Exact input metadata count differs.'}
     $paths=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.Zone.Path)
     if($bootstraps.Count){$paths+=@($bootstraps.Path)}
+    if($streamed){$paths+=@($Plan.SelectedXpakProvider.Metadata.Path,$Plan.ExportRequestFile.Path)}
     foreach($item in $Plan.InputMetadata){if($item.Path -cnotin $paths){throw 'Unexpected input metadata.'};Assert-T7CatalogueMetadata $item}
     if(!(Test-T7CatalogueInteger $Plan.Zone.Bytes $zoneSpec.Bytes) -or $Plan.Zone.Bytes -ne $zoneSpec.Bytes -or $Plan.Zone.SHA256 -ne $null -or
        $Plan.Zone.RelativePath -isnot [string] -or $Plan.Zone.RelativePath -cne $zoneSpec.RelativePath -or
@@ -603,7 +612,7 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
         PublicationSource=(Join-Path $sourceRoot 'native_message_publication.inc');PreparedCLI=(Join-Path $Build.PreparedRoot 'zonetool.cpp');
         MainResponse=(Join-Path $responseRoot 'main.obj.rsp');CLIResponse=(Join-Path $responseRoot 'zonetool11.obj.rsp');LinkResponse=(Join-Path $responseRoot 'link.rsp')}
     foreach($name in $paths.Keys) {
-        $limit=if($name -ceq 'PublicationSource'){16KB}elseif($name -ceq 'LinkResponse'){256KB}else{64KB}
+        $limit=if($name -ceq 'PublicationSource'){16KB}elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PreparedCLI' -and (Get-T7SelectedStreamedExport $Plan)){128KB}else{64KB}
         if($profile.$name.Path -cne $paths[$name] -or $profile.$name.Bytes -gt $limit){throw 'Publication source/response path or bound differs.'}
     }
     foreach($rows in @(@{Value=@($Build.Stages)},@{Value=@($Receipt.Stages)})) {
@@ -728,9 +737,11 @@ function New-T7CatalogueStart($Plan) {
     $start.ArgumentList.Clear();$start.ArgumentList.Add('-t7-iw7-catalog');$start.ArgumentList.Add($zoneSpec.Name)
     if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'){
         Assert-T7ResidentExportRequest $Plan.ExportRequest
-        $command=if((Get-T7ResidentExportVersion $Plan) -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
+        $streamed=[bool](Get-T7SelectedStreamedExport $Plan)
+        $command=if($streamed){'-t7-iw7-model-streamed-v1'}elseif((Get-T7ResidentExportVersion $Plan) -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
         $start.ArgumentList.Clear()
         foreach($argument in @($command,$Plan.ExportRequest.zone,$Plan.ExportRequest.model,'0')){$start.ArgumentList.Add($argument)}
+        if($streamed){$start.ArgumentList.Add('streamed-request.json')}
     }
     $start
 }
@@ -1276,6 +1287,7 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
     }
     Assert-H1Path $Plan.WorkingDirectory
     $allowedFiles=@('BlackOps3_UnrankedDedicatedServer.exe','steam_api64.dll','t7-zonetool-candidate.exe')
+    if($export -and (Get-T7SelectedStreamedExport $Plan)){$allowedFiles+=@('streamed-request.json')}
     foreach($entry in [IO.Directory]::EnumerateFileSystemEntries($Plan.WorkingDirectory)) {
         Assert-H1Path $entry
         $name=[IO.Path]::GetFileName($entry)
@@ -1314,6 +1326,7 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
         if($name -cnotin $allowedDirectories -or ![IO.Directory]::Exists($entry)){throw 'Unexpected engine output; preserve and stop.'}
         $allowed=@(if($name -ceq 'zone'){(Get-T7CataloguePlanZoneSpec $Plan).FileName}else{'catalog.json'})
         if($name -ceq 'zone'){$allowed+=@(Get-T7CatalogueBootstraps $Plan|ForEach-Object {[IO.Path]::GetFileName($_.RelativePath)})}
+        if($export -and (Get-T7SelectedStreamedExport $Plan) -and $name -ceq 'zone'){$allowed+=@([IO.Path]::GetFileName($Plan.SelectedXpakProvider.RelativePath))}
         foreach($child in [IO.Directory]::EnumerateFileSystemEntries($entry)) {
             Assert-H1Path $child
             if([IO.Path]::GetFileName($child) -cnotin $allowed -or [IO.Directory]::Exists($child)){throw 'Unexpected zone/catalogue output; preserve and stop.'}
