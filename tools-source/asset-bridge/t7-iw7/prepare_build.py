@@ -23,6 +23,79 @@ SDK_PINS = {'rc.exe': (55640, '43da1503c262c30894c851589bf0155f8365d77e63a5f7bc1
             'rcdll.dll': (264536, '9a11e4759adc48abe1fa9e3082ad7db4b53f4d6d77701c13729f4ffd47ae934c')}
 
 
+# The explicit IW7 writer include pulls in this exact 66-header facade. These
+# are raw source pins from native fab935826c898806855376662a8a03317b3ad8f1,
+# justified by its sealed E7 xsurface TU dependency record; no discovery glob.
+MULTISURFACE_HEADER_PINS = {
+    'src/zonetool/component/iw7/command.hpp': (1079, 'ff39ace55d37a3daa189bc662f0e8ced3fbb7638ce51dab45e920f06c01a1f78'),
+    'src/zonetool/component/iw7/scheduler.hpp': (858, 'a0ce7d867026aea722f85b654efba781e4d152561ff8c5fc6d84fc00d91b2ff6'),
+    'src/zonetool/game/iw7/game.hpp': (773, '959d5583ce5d46f06ce3a6837347b475ee90d369360cad0654a97d97e3711571'),
+    'src/zonetool/game/iw7/structs.hpp': (12260, 'a44114ab513d92e5d42d4b3a564ba32e3811c33f00d254dcaa3b42bf4cd387d6'),
+    'src/zonetool/game/iw7/symbols.hpp': (7667, '5e1e5c47ab9c8ae8c9ecc46d06f86da6cacfa0a19d431f40c5a762654e0d1a09'),
+    'src/zonetool/zonetool/iw7/assets/aipaths.hpp': (911, '43b64da885c94cf2bfcc5d9dfe4836125aff40c59f496567c8f268e3057282fc'),
+    'src/zonetool/zonetool/iw7/assets/clipmap.hpp': (1171, '69982e0a7a7d5544c07c82045af4b4d8e4805b4f654c06ef1c0bac60e8a5ddcf'),
+    'src/zonetool/zonetool/iw7/assets/computeshader.hpp': (745, '634b7a7234213674513adc6f30780213edb47373b12045a79e1b6ce790627108'),
+    'src/zonetool/zonetool/iw7/assets/comworld.hpp': (725, 'b274a97a6558030d25be5230ab5746a2e7162366d262623e1c6d1c2434de2ced'),
+    'src/zonetool/zonetool/iw7/assets/ddl.hpp': (723, 'eba1113cf20b3c8a1b1babe312fc326dcd10e6599648bd04593ed2cff40125fc'),
+    'src/zonetool/zonetool/iw7/assets/domainshader.hpp': (765, '3556c98cb23ddeed04430d813d29d162a3b4ecef123f49cdb55f0b48aa9897cb'),
+    'src/zonetool/zonetool/iw7/assets/fxeffectdef.hpp': (738, 'd4c6c8847fe35432eb1376eded793a0b9fc55e056c82f088c58d9ca71c8168c9'),
+    'src/zonetool/zonetool/iw7/assets/fxparticlesimanimation.hpp': (783, 'dbd9d8b94edebf6f621df560d7f0e23456694bdc69064080c4279398e970c605'),
+    'src/zonetool/zonetool/iw7/assets/fxworld.hpp': (721, '42f0fb397187a4e14b61f4a2396abfc645dee3aabfc8fb72fc95231e5bbd64e2'),
+    'src/zonetool/zonetool/iw7/assets/gesture.hpp': (775, '03e0d54267b021a90fd11ee36640a3bd111b54de863573504a65a26101a3fd6c'),
+    'src/zonetool/zonetool/iw7/assets/gfximage.hpp': (1231, 'eba9121056f3ef41fdb972dc1da7b9e870d45b45b91d8f1ace9a73116fc9aa4d'),
+    'src/zonetool/zonetool/iw7/assets/gfxlightdef.hpp': (738, '8f04897e2daea1de03c4042a4c3edd605999821e392c7e2bc4cce2a857f48a86'),
+    'src/zonetool/zonetool/iw7/assets/gfxlightmap.hpp': (738, 'fac30373307ed1c0bf19cd528b48c257a57f6b4fba8b5d6b7d87fbd679c89f91'),
+    'src/zonetool/zonetool/iw7/assets/gfxworld.hpp': (754, '7572d8d7f30c52a43d41e17d9419e8801ebd95731121de459b448c2e5b4e7531'),
+    'src/zonetool/zonetool/iw7/assets/gfxworld_tr.hpp': (767, '5936187acea267c54ab8fbcadb1ae70932574a4e4a32aa75ba17857f0a07f10f'),
+    'src/zonetool/zonetool/iw7/assets/glassworld.hpp': (735, '36b303947e1def0ace6352294624c89cf77c5e6be6b837662a728c2339bd7e88'),
+    'src/zonetool/zonetool/iw7/assets/hullshader.hpp': (757, '0d903d00b9e9d69aa8e70fb8b1f77de75c50782618bb41ea396cde3197916362'),
+    'src/zonetool/zonetool/iw7/assets/impactfx.hpp': (740, '9e2f203bf53ae2b9f67c0e2fc348bd52e6d4b55180a98dcc58421b93526ca285'),
+    'src/zonetool/zonetool/iw7/assets/laser.hpp': (721, 'b2de83e86bd61bbc4a923c597bb89e01e6a0b30ddb0db557eca4b9965161a386'),
+    'src/zonetool/zonetool/iw7/assets/localize.hpp': (153, 'e807f80ec35180b51412f1c530d8061ec13d264424580f32f524e3a88ed9ce4b'),
+    'src/zonetool/zonetool/iw7/assets/luafile.hpp': (141, '587e7fc04a17479d644a263ef34518ddd217fd1d95ae469d58668af12a1b8c1b'),
+    'src/zonetool/zonetool/iw7/assets/mapents.hpp': (1649, '24b6f08c7dea08a924bb8ed05cec320d167cd28a91fae469bc1cc854e0439952'),
+    'src/zonetool/zonetool/iw7/assets/material.hpp': (1011, '155c2339db46dee75b2ae4f6acdc93a2791e9bc836974740748c6964ce32917d'),
+    'src/zonetool/zonetool/iw7/assets/navmesh.hpp': (914, '3c500824e65fbabedc2ce6f5a569335be7c23cc09f7bf2f35b16d4eade94cbaa'),
+    'src/zonetool/zonetool/iw7/assets/netconststrings.hpp': (747, '86135467eed681cef0be0243f529132211653506b8b4ebb90a465736f1d7a1fb'),
+    'src/zonetool/zonetool/iw7/assets/particle_system.hpp': (758, '5908f984259938c4a64805e14336820704243820e9addfe47d03f41b7ab62147'),
+    'src/zonetool/zonetool/iw7/assets/physics_asset.hpp': (741, '2405f1dcd6c2e62a47f74d0a664c4366cdfb2f740d3057a2c30552d25ad95811'),
+    'src/zonetool/zonetool/iw7/assets/physics_fx_pipeline.hpp': (762, 'ce9fb7d2197deb9a9cad716cf609e3d1e26c3606c4da84d00ab6e1b67a9cf91c'),
+    'src/zonetool/zonetool/iw7/assets/physics_fx_shape.hpp': (750, '2f5717ddf052d15925bd7328a2009577c17ef4216f32f024377a291cb069d7df'),
+    'src/zonetool/zonetool/iw7/assets/physics_library.hpp': (749, '375343c2e727e1f82fefe19c32ed48240032d720c19b3b3ae484a3ad63c3a848'),
+    'src/zonetool/zonetool/iw7/assets/physics_sfx_event.hpp': (769, '8a6a8ada938bfbd99b97f26a462a00088f7a098b5530413ebba3f9e0569681a9'),
+    'src/zonetool/zonetool/iw7/assets/physics_vfx_event.hpp': (769, '7455e75bc34765a357e7a6cd2451045769232b0441686ce27ae95734b5727db3'),
+    'src/zonetool/zonetool/iw7/assets/pixelshader.hpp': (761, 'cffa5c276425f375697eae02aab6efd991b3d4eab7e79e0c745a91eea65d54e9'),
+    'src/zonetool/zonetool/iw7/assets/rawfile.hpp': (139, 'ed30186b27796e28a111271f2577bb20e6612c5f3a00ea8a84f0bacd4443e768'),
+    'src/zonetool/zonetool/iw7/assets/reticle.hpp': (729, 'eb07c87a716d5a76eedb7d94edf2e935244cd259175875b7a58cae32a5cfbb18'),
+    'src/zonetool/zonetool/iw7/assets/rumble.hpp': (728, '5478cd5401f27c0162486eaf888f8cb17fa2a0ccd3fd486c9a991f998dad9c38'),
+    'src/zonetool/zonetool/iw7/assets/rumble_graph.hpp': (737, 'f90e6566c73b8532e9824aaaa79f78597b215bb28d47838233b0eb7646c683bc'),
+    'src/zonetool/zonetool/iw7/assets/scriptabledef.hpp': (2189, 'ed1e3717b08d18ce17e04431764aa5bd2867c3a04c4ba8ee96c831761853f93a'),
+    'src/zonetool/zonetool/iw7/assets/scriptfile.hpp': (148, '902dd67debe872c4fe1785370e5bc9b8b43e52356f98a58836fad17eb97058a5'),
+    'src/zonetool/zonetool/iw7/assets/sound_bank.hpp': (723, 'e4ed88851d9bacc9d208fb31dc1a770365f62aa27064ec4513ca673262b3ca49'),
+    'src/zonetool/zonetool/iw7/assets/sound_globals.hpp': (12403, 'f3562a2a9beb70ec53cdf91e06bb7c50bea8f7636508d2a5b79b51a4ea5bbb6f'),
+    'src/zonetool/zonetool/iw7/assets/streaming_info.hpp': (745, 'd547939960a38d3835a2d86ed77b367c16010e47147d068df345caf73abfbec9'),
+    'src/zonetool/zonetool/iw7/assets/stringtable.hpp': (152, '374ce28b1bee3d36e1f1fd657c6ba8a3ae38799c97ebe02e8d63ee7c4083c56a'),
+    'src/zonetool/zonetool/iw7/assets/techset.hpp': (2700, 'beaedd847e3d9c43928d0fc098caa1254377c5404e745ea03cb73fdcc64eed5d'),
+    'src/zonetool/zonetool/iw7/assets/tracer.hpp': (725, '4e4b209085c4fc9a03ef96a0044dcc475f6a5813fca0d800ca81ebb2648b0751'),
+    'src/zonetool/zonetool/iw7/assets/ttfdef.hpp': (134, '42b45801a65b14d0eded46c944e0533ccbdfdf4bc26892037728a8c964cf5bcb'),
+    'src/zonetool/zonetool/iw7/assets/vectorfield.hpp': (737, '0cba4d00640c5829a8b072d491517bdfa895873bf32c0f62571c0f825e2eddd8'),
+    'src/zonetool/zonetool/iw7/assets/vertexdecl.hpp': (164, '134de72293622d9d03650ba43bee23ea5d5e4975fbf367ddc1aa17e3a7b0f410'),
+    'src/zonetool/zonetool/iw7/assets/vertexshader.hpp': (765, 'f5933d656f2f515bb7b7e0ac1235960b3f186923e7a5938794ee4a30894703e8'),
+    'src/zonetool/zonetool/iw7/assets/weapon_anim_package.hpp': (814, '2ffdaddeff258f5d68e325f61cfef9c135b282f45372270052d6a644060ff792'),
+    'src/zonetool/zonetool/iw7/assets/weapon_sfx_package.hpp': (758, 'f12c935f9c10038e598315f29934ed182399a88e64344d1df2dd7322843aca56'),
+    'src/zonetool/zonetool/iw7/assets/weapon_vfx_package.hpp': (758, 'd215252b6f567a4b473ca7d67ae8904c83b46e15a4c17ecbfead84da19243c2b'),
+    'src/zonetool/zonetool/iw7/assets/weaponattachment.hpp': (945, '1c4000505ae7229792561bb95ec48c654aff13e177b48cdf99108003bf48b5c2'),
+    'src/zonetool/zonetool/iw7/assets/weapondef.hpp': (2894, 'b519dcb68cc9d15e2e7f997a949bf01f8e9ec0acffdb32b2ee07aad23aa75972'),
+    'src/zonetool/zonetool/iw7/assets/xanim.hpp': (921, '7f485034bc2faddb24f1fac62532707291c59506e1574530937ae6df02fd44e5'),
+    'src/zonetool/zonetool/iw7/assets/xmodel.hpp': (897, '5e978a88b5e3e8a881f5eb21c12955d8cc1c72a210357f60e04cf3e86210a13a'),
+    'src/zonetool/zonetool/iw7/assets/xsurface.hpp': (735, '5b71c1049114cc9b06168576a845fe80596d1973e87f9d731cf47ecf539228a8'),
+    'src/zonetool/zonetool/iw7/functions.hpp': (1512, 'ddb66a3bcd48723bf0e1b3edd509f7dcac113f26a688cffaa11348bc55307cd9'),
+    'src/zonetool/zonetool/iw7/variables.hpp': (476, 'a472d37859e7a25febdcad9ca4e48a3f3699bb10ec8c1064afc47b0bbd1e8f6f'),
+    'src/zonetool/zonetool/iw7/zone.hpp': (868, '18c68575dcaecab76ea243eeb3decc57bfb066a9752118a91e95f4a9bd81736d'),
+    'src/zonetool/zonetool/iw7/zonetool.hpp': (3159, '612de0e4a64fceb5ec1b762fd5825d66c40f231e290c684d71896f50441f165a'),
+}
+
+
 def require(ok, message):
     if not ok: raise ValueError(message)
 
@@ -115,6 +188,48 @@ def read_records(text):
         elif line:
             require(current is not None, 'Dependency without record'); records[current].append(line)
     return records
+
+
+def multisurface_header_inputs(source, e7, read_raw, compile_raw, wanted, read):
+    """Extend only v2's baseline with the reviewed transitive writer headers."""
+    require((len(read_raw), hashlib.sha256(read_raw).hexdigest()) == E7_READ_PIN and
+            hashlib.sha256(compile_raw).hexdigest() == CL_LOG_SHA,
+            'Exact E7 header dependency and compiler journals required')
+    source, e7 = Path(source), Path(e7)
+    writer = key(source/'src/zonetool/zonetool/iw7/assets/xsurface.cpp')
+    cli = key(source/prepare_cli.PATHS[1])
+    records = read_records(read_raw.decode('utf-16'))
+    commands = read_records(compile_raw.decode('utf-16'))
+    require(writer in records and writer in commands and cli in commands,
+            'Exact E7 writer and CLI records required')
+    contexts = []
+    for name in (writer, cli):
+        require(len(commands[name]) == 1, 'Unique E7 compiler context required')
+        context = replace_one(r'/Fo"[^"]+"', '/Fo"<OBJECT>"', commands[name][0])
+        context = replace_one(r'\s+"?'+re.escape(name.upper())+r'"?\s*$', ' <SOURCE>', context)
+        contexts.append(context)
+    require(contexts[0] == contexts[1], 'E7 writer and CLI compiler contexts differ')
+    includes = [key(p) for p in records[writer]]
+    require(len(includes) == len(set(includes)), 'Duplicate E7 writer dependency refused')
+    pch = key(e7/'obj/community.pch')
+    require([p for p in includes if PureWindowsPath(p).suffix == '.pch'] == [pch],
+            'Only the known E7 PCH may be excluded for the prepared /Y- context')
+    headers = {key(source/name): (name, pin) for name, pin in MULTISURFACE_HEADER_PINS.items()}
+    require(len(headers) == 66 and sum(pin[0] for pin in MULTISURFACE_HEADER_PINS.values()) == 87204 and
+            not set(headers).intersection(wanted) and
+            set(includes) - {pch} - wanted == set(headers),
+            'Exact 66 additional multisurface headers required; missing or extra dependency refused')
+    pins = []
+    for name, (size, sha) in sorted(headers.values()):
+        path = source/name
+        raw = read(path, 16*1024, sha)
+        require((len(raw), hashlib.sha256(raw).hexdigest()) == (size, sha),
+                'Multisurface header pin differs: '+name)
+        pins.append({'Path':str(path), 'Bytes':size, 'SHA256':sha})
+    return pins, {'Count':len(pins), 'Bytes':sum(p['Bytes'] for p in pins),
+                  'E7TranslationUnit':writer, 'E7ReadSHA256':E7_READ_PIN[1],
+                  'E7CompileSHA256':CL_LOG_SHA, 'CompilerContextMatchesCLI':True,
+                  'PCHExcludedForPreparedYMinus':pch, 'Inputs':pins}
 
 
 def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals, *, resident_multisurface_v2=False):
@@ -418,6 +533,13 @@ def prepare(args):
     wanted.update(key(sdkbin/n) for n in SDK_PINS)
     wanted.add(key(job))
     wanted.update(anchors)
+    multisurface_headers = None
+    if resident_multisurface_v2:
+        header_pins, multisurface_headers = multisurface_header_inputs(
+            source, e7, e7_dependency_text, cl_raw, wanted, read)
+        for pin in header_pins:
+            wanted.add(key(pin['Path']))
+            expected[key(pin['Path'])] = pin
     missing = []; inputs = []
     for path in sorted(wanted):
         actual = path_checked(path); require(actual.is_file(), 'Recorded input missing: '+path)
@@ -481,6 +603,8 @@ def prepare(args):
             e7_dependency_text={'read':e7_dependency_text,'compile':cl_raw,'link':link_raw}
                 if surface_count_diagnostic or resident_multisurface_v2 else None,
             resident_multisurface_v2=resident_multisurface_v2)
+        if resident_multisurface_v2:
+            reuse['ResidentMultiSurfaceV2']['AdditionalHeaderInputs'] = multisurface_headers
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
                       'Receipt':str(path_checked(args.reuse_compile_receipt))})
         for pin in reused_inputs:
