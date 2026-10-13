@@ -458,8 +458,29 @@ namespace
                 std::array<wchar_t, 32768> temporary{};
                 const auto length = GetTempPathW(static_cast<DWORD>(temporary.size()), temporary.data());
                 check(length > 0 && length < temporary.size(), "Windows temporary path unavailable");
-                const std::filesystem::path parent(std::wstring(temporary.data(), length));
-                check(parent.is_absolute(), "Windows temporary path is not absolute");
+                const std::filesystem::path proposed(std::wstring(temporary.data(), length));
+                check(proposed.is_absolute(), "Windows temporary path is not absolute");
+                // TMP may use short names, junctions or different casing. Admit the final local DOS path.
+                owned_handle parent_handle(CreateFileW(proposed.c_str(), FILE_READ_ATTRIBUTES,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+                    FILE_FLAG_BACKUP_SEMANTICS, nullptr));
+                check(parent_handle.get() != INVALID_HANDLE_VALUE, "Windows temporary directory could not be opened");
+                BY_HANDLE_FILE_INFORMATION parent_info{};
+                check(GetFileInformationByHandle(parent_handle.get(), &parent_info)
+                    && (parent_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY), "Windows temporary parent is not a directory");
+                const auto capacity = GetFinalPathNameByHandleW(parent_handle.get(), nullptr, 0,
+                    FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+                check(capacity > 0 && capacity <= 32767, "Windows temporary directory final path unavailable");
+                std::vector<wchar_t> resolved(static_cast<std::size_t>(capacity) + 1u);
+                const auto resolved_length = GetFinalPathNameByHandleW(parent_handle.get(), resolved.data(),
+                    static_cast<DWORD>(resolved.size()), FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+                check(resolved_length > 0 && resolved_length < resolved.size(), "Windows temporary directory final path truncated");
+                const std::wstring final_path(resolved.data(), resolved_length);
+                check(final_path.size() >= 7 && final_path.compare(0, 4, L"\\\\?\\") == 0
+                    && final_path[5] == L':' && final_path[6] == L'\\'
+                    && ((final_path[4] >= L'A' && final_path[4] <= L'Z') || (final_path[4] >= L'a' && final_path[4] <= L'z')),
+                    "Windows temporary directory final path is not a local DOS drive path");
+                const std::filesystem::path parent(final_path.substr(4));
                 const auto prefix = std::wstring(L"selected-xpak-fixture-") + std::to_wstring(GetCurrentProcessId())
                     + L"-" + std::to_wstring(GetTickCount64()) + L"-";
                 for (unsigned attempt = 0; attempt < 32 && !directory_created_; ++attempt)
