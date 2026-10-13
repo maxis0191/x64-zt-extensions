@@ -772,11 +772,12 @@ only material names in `material_dependencies`; no texture pixels, binding UV
 transforms or shader settings accompany them. Names alone cannot reconstruct
 the missing material data.
 
-After a real export with the D candidate supplies ordered material names, the next decision is a
-bounded observation of **one material and one image**, including any aliased
+After a real export with the D candidate supplies ordered material names, the
+next operation is a bounded observation of **one material and one image**, including any aliased
 slots. The [selected-image boundary](../tools-source/asset-bridge/t7-iw7/T7-IMAGES.md#selected-material-decision-2026-10-13)
 records the exact T7 fields, residency/lifetime uncertainty and channel mismatch.
-No new native/export hook is authorized before that manifest and observation.
+That first instrumentation should observe bounded metadata in the existing
+callback; pixel capture follows only after the selected dependency is qualified.
 
 If those observations support capture, reuse the resident copier/DDS serializer,
 then adapt [MaterialV2](../tools-source/asset-bridge/surfaces/prepare_material_v2.py)

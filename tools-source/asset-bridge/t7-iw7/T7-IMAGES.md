@@ -146,12 +146,13 @@ placeholder material, or establish rendered quality.
 
 ## Selected material decision (2026-10-13)
 
-After a real export with the D candidate provides ordered `material_dependencies`, observe one named
-material and one selected image, including the chosen material's aliased slots.
+After a real export with the D candidate provides ordered `material_dependencies`,
+observe one named material and one selected image, including its aliased slots.
 The seam is [native_export.inc](native_export.inc)'s
 `selected->meshMaterials[0].materials[i]`, currently reduced to `material->name`.
 The callback scope above remains a placement to qualify, not a lifetime guarantee.
-Do not add a native hook or image-capture implementation before these observations.
+Use narrowly bounded metadata instrumentation for these observations before
+adding pixel capture; this decision does not require a pixel exporter to exist first.
 
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
