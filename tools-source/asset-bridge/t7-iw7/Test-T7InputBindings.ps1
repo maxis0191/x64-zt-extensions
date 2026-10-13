@@ -264,4 +264,49 @@ if($MultisurfaceFixturePlanPath) {
     if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($MultisurfaceFixturePlanPath))).ToLowerInvariant() -cne
         '23b93e754c725b81b438e12498fac8c93257aa43368889fecc22e3ff1fefa3dc'){throw 'Frozen B changed during testing.'}
 }
+function New-ZombiesBindingFixture {
+    $fixture=New-StreamedBindingFixture
+    $fixture.BuildProfile.Name='t7-zombies-catalogue-observation-c'
+    $fixture.BuildProfile|Add-Member NoteProperty ObservationSchema 'iw7.t7-zm-observation/1'
+    $fixture.ReuseCompile|Add-Member NoteProperty ZombiesObservationC ([pscustomobject]@{
+        Schema='iw7.t7-zm-observation-build/1';SourceProfile='t7-zombies-catalogue-observation-c';
+        BaseCLIBytes=107785;BaseCLISHA256='c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50';
+        CLIBytes=118485;CLISHA256='917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987'})
+    foreach($row in @(
+        @('ObserverSource','native_catalog_zombies_observation.inc',9668,'50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181'),
+        @('ObserverAdapter','prepare_catalog_zombies_observation.py',7613,'1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445'))) {
+        $pin=[pscustomobject]@{Path=('C:\fixture\'+$row[1]);Bytes=$row[2];SHA256=$row[3]}
+        $fixture.BuildProfile|Add-Member NoteProperty $row[0] $pin
+        $fixture.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+    }
+    $cli=@($fixture.Bindings|Where-Object Path -CEQ 'C:\plan\prepared\zonetool.cpp')[0]
+    $cli.Bytes=118485;$cli.SHA256='917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987'
+    return $fixture
+}
+Assert-T7InputBindings (New-ZombiesBindingFixture);$checks++
+foreach($change in @(
+    {$fixture.BuildProfile.Name='t7-catalog-message-publication'},
+    {$fixture.BuildProfile.ObservationSchema='wrong'},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('ZombiesObservationC')},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedStaticV1')},
+    {$fixture.ReuseCompile.ZombiesObservationC.Schema='wrong'},
+    {$fixture.ReuseCompile.ZombiesObservationC.SourceProfile='t7-catalog-message-publication'},
+    {$fixture.ReuseCompile.ZombiesObservationC.BaseCLIBytes=107784},
+    {$fixture.ReuseCompile.ZombiesObservationC.BaseCLISHA256=('a'*64)},
+    {$fixture.ReuseCompile.ZombiesObservationC.CLIBytes=118484},
+    {$fixture.ReuseCompile.ZombiesObservationC.CLISHA256=('a'*64)},
+    {$fixture.ReuseCompile.ZombiesObservationC|Add-Member NoteProperty Unbounded $true},
+    {$fixture.BuildProfile.ObserverSource.Bytes=9667},
+    {$fixture.BuildProfile.ObserverSource.SHA256=('a'*64)},
+    {$fixture.BuildProfile.ObserverAdapter.Path='C:\other.py'},
+    {$fixture.BuildProfile.ObserverAdapter|Add-Member NoteProperty Optional $true},
+    {@($fixture.Bindings|Where-Object Path -CEQ 'C:\fixture\native_catalog_zombies_observation.inc')[0].IsText=$false},
+    {@($fixture.Bindings|Where-Object Path -CEQ 'C:\plan\prepared\zonetool.cpp')[0].Bytes=107785},
+    {$fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions[1].WiredSHA256=('a'*64)},
+    {$fixture.Bindings+=$fixture.Bindings[-1]},
+    {$fixture.Bindings=$fixture.Bindings[0..149]},
+    {$fixture.ReuseCompile.RecompiledZonetool=$false}
+)) {
+    $fixture=New-ZombiesBindingFixture;. $change;Must-RefuseBinding $fixture
+}
 [ordered]@{Checks=$checks;ActualDefaultChecks=$entryChecks;Passed=$true;NativeInvoked=$false;OpaqueContentRead=$false}|ConvertTo-Json -Compress
