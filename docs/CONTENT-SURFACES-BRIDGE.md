@@ -761,6 +761,35 @@ diffuse-byte readback. `Ready`, `PixelsVerified`, `RecipientReferenceResolved`,
 Remaining work is the separately authorized recipient/rendered witness and native
 negative strict-reader matrix; this result authorizes no game launch or retry.
 
+## T7 five-surface material boundary (2026-10-13)
+
+Source audit at `c7850579`: the v2 geometry route preserves surface slots and UVs,
+but [rigid_export.py](../ops/model-lab/rigid_export.py) still requires every target
+to be `mopw/character_park_clown_zombie_shoes`. For the five-surface candidate,
+that means five recipient bindings, not five transferred BO3 appearances.
+[native_export.inc](../tools-source/asset-bridge/t7-iw7/native_export.inc) records
+only material names in `material_dependencies`; no texture pixels, binding UV
+transforms or shader settings accompany them. Names alone cannot reconstruct
+the missing material data.
+
+After export D supplies its real ordered material names, the next decision is a
+bounded observation of **one material and one image**, including any aliased
+slots. The [selected-image boundary](../tools-source/asset-bridge/t7-iw7/T7-IMAGES.md#selected-material-decision-2026-10-13)
+records the exact T7 fields, residency/lifetime uncertainty and channel mismatch.
+No new native/export hook is authorized before that manifest and observation.
+
+If those observations support capture, reuse the resident copier/DDS serializer,
+then adapt [MaterialV2](../tools-source/asset-bridge/surfaces/prepare_material_v2.py)
+to a single named image/material with the existing IW7 techset and state sidecars.
+Qualify channels and UV mapping before deriving the selected slot/alias group;
+keep other bindings explicit and aliases consistent. Reuse ModelFF/readback,
+with an oracle for the actual image format/mips rather than relaxing the existing
+32x32 witness check. This is a proposed route for real T7 pixels on an IW7
+material, not automatic BO3 material parity. Material C proves its synthetic
+pixel roundtrip only; real capture, DirectXTex import of that capture, material
+semantics and rendered appearance remain unproved. This documentation adds no
+runtime evidence or execution authorization.
+
 ## Validation record and failures retained
 
 On2026-10-12, Python3.12.10 passes29 synthetic tests, plus11 checks against actual
