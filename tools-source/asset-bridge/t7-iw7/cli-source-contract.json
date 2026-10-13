@@ -27,8 +27,8 @@
       "lf_sha256": "80fa0a07d766be8463422983a4d1368e3ca3fd3f44f730778be317c68f49c760"
     },
     "native_export.inc": {
-      "lf_bytes": 11343,
-      "lf_sha256": "288cd86fbdb3b81adb7ad39a10c6d0017b4e2873561491348d5cc7c1091470b7"
+      "lf_bytes": 12940,
+      "lf_sha256": "1a6b1b43ae11722f6587f1ba97667781c275e33e036feb732b5796a3fc16ba41"
     },
     "native_catalog.inc": {
       "lf_bytes": 3699,
@@ -47,8 +47,8 @@
       "lf_sha256": "c59ed465bf7b2116c40b59be6c0a686dce342aa4a2c6b39ae024a43c186f776b"
     },
     "prepare_cli.py": {
-      "lf_bytes": 5338,
-      "lf_sha256": "82377c0974063086bf0e265468116f3c252725fcc4e37aa778acf6b19ba1e252"
+      "lf_bytes": 5382,
+      "lf_sha256": "025e4480bf0b55025d3a2ebeaff8b538c9ca4ac76151dd68c338464341c16331"
     },
     "test_cli_patch.py": {
       "lf_bytes": 4687,
@@ -63,8 +63,12 @@
       "lf_sha256": "c0ff869f76080550dcd3e6b876d2648936499bd8a55611c78cb32fe181ae9b74"
     },
     "zonetool-fab9358-t7-resident-cli.patch": {
-      "lf_bytes": 21728,
-      "lf_sha256": "d9b02ed8a5902ee25e87ed1240ef0f7f9b9bc1575e12431e97e2e4efb6ff3c30"
+      "lf_bytes": 23419,
+      "lf_sha256": "fe56b42e38e6f819b7f5893eed59a07f0cfff8f692dba104e7cd71d7e295fe8d"
+    },
+    "test_triangle_ownership.py": {
+      "lf_bytes": 4756,
+      "lf_sha256": "76b5c2dcaa6c8017a9097a6e0755d2a0d66cfc954c99ff660c84cb631cecb864"
     }
   },
   "external_adapter": {
@@ -94,7 +98,7 @@
   },
   "patched_source_lf_sha256": {
     "src/zonetool/main.cpp": "ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615",
-    "src/zonetool/zonetool/t7/zonetool.cpp": "adcfa84e085a78ca554f6a6dee8efc07c9afdae035d509f760ef4c8b6f67616d",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e",
     "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
     "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
   },
@@ -120,7 +124,7 @@
   "reused_resource_inputs": 1,
   "full_or_incremental_build_invoked": false,
   "binary_input_contents_read": false,
-  "python_tests_passed": 27,
+  "python_tests_passed": 44,
   "python_tests_use_only_source_and_invented_records": true,
   "git_apply_check_passed": true,
   "native_patch_applied": false,

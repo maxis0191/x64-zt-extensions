@@ -43,6 +43,7 @@ def render(native):
 #include <utils/cryptography.hpp>
 #include <utils/flags.hpp>
 #include "t7_iw7_resident_model.hpp"
+#include "zonetool/iw7/assets/xsurface.hpp"
 #include <atomic>
 #include <mutex>
 
