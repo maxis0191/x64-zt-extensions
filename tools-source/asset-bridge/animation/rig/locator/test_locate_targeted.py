@@ -24,11 +24,13 @@ def fixture(parts, **limits):
 
 
 class TargetedTests(unittest.TestCase):
-    def test_only_three_reviewed_canonical_entries_are_allowed_one_at_a_time(self):
-        for address in ("0x140a17970", "0x140a17e70", "0x140dd1f90"):
+    def test_only_four_reviewed_canonical_entries_are_allowed_one_at_a_time(self):
+        for address in ("0x140a17970", "0x140a17e70", "0x140dd1f90", "0x1405f04a0"):
             self.assertEqual(parse_entry(address), int(address, 16))
         for address in ("0x140a17e71", "0X140A17E70", "0x140a17970,0x140a17e70",
-                        "0x140dd1f91", "0X140DD1F90", "0x140a7ca90", "0x140dd1f90,0x140a7ca90"):
+                        "0x140dd1f91", "0X140DD1F90", "0x140a7ca90", "0x140dd1f90,0x140a7ca90",
+                        "0x1405f04a1", "0X1405F04A0", "0x1405f04a0,0x140dd1f90",
+                        "0x1403bc140", "0x14126a090"):
             with self.assertRaisesRegex(ValueError, "seed"):
                 parse_entry(address)
 
@@ -124,6 +126,35 @@ class TargetedTests(unittest.TestCase):
         self.assertEqual((row["mnemonic"], row["operands"]), ("mov", "qword ptr [rcx], rax"))
         self.assertTrue(row["visited_in_static_walk"])
         self.assertEqual(result["fragments"][0]["offset_58_overlap_candidates"], [])
+        self.assertFalse(result["actual_first_writer_established"])
+
+    def test_r9_and_saved_alias_stores_survive_without_following_the_call(self):
+        # Synthetic output-pointer examples, not instructions read from H.
+        for payload, destination in (
+            (b"\x49\x89\x01\xc3", "qword ptr [r9], rax"),
+            (b"\x4c\x89\xcb" + relative(0xe8, TEXT + 3, TEXT + 0x10000)
+             + b"\x48\x89\x03\xc3", "qword ptr [rbx], rax"),
+        ):
+            with self.subTest(destination=destination):
+                result = fixture([(0, payload)]).analyze(TEXT)
+                fragment = result["fragments"][0]
+                self.assertTrue(any(row["operands"] == destination and row["visited_in_static_walk"]
+                                    for row in fragment["instructions"]))
+                self.assertEqual(fragment["offset_58_overlap_candidates"], [])
+                self.assertEqual(result["fragment_count"], 1)
+                self.assertEqual(result["external_callees_followed"], 0)
+                self.assertFalse(result["actual_first_writer_established"])
+
+    def test_conditional_r9d_clobber_remains_visible_without_alias_or_path_proof(self):
+        # test r9,r9; je store; mov r9d,1; store: mov [r9],rax; ret.
+        # A register name at the store cannot prove entry-R9 identity on every path.
+        payload = b"\x4d\x85\xc9\x74\x06\x41\xb9\x01\x00\x00\x00\x49\x89\x01\xc3"
+        result = fixture([(0, payload)]).analyze(TEXT)
+        rows = result["fragments"][0]["instructions"]
+        self.assertTrue(any(row["operands"] == "r9d, 1" and row["visited_in_static_walk"] for row in rows))
+        self.assertTrue(any(row["operands"] == "qword ptr [r9], rax" and row["visited_in_static_walk"] for row in rows))
+        self.assertEqual(result["fragments"][0]["offset_58_overlap_candidates"], [])
+        self.assertEqual(result["control_edge_count"], 1)
         self.assertFalse(result["actual_first_writer_established"])
 
     def test_fragment_count_byte_and_total_limits_fail_closed(self):
