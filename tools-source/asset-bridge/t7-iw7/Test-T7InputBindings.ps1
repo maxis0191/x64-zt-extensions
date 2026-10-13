@@ -88,7 +88,7 @@ function New-StreamedBindingFixture {
         Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'})
     foreach($row in @(
         @('prepared/main.cpp',13052,'ca8875cf36bdf9a8c8e6142969eab95194d214d09c90064e202d68ff9302fcb3',43146,'e599c3e6945e2192443b8a3a3e274d5d36b133b41beb38d6d9234c669defca01'),
-        @('prepared/zonetool.cpp',105327,'7b76fc52769de8648a3449fd94007ed6047f0963d97d06fdc88f90753442fd48',105381,'501570c6b69971052f32b8ebdf1dfc1318a73b55d251c1f2ab8655625d412afe'))) {
+        @('prepared/zonetool.cpp',105908,'eacd6cca7483f781ffa6202d7b10cb05c8ee81fc56e74e15c8d144ff6994a515',105962,'edaeaeb7865ad0ef55fa368619ed894f9ea1e10654754b0825a83ddf66f23379'))) {
         $transition=@($fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions|Where-Object Path -CEQ $row[0])[0]
         $transition.Bytes=$row[1];$transition.SHA256=$row[2];$transition.WiredBytes=$row[3];$transition.WiredSHA256=$row[4]
         $path='C:\plan\'+$row[0].Replace('/','\')
@@ -97,7 +97,7 @@ function New-StreamedBindingFixture {
     }
     foreach($row in @(
         @('streamed_mesh_payload.hpp',17917,'4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f'),
-        @('t7_iw7_streamed_model.hpp',10708,'baacda879ad058bbcba115362d8b86d10efd40c70040efd6bd036047b387f139'),
+        @('t7_iw7_streamed_model.hpp',11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
         @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
         @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
         @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))) {

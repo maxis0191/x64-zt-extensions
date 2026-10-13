@@ -118,6 +118,10 @@ function Assert-T7CatalogueHostReceiptIdentity($State,$Receipt) {
     $links=@(@($State.Plan.CandidateSource,'t7-zonetool-candidate.exe'),@($State.Plan.EngineSource,'BlackOps3_UnrankedDedicatedServer.exe'),
         @($State.Plan.SteamSource,'steam_api64.dll'),@($State.Plan.Zone.Path,$State.Plan.Zone.RelativePath))
     foreach($bootstrap in @(Get-T7CatalogueBootstraps $State.Plan)){$links+=,@($bootstrap.Path,$bootstrap.RelativePath)}
+    if($State.Plan.PSObject.Properties['SelectedStreamedStaticV1']){
+        $links+=,@($State.Plan.ExportRequestFile.Path,'streamed-request.json')
+        $links+=,@($State.Plan.SelectedXpakProvider.Metadata.Path,$State.Plan.SelectedXpakProvider.RelativePath)
+    }
     if($links.Count -ne $metadata.Count){throw 'Plan alias count differs.'}
     foreach($link in $links){
         $original=@($originals|Where-Object Path -CEQ $link[0])
