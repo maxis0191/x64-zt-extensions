@@ -131,6 +131,65 @@ try {
     Check ($fourteen.Count -eq 14 -and [Text.Encoding]::ASCII.GetByteCount($maximum) -le 8192) 'Full envelope exceeds message caps.'
     Check ($r.MessageOutcome -ceq 'Prefix' -and $r.ContextOutcome -ceq 'Observed' -and $r.CallersOutcome -ceq 'Observed' -and $r.Events.Count -eq 6) 'Whole profile lost legacy records or upgraded a prefix.'
     Check ((ConvertFrom-T7CatalogueMessage ($maximum.Replace("`n","`r`n"))).MessageOutcome -ceq 'Prefix') 'Maximum CRLF envelope lost.'
+    # C removes only its finite marker, then applies the unchanged F validator.
+    function Observation-Line([string]$Body,[uint]$Sequence=0,[string]$Thread='42') {
+        '[T7_ZM_OBS] schema=iw7.t7-zm-observation/1 seq='+$Sequence+' tid='+$Thread+' '+$Body+"`n"
+    }
+    $observation=Observation-Line 'kind=phase phase=0'
+    $mixed=$enabled+"`r`n"+$observation+$before+"`n"
+    $split=Split-T7CatalogueZombiesObservation $mixed
+    Check ($split.LegacyText -ceq ($enabled+"`r`n"+$before+"`n") -and $split.Records.Count -eq 1) 'C changed retained legacy bytes.'
+    $r=ConvertFrom-T7CatalogueZombiesObservation ($full+$observation)
+    Check ($r.MessageOutcome -ceq 'Observed' -and $r.ZombiesObservations.Count -eq 1 -and $r.ZombiesObservationBytes -eq $observation.Length) 'C changed message qualification.'
+    Check ((ConvertFrom-T7CatalogueZombiesObservation $full).ZombiesObservations.Count -eq 0) 'C fabricated absent observations.'
+    Refuses {ConvertFrom-T7CatalogueMessage ($full+$observation)}
+    $rows=[Collections.Generic.List[string]]::new()
+    for($phase=0;$phase -lt 14;$phase++){$rows.Add((Observation-Line ("kind=phase phase=$phase") $rows.Count))}
+    foreach($body in @(
+        'kind=raw_enter phase=13 caller=FFFFFFFFFFFFFFFF type=47 error=1 wait=-2147483648',
+        'kind=raw_return phase=13 result=ffffffffffffffff',
+        'kind=load_enter phase=13 caller=0000000000000000 count=4294967295 sync=2147483647 suppress=-2147483648',
+        'kind=load_return phase=13')){
+        for($i=0;$i -lt 4;$i++){$rows.Add((Observation-Line $body $rows.Count '4294967295'))}
+    }
+    for($i=0;$i -lt 8;$i++){
+        $body='kind=zone index='+($i%2)+' status=read nul=0 name_hex='+('ab'*64)+
+            ' alloc=18446744073709551615 free=18446744073709551615 alloc_slot=18446744073709551615 free_slot=18446744073709551615'
+        $rows.Add((Observation-Line $body $rows.Count))
+    }
+    $observationMaximum=$rows -join ''
+    $combined=$maximum+$observationMaximum
+    $split=Split-T7CatalogueZombiesObservation $combined
+    Check ($rows.Count -eq 38 -and $split.ObservationBytes -le 8192 -and $split.CombinedBytes -gt 8192 -and $split.CombinedBytes -le 16384) 'C maximum envelope bounds differ.'
+    Check ($split.LegacyText -ceq $maximum -and $split.Records[-1].alloc -eq [ulong]::MaxValue -and $split.Records[14].wait -eq [int]::MinValue) 'C lost native integer precision.'
+    $r=ConvertFrom-T7CatalogueZombiesObservation $combined
+    Check ($r.MessageOutcome -ceq 'Prefix' -and $r.ZombiesObservations.Count -eq 38 -and $r.Events.Count -eq 6) 'C upgraded a prefix or lost legacy records.'
+    Check ((ConvertFrom-T7CatalogueZombiesObservation ($combined.Replace("`n","`r`n"))).ZombiesObservations.Count -eq 38) 'C CRLF envelope rejected.'
+    foreach($body in @(
+        'kind=phase phase=14','kind=raw_enter phase=0 caller=0000000000000000 type=46 error=0 wait=0',
+        'kind=raw_enter phase=0 caller=0000000000000000 type=47 error=2 wait=0',
+        'kind=raw_enter phase=0 caller=0000000000000000 type=47 error=0 wait=-2147483649',
+        'kind=load_enter phase=0 caller=0000000000000000 count=4294967296 sync=0 suppress=0',
+        'kind=load_enter phase=0 caller=0000000000000000 count=1 sync=2147483648 suppress=0',
+        'kind=zone index=2 status=unreadable','kind=zone index=0 status=read nul=1 name_hex=a alloc=0 free=0 alloc_slot=0 free_slot=0',
+        'kind=zone index=0 status=read nul=1 name_hex=AB alloc=0 free=0 alloc_slot=0 free_slot=0',
+        'kind=zone index=0 status=unreadable nul=1 name_hex= alloc=0 free=0 alloc_slot=0 free_slot=0',
+        'kind=zone index=0 status=read nul=0 name_hex= alloc=0 free=0 alloc_slot=0 free_slot=0',
+        'kind=zone index=0 status=read nul=1 name_hex= alloc=18446744073709551616 free=0 alloc_slot=0 free_slot=0',
+        'kind=phase phase=0 extra=0','kind=unknown')){Refuses {Split-T7CatalogueZombiesObservation (Observation-Line $body)}}
+    foreach($bad in @($observation.TrimEnd("`n"),$observation.Replace('/1','/2'),$observation.Replace('seq=0','seq=64'),
+        $observation.Replace('tid=42','tid=0'),$observation.Replace('tid=42','tid=4294967296'),
+        ($observation+$observation),($observation+(Observation-Line 'kind=phase phase=0' 1)),
+        ('x'*16385),([char]0x80+$observation),($observationMaximum+(Observation-Line 'kind=zone index=0 status=unreadable' 38)))){
+        Refuses {Split-T7CatalogueZombiesObservation $bad}
+    }
+    Refuses {Split-T7CatalogueZombiesObservation (Observation-Line ('kind=phase phase='+('0'*500)))} 'bounded'
+    Refuses {ConvertFrom-T7CatalogueZombiesObservation ($full+"unknown stderr`n"+$observation)}
+    Refuses {ConvertFrom-T7CatalogueZombiesObservation (('x'*8193)+"`n"+$observation)}
+    $partial=$full+'[T7_C';$split=Split-T7CatalogueZombiesObservation ($observation+$partial)
+    Check ($split.LegacyText -ceq $partial) 'C invented a trailing legacy newline.'
+    Assert-T7CatalogueTraceSize 't7-zombies-catalogue-observation-c' 16384;$checks++
+    Refuses {Assert-T7CatalogueTraceSize 't7-zombies-catalogue-observation-c' 16385} 'cap exceeded'
     foreach($reader in 'ConvertFrom-T7CatalogueTrace','ConvertFrom-T7CatalogueExitContext','ConvertFrom-T7CatalogueCallers') {Refuses {& $reader $full}}
     Assert-T7CatalogueTraceSize 't7-catalog-message' 8192;$checks++
     Refuses {Assert-T7CatalogueTraceSize 't7-catalog-message' 8193} 'cap exceeded'
@@ -145,6 +204,10 @@ try {
     [IO.File]::WriteAllBytes($log,[byte[]]::new(8193))
     Refuses {Read-T7CatalogueTrace $plan $state $context} 'cap exceeded'
     Check ($context.Guards.Count -eq 0 -and $state.MessageOutcome -ceq 'PresentUnqualified') 'Oversized stderr inspected or accepted.'
+    [IO.File]::WriteAllText($log,$combined,[Text.UTF8Encoding]::new($false))
+    $plan.CandidateProfile='t7-zombies-catalogue-observation-c'
+    Read-T7CatalogueTrace $plan $state $context
+    Check ($state.MessageOutcome -ceq 'Prefix' -and $state.ZombiesObservations.Count -eq 38 -and $state.CatalogueOutcome -ceq 'NoCatalogue') 'C trace presence became a catalogue.'
     [ordered]@{Status='Passed';Checks=$checks;NativeTypesLoaded=$false;RealLeaseAcquired=$false;NativeProcessStarted=$false;OwnerStockRead=$false;MessageBytes='InventedOpaqueBytesOnly'}|ConvertTo-Json
 }finally {
     Close-Guards
