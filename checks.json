@@ -1,0 +1,924 @@
+{
+  "product": "x64-zt-extensions",
+  "checks": [
+    {
+      "id": "tools-source-asset-bridge-model",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/model",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-h1-fixture",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/h1-fixture",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-t7-bridge",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/t7-bridge",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-t7-iw7",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/t7-iw7",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-t7-iw7-animated",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/t7-iw7/animated",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-weapon",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/weapon",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-world",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/world",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-animation",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/animation",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-animation-rig",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/animation/rig",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-animation-rig-locator",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/animation/rig/locator",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-rig-abi",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/rig-abi",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-surfaces",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/surfaces",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-surfaces-sound",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/surfaces/sound",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-surfaces-sound-native-checksum",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/surfaces/sound/native-checksum",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-surfaces-sound-native-checksum-flac-dump",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-recipient",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/recipient",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-asset-bridge-recipient-script-names",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/recipient/script-names",
+        "-v"
+      ]
+    },
+    {
+      "id": "doom_texture_test",
+      "command": [
+        "python",
+        "-B",
+        "tests/ops/doom_texture_test.py"
+      ]
+    },
+    {
+      "id": "model_lab_test",
+      "command": [
+        "python",
+        "-B",
+        "tests/ops/model_lab_test.py"
+      ]
+    },
+    {
+      "id": "test_locator_supervisor",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/animation/rig/locator/test_locator_supervisor.ps1"
+      ]
+    },
+    {
+      "id": "Test-H1Native",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/h1-fixture/Test-H1Native.ps1"
+      ]
+    },
+    {
+      "id": "Test-H1Dump",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/h1-fixture/Test-H1Dump.ps1"
+      ]
+    },
+    {
+      "id": "Test-H1ProviderAdapter",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/h1-fixture/Test-H1ProviderAdapter.ps1"
+      ]
+    },
+    {
+      "id": "Test-SteamMetadataHost",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-SteamMetadataHost.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7Prepatch",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7Prepatch.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7Catalogue",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7Catalogue.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7ResidentExport",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExport.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7ResidentExportDiagnostic",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportDiagnostic.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7ResidentExportV2",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportV2.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueTrace",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueTrace.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueExitContext",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueExitContext.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueCallers",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueCallers.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueMessage",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueMessage.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CataloguePublication",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CataloguePublication.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueMain",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueMain.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueBootstrap",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueBootstrap.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueBootstraps",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueBootstraps.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7BootstrapGroup",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7BootstrapGroup.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueHost",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueHost.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueHostIncident",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueHostIncident.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7CatalogueOpaqueManifest",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueOpaqueManifest.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7BuildProfile",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-T7BuildProfile.ps1"
+      ]
+    },
+    {
+      "id": "Test-Watchpoint",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/rig-abi/Test-Watchpoint.ps1"
+      ]
+    },
+    {
+      "id": "Test-WatchMembership",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/rig-abi/Test-WatchMembership.ps1"
+      ]
+    },
+    {
+      "id": "Test-WatchSourceBindings",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/rig-abi/Test-WatchSourceBindings.ps1"
+      ]
+    },
+    {
+      "id": "test_observer_adapter",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/world/test_observer_adapter.ps1"
+      ]
+    },
+    {
+      "id": "test_observer_finalization",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/world/test_observer_finalization.ps1"
+      ]
+    },
+    {
+      "id": "test_observer_console",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/world/test_observer_console.ps1"
+      ]
+    },
+    {
+      "id": "test_sound_ff_transaction",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1"
+      ]
+    },
+    {
+      "id": "test_sound_ff_deadlines",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_sound_ff_deadlines.ps1"
+      ]
+    },
+    {
+      "id": "test_sound_ff_accounting",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_sound_ff_accounting.ps1"
+      ]
+    },
+    {
+      "id": "test_sound_job_memory",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_sound_job_memory.ps1"
+      ]
+    },
+    {
+      "id": "test_codec_admission",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_codec_admission.ps1"
+      ]
+    },
+    {
+      "id": "test_codec_profiles",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_codec_profiles.ps1"
+      ]
+    },
+    {
+      "id": "test_seal_inputs",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/native-checksum/test_seal_inputs.ps1"
+      ]
+    },
+    {
+      "id": "test_seal_entry_guards",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/native-checksum/test_seal_entry_guards.ps1"
+      ]
+    },
+    {
+      "id": "test_build_quarantine",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_quarantine.ps1"
+      ]
+    },
+    {
+      "id": "Test-NativeProbeSource",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/animation/Test-NativeProbeSource.ps1"
+      ]
+    },
+    {
+      "id": "Test-AnimationFFSource",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/animation/Test-AnimationFFSource.ps1",
+        "-ProviderRoot",
+        "{workspace}"
+      ]
+    },
+    {
+      "id": "Test-StockBindingSource",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/common/Test-StockBindingSource.ps1"
+      ]
+    },
+    {
+      "id": "test_material_v2_adapter",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/test_material_v2_adapter.ps1"
+      ]
+    },
+    {
+      "id": "test_material_v2_diagnostic",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/test_material_v2_diagnostic.ps1"
+      ]
+    },
+    {
+      "id": "test_material_v2_compiler",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/test_material_v2_compiler.ps1"
+      ]
+    },
+    {
+      "id": "test_codec_cleanup",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_codec_cleanup.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7BuildDeadline",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-T7BuildDeadline.ps1",
+        "-H1Core",
+        "{workspace}/tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7LinkTelemetry",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-T7LinkTelemetry.ps1",
+        "-Providers",
+        "{workspace}"
+      ]
+    },
+    {
+      "id": "test_observer_stages",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/world/test_observer_stages.ps1",
+        "-StageProviderRoot",
+        "{workspace}",
+        "-LinkProfilePath",
+        "{workspace}/tools-source/asset-bridge/t7-iw7/T7Build.Profile.ps1"
+      ]
+    },
+    {
+      "id": "Test-H1Compiler",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/h1-fixture/Test-H1Compiler.ps1",
+        "-PolicySource",
+        "{workspace}/tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1"
+      ]
+    },
+    {
+      "id": "Test-H1Observer",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/h1-fixture/Test-H1Observer.ps1",
+        "-MaterialObserverSource",
+        "{workspace}/tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs"
+      ]
+    },
+    {
+      "id": "Test-Recipient",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/recipient/Test-Recipient.ps1"
+      ]
+    },
+    {
+      "id": "Test-RecipientStock",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/recipient/Test-RecipientStock.ps1",
+        "-StockBindingPath",
+        "{workspace}/tools-source/asset-bridge/common/StockBinding.Core.ps1"
+      ]
+    },
+    {
+      "id": "Test-RecipientCompleteStock",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/recipient/Test-RecipientCompleteStock.ps1",
+        "-StockBindingPath",
+        "{workspace}/tools-source/asset-bridge/common/StockBinding.Core.ps1"
+      ]
+    },
+    {
+      "id": "Test-RecipientLight",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/recipient/Test-RecipientLight.ps1"
+      ]
+    },
+    {
+      "id": "test_writer",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "ops/doom-source/test_writer.ps1"
+      ]
+    },
+    {
+      "id": "test_ff",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "ops/doom-source/test_ff.ps1"
+      ]
+    },
+    {
+      "id": "test_prepare_rigid_mesh",
+      "command": [
+        "python",
+        "-B",
+        "ops/doom-source/test_prepare_rigid_mesh.py"
+      ]
+    },
+    {
+      "id": "test_inspect_sources",
+      "command": [
+        "python",
+        "-B",
+        "ops/doom-source/test_inspect_sources.py"
+      ]
+    },
+    {
+      "id": "test_prepare_writer",
+      "command": [
+        "python",
+        "-B",
+        "ops/doom-source/test_prepare_writer.py"
+      ]
+    },
+    {
+      "id": "test_inspect_fbx",
+      "command": [
+        "python",
+        "-B",
+        "ops/doom-source/test_inspect_fbx.py"
+      ]
+    },
+    {
+      "id": "test_prepare_checker",
+      "command": [
+        "python",
+        "-B",
+        "ops/doom-source/test_prepare_checker.py"
+      ]
+    },
+    {
+      "id": "test_prepare_ff",
+      "command": [
+        "python",
+        "-B",
+        "ops/doom-source/test_prepare_ff.py"
+      ]
+    }
+  ]
+}

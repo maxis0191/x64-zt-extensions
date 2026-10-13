@@ -17,6 +17,9 @@ TOOL_SHA = "4740f0c22a1a7bab0b01f7a55ec0b133263ac218825ac3c0d15b9e269fe472b0"
 DUMP_C_SHA = "cef411cf9b4de69be02cb4017aabd964e9143e340e211188daa6b6bab366493a"
 PYTHON_SHA = "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
 SOURCE_IDENTITY = "utf8-crlf-to-lf-only/1"
+# New source-composition qualification. The original 2026-10-12 manifest stays
+# immutable; its ModelFF helper predates the resident geometry changes.
+HELPER_MANIFEST = "sab_ff_helpers-20261013.json"
 
 
 def source_digest(raw):
@@ -27,7 +30,7 @@ def source_digest(raw):
 
 
 def verify_helpers(inputs, repo):
-    pins = strict_json(inputs.read(Path(__file__).with_name("sab_ff_helpers.json"), 16384))
+    pins = strict_json(inputs.read(Path(__file__).with_name(HELPER_MANIFEST), 16384))
     require(type(pins) is dict and set(pins) == {"schema", "normalization", "files"}
             and pins["schema"] == "iw7.original-sound-helper-sources/1" and pins["normalization"] == SOURCE_IDENTITY
             and type(pins["files"]) is dict and len(pins["files"]) == 16, "explicit helper source identity required")

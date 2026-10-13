@@ -9,7 +9,7 @@ from read_sab import Inputs, sha
 import sound_ff_phase as phase
 
 REPO = Path(__file__).resolve().parents[4]
-FILES = json.loads(Path(__file__).with_name("sab_ff_helpers.json").read_bytes())["files"]
+FILES = json.loads(Path(__file__).with_name(phase.HELPER_MANIFEST).read_bytes())["files"]
 
 
 def fixture(root, newline):
@@ -20,6 +20,14 @@ def fixture(root, newline):
 
 
 class HelperSourceTests(unittest.TestCase):
+    def test_legacy_helper_pin_is_preserved_and_not_current_qualification(self):
+        legacy = json.loads(Path(__file__).with_name("sab_ff_helpers.json").read_bytes())["files"]
+        changed = [p for p in FILES if FILES[p] != legacy[p]]
+        self.assertEqual(changed, ["ops/model-lab/ModelFF.Core.ps1"])
+        self.assertEqual(legacy[changed[0]], "4dc68627b6a0b14cf41a5f77859ce7c84b2f674035fcb87cf6fb48253f21ea8e")
+        self.assertEqual(phase.source_digest((REPO / changed[0]).read_bytes()), FILES[changed[0]])
+        self.assertNotEqual(FILES[changed[0]], legacy[changed[0]])
+
     def test_sound_job_is_only_namespace_and_counter_delta_from_shared_base(self):
         base = (REPO / "tools-source/asset-bridge/model/BuildJob.cs").read_bytes().replace(b"\r\n", b"\n")
         self.assertEqual(sha(base), "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387")
