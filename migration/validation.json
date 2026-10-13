@@ -1,0 +1,379 @@
+{
+  "date": "2026-10-13",
+  "scope": "Product extraction and private source bootstrap only",
+  "source_runs": [
+    {
+      "revisions": {
+        "iw7-mod-components": "93fd16b1b7e9da0b46b0348973baa55cd363b1ca",
+        "iw7-creator-sdk": "dc53c24fb5485fa428c948e3fc8202be0672d798",
+        "iw7-paris-server": "5e47dc2299fde638f31af6c026c0e17ee9ddb8ef",
+        "x64-zt-extensions": "6edca00c4cb45ee91f4216de35ce17700a919e21"
+      },
+      "checks": [
+        {
+          "id": "tools-source-asset-bridge-model",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-h1-fixture",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-t7-bridge",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-t7-iw7",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-t7-iw7-animated",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-weapon",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-world",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-animation",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-animation-rig",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-animation-rig-locator",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-rig-abi",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-surfaces",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-surfaces-sound",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-surfaces-sound-native-checksum",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-surfaces-sound-native-checksum-flac-dump",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-recipient",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-asset-bridge-recipient-script-names",
+          "exit_code": 0
+        },
+        {
+          "id": "doom_texture_test",
+          "exit_code": 0
+        },
+        {
+          "id": "model_lab_test",
+          "exit_code": 0
+        },
+        {
+          "id": "test_locator_supervisor",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-H1Native",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-H1Dump",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-H1ProviderAdapter",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-SteamMetadataHost",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7Prepatch",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7Catalogue",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7ResidentExport",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7ResidentExportDiagnostic",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7ResidentExportV2",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueTrace",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueExitContext",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueCallers",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueMessage",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CataloguePublication",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueMain",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueBootstrap",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueBootstraps",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7BootstrapGroup",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueHost",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueHostIncident",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7CatalogueOpaqueManifest",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7BuildProfile",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-Watchpoint",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-WatchMembership",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-WatchSourceBindings",
+          "exit_code": 0
+        },
+        {
+          "id": "test_observer_adapter",
+          "exit_code": 0
+        },
+        {
+          "id": "test_observer_finalization",
+          "exit_code": 0
+        },
+        {
+          "id": "test_observer_console",
+          "exit_code": 0
+        },
+        {
+          "id": "test_sound_ff_transaction",
+          "exit_code": 0
+        },
+        {
+          "id": "test_sound_ff_deadlines",
+          "exit_code": 0
+        },
+        {
+          "id": "test_sound_ff_accounting",
+          "exit_code": 0
+        },
+        {
+          "id": "test_sound_job_memory",
+          "exit_code": 0
+        },
+        {
+          "id": "test_codec_admission",
+          "exit_code": 0
+        },
+        {
+          "id": "test_codec_profiles",
+          "exit_code": 0
+        },
+        {
+          "id": "test_seal_inputs",
+          "exit_code": 0
+        },
+        {
+          "id": "test_seal_entry_guards",
+          "exit_code": 0
+        },
+        {
+          "id": "test_build_quarantine",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-NativeProbeSource",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-AnimationFFSource",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-StockBindingSource",
+          "exit_code": 0
+        },
+        {
+          "id": "test_material_v2_adapter",
+          "exit_code": 0
+        },
+        {
+          "id": "test_material_v2_diagnostic",
+          "exit_code": 0
+        },
+        {
+          "id": "test_material_v2_compiler",
+          "exit_code": 0
+        },
+        {
+          "id": "test_codec_cleanup",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7BuildDeadline",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-T7LinkTelemetry",
+          "exit_code": 0
+        },
+        {
+          "id": "test_observer_stages",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-H1Compiler",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-H1Observer",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-Recipient",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-RecipientStock",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-RecipientCompleteStock",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-RecipientLight",
+          "exit_code": 0
+        },
+        {
+          "id": "test_writer",
+          "exit_code": 0
+        },
+        {
+          "id": "test_ff",
+          "exit_code": 0
+        },
+        {
+          "id": "test_prepare_rigid_mesh",
+          "exit_code": 0
+        },
+        {
+          "id": "test_inspect_sources",
+          "exit_code": 0
+        },
+        {
+          "id": "test_prepare_writer",
+          "exit_code": 0
+        },
+        {
+          "id": "test_inspect_fbx",
+          "exit_code": 0
+        },
+        {
+          "id": "test_prepare_checker",
+          "exit_code": 0
+        },
+        {
+          "id": "test_prepare_ff",
+          "exit_code": 0
+        },
+        {
+          "id": "recipient_stream_contract",
+          "exit_code": 0
+        },
+        {
+          "id": "test_sound_ff_transaction_dump",
+          "exit_code": 0
+        },
+        {
+          "id": "test_sound_ff_transaction_standard",
+          "exit_code": 0
+        },
+        {
+          "id": "recipient_snapshot",
+          "exit_code": 0
+        }
+      ]
+    },
+    {
+      "revisions": {
+        "iw7-mod-components": "93fd16b1b7e9da0b46b0348973baa55cd363b1ca",
+        "iw7-creator-sdk": "dc53c24fb5485fa428c948e3fc8202be0672d798",
+        "iw7-paris-server": "5e47dc2299fde638f31af6c026c0e17ee9ddb8ef",
+        "x64-zt-extensions": "e0c306fa480af297b463c4b8dee259445b14bacc"
+      },
+      "checks": [
+        {
+          "id": "asset-source-pins",
+          "exit_code": 0
+        }
+      ]
+    }
+  ],
+  "source_check_groups": 86,
+  "offline_bootstrap": "passed with spaces",
+  "private_release_download": "passed; pinned SHA256 and member checks",
+  "source_workspace_regressions": null,
+  "runtime_qualified": false,
+  "owner_gameplay_acceptance": "not requested; unchanged",
+  "main_runtime": "untouched",
+  "ci": "Exact-head Actions admission evidence recorded in the PR before merge.",
+  "retained_failures": "Initial sound suite exposed pre-existing ModelFF normalized pin mismatch; legacy sab_ff_helpers.json unchanged. New sab_ff_helpers-20261013.json qualifies the current source only. Initial image suite missing Pillow resolved by hash-pinned Pillow 12.3.0 requirement. All affected checks rerun."
+}
