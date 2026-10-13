@@ -109,3 +109,52 @@ global disk-growth measurement or OS quota. Client join, native sound lookup,
 playback and owner acceptance remain false. The next SDK assembly must consume
 the actually received protocol field and the closed evidence chain; no new
 protocol launch is needed for the unchanged qualified binary.
+
+## Actual SDK package assembly
+
+The bounded assembly ran once after independent review of its final protocol
+binding. All four command blocks exited zero. The SDK checkout remained clean
+at `f7013c9b0bfa414d22993aa6a968256dce890b32`, with its fourteen selected source
+pins unchanged. The original command sheet and null-protocol Plan were retained;
+a distinct execution sheet replaced only the reviewed protocol-binding region.
+
+Eight pinned JSON receipts bind the value from `/InfoResponse/protocol` to r3,
+the admitted process generations, restoration, actual host exit zero and the
+independent witness above. Source constants serve only as cross-checks. Original
+Get-Process and CIM server timestamps differ by eight ticks, within the producer's
+one-millisecond tolerance; both CIM observations match exactly. The frozen binding
+passes 99 synthetic controls, two AST checks and validation against the eight
+real receipts. It does not make a fresh runtime observation or grant a new run.
+
+Exactly four files were copied: the three transport files above and the canonical
+1266-byte GSC, totaling 120718 bytes. Existing validators and the packager verified
+their contents. No game assets, native executable, symbols or build cache were
+copied. All outputs remain local under
+`runtime/sdk-standardmod-c-20261013/assembly-c-01` in the SDK checkout.
+
+| Output | Bytes | SHA256 |
+| --- | ---: | --- |
+| manifest.package.json | 5148 | 952ccce4e870d861557749728d6f15fe60f9e0b393a7cd79b3901cd324d4a025 |
+| sdk_original_sound_v1.standardmod-c.zip | 245141 | f3f9a6d5ec6aaf8fb958077ee5e152278c4283df9c3494dd18566224f799af61 |
+| assembly-inputs.local.json | 5909 | 8a6ab743256e0c619623eea4657d4cb8188f9e114f70fee3e334fc7589e206b2 |
+| validation.plan.json | 1321 | 2bb09400dd2ba0f61e2c8443edd567f9d0b69c69eaf0b1db7d8e883a66e61101 |
+| validation.package-distribution.json | 1494 | 43bba33fd3249f02748d6ceb72ee857b0eb092a8613d6ca22004d237d34ca2f7 |
+| package.receipt.json | 1561 | 5006b2566917b327c84f3f08c82cada9a29e0f717310d906bb96b02ed03c0d2e |
+| assembly-completion.local.json | 5170 | d4537d410372688badd3ff33ea2cc89e46eb722b83c47e5f3076cab95446948b |
+
+The ZIP hash is the existing packager's stream hash. Its size is below the
+267840-byte cap. SDK Plan is valid with no pending static fields; PackageGate
+checks four files with no compatibility errors, and the packager reports valid
+and packaged. The target protocol is 2, with declared client/server native source
+`77e6d4d24e918ee363b3feee3735c3b889dff7d7`.
+
+These are static contract and payload-integrity results. `ready_to_deploy`,
+`runtime_ready` and `owner_accepted` remain false, and the five declared evidence
+entries remain pending. No new client join, sound lookup or playback occurred.
+The archive was not published or distributed externally.
+
+Final scoped accounting is 387238 bytes for assembly and 567081 bytes including
+preparation, within the 4 MiB allocation inside the existing global pool. This
+small-file operation acquired no heavy lease and launched no build or game.
+Next: reuse this package and r3 for a protected lookup-only scenario, with the
+base client declared in the complete runtime reservation and full restoration.

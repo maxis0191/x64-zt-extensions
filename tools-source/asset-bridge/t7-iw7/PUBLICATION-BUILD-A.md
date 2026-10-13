@@ -113,3 +113,24 @@ Next: coordinator integration of this checkpoint and independent closure
 evidence, then a separately reviewed runtime plan using the actual candidate
 identity and distinct publication profile. A new runtime GO and fresh admission
 are still required. The build retains `CandidateExecuted=false` and `Ready=false`.
+
+## Independent closure
+
+The independent witness at 03:04:17.1735568 UTC confirms absence through fresh
+scheduler and CIM observations: host, parent PID, all six tool/telemetry processes,
+observable descendants and scoped roots, with no remaining heavy work, game,
+lease or relevant UDP endpoint. Main was stopped and the unrelated Python process
+retained its identity. Five small receipts were pinned; the worker's actual
+session 2516 exit zero was independently checked in its completed tool record.
+
+Witness `t7-publication-build-a-independent-absence.local.json` is 7499 bytes,
+SHA256 `cf7813cc93a7cc931d06b8049f6725b0e1edb607a7c5623ce28ea85c398833cc`.
+It retains the provenance limit: seven complete process tuples were recorded,
+but parent 33220 has only a preserved PID reference. Its absence is observed,
+not a retrospectively invented image/creation tuple. The witness reads no native
+artifact; job closure and artifact hashes remain original-host evidence.
+
+The worker checkout had advanced to documentation-only commit `4c05f9e` after
+the build; executable source and helpers were unchanged from `cd392c40` and the
+checkout remained clean during the witness. This observation closes the build
+group without executing or qualifying the candidate's runtime behavior.
