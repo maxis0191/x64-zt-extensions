@@ -23,6 +23,7 @@
     "ops/Build-RhinoZoneTool.ps1",
     "ops/Inspect-Texture.py",
     "ops/Prepare-DoomTextureWork.ps1",
+    "ops/Test-AssetSourcePins.ps1",
     "ops/doom-source/Acquire-Blender.ps1",
     "ops/doom-source/Build-FF.ps1",
     "ops/doom-source/Build-Writer.ps1",
@@ -417,6 +418,7 @@
     "tools-source/asset-bridge/surfaces/sound/sab-ff-checkpoint-2026-10-12.json",
     "tools-source/asset-bridge/surfaces/sound/sab-ff-f-checkpoint-2026-10-12.json",
     "tools-source/asset-bridge/surfaces/sound/sab_contract.json",
+    "tools-source/asset-bridge/surfaces/sound/sab_ff_helpers-20261013.json",
     "tools-source/asset-bridge/surfaces/sound/sab_ff_helpers.json",
     "tools-source/asset-bridge/surfaces/sound/sound_ff_phase.py",
     "tools-source/asset-bridge/surfaces/sound/standard-mod-capacity-b-checkpoint-2026-10-12.json",
@@ -670,8 +672,7 @@
     "tools-source/asset-bridge/world/verify_source.py",
     "tools-source/asset-bridge/world/world_clipmap_observer.hpp",
     "tools-source/asset-bridge/world/zonetool-fab9358-trigger-types.patch",
-    "tools-source/asset-bridge/world/zonetool-fab9358-world-observer.patch",
-    "tools-source/asset-bridge/surfaces/sound/sab_ff_helpers-20261013.json"
+    "tools-source/asset-bridge/world/zonetool-fab9358-world-observer.patch"
   ],
   "dependencies": [
     {

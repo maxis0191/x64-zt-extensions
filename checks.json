@@ -960,6 +960,15 @@
         "-FixtureRoot",
         "{run}/recipient snapshot"
       ]
+    },
+    {
+      "id": "asset-source-pins",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "ops/Test-AssetSourcePins.ps1"
+      ]
     }
   ]
 }
