@@ -301,8 +301,26 @@ row records its image failure stage; later rows remain explicitly not attempted,
 rather than being mistaken for missing or unreadable images. The observer still
 stops at that refusal and leaves all completeness/lifetime/pixel claims false.
 Header/texture rechecks, maximum counts and read/output limits are unchanged.
-New synthetic cases for retained scalars and later unvisited bindings are prepared;
-their native execution is pending. The earlier D50 result belongs to its own bytes.
+Attempt E on 2026-10-14 (Europe/Paris), source
+`8b953041b734fd129dd9d19aa61f92d198800a3d`, actually passed the changed fixture:
+
+```text
+PASS selected material metadata fixture: 63 checks; no pixels or engine calls.
+```
+
+The checker required the exact inventory of D50 plus 13 added/updated checks,
+including retained failed-binding scalars, later unvisited bindings, an unreadable
+image name after a copied header, and sparse image indices. MSVC C++20 `/W4 /WX`
+compile/link and the separately owned fixture both exited 0. The sole pinned
+`vctip` child was captured twice through the original compiler job; only that job
+was stopped, then fresh root0/active0/members0 preceded ordinary closure and test.
+All jobs closed before lease release, fresh postflight showed zero leases and
+heavy/game processes, and the invoking host exited 0. Retained outputs total
+4,393,223 bytes under the 6 MiB bound. The 187,904-byte executable SHA-256 is
+`28aaa52b2f28227a592cebbdfed94b50557f1a2519c52366f887a3785ada4312`.
+This qualifies the new synthetic diagnostics, not an engine pointer or authentic
+image capture. The earlier D50 and E3 results belong only to their frozen bytes;
+a future native CLI must explicitly adopt these new source inputs.
 
 Greyhound
 [`22c3d17`, image structures](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/DBGameAssets.h#L776-L815)
