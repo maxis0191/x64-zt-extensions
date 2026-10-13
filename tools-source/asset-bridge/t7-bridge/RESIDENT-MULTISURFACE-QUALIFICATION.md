@@ -5,6 +5,51 @@ prepared export. It does not run the candidate, grant admission, create an
 operational plan, prove a serialized model, or establish game compatibility.
 The original v1 and surface-count diagnostic contracts remain separate.
 
+## Selected mesh/material observation E2, 2026-10-13
+
+A separately selected probe adds only
+`SelectedMeshMaterialObservation: {Schema: iw7.t7-selected-mesh-material-probe/1}`
+to the v2 export plan. Extra fields, v1 selection, mixed diagnostics, another
+candidate or unguarded evidence refuse. It keeps the v2 command and the resident
+manifest contract; this is an observation build, not permission to read XPAK
+payloads or claim exported geometry.
+
+The probe's compiled assets are
+`afdd8062732499698a6a810918b8aae082ba3668`, its native source dependency is
+`2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1`, and the ZoneTool upstream source is
+`fab935826c898806855376662a8a03317b3ad8f1`. These roles remain distinct.
+E2 build plan 366,065 bytes /
+`13318cc0cdd91621c47edaf838a81357f774649a2940fc9df2e85f1351b7223f`
+and receipt 22,239 bytes /
+`1d54bdceca45ae97ef0875ad745eac79a9214d02927b6f444eb526bdc589a511`
+bind the candidate 21,849,600 bytes /
+`7c7ad775b201dea60ec050a28e5943cbf1eeeaa8e6386eba675c7ffc001f5e7f`.
+
+The ordinary publication/stage checks remain required, followed by E2's 144
+bindings (138 text, six binary), 1,146 inputs, the unchanged 66-header inventory,
+and its exact three source transitions. The CLI transition is 62,674 raw bytes
+and 62,728 wired bytes; the 714-byte transition inventory hashes to
+`e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c`.
+The operational binding count is 106, compared with D's unchanged 103.
+
+Four E2 closure texts are pinned separately from D: extracted completion,
+original host closure, original tool evidence and their bundle manifest. The
+qualifier verifies source ownership, actual PTY exit 0, all three original stage
+identities/results, closed guards and released lease. This is a faithful retained
+snapshot, not fresh machine admission or an independent current witness. It
+does not promote the build-only receipt's fixture/stock flags.
+
+The targeted source suite passed 294 synthetic checks, including D's previous
+244 checks. A separate read-only qualification of the real E2 receipt held
+1,432,336 bytes in 23 text files and passed, without opening binaries or creating
+a runtime plan. A passed material fixture and a distinct authorized stock Run
+remain subsequent requirements. The expected stock observation still refuses
+the streamed mesh; its bounded mesh and material JSON describe metadata only.
+Keep every uint64 key and opaque value exact with Python integers or PowerShell
+UInt64, preserving raw JSON; JavaScript Number cannot represent every such value.
+
+## Original build D contract
+
 ## Selection and guarded evidence
 
 `Operation` stays `ResidentExportV1`. The explicit
