@@ -1,5 +1,61 @@
 # First real T7 catalogue: one minimal experiment
 
+## Zombies common catalogue A, 2026-10-13
+
+The two-zone catalogue source was reviewed and merged in
+[asset PR5](https://github.com/maxis0191/x64-zt-extensions/pull/5). A distinct
+invocation used composed source `55d751c46f4427cf7c133373d596f6b0a4cf3172`,
+the already qualified F publication candidate (21,751,296 bytes, SHA256
+`31b9d908d15fb5f0bf17a7b27309dc7183458d5e586dfc6e427cc8ec2b3fa647`),
+the exact 23 F bootstraps and `-t7-iw7-catalog zm_common`.
+
+The selected `zm_common.ff` was 36,332,480 bytes. Its hash and original/alias
+identity were observed under admission, with depot provenance still unknown.
+The native process exited naturally with code 1 after 5,217.6003 ms:
+**Failed / NoCatalogue**. No names, bone/root/cosmetic/LOD counts or report were
+produced. The retained 42-byte engine message is:
+
+```text
+ERROR: Could not find zone 'en_zm_common'
+```
+
+Stdout separately reported `Exact donor zone did not finish loading`. This
+identifies the missing localized dependency, not an ABI defect or an absent
+model. Metadata inspection found the owner's `en_zm_common.ff` (148,160 bytes);
+no payload was read by that inspection. No common-zone patch or localized
+patch file was present among the two exact paths checked.
+
+The old F preparation helper had advanced from its bound 31,337-byte version.
+With the source owner's coordination, that one helper was temporarily restored
+at its original path from Git commit `17329e4913f4271f6a641b00641d6bc4e84be606`,
+matching F's exact hash. Its current 34,819 bytes and original metadata were
+backed up, then restored after the original host closed. The historical
+checkout returned to its clean original head; no frozen plan or receipt changed.
+
+The original runner confirmed tree closure, lease release, input revalidation
+and retained aliases. Its original host reached `Closed`, `CanExit=true`, zero
+wrapper guards and zero leases before PTY 31643 actually exited 1
+(tool chunk `a7051c`). A fresh observation confirmed this host, native process
+and lease absent. By that later observation another authorized workload had
+started; global zero leases/heavy processes is not claimed.
+
+Private ignored evidence under `t7-zm-catalogue-a-20261013/` retains plan
+59,266 bytes / `37637668aaa637c23120dad38210e94a8f4a21cb7dc665aed74a9a87b3891385`,
+host contract 1,383 bytes /
+`8167f0f989c4b6f1d58c6b3ad9334598f8a4c1507bc8576a54a1eea684cfd0a7`,
+receipt 35,990 bytes /
+`de0ab4914d24411cc022b6c0febaf0a8bc8f241a9e32c1ea676ee1804a2edd39`
+and completion 3,887 bytes /
+`e9e296b7685a2ba43ed50f812bd4b5b19e4b685f2bb05d9fc9d8a2414a3b0baf`.
+Only bounded text evidence was hashed after lease release.
+
+Next action: qualify the one localized FF with the existing bootstrap qualifier,
+add its explicit alias and source pins to a fresh B plan, then perform a separate
+authorized catalogue invocation. A remains failed; no native rebuild or retry
+on its consumed root is part of this checkpoint.
+
+## Original 2026-10-12 recipe and evidence
+
 Updated 2026-10-12 after the completed prepatch diagnostic and the coordinator's
 decision to observe missing bootstrap inputs during a bounded catalogue attempt.
 This recipe is reviewable, not a launch authorization. Diagnostic proof `0dc01d7`
