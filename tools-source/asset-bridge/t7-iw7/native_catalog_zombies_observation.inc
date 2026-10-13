@@ -26,7 +26,7 @@ struct zm_observation_error_guard
 {
     DWORD value = GetLastError();
     int crt_value = errno;
-    ~zm_observation_error_guard() { SetLastError(value); errno = crt_value; }
+    ~zm_observation_error_guard() { errno = crt_value; SetLastError(value); }
 };
 
 static bool zm_observation_slot(std::atomic<unsigned int>& counter, const unsigned int limit) noexcept
@@ -85,7 +85,7 @@ static XAssetHeader zm_observation_find(XAssetType type, const char* name, bool 
     if (selected)
         zm_observation_log(true, "kind=raw_enter phase=%u caller=%p type=47 error=%u wait=%d\n",
             zm_observation_last_phase.load(), _ReturnAddress(), static_cast<unsigned int>(error_if_missing), wait_time);
-    SetLastError(entry_error); errno = entry_errno;
+    errno = entry_errno; SetLastError(entry_error);
     const auto result = zm_observation_find_hook.invoke<XAssetHeader>(type, name, error_if_missing, wait_time);
     const zm_observation_error_guard restore_result;
     if (selected)
@@ -139,7 +139,7 @@ static void zm_observation_load(XZoneInfo* zones, unsigned int count, qboolean s
             zm_observation_last_phase.load(), _ReturnAddress(), count, static_cast<int>(sync), static_cast<int>(suppress_sync));
         for (unsigned int i = 0; i < count && i < 2; ++i) zm_observation_zone_row(zones, i);
     }
-    SetLastError(entry_error); errno = entry_errno;
+    errno = entry_errno; SetLastError(entry_error);
     zm_observation_load_hook.invoke<void>(zones, count, sync, suppress_sync);
     const zm_observation_error_guard restore_result;
     zm_observation_phase_event(zm_observation_phase::load_return);
