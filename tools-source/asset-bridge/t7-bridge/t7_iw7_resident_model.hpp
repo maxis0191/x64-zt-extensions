@@ -152,7 +152,8 @@ namespace zonetool::t7::resident_iw7
 
         const auto& mesh = object(model.meshes[lod]);
         (void)asset_name(mesh.name);
-        require(mesh.numSurfs == 1, "pilot requires one selected surface");
+        require(mesh.numSurfs == 1, ("pilot requires one selected surface; observed numSurfs=" +
+            std::to_string(static_cast<unsigned int>(mesh.numSurfs))).c_str());
         const auto& surf = object(mesh.surfs);
         require((surf.flags & (XSURFACE_FLAG_SKINNED | XSURFACE_FLAG_STREAMED)) == 0,
             "skinned or streamed surface is outside resident pilot");

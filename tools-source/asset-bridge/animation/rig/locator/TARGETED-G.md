@@ -1,9 +1,56 @@
 # Locator Plan G: one explicit output-pointer callee
 
-This is source, synthetic tests and inert Plan preparation only. No G Run,
-snapshot content read, admission, game, ZoneTool or debugger action is authorized
-by this checkpoint. The SDK runtime demonstration keeps priority for the heavy
-slot. [Run F](run-f-validation-2026-10-12.json) is closed and remains unchanged.
+The original checkpoint below was source, synthetic tests and inert Plan
+preparation only. A later explicit GO authorized one G Run on 2026-10-13,
+recorded below. No further Run is authorized. [Run F](run-f-validation-2026-10-12.json)
+is closed and remains unchanged.
+
+## Run G: declared traversal completed, another call boundary found
+
+The [sanitized receipt](run-g-validation-2026-10-13.json) records exactly one
+Run on clean HEAD `8a8ccfd`, with source code unchanged from `86d35c6` and the
+same pinned Plan. G decoded and statically visited 31 instructions in one
+119-byte owner range, with five edges and no remaining or refused frontier.
+The original child exited 0, job Active=0; guarded inputs were unchanged,
+the job closed and its full 1 GiB/2 GiB reservation was released. The local
+postcheck found no lease or original child. Main remained `StoppedConfirmed`,
+with no game process or UDP 27016 endpoint, and the known recorder tuple survived.
+An independent absence witness passed at `2026-10-13T05:22:18.2210757Z`,
+pinned in the sanitized receipt. It verified all four original process tuples
+absent, no descendants, lease, heavy work, game or monitored endpoint, and the
+recorder tuple unchanged. The real PTY exit was verified separately. Original
+job/handle closure facts come from the pinned runner receipts; the witness did
+not adopt or inspect the terminated job. Runtime sources were unchanged while
+the two documentary files were being edited. This closes the execution review,
+without establishing any functional or gameplay acceptance.
+
+The initial G preflight had incorrectly required Main to be running. Its refusal
+and original helpers remain intact. After independent confirmation that Main
+was stopped, separately reviewed r2 helpers accepted that explicit state only
+with no Main/game process and no endpoint. Global endpoint-query errors still
+fail; absence after a successful query is valid data. Main is never started to
+satisfy this observer. A later fresh preflight and renewed unique GO preceded
+the one Run; no native retry occurred.
+
+The PTY capture preserves both actual tool-output chunks, including console
+wrapping/escape sequences. Host, parent, Run host and child image/creation tuples
+are in the ignored receipts. Two Run files total/max 10,222 bytes: report 8,282
+and state 1,940. The original-process lifecycle took 515 ms; analysis took
+0.016 seconds. The fixed 16 MiB new-output allocation in the existing 4 GiB
+pool did not alter the 3 MiB report or 4 MiB Run-output ceilings. No game,
+ZoneTool, stock copy, restoration or cleanup occurred, and no snapshot/binary
+was rehashed after release.
+
+The [report-only boundary review](REPORT-G-BOUNDARY.md) traces entry RCX into
+RBX and, on the nonzero-source branch, into R9 for the call to `0x1405f04a0`.
+No direct store through that pointer appears in this range. A different call
+lies on the zero-source branch. All three callees remain unexamined, and the
+literal +0x58 reference is a stack restore. First-writer, live provenance and
+rig/animation acceptance remain false. The proposed next seed is exactly
+`0x1405f04a0`, from the explicit R9 handoff at `0x140dd1fe6`; this is a source
+proposal for separate review, without a new Plan, allowlist expansion or Run.
+
+## Original source/Plan preparation
 
 Owner direction, 2026-10-12: the import target is now **BO3/T7x to IW7**;
 H1 is abandoned as the new import target. Future model and animation work must
@@ -95,5 +142,7 @@ noncanonical forms and an F report presented as G are refused. The actual
 default Plan runs with native loading, lease acquisition, CIM, creation/copy
 and snapshot hashing trapped; G's Run root remains absent.
 
-Next: coordinator source/Plan review, then a separate explicit GO and fresh
-full admission before one G Run. Until then, no heavy reservation is taken.
+At preparation, source/Plan review and a separate GO with fresh full admission
+were required before one Run. Those gates led to the result above. Next:
+coordinator review of the retained receipts and newly identified call boundary,
+without an implicit additional Run or callee read.
