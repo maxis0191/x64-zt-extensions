@@ -8,6 +8,7 @@ import json
 import sys
 import subprocess
 import shutil
+import struct
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +21,7 @@ sys.path.insert(0,str(ROOT/'ops/model-lab'))
 try:
     import prepare_writer
     import prepare_ff
+    import rigid_export
 finally:
     sys.path.pop(0)
 
@@ -144,6 +146,7 @@ foreach($variant in @('size','hash','reader','shadow','collision')) {
             script.write_text(r"""param($Repo,$Temp)
 $ErrorActionPreference='Stop'
 . "$Repo/ops/Base-Client.Core.ps1"
+. "$Repo/ops/model-lab/ModelFF.Core.ps1"
 . "$Repo/ops/model-lab/Model-Runtime.Core.ps1"
 function Update-IW7BaseClient($Session) {}
 function Assert-IW7BaseIdentity($Identity) {if($Identity.PID -notin @(123,456)){throw 'Foreign identity'}}
@@ -162,6 +165,12 @@ $journal=[ordered]@{utc=[datetime]::UtcNow.ToString('o');method='GET';path=$buil
 Wait-IW7ModelRuntimeEvidence $session $build $http $Temp
 $r=Get-Content "$Temp/model-runtime.local.json" -Raw|ConvertFrom-Json
 if(!$r.ModelSetRequested -or !$r.FreshCacheVerified -or $r.PixelsVerified -or $r.Ready -or $r.RecipientReferenceResolved -or $r.HttpRequesterPID -cne 'unmeasured'){throw 'False acceptance'}
+$build|Add-Member NoteProperty ModelName 'original/mesh.v2'
+$text=$text.Replace('model=paris_model_probe;','model=original/mesh.v2;')
+[IO.File]::WriteAllText($session.Server.Stdout,$text)
+Wait-IW7ModelRuntimeEvidence $session $build $http $Temp
+$r=Get-Content "$Temp/model-runtime.local.json" -Raw|ConvertFrom-Json
+if($r.ModelName -cne $build.ModelName -or $r.PixelsVerified -or $r.Ready){throw 'Named model invented rendering evidence'}
 [IO.File]::WriteAllText($session.Server.Stdout,$text+$text)
 $refused=$false;try{Wait-IW7ModelRuntimeEvidence $session $build $http $Temp}catch{$refused=$true}
 if(!$refused){throw 'Duplicate request accepted'}
@@ -363,6 +372,283 @@ foreach($bad in @($log+'Loading asset "foreign" of type rawfile.',$log.Replace('
                 change(data)
                 with self.assertRaises(ValueError):
                     geometry.validate(data)
+
+
+class ResidentRigidTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        (ROOT / 'runtime').mkdir(exist_ok=True)
+        sys.path.insert(0, str(rigid_export.BRIDGE))
+        try:
+            spec = importlib.util.spec_from_file_location('_model_lab_synthetic', rigid_export.BRIDGE / 'test_readback.py')
+            cls.fixture = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(cls.fixture)
+        finally:
+            sys.path.pop(0)
+
+    def synthetic(self):
+        # Explicit independent irregular pyramid; deliberately not the cube,
+        # not donor bytes, and with a mesh name unrelated to the model suffix.
+        return self.fixture.Synthetic(names=('original/pilot', 'mesh/unrelated', 'root pivot', 'donor/clay'), lod=0)
+
+    def write_export(self, root, fixture):
+        root.mkdir()
+        for role in ('model', 'mesh'):
+            path = root / fixture.manifest[role]['relative_path']
+            path.parent.mkdir(parents=True)
+            path.write_bytes(fixture.outputs[role])
+        (root / 'request.json').write_bytes(rigid_export.json_bytes(fixture.request))
+        (root / 'manifest.json').write_bytes(rigid_export.json_bytes(fixture.manifest))
+
+    def staged(self, base, fixture=None, distance=None):
+        fixture = fixture or self.synthetic()
+        root, staged = base / 'export', base / 'prepared'
+        self.write_export(root, fixture)
+        plan = rigid_export.stage(root, root / 'request.json', root / 'manifest.json', staged,
+                                  rigid_export.MATERIAL, distance)
+        return fixture, root, staged, plan
+
+    def test_material_only_rebind_preserves_every_other_byte_and_manifest(self):
+        f = self.synthetic()
+        model, mesh = bytes(f.outputs['model']), bytes(f.outputs['mesh'])
+        manifest = copy.deepcopy(f.manifest)
+        derived, proof = rigid_export.derive(model, mesh, f.manifest, f.request, rigid_export.MATERIAL)
+        start, end = f.records['model']['material'] + 2, f.records['model']['lod0'] - 1
+        self.assertEqual(derived, model[:start] + rigid_export.MATERIAL.encode() + model[end:])
+        self.assertEqual(f.manifest, manifest)
+        self.assertEqual(bytes(f.outputs['model']), model)
+        self.assertEqual(bytes(f.outputs['mesh']), mesh)
+        self.assertEqual(proof['derived_model']['lod_distance'], 317)
+        self.assertEqual(proof['source_readback']['mesh']['vertices'], 5)
+        self.assertEqual(proof['source_readback']['mesh']['triangle_count'], 6)
+        for key in ('native_provenance_verified', 'runtime_verified', 'pixels_verified', 'ready'):
+            self.assertIs(proof[key], False)
+
+    def test_explicit_lod_transform_and_source_zero_are_distinct_from_export_validity(self):
+        f = self.synthetic().change('model', 'model', 6 + 224, 'f', 0)
+        model, mesh = bytes(f.outputs['model']), bytes(f.outputs['mesh'])
+        unchanged, _ = rigid_export.derive(model, mesh, f.manifest, f.request, rigid_export.MATERIAL)
+        derived, proof = rigid_export.derive(model, mesh, f.manifest, f.request, rigid_export.MATERIAL, 1000000)
+        self.assertEqual(derived, unchanged[:230] + struct.pack('<f', 1000000) + unchanged[234:])
+        self.assertEqual(proof['transformations'][1]['old'], 0)
+        self.assertEqual(proof['transformations'][1]['new'], 1000000)
+        self.assertEqual(f.inspect()['model']['lod_distance'], 0)
+        for value in (float('nan'), float('inf'), -1, True):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                rigid_export.derive(model, mesh, f.manifest, f.request, rigid_export.MATERIAL, value)
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            _, _, staged, plan = self.staged(Path(folder), f)
+            self.assertFalse(plan['scene_lod_distance_sufficient'])
+            rigid_export.verify_stage(staged)
+            with self.assertRaisesRegex(ValueError, 'export is not invalid'):
+                rigid_export.verify_stage(staged, scene=True)
+
+    def test_staging_keeps_native_receipt_and_ncs_actual_name(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            f, root, staged, plan = self.staged(Path(folder), distance=1000000)
+            rigid_export.verify_stage(staged, scene=True)
+            self.assertEqual(len(plan['source_files']), 5)
+            self.assertEqual((staged / 'evidence/manifest.json').read_bytes(), (root / 'manifest.json').read_bytes())
+            self.assertEqual((staged / 'evidence/source.xmb').read_bytes(), bytes(f.outputs['model']))
+            self.assertEqual((staged / 'xsurface/mesh/unrelated.xsb').read_bytes(), bytes(f.outputs['mesh']))
+            ncs = json.loads((staged / 'netconststrings/ncs_mdl_paris_model_probe.json').read_bytes())
+            self.assertEqual(ncs['stringList'], ['original/pilot'])
+            self.assertIn('xmodel,original/pilot\n', (staged / 'zone_source/paris_model_probe.csv').read_text())
+            self.assertEqual(plan['zone'], 'paris_model_probe')
+            with self.assertRaises(ValueError):
+                rigid_export.stage(root, root / 'request.json', root / 'manifest.json', root / 'nested', rigid_export.MATERIAL)
+            with self.assertRaises(ValueError):
+                rigid_export.stage(root, root / 'request.json', root / 'manifest.json', Path(folder) / 'wrong', 'donor/clay')
+
+    def test_third_change_is_rejected_even_when_staged_hash_is_updated(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            f, _, staged, plan = self.staged(Path(folder), distance=1000000)
+            path = staged / 'xmodel/original/pilot.xmb'
+            data = bytearray(path.read_bytes())
+            # Valid independent mip-radius change: geometry parser alone would
+            # accept it, but it is not either declared derivation.
+            struct.pack_into('<e', data, f.records['model']['mip_radius'] + 6, 0.5)
+            path.write_bytes(data)
+            plan['source_files']['xmodel/original/pilot.xmb'] = rigid_export.digest(data)
+            (staged / 'model-ff-plan.json').write_bytes(rigid_export.json_bytes(plan))
+            with self.assertRaises(ValueError):
+                rigid_export.verify_stage(staged)
+
+    def test_cli_rejects_ambiguous_json_and_reports_explicit_scene_gate(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder)
+            f = self.synthetic().change('model', 'model', 6 + 224, 'f', 0)
+            root = base / 'export'
+            self.write_export(root, f)
+            output = base / 'cli-prepared'
+            command = [sys.executable, '-B', '-S', str(ROOT / 'ops/model-lab/prepare_ff.py'),
+                       '--export-root', str(root), '--request', str(root / 'request.json'),
+                       '--manifest', str(root / 'manifest.json'), '--output', str(output),
+                       '--rebind-material', rigid_export.MATERIAL]
+            result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse(json.loads(result.stdout)['scene_lod_distance_sufficient'])
+            verify = [sys.executable, '-B', '-S', str(ROOT / 'ops/model-lab/rigid_export.py'),
+                      'verify-stage', '--source', str(output)]
+            result = subprocess.run(verify, capture_output=True, text=True, timeout=15)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('export is not invalid', result.stderr)
+            original = (root / 'manifest.json').read_bytes()
+            for raw in (b'{"schema":1,"schema":2}', b'{"value":NaN}', b' ' * 4097):
+                with self.subTest(raw_length=len(raw)):
+                    (root / 'manifest.json').write_bytes(raw)
+                    with self.assertRaises(ValueError):
+                        rigid_export.stage(root, root / 'request.json', root / 'manifest.json', base / 'refused', rigid_export.MATERIAL)
+                    self.assertFalse((base / 'refused').exists())
+            (root / 'manifest.json').write_bytes(original)
+            for name in ('../escape', 'a/b,rawfile', 'a/CON', 'name;quit'):
+                with self.subTest(name=name), self.assertRaises(ValueError):
+                    rigid_export.lab_name(name)
+
+    def test_dump_compares_packed_normals_uv_indices_and_semantics(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder)
+            f, _, staged, _ = self.staged(base, distance=1000000)
+            dump = base / 'roundtrip'
+            for relative in ('xmodel/original/pilot.xmb', 'xsurface/mesh/unrelated.xsb'):
+                target = dump / relative
+                target.parent.mkdir(parents=True)
+                target.write_bytes((staged / relative).read_bytes())
+            ff = base / 'mod.ff'
+            ff.write_bytes(b'original synthetic FF stand-in; never engine input')
+            proof = rigid_export.verify_dump(staged, dump, ff)
+            self.assertTrue(proof['geometry_roundtrip_verified'])
+            self.assertFalse(proof['source_geometry_correspondence_verified'])
+            self.assertFalse(proof['runtime_verified'])
+            # A dump may use different nonzero pointer sentinels.
+            model_path = dump / 'xmodel/original/pilot.xmb'
+            model = bytearray(model_path.read_bytes())
+            struct.pack_into('<Q', model, 6 + 152, 0xabcde000)
+            model_path.write_bytes(model)
+            rigid_export.verify_dump(staged, dump, ff)
+            mesh_path = dump / 'xsurface/mesh/unrelated.xsb'
+            original = mesh_path.read_bytes()
+            for offset in (12, 16, 20, 24, 28):
+                with self.subTest(packed_offset=offset):
+                    data = bytearray(original)
+                    data[f.records['mesh']['vertices'] + 6 + offset] ^= 1
+                    mesh_path.write_bytes(data)
+                    with self.assertRaisesRegex(ValueError, 'FF dump differs'):
+                        rigid_export.verify_dump(staged, dump, ff)
+            mesh_path.write_bytes(original)
+            data = bytearray(original)
+            offset = f.records['mesh']['triangles'] + 6
+            data[offset:offset+6] = struct.pack('<3H', 0, 1, 2)
+            mesh_path.write_bytes(data)
+            with self.assertRaises(ValueError):
+                rigid_export.verify_dump(staged, dump, ff)
+
+    def test_rigid_runtime_requires_reviewed_tuple_and_exact_large_cache(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder)
+            f, _, staged, plan = self.staged(base, distance=1000000)
+            dump = base / 'roundtrip'
+            for relative in ('xmodel/original/pilot.xmb', 'xsurface/mesh/unrelated.xsb'):
+                target = dump / relative
+                target.parent.mkdir(parents=True)
+                target.write_bytes((staged / relative).read_bytes())
+            ff = base / 'mod.ff'
+            ff.write_bytes(b'SYNTHETIC NOT A FASTFILE\n' * 128)
+            proof = rigid_export.verify_dump(staged, dump, ff)
+            evidence = rigid_export.json_bytes(proof)
+            (base / 'geometry-roundtrip.json').write_bytes(evidence)
+            (base / 'reader.stdout.log').write_bytes(evidence)
+            rows = [('material', ',' + rigid_export.MATERIAL), ('xmodelsurfs', plan['mesh_name']),
+                    ('xmodel', plan['model_name']), ('netconststrings', 'ncs_mdl_paris_model_probe'), ('rawfile', 'paris_model_probe')]
+            log = 'Loading zone "paris_model_probe"\n' + ''.join(f'Loading asset "{name}" of type {kind}.\n' for kind, name in rows)
+            (base / 'inventory.stdout.log').write_text(log)
+            state = {'Schema': 'iw7.model-ff-build/1', 'SourcePlan': plan, 'SourcePlanSHA256': proof['source_plan_sha256'],
+                     'Restored': True, 'StockPreserved': True, 'RestorationStatus': 'Confirmed', 'RetainedLeaseToken': None,
+                     'InventoryVerified': True, 'GeometryRoundtripVerified': True, 'Ready': False,
+                     'Build': {'ExitCode': 0}, 'Offline': {'ExitCode': 0, 'Stdout': str(base / 'inventory.stdout.log')},
+                     'Dump': {'ExitCode': 0}, 'GeometryReader': {'ExitCode': 0, 'Stdout': str(base / 'reader.stdout.log')},
+                     'GeometryEvidenceSHA256': rigid_export.digest(evidence),
+                     'FF': {'Path': 'mod.ff', 'Bytes': proof['ff']['bytes'], 'SHA256': proof['ff']['sha256']}}
+            (base / 'state.local.json').write_bytes(rigid_export.json_bytes(state))
+            script = base / 'runtime.ps1'
+            script.write_text(r'''param($Repo,$Root)
+$ErrorActionPreference='Stop'
+. "$Repo/ops/Base-Client.Core.ps1"
+. "$Repo/ops/model-lab/ModelFF.Core.ps1"
+. "$Repo/ops/model-lab/Model-Runtime.Core.ps1"
+$s=Get-Content "$Root/state.local.json" -Raw|ConvertFrom-Json
+$pins=@($s.FF.Bytes,$s.FF.SHA256,$s.GeometryEvidenceSHA256)
+$refused=$false;try{Read-IW7ModelBuild $Root 'geometry-roundtrip.json'}catch{$refused=$true}
+if(!$refused){throw 'Unreviewed resident build accepted'}
+$build=Read-IW7ModelBuild $Root 'geometry-roundtrip.json' @pins
+if($build.ModelName -cne 'original/pilot' -or $build.MeshName -cne 'mesh/unrelated' -or
+    $build.FsGame -cne 'mods/paris_model_probe' -or $build.Ready -or $build.PixelsVerified){throw 'Rigid route/claims differ'}
+foreach($i in 0..2){
+    $bad=$pins.Clone();$bad[$i]=if($i -eq 0){123}else{'A'*64}
+    $refused=$false;try{Read-IW7ModelBuild $Root 'geometry-roundtrip.json' @bad}catch{$refused=$true}
+    if(!$refused){throw 'Wrong review tuple accepted'}
+}
+$log=[IO.File]::ReadAllText("$Root/inventory.stdout.log")
+$rows=@(Get-ModelFFInventory $log $build.ModelName $build.MeshName)
+if($rows.Count -ne 5){throw 'Incomplete inventory'}
+$refused=$false;try{Get-ModelFFInventory $log}catch{$refused=$true}
+if(!$refused){throw 'Cube inventory silently widened'}
+$game="$Root/game";$null=New-Item -ItemType Directory "$game/mods/paris_model_probe" -Force
+[IO.File]::WriteAllBytes("$game/mods/paris_model_probe/mod.ff",$build.Bytes)
+$null=Get-IW7ModelProfilePaths $game $build
+$refused=$false;try{Get-IW7ModelProfilePaths $game}catch{$refused=$true}
+if(!$refused){throw 'Legacy cache limit widened without review'}
+$bad=$build.Bytes.Clone();$bad[0]=$bad[0] -bxor 1
+[IO.File]::WriteAllBytes("$game/mods/paris_model_probe/mod.ff",$bad)
+$refused=$false;try{Get-IW7ModelProfilePaths $game $build}catch{$refused=$true}
+if(!$refused -or !(Test-Path "$game/mods/paris_model_probe/mod.ff")){throw 'Foreign larger cache accepted/deleted'}
+$refused=$false;try{Get-IW7ModelCandidate $s.FF.Bytes $s.FF.SHA256}catch{$refused=$true}
+if(!$refused){throw 'Synthetic FF entered historical whitelist'}
+[IO.File]::WriteAllBytes("$Root/roundtrip/xsurface/mesh/unrelated.xsb",[byte[]](1,2,3))
+$refused=$false;try{Read-IW7ModelBuild $Root 'geometry-roundtrip.json' @pins}catch{$refused=$true}
+if(!$refused){throw 'Changed retained readback accepted'}
+''')
+            result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), folder], capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rigid_http_explicit_bound_does_not_widen_legacy_routes(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            script = Path(folder) / 'http.ps1'
+            script.write_text(r'''param($Repo,$Root)
+$ErrorActionPreference='Stop'
+Add-Type -Path "$Repo/ops/hud-lab/HudHttp.cs"
+$bytes=[Text.Encoding]::UTF8.GetBytes(('SYNTHETIC HTTP ONLY' * 200))
+$hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))
+foreach($route in @([IW7HudHttp]::Route,[IW7HudHttp]::ModelRoute)){
+    $refused=$false;try{[IW7HudHttp]::new($bytes,$hash,"$Root/legacy.jsonl",$route)}catch{$refused=$true}
+    if(!$refused -or (Test-Path "$Root/legacy.jsonl")){throw 'Legacy route limit widened'}
+}
+$refused=$false;try{[IW7HudHttp]::CreateRigidModel($bytes,('A'*64),"$Root/wrong.jsonl")}catch{$refused=$true}
+if(!$refused -or (Test-Path "$Root/wrong.jsonl")){throw 'Wrong rigid hash created listener/journal'}
+# A single zeroed array exercises the actual upper-bound branch. Asset checks
+# length before cloning or hashing, so no second large payload is allocated.
+$oversize=[byte[]]::new(32MB+1)
+$refused=$false;try{[IW7HudHttp]::CreateRigidModel($oversize,$hash,"$Root/oversize.jsonl")}catch{
+    $refused=$_.Exception.ToString().Contains('exceeds its route-specific bound')
+}
+$oversize=$null
+if(!$refused -or (Test-Path "$Root/oversize.jsonl")){throw 'Oversized rigid payload reached journal/listener'}
+$http=[IW7HudHttp]::CreateRigidModel($bytes,$hash,"$Root/rigid.jsonl")
+$client=[Net.Http.HttpClient]::new()
+try{
+    if($http.AssetRoute -cne [IW7HudHttp]::ModelRoute){throw 'Unexpected rigid route'}
+    foreach($route in @([IW7HudHttp]::Route,[IW7HudHttp]::BeaconRoute,[IW7HudHttp]::SoundRoute,([IW7HudHttp]::ModelRoute+'?x=1'))){
+        $response=$client.GetAsync($http.BaseUrl+$route).GetAwaiter().GetResult()
+        if([int]$response.StatusCode -ne 404){throw 'Rigid HTTP served foreign route'}
+        $response.Dispose()
+    }
+    $actual=$client.GetByteArrayAsync($http.BaseUrl+[IW7HudHttp]::ModelRoute).GetAwaiter().GetResult()
+    if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($actual)) -cne $hash -or $http.CompletedGets -ne 1){throw 'Rigid GET differs'}
+}finally{$client.Dispose();$http.Dispose()}
+if(!$http.Stopped){throw 'Synthetic HTTP worker remains active'}
+''')
+            result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), folder], capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == '__main__':

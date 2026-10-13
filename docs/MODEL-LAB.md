@@ -19,6 +19,10 @@ file integrity, runtime behavior and owner acceptance are separate gates.
 > overall pixels or owner acceptance, or the new T7 asset port. The earlier
 > invisible-cube result below is retained as history.
 
+The [resident rigid export connection](../ops/model-lab/RESIDENT-RIGID.md) adds
+source preparation/rebind and FF/runtime proof gates for a T7 donor. Its actual
+FF, roundtrip and rendering remain unproved; the cube checkpoints above stay distinct.
+
 ## Named content and author evidence
 
 Public author pages were inspected once for this content search on2026-10-06/07.
