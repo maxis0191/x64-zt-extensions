@@ -16,30 +16,46 @@ function New-Geometry([int]$Count=5){
         selected_counts=[pscustomobject]@{bones=1;roots=1;surfaces=$Count;vertices=3*$Count;triangles=$Count}
         surface_records=@(for($i=0;$i -lt $Count;$i++){[pscustomobject]@{index=$i;material_slot=$i;vertices=3;triangles=1}})
         material_dependencies=@(for($i=0;$i -lt $Count;$i++){'same_material'})
-        geometry_work_bytes_upper_bound=256+560*$Count
+        geometry_work_bytes_upper_bound=256+576*$Count
     }
 }
 
 $g=New-Geometry
-Check ($g.geometry_work_bytes_upper_bound -eq 3056) 'Five-occurrence golden work size differs.'
+Check ($g.geometry_work_bytes_upper_bound -eq 3136) 'Five-occurrence golden work size differs.'
 $before=$g|ConvertTo-Json -Depth 20 -Compress
 Assert-T7ResidentExportGeometryV2 $g;$script:checks++
 Check (($g|ConvertTo-Json -Depth 20 -Compress) -ceq $before) 'Validation reordered or deduplicated occurrences.'
-foreach($pair in @(@(1,816),@(255,143056))){
+foreach($pair in @(@(1,832,816),@(255,147136,143056))){
     $value=New-Geometry $pair[0]
     Check ($value.geometry_work_bytes_upper_bound -eq $pair[1]) 'Boundary golden work size differs.'
     Assert-T7ResidentExportGeometryV2 $value;$script:checks++
+    $value.geometry_work_bytes_upper_bound=$pair[2]
+    Refuses {Assert-T7ResidentExportGeometryV2 $value} 'work bytes'
 }
+
+$face=New-Geometry 2
+$face.surface_records[1].vertices=5;$face.surface_records[1].triangles=2
+$face.selected_counts.vertices=8;$face.selected_counts.triangles=3
+$face.geometry_work_bytes_upper_bound=1540
+Assert-T7ResidentExportGeometryV2 $face;$script:checks++
+$face.geometry_work_bytes_upper_bound=1508
+Refuses {Assert-T7ResidentExportGeometryV2 $face} 'work bytes'
 
 # Exact 16 MiB boundary, with every surface below its per-item bound.
 $boundary=New-Geometry 6
 for($i=0;$i -lt 6;$i++){$boundary.surface_records[$i].vertices=44500;$boundary.surface_records[$i].triangles=10482}
-$boundary.surface_records[5].triangles=10486
-$boundary.selected_counts.vertices=267000;$boundary.selected_counts.triangles=62896
+$boundary.surface_records[5].triangles=10478
+$boundary.selected_counts.vertices=267000;$boundary.selected_counts.triangles=62888
 $boundary.geometry_work_bytes_upper_bound=16777216
 Assert-T7ResidentExportGeometryV2 $boundary;$script:checks++
 $bad=Copy-Value $boundary;$bad.surface_records[5].triangles++;$bad.selected_counts.triangles++;$bad.geometry_work_bytes_upper_bound+=12
 Refuses {Assert-T7ResidentExportGeometryV2 $bad} 'work bytes'
+# The former 368*N edge is 96 bytes over the corrected cap at N=6.
+$oldEdge=Copy-Value $boundary;$oldEdge.surface_records[5].triangles=10486;$oldEdge.selected_counts.triangles=62896
+foreach($declared in @(16777216,16777312)){
+    $oldEdge.geometry_work_bytes_upper_bound=$declared
+    Refuses {Assert-T7ResidentExportGeometryV2 $oldEdge} 'work bytes'
+}
 
 foreach($spec in @(@('bones',0),@('bones',2),@('roots',0),@('roots',2),@('surfaces',0),@('surfaces',256),
     @('vertices',2),@('vertices',16711426),@('triangles',0),@('triangles',16711426))){
@@ -98,12 +114,12 @@ foreach($value in @('../escape',',reference',('x'*256),$false)){
     $bad=Copy-Value $g;$bad.material_dependencies[4]=$value
     Refuses {Assert-T7ResidentExportGeometryV2 $bad} 'Unsafe export'
 }
-foreach($value in @(0,3055,3057,816,16777217,'3056',3056.0,$true,[long]::MaxValue)){
+foreach($value in @(0,3135,3137,832,3056,16777217,'3136',3136.0,$true,[long]::MaxValue)){
     $bad=Copy-Value $g;$bad.geometry_work_bytes_upper_bound=$value
     Refuses {Assert-T7ResidentExportGeometryV2 $bad} 'work bytes'
 }
 # The same material and geometry occurrence still contributes five full rows.
-$bad=Copy-Value $g;$bad.geometry_work_bytes_upper_bound=816
+$bad=Copy-Value $g;$bad.geometry_work_bytes_upper_bound=832
 Refuses {Assert-T7ResidentExportGeometryV2 $bad} 'work bytes'
 $bad=New-Geometry 255
 foreach($row in $bad.surface_records){$row.vertices=65535;$row.triangles=65535}
@@ -197,12 +213,12 @@ try{
     $state=[ordered]@{ExitCode=0;ExportOutcome='NoExport'}
     Check ((Read-T7ResidentExportReport $plan $state $context) -ceq 'ExportFilesObserved') 'V2 report refused.'
     Check ($context.Guards.Count -eq 3 -and $state.SurfaceRecords.Count -eq 255 -and $state.MaterialDependencies.Count -eq 255 -and
-        $state.GeometryWorkBytesUpperBound -eq 143056 -and !$state.SerializedParseVerified -and !$state.DependencyPayloadsVerified) 'V2 report lost slots, guards or qualification limits.'
+        $state.GeometryWorkBytesUpperBound -eq 147136 -and !$state.SerializedParseVerified -and !$state.DependencyPayloadsVerified) 'V2 report lost slots, guards or qualification limits.'
     Close-Guards
     $state.ExitCode=1
     Check ((Read-T7ResidentExportReport $plan $state $context) -ceq 'ValidExportFromFailedProcess') 'Failed native process became accepted.'
     Close-Guards;$state.ExitCode=0
-    $bad=Copy-Value $manifest;$bad.geometry_work_bytes_upper_bound=816;Save-Manifest $bad
+    $bad=Copy-Value $manifest;$bad.geometry_work_bytes_upper_bound=832;Save-Manifest $bad
     Refuses {Read-T7ResidentExportReport $plan $state $context} 'work bytes'
     Check ($context.Guards.Count -eq 1) 'Geometry limits must reject before model or mesh pins are opened.'
     Close-Guards;Save-Manifest $manifest
