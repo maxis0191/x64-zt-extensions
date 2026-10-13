@@ -51,3 +51,11 @@ jobs:
           if ($LASTEXITCODE) { throw 'Selected XPAK fixture compilation failed' }
           & ./runtime/selected-xpak/fixture.exe
           if ($LASTEXITCODE) { throw 'Selected XPAK synthetic fixture failed' }
+          cl /nologo /std:c++20 /EHsc /O2 /MT /W4 /WX /Foruntime/selected-xpak/cli-options.obj /Feruntime/selected-xpak/cli-options.exe tools-source/asset-bridge/t7-iw7/test_selected_xpak_cli_options.cpp
+          if ($LASTEXITCODE) { throw 'Selected XPAK CLI parameter fixture compilation failed' }
+          & ./runtime/selected-xpak/cli-options.exe
+          if ($LASTEXITCODE) { throw 'Selected XPAK CLI parameter fixture failed' }
+          cl /nologo /std:c++20 /EHsc /O2 /MT /W4 /WX /I runtime/selected-xpak/lz4 /Foruntime/selected-xpak/cli.obj /Feruntime/selected-xpak/selected-xpak.exe tools-source/asset-bridge/t7-iw7/selected_xpak_cli.cpp runtime/selected-xpak/lz4.obj
+          if ($LASTEXITCODE) { throw 'Selected XPAK CLI compilation failed' }
+          & ./runtime/selected-xpak/selected-xpak.exe --help
+          if ($LASTEXITCODE) { throw 'Selected XPAK CLI help failed' }

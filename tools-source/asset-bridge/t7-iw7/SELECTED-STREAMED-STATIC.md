@@ -92,6 +92,30 @@ native types, opaque-input hashes, lease or run-root creation. The PS synthetic
 streamed transition initially retained the earlier CLI tuple and was correctly
 refused; its exact new tuple was updated. Legacy transition tables are unchanged.
 
+## Explicit qualified source cohort on 2026-10-14
+
+The next source preparation adopts reader18512/SHA53265601 from the offline
+CLI batchB qualification: 13 copy cases,46 refusals, one Windows sealing case,
+42 options/containment cases, CLI compilation and help all passed. Its one
+real selected extraction decoded7,680 bytes with LZ4 opcode3 into18,624 owned
+bytes. This is a packet-reader result, not a rigid conversion or engine ABI
+result. The generic public API permits1..256KiB; the selected streamed engine
+wrapper still requires exactly18,624 bytes before any read.
+
+The same future source cohort explicitly adopts PR23's MaterialE helper
+(16489 bytes/SHA0ea84735) and fixture (13721 bytes/SHAcb27d4df), after its63
+native synthetic cases passed. It retains copied binding scalars before image
+dereferences and distinguishes refused from unvisited image rows. No retail
+image name, format or pixels were qualified by those synthetic cases.
+
+The source contract, rendered patch and streamed-only transition/runner pins
+are recalculated together with the already merged rigid refusal diagnostic.
+Neither engine CLI logic nor geometry guards change in this compatibility
+commit. Legacy128/E2-v2144 tables, dependencies and archive stay unchanged;
+the old E3 compiled packages and receipts retain reader457 and MaterialD50.
+This new combined translation unit still needs its own native build and stock
+observation before the detailed rigid refusal can identify the failing field.
+
 ## Build preparation
 
 `prepare_build.py --selected-streamed-static-v1` selects a separate transition
