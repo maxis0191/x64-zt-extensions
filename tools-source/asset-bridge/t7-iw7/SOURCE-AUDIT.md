@@ -306,3 +306,11 @@ An intermediate source-pin generator hashed a JSON representation instead of
 the runner's sorted newline-delimited rows. This was corrected before a build
 plan or native execution; the targeted PowerShell binding suite passed with
 the actual 714-byte row format. This is source validation, not native validation.
+
+The first E DEFAULT also stopped before provider loading because its three new
+read-only observer sources produced 144 bindings instead of D's exact 141.
+The current validator requires precisely those three paths, lengths and hashes,
+144 total/138 text bindings, and the unchanged 1,146 native inputs/six binary
+metadata bindings/66-header proof. Legacy remains capped at 128. Missing,
+mutated, redirected or misclassified observer sources are rejected. The failed
+E plan remains immutable and has never been run.

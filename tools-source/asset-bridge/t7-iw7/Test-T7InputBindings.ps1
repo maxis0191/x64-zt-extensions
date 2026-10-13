@@ -42,6 +42,12 @@ function New-BindingFixture {
     }
     while($bindings.Count -lt 135){$bindings+=@([pscustomobject]@{Path=('C:\fixture\text'+$bindings.Count+'.txt');Bytes=1;SHA256=('a'*64);IsText=$true})}
     foreach($row in @(
+        @('resident_image_copy.hpp',6366,'96291c23f132e09285d4ea3171c9107ac525d8628403014eae85a895f99c324e'),
+        @('selected_material_observation.hpp',12765,'a935803571f04b3a2cad7346824bf3194f5d44aeada15b224a3faa75ea292d7f'),
+        @('selected_material_observation_fixture.cpp',8146,'f011131feeb5495b3bfb0a1e86ad34aad20fc7869ec775c861290df6e3e1a05b'))) {
+        $bindings+=@([pscustomobject]@{Path=('C:\fixture\'+$row[0]);Bytes=$row[1];SHA256=$row[2];IsText=$true})
+    }
+    foreach($row in @(
         @('cl.exe',677776,'fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619'),
         @('link.exe',3252616,'a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f'),
         @('probe-nativejob.dll',13312,'5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8'),
@@ -59,7 +65,7 @@ function New-BindingFixture {
             E7TranslationUnit='c:\native\src\zonetool\zonetool\iw7\assets\xsurface.cpp';E7ReadSHA256=$readSHA;
             E7CompileSHA256=$compileSHA;CompilerContextMatchesCLI=$true;PCHExcludedForPreparedYMinus='c:\e7\obj\community.pch';Inputs=$headers}}
     # JSON roundtrip ensures proof, Inputs and Bindings do not share pin objects.
-    return ([pscustomobject]@{SourceCommit='fab935826c898806855376662a8a03317b3ad8f1';PreparedRoot='C:\plan\prepared';
+    return ([pscustomobject]@{SourceCommit='fab935826c898806855376662a8a03317b3ad8f1';PreparedRoot='C:\plan\prepared';Runner='C:\fixture\Run-T7Build.ps1';
         BuildProfile=[pscustomobject]@{Name='t7-catalog-message-publication';PublicationSchema='iw7.t7-message-publication-build/1'};
         ReuseCompile=[pscustomobject]@{RecompiledMain=$true;RecompiledZonetool=$true;StageRoots=@('C:\old\xpak');ResidentMultiSurfaceV2=$proof};
         Inputs=$inputs;Bindings=$bindings}|ConvertTo-Json -Depth 15|ConvertFrom-Json -Depth 15)
@@ -75,7 +81,8 @@ foreach($mode in 'missing-marker','null-marker','old-profile','mixed','false-mai
     'proof-missing','proof-count','proof-bytes','context','journal','pch','input-count','binding-count','classification',
     'header-input','header-binding','header-missing','header-extra','header-duplicate','header-mutant-all','header-path-all',
     'duplicate-input','duplicate-binding','journal-binding','dep-json','transition','wired-binding','string-classification',
-    'binary-mutant','binary-as-text','header-length','old-surface80-all','old-surface80-transition') {
+    'binary-mutant','binary-as-text','header-length','old-surface80-all','old-surface80-transition',
+    'observer-missing','observer-hash','observer-bytes','observer-path','observer-classification') {
     $f=New-BindingFixture;$p=$f.ReuseCompile.ResidentMultiSurfaceV2;$h=$p.AdditionalHeaderInputs
     switch($mode) {
         missing-marker {$f.ReuseCompile.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}
@@ -119,6 +126,11 @@ foreach($mode in 'missing-marker','null-marker','old-profile','mixed','false-mai
             if($mode -ceq 'old-surface80-all'){$p.SHA256=$oldSHA}
         }
         wired-binding {$f.Bindings[72].SHA256=('0'*64)}
+        observer-missing {$f.Bindings[135].Path='C:\fixture\other.hpp'}
+        observer-hash {$f.Bindings[135].SHA256=('0'*64)}
+        observer-bytes {$f.Bindings[136].Bytes++}
+        observer-path {$f.Bindings[136].Path='C:\other\selected_material_observation.hpp'}
+        observer-classification {$f.Bindings[137].IsText=$false}
     }
     Must-RefuseBinding $f
 }
