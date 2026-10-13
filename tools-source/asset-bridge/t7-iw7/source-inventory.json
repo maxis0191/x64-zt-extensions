@@ -1,0 +1,81 @@
+{
+  "schema": "iw7.t7-iw7-source-inventory/1",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "files": {
+    "README.md": {
+      "bytes": 14793,
+      "sha256": "9a9d70bba62c1136118c5f0579f37f7384fa5c97d4f300f3f014284a5173707c"
+    },
+    "src/zonetool/main.cpp": {
+      "bytes": 12925,
+      "sha256": "9d7ee573357c15554368e36542c0dad5f163e1cf069b869686f3ffb51a07bc01"
+    },
+    "src/zonetool/game/shared.cpp": {
+      "bytes": 13049,
+      "sha256": "de421b87b65d230622e77c6bca1da2d2435ddf646b2ab9c506cc55c043301d41"
+    },
+    "src/zonetool/zonetool/t7/zonetool.cpp": {
+      "bytes": 19933,
+      "sha256": "026f7a943a9b48adf2a098c8704fb8a9c4a60037f1759dc92d471eb7f7e6615e"
+    },
+    "src/zonetool/zonetool/t7/functions.hpp": {
+      "bytes": 900,
+      "sha256": "099ec902cb7a41d72248ac458c2569c53e33367abb7adc613e1f579a77dafd07"
+    },
+    "src/zonetool/zonetool/t7/common/xpak.cpp": {
+      "bytes": 8271,
+      "sha256": "69c42adf4b04eb3fb7b46af2ec9b2b753fa144a025b8178eb8db1d43ead214d9"
+    },
+    "src/zonetool/zonetool/t7/common/xpak.hpp": {
+      "bytes": 192,
+      "sha256": "e9bb754c4228c42bd6a26e20d7252d59b76806cca55c7af275280586b8dd3f70"
+    },
+    "src/zonetool/component/t7/zonetool.cpp": {
+      "bytes": 1440,
+      "sha256": "5c36b329d33d9afec755434680b558ea4f13b212962f62250aafdab0b101752b"
+    },
+    "src/zonetool/zonetool/t7/converter/iw7/assets/xmodel.cpp": {
+      "bytes": 6767,
+      "sha256": "dea97c0121ddaaa5710e11192c19b37bf7f258e583ce791288e01db833e5d1ff"
+    },
+    "src/zonetool/zonetool/t7/converter/iw7/assets/xmodel_mesh.cpp": {
+      "bytes": 7957,
+      "sha256": "1424cd3919e2fe86240257aa1633e6f4c87e42c13b70e7300f95eef3e1f7a9c6"
+    },
+    "src/zonetool/zonetool/t7/converter/iw7/assets/xanim.cpp": {
+      "bytes": 5546,
+      "sha256": "5dc9086745e73c07b3f39bf3a819e905b664ca048324616b9048ce9d4bb7e682"
+    },
+    "src/zonetool/zonetool/iw7/assets/xmodel.cpp": {
+      "bytes": 13911,
+      "sha256": "3b512ce71a72ae76a01a5e5b4236162c529557f78f583b8de79ae86a80c0b97a"
+    },
+    "src/zonetool/zonetool/iw7/assets/xsurface.cpp": {
+      "bytes": 17235,
+      "sha256": "347622b01c02f0848e2aa4d98597c3b4939022441a6f792053ffc4d94ff8fa03"
+    },
+    "src/zonetool/zonetool/iw7/assets/xanim.cpp": {
+      "bytes": 14911,
+      "sha256": "28018aae6c3407fe7fc35b48fdec4fd98daba8ff8f6b0c1047eb383365992673"
+    },
+    "src/zonetool/zonetool/utils/io/assetmanager.hpp": {
+      "bytes": 16740,
+      "sha256": "674f3fd82ff519fa76d2105c05e09c7a950857a7c598ab019fbea3bab8a75b83"
+    },
+    "src/zonetool/zonetool/utils/io/filesystem.cpp": {
+      "bytes": 8003,
+      "sha256": "79ccd9ae7ca9edffadebc9182a8c64d44953ce0222ac51a2acf6d6f8afdb35a5"
+    },
+    "src/common/utils/flags.cpp": {
+      "bytes": 2160,
+      "sha256": "c647aad2dcddad3614b25a0337d8561e1e19a9318183b534546c6667af2cd81f"
+    }
+  },
+  "source_files": 17,
+  "source_bytes": 164733,
+  "scope": "Retained source only. No BO3 installation metadata scan or payload read performed by this chat.",
+  "native_compiled": false,
+  "native_executed": false,
+  "retail_payload_read": false,
+  "ready": false
+}

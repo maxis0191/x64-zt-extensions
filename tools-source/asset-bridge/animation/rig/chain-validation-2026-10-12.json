@@ -1,0 +1,81 @@
+{
+  "schema": "iw7.original-rig-chain-source-validation/1",
+  "captured_utc": "2026-10-12T05:09:07.021654+00:00",
+  "source_base_commit": "1dc2347e98f6c4c98414a353ee006aa89575b329",
+  "light_tests": {
+    "prior_rig": 79,
+    "chain": 14,
+    "total": 93,
+    "passed": 93
+  },
+  "initial_test_setup_failure": "Flat synthetic dump layout attempted to create the same directory twice; test setup changed to exist_ok, with no production-reader relaxation.",
+  "source_hashes": {
+    "plan_rig_chain.py": "35f41389890055eee1d5c7b32f30d6841ebe099dcfee950b43c1817413495244",
+    "read_rig_chain.py": "d8a4ae67f43e5d5392d9c76ecbe97efb56640e3b468d66e909880b1ea63def86",
+    "test_rig_chain.py": "d3700e9967d0f60939d7452ed28d6db0c3f780afa034165cb34a2aef20dd15e4"
+  },
+  "physical_plan": {
+    "label": "animation-rig-chain-plan-20261012-b.local.json",
+    "bytes": 56709,
+    "sha256": "5a486bd3b4b7bf7868a598d68950b90803d513751b0cb956ef443eaefea165f6",
+    "schema": "iw7.original-rig-chain-plan/1",
+    "mode": "plan-only",
+    "base_plan_sha256": "530051a7522327106e84bef5e3f7ecfa38f60ecad73f530dca981b59e11eef63",
+    "prepared_receipt_sha256": "6875713edd1f936231a13e1eb028df856118d46beaace9c4b0100bdf1b55e985",
+    "nine_provider_hashes_rechecked": true,
+    "eleven_iw7_interfaces_rechecked": true,
+    "compiler_and_python_hashes_rechecked": true,
+    "source_and_header_bytes_rechecked": true,
+    "run_root_created": false,
+    "stock_files_read_or_copied": false,
+    "phase_count": 8,
+    "phases": [
+      "compile",
+      "emit-first",
+      "emit-second",
+      "read-native",
+      "build",
+      "verify",
+      "dump",
+      "read-ff"
+    ],
+    "expected_inventory": [
+      "material,,mopw/character_park_clown_zombie_shoes",
+      "xmodelsurfs,paris_doom_skin_two_bone_first_a_lod0",
+      "xmodelsurfs,paris_doom_skin_two_bone_second_a_lod0",
+      "xmodel,paris_doom_skin_two_bone_first_a",
+      "xmodel,paris_doom_skin_two_bone_second_a",
+      "xanim,paris_original_probe_bend",
+      "rawfile,sdk_original_rig_probe"
+    ],
+    "staged_entries": 79,
+    "bounded_redumps": 5
+  },
+  "prior_plan_preserved": {
+    "label": "animation-rig-chain-plan-20261012-a.local.json",
+    "sha256": "b29d63e410b1f0fc2a91585ef9f95aec78ec3146cbc21f565c0ed5b65857d691",
+    "scope": "Earlier source plan before adding explicit working directories, candidate staging and retention mapping."
+  },
+  "data_reader_tests": {
+    "original_synthetic_xmb_xsb_only": true,
+    "native_and_ff_scope_tested": true,
+    "both_weight_hypotheses_tested": true,
+    "actual_model_streams_feed_oracle": true,
+    "actual_new_model_native_or_ff_outputs_read": false
+  },
+  "provider_edits": false,
+  "measured_animation_ff_runner_edits": false,
+  "recovered_source_edits": false,
+  "executor_integration_pending": true,
+  "native_compilation": false,
+  "native_execution": false,
+  "ff_execution": false,
+  "new_sdk_or_retail_copy": false,
+  "resource_lease_created": false,
+  "stock_transaction": false,
+  "game_execution": false,
+  "material_binding_verified": false,
+  "engine_animation_conventions_verified": false,
+  "runtime_render_verified": false,
+  "ready": false
+}

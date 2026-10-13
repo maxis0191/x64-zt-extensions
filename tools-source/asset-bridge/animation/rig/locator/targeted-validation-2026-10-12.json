@@ -1,0 +1,39 @@
+{
+  "schema": "iw7.rig-targeted-preparation/1",
+  "date_utc": "2026-10-12",
+  "prior_run_evidence_commit": "b35f2f5",
+  "entry": "0x140a17970",
+  "source_pins": {
+    "Locator.Supervisor.Core.ps1": "eb6ebea3872227dba6a430cc3f50aa4da1c74ddfc0b643fce295df398a602a5c",
+    "Run-Locator.ps1": "649cb2ea02edd935fc9575cb4b2f0e1e9fb9d6f1d24c4e5fffec2b430877b9ca",
+    "locate_targeted.py": "e063effa6719b92ec5355fa6990c08af47ba7d297a5391e23cdd715b9a6ccc8b"
+  },
+  "plan_sha256": "f52d2728225ab92670a909ab2c92a336f4b6400519f52c7fc601671d8b86ad3f",
+  "default_plan_evidence_sha256": "1e7082d461981f2b86bbf1b4c281de9be63582a7f5c15e5bb8c147f1f4c2b7d5",
+  "command_sha256": "151f9991d6e1f36d480987f43f6e6671a0b948e11ca37665dac89af14f723743",
+  "tests": {"python_original": 12, "python_targeted": 16, "python_total_passed": 28, "powershell_checks_passed": 134},
+  "corrected_test_failure": "Capstone 5.0.7 labels the tested MOVUPS memory destination read-only. Preserve all overlap references and supplement explicit MOV-family memory destinations as unproved candidates.",
+  "limits": {
+    "root_entries": 1, "fragments": 8, "fragment_bytes": 2048,
+    "decoded_bytes": 8192, "instructions": 2048, "control_edges": 64,
+    "seconds": 10, "text_scans": 0, "external_callees_followed": 0
+  },
+  "outer_supervisor": {"physical_bytes": 1073741824, "commit_bytes": 2147483648, "deadline_seconds": 60, "maximum_output_bytes": 4194304, "cleanup_seconds": 15},
+  "guarded_bytes": 40538053,
+  "runtime_pins": 42,
+  "known_guard_and_child_content_read_bytes": 106238954,
+  "default_plan_native_types_loaded": false,
+  "default_plan_lease_acquired": false,
+  "default_plan_reference_content_read": false,
+  "targeted_run_root_created": false,
+  "targeted_run_invocations": 0,
+  "complete_logical_function_established": false,
+  "continuation_same_function_established": false,
+  "reference_live_provenance": false,
+  "actual_first_writer_established": false,
+  "live_breakpoint_established": false,
+  "process_attached": false,
+  "game_or_zonetool_launched": false,
+  "acceptance_changed": false,
+  "next_action": "Coordinator source and exact Plan review; separate GO and fresh complete admission before any targeted Run."
+}

@@ -1,0 +1,156 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-checkpoint/1",
+  "date": "2026-10-12",
+  "attempt": "I",
+  "plan_bytes": 10833,
+  "plan_sha256": "234dc0d788c769e5ddb83cb9d6daa2e9a09d677baf6b4b4aaaef99590e4ff03f",
+  "candidate_bytes": 21750272,
+  "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+  "source_commit": "973a1cbc9f6d0b3c44d05fe52bf4463abd5b01a1",
+  "corrected_dispatch_sha256": "9db1b76179daa59dac1ff2bd8ad504865c5a2bc4805eda8481438a355af02eb9",
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "trace_outcome": "TraceObserved",
+  "exit_context_outcome": "Observed",
+  "callers_outcome": "Observed",
+  "message": {
+    "outcome": "Observed",
+    "captures": [
+      {
+        "Kind": "install",
+        "ThreadId": 25272,
+        "Status": "installed",
+        "Error": 0
+      },
+      {
+        "Kind": "buffer",
+        "ThreadId": 28892,
+        "Status": "ok",
+        "Error": 0,
+        "Requested": 384,
+        "ReadBytes": 384,
+        "Length": 45,
+        "NulTerminated": true
+      }
+    ],
+    "incomplete_trailing_line": false,
+    "install_boundary_observed": true,
+    "exit_correlated": true,
+    "correlation": "SameThreadBeforeExit",
+    "decoded_or_interpreted_by_adapter": false
+  },
+  "exit_code": 0,
+  "elapsed_ms": 2246.6043000221252,
+  "started_utc": "2026-10-12T17:04:56.1140830Z",
+  "finished_utc": "2026-10-12T17:04:59.8024572Z",
+  "native_root": {
+    "pid": 33572,
+    "created_utc": "2026-10-12T17:04:56.1519471Z"
+  },
+  "trace_events": [
+    {
+      "Phase": "enabled",
+      "StdoutUnbuffered": true,
+      "StderrUnbuffered": true,
+      "ThreadId": 25272
+    },
+    {
+      "Phase": "before_entry_point",
+      "Code": 0,
+      "ThreadId": 25272,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "before_post_unpack",
+      "Code": 0,
+      "ThreadId": 25272,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "after_post_unpack",
+      "Code": 0,
+      "ThreadId": 25272,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "exit_hook",
+      "Code": 0,
+      "ThreadId": 28892,
+      "ReturnAddress": "0000000140AC00C4"
+    }
+  ],
+  "stderr_evidence_under_guards": {
+    "name": "stderr.log",
+    "bytes": 4888,
+    "sha256": "56f2538ecb2d2b4c3b31a545f9412d099b1942a101bcca27a743a41f46314dd7",
+    "hash_recalculated_after_release": false
+  },
+  "stdout_bytes": 70,
+  "receipt_bytes": 12971,
+  "closure": {
+    "tree_confirmed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "termination_requested": false,
+    "inputs_reverified_under_lease": true,
+    "engine_outputs_validated": true,
+    "original_metadata_unchanged": true,
+    "postflight_utc": "2026-10-12T17:05:07.5548030Z",
+    "metadata_equal_count": 4,
+    "file_ids_equal_count": 8,
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "host_pid": 35524,
+    "host_created_utc": "2026-10-12T17:04:35.1377251Z",
+    "host_parent_pid": 35188,
+    "session_id": 13977,
+    "tool_exit_chunk": "f4269b",
+    "actual_host_exit_code": 0,
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T17:05:51.4233562Z",
+    "host_parent_and_root_absent": true,
+    "lease_count": 0,
+    "payload_hashes_read_after_release": false
+  },
+  "private_evidence": [
+    {
+      "name": "t7-catalog-i-corrected-preflight.local.json",
+      "bytes": 2058,
+      "sha256": "0073cb67a8efe50f4f65e858c37b56e5aba600179d1bf169c055d00988630d9d"
+    },
+    {
+      "name": "t7-catalog-i-corrected-host-return.local.json",
+      "bytes": 434,
+      "sha256": "1c4a846f8658b50fac833009decbba72af14af27bad2985ebc7214314a57c9b3"
+    },
+    {
+      "name": "t7-catalog-i-corrected-postflight.local.json",
+      "bytes": 3253,
+      "sha256": "e0469ff6d4da335bb1f7aba578e6f94849ccddec8cf7d0fd3076336b3a40651b"
+    },
+    {
+      "name": "t7-catalog-i-corrected-host-outcome.local.json",
+      "bytes": 291,
+      "sha256": "3d6e92ee089ccb19aadff55a2277edc5badafb0d750576f6559c395c3ae2fb05"
+    },
+    {
+      "name": "t7-catalog-i-corrected-host-exit.local.json",
+      "bytes": 338,
+      "sha256": "97755bc954190df167a9488ade789de9739b18ead13d2b019799f0da8c74a892"
+    },
+    {
+      "name": "t7-catalog-i-corrected-host-absence.local.json",
+      "bytes": 601,
+      "sha256": "d583ac8893cdfa67dad76ff0a34298ba3ca5353692658e83b13e67e701fa298d"
+    }
+  ],
+  "limits": {
+    "native_invocations": 1,
+    "runtime_attempt_consumed": true,
+    "catalogue_success": false,
+    "compatibility_proven": false,
+    "ready": false,
+    "previous_refused_dispatch_preserved": true
+  },
+  "next_action": "Worker 51 alone interprets the private 45-byte message after closure. No retry or further native invocation authorized by this checkpoint."
+}

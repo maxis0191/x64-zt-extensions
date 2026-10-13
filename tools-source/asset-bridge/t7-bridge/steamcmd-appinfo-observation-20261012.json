@@ -1,0 +1,117 @@
+{
+  "schema": "iw7.steamcmd-appinfo-observation/1",
+  "observed_date": "2026-10-12",
+  "attempt": "metadata-a",
+  "invocations": 1,
+  "source_commit": "2fc94701a2ebc04e66859a33fa2100ef7f3603c6",
+  "plan_sha256": "081d703c285d21cba2cf5c9c267fd1b20bd6026d4b0a16a6cb9cbe713fc90e2a",
+  "process_attempt_status": "Failed",
+  "steamcmd_parent_exit_code": 7,
+  "python_root_exit_code": 1,
+  "phase_failure_field": null,
+  "phase_elapsed_seconds": 16.65600000001723,
+  "interpretation": "The guarded invocation failed on nonzero parent exit. Its separate internal Steam console log contains the completed anonymous AppInfo response; metadata is usable without promoting the invocation to passed.",
+  "exit_7_cause": "Unresolved. Updater logs show two update stages, cleanup warnings marked continuing, then final console login/query/unload OK; no inspected log explicitly explains parent exit 7.",
+  "appinfo": {
+    "confirmed_from_primary_response": true,
+    "app_id": 545990,
+    "change_number": 34351876,
+    "name": "Call of Duty: Black Ops III - Unranked Dedicated Server",
+    "type": "Tool",
+    "release_state": "released",
+    "os": "windows",
+    "free_to_download": true,
+    "declared_install_dir": "Call of Duty Black Ops III",
+    "declared_launch": "UnrankedServer\\Launch_Server.bat",
+    "declared_working_dir": "UnrankedServer\\",
+    "public_build_id": 4500243,
+    "depot_id": 545991,
+    "public_manifest_id": "2350066205567669287",
+    "declared_installed_bytes": 3900040220,
+    "declared_download_bytes": 3697813104
+  },
+  "updated_steamcmd": {
+    "Bytes": 5462168,
+    "Version": "10.95.69.31",
+    "SHA256": "88f791368cdb3a8c82b84d3ea53f25c18c33b425a0560d5a3f851bd709b35580",
+    "SignatureStatus": "Valid",
+    "Signer": "CN=Valve Corp., O=Valve Corp., L=Bellevue, S=Washington, C=US"
+  },
+  "storage": {
+    "observed_peak_tool_bytes": 287918599,
+    "closed_tool_bytes": 161068764,
+    "outer_receipt_and_logs_bytes": 1654,
+    "closed_tool_plus_outer_bytes": 161070418,
+    "observation_limit_bytes": 536870912,
+    "limit_is_os_quota": false
+  },
+  "closure": {
+    "original_root_exited": true,
+    "active_processes_before_stop": 0,
+    "stop_requested": true,
+    "active_processes_after_stop": 0,
+    "tree_closure_confirmed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "fresh_audit_utc": "2026-10-12T11:05:45.6082193Z",
+    "fresh_lease_count": 0,
+    "original_root_present": false,
+    "tool_or_host_leftovers": 0,
+    "main_process_generation_and_udp_owner_unchanged": true
+  },
+  "scope": {
+    "anonymous_login": true,
+    "personal_login_requested": false,
+    "app_or_depot_download_requested": false,
+    "installed_apps_reported_by_content_log": 0,
+    "file_manifest_obtained": false,
+    "dedicated_executable_obtained": false,
+    "t7_address_compatibility_proven": false,
+    "bo3_export_performed": false,
+    "iw7_ff_or_render_proven": false,
+    "retry_performed": false
+  },
+  "evidence": [
+    {
+      "name": "outer/receipt.json",
+      "bytes": 1654,
+      "sha256": "433f51233b73d544790750e1921dd2260ddd46bdcb0bc134e6aec9c1c9166c43"
+    },
+    {
+      "name": "metadata-attempt-a/phase.json",
+      "bytes": 938,
+      "sha256": "5ea1a071251a4936aac6933c7e01c15afac13202acf557e7e19e6485069d1b02"
+    },
+    {
+      "name": "metadata-attempt-a/stdout.log",
+      "bytes": 4441,
+      "sha256": "d1833114f516653c932d8638b980f041d55e2a30c632ec581b87484512dbca33"
+    },
+    {
+      "name": "metadata-attempt-a/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "logs/console_log.txt",
+      "bytes": 1774,
+      "sha256": "f51474538cf770f6aff22a8fdeb3ea3fc574165d8b99afd115cba81b60f700ed"
+    },
+    {
+      "name": "logs/bootstrap_log.txt",
+      "bytes": 3566,
+      "sha256": "582b04c845bad454fb591793c6a9b54015c65fa7276ded8cc195727ce01b57eb"
+    },
+    {
+      "name": "logs/content_log.txt",
+      "bytes": 725,
+      "sha256": "a795d7e9085a39c58e10bf0039a7fbc92a1fdc7649b6468748123d5945bd28d6"
+    },
+    {
+      "name": "closure-a.local.json",
+      "bytes": 604,
+      "sha256": "7487693eb35ab80d9476fe1702b8ff23e732917016939af148f815fec5542d51"
+    }
+  ],
+  "next_useful_step": "Retrieve only the pinned depot file manifest, inspect exact executable/dependency paths and sizes, then review the minimum legitimate selective payload. Do not repeat AppInfo just to reconfirm fields already observed; do not silently reuse the fresh-bootstrap execution profile."
+}

@@ -1,0 +1,25 @@
+{
+  "schema": "iw7.rig-abi.watch-context/1",
+  "profile": "first",
+  "run_id": null,
+  "tool_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "ff_sha256": "ea7ba4be1d5e6f0878431b51e7b9b1ba9d2b10bf74b1ad21da14d55c414e145d",
+  "pid": null,
+  "creation_utc": null,
+  "image_path": null,
+  "xsurface": null,
+  "xmodelsurfs": null,
+  "arm_rip": null,
+  "arm_code_hex": null,
+  "review": {
+    "phase": null,
+    "evidence_sha256": null,
+    "mapping_verified": false,
+    "stopped_identity_verified": false,
+    "launch_job_owned": false,
+    "breakpoint_table_empty": false,
+    "all_threads_stopped": false,
+    "deadline_armed": false,
+    "admission_lease_id": null
+  }
+}

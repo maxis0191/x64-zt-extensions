@@ -1,0 +1,77 @@
+{
+  "schema": "iw7.t7-catalogue-preparation/2",
+  "date": "2026-10-12",
+  "attempt": "B",
+  "status": "PlanCheckedPendingGO",
+  "prior_attempt_proof_commit": "dee6edd5be840856e4f551599af7a9394cf13452",
+  "plan_sha256": "bc5de39e59a5f2ba8a8139570e33cc79075d27d4a46e7a845e36d701c52594ed",
+  "plan_bindings": 15,
+  "correction": {
+    "profile": "ObservedStartupA",
+    "appid_max_live_bytes": 6,
+    "appid_required_closed_text": "311210",
+    "appid_final_read_guard": true,
+    "allowed_identity_directories": [
+      "identities",
+      "identities/dedicatedpc",
+      "identities/dedicatedpc/dumps",
+      "identities/dedicatedpc/LPC"
+    ],
+    "identity_files_allowed": 0,
+    "identity_payload_read": false,
+    "closed_engine_writer_identified": false,
+    "bounds_are_observation_based_policy": true
+  },
+  "fixed_inputs": {
+    "candidate_bytes": 21740032,
+    "candidate_sha256": "94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15",
+    "initial_ff": "mp_freerun_04.ff",
+    "initial_ff_bytes": 16977344,
+    "ff_hash_observed_during_admitted_attempt": true,
+    "additional_ff_count": 0,
+    "fd_count": 0,
+    "xpak_count": 0
+  },
+  "bounds": {
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "group_seconds": 200,
+    "root_seconds": 120,
+    "cleanup_seconds": 5,
+    "mutable_bytes": 67108864,
+    "tree_entries": 64,
+    "total_logical_bytes": 127799192
+  },
+  "validation": {
+    "result": "Passed",
+    "powershell_checks": 112,
+    "scope": "Existing 95 checks plus narrow app-id/directory/identity-file policy",
+    "real_lease_acquired": false,
+    "native_types_loaded": false,
+    "native_process_started": false,
+    "owner_stock_read": false,
+    "default_runner_status": "PlanCheckedPendingGO"
+  },
+  "preparation": {
+    "new_ordinary_empty_directories": 4,
+    "new_stock_links": 0,
+    "stock_payloads_hashed": 0,
+    "native_go": false,
+    "native_invoked": false,
+    "prior_attempt_tree_unchanged": true,
+    "ready": false
+  },
+  "source_pins": [
+    {
+      "name": "Run-T7Catalogue.ps1",
+      "bytes": 10443,
+      "sha256": "8cfc5902c372b3012daac51c8d008effed554970b1070c9bf6ead15ec2b2e770"
+    },
+    {
+      "name": "T7Catalogue.Profile.ps1",
+      "bytes": 15232,
+      "sha256": "70395f2d85b7e9cedabdbbb8949a0d3e2237b3590162c25061fb793af38d99c5"
+    }
+  ],
+  "next_action": "Independent review and separate coordinator GO after the active heavy workload closes. No automatic B launch or new stock."
+}

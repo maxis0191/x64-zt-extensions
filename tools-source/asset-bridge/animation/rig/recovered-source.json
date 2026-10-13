@@ -1,0 +1,74 @@
+{
+  "schema": "iw7.animation-rig-source-recovery/1",
+  "source_worktree": "doom-source-pipeline",
+  "source_relative_directory": "ops/doom-source",
+  "recovered_utc": "2026-10-12T04:25:07.2587215Z",
+  "recovered_files": [
+    {
+      "file": "prepare_skin_fixture.py",
+      "sha256": "b65564a3ecf3edc25b359f2cd420926c247f887375d6081b2c7f71f596a50353",
+      "bytes": 5865
+    },
+    {
+      "file": "read_skin_fixture.py",
+      "sha256": "444c52d5eeb6fa9b2329a20e4a30a466013815d91271473cf816d8dc14bc34fc",
+      "bytes": 8784
+    },
+    {
+      "file": "skin_oracle.py",
+      "sha256": "fcffec4ef49e416786f66ef8ce895c0e839a5104ddef1f3d74924907206c126b",
+      "bytes": 11697
+    },
+    {
+      "file": "prepare_skin_writer.py",
+      "sha256": "4ed76293e77efe00236312ca732491b3b008b37c5959b8666930dfcfcecdf510",
+      "bytes": 9023
+    },
+    {
+      "file": "writer_skin_two_bone.cpp",
+      "sha256": "ae31277cd6a9f4610a835f14dad51d3c8a5a1bc065da467c21c2dd610bf194a4",
+      "bytes": 12252
+    },
+    {
+      "file": "skin_native_abi.hpp",
+      "sha256": "d7d310252bff24a1ee809d71bfe1776d2e9367cdeab62a82ad17351330fde864",
+      "bytes": 2667
+    },
+    {
+      "file": "half_uv.hpp",
+      "sha256": "f532d525a81e0073c9c8ca6beeb9781734f56990f1db59cbd87b55efba2ae3d9",
+      "bytes": 1377
+    },
+    {
+      "file": "read_skin_native.py",
+      "sha256": "ba6806c74820271ecd37e79701fd8edd7e3cc7d713251f6a9fc3ae8f4dcbf258",
+      "bytes": 11783
+    },
+    {
+      "file": "test_skin_fixture.py",
+      "sha256": "f55af9e12d7e0a4b7bb27adf4d205122baa552823ca628c62d577757b472d5f4",
+      "bytes": 8161
+    },
+    {
+      "file": "test_skin_oracle.py",
+      "sha256": "f8dab608f2742cccfd50df2d5fb01ad2e51b3bec73583f1629abfc01ef2bccd3",
+      "bytes": 7917
+    },
+    {
+      "file": "test_skin_native.py",
+      "sha256": "23c832d75927c1f5e2a3735cfccdfa644a9a50a44af28882d50efd0bca64bd9d",
+      "bytes": 9921
+    },
+    {
+      "file": "test_prepare_skin_writer.py",
+      "sha256": "882f79b77d41bf8385b754bf78c3c6090a6013be60ff21a94e57fc1a0217dad9",
+      "bytes": 13072
+    }
+  ],
+  "original_source_files_modified": false,
+  "native_wrapper_recovered": false,
+  "native_compilation": false,
+  "native_execution": false,
+  "game_execution": false,
+  "notes": "Original procedural two-bone source and independent readers/tests recovered byte-for-byte. Historical source comments describe their original preparation checkpoint; current measured state is in README and validation records."
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "iw7.h1-original-fixture-source-contract/1",
+  "pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "lf_sha256": {
+    "src/zonetool/zonetool/h1/structs.hpp": "e205d7b81514abde7c4d6e8405cbe217f8ea745ee529b76ad1c374495c4563be",
+    "src/zonetool/zonetool/h1/assets/xmodel.cpp": "3c66b25038fcac85a79ef221720e1dcb226e617d1a2f7cee07d3c743a61c0c02",
+    "src/zonetool/zonetool/h1/assets/xsurface.cpp": "7b72e571814220235affb926f5b704c5c85b5e93f3582b615500344048463e9e",
+    "src/zonetool/zonetool/h1/assets/material.cpp": "8e7ae7a620389b9535d653ba3f46333766da30b22e51672b6ebab03981b0eabd",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/xmodel.cpp": "eb144cbb654c81aacf4c6f1551bc36c5b601f22e6a11d5dae514d68c35a49460",
+    "src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp": "db44ec1166c6f0cbb3af0ad21631154b8e3b00b42aac042b59e79c1ced4d24ce",
+    "src/zonetool/zonetool/iw7/assets/xmodel.cpp": "a72e445a09c21b165b09c6648164bd60044ab494ba6ccbbe9c175f1ce31276f4",
+    "src/zonetool/zonetool/utils/io/assetmanager.hpp": "28f3981362f6ce502add0ad3c6716b64e948dd7c85ebe744b04b1f4f14c66f05",
+    "src/zonetool/zonetool/utils/io/filesystem.cpp": "580cdb455ad178b1cb14fcadecea1a7ec2738ecdd25b655aa12254b9098a76c2",
+    "src/zonetool/game/shared.cpp": "7296150205d468d6f026ac2a925dbbdb20a3fcc2693ea1e45e08366e1b3fc3c1",
+    "src/zonetool/zonetool/h1/zonetool.cpp": "f506120ae473ebaf63755b5e0f0277ac8093d14fbca92dfbe266dcf1d5c681fc",
+    "src/zonetool/main.cpp": "205578e09b66f830df33d51e74d56be72aec249c690149810961a6184e96235e"
+  },
+  "native_abi_verified": false,
+  "profile": "H1 original rigid XMB/XSB with explicit unresolved material reference"
+}

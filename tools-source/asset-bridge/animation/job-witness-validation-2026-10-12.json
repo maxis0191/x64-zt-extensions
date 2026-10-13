@@ -1,0 +1,220 @@
+{
+  "schema": "iw7.native-job-witness-validation/1",
+  "status": "OwnedJobWitnessPassed",
+  "source_commit": "908869d6acc16a4750e1842481f43bb6150998cb",
+  "reviewed_main": "4d705f6",
+  "source_sha256": {
+    "Run-NativeJobWitness.ps1": "A27A29B9B897DC4B6F53BA53B34467686ED39A95C5DC61F12D43DF06F5D6CAC9",
+    "NativeJob-WitnessNode.ps1": "5860C50A2D0B5417BF1E777D5C400212F9D7B0F0C26C56837F5646A56A63C584",
+    "Probe-NativeJob.cs": "DDEFA72FF2B98286CD585D1178C13E67DCD646BBCF39D51365660901366C5CA8",
+    "Run-NativeProbe.ps1": "8C861A8C4636E289A53FF878C36E8B42D222B05C8103E5E2BBAE7B3BEDC21D01"
+  },
+  "started_utc": "2026-10-12T03:04:39.0904328Z",
+  "finished_utc": "2026-10-12T03:04:43.7431209Z",
+  "process_exit": 0,
+  "attempts": 1,
+  "power_shell_version": "7.6.5 SHA: ea554a8f9c6085f54fb2828f7ea286c65c35599f+ea554a8f9c6085f54fb2828f7ea286c65c35599f",
+  "power_shell_sha256": "362A356CE7F0940EC74F73A8FC2C990A2CC24A38A11C90BBD8ECA947110AD139",
+  "helper_compiled_by": "Add-Type to one DLL",
+  "helper_assembly_sha256": "5F613EBB83019DBF4BFA4F6A93C5329098343729B70ACC2CFA70AA8B64F195F8",
+  "admission": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "priority": "BelowNormal",
+    "physical_available": 15581212672,
+    "committed": 24661532672,
+    "commit_limit": 47564615680
+  },
+  "cases": [
+    {
+      "name": "normal-tree",
+      "passed": true,
+      "node_roles": [
+        "Parent",
+        "Child",
+        "Grandchild"
+      ],
+      "foreign_survived": true,
+      "all_three_exit_codes": 0
+    },
+    {
+      "name": "root-exit-and-job-termination",
+      "passed": true,
+      "node_roles": [
+        "Parent",
+        "Child",
+        "Grandchild"
+      ],
+      "foreign_survived": true,
+      "tree_stayed_open_after_root_exit": true
+    },
+    {
+      "name": "launcher-kill-on-close",
+      "passed": true,
+      "node_roles": [
+        "Parent",
+        "Child",
+        "Grandchild"
+      ],
+      "foreign_survived": true,
+      "outer_termination_used_before_proof": false
+    }
+  ],
+  "all_owned_trees_closed": true,
+  "lease_released": true,
+  "resource_after": {
+    "captured_utc": "2026-10-12T03:04:43.7467412Z",
+    "lease_count": 0
+  },
+  "fresh_postcheck": {
+    "fixture_identities_checked": 11,
+    "matching_live_pids": 0,
+    "main_identity_preserved": true,
+    "remaining_game_build_processes": "Main only",
+    "second_empty_registry_snapshot_utc": "2026-10-12T03:04:53.3531065Z"
+  },
+  "artifact_count": 31,
+  "total_bytes": 22593,
+  "bytes_before_final_receipts": 16697,
+  "artifact_limit": 33554432,
+  "final_metadata_reserve": 1048576,
+  "artifacts": {
+    "foreign/finish": {
+      "bytes": 1,
+      "sha256": "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"
+    },
+    "foreign/fixture-ticket.json": {
+      "bytes": 139,
+      "sha256": "5f5694140e94cdbbd80a8d0c0bd51603d7a766f6a4b4a821136d49e14b6a06bd"
+    },
+    "foreign/Foreign.ready.json": {
+      "bytes": 257,
+      "sha256": "ef87ae1872b20f0dff00e714e827a7e35735c89fce91f582cb2783dd7f5d9c82"
+    },
+    "foreign/root.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "foreign/root.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "launcher-exits/Child.ready.json": {
+      "bytes": 255,
+      "sha256": "6f287208e5bb9865264b602c1f7284e99a2c4cb53284c6e6facbd1ecb5d4f9b2"
+    },
+    "launcher-exits/fixture-ticket.json": {
+      "bytes": 139,
+      "sha256": "82ea5c168fdc24657e3228610b4ea4cde8af13ba40388ab0d8c3932942a2a0e8"
+    },
+    "launcher-exits/Grandchild.ready.json": {
+      "bytes": 259,
+      "sha256": "0c4a32f9eb3db7fa296e3ac1fadea96568086e457575bf7bc25b38a6749f3fef"
+    },
+    "launcher-exits/inner.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "launcher-exits/inner.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "launcher-exits/Launcher.ready.json": {
+      "bytes": 258,
+      "sha256": "b3996b18421646ce519fb57c3d9a4b2d9f5ab5167dccd113f828642d8db48a71"
+    },
+    "launcher-exits/Parent.ready.json": {
+      "bytes": 255,
+      "sha256": "664466bde8a78622819917dbd8b103a11703efe0546b648a43362624a4a7a67e"
+    },
+    "launcher-exits/root.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "launcher-exits/root.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-receipt.json": {
+      "bytes": 5304,
+      "sha256": "cf07725dc8293a65617dc62cc481b0f187b76ece46e671b63b0af2872dbda1cb"
+    },
+    "normal/Child.ready.json": {
+      "bytes": 255,
+      "sha256": "bbdb6c49655f9a93df0b3c9376657744505ef6a1e50671fa735583c7f2c4ed26"
+    },
+    "normal/finish": {
+      "bytes": 1,
+      "sha256": "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"
+    },
+    "normal/fixture-ticket.json": {
+      "bytes": 139,
+      "sha256": "dd80fb7646b84f9baa86c92cbab33a636e4a1abfb06be886ef8fb8e3d81d5c8d"
+    },
+    "normal/Grandchild.ready.json": {
+      "bytes": 260,
+      "sha256": "4336791bf1391ef54be49f53c1164b5f17282e34d14945f4455af46948f8cf36"
+    },
+    "normal/Parent.ready.json": {
+      "bytes": 256,
+      "sha256": "e8022bc9947d2d2002646519f21cac0351c908a2e7987728e5f4ff29d8905524"
+    },
+    "normal/root.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "normal/root.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Probe-NativeJob.dll": {
+      "bytes": 13312,
+      "sha256": "5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8"
+    },
+    "resource-after.json": {
+      "bytes": 592,
+      "sha256": "843380b6d6fb4b611ab5ae9e269cece0112c3a9ef99f8b1295224c53b0df0313"
+    },
+    "root-exits-first/Child.ready.json": {
+      "bytes": 255,
+      "sha256": "986ad641348d46f0a178197b345bc4db01a68b6dc9cfd7b5521fbd9d6bb1c638"
+    },
+    "root-exits-first/fixture-ticket.json": {
+      "bytes": 139,
+      "sha256": "57315292146874fe05fe97553fa3287fefb95b9bb60aa703ea73e4681723e32e"
+    },
+    "root-exits-first/Grandchild.ready.json": {
+      "bytes": 260,
+      "sha256": "f7020be08e9dc6cb9aef6ec402233cb06e3ad7d8998bcc097adb7befd534a355"
+    },
+    "root-exits-first/parent-exit": {
+      "bytes": 1,
+      "sha256": "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"
+    },
+    "root-exits-first/Parent.ready.json": {
+      "bytes": 256,
+      "sha256": "bde0ca75ac1f5325e9ce99071d5977783c06b48353cb2932eca7eb5a14ec3ea2"
+    },
+    "root-exits-first/root.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "root-exits-first/root.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "checks_not_performed": [
+    "Failure injected between suspended creation and resume",
+    "Deliberate native accounting failure",
+    "Full revised animation runner",
+    "PowerShell 7.0 execution",
+    "Near-32-MiB native output flood",
+    "FF/game/animation runtime"
+  ],
+  "native_writer_rebuilt": false,
+  "game_launched": false,
+  "animation_runtime_verified": false,
+  "historical_xab_evidence_unchanged": true,
+  "peak_memory_measured": false
+}

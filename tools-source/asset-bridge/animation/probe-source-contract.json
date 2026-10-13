@@ -1,0 +1,32 @@
+{
+  "schema": "iw7.original-probe-source-contract/1",
+  "zonetool_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "zonetool_sha256": {
+    "src/zonetool/game/shared.cpp": "de421b87b65d230622e77c6bca1da2d2435ddf646b2ab9c506cc55c043301d41",
+    "src/zonetool/zonetool/t7/structs.hpp": "f1f46442ba69a384c8a6201b4a424a6b1fbf14b5fb08515ac9e356a5574b2a6e",
+    "src/zonetool/zonetool/t7/converter/iw7/assets/xanim.cpp": "5dc9086745e73c07b3f39bf3a819e905b664ca048324616b9048ce9d4bb7e682",
+    "src/zonetool/zonetool/utils/io/filesystem.hpp": "3b9f4bdd05c0310c78606cb49fa7c609a019d73732b7f2f37299a94467b37270",
+    "src/zonetool/zonetool/utils/memory.hpp": "1a561acce39e93ca6605fd1485adfbba5b98a5723e0b14f02a2e12e4f9d12491"
+  },
+  "references": [
+    {
+      "file": "CoDXAnimTranslator.cpp",
+      "revision": "d02629b510a2e0be09836bc0bc98f2f4bd1bb8c7",
+      "url": "https://raw.githubusercontent.com/Scobalula/Greyhound/d02629b510a2e0be09836bc0bc98f2f4bd1bb8c7/src/WraithXCOD/WraithXCOD/CoDXAnimTranslator.cpp",
+      "sha256": "7f9e02358f83ded3a032be78aac2114f69140f16060b6d77585dafea72396334",
+      "bytes": 87169
+    },
+    {
+      "file": "GameInfiniteWarfare.cpp",
+      "revision": "f2d130543fb8a4733d1b27176016ba390e4ffd5d",
+      "url": "https://raw.githubusercontent.com/Scobalula/Greyhound/f2d130543fb8a4733d1b27176016ba390e4ffd5d/src/WraithXCOD/WraithXCOD/GameInfiniteWarfare.cpp",
+      "sha256": "3ce8dd51025df1cc2d097d7aa4d9bb58b6c8c08157bb1019207e0a33c7929964",
+      "bytes": 37877
+    }
+  ],
+  "unresolved": [
+    "Runtime cadence of frequency1 for the new looping no-delta numframes30/framerate30 clip",
+    "IW7 engine normalization and interpolation of the packed quaternion samples",
+    "Native serializer output, skinning, note delivery and visible bend have not run"
+  ]
+}

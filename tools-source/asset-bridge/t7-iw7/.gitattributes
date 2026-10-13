@@ -1,0 +1,4 @@
+# World and T7 plans bind this provider's exact reviewed bytes.
+T7Build.Profile.ps1 text eol=lf
+# Preserve exact retained upstream whitespace in the review-only patch context.
+zonetool-fab9358-t7-resident-cli.patch whitespace=-space-before-tab,-blank-at-eol

@@ -1,0 +1,247 @@
+{
+  "schema": "iw7.original-probe-rig-source-validation/1",
+  "captured_utc": "2026-10-12T04:33:02.568974+00:00",
+  "source_base_commit": "4981e148cd2ff5fbc660327abb8992f9d471cdd3",
+  "source_scope": "new animation/rig package plus docs/ANIMATION-AI-BRIDGE.md; independent follow-up to FF evidence",
+  "recovery_manifest_sha256": "8b29a5aebc7e96014bb4d9938cb8f6fa68a32b0b411a0d0d3a4bd083797717b4",
+  "new_clip_reader_sha256": "d98d26366264858c2aa11ac96adfed62dc5e2c45baae3362935a1c9042def179",
+  "new_clip_tests_sha256": "a63b151efa5daa3fe8c4983ed5339e3789ad2be94832bee8d1201bbdfbe7fc23",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "pinned_checkout_clean_at_preparation": true,
+  "interface_hashes": {
+    "iw7/structs.hpp": "adb62e481a533d27f97829e64d9038b13c5e9cd88e6b4aee8cac339b9492921a",
+    "iw7/assets/xsurface.cpp": "347622b01c02f0848e2aa4d98597c3b4939022441a6f792053ffc4d94ff8fa03",
+    "iw7/assets/xmodel.cpp": "3b512ce71a72ae76a01a5e5b4236162c529557f78f583b8de79ae86a80c0b97a",
+    "h1/converter/iw7/assets/xsurface.cpp": "3399ce3d1b96cb8db87c18c882009d99d53e63534f7e7ea4e9705ecb0a7386b6",
+    "iw7/converter/h1/assets/xsurface.cpp": "565e64df3c3f9408e64d8a4cd8bdfd04c21612381968b1379aec5735cf4f2210",
+    "t7/converter/iw7/assets/xmodel_mesh.cpp": "1424cd3919e2fe86240257aa1633e6f4c87e42c13b70e7300f95eef3e1f7a9c6",
+    "utils/io/assetmanager.hpp": "674f3fd82ff519fa76d2105c05e09c7a950857a7c598ab019fbea3bab8a75b83",
+    "utils/io/filesystem.hpp": "3b9f4bdd05c0310c78606cb49fa7c609a019d73732b7f2f37299a94467b37270",
+    "utils/memory.hpp": "1a561acce39e93ca6605fd1485adfbba5b98a5723e0b14f02a2e12e4f9d12491",
+    "h1/converter/iw7/assets/xmodel.cpp": "eaa7c2a379ff24203a32e27377e5f8dbcb73c8e7c0da3b2bfbbdc818d448e309",
+    "../game/shared.cpp": "de421b87b65d230622e77c6bca1da2d2435ddf646b2ab9c506cc55c043301d41"
+  },
+  "input_manifest_sha256": "4afeead7d687b130af7d7a88ad33be403ea3388dca074f0e52ee0b1da81ec473",
+  "input_streams": {
+    "geometry.source.json": {
+      "bytes": 3234,
+      "sha256": "18aed61ac8b4017f677dca5f56c92b5f3e0cc2ffa717766a0e04eeb39004c00a"
+    },
+    "positions.f32.bin": {
+      "bytes": 96,
+      "sha256": "a8ce120d40a527d9d7dac67b117644eb986e95eda0dbd14265b3ed9f93a239a8"
+    },
+    "normals.f32.bin": {
+      "bytes": 96,
+      "sha256": "4d8cbe1729a0323c13e1eab08968e0fa2287d53cb966e5456b0d5e94d38efdbc"
+    },
+    "uv.f32.bin": {
+      "bytes": 64,
+      "sha256": "161d3a67d42f8c9c403f81438f0b6977c7157f35fe7fcce8c13062c9e67cc599"
+    },
+    "triangles.u16.bin": {
+      "bytes": 36,
+      "sha256": "c9b62a848a1d944e4f5f7815b316617cb91f8ca7f70e7e3ad6cc4bccd7815c73"
+    },
+    "parents.u8.bin": {
+      "bytes": 1,
+      "sha256": "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"
+    },
+    "tag-angles.i16.bin": {
+      "bytes": 8,
+      "sha256": "bc7df5516008c1b5d87472e8378756822146b5390b601210e36cfc10ed013047"
+    },
+    "tag-positions.f32.bin": {
+      "bytes": 12,
+      "sha256": "0aee17620d8e0e3d6f33b809c49ebb0ad49b1a768b560dd310634660b66c8871"
+    },
+    "base-mats.f32.bin": {
+      "bytes": 64,
+      "sha256": "f848a237b18fd7139d022460863da3d8d4a73130e78f5a097d101ce5f2a8c4d2"
+    },
+    "first.blend.u16.bin": {
+      "bytes": 48,
+      "sha256": "c2984994e055a7d83355807916153285ed615c270caf74bdc30779eb6fcccc68"
+    },
+    "second.blend.u16.bin": {
+      "bytes": 48,
+      "sha256": "b0970da08178558f90fe462e6ac77ed5d6aeeba3dec6f29f17eca53491761215"
+    }
+  },
+  "prepared_source_hashes": {
+    "writer_skin_two_bone.cpp": "ae31277cd6a9f4610a835f14dad51d3c8a5a1bc065da467c21c2dd610bf194a4",
+    "skin_native_abi.hpp": "d7d310252bff24a1ee809d71bfe1776d2e9367cdeab62a82ad17351330fde864",
+    "half_uv.hpp": "f532d525a81e0073c9c8ca6beeb9781734f56990f1db59cbd87b55efba2ae3d9",
+    "skin_geometry.hpp": "0e7ecf12a8327f13444344686395d40dd965a7921e48dc73540ca2b859ecdd1f"
+  },
+  "source_preparation_and_verification_identical": true,
+  "light_tests": {
+    "recovered": 69,
+    "new": 10,
+    "total": 79,
+    "passed": 79,
+    "native_processes": 0
+  },
+  "executed_light_operations": [
+    "original raw input preparation",
+    "independent input read",
+    "C++ source/header preparation only",
+    "source/header revalidation only",
+    "actual B XAB four-key CPU rig binding"
+  ],
+  "all_five_light_operation_exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "retained_local_reports": {
+    "clip-rig-cpu.local.json": {
+      "bytes": 9850,
+      "sha256": "0b10ac78c4a5579496d2824c90dcc1a62220eec2b710b1d4105d83de0f5a816a"
+    },
+    "input-preparation.local.json": {
+      "bytes": 3615,
+      "sha256": "41b476b45fc57e5f1c4316212b1b8736c6f2a117bdc4975cbf2e8ea16b6915a1"
+    },
+    "input-read.local.json": {
+      "bytes": 1144,
+      "sha256": "438f88090a7e55d76b656a615671bccb62f1df0d4c41d7d1d9b3c0268a12f978"
+    },
+    "writer-preparation.local.json": {
+      "bytes": 3896,
+      "sha256": "e6bdfd6021bbc0f68835442e5ad86573901b92d8fff5e3887a871a259b4db1db"
+    },
+    "writer-verification.local.json": {
+      "bytes": 3896,
+      "sha256": "e6bdfd6021bbc0f68835442e5ad86573901b92d8fff5e3887a871a259b4db1db"
+    }
+  },
+  "retained_local_file_count": 22,
+  "retained_local_bytes": 51445,
+  "cpu": {
+    "status": "four-key-rig-cpu-pass",
+    "clip_sha256": "a357ae4d2269e14be43f2e4222bc2d8b00712d371f2cab7d21133a823729c221",
+    "clip_readback_scope": "ff-redump-profile",
+    "clip_matches_retained_evidence_hash": true,
+    "channel_to_bone": [
+      0,
+      1
+    ],
+    "parent_distances": [
+      1
+    ],
+    "bind_matrix_error": 0.0,
+    "geometry_input_verified": true,
+    "notetrack_data": {
+      "name": "probe_contact",
+      "normalized_time": 0.5,
+      "script_string_id": 4036
+    },
+    "root_motion_authored": false,
+    "quaternion_normalization": "CPU assumption, not measured engine behavior"
+  },
+  "profile_metrics": {
+    "first": {
+      "model": "paris_doom_skin_two_bone_first_a",
+      "stored_weight_direction": "first_bone_hypothesis_only",
+      "samples": [
+        {
+          "frame": 0,
+          "target_degrees": 0.0,
+          "decoded_degrees": 0.0,
+          "max_error_units": 0.0,
+          "opposite_hypothesis_error_units": 0.0
+        },
+        {
+          "frame": 10,
+          "target_degrees": 45.0,
+          "decoded_degrees": 44.99976426267937,
+          "max_error_units": 0.004260786588817347,
+          "opposite_hypothesis_error_units": 2.160545122089258
+        },
+        {
+          "frame": 20,
+          "target_degrees": -45.0,
+          "decoded_degrees": -44.99976426267937,
+          "max_error_units": 0.004260786588817347,
+          "opposite_hypothesis_error_units": 2.160545122089258
+        },
+        {
+          "frame": 30,
+          "target_degrees": 0.0,
+          "decoded_degrees": 0.0,
+          "max_error_units": 0.0,
+          "opposite_hypothesis_error_units": 0.0
+        }
+      ]
+    },
+    "second": {
+      "model": "paris_doom_skin_two_bone_second_a",
+      "stored_weight_direction": "second_bone_hypothesis_only",
+      "samples": [
+        {
+          "frame": 0,
+          "target_degrees": 0.0,
+          "decoded_degrees": 0.0,
+          "max_error_units": 0.0,
+          "opposite_hypothesis_error_units": 0.0
+        },
+        {
+          "frame": 10,
+          "target_degrees": 45.0,
+          "decoded_degrees": 44.99976426267937,
+          "max_error_units": 0.004260786588817347,
+          "opposite_hypothesis_error_units": 2.160545122089258
+        },
+        {
+          "frame": 20,
+          "target_degrees": -45.0,
+          "decoded_degrees": -44.99976426267937,
+          "max_error_units": 0.004260786588817347,
+          "opposite_hypothesis_error_units": 2.160545122089258
+        },
+        {
+          "frame": 30,
+          "target_degrees": 0.0,
+          "decoded_degrees": 0.0,
+          "max_error_units": 0.0,
+          "opposite_hypothesis_error_units": 0.0
+        }
+      ]
+    }
+  },
+  "runtime_source_evidence": {
+    "retail_dump_pin": "1dd48a78e55ef9c99519fc5221a206168ce2e98a",
+    "retail_file_hashes": {
+      "decompiled/scripts/mp/animatedmodels.gsc": "3ed0376d922fc8ca8139cf755f03376483dd18d47107c5b0dcbe7bbe09f2dfee",
+      "decompiled/scripts/cp/maps/cp_zmb/cp_zmb_ufo.gsc": "9cab09792236ad74aab6ee1146f88654ec80fcc5159d8e399797034e5489658f",
+      "decompiled/scripts/engine/utility.gsc": "007f026cb956a4c256977d60c2691cc554e0cc78a13dfd1694469acf707bbdf7",
+      "decompiled/scripts/anim/notetracks_mp.gsc": "304cdeaf3525bf87fae47d8eb55cb7b69050af4ecedec1f46e870a78fd2e187b"
+    },
+    "gsc_tool_pin": "0be361a4b22be0d0997b92ad94506ee5a5f99fc9",
+    "gsc_tool_file_hashes": {
+      "src/gsc/engine/iw7_func.cpp": "a5637127f600900079a47cd686d3f20805000e7d99ad97106c3ad65b00d12575",
+      "src/gsc/engine/iw7_meth.cpp": "06ea21ebca70c588727cb639a44001dd4ba3339661be445200b9b44f4aa5cf2c"
+    },
+    "proposed_route": [
+      "precachempanim",
+      "scriptmodelplayanim"
+    ],
+    "custom_preload_and_registry_verified": false,
+    "script_model_notetrack_consumer_verified": false
+  },
+  "native_compilation": false,
+  "native_writer_execution": false,
+  "new_native_model_read": false,
+  "model_ff_verified": false,
+  "resource_lease_created": false,
+  "stock_preparation": false,
+  "game_execution": false,
+  "runtime_animation_verified": false,
+  "engine_weight_direction_verified": false,
+  "note_delivery_verified": false,
+  "loop_duration_verified": false,
+  "ready": false
+}

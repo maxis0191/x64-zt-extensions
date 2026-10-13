@@ -1,0 +1,196 @@
+{
+  "schema": "iw7.native-dump-only-codec-checkpoint/1",
+  "status": "NativeDumpOnlyCDecodedPCMVerified",
+  "execution_source_commit": "856d8712b6b380f3bb162da12a49b806fe66fbb1",
+  "execution_plan": {
+    "bytes": 8732,
+    "sha256": "aacb9bc37463412ba1daab52eee724106c330a887decf1ac2a0e5aab1e2e8057"
+  },
+  "execution_command": {
+    "bytes": 2305,
+    "sha256": "7a043da2b434afbc8b39634b2e421a3049ba904794e7e9ea05afb42f12cc60a7"
+  },
+  "execution_dispatch": {
+    "bytes": 2303,
+    "sha256": "db7d2f26fbe6308d7cd1c8ec85f914952054a4d5ec25a5e8f4ff3db30274f1e4"
+  },
+  "execution_entry": {
+    "bytes": 23350,
+    "sha256": "18df9b6d0d204a95b5e3470c8e115e7f98d31281cad98d6f9eaa3b364b0e0f4c"
+  },
+  "authorized_runs": 1,
+  "actual_runs": 1,
+  "retry_count": 0,
+  "input_profile": "NativeDumpOnlyC",
+  "started_utc": "2026-10-12T18:36:04.9011314Z",
+  "returned_utc": "2026-10-12T18:36:07.7470544Z",
+  "reservation_created_utc": "2026-10-12T18:36:06.0284246Z",
+  "physical_estimate_bytes": 536870912,
+  "commit_estimate_bytes": 1073741824,
+  "phase_deadline_ms": 10000,
+  "cleanup_deadline_ms": 5000,
+  "per_pipe_log_limit_bytes": 32768,
+  "wav_success_and_observed_stop_bytes": 131072,
+  "total_output_stop_bytes": 1048576,
+  "codec_version": "8.1.2-full_build-www.gyan.dev",
+  "codec": {
+    "bytes": 242496512,
+    "sha256": "ad8f211bc894755e0061c55ab280ae00e8d3d4f15a8cc4372b24cfa247b5942e"
+  },
+  "strict_arguments_unchanged_from_native_dump_f_except_input_output_paths": true,
+  "strict_decode_options": [
+    "-xerror",
+    "-err_detect",
+    "explode",
+    "-threads",
+    "1",
+    "-protocol_whitelist",
+    "file",
+    "-c:a",
+    "pcm_s16le",
+    "-fflags",
+    "+bitexact",
+    "-flags:a",
+    "+bitexact"
+  ],
+  "resampling_requested": false,
+  "channel_conversion_requested": false,
+  "fallback_decoder_used": false,
+  "input_dump": {
+    "bytes": 96394,
+    "sha256": "1f20e4e3d2ea9160c833ba2f188950908573c9bf677e63e10edf639efd40c725",
+    "provenance": "Qualified DumpOnly A; immutable F FF/SABL/SABS reopened by qualified native C; STREAMINFO blocks 4096"
+  },
+  "native_dump_only_state": {
+    "bytes": 62517,
+    "sha256": "761ef1246010482d9451e1feae1b7e0f2e75bcd0ea678a1ce70f294184d669df"
+  },
+  "qualified_native_c_sha256": "cef411cf9b4de69be02cb4017aabd964e9143e340e211188daa6b6bab366493a",
+  "original_wav": {
+    "bytes": 96044,
+    "sha256": "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4"
+  },
+  "input_pin_provenance": "Exact reviewed Plan and qualified DumpOnly receipt; complete retained input guards and validation/revalidation under admission. No audio or executable content read/hash after release.",
+  "native_exit_code": 0,
+  "worker_root_exit_code": 0,
+  "supervisor_failure": null,
+  "worker_failure": null,
+  "pcm_verified": true,
+  "pcm_bytes": 96000,
+  "pcm_sha256": "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9",
+  "samples": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "sample_rate": 48000,
+  "decoded_wav_bytes": 96044,
+  "decoded_wav_sha256": "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4",
+  "decoded_wav_byte_identical_to_original": true,
+  "output_proof_scope": "Worker checked original PCM against decoded PCM and hashed WAV under admission; supervisor retained output guard and checked exact output hash before accepting. Checkpoint copies the accepted receipt without rereading audio.",
+  "pipes_eof": true,
+  "drains": {
+    "stdout": {
+      "normal_return": true,
+      "exception_type": null
+    },
+    "stderr": {
+      "normal_return": true,
+      "exception_type": null
+    }
+  },
+  "lifecycle": {
+    "scheduler_attached": true,
+    "below_normal": true,
+    "root_exited": true,
+    "active_job_members": 0,
+    "root_observation_elapsed_ms": 351,
+    "cleanup_required": false,
+    "job_closed": true,
+    "job_dispose_completed": true,
+    "input_hashes_match": true,
+    "inputs_unchanged": true,
+    "read_guards_released": true,
+    "retained_lease": null,
+    "quarantined": false
+  },
+  "preflight": {
+    "observed_utc": "2026-10-12T18:35:59.7010702Z",
+    "budget_allowed": true,
+    "heavy_processes": 0,
+    "leases": 0,
+    "payload_or_executable_hashes_before_admission": 0,
+    "source_plan_command_dispatch_exact": true,
+    "run_root_fresh": true
+  },
+  "postflight": {
+    "observed_utc": "2026-10-12T18:37:19.7400357Z",
+    "host_safe_success_closure_confirmed": true,
+    "actual_host_exit_code": 0,
+    "exit_evidence": "Persistent PTY write_stdin completion returned exit_code 0",
+    "host_and_children_absent": true,
+    "leases": 0,
+    "heavy_lab_codec_processes": 0,
+    "main_and_owner_games_absent": true,
+    "udp_27016_absent": true,
+    "main_restart_performed": false,
+    "unrelated_python_original_identity_preserved": true
+  },
+  "accounting": {
+    "file_count": 5,
+    "total_bytes_from_file_metadata": 102633.0,
+    "file_lengths": {
+      "decoded.wav": 96044,
+      "state.local.json": 2324,
+      "stderr.log": 3243,
+      "stdout.log": 0,
+      "worker-receipt.json": 1022
+    },
+    "payload_reads_or_hashes_after_release": 0,
+    "scope": "Postflight file-length snapshot only; no decoded WAV content read/hash and no continuous maximum claim."
+  },
+  "evidence": {
+    "state": {
+      "bytes": 2324,
+      "sha256": "180726c7835c85c6fd28c8f531919e4d7400a54ef4d0e3303a43ed7d35f8199b"
+    },
+    "worker": {
+      "bytes": 1022,
+      "sha256": "558ee4c9caab1c93efe3ab6334f90a8427909492a51931179f9d69f8efa3f8bf"
+    },
+    "stderr": {
+      "bytes": 3243,
+      "sha256": "05c1adef0b3b964caed4187d3dbcf95299201d463e76605dc7066b18e07e241a"
+    },
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "preflight": {
+      "bytes": 1411,
+      "sha256": "a87d7ec1d62f66a6e99db284cd4acc62cb8beeba892229ca5d4fbf3e987ade35"
+    },
+    "host_identity": {
+      "bytes": 420,
+      "sha256": "68330720178b89a418c8b7fa86ac123a7934cc167968ac9be20f8879c77cdaa4"
+    },
+    "host_outcome": {
+      "bytes": 471,
+      "sha256": "7c489748edd50bc8627d9a67fc03ec107007ffcf78bb399a00ee960a54359f33"
+    },
+    "host_exit": {
+      "bytes": 1009,
+      "sha256": "1cb3058a8124be54b95f9778e16a136162e46f89a090483c3a2fe1e35795d38b"
+    }
+  },
+  "evidence_read_scope": "Only bounded text Plan, command, dispatch, codec state, worker/log traces and host/pre/postflight metadata were read after release.",
+  "earlier_native_dump_f_failure_preserved": true,
+  "dump_decoded_by_ffmpeg": true,
+  "standalone_flac_conformance_verified": false,
+  "native_alias_index_verified": false,
+  "checksum_checksum_verified": false,
+  "playback_verified": false,
+  "ready": false,
+  "production_source_modified_after_run": false,
+  "game_launched": false,
+  "stock_staged": false,
+  "next_action": "Coordinator review and integration of this sound-only checkpoint. Exact third-party decode and original PCM are proved; any playback, other native invocation or broader sound acceptance requires a separate decision."
+}

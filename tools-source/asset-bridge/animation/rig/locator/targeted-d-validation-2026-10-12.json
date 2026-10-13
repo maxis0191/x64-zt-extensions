@@ -1,0 +1,52 @@
+{
+  "schema": "iw7.rig-targeted-preparation/2",
+  "date_utc": "2026-10-12",
+  "prior_failure_evidence_commit": "8dd7480e323dd4fd9b6298bb6e324bcc4a9fb574",
+  "entry": "0x140a17e70",
+  "source_pins": {
+    "Locator.Supervisor.Core.ps1": "a460ee035e13bf088726b8b60fb900a2e441f941b03e99a53ba76c6cb3be6607",
+    "Run-Locator.ps1": "d944118f994c6a82ff4756e13f8eceb91d48b5c407a8ddcf9f2bc4ce77cc4c49",
+    "locate_targeted.py": "127025b5995aed5e89faeb8d7cd1069832f0ea0cf00e44198bdde34bad7df475"
+  },
+  "plan_sha256": "6e2158212845ad7642eae0a5a97304fb7e2dec20303f6d0fac2bb0d637113ca2",
+  "default_plan_evidence_sha256": "625ebead135ac025958a55dd56d0e3b28c3814d6f3c186d8c80a1eda0582d014",
+  "command_sha256": "d1d5a7ca097ffebf9d979ced4f8badadecb2778ad65d84336d0239509875cf72",
+  "tests": {
+    "python_original": 12,
+    "python_targeted": 22,
+    "python_total_passed": 34,
+    "powershell_checks_passed": 145
+  },
+  "limits": {
+    "root_entries": 1,
+    "fragments": 8,
+    "fragment_bytes": 2048,
+    "decoded_bytes": 8192,
+    "instructions": 2048,
+    "control_edges": 64,
+    "seconds": 10,
+    "text_scans": 0,
+    "external_callees_followed": 0
+  },
+  "guarded_bytes": 40542374,
+  "runtime_pins": 42,
+  "known_guard_and_child_content_read_bytes": 106247596,
+  "default_plan_native_types_loaded": false,
+  "default_plan_lease_acquired": false,
+  "default_plan_reference_content_read": false,
+  "targeted_run_root_created": false,
+  "targeted_run_invocations": 0,
+  "local_refusals_keep_overall_failure": true,
+  "missing_and_ambiguous_owner_distinguished": true,
+  "independent_branches_remain_globally_bounded": true,
+  "unowned_leaf_decoded": false,
+  "unvisited_is_unreachable": false,
+  "complete_logical_function_established": false,
+  "reference_live_provenance": false,
+  "actual_first_writer_established": false,
+  "live_breakpoint_established": false,
+  "process_attached": false,
+  "game_or_zonetool_launched": false,
+  "acceptance_changed": false,
+  "next_action": "Coordinator source and exact Plan D review; separate GO and fresh full admission before any Run."
+}

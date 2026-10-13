@@ -1,0 +1,393 @@
+{
+  "schema": "iw7.asset-bridge.havok-audit/1",
+  "date": "2026-10-12",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_lf_sha256": {
+    ".gitmodules": "f7c293a59681b22810f86027f35507cf37320368221d6d0eab84be5d5b927c9d",
+    "premake5.lua": "1da8d19b6a525404dd9d36b5c39fc5fc402c1093877912b4cc3775b1f7656386",
+    "src/zonetool/game/iw7/symbols.hpp": "fed035755c380f72cb902081691f5f339eca03c57766b5e84f313bdf4a0c6c7d",
+    "src/zonetool/zonetool/iw7/functions.hpp": "8e14052e7281da176e1b6ff01ff457ccee58cae7469f77b22a80f368e18c23e9",
+    "src/zonetool/zonetool/iw7/common/havok.hpp": "b163b9e3f857163d99a2132540bdf5b1ade97588764d647e5e9abc8b3fe6460c",
+    "src/zonetool/zonetool/iw7/common/havok.cpp": "a4b9642c91629ecf8b3a30c25b2d59ed4a0ccf7d1bf368fd1c29ba519028f930",
+    "src/zonetool/zonetool/iw7/assets/physics_asset.cpp": "bacaac7e5b1e9c4ee9e4f357a869c0df5527bc65190b8332e4d32372c6c47003",
+    "src/zonetool/zonetool/iw7/assets/physics_library.cpp": "7f918a0d4caefbab28126a7982f7fbf9fe9816249ac6e6acee23584f14d92845",
+    "src/zonetool/zonetool/iw7/assets/clipmap.cpp": "c56d8922ef6b5aff2f63f7ae853b0f80e20d44e312339075702c6a354740645e",
+    "src/zonetool/zonetool/iw7/zonetool.cpp": "5abd5c9b0c4a71e665c052cd51db0003c089fdb40f88380baaa4b59a2f8c6a78"
+  },
+  "retained_physics_asset": {
+    "schema": "iw7.asset-bridge.hkx-envelope-inspection/1",
+    "bytes": 47152,
+    "sha256": "4827c1d86cad3cf7065fd5b24bf1fd09dbec88ea7ff495b008407aaaf0fbb112",
+    "file_version": 11,
+    "contents_version": "hk_2014.2.5-r1",
+    "layout": [
+      8,
+      1,
+      0,
+      1
+    ],
+    "root_section": 2,
+    "root_offset": 0,
+    "root_class": "HavokPhysicsAsset",
+    "sections": [
+      {
+        "name": "__classnames__",
+        "start": 256,
+        "data_bytes": 384,
+        "local_fixups": 384,
+        "global_fixups": 384,
+        "virtual_fixups": 384,
+        "exports": 384,
+        "imports": 384,
+        "end": 384
+      },
+      {
+        "name": "__types__",
+        "start": 640,
+        "data_bytes": 0,
+        "local_fixups": 0,
+        "global_fixups": 0,
+        "virtual_fixups": 0,
+        "exports": 0,
+        "imports": 0,
+        "end": 0
+      },
+      {
+        "name": "__data__",
+        "start": 640,
+        "data_bytes": 42320,
+        "local_fixups": 42320,
+        "global_fixups": 43104,
+        "virtual_fixups": 45072,
+        "exports": 46512,
+        "imports": 46512,
+        "end": 46512
+      }
+    ],
+    "class_names": [
+      "HavokPhysicsAsset",
+      "hknpCapsuleShape",
+      "hknpConvexPolytopeShape",
+      "hknpConvexPolytopeShapeConnectivity",
+      "hknpPhysicsSystemData",
+      "hknpShapeMassProperties",
+      "hkpLimitedHingeConstraintData",
+      "hkpRagdollConstraintData",
+      "hkpSpringDamperConstraintMotor"
+    ],
+    "shape_graph_validated": false,
+    "fixups_validated": false,
+    "runtime_ready": false
+  },
+  "retained_runtime": {
+    "schema": "iw7.asset-bridge.havok-runtime-markers/1",
+    "bytes": 3194880,
+    "sha256": "28b66189c1f35442d3e32ea5077e785e7cb8fbf45ed420094dc6b2795afd04e5",
+    "markers_at_file_offsets": {
+      "hk_2014.2.5-r1": [
+        1337312,
+        1337328
+      ],
+      "HavokPhysicsAsset": [
+        448056,
+        448081
+      ],
+      "HavokPhysicsShapeList": [
+        451000,
+        451025
+      ],
+      "HavokPhysicsShapeListShapeTagData": [
+        450760
+      ],
+      "hknpConvexPolytopeShape": [
+        1408720,
+        1408745
+      ],
+      "hknpPhysicsSystemData": [
+        1431736,
+        1431761
+      ],
+      "hknpCompressedMeshShapeData": [
+        1392584,
+        1392617
+      ],
+      "hkGeometry": [
+        1313344,
+        1313361
+      ],
+      "hkRootLevelContainer": [
+        1335440,
+        1335465
+      ],
+      "Util\\hkSerializeUtil.cpp": [
+        1981512
+      ],
+      "Packfile\\hkPackfileWriter.cpp": [
+        1983480
+      ]
+    },
+    "meaning": "String presence in a previously patched runtime snapshot; no function ABI proof",
+    "runtime_ready": false
+  },
+  "source_tests": {
+    "havok_probe": 5,
+    "result": "PASS",
+    "synthetic_envelope_is_not_valid_shape_data": true
+  },
+  "native_executed": false,
+  "world_hkx_observed": false,
+  "generation_ready": false,
+  "world_consumer": {
+    "schema": "iw7.asset-bridge.world-consumer-inspection/1",
+    "snapshot": "Existing patched capture; not a live binary ABI or pristine retail image",
+    "rdata_sha256": "28b66189c1f35442d3e32ea5077e785e7cb8fbf45ed420094dc6b2795afd04e5",
+    "pdata_sha256": "8ff97607018c0c531a9d6851282701074a50b141729060f9f23ae728c9fad41e",
+    "whole_text_hash_recomputed": false,
+    "selected_text_bytes": 2690,
+    "windows": [
+      {
+        "name": "db_add_patched",
+        "start": "0x140a76520",
+        "bytes": 121,
+        "sha256": "23f37d5c81eea00330ad7e31ca92b2639f27e8a5795fd34f7850cefa6de3faa2",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140a76520",
+            "end": "0x140a76599"
+          }
+        ]
+      },
+      {
+        "name": "asset_link",
+        "start": "0x140a782b0",
+        "bytes": 568,
+        "sha256": "95f7074da74f208ddf427949d451905c3bf1f81ca25758759985c7c65bc0f32f",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140a782b0",
+            "end": "0x140a784e8"
+          }
+        ]
+      },
+      {
+        "name": "type_dispatch",
+        "start": "0x1403b7430",
+        "bytes": 34,
+        "sha256": "8bac3192200b7cc05a18a5f9f3b02782c3e5a87dea62b65d5ea40d436212c23e",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x1403b7430",
+            "end": "0x1403b7452"
+          }
+        ]
+      },
+      {
+        "name": "clipmap_wrapper",
+        "start": "0x1403b72f0",
+        "bytes": 14,
+        "sha256": "3ffcf4a7d534e80a7ab3126240c646f2c0d694e022fc0bbc1c460ad4d8b01575",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x1403b72f0",
+            "end": "0x1403b72fe"
+          }
+        ]
+      },
+      {
+        "name": "clipmap_thunk",
+        "start": "0x14054beb0",
+        "bytes": 5,
+        "sha256": "bed2f0bc5652a6ae9482680e20b96d1081ce233d4826c278fead39ea071ec3c1",
+        "overlapping_unwind_ranges": []
+      },
+      {
+        "name": "world_consumer",
+        "start": "0x140571d50",
+        "bytes": 432,
+        "sha256": "12d99ba73e2078af560f1096c03c84b0a994c457fe7238cd79bb1793bcba35b6",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140571d50",
+            "end": "0x140571f00"
+          }
+        ]
+      },
+      {
+        "name": "shape_tags_loader",
+        "start": "0x140572c30",
+        "bytes": 143,
+        "sha256": "926f1458422a1f58ac65243b9f53f3fe6f4ccaccc8fed23039496267f1f7f0db",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140572c30",
+            "end": "0x140572cbf"
+          }
+        ]
+      },
+      {
+        "name": "packfile_inplace",
+        "start": "0x140f2da80",
+        "bytes": 966,
+        "sha256": "01e53078c7ab6cd0be20812f2ca919528c3232cf74d1a14664adad6f980a3048",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140f2da80",
+            "end": "0x140f2dacf"
+          },
+          {
+            "start": "0x140f2dacf",
+            "end": "0x140f2dae5"
+          },
+          {
+            "start": "0x140f2dae5",
+            "end": "0x140f2dd71"
+          },
+          {
+            "start": "0x140f2dd71",
+            "end": "0x140f2dddc"
+          },
+          {
+            "start": "0x140f2dddc",
+            "end": "0x140f2de46"
+          }
+        ]
+      },
+      {
+        "name": "packfile_header_check",
+        "start": "0x140f2e120",
+        "bytes": 407,
+        "sha256": "8cb2ab453ae56a0e78ce22912f2570e0983b0034a898d8158896eef0a16f4576",
+        "overlapping_unwind_ranges": [
+          {
+            "start": "0x140f2e120",
+            "end": "0x140f2e2b7"
+          }
+        ]
+      }
+    ],
+    "capstone_version": "5.0.7",
+    "call_chain": [
+      {
+        "site": "0x140a76557",
+        "kind": "call",
+        "target": "0x140a782b0"
+      },
+      {
+        "site": "0x140a783cb",
+        "kind": "call",
+        "target": "0x1403b7430"
+      },
+      {
+        "site": "0x1403b72f4",
+        "kind": "call",
+        "target": "0x14054beb0"
+      },
+      {
+        "site": "0x14054beb0",
+        "kind": "jmp",
+        "target": "0x140571d50"
+      },
+      {
+        "site": "0x140571d79",
+        "kind": "call",
+        "target": "0x140572c30"
+      },
+      {
+        "site": "0x140572c3a",
+        "kind": "call",
+        "target": "0x140f2da80"
+      },
+      {
+        "site": "0x140f2daae",
+        "kind": "call",
+        "target": "0x140f2e120"
+      }
+    ],
+    "dispatch": {
+      "table": "0x1414672d0",
+      "asset_type": 22,
+      "entry": "0x1403b72f0"
+    },
+    "world_blob_fields": {
+      "size_offset": "0xf8",
+      "pointer_offset": "0x100"
+    },
+    "root_class_identified": false,
+    "creator_identified": false,
+    "serializer_identified": false,
+    "native_executed": false
+  },
+  "observer_source_candidate": {
+    "schema": "iw7.asset-bridge.world-observer-source/1",
+    "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+    "base_lf_sha256": "5abd5c9b0c4a71e665c052cd51db0003c089fdb40f88380baaa4b59a2f8c6a78",
+    "patched_lf_sha256": "4cf249e16b1f03cab452c197a75b6cd104bb070a6f1ec7ac1fd160ac4d493b08",
+    "header_lf_sha256": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
+    "patch_sha256": "f53eec4a12eb49f8a7c1b45ffd41fb2563b75f811142254020e4658c1ea59ce2",
+    "apply_reverse": true,
+    "original_syntactic_call_sites": 1,
+    "read_budget_bytes": 2048,
+    "metadata_budget_bytes": 4096,
+    "native_compiled": false,
+    "native_harness_run": false,
+    "engine_observed": false
+  },
+  "observer_harness_source": {
+    "schema": "iw7.world-clipmap-harness-source/1",
+    "plan_sha256": "fc8f55da2fe60b25d8d98217eebdf3f982b562e42e49fbd01c69f33a248f8c54",
+    "source_sha256": {
+      "tools-source/asset-bridge/world/world_clipmap_observer.hpp": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
+      "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
+      "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
+      "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa"
+    },
+    "reader_original_json_tests_passed": 5,
+    "expected_native_records": 24,
+    "native_compiled": false,
+    "native_harness_run": false,
+    "engine_observed": false,
+    "coordinator_execution_adapter_review_pending": true
+  },
+  "observer_adapter_source": {
+    "schema": "iw7.world-observer-adapter-source/1",
+    "plan_sha256": "fc8f55da2fe60b25d8d98217eebdf3f982b562e42e49fbd01c69f33a248f8c54",
+    "source_sha256": {
+      "tools-source/asset-bridge/world/world_clipmap_observer.hpp": "18f5570df0c416a20be9c09952be8bd2baca7267ba3fa240fe398ce9428d96a8",
+      "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp": "31eabc7ddace4a4eddc739b08466e8fe3af2456eead5a09e3b8ae72b9960d585",
+      "tools-source/asset-bridge/world/check_observer_harness.py": "fcc4fb56755650e5f814930ff2dd27cf86d4b24da14fcafd60e9339779a511b2",
+      "tools-source/asset-bridge/world/test_observer_harness_check.py": "6b2cc20f1c6f05e420829104d213c37f36f82fcf138849fe9ea5fb62a336a9fa",
+      "tools-source/asset-bridge/world/Run-ObserverHarness.ps1": "9bfc9a3d6277f05f9daef3afeb75d835ce5d181ec7501762470d2c5cb0204779",
+      "tools-source/asset-bridge/world/ObserverHarness.Core.ps1": "760ad94967da428a54d052aa5685f69e79452a6e325b0ca84b2e69fbfc7567a4",
+      "tools-source/asset-bridge/world/observer_harness_driver.py": "6d74a088b8922c41ef7998758d1ccbcb7354e3188ae033a0aebd3a8ae13460c9",
+      "tools-source/asset-bridge/world/test_observer_adapter.ps1": "64645c3e23de6b09793ca9b44aa09b8553f3904af9424a2f98c832ff0b6ba89a",
+      "tools-source/asset-bridge/world/test_observer_driver.py": "779d69e4bbcab81374e7c6f1c65637a6ab59190ff0194519a14b2ad605c99dd6",
+      "tools-source/asset-bridge/world/test_observer_plan.ps1": "0121e904ce5677ef9ad314fe64b1e951778d2e32750d997ccbb2f76410b93a10",
+      "tools-source/asset-bridge/world/test_observer_finalization.ps1": "954aa7df91553629fe766f8918fef18a32fa112569e0d69f38cad53ab3d4f447"
+    },
+    "driver_fake_process_tests_passed": 9,
+    "powershell_pure_mock_checks_passed": 56,
+    "installed_tool_plan_inert": true,
+    "plan_bound_inputs": 26,
+    "native_compiled": false,
+    "native_harness_run": false,
+    "engine_observed": false,
+    "review_pending": true,
+    "correction": "Explicit parentheses added to mixed PowerShell type/refusal predicates after pure-test failure.",
+    "checkout_filtered_source_pins_verified": 11,
+    "world_powershell_line_endings": "LF enforced by world/.gitattributes; prevents inherited CRLF checkout pin drift",
+    "guarded_drain_fault_cases": 12,
+    "finalization_mock_checks_passed": 45,
+    "review_corrections": {
+      "base": "d2d97ca16824068d4c64a573237fb64ab1ce726b",
+      "findings": [
+        "non-OS drain exceptions could be accepted as EOF",
+        "lease released before final publication/accounting"
+      ],
+      "corrections": [
+        "local BaseException guard signals failure without exception formatting",
+        "receipt frozen and verified before release; publication failures do not release; ambiguous outcomes stay unconfirmed"
+      ],
+      "native_execution": false
+    }
+  }
+}

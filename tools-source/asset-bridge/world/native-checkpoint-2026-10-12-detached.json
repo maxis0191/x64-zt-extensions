@@ -1,0 +1,104 @@
+{
+  "schema": "iw7.world-observer-native-checkpoint/1",
+  "status": "Failed",
+  "source_commit": "757e3a1277adcd8e577a1f47c3856f9b55099401",
+  "plan_sha256": "b6f79c9f8de982ad2ab0bf053ff55fd328daf0252215d8869ae63d98bb66ca76",
+  "driver_sha256": "cc2f12722a98a73e5eaca2e2981cffa233bd9cfefc1a86467e83379ac2ac5e53",
+  "run_receipt_sha256": "247f8c3f2429b0d1db36f9d73bbfbb3d1709dc1edf5a3cc575a8a32c1b708b40",
+  "postflight_sha256": "bf4862196f30015bb91ad6e11892bfc79cb596235ff1dad13261ac9e3beef80c",
+  "slot_release_sha256": "c5fec9e309fe7d5da248951046d10d77bf5ad48375c17d20f817c23e774edaf0",
+  "invocations_for_this_plan": 1,
+  "native_attempts_total": 3,
+  "native_compiled": false,
+  "compiler_started": true,
+  "object_emitted": true,
+  "compiler_success_receipt": false,
+  "fixture_permitted": false,
+  "fixture_executed": false,
+  "observations": 0,
+  "expected_observations": 24,
+  "engine_observed": false,
+  "failure": "At most one console-host generation is permitted.",
+  "captured_utc": "2026-10-12T12:18:51.5814777Z",
+  "observed_roles": [
+    {
+      "role": "python-root",
+      "parent": "retained-powershell-owner",
+      "image": "python.exe",
+      "created_utc": "2026-10-12T12:18:50.5930199Z",
+      "in_original_job": true
+    },
+    {
+      "role": "root-console-host",
+      "parent": "python-root",
+      "image": "conhost.exe",
+      "created_utc": "2026-10-12T12:18:50.6150955Z",
+      "in_original_job": true
+    },
+    {
+      "role": "compiler",
+      "parent": "python-root",
+      "image": "cl.exe",
+      "created_utc": "2026-10-12T12:18:50.7123142Z",
+      "in_original_job": true
+    },
+    {
+      "role": "compiler-telemetry",
+      "parent": "compiler",
+      "image": "vctip.exe",
+      "created_utc": "2026-10-12T12:18:51.2489299Z",
+      "in_original_job": true
+    },
+    {
+      "role": "linker",
+      "parent": "compiler",
+      "image": "link.exe",
+      "created_utc": "2026-10-12T12:18:51.5025031Z",
+      "in_original_job": true
+    },
+    {
+      "role": "linker-console-host",
+      "parent": "linker",
+      "image": "conhost.exe",
+      "created_utc": "2026-10-12T12:18:51.5051348Z",
+      "in_original_job": true
+    }
+  ],
+  "diagnosis": "The DETACHED_PROCESS request for the direct compiler launch did not prevent its nested link.exe child from owning another console host. The per-poll global console limit refused the live six-member compile/link graph. No fixture was launched.",
+  "stdout": {
+    "compiler_bytes": 0,
+    "compiler_stderr_bytes": 0,
+    "fixture_streams_present": false,
+    "outer_stdout": "PowerShell startup banner and retained-host prompts only; no harness success JSON",
+    "outer_stderr": "At most one console-host generation is permitted."
+  },
+  "cleanup": {
+    "original_job_closed": true,
+    "root_exited": true,
+    "root_exit_code_after_owned_stop": 122,
+    "active_processes": 0,
+    "confirmed_utc": "2026-10-12T12:18:51.7199067Z",
+    "postflight_utc": "2026-10-12T12:20:25.5411637Z",
+    "slot_released_utc": "2026-10-12T12:21:20.4989967Z",
+    "postflight_lease_count": 0,
+    "attempt_token_present": false,
+    "manual_release": false,
+    "original_host_retained_for_quarantine_check": true,
+    "quarantine_present": false,
+    "original_host_exited_after_verification": true,
+    "host_exit_does_not_qualify_harness": true,
+    "known_children_remaining": 0,
+    "receipt_stage": "BeforeLeaseRelease"
+  },
+  "unchanged_source_pins": 28,
+  "main_identity_and_managed_fingerprints_unchanged": true,
+  "restoration": "None required: Main, stock, scripts, configuration and bank unchanged.",
+  "retained_run_files": 6,
+  "retained_run_bytes": 244891.0,
+  "prior_attempts": [
+    "native-checkpoint-2026-10-12.json",
+    "native-checkpoint-2026-10-12-retry.json"
+  ],
+  "raw_evidence": "Exact identities, generation/parent observations and output remain local; no private paths, process identifiers, tokens, config or raw logs copied here.",
+  "further_execution": "No fourth Run authorized; no further experimental source change performed with this checkpoint."
+}

@@ -1,0 +1,92 @@
+{
+  "schema": "iw7.packed-frame-source-audit/1",
+  "source": {
+    "bytes": 1231,
+    "sha256": "3d55171cb581dfa2ea249bea1de1a1f939f6aaebbc8995e291c005540e388f27"
+  },
+  "roundtrip": {
+    "bytes": 1231,
+    "sha256": "d1bcc267099b758506c965add1564fdaecc8814b2a60954c95e79500f9d57b83"
+  },
+  "surface": "paris_model_probe_lod0",
+  "vertices": 24,
+  "triangles": 12,
+  "vertex_stride": 32,
+  "normal_offset": 24,
+  "tangent_offset": 28,
+  "prefix_only": true,
+  "remaining_bytes_not_audited": 30,
+  "vertex_bytes_identical": true,
+  "triangle_bytes_identical": true,
+  "vertex_stream_sha256": "97e4dbfaa64f701658dee21037e2ce7eccd045329c5ed76ac83ab66f3236499d",
+  "normal_top_two_bits": {
+    "3": 24
+  },
+  "tangent_top_two_bits": {
+    "3": 24
+  },
+  "normal_words": [
+    "0xC0080200",
+    "0xE0000200",
+    "0xE0080000",
+    "0xE00803FF",
+    "0xE00FFE00",
+    "0xFFF80200"
+  ],
+  "tangent_words": [
+    "0xE0000200",
+    "0xE0080000",
+    "0xE00803FF",
+    "0xE00FFE00"
+  ],
+  "hypotheses": [
+    {
+      "codec_hypothesis": "h1_unorm10",
+      "triangle_count": 12,
+      "normal_max_component_error": 0.0009775171065493637,
+      "tangent_max_component_error": 0.0009775171065493637,
+      "normal_max_angle_degrees": 0.0792066635749719,
+      "tangent_max_angle_degrees": 0.0792066635749719,
+      "positive_uv_handedness_triangles": 12,
+      "negative_uv_handedness_triangles": 0,
+      "source_geometry_consistent": true
+    },
+    {
+      "codec_hypothesis": "midpoint10",
+      "triangle_count": 12,
+      "normal_max_component_error": 0.0009765625,
+      "tangent_max_component_error": 0.0009765625,
+      "normal_max_angle_degrees": 0.0792066635749719,
+      "tangent_max_angle_degrees": 0.0792066635749719,
+      "positive_uv_handedness_triangles": 12,
+      "negative_uv_handedness_triangles": 0,
+      "source_geometry_consistent": true
+    },
+    {
+      "codec_hypothesis": "signed10",
+      "triangle_count": 12,
+      "normal_max_component_error": 1.0019569471624266,
+      "tangent_max_component_error": 1.0019569471624266,
+      "normal_max_angle_degrees": 90.07928416510359,
+      "tangent_max_angle_degrees": 90.07928416510359,
+      "positive_uv_handedness_triangles": 12,
+      "negative_uv_handedness_triangles": 0,
+      "source_geometry_consistent": false
+    }
+  ],
+  "roundtrip_h1_hypothesis": {
+    "codec_hypothesis": "h1_unorm10",
+    "triangle_count": 12,
+    "normal_max_component_error": 0.0009775171065493637,
+    "tangent_max_component_error": 0.0009775171065493637,
+    "normal_max_angle_degrees": 0.0792066635749719,
+    "tangent_max_angle_degrees": 0.0792066635749719,
+    "positive_uv_handedness_triangles": 12,
+    "negative_uv_handedness_triangles": 0,
+    "source_geometry_consistent": true
+  },
+  "iw7_shader_decoder_verified": false,
+  "tangent_sign_semantics_verified": false,
+  "lighting_cause_established": false,
+  "assets_modified": false
+}

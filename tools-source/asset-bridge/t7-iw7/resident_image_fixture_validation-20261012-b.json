@@ -1,0 +1,240 @@
+{
+  "schema": "iw7.t7-resident-image-native-checkpoint/1",
+  "status": "SyntheticHarnessPassedClosedB",
+  "fixture_source_commit": "f1e0d35707c19416999639f753a68c66497dfedc",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "plan_sha256": "eae513b8f3fd4f3589923dd5dcaf10dea48fe9fd26218b8b7570429dc1d86730",
+  "recipe_sha256": "1f9b31f51cd83fe637b8154ce9d3cbde2901466eef298b92c205a7f0e3bbaabf",
+  "fixture_source_sha256": "eb0352d3b6c45b1bff64a82f14710c9cedf23941a7ced6ef90b7a74151f671d6",
+  "go_utc": "2026-10-12T14:50:06Z",
+  "started_utc": "2026-10-12T14:51:34.3874699Z",
+  "finished_utc": "2026-10-12T14:51:44.8290583Z",
+  "invocations_for_b": 1,
+  "attempts_total": 2,
+  "prior_failed_attempt_preserved": "resident_image_fixture_validation-20261012-a.json",
+  "native_compilation_passed": true,
+  "warning_as_error_preserved": true,
+  "production_helper_changed": false,
+  "native_fixture_executed": true,
+  "native_cases_passed": 54,
+  "copies": 6,
+  "typed_formats": 18,
+  "expected_refusals": 30,
+  "largest_pixel_copy_bytes": 96,
+  "actual_t7_header_bytes": 264,
+  "actual_t7_name_offset": 248,
+  "transcript_bytes": 298,
+  "transcript_sha256": "7716be4a0e12f3156655e84dc8f4b34a5c31a520cf7f27043b1894f32b25833d",
+  "independent_checker_passed": true,
+  "checker_alone_proves_execution": false,
+  "execution_proof": "Exact prior link artifact launched by original owned job; exit0/closure receipt plus independent transcript check",
+  "stages": [
+    {
+      "name": "compile",
+      "exit_code": 0,
+      "original_job_closed": true,
+      "elapsed_ms": 1282.887,
+      "elapsed_clock": "shared Compile+Link start",
+      "qualified_tool_telemetry_cleanup": true,
+      "failure_termination_requested": false,
+      "max_sampled_output_bytes": 312740,
+      "max_sampled_stream_bytes": 28,
+      "stdout_bytes": 28,
+      "stderr_bytes": 0
+    },
+    {
+      "name": "link",
+      "exit_code": 0,
+      "original_job_closed": true,
+      "elapsed_ms": 1917.429,
+      "elapsed_clock": "shared Compile+Link start",
+      "qualified_tool_telemetry_cleanup": true,
+      "failure_termination_requested": false,
+      "max_sampled_output_bytes": 336292,
+      "max_sampled_stream_bytes": 28,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "name": "fixture",
+      "exit_code": 0,
+      "original_job_closed": true,
+      "elapsed_ms": 236.272,
+      "elapsed_clock": "individual stage start",
+      "qualified_tool_telemetry_cleanup": false,
+      "failure_termination_requested": false,
+      "max_sampled_output_bytes": 336590,
+      "max_sampled_stream_bytes": 298,
+      "stdout_bytes": 298,
+      "stderr_bytes": 0
+    },
+    {
+      "name": "check",
+      "exit_code": 0,
+      "original_job_closed": true,
+      "elapsed_ms": 242.987,
+      "elapsed_clock": "individual stage start",
+      "qualified_tool_telemetry_cleanup": false,
+      "failure_termination_requested": false,
+      "max_sampled_output_bytes": 336883,
+      "max_sampled_stream_bytes": 298,
+      "stdout_bytes": 293,
+      "stderr_bytes": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "resident_image_fixture.obj",
+      "bytes": 283716,
+      "sha256": "cd0e7c4c8581f52b64c702651c64bb30fe8c86427b217400b4e5a79bff33c455",
+      "hash_origin": "Original guarded stage receipt under lease; not recalculated after release"
+    },
+    {
+      "name": "dependencies.json",
+      "bytes": 28996,
+      "sha256": "d00b4db91c7d5255a4a0f272357b3e481af0a5937d8543565aaca558b710e87e",
+      "hash_origin": "Original guarded stage receipt under lease; not recalculated after release"
+    },
+    {
+      "name": "resident_image_fixture.exe",
+      "bytes": 23552,
+      "sha256": "7903ca45cda0490f151c8830412a53da95e9a546d09364cb357289888451c448",
+      "hash_origin": "Original guarded stage receipt under lease; not recalculated after release"
+    }
+  ],
+  "original_jobs_closed": 4,
+  "bound_inputs_revalidated_under_lease": true,
+  "explicit_bindings": 24,
+  "reused_header_pins": 393,
+  "compiler_consumed_includes": 263,
+  "compiler_source_and_includes_within_guarded_set": true,
+  "toolchain_fully_hermetic": false,
+  "output_contract": {
+    "enforcement": "Sampled",
+    "strict_write_cap": false,
+    "stream_threshold_bytes": 2097152,
+    "live_total_threshold_bytes": 66060288,
+    "final_acceptance_bytes": 67108864,
+    "threshold_exceeded": false
+  },
+  "retained_run_bytes": 463606,
+  "retained_run_files": 12,
+  "receipt_stage": "BeforeLeaseRelease",
+  "immutable_receipt_status": "SyntheticHarnessValidatedLeaseHeld",
+  "returned_release_confirmed": true,
+  "postflight_registry_empty": true,
+  "host_appdomain_quarantine_absent": true,
+  "host_exited_normally": true,
+  "host_and_six_children_absence_confirmed_utc": "2026-10-12T14:53:45.8867205Z",
+  "host_cim_identity_note": "CIM rounded native creation time by 5 ticks; existing scheduler identity tolerance and exact native Get-Process timestamp both verified",
+  "main_stopped_before_after": true,
+  "protected_python_identity_preserved": true,
+  "postflight_other_heavy_count": 0,
+  "binary_input_hashes_performed_after_release": false,
+  "native_memory_peaks_measured": false,
+  "engine_observed": false,
+  "real_image_capture_validated": false,
+  "atomic_snapshot_proven": false,
+  "seh_verified": false,
+  "directxtex_import_validated": false,
+  "material_completeness_validated": false,
+  "rendered_quality_validated": false,
+  "local_evidence": [
+    {
+      "name": "t7-resident-image-fixture-b/run.json",
+      "bytes": 126723,
+      "sha256": "1eb7560eddc827c4ed9a11bfde28198452dd9c611a842bc9b900b8525de75149"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/compile/dependencies.json",
+      "bytes": 28996,
+      "sha256": "d00b4db91c7d5255a4a0f272357b3e481af0a5937d8543565aaca558b710e87e"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/compile/stdout.log",
+      "bytes": 28,
+      "sha256": "3f0fc78a0084bac5ae026653cf7dae63b8784ff0d40c676f6df7b4eb0f4aca22"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/link/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/fixture/stdout.log",
+      "bytes": 298,
+      "sha256": "7716be4a0e12f3156655e84dc8f4b34a5c31a520cf7f27043b1894f32b25833d"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/fixture/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/check/stdout.log",
+      "bytes": 293,
+      "sha256": "5e501de019d7604d7f30927db5067b7cff09bebe3a4e82af063634f857f6d05a"
+    },
+    {
+      "name": "t7-resident-image-fixture-b/check/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/preflight-b.json",
+      "bytes": 1725,
+      "sha256": "c97c3289f7c30411724bd8f487711e8b61492eace952d6a19311b9c7ecb4cd31"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/host-before-b.json",
+      "bytes": 336,
+      "sha256": "8f14abf2f1cd919e5dabb8f03bacd8ff92653512f65dea7ef51a206488d890e9"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/invocation-b.json",
+      "bytes": 252,
+      "sha256": "22598f9af79445effd152583e9e2413bf01e0e282338acc4cf5bfb3c950e7671"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/returned-state-b.json",
+      "bytes": 126769,
+      "sha256": "6945e9823da6ebc3efbd1e41f3e33fee363f2bf715ace6df96a3163dc3caef99"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/host-closure-b.json",
+      "bytes": 574,
+      "sha256": "d800930db05802cd6335d3a33bc739234a0df8d52793fe3f50d0c8470dd17c96"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/postflight-b.json",
+      "bytes": 1454,
+      "sha256": "6491ef84b917e7e6224a4f32af87cb6ae2fb2a4d8f14b1584f33cc268681b39e"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/postflight-validation-b.json",
+      "bytes": 498,
+      "sha256": "e9f100c5aea56cdb881123a8927cb17f0b9bc7888a736ac5cd16279f0d8c4922"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/host-exiting-b.json",
+      "bytes": 219,
+      "sha256": "e7d27e2caa088943be01a41768cbd0ca890c80a1c4e8176890e85f95c50441a0"
+    },
+    {
+      "name": "t7-resident-image-fixture-preparation-20261012-b/slot-released-b.json",
+      "bytes": 323,
+      "sha256": "4c2ee958bec7e523443a9ab51f83943cf45907f3189ef1758e76615f3e4a17b9"
+    }
+  ],
+  "next_action": "Review bounded selected-image capture/publication integration in a stable DB scope; no further native run authorized by this checkpoint"
+}

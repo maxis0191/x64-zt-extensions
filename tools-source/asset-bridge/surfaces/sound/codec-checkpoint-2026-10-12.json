@@ -1,0 +1,73 @@
+{
+  "schema": "iw7.original-sound-codec-checkpoint/1",
+  "status": "ThirdPartyPCMVerified",
+  "execution_source_commit": "b31695be7a39cc1aa05bd748e6b2cc72d7ce8e58",
+  "execution_plan_sha256": "6430949bbfe3b55d08bb547e2fe01313853101f77e76e2af2041f35a26270541",
+  "authorized_runs": 1,
+  "actual_runs": 1,
+  "retry_count": 0,
+  "reservation_created_utc": "2026-10-12T06:22:31.7930241Z",
+  "physical_estimate_bytes": 536870912,
+  "commit_estimate_bytes": 1073741824,
+  "codec_version": "8.1.2-full_build-www.gyan.dev",
+  "codec_sha256": "ad8f211bc894755e0061c55ab280ae00e8d3d4f15a8cc4372b24cfa247b5942e",
+  "input_flac_sha256": "9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb",
+  "pcm": {
+    "sample_rate": 48000,
+    "samples": 48000,
+    "channels": 1,
+    "bits_per_sample": 16,
+    "bytes": 96000,
+    "sha256": "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9",
+    "equals_original": true
+  },
+  "native_exit_code": 0,
+  "pipes_eof": true,
+  "both_drains_normal_return": true,
+  "drain_exception_count": 0,
+  "root_exit_code": 0,
+  "active_job_members": 0,
+  "closure_observed_elapsed_ms": 467,
+  "scheduler_attached": true,
+  "job_closed": true,
+  "job_dispose_completed": true,
+  "read_guards_released": true,
+  "input_hashes_match": true,
+  "inputs_unchanged": true,
+  "reviewed_files_rechecked": 14,
+  "quarantined": false,
+  "retained_lease": false,
+  "post_run_registry_observed_utc": "2026-10-12T06:22:51.3405690Z",
+  "post_run_registry_leases": 0,
+  "remaining_run_processes": 0,
+  "outputs": {
+    "decoded.wav": {
+      "bytes": 96044,
+      "sha256": "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4",
+      "equals_complete_original_wav": true
+    },
+    "state.local.json": {
+      "bytes": 1897,
+      "sha256": "d9cbd9c44f2b74a12490b6cda6788e3b7a3334f121d69f65014d0e5858e43a55"
+    },
+    "worker-receipt.json": {
+      "bytes": 805,
+      "sha256": "b10cc105ce54184fd96ed96f4d98fd776f62ef059a14fda9cf17736140f95eca"
+    },
+    "stderr.log": {
+      "bytes": 3204,
+      "sha256": "ee95e48207c754815db5e135e688b28b16badbb6c5e6d894e4e9fec0bf0ac75d"
+    },
+    "stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "output_total_bytes": 101950,
+  "external_decoder_verified": true,
+  "sab_built": false,
+  "ff_built": false,
+  "delivered": false,
+  "playback_verified": false,
+  "ready": false
+}

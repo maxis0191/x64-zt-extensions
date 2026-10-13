@@ -1,0 +1,52 @@
+{
+  "schema": "iw7.t7-catalogue-preflight-refusal/1",
+  "date": "2026-10-12",
+  "attempt": "G",
+  "source_commit": "973a1cbc9f6d0b3c44d05fe52bf4463abd5b01a1",
+  "plan_sha256": "047ee1aa5df8f514e598b837b835639d843dfc36ae64f69dfff9cb2138c7a4d3",
+  "plan_bytes": 10750,
+  "status": "PreflightRefused",
+  "default_plan_validation": "PlanCheckedPendingGO",
+  "error": "Stopped Main baseline differs or is ambiguous.",
+  "observed_utc": "2026-10-12T16:23:17.5341169Z",
+  "expected_main": {
+    "baseline": "Stopped",
+    "original_pid": 27784,
+    "original_created_utc": "2026-10-12T00:52:28.713374Z",
+    "image_name": "iw7-paris-voice.exe"
+  },
+  "observed_main": {
+    "pid": 19932,
+    "created_utc": "2026-10-12T16:21:08.1996220Z",
+    "image_matches_expected_absolute_path": true,
+    "udp_local_address": "0.0.0.0",
+    "udp_local_port": 27016,
+    "udp_owning_process": 19932,
+    "original_pid_observed": false,
+    "start_actor_known": false,
+    "occupied_state_checked": false
+  },
+  "execution": {
+    "native_invocations": 0,
+    "persistent_host_started": false,
+    "runtime_lease_acquired": false,
+    "binary_inputs_hashed": false,
+    "attempt_marker_present": false,
+    "runtime_receipt_present": false,
+    "plan_modified_after_go": false,
+    "main_or_network_modified": false,
+    "candidate_or_stock_modified": false
+  },
+  "private_evidence": {
+    "name": "t7-catalog-g-preflight-refusal.local.json",
+    "bytes": 960,
+    "sha256": "122f2d8ee99f208b5e800cbeaaf31a814640db8f1a6b9c65858e9f929f499577"
+  },
+  "limits": {
+    "runtime_attempt_consumed": false,
+    "message_captured": false,
+    "catalogue_result_available": false,
+    "ready": false
+  },
+  "next_action": "Preserve the observed Main process. Coordinator must review a separately sealed plan and exact GO before any invocation under a different Main baseline."
+}

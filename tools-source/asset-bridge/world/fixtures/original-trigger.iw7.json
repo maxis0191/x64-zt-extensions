@@ -1,0 +1,79 @@
+{
+  "schema": "iw7.asset-bridge.iw7-client-trigger-records/1",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "runtime_ready": false,
+  "scope": "client-trigger geometry/type records only; not MapEnts, Havok or FF",
+  "trigger": {
+    "count": 1,
+    "models": [
+      {
+        "contents": 1,
+        "hullCount": 1,
+        "firstHull": 0,
+        "windingCount": 0,
+        "firstWinding": 0,
+        "flags": 0,
+        "physicsAsset": null,
+        "physicsShapeOverrideIdx": 65535
+      }
+    ],
+    "hullCount": 1,
+    "hulls": [
+      {
+        "bounds": {
+          "midPoint": [
+            12.5,
+            -4.0,
+            8.0
+          ],
+          "halfSize": [
+            16.0,
+            8.0,
+            4.0
+          ]
+        },
+        "contents": 1,
+        "slabCount": 3,
+        "firstSlab": 0
+      }
+    ],
+    "slabCount": 3,
+    "slabs": [
+      {
+        "dir": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "midPoint": 12.5,
+        "halfSize": 16.0
+      },
+      {
+        "dir": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "midPoint": -4.0,
+        "halfSize": 8.0
+      },
+      {
+        "dir": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "midPoint": 8.0,
+        "halfSize": 4.0
+      }
+    ],
+    "windingCount": 0,
+    "windings": [],
+    "windingPointCount": 0,
+    "windingPoints": []
+  },
+  "triggerType": [
+    3
+  ],
+  "source_sha256": "6914615b4bd983f8fcf13a5abdd8f6644e9ecc089515f1b694047ebc0bf9ebc0"
+}

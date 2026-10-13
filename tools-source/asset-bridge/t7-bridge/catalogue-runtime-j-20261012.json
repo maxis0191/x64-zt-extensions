@@ -1,0 +1,233 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-checkpoint/1",
+  "date": "2026-10-12",
+  "attempt": "J",
+  "plan": {
+    "name": "t7-catalog-plan-j.local.json",
+    "bytes": 12690,
+    "sha256": "44bb6204bf695fdb212c7fd342af740f44f95da5a44201c3f87edacc2b1a9f7a"
+  },
+  "candidate_bytes": 21750272,
+  "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+  "source_commit": "131fde7c69f726f9d102b08ed6bf8c4465e5c185",
+  "dispatch": {
+    "name": "Invoke-T7CatalogueJ.local.ps1",
+    "bytes": 3163,
+    "sha256": "fb0e60f3a146816ffcae811eccf718d985764354df1da313f693aad62190dee5"
+  },
+  "dispatch_review": {
+    "name": "t7-catalog-j-dispatch-review.local.json",
+    "bytes": 5356,
+    "sha256": "100f631ca52c6f30e156fe2a976d4424b8a69afc168a6122c5fea6e56a6bfb9e"
+  },
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "trace_outcome": "TraceObserved",
+  "exit_context_outcome": "Observed",
+  "callers_outcome": "Observed",
+  "message": {
+    "outcome": "Observed",
+    "captures": [
+      {
+        "Kind": "install",
+        "ThreadId": 6172,
+        "Status": "installed",
+        "Error": 0
+      },
+      {
+        "Kind": "buffer",
+        "ThreadId": 23636,
+        "Status": "ok",
+        "Error": 0,
+        "Requested": 384,
+        "ReadBytes": 384,
+        "Length": 42,
+        "NulTerminated": true
+      }
+    ],
+    "incomplete_trailing_line": false,
+    "install_boundary_observed": true,
+    "exit_correlated": true,
+    "correlation": "SameThreadBeforeExit",
+    "decoded_or_interpreted_by_adapter": false
+  },
+  "exit_code": 0,
+  "elapsed_ms": 2194.0329999923706,
+  "started_utc": "2026-10-12T18:01:56.9273406Z",
+  "finished_utc": "2026-10-12T18:02:00.4438386Z",
+  "native_root": {
+    "pid": 10828,
+    "created_utc": "2026-10-12T18:01:56.9605724Z"
+  },
+  "trace_events": [
+    {
+      "Phase": "enabled",
+      "StdoutUnbuffered": true,
+      "StderrUnbuffered": true,
+      "ThreadId": 6172
+    },
+    {
+      "Phase": "before_entry_point",
+      "Code": 0,
+      "ThreadId": 6172,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "before_post_unpack",
+      "Code": 0,
+      "ThreadId": 6172,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "after_post_unpack",
+      "Code": 0,
+      "ThreadId": 6172,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "exit_hook",
+      "Code": 0,
+      "ThreadId": 23636,
+      "ReturnAddress": "0000000140AC00C4"
+    }
+  ],
+  "stderr_evidence_under_guards": {
+    "name": "stderr.log",
+    "bytes": 4877,
+    "sha256": "a79443ff68567b94da8b1ab9ef3150299acae81605d6d13ca27f1078579aa4d7",
+    "hash_recalculated_after_release": false
+  },
+  "stdout_bytes": 70,
+  "receipt": {
+    "name": "receipt.json",
+    "bytes": 14157,
+    "sha256": "78b06b4d384d54f8d31fd29ab5115568aa526e4dfbb2ae903a57ae53305c1f61"
+  },
+  "bootstrap": {
+    "name": "en_core_pre_gfx.ff",
+    "bytes": 832,
+    "sha256": "37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c",
+    "relative_alias": "zone/en_core_pre_gfx.ff",
+    "qualified_file_id_matched": true,
+    "alias_identity_and_hash_reverified_under_lease": true,
+    "engine_lookup_path_proven": false,
+    "content_compatibility_proven": false
+  },
+  "preflight": {
+    "captured_utc": "2026-10-12T18:01:14.9362851Z",
+    "decision": "PassedPendingAtomicAdmission",
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "commit_used_percent": 52.81,
+    "physical_reserve": 0,
+    "commit_reserve": 9512923136
+  },
+  "closure": {
+    "tree_confirmed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "termination_requested": false,
+    "inputs_reverified_under_lease": true,
+    "engine_outputs_validated": true,
+    "original_metadata_unchanged": true,
+    "postflight_utc": "2026-10-12T18:03:49.1208942Z",
+    "metadata_equal_count": 5,
+    "file_ids_equal_count": 10,
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "host_pid": 19432,
+    "host_created_utc": "2026-10-12T18:01:25.6339611Z",
+    "host_parent_pid": 30128,
+    "session_id": 65217,
+    "tool_exit_chunk": "edc24d",
+    "actual_host_exit_code": 0,
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T18:04:19.8994175Z",
+    "host_parent_and_root_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "payload_hashes_read_after_release": false,
+    "guard_disposal_evidence": "Pinned runner finally disposes and clears every guard after Context.Closed and Lease=null, before the observed wrapper return."
+  },
+  "closure_helper_correction": {
+    "original": {
+      "name": "Finish-T7CatalogueJ.local.ps1",
+      "bytes": 5325,
+      "sha256": "bc8fac99ff4aeae1bdc941e323d3f61ee5b3835cd4c9aa70dd6878e89a617248"
+    },
+    "corrected": {
+      "name": "Finish-T7CatalogueJCorrected.local.ps1",
+      "bytes": 5396,
+      "sha256": "6240669a09b10d2f21bace0767ce1736c4ffc1214b533e491e0f1127d0db4410"
+    },
+    "original_refusal_chunk": "6e1c8a",
+    "reason": "ConvertFrom-Json returned System.DateTime, so exact string comparison rejected equal creation timestamps.",
+    "utc_ticks_equal": 639274249169605724,
+    "correction": "Compare UTC ticks exactly; every other closure check unchanged.",
+    "corrected_pass_chunk": "f5209e",
+    "additional_native_invocation": false
+  },
+  "private_evidence": [
+    {
+      "name": "t7-catalog-j-preflight.local.json",
+      "bytes": 1684,
+      "sha256": "15b6d5fb1d70b4d6dc5207845b2fc47fdcd055349e7fab00367de1a8942a4eb6"
+    },
+    {
+      "name": "t7-catalog-j-host-start.local.json",
+      "bytes": 409,
+      "sha256": "2962fbe4b5b95a57078b21aa5a3fd4204e873946a588b45d16daba26c2a4ebef"
+    },
+    {
+      "name": "t7-catalog-j-host-return.local.json",
+      "bytes": 434,
+      "sha256": "128fc3ce05cec2883d3c89cc24e6de5d11ec60a1fb1af4a25032bd73f17aec82"
+    },
+    {
+      "name": "t7-catalog-j-postflight.local.json",
+      "bytes": 4052,
+      "sha256": "67db21e020e562c17647e3a252934e69d6dd3f7ecd56edca669e2f3ed456d776"
+    },
+    {
+      "name": "t7-catalog-j-host-outcome.local.json",
+      "bytes": 372,
+      "sha256": "78c7523b3c4e6c8af2d1a65dddcb574fb95309a6d24b5b76e2fcc6e8b744c20b"
+    },
+    {
+      "name": "t7-catalog-j-host-exit.local.json",
+      "bytes": 289,
+      "sha256": "84e478dc125c80963bb571f971f335e1b8ea811a070b5238898c5d8879645bd5"
+    },
+    {
+      "name": "t7-catalog-j-host-absence.local.json",
+      "bytes": 723,
+      "sha256": "e84a313c8d6d265ee05bc2ac2b0d553eb4d3f3b8ee7598f360a7e784ca2b516c"
+    }
+  ],
+  "limits": {
+    "native_invocations": 1,
+    "runtime_attempt_consumed": true,
+    "catalogue_success": false,
+    "compatibility_proven": false,
+    "ready": false,
+    "plan_i_preserved": true,
+    "new_probe_added": false,
+    "speculative_dependency_added": false
+  },
+  "next_action": "Propose qualification of only the newly named core_pre_gfx.ff. Its prior metadata snapshot reports 22351168 bytes; current metadata, identity, content and hash remain unqualified. No new payload read, implementation, probe or engine Run is authorized by this checkpoint.",
+  "analysis_owner_51": {
+    "first_complete_correlated_message_bytes": 42,
+    "encoding": "ASCII",
+    "error_category": "Required startup zone not found",
+    "missing_zone_name": "core_pre_gfx",
+    "previous_i_missing_zone_name": "en_core_pre_gfx",
+    "same_named_failure_as_i": false,
+    "initialization_complete_marker_observed": false,
+    "model_catalog_marker_observed_in_stdout_or_stderr": false,
+    "stdout_bytes": 70,
+    "stdout_only_initialization_started": true,
+    "raw_message_or_hex_published": false,
+    "receipt_sha256_independently_confirmed": "78b06b4d384d54f8d31fd29ab5115568aa526e4dfbb2ae903a57ae53305c1f61",
+    "interpretation_limit": "The first named failure changed after staging the localized bootstrap; neither its full validity nor an exhaustive startup dependency sequence is proved."
+  }
+}

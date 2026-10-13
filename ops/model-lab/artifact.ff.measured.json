@@ -1,0 +1,45 @@
+{
+  "schema": "iw7.model-ff-measured/1",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "build_run": "runtime/model-ff-build-20261007",
+  "ff": {
+    "Path": "mod.ff",
+    "Bytes": 1036,
+    "SHA256": "BE3A34FF1AB0F95B1850E0BDE0BA60E519706F796F2BF38134C65A42724893CB"
+  },
+  "inventory": [
+    "material,,mopw/character_park_clown_zombie_shoes",
+    "xmodelsurfs,paris_model_probe_lod0",
+    "xmodel,paris_model_probe",
+    "netconststrings,ncs_mdl_paris_model_probe",
+    "rawfile,paris_model_probe"
+  ],
+  "original_status": "Failed",
+  "original_failure": "The term 'Assert-IW7MemoryHeadroom' is not recognized as a name of a cmdlet, function, script file, or executable program.\r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again.",
+  "original_geometry_flag": false,
+  "restored": true,
+  "stock_preserved": true,
+  "retained_reader_evidence": "runtime/model-ff-build-20261007/model-recovery-reader-20261006-235045-332-54ebc81551d342dba2cd56293c1dd5e7.stdout.log.evidence.json",
+  "reader_sha256": "DD28427E8D26D32A0B78426EC1083C18B529262EE67CAE010B8ACCB3A901C2BA",
+  "reader_exit_code": 0,
+  "geometry": {
+    "schema": "iw7.model-roundtrip/1",
+    "vertices": 24,
+    "triangles": 12,
+    "bones": 1,
+    "surfaces": 1,
+    "lods": 1,
+    "geometry_roundtrip_verified": true,
+    "read_existing_supported": true,
+    "normal_encoding": "H1-1010102-candidate",
+    "iw7_normal_encoding_verified": false,
+    "material_reference": "mopw/character_park_clown_zombie_shoes",
+    "ff_built": false,
+    "pixels_verified": false,
+    "ready": false
+  },
+  "geometry_roundtrip_verified": true,
+  "recipient_reference_resolved": false,
+  "pixels_verified": false,
+  "ready": false
+}

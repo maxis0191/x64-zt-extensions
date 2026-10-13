@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-12",
+  "runner_commit": "379526b9f41f2746e60ba8c22fe05e2447dc5245",
+  "status": "references_only_stopped_by_coordinator_after_fatal_window",
+  "native_started": true,
+  "automatic_retries": 0,
+  "cause": "Unresolved; Fatal Error window persists and the final log announces global_mp loading. Dialog body was not captured.",
+  "native_executable_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "parameters_sha256": "7e7b98fe81018570ea5abebcbfa66fe6bbfc4db8a351d06d55e3bcc62cb4074d",
+  "plan_sha256": "d1a40ce78e5bdd94060cd2a8a53a45bff6508eb0578a4d800e2249fe68bf2026",
+  "approved_run_command_sha256": "2edb9c78d85dda0511a80390a337936bd64408baf42b53097de0a2a8db79adb2",
+  "policies_main_commit": "178708bde0ee18fc552007aa3b6475477b82aae9",
+  "fresh_atomic_admission": {
+    "physical_bytes": 8589934592,
+    "commit_bytes": 11811160064,
+    "acquired": true,
+    "prior_preflight_was_not_admission": true
+  },
+  "configured_limits": {
+    "native_seconds": 240,
+    "original_job_seconds": 245,
+    "post_root_drain_seconds": 5,
+    "group_seconds": 600,
+    "log_bytes_each": 2097152,
+    "output_stop_bytes": 268435456
+  },
+  "phase": {
+    "requested": [
+      "references"
+    ],
+    "stdout_bytes": 1449,
+    "stderr_bytes": 0,
+    "last_log": "[ INFO ][ zonetool::iw7::load_zone ]: Loading zone \"global_mp\"...",
+    "bootstrap_finalize_observed": true,
+    "reference_csv_created": false,
+    "phase_receipt_created": false,
+    "script_phase_started": false,
+    "reference_verified": false,
+    "utility_bytes_observed": false,
+    "original_outer_native_executed_field": null
+  },
+  "light_samples": [
+    {
+      "captured_utc": "2026-10-12T05:40:33.3546417Z",
+      "native_age_seconds": 43.3535187,
+      "cpu_seconds": 4.875,
+      "resident_bytes": 443604992,
+      "private_bytes": 594030592,
+      "read_bytes": 99588572,
+      "write_bytes": 2756140,
+      "thread_count": 19,
+      "thread_wait_counts": {
+        "Wait/Suspended": 9,
+        "Wait/EventPairLow": 6,
+        "Wait/Executive": 1,
+        "Wait/ExecutionDelay": 1,
+        "Wait/UserRequest": 2
+      },
+      "main_window_title": "Fatal Error",
+      "main_window_handle": 27263364,
+      "bytes": 4196,
+      "sha256": "4344f9adf3900805522224a8e85c7964d450bc360427d5cdbac07be3f8d8a1f1"
+    },
+    {
+      "captured_utc": "2026-10-12T05:41:37.1425254Z",
+      "native_age_seconds": 107.1413802,
+      "cpu_seconds": 4.984375,
+      "resident_bytes": 443551744,
+      "private_bytes": 593932288,
+      "read_bytes": 99588572,
+      "write_bytes": 2756140,
+      "thread_count": 16,
+      "thread_wait_counts": {
+        "Wait/Suspended": 9,
+        "Wait/Executive": 1,
+        "Wait/ExecutionDelay": 1,
+        "Wait/UserRequest": 2,
+        "Wait/EventPairLow": 3
+      },
+      "main_window_title": "Fatal Error",
+      "main_window_handle": 27263364,
+      "bytes": 3941,
+      "sha256": "3c9d10d22d939ff8f54a7db273f5cfc2d460a25073241024af6ebfa10ce46e41"
+    },
+    {
+      "captured_utc": "2026-10-12T05:43:03.2211584Z",
+      "native_age_seconds": 193.2197631,
+      "cpu_seconds": 5.140625,
+      "resident_bytes": 443314176,
+      "private_bytes": 593240064,
+      "read_bytes": 99588572,
+      "write_bytes": 2756140,
+      "thread_count": 13,
+      "thread_wait_counts": {
+        "Wait/Suspended": 9,
+        "Wait/Executive": 1,
+        "Wait/ExecutionDelay": 1,
+        "Wait/UserRequest": 2
+      },
+      "main_window_title": "Fatal Error",
+      "main_window_handle": 27263364,
+      "bytes": 3753,
+      "sha256": "16e8bc500c1c9368fcf7eb87a732ceeb0031313c5da80304ba5266184aefcbc4"
+    }
+  ],
+  "sampling_schedule_met": false,
+  "sampling_note": "Three real observations at 43.35,107.14,193.22 seconds; no samples at planned0/10/30 are claimed. Filenames retain requested checkpoints, actual ages are authoritative.",
+  "identity": {
+    "parent_and_child_images_creation_relationship_checked_before_after": true,
+    "e7_hash_checked": true,
+    "same_native_identity_used_for_later_samples": true,
+    "process_handle_held_during_sample": true,
+    "DirectJobMembershipQueried": false,
+    "job_ownership_basis": "Verified original parent and reviewed non-breakaway child inheritance.",
+    "cim_timeout_seconds_each": 2,
+    "cim_timeout_is_whole_call_deadline": false
+  },
+  "dialog": {
+    "title_observed": "Fatal Error",
+    "same_handle_in_all_samples": true,
+    "all_windows_enumerated": false,
+    "body_captured": false,
+    "reason": "Existing reader requires a private desktop absent from this launch. Additional Python ctypes permission arrived after stop.request had been placed; stop was not revoked or delayed.",
+    "arrival_relative_to_final_closure": "Not precisely established; only arrival after stop.request is established.",
+    "interaction_performed": false
+  },
+  "stop": {
+    "request_utc": "2026-10-12T05:43:03.5130852Z",
+    "command_complete_utc": "2026-10-12T05:43:07.1439696Z",
+    "command_exit_code": 1,
+    "outer_status": "Failed",
+    "outer_failure": "Coordinator requested owned stop.",
+    "closure_after_stop": {
+      "ExitCode": 122,
+      "RootExited": true,
+      "Active": 0
+    },
+    "timeout_reached": false
+  },
+  "restored": true,
+  "stock_preserved": true,
+  "restoration_status": "Confirmed",
+  "cleanup_error": null,
+  "lease_released": true,
+  "active_leases_at_final_check": 0,
+  "remaining_owned_processes": 0,
+  "managed_input_count": 75,
+  "remaining_recorded_staging_paths": 0,
+  "main_same_identity": true,
+  "generated_output_final_bytes": 1225970,
+  "final_observation_sha256": "163081a35ea4a6f9070939c18e1e4836b650b0a29eaba315e2bb24dd26fe3da8",
+  "retained_artifacts": [
+    {
+      "relative": "state.local.json",
+      "bytes": 103890,
+      "sha256": "fbec5239264abb0fd8153457431fb085f2a57c5874d01fb4edc0ab5ea713ebfe"
+    },
+    {
+      "relative": "backup/recovery.local.json",
+      "bytes": 8141,
+      "sha256": "a9256dfaf066ebbff8422dc0d6dad3d0669b253a18fdb823269ab107c12551a7"
+    },
+    {
+      "relative": "references/native-start.json",
+      "bytes": 542,
+      "sha256": "7d1cd01125b7bbb1f351f9b6e3978acb6d5932ed5845b97f8e3835f5451fd092"
+    },
+    {
+      "relative": "references/stdout.log",
+      "bytes": 1449,
+      "sha256": "24b20a1570c48763c16f047a6473cf0bf385b4fa512535851acb55d652fc037a"
+    },
+    {
+      "relative": "references/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "relative": "stop.request",
+      "bytes": 161,
+      "sha256": "d81e3138828672c990b40300b9a09b6bfedf3382828c86207b1f03fff3ea6715"
+    },
+    {
+      "relative": "observations/light-010.local.json",
+      "bytes": 4196,
+      "sha256": "4344f9adf3900805522224a8e85c7964d450bc360427d5cdbac07be3f8d8a1f1"
+    },
+    {
+      "relative": "observations/light-045.local.json",
+      "bytes": 3941,
+      "sha256": "3c9d10d22d939ff8f54a7db273f5cfc2d460a25073241024af6ebfa10ce46e41"
+    },
+    {
+      "relative": "observations/light-final.local.json",
+      "bytes": 3753,
+      "sha256": "16e8bc500c1c9368fcf7eb87a732ceeb0031313c5da80304ba5266184aefcbc4"
+    }
+  ],
+  "snapshot_taken": false,
+  "cdb_used": false,
+  "closure_complete": false,
+  "package_ready": false,
+  "runtime_verified": false,
+  "limits": [
+    "Visible output proves the corrected capture exposes progress; it does not prove the native loading error is fixed.",
+    "The last load marker and Fatal Error title do not supply the fatal message or root cause. Missing eng_* notices are not attributed as the cause.",
+    "Reference CSV and phase receipt are absent because the original job was stopped before a result; the unchanged outer NativeExecuted=null is not relabeled.",
+    "The first directory listing reported zero log length while direct reading exposed content. Retained final stdout is1449bytes; no additional logger defect is inferred.",
+    "Live Get-FileHash refused sharing on open logs; the final sample used a read-sharing handle, and final hashes were verified after closure.",
+    "The preserved final-observation note says the ctypes authorization arrived after stop and closure; only after stop.request is established. This report narrows that timing claim.",
+    "No second B attempt, utility export, dump, debugger, stock/CLI/stdin change or resource-budget reduction occurred."
+  ]
+}

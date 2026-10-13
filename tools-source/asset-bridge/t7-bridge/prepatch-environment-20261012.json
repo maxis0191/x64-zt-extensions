@@ -1,0 +1,42 @@
+{
+  "schema": "iw7.t7-prepatch-environment-observation/1",
+  "prepared_utc": "2026-10-12T12:07:29.1742599Z",
+  "purpose": "Environment for bounded entrypoint-to-first-DPI-hook witness before absolute patches",
+  "file_hardlinks_created": 2,
+  "payload_files_copied": 0,
+  "source_destination_file_ids_equal": true,
+  "source_lengths_attributes_and_last_write_unchanged": true,
+  "reparse_points_observed": false,
+  "sources_guarded_during_link_creation": true,
+  "runtime_input_guards_still_required": true,
+  "payload_hashes_rechecked_during_preparation": false,
+  "input_identities_from_prior_receipts": [
+    {
+      "name": "BlackOps3_UnrankedDedicatedServer.exe",
+      "bytes": 21737352,
+      "sha256": "3df511d71e3690b14517379783bbfb713f6fe2ed2f2e73b445b4878216686156",
+      "attributes": "ReadOnly, Archive"
+    },
+    {
+      "name": "steam_api64.dll",
+      "bytes": 235600,
+      "sha256": "71af8666392acad2080a816b9f1196fe9ccb950e1db8a549f8312c4d231f55a8",
+      "attributes": "Archive"
+    }
+  ],
+  "candidate_present": false,
+  "working_directory_zone_present": false,
+  "parent_zone_present": false,
+  "ff_fd_or_xpak_exposed_by_this_preparation": false,
+  "native_provider_loaded": false,
+  "lease_acquired": false,
+  "native_executed": false,
+  "entrypoint_effects_proven_absent": false,
+  "ready": false,
+  "evidence": {
+    "name": "environment.local.json",
+    "bytes": 2169,
+    "sha256": "e7e3ed8c5479581e26506eb4bbb8a0ceb64b9a74cfd1eb5e076f122d6b2787b0"
+  },
+  "next_action": "Bind the reviewed bounded helper contract, instrumented candidate and retained-job runtime plan; no guessed zone closure or native execution in this preparation."
+}

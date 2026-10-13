@@ -1,0 +1,71 @@
+{
+  "schema": "iw7.recipient-script-name-source/1",
+  "date": "2026-10-12",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "base_native_source": "src/zonetool/zonetool/iw7/zonetool.cpp",
+  "base_source_sha256": "f1c9fb861b81727dc7e3882f5116231e6dc0d1a0e6f5838953a62232171059bc",
+  "patched_source_lf_sha256": "f191cec478c3ce44e509381475c4a93516bc1c88bc7766967c1b183ec497f044",
+  "files": {
+    ".gitattributes": {
+      "lf_bytes": 161,
+      "lf_sha256": "93d4579a9c5a333df8594e0896b9b31261d369c9962b69771965c8f612fafee2"
+    },
+    "recipient_script_names.hpp": {
+      "lf_bytes": 7569,
+      "lf_sha256": "2a287c91f7e7c6a4334f4aa7d6cb09672462302ba5e037aa43d7411c114367f8"
+    },
+    "native_observer.inc": {
+      "lf_bytes": 2772,
+      "lf_sha256": "de7ca5b20754fce5c2a112f8a773332093f8f8b2abd81edf1dfa615b71c9e8dc"
+    },
+    "native_cli.inc": {
+      "lf_bytes": 936,
+      "lf_sha256": "343a3a8f66e6035a26bc368e0a79f34d9fec7715743c47421a19569277002704"
+    },
+    "script_name_contract.py": {
+      "lf_bytes": 5578,
+      "lf_sha256": "f54f34fbfdd95ccc34d48ccf514e296f1beb279654ca0845594c86e262868d04"
+    },
+    "test_script_name_contract.py": {
+      "lf_bytes": 6050,
+      "lf_sha256": "b3f24770f306129b21c937bb3b04cf7bf0e32846aafeb68753171ff5cf4ab9c6"
+    },
+    "test_prepare_observer.py": {
+      "lf_bytes": 4034,
+      "lf_sha256": "09f2bafa97c030cc8fbd751be4b1d637ec36059b616973f0e9db3d6681b9a814"
+    },
+    "test_recipient_script_names.cpp": {
+      "lf_bytes": 4988,
+      "lf_sha256": "c937e6ba78638655ed4296e3dffce9f05a0a3b0d220960f2d3effd923d94302b"
+    },
+    "prepare_observer.py": {
+      "lf_bytes": 3137,
+      "lf_sha256": "59a308781f91a890bc1231c84a4ad077eb39ee7f0a56beee55dd3015988607b1"
+    },
+    "zonetool-fab9358-script-names.patch": {
+      "lf_bytes": 4510,
+      "lf_sha256": "6c79fb2440fb0df543e1c08fa6e4211735195ee93ce0c9893c0d17ee42803926"
+    },
+    "README.md": {
+      "lf_bytes": 9959,
+      "lf_sha256": "d6e5d12c85b0c7552b1779c2dc666461149b375a7c18d9a91de1d377906085d3"
+    },
+    "build-proposal.json": {
+      "lf_bytes": 2547,
+      "lf_sha256": "dd7fb81367fd625153eac9ade52d52bc4a7d796b8db9547b490e27cff84ba11b"
+    }
+  },
+  "python_tests_passed": 27,
+  "python_tests_use_only_source_and_invented_fixtures": true,
+  "git_apply_check_passed": true,
+  "shared_patch_applied": false,
+  "native_harness_prepared": true,
+  "native_harness_compiled": false,
+  "native_harness_executed": false,
+  "candidate_built": false,
+  "native_executed": false,
+  "retail_payload_read": false,
+  "script_bytes_verified": false,
+  "closure_complete": false,
+  "ready": false
+}

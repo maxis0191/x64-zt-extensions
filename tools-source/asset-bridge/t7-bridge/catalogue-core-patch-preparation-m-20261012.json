@@ -1,0 +1,127 @@
+{
+  "schema": "iw7.t7-core-patch-preparation-checkpoint/1",
+  "date": "2026-10-12",
+  "status": "SourcePreparedPendingReviewAndDistinctQualificationGO",
+  "named_input": {
+    "name": "core_patch.ff",
+    "named_by_closed_attempt": "L",
+    "metadata_observed_utc": "2026-10-12T19:08:30.7208143Z",
+    "bytes": 45217664,
+    "ordinary_file_and_ancestors": true,
+    "metadata_file_id_observed_by_analysis_owner": true,
+    "payload_content_header_or_hash_read": false,
+    "metadata_receipt": {
+      "name": "t7-message-l-startup-metadata.local.json",
+      "bytes": 1710,
+      "sha256": "bc462b608deb907a7df52d654736bc2530b42f17c5a3e0fa6a1920cbc7c906bd"
+    }
+  },
+  "initial_cap_refusal": {
+    "reader_and_v1_aggregate_cap": 33554432,
+    "previous_qualified_bytes": 22976640,
+    "proposed_four_file_total": 68194304,
+    "excess_even_above_64_mib_aggregate": 1085440,
+    "qualification_script_or_payload_started_before_distinct_cap_decision": false,
+    "superseded_by_explicit_source_authorization": "64 MiB per file and 128 MiB aggregate; this authorization did not itself authorize Run."
+  },
+  "policy": {
+    "new_opt_in": "QualifiedCollectionV2",
+    "item_bytes_max": 67108864,
+    "aggregate_bytes_max": 134217728,
+    "item_count_min": 1,
+    "item_count_max": 8,
+    "legacy_j_k_unchanged": true,
+    "qualified_collection_v1_kept_at_32_mib_item_and_aggregate": true,
+    "safe_names_distinct_paths_and_id_checks_unchanged": true,
+    "global_validation_before_alias_unchanged": true,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "group_native_cleanup_seconds": [200, 120, 5],
+    "proposed_four_file_output_limit": 196003736,
+    "max_output_for_current_candidate": 262027160,
+    "max_output_for_64_mib_candidate": 307385752
+  },
+  "reader": {
+    "name": "Read-SteamSnapshot",
+    "validate_range_maximum": 67108864,
+    "maximum_without_explicit_opt_in": 33554432,
+    "explicit_switch": "Allow64MiB",
+    "refusal_before_path_or_stream_access": true,
+    "existing_snapshot_hash_and_guard_loop_reused": true,
+    "source_bytes": 25510,
+    "source_sha256": "28382d32673b059eee2de63f22543ce1dc63dafcb136be62ec93319e50b8df20"
+  },
+  "qualification_preparation": {
+    "script": {
+      "name": "Qualify-T7CorePatchA.local.ps1",
+      "bytes": 13347,
+      "sha256": "b02fea20f16184aa2407102caa652e826ab87d060f864c60d029005090310eba"
+    },
+    "source_manifest": {
+      "name": "t7-core-patch-qualification-a-source-pins.local.json",
+      "bytes": 2491,
+      "sha256": "f1f77fe95d465c9b6b332849d61ef5f3ac7beee7d6953b628f6626c637dd1b01"
+    },
+    "preparation": {
+      "name": "t7-core-patch-qualification-a-preparation.local.json",
+      "bytes": 3438,
+      "sha256": "dc50e0ea275af8bc15f12aac90c5c8bb3f48b02868b9184f02f0a06ef83b518f"
+    },
+    "source_delta": {
+      "name": "t7-core-patch-a-reviewed-source-delta.local.patch",
+      "bytes": 12943,
+      "sha256": "961dc1dafbcae94747201b29f5400653fdbb2789c283ca45fc192cf79100a139"
+    },
+    "lifecycle_functions_identical_to_predecessor": 5,
+    "guarded_bytes_per_pass": 45217664,
+    "guarded_passes": 2,
+    "guarded_total_bytes": 90435328,
+    "default_status": "QualificationScriptCheckedPendingGO",
+    "default_tool_chunk": "7accd6",
+    "actual_host_arguments_captured_without_launch": true,
+    "host_wiring_tool_chunk": "e867e3",
+    "scope_marker_receipt_absent": true,
+    "run_invoked": false,
+    "payload_opened": false
+  },
+  "validation": {
+    "catalogue_collection_checks": 311,
+    "remaining_catalogue_checks": 1206,
+    "reader_checks": 68,
+    "source_checks_total": 1585,
+    "qualification_lifecycle_checks_separate": 54,
+    "source_tool_chunks": ["4d8d7a", "4a1f14", "80c640", "9172ce", "86c939", "287b5a", "72714f", "49743a", "db9e69"],
+    "qualification_tool_chunk": "eff186",
+    "real_asset_read": false,
+    "native_support_loaded": false,
+    "real_lease_acquired": false,
+    "large_fixture_allocation_required": false,
+    "v1_boundary_retained": true,
+    "v2_exact_item_and_aggregate_boundaries_checked": true,
+    "late_aggregate_failure_emits_no_partial_collection": true,
+    "reader_oversize_refused_before_path_or_stream": true
+  },
+  "delegation_proposal": {
+    "status": "ProposedNotAccepted",
+    "name": "t7-named-dependency-delegation-proposal.local.json",
+    "bytes": 4976,
+    "sha256": "aa4b12860d837feac5800b9df3010e18099eadfaceee6944f47bf4e98e563248",
+    "maximum_new_named_dependencies": 3,
+    "maximum_qualification_and_catalogue_pairs": 3,
+    "retry": false,
+    "stop_on_new_error_category_repeat_ambiguity_or_bound_failure": true,
+    "new_framework_or_scheduler": false
+  },
+  "plan_m": {
+    "created": false,
+    "planned_items_after_successful_qualification": 4,
+    "planned_bindings": 34,
+    "planned_text_bindings": 25,
+    "planned_binary_bindings": 9,
+    "planned_metadata_and_aliases_each": 8,
+    "planned_original_and_alias_id_checks": 16,
+    "requires_real_closed_qualification_hash_and_id": true,
+    "catalogue_run_authorized_by_this_checkpoint": false
+  },
+  "next_action": "Independent targeted review and distinct qualification GO; after full closure only, build Plan M from its real qualification identity/hash. No qualification or catalogue run follows from this preparation alone."
+}

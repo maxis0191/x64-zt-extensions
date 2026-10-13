@@ -1,0 +1,170 @@
+{
+  "schema": "iw7.t7-core-post-gfx-source-preparation/1",
+  "date": "2026-10-12",
+  "status": "SourceOnlyPendingIndependentReviewAndTwoPhaseGO",
+  "source_operational_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+  "P_checkpoint_commit": "f885a8d9f30925b5ec5ece36bb9dbc526fe80b76",
+  "input_name": "core_post_gfx.ff",
+  "input_bytes": 267200,
+  "input_hash": null,
+  "qualified_file_id": null,
+  "metadata_source": {
+    "name": "t7-message-p-startup-metadata.local.json",
+    "bytes": 1748,
+    "sha256": "1f03c1d6e98a4fc3a85c39ea446f9ea36f03595b8df7cea692d1428252824a3e",
+    "scope": "Previously authorized targeted metadata only from analysis owner 51."
+  },
+  "qualification": {
+    "name": "Qualify-T7CorePostGfxA.local.ps1",
+    "bytes": 13340,
+    "sha256": "51fcf3b50e57d056343169764f128a8fac81a1fe3f80a295fe2ada029a005f00"
+  },
+  "source_manifest": {
+    "name": "t7-core-post-gfx-qualification-a-source-pins.local.json",
+    "bytes": 2491,
+    "sha256": "f1f77fe95d465c9b6b332849d61ef5f3ac7beee7d6953b628f6626c637dd1b01"
+  },
+  "source_review": {
+    "name": "t7-core-post-gfx-a-source-review.local.json",
+    "bytes": 1538,
+    "sha256": "4865da19a11b672a2b9bf4b6c46c16242240cf8bb0c88b7985b36f6cbab2afc0"
+  },
+  "launch": {
+    "name": "t7-core-post-gfx-qualification-a-launch.local.json",
+    "bytes": 1468,
+    "sha256": "210c4401da7a653bd97aac2129b32ad1654a4be615663abee5935d84d4c024d0"
+  },
+  "wiring": {
+    "name": "t7-core-post-gfx-qualification-a-wiring.local.json",
+    "bytes": 1255,
+    "sha256": "09c36771f51bb523afb7a7e9a35851ad65c8e1103a80b0f38255660e3d568e33"
+  },
+  "literal_diff": {
+    "name": "t7-core-post-gfx-a-literal-diff.local.patch",
+    "bytes": 9958,
+    "sha256": "e9b7ab1eab7439d87be95901d32a2d0cabcde1d09446f5003ed1646cfb8b49a7"
+  },
+  "qualification_checks": {
+    "source_parse": true,
+    "variable_occurrences_unchanged": 367,
+    "command_occurrences_unchanged": 73,
+    "nonliteral_tokens_unchanged": 1990,
+    "lifecycle_functions_byte_identical": 5,
+    "default_pass_tool_chunk": "ac94fa",
+    "wiring_pass_tool_chunk": "911091",
+    "lifecycle_tests": "54 existing pure checks retained from byte-identical lifecycle functions; not rerun for this data-only adaptation."
+  },
+  "operational_sources": {
+    "profile": {
+      "name": "T7Catalogue.Profile.ps1",
+      "bytes": 75295,
+      "sha256": "4c5ba9c0ccfd9bdbf7d6b2a46930ed560d4ced322f2e164d04fc2b1be57a1a47"
+    },
+    "reader": {
+      "name": "Invoke-SteamMetadata.ps1",
+      "bytes": 25510,
+      "sha256": "28382d32673b059eee2de63f22543ce1dc63dafcb136be62ec93319e50b8df20"
+    },
+    "runner": {
+      "name": "Run-T7Catalogue.ps1",
+      "bytes": 12525,
+      "sha256": "fd710da6538378b93f29b22930a0e61fd6163ef7541cae8dc5d1e89eda21d94a"
+    }
+  },
+  "candidate": {
+    "bytes": 21750272,
+    "sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+    "provenance": "Existing closed P evidence; not rehashed in preparation."
+  },
+  "future_catalogue": {
+    "attempt": "Q",
+    "input_count": 8,
+    "bootstrap_bytes": 75726016,
+    "bindings": 46,
+    "text_bindings": 33,
+    "binary_bindings": 13,
+    "metadata_rows": 12,
+    "original_and_alias_ids": 24,
+    "output_limit_bytes": 203535448,
+    "plan_materialized": false,
+    "dispatch_materialized": false,
+    "requires_actual_successful_closed_qualification": true
+  },
+  "limits": {
+    "new_dependencies_max": 1,
+    "qualification_invocations_max": 1,
+    "catalogue_invocations_max": 1,
+    "heavy_stages_max": 2,
+    "retries": 0,
+    "qualification_read_bytes_per_pass": 267200,
+    "qualification_read_passes": 2,
+    "qualification_read_bytes_total": 534400,
+    "policy": "QualifiedCollectionV2",
+    "V3_adopted": false,
+    "collection_max_items": 8,
+    "file_max_bytes": 67108864,
+    "aggregate_max_bytes": 134217728,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "group_seconds": 200,
+    "native_seconds": 120,
+    "cleanup_seconds": 5,
+    "stderr_bytes": 8192,
+    "automatic_next_dependency": false,
+    "export": false,
+    "engine_or_instrumentation_change": false
+  },
+  "frozen_catalogue_closure": {
+    "reference": {
+      "name": "Finish-T7CatalogueP.bound.local.ps1",
+      "bytes": 5598,
+      "sha256": "995142494cf9195ec2bec901ad3c61e9ffbe28528111f9ee7a149c06492d98cf"
+    },
+    "variable_occurrences": 140,
+    "command_occurrences": 32,
+    "nonliteral_tokens": 850,
+    "preserve_all_N_globals_and_L_locals": true,
+    "allowed_literal_changes": [
+      "Attempt paths and labels",
+      "Actual Plan bytes and SHA256",
+      "12 metadata/input/alias rows and 24 combined identities",
+      "Observed host PID, native PID and native creation UTC"
+    ],
+    "prefix_rename_forbidden": true,
+    "new_command_or_function_forbidden": true,
+    "bind_actual_identities_only_after_return": true,
+    "publish_exact_diff_and_hash_before_invocation": true,
+    "actual_identity_binding_must_change_exactly_three_literals": true,
+    "draft_never_invoked": true
+  },
+  "corrected_plan_preparation_reference": {
+    "name": "Prepare-T7CataloguePCorrected.local.ps1",
+    "bytes": 9457,
+    "sha256": "f3397335a46394cad989431df6e8d8c8f6c65f35707403a09f3e524943dcd2f4"
+  },
+  "delegation_proposal": {
+    "name": "t7-core-post-gfx-q-delegation-proposal.local.json",
+    "bytes": 9644,
+    "sha256": "9447d5c9beb9d4506262fb588e9d92c4f2f186bb54838c5bc33fbdf994b7f17b"
+  },
+  "measured_data_acceptance": {
+    "coordinator_acceptance_pending": true,
+    "per_substitution_approval_required_after_acceptance": false,
+    "only_actual_receipt_or_runtime_data_allowed": true,
+    "exact_full_diff_AST_and_pins_must_pass": true,
+    "publish_before_each_runtime_invocation": true,
+    "runtime_gates_and_identifiers_unchanged": true,
+    "ordinary_source_preparation_corrections_may_be_resolved_with_preserved_evidence_and_final_diff": true,
+    "runtime_error_retries_authorized": false
+  },
+  "qualification_attempted": false,
+  "live_preflight_run": false,
+  "payload_opened": false,
+  "payload_hashed": false,
+  "lease_acquired": false,
+  "native_started": false,
+  "operational_source_changed": false,
+  "V3_adopted": false,
+  "ready": false,
+  "next_action": "Coordinator reviews the exact qualification and bounded two-phase proposal. No runtime is authorized yet; unknown input hash/qualified ID and Q Plan/dispatch remain unmaterialized."
+}

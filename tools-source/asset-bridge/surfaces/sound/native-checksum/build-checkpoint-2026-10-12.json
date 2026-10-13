@@ -1,0 +1,71 @@
+{
+  "schema": "iw7.sound-checksum-build-checkpoint/1",
+  "date_utc": "2026-10-12",
+  "source_commit": "f870bc81895882082c600bff83273b5f4701399b",
+  "plan": "C",
+  "plan_sha256": "a0389f94f3ad2488a76b7c30229ec6a5486b145e448cc62e2b8a4d3ce9000a38",
+  "host_command": "D",
+  "host_command_bytes": 1083,
+  "host_command_sha256": "29c16d4c32cec0e68d75afa9e9c2307db90b82fb460a58834de557392a342a4f",
+  "persistent_ps7_host": true,
+  "invocations": 1,
+  "retry_attempted": false,
+  "status": "FailedFirstCompile",
+  "first_phase": "probe-original-compile",
+  "native_commands_attempted": 1,
+  "successful_native_steps": 0,
+  "compiler_exit_code": 2,
+  "compiler_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619",
+  "compiler_error": "cl : Command line error D8004 : '/D' requires an argument",
+  "original_root_exit_code": 1,
+  "elapsed_ms": 101844,
+  "physical_budget_bytes": 4294967296,
+  "commit_budget_bytes": 6442450944,
+  "input_file_count": 1410,
+  "proof_bytes_read": 2207024770,
+  "inputs_verified_before": true,
+  "inputs_verified_after": true,
+  "input_guards_opened": 1410,
+  "input_guards_disposed": 1410,
+  "original_job_active_at_close": 0,
+  "tree_closed": true,
+  "lease_released": true,
+  "retained_lease_token": null,
+  "quarantine_root_absent_before_host_exit": true,
+  "persistent_host_closed_after_confirmation": true,
+  "fresh_registry_empty_utc": "2026-10-12T10:13:30.1600470Z",
+  "fresh_heavy_processes_empty": true,
+  "main_udp_process_identity_unchanged": true,
+  "postflight_source_provider_pins_unchanged": true,
+  "host_and_native_processes_absent_utc": "2026-10-12T10:14:50.1123361Z",
+  "output_bytes": 1872,
+  "peak_observed_output_bytes": 1872,
+  "files": [
+    {
+      "relative": "supervisor-state.json",
+      "bytes": 1516,
+      "sha256": "e4e7d0c53f510e4b2b62436e579e55797fa13e4a111c766423a858c1e4c78258"
+    },
+    {
+      "relative": "logs/probe-original-compile/phase.json",
+      "bytes": 297,
+      "sha256": "5ddb3527114c484b68d7af976ca1c6e5069a4b06136b3ae5a583678d389279db"
+    },
+    {
+      "relative": "logs/probe-original-compile/stderr.log",
+      "bytes": 59,
+      "sha256": "f6dbfed5c18c03d0b21860d4e0be198655a380d910d237149c3d6f411f0326ac"
+    },
+    {
+      "relative": "logs/probe-original-compile/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "native_probes_executed": 0,
+  "candidate_built": false,
+  "native_checksum_fix_validated": false,
+  "sab_ff_validated": false,
+  "playback_validated": false,
+  "ready": false
+}

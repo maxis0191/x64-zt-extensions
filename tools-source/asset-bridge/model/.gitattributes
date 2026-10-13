@@ -1,0 +1,4 @@
+# Unified-diff context is a literal space before the original tab indentation;
+# a blank context line is one literal space. Keep those required patch bytes.
+zonetool-fab9358-h1-xsurface.patch whitespace=-space-before-tab,-blank-at-eol
+zonetool-fab9358-h1-map-layout.patch whitespace=-space-before-tab,-blank-at-eol

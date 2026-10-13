@@ -1,0 +1,70 @@
+--- a/src/zonetool/zonetool/h1/converter/iw7/assets/clipmap.cpp
++++ b/src/zonetool/zonetool/h1/converter/iw7/assets/clipmap.cpp
+@@ -226,8 +226,8 @@
+ 				{
+ 					auto* dyn = &new_asset->dynEntDefList[0][i];
+ 					dyn->type = zonetool::iw7::DYNENT_TYPE_SCRIPTABLEINST;
+-					dyn->scriptableMapIndex = 500;
+-					dyn->unk2 = true;
++					dyn->instanceIndex = 500;
++					dyn->spawnEnabled = true;
+ 				}
+ 
+ 				const auto copy_dynents = [&](const auto index)
+@@ -277,10 +277,10 @@
+ 							new_dynent_def->baseModel = reinterpret_cast<zonetool::iw7::XModel*>(dynent_def->baseModel);
+ 							new_dynent_def->brushModel = dynent_def->brushModel;
+ 							new_dynent_def->linkTo = reinterpret_cast<zonetool::iw7::DynEntityLinkToDef*>(dynent_def->linkTo);
+-							new_dynent_def->scriptableMapIndex = dynent_def->scriptableIndex;
+-							new_dynent_def->unk2 = true;
+-
+-							new_dynent_def->scriptableMapIndex = 0; // remove this for now
++							new_dynent_def->spawnEnabled = true;
++
++							// Preserve the historical final zero; its prior input assignment was overwritten.
++							new_dynent_def->instanceIndex = 0;
+ 						}
+ 
+ 						{
+@@ -316,17 +316,22 @@
+ 					new_asset->dynEntGlobalIdList[1][i].id = i;
+ 				}
+ 
+-				for (auto i = 0; i < 8; i++)
+-				{
+-					new_asset->unkIndexes[i] = -1;
+-				}
+-
+-				new_asset->unk2Count = 0;
+-				new_asset->unk2 = nullptr;
+-				new_asset->unk2_1[0] = nullptr;
+-				new_asset->unk2_1[1] = nullptr;
+-				new_asset->unk2_2[0] = nullptr;
+-				new_asset->unk2_2[1] = nullptr;
++				// Historical short[8] = -1: preserve all sixteen sentinel bytes.
++				for (auto client = 0; client < 2; client++)
++				{
++					for (auto basis = 0; basis < 2; basis++)
++					{
++						new_asset->dynEntPhysicsSetupHead[client][basis] = 0xFFFFu;
++						new_asset->dynEntPhysicsSetupTail[client][basis] = 0xFFFFu;
++					}
++				}
++
++				new_asset->dynEntTransientGroupCount = 0;
++				new_asset->dynEntTransientGroups = nullptr;
++				new_asset->dynEntTransientGroupRuntime[0] = nullptr;
++				new_asset->dynEntTransientGroupRuntime[1] = nullptr;
++				new_asset->dynEntTransientGroupState[0] = nullptr;
++				new_asset->dynEntTransientGroupState[1] = nullptr;
+ 				new_asset->unk3Count = 0;
+ 				new_asset->unk3 = nullptr;
+ 
+@@ -458,6 +463,7 @@
+ 
+ 			void dump(clipMap_t* asset)
+ 			{
++				ZONETOOL_WARNING("Experimental H1 -> IW7 map conversion: layout compatibility only; collision, dynamic entities and scriptables are unvalidated.");
+ 				utils::memory::allocator allocator;
+ 
+ 				const auto mapents_converted_asset = mapents::convert(asset, allocator);

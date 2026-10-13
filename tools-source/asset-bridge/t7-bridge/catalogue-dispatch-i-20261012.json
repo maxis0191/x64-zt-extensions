@@ -1,0 +1,71 @@
+{
+  "schema": "iw7.t7-catalogue-dispatch-refusal/1",
+  "date": "2026-10-12",
+  "plan": "I",
+  "plan_bytes": 10833,
+  "plan_sha256": "234dc0d788c769e5ddb83cb9d6daa2e9a09d677baf6b4b4aaaef99590e4ff03f",
+  "status": "DispatchRefusedBeforePlanRead",
+  "fresh_preflight": {
+    "captured_utc": "2026-10-12T16:55:06.0316135Z",
+    "decision": "PassedPendingAtomicAdmission",
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "additional_physical_bytes": 6442450944,
+    "additional_commit_bytes": 8589934592,
+    "physical_reserve_bytes": 0,
+    "commit_reserve_bytes": 9512923136,
+    "commit_used_percent": 53.88,
+    "allowed": true,
+    "high_water": false
+  },
+  "dispatch_error": {
+    "actual_plan_file": "t7-catalog-plan-f.local.json",
+    "supplied_hash_belongs_to": "I",
+    "message": "Bound input hash/length differs.",
+    "location": "First Open-H1Pin, before plan read and runtime state",
+    "operator_wrapper_error": true,
+    "original_wrapper_preserved": true,
+    "runner_returned_utc": "2026-10-12T16:55:47.8961680Z"
+  },
+  "closure": {
+    "host_pid": 28228,
+    "host_created_utc": "2026-10-12T16:55:14.4756166Z",
+    "parent_pid": 36592,
+    "first_closure_helper_error": "Missing H1Native.Core import",
+    "separate_closure_correction_without_candidate_retry": true,
+    "postflight_utc": "2026-10-12T16:57:17.8392116Z",
+    "session_id": 96726,
+    "tool_completion_chunk": "0b2ef0",
+    "actual_host_exit_code": 0,
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T16:57:53.9477501Z",
+    "host_and_parent_absent": true,
+    "lease_count": 0,
+    "runtime_file_count": 0,
+    "attempt_marker_present": false,
+    "candidate_alias_present": false
+  },
+  "private_evidence": [
+    {"name": "Invoke-T7CatalogueIOnce.local.ps1", "bytes": 1406, "sha256": "e98ee9b79cdf08feb8caf7d106b22cd372e3662000ebe62dbe3114f56bea5c35"},
+    {"name": "t7-catalog-i-dispatch-refusal.local.json", "bytes": 1739, "sha256": "7946f40a6a852e4970af6dbecd32f0568c7eb482b021fe52ae59deb320a9a666"},
+    {"name": "t7-catalog-i-refusal-host-exit.local.json", "bytes": 338, "sha256": "f06513af304ddd29c5da92f2ff281cf8ffd7aca340aeea9856757ceed2e954e8"},
+    {"name": "t7-catalog-i-refusal-host-absence.local.json", "bytes": 409, "sha256": "8c1c3a0e0d969dcb03b2580afb86e167b983287b881caa9aa43f2b29ace7d075"},
+    {"name": "Invoke-T7CatalogueICorrected.local.ps1", "bytes": 2904, "sha256": "9db1b76179daa59dac1ff2bd8ad504865c5a2bc4805eda8481438a355af02eb9"},
+    {"name": "t7-catalog-i-corrected-dispatch-review.local.json", "bytes": 1399, "sha256": "998787779de922dbab24d4810f1cf0a5bf34952ce0d32907125e9f78ccfe1586"}
+  ],
+  "limits": {
+    "native_invocations": 0,
+    "runtime_job_created": false,
+    "runtime_lease_acquired": false,
+    "binary_inputs_hashed": false,
+    "message_captured": false,
+    "runtime_attempt_consumed": false,
+    "plan_i_modified": false,
+    "corrected_wrapper_run_invoked": false,
+    "corrected_default_validation": "PlanCheckedPendingGO",
+    "ready": false
+  },
+  "next_action": "Preserve the original dispatch and evidence. Independent review of the distinct corrected wrapper and a new explicit GO are required before any native invocation."
+}

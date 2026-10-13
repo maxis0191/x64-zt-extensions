@@ -1,0 +1,303 @@
+{
+  "schema": "iw7.t7-prepatch-comparison-summary/1",
+  "date": "2026-10-12",
+  "source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "inputs": {
+    "static": {
+      "sha256": "c4242df724709c747b98156e3b5ded3af6ea5190111b0a1034d1a2b68c65cf18",
+      "bytes": 44444
+    },
+    "capture": {
+      "sha256": "46126fe9938013a751ae923ba871a090f7b047496ce4f19475ca90c0bc6f0c03",
+      "bytes": 12343
+    },
+    "receipt": {
+      "sha256": "bbedd8798504528492a0d274ad29d3a90666a4283c22e55b415fd971ffbd6406",
+      "bytes": 3644
+    },
+    "plan": {
+      "sha256": "6c28482ecbb11b8931c019dff272464974ca008a1f7ed4c625e0ef454debf741",
+      "bytes": 7723
+    }
+  },
+  "capture": {
+    "phase": "first_dpi_before_component_post_unpack",
+    "requested_bytes": 661416,
+    "returned_bytes": 661416,
+    "window_count": 12,
+    "window_bytes": 1536,
+    "module_base": "0x140000000",
+    "capture_complete": true,
+    "report_links_match": true,
+    "runner_qualified_capture": true
+  },
+  "comparison": {
+    "changed_windows": 12,
+    "changed_bytes": 1530,
+    "specified_patterns_matched": 8,
+    "runtime_conflicts": [],
+    "pe_changes": {},
+    "pdata_record_counts": {
+      "disk": 54927,
+      "mapped": 54927
+    },
+    "decoder_version": "5.0.7",
+    "anchored_windows": 6,
+    "decode_bytes_submitted": 883,
+    "decoded_boundaries": 8
+  },
+  "windows": [
+    {
+      "site": "DB_FindXAssetHeader",
+      "source_va": "0x1401d5fb0",
+      "mapped_va": "0x1401d5fb0",
+      "changed_bytes": 255,
+      "disk_sha256": "e68741695c7538d4d323d442f8e1affe0558c77861e119565c7b8b6a87f0e9b3",
+      "mapped_sha256": "62f4b1512e2e9d9a5aa367456fc995b7f1323a086e59669ef7df9bcba572d985",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": false,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": true,
+      "begin_available_in_window": true,
+      "decode_checks": {
+        "0x1401d5fb0": "decoded_boundary"
+      }
+    },
+    {
+      "site": "DB_LoadXAssets",
+      "source_va": "0x1401d8740",
+      "mapped_va": "0x1401d8740",
+      "changed_bytes": 256,
+      "disk_sha256": "756b82908d1aa14a3aebafb9a6094d786b3566d35e25828bf03edc40f96b3dbc",
+      "mapped_sha256": "1319d99bf0d5fc6e46085dbad21c3c87ec2601572eafa4c5fac34f0ad2506f77",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": false,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": true,
+      "begin_available_in_window": true,
+      "decode_checks": {
+        "0x1401d8740": "decoded_boundary",
+        "0x1401d87ae": "decoded_boundary",
+        "0x1401d87b3": "decoded_boundary"
+      }
+    },
+    {
+      "site": "SL_ConvertToString",
+      "source_va": "0x1401632c0",
+      "mapped_va": "0x1401632c0",
+      "changed_bytes": 128,
+      "disk_sha256": "07b00f3d456f5e6c1bc3f158a20b146a856834941f766a9a2f7d4a0143101ea0",
+      "mapped_sha256": "3cbaba12109adaf1668a71ce49b0576c58201b64a2c5558e0f5f967a8aa41a37",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": false,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": false,
+      "begin_available_in_window": null,
+      "decode_checks": null
+    },
+    {
+      "site": "boot_call",
+      "source_va": "0x140502aa9",
+      "mapped_va": "0x140502aa9",
+      "changed_bytes": 96,
+      "disk_sha256": "d4afab3e5a36e69f35078248793256362e79c81efff90fa7a3e01d242f9c95e7",
+      "mapped_sha256": "307af93042f1f79b469bd76bc7e67db98c2cc830956a6ebde2f5924e2cd6cd9d",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": "0x140504170",
+      "pdata_record_present": true,
+      "begin_available_in_window": true,
+      "decode_checks": {
+        "0x140502aa9": "decoded_boundary"
+      }
+    },
+    {
+      "site": "server_thread_ret",
+      "source_va": "0x140537840",
+      "mapped_va": "0x140537840",
+      "changed_bytes": 128,
+      "disk_sha256": "faf9303326df690b77104c3e16ae06aea3e4cc3daa5ba16ae589dd2be707e00c",
+      "mapped_sha256": "a0a92f867893e7b9ccfd6a12e041b09370402ae0181fc3b14b02bba619d6bde2",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": false,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": true,
+      "begin_available_in_window": true,
+      "decode_checks": {
+        "0x140537840": "decoded_boundary"
+      }
+    },
+    {
+      "site": "copy_info_branch_1",
+      "source_va": "0x1401a18df",
+      "mapped_va": "0x1401a18df",
+      "changed_bytes": 96,
+      "disk_sha256": "8eabb3c5b4bd22b67654b6e3aa4aafa437f4301a7b52b852237b2e36325b74e1",
+      "mapped_sha256": "9872f8cd2703a52c71fa2a7c0c06c10ec24465e0e6623affa404b37806e22a37",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": true,
+      "begin_available_in_window": true,
+      "decode_checks": {
+        "0x1401a18df": "decoded_boundary"
+      }
+    },
+    {
+      "site": "copy_info_branch_2",
+      "source_va": "0x1401a1b5b",
+      "mapped_va": "0x1401a1b5b",
+      "changed_bytes": 96,
+      "disk_sha256": "e519dd533456b747eeffa3c56da0916225ad9b8bf5b6a19077e57ed25f93cd5c",
+      "mapped_sha256": "a68f9cd3d8f0c016e7a2d7159d578bda4a6bd0507b4b2df742150e0bcffec8f6",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": true,
+      "begin_available_in_window": true,
+      "decode_checks": {
+        "0x1401a1b5b": "decoded_boundary"
+      }
+    },
+    {
+      "site": "image_loader_call",
+      "source_va": "0x1401b1e5d",
+      "mapped_va": "0x1401b1e5d",
+      "changed_bytes": 91,
+      "disk_sha256": "08ff233c91878dc4f3b1731c4a595ac8df114d4b77fedcb327a46ece9417d67f",
+      "mapped_sha256": "d793b2edc1ad352b923982ee82e74a29a1302f53162fdca17dc348387cc01a2c",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": "0x1407db4c0",
+      "pdata_record_present": true,
+      "begin_available_in_window": false,
+      "decode_checks": null
+    },
+    {
+      "site": "integrity_intact_1",
+      "source_va": "0x140064dc4",
+      "mapped_va": "0x140064dc4",
+      "changed_bytes": 96,
+      "disk_sha256": "ecc8ecc30d6d17ce28b25f58f8f4b31128c89824584d34c7e3e36256f4474df4",
+      "mapped_sha256": "496410551b079d555e5a4245135de6718534b0c25356457a2e6bc87aa5ff1e3f",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": false,
+      "begin_available_in_window": null,
+      "decode_checks": null
+    },
+    {
+      "site": "integrity_intact_2",
+      "source_va": "0x140909bd4",
+      "mapped_va": "0x140909bd4",
+      "changed_bytes": 96,
+      "disk_sha256": "b21e66a93970bbbec1ebf54c5e35bd6e1779861347d934a1d9761997fd02fb70",
+      "mapped_sha256": "b07631ceb4ca634a8c8d97c2116bdb8d655622b1122569744b4f02b940085732",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": false,
+      "begin_available_in_window": null,
+      "decode_checks": null
+    },
+    {
+      "site": "integrity_intact_3",
+      "source_va": "0x1410654c1",
+      "mapped_va": "0x1410654c1",
+      "changed_bytes": 96,
+      "disk_sha256": "d367304ba6d3cd52aea37c827540a84e476f2242be47f5de8ff157ae193db8f6",
+      "mapped_sha256": "f79b22e03d3c30b3f77302937beba0ee39196f6f544771f9bee358683e5f2305",
+      "section_executable": false,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": false,
+      "begin_available_in_window": null,
+      "decode_checks": null
+    },
+    {
+      "site": "integrity_split",
+      "source_va": "0x1400621a8",
+      "mapped_va": "0x1400621a8",
+      "changed_bytes": 96,
+      "disk_sha256": "84dbcf3d13b6f1fe522b0a4a5b8666d308f1a062827cb06aa5ce773d50d9f549",
+      "mapped_sha256": "d49622166664926bf1b072d2fe21ed2d2d0f4f5c297b335ee042475394471898",
+      "section_executable": true,
+      "page_protect": [
+        "0x40"
+      ],
+      "source_pattern_specified": true,
+      "source_pattern_conflicts": [],
+      "actual_call_target": null,
+      "pdata_record_present": false,
+      "begin_available_in_window": null,
+      "decode_checks": null
+    }
+  ],
+  "static_baseline": {
+    "windows": 38,
+    "conflicts": 9,
+    "indeterminate": 37,
+    "unknown_categories": {
+      "unsupported or invalid unwind header": 25,
+      "instruction boundary not independently anchored": 7,
+      "RVA range has no complete file backing": 5
+    },
+    "windows_not_captured": 26,
+    "non_file_backed_globals_not_captured": 5
+  },
+  "limits": {
+    "abi_proven": false,
+    "runtime_compatibility_proven": false,
+    "boot_authorized": false,
+    "catalogue_executed": false,
+    "full_unwind_validated": false,
+    "input_binary_hashes_recomputed": false,
+    "raw_game_bytes_or_disassembly_in_summary": false
+  },
+  "conclusion": "No observed refusal remains in the sampled sites. Prepare a separately reviewed single-zone catalogue experiment; unknown coverage is residual risk, not an automatic requirement for another probe."
+}

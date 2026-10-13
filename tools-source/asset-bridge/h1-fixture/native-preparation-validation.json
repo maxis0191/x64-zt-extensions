@@ -1,0 +1,121 @@
+{
+  "schema": "iw7.h1-native-source-validation/1",
+  "date": "2026-10-12",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_preparation_tests_passed": 12,
+  "original_fixture_tests_passed": 12,
+  "source_files_verified": 21,
+  "prepared_file_bytes_verified": 6,
+  "prepared_file_count_with_receipt": 7,
+  "prepared_total_bytes": 64420,
+  "native_compiled": false,
+  "native_executed": false,
+  "dump_executed": false,
+  "engine_loaded": false,
+  "full_material_included": false,
+  "bone_engine_token_resolved": false,
+  "whole_zonetool_application_tested": false,
+  "shared_sources_modified": false,
+  "declaration_adapter_used": true,
+  "prepared_fragment_hashes": {
+    "h1_xmodel_parser_and_string_table": {
+      "bytes": 3378,
+      "lf_sha256": "2c0c7560d7bdea871ffb243088048d402b12afd8af7a9abc544c23eddd4cb93d"
+    },
+    "h1_xsurface_parser_and_subdivision": {
+      "bytes": 3442,
+      "lf_sha256": "d01d2a489b868989b0f68b714d8423ae3d990df85b78e32d7956d50f6a1d2975"
+    },
+    "model_declaration_members": {
+      "bytes": 287,
+      "lf_sha256": "50ce33b0d4642fc0ee48f898a9df08487599a1b4591d5ff53c758f2cabf8ca96"
+    },
+    "surface_declaration_members": {
+      "bytes": 120,
+      "lf_sha256": "ee0c4d1a1b14834cf516fa8d291b93be0d2cb8bba653d172efc198ed380066ff"
+    },
+    "converter_macros": {
+      "bytes": 1830,
+      "lf_sha256": "ad78b21291e2d2906e47fd8ec7b6fbbe20de6d3738fff3149453f9ea264babcc"
+    },
+    "model_convert": {
+      "bytes": 3490,
+      "lf_sha256": "d5f98ceb8680fa139d1c6dd06eca7e087fd58e040b6d6276e12fdbf788661035"
+    },
+    "patched_surface_convert": {
+      "bytes": 7106,
+      "lf_sha256": "330156e4cac86310297eec2b7a6ab963de14193b35f3cc8ca8d9f90f39c514f6"
+    },
+    "directory_exists": {
+      "bytes": 110,
+      "lf_sha256": "6a1c7c7cdc3a47ad087722e1b39dbe83eec2bdc92f67166bd203cfec0178772e"
+    },
+    "list_files": {
+      "bytes": 251,
+      "lf_sha256": "fba3c771cbe3da4a4900fbd2181bcddee11687a1e6fec41c8d42657080167c80"
+    },
+    "production_filesystem": {
+      "bytes": 7520,
+      "lf_sha256": "b525ee9a39d7d83c53f3c5ec41992f43e103e12135729c9404f00f0059d991f4"
+    },
+    "production_allocator": {
+      "bytes": 1858,
+      "lf_sha256": "e615685405f188d4249bae8339c751d96bd9fa1a26b5f5e733f5e906a89fe4cc"
+    },
+    "production_half_and_visibility_codecs": {
+      "bytes": 2401,
+      "lf_sha256": "1b57038e7101546e2966c89f62be9eb7de119680f0a2ded8d2445a492fe7e96e"
+    }
+  },
+  "prepared_files": {
+    "parser_declarations.inc": {
+      "bytes": 555,
+      "sha256": "8135387458b243f4b327429ea712fd3738d85568c84067e364dbb83fa4d4dea3"
+    },
+    "production_parsers.inc": {
+      "bytes": 6826,
+      "sha256": "62ebd5062f8eb8936fa107b56accc261fc500e40929e35f49ebc08413db767fc"
+    },
+    "production_converters.inc": {
+      "bytes": 12533,
+      "sha256": "938201dab5d7a460feb3e400c75e82e444aa98c5f2903e027eb2328108978372"
+    },
+    "production_support.inc": {
+      "bytes": 12192,
+      "sha256": "470b80727c4be9e7bf25c979d2f49449be380c3233418ff8066e71e1a945b99e"
+    },
+    "fixture_bytes.inc": {
+      "bytes": 11967,
+      "sha256": "bbecd85c9b41aa53474f1fc93665b5443867c6760213e0c99a37813488e3ed16"
+    },
+    "native_probe.cpp": {
+      "bytes": 13048,
+      "sha256": "fc7354a4c7fa2deaadf9aa534c34bfbcf08643226aff5256c9290a4f3e38dfd9"
+    }
+  },
+  "preflight_modified_bytes_rejected": true,
+  "preparation_overwrite_refused": true,
+  "estimates": {
+    "estimated_physical_gib": 4,
+    "estimated_commit_gib": 6,
+    "estimated_run_physical_gib": 0.25,
+    "estimated_run_commit_gib": 0.25,
+    "new_artifact_limit_mib": 32,
+    "estimate_is_measured": false,
+    "compiler_processes": 1,
+    "parser_pool_bytes": 1048576,
+    "compile_deadline_seconds": 120,
+    "run_deadline_seconds": 15
+  },
+  "bounded_read_review_correction": {
+    "limit_bytes": 1048576,
+    "maximum_read_request_bytes": 1048577,
+    "single_open_handle": true,
+    "regular_file_identity_and_state_before_after": true,
+    "real_concurrent_oversized_growth_rejected": true,
+    "real_concurrent_in_bound_growth_rejected": true,
+    "real_replacement_before_open_rejected": true,
+    "windows_ctime_compared_within_same_api": true,
+    "preflight_rechecked": true
+  }
+}

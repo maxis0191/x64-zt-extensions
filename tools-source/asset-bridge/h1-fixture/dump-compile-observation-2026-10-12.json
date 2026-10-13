@@ -1,0 +1,96 @@
+{
+  "schema": "iw7.h1-dump-compile-observation/1",
+  "date": "2026-10-12",
+  "source_commit": "65b31627fe15cefa46cdadf9d1f5f485cf8d0730",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "authorization": "one Compile phase only; no Probe or FF GO",
+  "plan_sha256": "328d765786859e435eaa0766153ca7a1b01802d55efbcdd50aea802c67e0abb2",
+  "plan_bindings_verified": 68,
+  "stage": "Compile",
+  "status": "Passed",
+  "exit_code": 0,
+  "tree_closure_confirmed": true,
+  "lease_released": true,
+  "quarantined": false,
+  "registered_original": "Registered",
+  "original_pid": 14784,
+  "original_created_utc": "2026-10-12T09:43:05.9507343Z",
+  "admitted_started_utc": "2026-10-12T09:43:05.8431723Z",
+  "finished_utc": "2026-10-12T09:43:09.2505238Z",
+  "acceptance_elapsed_ms": 3196.094599992037,
+  "physical_reservation_bytes": 4294967296,
+  "commit_reservation_bytes": 6442450944,
+  "reservations_are_measured_peaks": false,
+  "deadline_seconds": 120,
+  "output_limit_bytes": 33554432,
+  "cleanup_seconds": 5,
+  "compiler_telemetry_action": "StopOriginalJobAfterVerifiedCompilerAndTelemetry",
+  "telemetry_captures": [
+    {
+      "captured_utc": "2026-10-12T09:43:08.8643618Z",
+      "pid": 32148,
+      "created_utc": "2026-10-12T09:43:07.4982677Z",
+      "parent_pid": 14784,
+      "in_original_job": true
+    },
+    {
+      "captured_utc": "2026-10-12T09:43:08.9352827Z",
+      "pid": 32148,
+      "created_utc": "2026-10-12T09:43:07.4982677Z",
+      "parent_pid": 14784,
+      "in_original_job": true
+    }
+  ],
+  "after_stop_active_processes": 0,
+  "after_stop_root_exit": 0,
+  "after_stop_members": 0,
+  "fresh_final_poll_utc": "2026-10-12T09:43:08.9542653Z",
+  "fresh_final_poll_active_processes": 0,
+  "fresh_final_poll_root_exit": 0,
+  "files": {
+    "native_probe.exe": {
+      "bytes": 1331200,
+      "sha256": "15aeb2e9da13a96e1b61045ee4c4f275113ff680af945ce48c0b764f0d7080d6"
+    },
+    "native_probe.obj": {
+      "bytes": 4221918,
+      "sha256": "e95944e33e910f56081ec85a41c935011304236b95656c93adf9699fbe5c3446"
+    },
+    "native_probe.pdb": {
+      "bytes": 13463552,
+      "sha256": "3180219a77581de1d1f812e8779823479986a84785700e44e810127351600e07"
+    },
+    "receipt.json": {
+      "bytes": 6229,
+      "sha256": "f0438da3dca9dbf13ba18e1d60a94c2520bde098cdddc56a91dc6bfba9e6e9a0"
+    },
+    "stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout.log": {
+      "bytes": 1248,
+      "sha256": "bcca2a2a5c385e927b671105d4dcf33862fd275a2c08fd9c52f4a09cf06659da"
+    }
+  },
+  "total_files": 6,
+  "total_bytes": 19024147,
+  "warnings": [
+    "two production assetmanager strcpy C4996 warnings"
+  ],
+  "fresh_process_registry_observed_utc": "2026-10-12T09:43:23.6223220Z",
+  "fresh_lease_count": 0,
+  "owned_native_compiler_probe_residue": false,
+  "main_pid": 27784,
+  "main_created_utc": "2026-10-12T00:52:28.7133740Z",
+  "main_image_sha256": "408ecfaef8e3584769736878858ed225c4648249433e91caff3ad8c5c7efb9a7",
+  "probe_executed": false,
+  "probe_directory_exists": false,
+  "dump_executed": false,
+  "independent_native_readback_executed": false,
+  "ff_built": false,
+  "render_verified": false,
+  "bone_engine_token_resolved": false,
+  "material_complete": false,
+  "whole_zonetool_application": false
+}

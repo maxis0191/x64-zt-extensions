@@ -1,0 +1,2 @@
+# Unified diff context lines carry a required space before original tabs/blank lines.
+strict-content-sources.patch whitespace=-blank-at-eol,-space-before-tab

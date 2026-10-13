@@ -1,0 +1,11 @@
+{
+  "schema": "iw7.agent-scenario/1",
+  "name": "doom-rigid-geometry-witness",
+  "steps": [
+    {"id": "settle", "action": "wait", "duration_ms": 500},
+    {"id": "model-frame", "action": "capture"},
+    {"id": "wait-swap-first", "action": "wait", "duration_ms": 5000},
+    {"id": "wait-swap-second", "action": "wait", "duration_ms": 4500},
+    {"id": "swapped-model-frame", "action": "capture"}
+  ]
+}

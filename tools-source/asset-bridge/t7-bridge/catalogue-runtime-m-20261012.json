@@ -1,0 +1,323 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-checkpoint/1",
+  "date": "2026-10-12",
+  "attempt": "M",
+  "plan": {
+    "name": "t7-catalog-plan-m.local.json",
+    "bytes": 19159,
+    "sha256": "90ddc765f745c473ba0d42139caa81e2975f4fa763bc79909ce3882c48046fc4"
+  },
+  "candidate_bytes": 21750272,
+  "candidate_sha256": "57168e99d3dd004e83a531905efe5354a8d29e39592786e3f81b5dd4cd5ce05a",
+  "source_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+  "dispatch": {
+    "name": "Invoke-T7CatalogueM.local.ps1",
+    "bytes": 3707,
+    "sha256": "21d4503fbd77c55c793150c205dbc40ac3feb782b59603736faeecafd136d996"
+  },
+  "dispatch_review": {
+    "name": "t7-catalog-m-dispatch-review.local.json",
+    "bytes": 5361,
+    "sha256": "f180c7b216eda36baaaa1cadb9dbef4b618ec246d79faa9e5e2690e865cd57cd"
+  },
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "trace_outcome": "TraceObserved",
+  "exit_context_outcome": "Observed",
+  "callers_outcome": "Observed",
+  "message": {
+    "outcome": "Observed",
+    "captures": [
+      {
+        "Kind": "install",
+        "ThreadId": 28788,
+        "Status": "installed",
+        "Error": 0
+      },
+      {
+        "Kind": "buffer",
+        "ThreadId": 15024,
+        "Status": "ok",
+        "Error": 0,
+        "Requested": 384,
+        "ReadBytes": 384,
+        "Length": 41,
+        "NulTerminated": true
+      }
+    ],
+    "incomplete_trailing_line": false,
+    "install_boundary_observed": true,
+    "exit_correlated": true,
+    "correlation": "SameThreadBeforeExit",
+    "decoded_or_interpreted_by_adapter": false
+  },
+  "exit_code": 0,
+  "elapsed_ms": 3025.7106999754906,
+  "started_utc": "2026-10-12T19:27:37.9350149Z",
+  "finished_utc": "2026-10-12T19:27:42.6119508Z",
+  "runner_returned_utc": "2026-10-12T19:27:42.6327544Z",
+  "native_root": {
+    "pid": 31356,
+    "created_utc": "2026-10-12T19:27:37.969274Z"
+  },
+  "trace_events": [
+    {
+      "Phase": "enabled",
+      "StdoutUnbuffered": true,
+      "StderrUnbuffered": true,
+      "ThreadId": 28788
+    },
+    {
+      "Phase": "before_entry_point",
+      "Code": 0,
+      "ThreadId": 28788,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "before_post_unpack",
+      "Code": 0,
+      "ThreadId": 28788,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "after_post_unpack",
+      "Code": 0,
+      "ThreadId": 28788,
+      "ReturnAddress": "0000000000000000"
+    },
+    {
+      "Phase": "exit_hook",
+      "Code": 0,
+      "ThreadId": 15024,
+      "ReturnAddress": "0000000140AC00C4"
+    }
+  ],
+  "stderr_evidence_under_guards": {
+    "name": "stderr.log",
+    "bytes": 4880,
+    "sha256": "1e78a03b761a8c4ec7604561028c22f80b5c9ea82fd6e0c5beefc71033884c73",
+    "hash_recalculated_after_release": false
+  },
+  "stdout_bytes": 70,
+  "receipt": {
+    "name": "receipt.json",
+    "bytes": 17815,
+    "sha256": "a1d474f1590ad748794365cdc65be498ce9cbd3667cc1cea31a1b8b327f98749"
+  },
+  "bootstraps": [
+    {
+      "name": "en_core_pre_gfx.ff",
+      "bytes": 832,
+      "sha256": "37fa64b205570954c2aec30661f9ee7ad41b8fc490114a3a86907889fb94162c",
+      "relative_alias": "zone/en_core_pre_gfx.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "core_pre_gfx.ff",
+      "bytes": 22351168,
+      "sha256": "5016669dba3eab765999bd2d0fdcda01c336f4fe2ea6ee8670c61c48107d97ce",
+      "relative_alias": "zone/core_pre_gfx.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "en_core_patch.ff",
+      "bytes": 624640,
+      "sha256": "241f1154237ca5459b98e948156f2138a546968a63f92cd13f70cb2e9794906e",
+      "relative_alias": "zone/en_core_patch.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    },
+    {
+      "name": "core_patch.ff",
+      "bytes": 45217664,
+      "sha256": "270b267de51f64f6fafc22b0f2047a544fdb83dc02b919b863d45688e3be3bdc",
+      "relative_alias": "zone/core_patch.ff",
+      "qualified_file_id_matched": true,
+      "alias_identity_and_hash_reverified_under_lease": true,
+      "engine_lookup_path_proven": false,
+      "content_compatibility_proven": false
+    }
+  ],
+  "preflight": {
+    "captured_utc": "2026-10-12T19:26:56.6689362Z",
+    "decision": true,
+    "physical_bytes": 6442450944,
+    "commit_bytes": 8589934592,
+    "commit_used_percent": 55.11,
+    "physical_reserve": 0,
+    "commit_reserve": 9512923136
+  },
+  "closure": {
+    "tree_confirmed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "termination_requested": false,
+    "inputs_reverified_under_lease": true,
+    "engine_outputs_validated": true,
+    "original_metadata_unchanged": true,
+    "postflight_utc": "2026-10-12T19:28:22.5432985Z",
+    "metadata_equal_count": 8,
+    "file_ids_equal_count": 16,
+    "main_baseline": "Stopped",
+    "preserved_python_identity_unchanged": true,
+    "host_pid": 17892,
+    "host_created_utc": "2026-10-12T19:27:02.8450966Z",
+    "host_parent_pid": 25332,
+    "session_id": 48452,
+    "tool_exit_chunk": "e14b7c",
+    "actual_host_exit_code": 0,
+    "exit_inferred_from_absence": false,
+    "independent_absence_utc": "2026-10-12T19:28:47.3676125Z",
+    "host_parent_and_root_absent": true,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "payload_hashes_read_after_release": false,
+    "guard_disposal_evidence": "Pinned runner finally disposes and clears every guard after Context.Closed and Lease=null, before the observed wrapper return."
+  },
+  "closure_helper": {
+    "name": "Finish-T7CatalogueMVerified.local.ps1",
+    "bytes": 5445,
+    "sha256": "59b98b8a5f9349f646baf61b255887559e19f0b3ce0214fceb7a79c3c4db38ed"
+  },
+  "preflight_correction": "None; known IW7/BlackOps3 client filter preserved.",
+  "private_evidence": [
+    {
+      "name": "t7-catalog-m-preflight.local.json",
+      "bytes": 1334,
+      "sha256": "c828b3b2894a29abfb818996eafc6d5c72c981b12fa6ea745879b801707025be"
+    },
+    {
+      "name": "t7-catalog-m-host-start.local.json",
+      "bytes": 270,
+      "sha256": "e71b95d2b03d09635a9aef70298d97eac60c434697e8efb5ca20fc8208149147"
+    },
+    {
+      "name": "t7-catalog-m-host-return.local.json",
+      "bytes": 434,
+      "sha256": "8d7de4f48db2eaa33fa539f244810089cb0074fe99385476edece3db514abd60"
+    },
+    {
+      "name": "t7-catalog-m-postflight.local.json",
+      "bytes": 5420,
+      "sha256": "52bae496f72ee07227c7561133287fb4dafa0b5d7d4137024d4ff30ff9f4918f"
+    },
+    {
+      "name": "t7-catalog-m-host-outcome.local.json",
+      "bytes": 372,
+      "sha256": "3b42b9d52005a26bbc6071f2914239746d46b3c8c49bffbc786ba6f006e0a108"
+    },
+    {
+      "name": "t7-catalog-m-host-exit.local.json",
+      "bytes": 215,
+      "sha256": "9e038a500aadcdd7d4404ba3170c8ddacca2fe17442ec18c995a88f7604de788"
+    },
+    {
+      "name": "t7-catalog-m-host-absence.local.json",
+      "bytes": 825,
+      "sha256": "42289c24ae933359731f62add91051ebe914e2013f1e1c9e6eb9302f7f1836b8"
+    }
+  ],
+  "limits": {
+    "native_invocations": 1,
+    "runtime_attempt_consumed": true,
+    "catalogue_success": false,
+    "compatibility_proven": false,
+    "ready": false,
+    "plan_l_preserved": true,
+    "new_probe_added": false,
+    "speculative_dependency_added": false
+  },
+  "next_action": "Analysis owner interprets the private correlated MSG. Further work is limited to the separately accepted three-dependency batch protocol and its stop conditions; this checkpoint itself authorizes no Run.",
+  "batch": {
+    "protocol": {
+      "name": "t7-named-dependency-delegation-proposal.local.json",
+      "bytes": 4976,
+      "sha256": "aa4b12860d837feac5800b9df3010e18099eadfaceee6944f47bf4e98e563248"
+    },
+    "coordinator_acceptance_received": true,
+    "accepted_after_proposal": true,
+    "proposal_file_retained_unchanged": true,
+    "source_commit": "22bbaa184c583c7d579b991def9b79c73b2a19e4",
+    "profile_sha256": "4c5ba9c0ccfd9bdbf7d6b2a46930ed560d4ced322f2e164d04fc2b1be57a1a47",
+    "reader_sha256": "28382d32673b059eee2de63f22543ce1dc63dafcb136be62ec93319e50b8df20",
+    "dependency_cycles_max": 3,
+    "closed_cycles": 1,
+    "closed_phases": 2,
+    "heavy_phases_max": 6,
+    "retry": false,
+    "bootstrap_bytes": 68194304,
+    "aggregate_limit_bytes": 134217728,
+    "next_analysis_pending": false
+  },
+  "core_patch_qualification": {
+    "status": "IdentityAndHashObservedCompatibilityUnknown",
+    "file_name": "core_patch.ff",
+    "bytes": 45217664,
+    "sha256": "270b267de51f64f6fafc22b0f2047a544fdb83dc02b919b863d45688e3be3bdc",
+    "hash_provenance": "ObservedUnderLeaseNotDepotVerified",
+    "started_utc": "2026-10-12T19:20:48.5580399Z",
+    "finished_utc": "2026-10-12T19:20:50.8733481Z",
+    "passes": 2,
+    "read_bytes_per_pass": 45217664,
+    "total_read_bytes": 90435328,
+    "metadata_identity_and_hash_reverified_under_guard": true,
+    "tree_closed": true,
+    "lease_released": true,
+    "guards_closed": true,
+    "quarantined": false,
+    "receipt": {
+      "name": "t7-core-patch-qualification-a.local.json",
+      "bytes": 4433,
+      "sha256": "02bf3154b7c062391b962dba896c51cba439a8698b27e103cb14476119330081"
+    },
+    "closure": {
+      "name": "t7-core-patch-a-host-closure.local.json",
+      "bytes": 922,
+      "sha256": "d84d23bf2a5b9c1586d06275a6d9b1fbcd5f3df1f82056fccd33ff6fd6e7801b"
+    },
+    "absence": {
+      "name": "t7-core-patch-a-host-absence.local.json",
+      "bytes": 797,
+      "sha256": "a1966198811b29d477f97661c1e906f0c5caec513f3966c7c3fdf129b5aabc54"
+    },
+    "session": 98502,
+    "actual_exit_code": 0,
+    "exit_tool_chunk": "d9fa11",
+    "host_and_parent_absent": true,
+    "independent_absence_utc": "2026-10-12T19:25:14.6620823Z",
+    "payload_hashes_after_release": false,
+    "native_engine_executed": false,
+    "header_captured": false,
+    "depot_verified": false,
+    "compatibility_proven": false
+  },
+  "retained_preparation_corrections": [
+    "CorePatch closure proof initially used empty interactive PSScriptRoot; all closure assertions passed before the path binding failure. Explicit absolute CreateNew proof then succeeded. No qualification retry.",
+    "The first draft of the M closure helper used an incorrect regex replacement for local variable labels. Its parse failed before invocation. That draft is retained privately; the corrected helper preserves the predecessor variable names and changes only fixed attempt values. Parse and same-host closure passed. No operational source, plan, candidate or Run was changed or repeated."
+  ],
+  "analysis_owner_followup": {
+    "same_missing_startup_zone_category": true,
+    "new_named_zone": "en_core_gfx",
+    "message_bytes": 41,
+    "complete_correlated_nul": true,
+    "only_named_path_metadata_observed": true,
+    "bytes": 768,
+    "ordinary_file_and_ancestors": true,
+    "payload_read": false,
+    "metadata_evidence_name": "t7-message-m-startup-metadata.local.json",
+    "metadata_evidence_bytes": 2034,
+    "metadata_evidence_sha256": "5187aa5e00b57c36b979c0265fdc963c533ae883e8bebf2c891cb01e44820162",
+    "projected_bootstrap_count": 5,
+    "projected_bootstrap_bytes": 68195072,
+    "within_batch_limits": true,
+    "compatibility_proven": false
+  }
+}

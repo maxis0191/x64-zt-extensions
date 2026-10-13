@@ -1,0 +1,117 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-observation/1",
+  "date": "2026-10-12",
+  "attempt": "A",
+  "source_commit": "876056767feaeea9d5d9dc735eca1ad3e55ca952",
+  "plan_sha256": "cb8e16f3a98917b4ad4d0fe9264e1086e10c6b2b21d0c452afa4f5efba66bf40",
+  "invocations": 1,
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "stop_reason": "Unexpected engine output; preserve and stop.",
+  "root_exit_code": -536870911,
+  "termination_requested": true,
+  "candidate": {
+    "bytes": 21740032,
+    "sha256": "94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15"
+  },
+  "observed_zone": {
+    "file": "mp_freerun_04.ff",
+    "bytes": 16977344,
+    "sha256": "7456c7fbbcfe29ca3b71298bfab3f77e253dfabdda82a88304aa8eecb019125b",
+    "provenance": "ObservedUnderLeaseNotDepotVerified",
+    "guard_retained_through_native_closure": true,
+    "payload_reverified_after_closure": false
+  },
+  "unexpected_outputs": [
+    {
+      "relative_path": "work/steam_appid.txt",
+      "kind": "file",
+      "bytes": 6,
+      "text": "311210"
+    },
+    {
+      "relative_path": "work/identities",
+      "kind": "directory"
+    },
+    {
+      "relative_path": "work/identities/dedicatedpc",
+      "kind": "directory"
+    },
+    {
+      "relative_path": "work/identities/dedicatedpc/dumps",
+      "kind": "empty_directory"
+    },
+    {
+      "relative_path": "work/identities/dedicatedpc/LPC",
+      "kind": "empty_directory"
+    }
+  ],
+  "other_output": {
+    "relative_path": "temp/zt-tlsdll.dll",
+    "bytes": 113152,
+    "binary_payload_read_after_closure": false,
+    "caused_guard_failure": false
+  },
+  "closure": {
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "inputs_reverified": false,
+    "postflight_utc": "2026-10-12T13:22:32.3444121Z",
+    "postflight_lease_count": 0,
+    "postflight_heavy_count": 0,
+    "original_root_present": false,
+    "main_generation_and_udp_owner_unchanged": true,
+    "original_metadata_equal": true,
+    "source_and_alias_ids_equal": true,
+    "host_quarantine_absent": true,
+    "host_normal_exit_confirmed": true,
+    "host_and_candidate_absent_utc": "2026-10-12T13:22:55.0331754Z",
+    "aliases_retained": 4,
+    "preserved_python_generation_unchanged": true
+  },
+  "evidence": [
+    {
+      "name": "evidence/receipt.json",
+      "bytes": 4093,
+      "sha256": "a8bb0f1ae419e499bec776a43687da29dda490d855c252d02a7145b2ae8d82cd"
+    },
+    {
+      "name": "evidence/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "evidence/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "postflight.local.json",
+      "bytes": 3022,
+      "sha256": "a67049c7bb978b232f32e2e3b48bc69151da93c83cfce2c4cd8450ba8a8cebe5"
+    },
+    {
+      "name": "host-outcome.local.json",
+      "bytes": 304,
+      "sha256": "d8ea0f50a4072972319a9e792b4e59be0ece1f12fd82b7574eed85532d21a78d"
+    },
+    {
+      "name": "inventory-after-closure.local.json",
+      "bytes": 3374,
+      "sha256": "cb5bd423a6d4e3ef38c0622cbc1247e21648f282f7d0bb379636718ea1430a61"
+    }
+  ],
+  "limits": {
+    "missing_dependency_named": false,
+    "catalogue_produced": false,
+    "cli_reached_proven": false,
+    "model_name_observed": false,
+    "asset_export_performed": false,
+    "engine_compatibility_proven": false,
+    "all_external_io_observed": false,
+    "next_native_go": false,
+    "ready": false
+  },
+  "next_action": "Review a source-only correction allowing only the observed app-id file and empty identity directories; preserve A and prepare a separately reviewed plan B, without adding FFs or retrying."
+}

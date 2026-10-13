@@ -1,0 +1,36 @@
+{
+  "schema": "iw7.original-sound-bank-contract/1",
+  "zone": "sdk_original_sound_v1",
+  "bank": "community_original_sound_v1.all",
+  "alias": "community_original_chime_v1",
+  "sample": "community/original_chime_v1",
+  "samples": 48000,
+  "sample_rate": 48000,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "alias_id": 1489483025,
+  "asset_id": 1496246593,
+  "pcm_sha256": "72cb02b5178ce424fd3df3dbfb28b0b9613f69a4da3af71a022b8b542a46ddd9",
+  "sources": {
+    "original/source.wav": {
+      "bytes": 96044,
+      "sha256": "299727b757b46804ca52144133b7e72405f13ddcdaf8aea30a497afc62ca9cb4"
+    },
+    "sound_assets/community/original_chime_v1.flac": {
+      "bytes": 96394,
+      "sha256": "9f807b3f4dfee213dfd44e3f60b9109075327b233f321bdf38f594c3a0c47bbb"
+    },
+    "sound/community_original_sound_v1.all.aliases.csv": {
+      "bytes": 947,
+      "sha256": "a1db885270d7ca0e4cfe46ad7eb37ca6334544a73798740d8498fa2532ab7c65"
+    },
+    "soundbank/community_original_sound_v1.all.json": {
+      "bytes": 572,
+      "sha256": "3ef57d72a67a5e0beb1a64abe38410852ee1e891d6078f5e5e5757327ef6f1ba"
+    },
+    "zone_source/sdk_original_sound_v1.csv": {
+      "bytes": 42,
+      "sha256": "073755aa4536c3643a25f056e912ea33fa8f2c26778099cd30e4715df39dde76"
+    }
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "schema": "iw7.asset-bridge.h1-light-validation/1",
+  "date": "2026-10-12",
+  "base_private_commit": "21b91e3ebace48fda5ed60024719168064b2cca5",
+  "unit_tests": 10,
+  "original_deterministic_corpus_cases": 100,
+  "python_syntax_checked": true,
+  "patch": {
+    "schema": "iw7.asset-bridge.zonetool-patch/1",
+    "base_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+    "file": "src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp",
+    "base_lf_sha256": "db44ec1166c6f0cbb3af0ad21631154b8e3b00b42aac042b59e79c1ced4d24ce",
+    "patched_lf_sha256": "f0910695382533abf9aed8a0c03f2f0da9d9af1ce2baee0efb5e78d252218a15",
+    "patch_sha256": "e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0",
+    "native_compiled": false,
+    "native_behavior_executed": false,
+    "patch_reproducible": true,
+    "git_apply_and_reverse_check": true,
+    "selected_source_bytes": 8353,
+    "shared_checkout_modified": false
+  },
+  "retained": {
+    "schema": "iw7.asset-bridge.retained-two-bone-check/1",
+    "profiles": [
+      {
+        "hypothesis": "first",
+        "retained_native_read": {
+          "schema": "iw7.doom-two-bone-native-read/1",
+          "hypothesis": "first",
+          "model": {
+            "bones": 2,
+            "roots": 1,
+            "client_bones": 0,
+            "lods": 1,
+            "complete_model_bytes_read": true,
+            "bone_bounds_engine_verified": false
+          },
+          "surface": {
+            "vertices": 8,
+            "triangles": 6,
+            "blend_bytes": 48,
+            "normal_tangent_component_error": 0.0009775171065493637,
+            "source_codec_words_verified": true,
+            "iw7_shader_encoding_verified": false
+          },
+          "cpu_oracle": {
+            "vertices": 8,
+            "bones": 2,
+            "blend_bytes": 48,
+            "bind_matrix_error": 0.0,
+            "quantization_error_units": 0.004244675295264755,
+            "opposite_weight_error_units": 2.1605397252895244,
+            "stored_weight_direction": "first_bone_hypothesis_only",
+            "engine_deformation_verified": false,
+            "pixels_verified": false,
+            "animation_verified": false
+          },
+          "xmb_sha256": "c979c54ac158dcc9ad648efe2542831f4250b13805b8232e218866a15ac0d856",
+          "xsb_sha256": "aef640e642c7e0eeef0d5cf2a483a8d349a4e5514c4528c8ac77998794ba4fdc",
+          "native_writer_receipt_verified": false,
+          "part_bits_engine_verified": false,
+          "draw_verified": false,
+          "pixels_verified": false,
+          "ready": false
+        },
+        "bridge_readback": {
+          "schema": "iw7.asset-bridge.blend-result/1",
+          "zonetool_reference": "fab935826c898806855376662a8a03317b3ad8f1",
+          "vertices": 8,
+          "bone_indices_used": [
+            0,
+            1
+          ],
+          "blend_vert_counts": [
+            4,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "h1_bytes": 32,
+          "iw7_bytes": 48,
+          "h1_sha256": "b278b582ced2dc2b6d352a26f14fbc5f6a31418ef1b9cafed678657c867ef264",
+          "iw7_sha256": "c2984994e055a7d83355807916153285ed615c270caf74bdc30779eb6fcccc68",
+          "independent_word_readback": true,
+          "weight_words_preserved": true,
+          "weight_direction_engine_verified": false,
+          "xsb_emitted": false,
+          "ff_built": false,
+          "render_verified": false
+        }
+      },
+      {
+        "hypothesis": "second",
+        "retained_native_read": {
+          "schema": "iw7.doom-two-bone-native-read/1",
+          "hypothesis": "second",
+          "model": {
+            "bones": 2,
+            "roots": 1,
+            "client_bones": 0,
+            "lods": 1,
+            "complete_model_bytes_read": true,
+            "bone_bounds_engine_verified": false
+          },
+          "surface": {
+            "vertices": 8,
+            "triangles": 6,
+            "blend_bytes": 48,
+            "normal_tangent_component_error": 0.0009775171065493637,
+            "source_codec_words_verified": true,
+            "iw7_shader_encoding_verified": false
+          },
+          "cpu_oracle": {
+            "vertices": 8,
+            "bones": 2,
+            "blend_bytes": 48,
+            "bind_matrix_error": 0.0,
+            "quantization_error_units": 0.004244675295264755,
+            "opposite_weight_error_units": 2.1605397252895244,
+            "stored_weight_direction": "second_bone_hypothesis_only",
+            "engine_deformation_verified": false,
+            "pixels_verified": false,
+            "animation_verified": false
+          },
+          "xmb_sha256": "67fc685e892dff9f46c10923e0c2c9819ed38f9cec502bdfb6349b3d2ff7a620",
+          "xsb_sha256": "118343bf0f75df1fe4bc3be71d93b9d895f4f899fb5301f5dee0f157767574ae",
+          "native_writer_receipt_verified": false,
+          "part_bits_engine_verified": false,
+          "draw_verified": false,
+          "pixels_verified": false,
+          "ready": false
+        },
+        "bridge_readback": {
+          "schema": "iw7.asset-bridge.blend-result/1",
+          "zonetool_reference": "fab935826c898806855376662a8a03317b3ad8f1",
+          "vertices": 8,
+          "bone_indices_used": [
+            0,
+            1
+          ],
+          "blend_vert_counts": [
+            4,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "h1_bytes": 32,
+          "iw7_bytes": 48,
+          "h1_sha256": "9b4870c79d6170c4fa6c685807fef0aed513a202c084ed35a3ceaaf07b3e0619",
+          "iw7_sha256": "b0970da08178558f90fe462e6ac77ed5d6aeeba3dec6f29f17eca53491761215",
+          "independent_word_readback": true,
+          "weight_words_preserved": true,
+          "weight_direction_engine_verified": false,
+          "xsb_emitted": false,
+          "ff_built": false,
+          "render_verified": false
+        }
+      }
+    ],
+    "native_writer_rerun": false,
+    "native_compilation": false,
+    "game_run": false,
+    "weight_direction_engine_verified": false
+  },
+  "retained_reader_sha256": "ba6806c74820271ecd37e79701fd8edd7e3cc7d713251f6a9fc3ae8f4dcbf258",
+  "native_compile": false,
+  "native_converter_executed": false,
+  "game_run": false,
+  "resource_lease_acquired": false,
+  "main_modified": false,
+  "owner_gameplay_acceptance": false,
+  "source_files_sha256": {
+    "blend_bridge.py": "faf3ef03f7ad50114390a00dd446b60165dc363904f7b9286127b3b8f78f6b9e",
+    "prepare_zonetool_patch.py": "c25399baeb9e75b26120c3b27f4338e616dec9de5c33f27b1e0a9aa6ef990690",
+    "test_blend_bridge.py": "dbab314f3e2f85612d4affe59ee17b274f21fb7506d967bf76f913404e877f83",
+    "verify_retained_two_bone.py": "7e653fca9968581329257cfe4bc7346322edff3ebc8716d4b3b49eafa71d0a28",
+    "verify_zonetool_patch.py": "e640a78d8d6ece3eef6b347f87cf62a5b7e054a84e7f5302a03adc7173ca7e08",
+    "zonetool-fab9358-h1-xsurface.patch": "e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0"
+  }
+}

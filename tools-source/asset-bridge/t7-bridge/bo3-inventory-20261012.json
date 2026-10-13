@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "observed_utc": "2026-10-12T10:25:18.2098541Z",
+  "source": "Owner-designated BO3 installation, download completion confirmed by owner through coordinator",
+  "scope": "Top-level entries and immediate zone file metadata only; no recursive inventory",
+  "file_contents_read": false,
+  "game_files_hashed": false,
+  "integrity_verified": false,
+  "executable_compatibility_verified": false,
+  "top_level_directories": ["redist", "video", "zone"],
+  "top_level_files": [
+    {"name": "BlackOps3.exe", "bytes": 105994224},
+    {"name": "boiii.exe", "bytes": 3185152},
+    {"name": "cod.bmp", "bytes": 491576},
+    {"name": "codlogo.bmp", "bytes": 109976},
+    {"name": "localization.txt", "bytes": 2818},
+    {"name": "manifest.json", "bytes": 81},
+    {"name": "steam_api64.dll", "bytes": 235600}
+  ],
+  "required_dedicated_executable_at_top_level": false,
+  "unranked_server_subdirectory_exists": false,
+  "zone_immediate_file_count": 481,
+  "zone_enumeration_cap": 10000,
+  "zone_enumeration_cap_reached": false,
+  "zone_extensions": [
+    {"extension": ".fd", "files": 110, "bytes": 795488625},
+    {"extension": ".ff", "files": 168, "bytes": 5941287680},
+    {"extension": ".xpak", "files": 203, "bytes": 77789396992}
+  ],
+  "small_nonlocalized_nonpatch_ff_over_one_mib": [
+    {"name": "core_gfx.ff", "bytes": 6105536},
+    {"name": "mp_freerun_04.ff", "bytes": 16977344},
+    {"name": "mp_freerun_02.ff", "bytes": 17943488},
+    {"name": "core_pre_gfx.ff", "bytes": 22351168},
+    {"name": "mp_freerun_03.ff", "bytes": 23649792},
+    {"name": "mp_freerun_01.ff", "bytes": 24135808},
+    {"name": "core_ui.ff", "bytes": 33272384},
+    {"name": "zm_common.ff", "bytes": 36332480},
+    {"name": "mp_aerospace.ff", "bytes": 45989888},
+    {"name": "mp_redwood.ff", "bytes": 50906112},
+    {"name": "mp_redwood_ice.ff", "bytes": 52363200},
+    {"name": "core_specialists.ff", "bytes": 54940800}
+  ],
+  "donor_model_selected": false,
+  "limitations": "Lengths do not prove complete/valid content, expected build, residency, model inventory or loadability. boiii.exe name does not establish a T7x version. Hash only subsequently selected inputs under a separately admitted stage."
+}

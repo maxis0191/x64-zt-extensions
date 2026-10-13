@@ -1,0 +1,226 @@
+{
+  "schema": "iw7.t7-catalogue-runtime-observation/1",
+  "date": "2026-10-12",
+  "attempt": "E",
+  "source_commit": "90d28e45c74971a775952042368e997ec8775818",
+  "plan_sha256": "2cc54a561ac944da036e72bbac6bbc6b48b59a310e1c7c08508b09026a716efb",
+  "invocations": 1,
+  "status": "Failed",
+  "catalogue_outcome": "NoCatalogue",
+  "qualification_error": "No qualified catalogue was produced.",
+  "root_pid": 14448,
+  "root_created_utc": "2026-10-12T15:07:07.3051899Z",
+  "root_exit_code": 0,
+  "native_stage_elapsed_ms": 1964.834800004959,
+  "termination_requested": false,
+  "candidate": {
+    "profile": "t7-catalog-exit-context",
+    "bytes": 21744640,
+    "sha256": "f3408671d392b97e3ca09bc3e6e294c761813feccd18d8a1aaa4920874be2847",
+    "build_plan_sha256": "0cd2c2f3bdc22021a045d53bec19988b912c8d3db095e02eef061ebfa201880b",
+    "build_receipt_sha256": "3366373d1cf91e30634bfb3367133bee99771ca2b2cb9c794c7ced784cc9f6b0"
+  },
+  "observed_zone": {
+    "file": "mp_freerun_04.ff",
+    "bytes": 16977344,
+    "sha256": "7456c7fbbcfe29ca3b71298bfab3f77e253dfabdda82a88304aa8eecb019125b",
+    "provenance": "ObservedUnderLeaseNotDepotVerified",
+    "payload_reverified_under_lease_after_closure": true
+  },
+  "outputs": {
+    "stdout_bytes": 70,
+    "stderr_bytes": 1917,
+    "stdout_message": "[ INFO ][ zonetool::t7::init_zonetool ]: ZoneTool is initializing...",
+    "trace_outcome": "TraceObserved",
+    "trace_events": [
+      {
+        "phase": "enabled",
+        "tid": 3848,
+        "stdout_unbuffered": true,
+        "stderr_unbuffered": true
+      },
+      {
+        "phase": "before_entry_point",
+        "tid": 3848,
+        "code": 0,
+        "return_address": "0000000000000000"
+      },
+      {
+        "phase": "before_post_unpack",
+        "tid": 3848,
+        "code": 0,
+        "return_address": "0000000000000000"
+      },
+      {
+        "phase": "after_post_unpack",
+        "tid": 3848,
+        "code": 0,
+        "return_address": "0000000000000000"
+      },
+      {
+        "phase": "exit_hook",
+        "tid": 24404,
+        "code": 0,
+        "return_address": "0000000140AC00C4"
+      }
+    ],
+    "context_outcome": "Observed",
+    "incomplete_trailing_line": false,
+    "context": {
+      "memory": {
+        "status": "ok",
+        "error": 0,
+        "start": "0000000140AC0084",
+        "requested_bytes": 256,
+        "read_bytes": 256,
+        "module": "0000000140000000",
+        "allocation": "0000000140000000",
+        "region": "0000000140AC0000",
+        "region_size": 178491392,
+        "state": 4096,
+        "protect": 64,
+        "type": 16777216,
+        "captured_bytes_retained_privately_only": true
+      },
+      "stack": {
+        "status": "ok",
+        "error": 0,
+        "count": 8,
+        "addresses": [
+          "00000001601BC6B9",
+          "00000001601BC059",
+          "00000001601BC816",
+          "0000000140AC00C4",
+          "0000000140584FD8",
+          "00000001401DA015",
+          "0000000140526D02",
+          "00007FF90747CD87"
+        ]
+      },
+      "function": {
+        "status": "ok",
+        "error": 0,
+        "image": "0000000140000000",
+        "record": "000000014B44B2AC",
+        "read_bytes": 12,
+        "begin_rva": "0x00ABFF48",
+        "end_rva_exclusive": "0x00AC00DD",
+        "unwind_rva": "0x0105C178"
+      }
+    },
+    "catalogue_files": 0,
+    "entry_point_return_observed": false,
+    "startup_output_profile_validated": true,
+    "identity_payload_files": 0,
+    "extra_missing_file_message": false,
+    "binary_payload_read_after_release": false
+  },
+  "closure": {
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "inputs_reverified": true,
+    "original_metadata_unchanged": true,
+    "main_baseline": "Stopped",
+    "main_observed_before_utc": "2026-10-12T15:07:05.9624676Z",
+    "main_observed_before_launch_utc": "2026-10-12T15:07:07.2567896Z",
+    "main_observed_after_utc": "2026-10-12T15:07:10.5926061Z",
+    "postflight_utc": "2026-10-12T15:07:49.0851433Z",
+    "postflight_lease_count": 0,
+    "postflight_heavy_count": 0,
+    "main_stopped_baseline_unchanged": true,
+    "postflight_original_metadata_equal": true,
+    "postflight_source_and_alias_ids_equal": true,
+    "host_pid": 25580,
+    "host_quarantine_absent": true,
+    "host_session_exit": {
+      "source_tool": "tools.write_stdin",
+      "session_id_from_call": 12428,
+      "observed_chunk_id": "6fdf98",
+      "observed_exit_code": 0,
+      "derived_from_process_absence": false,
+      "evidence": "host-session-exit.local.json"
+    },
+    "host_and_candidate_absent_utc": "2026-10-12T15:08:08.6666893Z",
+    "absence_evidence": "host-absence.local.json",
+    "host_present": false,
+    "candidate_present": false,
+    "aliases_retained": 4,
+    "preserved_python_generation_unchanged": true
+  },
+  "bounded_analysis": {
+    "tool": "existing Capstone",
+    "version": "5.0.7",
+    "input_bytes": 256,
+    "input_source": "private captured context only after closure and host absence",
+    "indirect_call_address": "0x140AC00BE",
+    "call_size": 6,
+    "return_address": "0x140AC00C4",
+    "rip_relative_pointer_slot": "0x14B4BD078",
+    "slot_contents_read": false,
+    "instruction_at_return_address": "int3",
+    "initial_window_alignment_proven": false,
+    "function_name_proven": false,
+    "exe_pdb_or_extra_memory_read": false,
+    "raw_hex_and_disassembly_retained_privately_only": true
+  },
+  "evidence": [
+    {
+      "name": "evidence/receipt.json",
+      "bytes": 8441,
+      "sha256": "d20a1820bf91759b581382e8bbd9e7b8636461bc873d2cc7b1fc49b5f2755dbd"
+    },
+    {
+      "name": "evidence/stdout.log",
+      "bytes": 70,
+      "sha256": "f54b1b215440fd9e9e6533e672b006bca812ae3945573c470509512db12164ca"
+    },
+    {
+      "name": "evidence/stderr.log",
+      "bytes": 1917,
+      "sha256": "7e63210842bc2aa596f95196fe7320ef98290d3bb5373d2e215139f05c06dd2c"
+    },
+    {
+      "name": "postflight.local.json",
+      "bytes": 3402,
+      "sha256": "19b67c8178809cc71c4fb4e78ef79485edf8957e7dc9d478633efe62edda45fa"
+    },
+    {
+      "name": "host-outcome.local.json",
+      "bytes": 291,
+      "sha256": "9588f5ad734a107bab07658bd49fcb0fee5d0033321d1a3d5abde98566b0897d"
+    },
+    {
+      "name": "host-session-exit.local.json",
+      "bytes": 734,
+      "sha256": "c1a6d9eccaf2c1dbf2ab5331d2956c3fdd68c377ebd275ff4966b374bf06f00f"
+    },
+    {
+      "name": "host-absence.local.json",
+      "bytes": 180,
+      "sha256": "9a063ba22f836d3a0c6d4eb32a02feff6e26c36fe7d674efdee2ff6a7f1bfb0b"
+    },
+    {
+      "name": "exit-context-analysis.local.json",
+      "bytes": 4482,
+      "sha256": "0ffce19b25d8e1211d2175745fb5171d340f9612300443118d1ffa7ebb3e38e1"
+    }
+  ],
+  "limits": {
+    "catalogue_produced": false,
+    "post_unpack_return_observed": true,
+    "exit_hook_observed": true,
+    "exit_context_captured": true,
+    "exit_hook_cause_known": false,
+    "function_name_proven": false,
+    "original_engine_init_returned_proven": false,
+    "handle_params_reached_proven": false,
+    "model_name_observed": false,
+    "asset_export_performed": false,
+    "engine_compatibility_proven": false,
+    "all_external_io_observed": false,
+    "next_native_go": false,
+    "ready": false
+  },
+  "next_action": "Build owner correlates exact source with the private captured window, call slot, stack and runtime-function bounds. No automatic runtime, expanded capture or added input."
+}

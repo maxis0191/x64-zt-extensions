@@ -1,0 +1,127 @@
+--- a/src/zonetool/zonetool/iw7/assets/material.cpp
++++ b/src/zonetool/zonetool/iw7/assets/material.cpp
+@@ -1,4 +1,5 @@
+ #include <std_include.hpp>
++#include <utils/flags.hpp>
+ #include "material.hpp"
+ 
+ #include "techset.hpp"
+@@ -19,7 +20,7 @@
+ 	for (int i = 0; i < size; i++) \
+ 	{ \
+ 		ordered_json cent##entry; \
+-		std::string name = asset->constantTable[i].name; \
++		std::string name(asset->constantTable[i].name, sizeof(asset->constantTable[i].name)); \
+ 		name.resize(12); \
+ 		cent##entry["name"] = name.data(); \
+ 		cent##entry["nameHash"] = asset->entry[i].nameHash; \
+@@ -185,7 +186,7 @@
+ 			mat[i].nameHash = matdata[i]["typeHash"].get<unsigned int>();
+ 
+ 			std::string img = matdata[i]["image"].get<std::string>();
+-			if (filesystem::get_fastfile().starts_with("paris_enemy_"))
++			if (utils::flags::has_flag("strict-content-sources") || filesystem::get_fastfile().starts_with("paris_enemy_"))
+ 			{
+ 				// Preserve the requested JSON name. Resolve its actual source/reference
+ 				// through the zone dependency loader instead of creating a DB default.
+@@ -244,7 +245,7 @@
+ 		std::string techset = matdata["techniqueSet->name"];
+ 		if (!techset.empty())
+ 		{
+-			if (filesystem::get_fastfile().starts_with("paris_enemy_"))
++			if (utils::flags::has_flag("strict-content-sources") || filesystem::get_fastfile().starts_with("paris_enemy_"))
+ 			{
+ 				mat->techniqueSet = mem->allocate<MaterialTechniqueSet>();
+ 				mat->techniqueSet->name = mem->duplicate_string(techset);
+@@ -276,7 +277,16 @@
+ 			auto constant_def = mem->allocate<MaterialConstantDef>(constantTable.size());
+ 			for (int i = 0; i < constantTable.size(); i++)
+ 			{
+-				strcat(constant_def[i].name, constantTable[i]["name"].get<std::string>().data());
++				if (utils::flags::has_flag("strict-content-sources"))
++				{
++					const auto constant_name = constantTable[i]["name"].get<std::string>();
++					if (constant_name.size() > sizeof(constant_def[i].name))
++						throw std::runtime_error("IW7 content constant name exceeds fixed field: " + constant_name);
++					std::memset(constant_def[i].name, 0, sizeof(constant_def[i].name));
++					std::memcpy(constant_def[i].name, constant_name.data(), constant_name.size());
++				}
++				else
++					strcat(constant_def[i].name, constantTable[i]["name"].get<std::string>().data());
+ 				constant_def[i].nameHash = constantTable[i]["nameHash"].get<unsigned int>();
+ 				constant_def[i].literal[0] = constantTable[i]["literal"][0].is_null() ? std::numeric_limits<float>::quiet_NaN() : constantTable[i]["literal"][0].get<float>();
+ 				constant_def[i].literal[1] = constantTable[i]["literal"][1].is_null() ? std::numeric_limits<float>::quiet_NaN() : constantTable[i]["literal"][1].get<float>();
+@@ -362,7 +372,7 @@
+ 
+ 			if (DB_IsXAssetDefault(XAssetType(this->type()), this->name_.data()))
+ 			{
+-				if (filesystem::get_fastfile().starts_with("paris_enemy_"))
++				if (utils::flags::has_flag("strict-content-sources") || filesystem::get_fastfile().starts_with("paris_enemy_"))
+ 					throw std::runtime_error("Required IW7 enemy material donor asset missing: " + name);
+ 				ZONETOOL_WARNING("Missing material \"%s\", using default...", this->name_.data());
+ 			}
+--- a/src/zonetool/zonetool/iw7/assets/techset.cpp
++++ b/src/zonetool/zonetool/iw7/assets/techset.cpp
+@@ -1,4 +1,5 @@
+ #include <std_include.hpp>
++#include <utils/flags.hpp>
+ #include "techset.hpp"
+ 
+ #include "vertexshader.hpp"
+@@ -191,6 +192,9 @@
+ 				return path;
+ 			}
+ 
++			// Strict content builds must not borrow another material's state/buffers.
++			if (utils::flags::has_flag("strict-content-sources")) return path;
++
+ 			// get a random one from the directory
+ 			{
+ 				for (const auto& parse_path : filesystem::get_search_paths())
+@@ -221,6 +225,8 @@
+ 
+ 		if (fp)
+ 		{
++			if (utils::flags::has_flag("strict-content-sources") && file.size() != static_cast<std::size_t>(MaterialTechniqueType::TECHNIQUE_COUNT))
++				throw std::runtime_error("IW7 content technique-index length mismatch: " + path);
+ 			fread(indexes, MaterialTechniqueType::TECHNIQUE_COUNT, 1, fp);
+ 			file.close();
+ 			return;
+@@ -236,6 +242,8 @@
+ 		assetmanager::reader read(mem);
+ 		if (!read.open(path))
+ 		{
++			if (utils::flags::has_flag("strict-content-sources"))
++				throw std::runtime_error("Required IW7 content constant buffer missing: " + path);
+ 			(*def_ptr) = nullptr;
+ 			return;
+ 		}
+@@ -312,6 +320,8 @@
+ 
+ 		if (fp)
+ 		{
++			if (utils::flags::has_flag("strict-content-sources") && file.size() != static_cast<std::size_t>(MaterialTechniqueType::TECHNIQUE_COUNT))
++				throw std::runtime_error("IW7 content technique-index length mismatch: " + path);
+ 			fread(statebits, MaterialTechniqueType::TECHNIQUE_COUNT, 1, fp);
+ 			file.close();
+ 			return;
+--- a/src/zonetool/zonetool/iw7/assets/gfximage.cpp
++++ b/src/zonetool/zonetool/iw7/assets/gfximage.cpp
+@@ -339,7 +339,7 @@
+ 
+ 		read.close();
+ 
+-		if (filesystem::get_fastfile().starts_with("paris_enemy_") &&
++		if ((utils::flags::has_flag("strict-content-sources") || filesystem::get_fastfile().starts_with("paris_enemy_")) &&
+ 			asset->imageFormat == DXGI_FORMAT_R8G8B8A8_UNORM && asset->category == IMG_CATEGORY_AUTO_GENERATED &&
+ 			asset->width == 1 && asset->height == 1 && asset->dataLen1 == 4 && asset->pixelData &&
+ 			asset->pixelData[0] == 255 && asset->pixelData[1] == 0 && asset->pixelData[2] == 0 && asset->pixelData[3] == 255)
+@@ -381,6 +381,8 @@
+ 		this->asset_ = parse_custom(name.data(), mem);
+ 		if (!this->asset_)
+ 		{
++			if (utils::flags::has_flag("strict-content-sources"))
++				throw std::runtime_error("Required IW7 content image source missing: " + name);
+ 			if (filesystem::get_fastfile().starts_with("paris_enemy_"))
+ 				throw std::runtime_error("Required IW7 enemy image source missing: " + name);
+ 			ZONETOOL_WARNING("Image \"%s\" not found, it will probably look messed up ingame!", name.data());

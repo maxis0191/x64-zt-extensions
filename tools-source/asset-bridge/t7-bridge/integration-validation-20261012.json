@@ -1,0 +1,31 @@
+{
+  "schema": "iw7.t7-source-integration/1",
+  "date": "2026-10-12",
+  "source_commit": "4bb1013dcdd2fe5a771ce2b42102ab28aed80a74",
+  "retained_native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "python_metadata_phase_cases": 12,
+  "python_cli_contract_cases": 19,
+  "retained_source_comparisons_included": true,
+  "patch_prepare_check_passed": true,
+  "patch_apply_check_passed": true,
+  "patch_bytes": 13696,
+  "patched_source_files": 4,
+  "translation_units": 3,
+  "shared_source_modified": false,
+  "bootstrap_verification_entry_executed": true,
+  "bootstrap_hashes_and_signature_valid": true,
+  "bootstrap_verification_installed_other_tools": false,
+  "reviewed_components": [
+    "resident model selector and common asset-name validation",
+    "fixed anonymous Steam metadata phase with drain and deadline failures",
+    "selective CLI and root bone/count observation",
+    "verification-only bootstrap entry and portable test registration"
+  ],
+  "native_name_cases_prepared_not_run": 51,
+  "native_cli_compiled": false,
+  "steamcmd_executed": false,
+  "real_donor_exported": false,
+  "rendered": false,
+  "ready": false,
+  "limits": "Source and mocked tests only. Existing PR155 integration is a separate prior result; this receipt does not relabel it as a full T7 native/platform run."
+}

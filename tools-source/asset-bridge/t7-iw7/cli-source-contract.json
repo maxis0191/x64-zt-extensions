@@ -1,0 +1,143 @@
+{
+  "schema": "iw7.t7-iw7-cli-source-contract/1",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "files": {
+    ".gitattributes": {
+      "lf_bytes": 258,
+      "lf_sha256": "ce1a8c3ef96c5d8f741c4eb21e8ef1b4e66861921a8cb5d21fc88d1dc8dee501"
+    },
+    "SOURCE-AUDIT.md": {
+      "lf_bytes": 16453,
+      "lf_sha256": "9190f0b06c1807954d8523b1015a3ded40d0cb36cc11d27f7d3967995adda3fb"
+    },
+    "source-inventory.json": {
+      "lf_bytes": 3133,
+      "lf_sha256": "e0a8a99fed0d76f2db0df5d87d0c6a2bd63cd20399504b6ae04bf31588607b84"
+    },
+    "boot_contract.py": {
+      "lf_bytes": 3737,
+      "lf_sha256": "f57fa1996ebfde5ca459d8c774ca5ca997a1831e4238078197a50cea7652caa9"
+    },
+    "test_boot_contract.py": {
+      "lf_bytes": 3417,
+      "lf_sha256": "92b8073d1ab72c6f34b5b7e5db30c0dbbc2160909b083e08a4a66568b4eecd66"
+    },
+    "native_cli.inc": {
+      "lf_bytes": 1460,
+      "lf_sha256": "80fa0a07d766be8463422983a4d1368e3ca3fd3f44f730778be317c68f49c760"
+    },
+    "native_export.inc": {
+      "lf_bytes": 12940,
+      "lf_sha256": "1a6b1b43ae11722f6587f1ba97667781c275e33e036feb732b5796a3fc16ba41"
+    },
+    "native_catalog.inc": {
+      "lf_bytes": 3699,
+      "lf_sha256": "bba04b7e7adaf9d64a90bfdcef470d54566119f723565c76840e38fc31a5bcd1"
+    },
+    "native_catalog_capture.inc": {
+      "lf_bytes": 1532,
+      "lf_sha256": "ccfd4a6015f1e5f4f65378a964e63cc213e97f79c4809ff5bf3e81d9d00e94fa"
+    },
+    "catalog_contract.py": {
+      "lf_bytes": 2725,
+      "lf_sha256": "2750209244aa1b73f07edf11b9801e39b47386f67457db88856bdbd50ea2722b"
+    },
+    "test_catalog_contract.py": {
+      "lf_bytes": 3296,
+      "lf_sha256": "c59ed465bf7b2116c40b59be6c0a686dce342aa4a2c6b39ae024a43c186f776b"
+    },
+    "prepare_cli.py": {
+      "lf_bytes": 5382,
+      "lf_sha256": "025e4480bf0b55025d3a2ebeaff8b538c9ca4ac76151dd68c338464341c16331"
+    },
+    "test_cli_patch.py": {
+      "lf_bytes": 5903,
+      "lf_sha256": "6d6fbad47cb95dfc8fcafb201a0d18c4bc4c004ff7b60083a3f1c2967755d000"
+    },
+    "export_contract.py": {
+      "lf_bytes": 7049,
+      "lf_sha256": "067a1c3494eff6767e8258028a2d6fc6510c850b92e019606e4b7113e571ea06"
+    },
+    "test_export_contract.py": {
+      "lf_bytes": 11760,
+      "lf_sha256": "9d1c04e1309cab82e9dfbadc4bc7aa56a91fed40bef7960a63372341f5155db9"
+    },
+    "zonetool-fab9358-t7-resident-cli.patch": {
+      "lf_bytes": 23419,
+      "lf_sha256": "fe56b42e38e6f819b7f5893eed59a07f0cfff8f692dba104e7cd71d7e295fe8d"
+    },
+    "test_triangle_ownership.py": {
+      "lf_bytes": 4756,
+      "lf_sha256": "4ad5dd4d4e6214e105cc5918e7f5a0c5b6747a6da79177bebfc5243009d8f830"
+    }
+  },
+  "external_adapter": {
+    "repository_path": "tools-source/asset-bridge/t7-bridge/t7_iw7_resident_model.hpp",
+    "profile": "t7-iw7-resident-static-v1",
+    "lf_bytes": 21290,
+    "lf_sha256": "857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4",
+    "compile_verified": false,
+    "source_commit": "cf1949658fa374bcd14db79865247243fca7c34c",
+    "required_sibling": {
+      "name": "t7_asset_name.hpp",
+      "lf_bytes": 1945,
+      "lf_sha256": "171a3834a1e4c2321347850d350d9683eee4dec7715f3fdc95d5cb12c4adee65"
+    },
+    "native_boundary_fixture": {
+      "name": "test_t7_asset_name.cpp",
+      "lf_bytes": 2170,
+      "lf_sha256": "b77aee23860f07c9dee92063a1b322d7964da77880990cdd6dc9064f8bb4ddfc",
+      "expected_checks": 51,
+      "compiled": false,
+      "executed": false
+    },
+    "supported_profiles": [
+      "t7-iw7-resident-static-v1",
+      "t7-iw7-resident-static-v2"
+    ]
+  },
+  "patched_source_lf_sha256": {
+    "src/zonetool/main.cpp": "ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e",
+    "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
+    "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
+  },
+  "compile_replacements": [
+    {
+      "source": "src/zonetool/main.cpp",
+      "object": "main.obj",
+      "retained_object_metadata_bytes": 269417
+    },
+    {
+      "source": "src/zonetool/zonetool/t7/zonetool.cpp",
+      "object": "zonetool11.obj",
+      "retained_object_metadata_bytes": 1207187
+    },
+    {
+      "source": "src/zonetool/zonetool/t7/common/xpak.cpp",
+      "object": "xpak.obj",
+      "retained_object_metadata_bytes": 683683
+    }
+  ],
+  "unaffected_e7_objects": 410,
+  "reused_project_libraries": 18,
+  "reused_resource_inputs": 1,
+  "full_or_incremental_build_invoked": false,
+  "binary_input_contents_read": false,
+  "python_tests_passed": 44,
+  "python_tests_use_only_source_and_invented_records": true,
+  "git_apply_check_passed": true,
+  "native_patch_applied": false,
+  "native_compiled": false,
+  "native_executed": false,
+  "stock_staged": false,
+  "stock_plan_prepared": false,
+  "ready": false,
+  "remaining_gates": [
+    "Integrate exact conversion adapter and independent source review.",
+    "Seal source/toolchain/410 reused objects/18 libraries/resource/debug inputs and exact command/environment closure under separate admission.",
+    "Review private three-TU incremental build plus original-job supervisor adapter and obtain stage GO.",
+    "Bind available exact T7 dedicated engine, selected stock files, bootstrap dependencies and recipient restore profile before native GO.",
+    "Validate serialized parse and geometry; resolve material payloads and source-zone provenance separately."
+  ]
+}

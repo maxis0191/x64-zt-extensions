@@ -1,0 +1,144 @@
+{
+  "date": "2026-10-12",
+  "runner_commit": "cb3d9ac8684a99c5e711c39b02912bfc5a98a084",
+  "status": "references_timed_out_no_retry",
+  "cause": "unknown",
+  "native_started": true,
+  "native_executable_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "parameters_sha256": "c05dc63a9152c2abb9a215dea68975837dc006e2f62e1b334b9effd0a5d031db",
+  "plan_sha256": "4741f0135ee7d3aafa35fc939410a5b3068e6f7882ff8700b2e79238bf31566d",
+  "inventory_audit_sha256": "a2aed9bfcc8526d3aadfde81b2cd9be2a19c810924c98e9edceca642ee80ae36",
+  "approved_run_command_sha256": "5e9cf3926bc2693d270face737182e5483ca65300992fd43f65cd43c0f122aee",
+  "final_observation_sha256": "4c3005d9923c0869d9d9e84a898cac0a7f52e001536cbb5cad9dc51d7608319a",
+  "phase": {
+    "requested": "references",
+    "native_failure": "phase timeout",
+    "native_exit_code": null,
+    "parent_exit_code": 2,
+    "outer_failure": "Recipient phase deadline exceeded.",
+    "stdout_bytes": 0,
+    "stderr_bytes": 0,
+    "reference_csv_created": false,
+    "script_phase_started": false,
+    "utility_bytes_observed": false
+  },
+  "post_root_exit": {
+    "samples": 42,
+    "first": {
+      "DrainSeconds": 0.0,
+      "Active": 2,
+      "RootExitCode": 2,
+      "PhaseSeconds": 240.1993605
+    },
+    "last": {
+      "DrainSeconds": 4.800195299999984,
+      "Active": 2,
+      "RootExitCode": 2,
+      "PhaseSeconds": 244.9995558
+    },
+    "configured_drain_seconds": 5,
+    "outer_deadline_seconds": 245,
+    "stop_original_job": true,
+    "closure_after_stop": {
+      "ExitCode": 2,
+      "RootExited": true,
+      "Active": 0
+    }
+  },
+  "light_process_samples": [
+    {
+      "captured_utc": "2026-10-12T04:44:24.7991191Z",
+      "native_cpu_seconds": 4.234375,
+      "native_resident_bytes": 443564032,
+      "native_private_bytes": 593936384
+    },
+    {
+      "captured_utc": "2026-10-12T04:45:11.1217067Z",
+      "native_cpu_seconds": 4.3125,
+      "native_resident_bytes": 443564032,
+      "native_private_bytes": 593936384
+    },
+    {
+      "captured_utc": "2026-10-12T04:46:51.5373773Z",
+      "native_cpu_seconds": 4.46875,
+      "native_resident_bytes": 443326464,
+      "native_private_bytes": 593244160
+    }
+  ],
+  "thread_wait_states_captured": false,
+  "native_stacks_captured": false,
+  "window_inventory_captured": false,
+  "restored": true,
+  "stock_preserved": true,
+  "restoration_status": "Confirmed",
+  "cleanup_error": null,
+  "lease_released": true,
+  "remaining_owned_processes": 0,
+  "remaining_recorded_staging_paths": 0,
+  "active_leases_at_final_check": 0,
+  "main_same_identity": true,
+  "generated_output_final_bytes": 1218874,
+  "output_stop_bytes": 268435456,
+  "retained_artifacts": [
+    {
+      "Relative": "references.json",
+      "Bytes": 565,
+      "SHA256": "F7E4101A52902470F183D8D28185F5A921515F77CD268162729C02F79C715C7F"
+    },
+    {
+      "Relative": "state.local.json",
+      "Bytes": 110498,
+      "SHA256": "512247FFCA1DDC8FF18BD710D0A717BFEF7AB8B055628248A63EE2FAB8227D26"
+    },
+    {
+      "Relative": "backup/recovery.local.json",
+      "Bytes": 8141,
+      "SHA256": "BCEE9B2A59B597B870D61EDB9321649534CFDC581282DE2E27B9CFC9E87D3A54"
+    },
+    {
+      "Relative": "references/phase.json",
+      "Bytes": 338,
+      "SHA256": "C2BFBEA17C6F5FE8D1D3237C3ABB0AD10185C5FF238603D9F7EAB27A4FD41E7E"
+    },
+    {
+      "Relative": "references/stderr.log",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Relative": "references/stdout.log",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Relative": "work/main/data0.dcache",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Relative": "work/main/data1.dcache",
+      "Bytes": 0,
+      "SHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Relative": "work/main/toc0.dcache",
+      "Bytes": 549664,
+      "SHA256": "054A405F6BC9F6F30CC1246DB6FF7AAAFDCFCC363C40A6F81A31479D7BF53183"
+    },
+    {
+      "Relative": "work/main/toc1.dcache",
+      "Bytes": 549664,
+      "SHA256": "054A405F6BC9F6F30CC1246DB6FF7AAAFDCFCC363C40A6F81A31479D7BF53183"
+    }
+  ],
+  "closure_complete": false,
+  "package_ready": false,
+  "runtime_verified": false,
+  "limits": [
+    "No result proves reference resolution, missing assets, utility content or transitive closure.",
+    "NativeExecuted remains null in the unchanged outer state because failure preceded receipt validation; the native phase receipt and exact-process samples independently prove launch.",
+    "42 observed nonzero job counts after Python exit do not identify the remaining members or explain the preceding native stall.",
+    "State, caches and logs remain retained. No CLI, stock, native tool or timeout was changed; no retry occurred.",
+    "Thread/wait/window request arrived after process closure; no debugger or dump was started."
+  ]
+}

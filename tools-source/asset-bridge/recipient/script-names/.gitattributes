@@ -1,0 +1,2 @@
+# Preserve mandatory unified-diff context spaces before original tab indentation.
+zonetool-fab9358-script-names.patch whitespace=-space-before-tab,-blank-at-eol

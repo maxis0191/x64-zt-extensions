@@ -1,0 +1,11 @@
+{
+  "schema": "iw7.h1-dump-source-contract/1",
+  "pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "native_executed": false,
+  "lf_sha256": {
+    "src/zonetool/zonetool/iw7/assets/xmodel.cpp": "a72e445a09c21b165b09c6648164bd60044ab494ba6ccbbe9c175f1ce31276f4",
+    "src/zonetool/zonetool/iw7/assets/xsurface.cpp": "4f64194d253bd6bbbea813d624fecacf4ee1e6ed8ecccbdf1f70f13825204a9a",
+    "src/zonetool/zonetool/iw7/common/havok.cpp": "a4b9642c91629ecf8b3a30c25b2d59ed4a0ccf7d1bf368fd1c29ba519028f930",
+    "src/zonetool/zonetool/iw7/common/havok.hpp": "b163b9e3f857163d99a2132540bdf5b1ade97588764d647e5e9abc8b3fe6460c"
+  }
+}

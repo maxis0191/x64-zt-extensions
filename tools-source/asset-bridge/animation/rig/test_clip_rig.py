@@ -1,0 +1,141 @@
+"""Original synthetic XAB test bytes; no writer, native compiler or game."""
+import hashlib
+import json
+import math
+from pathlib import Path
+import struct
+import tempfile
+import unittest
+
+from prepare_skin_fixture import fixture_files, manifest
+from verify_clip_rig import closed_form, inspect, read_bounded, verify
+
+
+def clip_bytes(note_id=3):
+    # Hand-authored exact profile, deliberately no import of an XAB generator.
+    header = bytearray(136)
+    for offset in (0, 8, 16, 24, 40, 72):
+        struct.pack_into("<Q", header, offset, 1)
+    struct.pack_into("<I", header, 88, 16)
+    struct.pack_into("<ffHH", header, 100, 30., 1., 4, 1)
+    struct.pack_into("<H", header, 116, 30)
+    header[118:130] = bytes((1, 1, 0, 1, 0, 0, 0, 0, 0, 2, 2, 1))
+    def array(payload, count):
+        return b"\x08\x01" + struct.pack("<I", count) + payload
+    def name(value):
+        return b"\x06\x01" + value.encode("ascii") + b"\0"
+    return (array(header, 1) + name("paris_original_probe_bend") + name("tag_origin") + name("tag_probe")
+            + array(bytes((0, 10, 20, 30)), 4) + array(struct.pack("<H", 3), 1)
+            + array(struct.pack("<16h", 0, 0, 0, 32767, 12539, 0, 0, 30272,
+                                -12539, 0, 0, 30272, 0, 0, 0, 32767), 16)
+            + array(struct.pack("<If", note_id, .5), 1) + name("probe_contact"))
+
+
+def meta(files):
+    return manifest(files, {name: "0" * 64 for name in (
+        "iw7/structs.hpp", "iw7/assets/xsurface.cpp", "iw7/assets/xmodel.cpp",
+        "h1/converter/iw7/assets/xsurface.cpp", "iw7/converter/h1/assets/xsurface.cpp",
+        "t7/converter/iw7/assets/xmodel_mesh.cpp")})
+
+
+class ClipRigTests(unittest.TestCase):
+    def test_all_four_keys_for_both_weight_hypotheses(self):
+        files = fixture_files()
+        result = verify(files, meta(files), clip_bytes())
+        self.assertEqual(result["status"], "four-key-rig-cpu-pass")
+        self.assertEqual(result["channel_to_bone"], [0, 1])
+        for profile in result["profiles"].values():
+            self.assertEqual([s["frame"] for s in profile["samples"]], [0, 10, 20, 30])
+            for sample in profile["samples"]:
+                self.assertLess(sample["max_error_units"], .005)
+                if sample["frame"] in (10, 20):
+                    self.assertGreater(sample["opposite_hypothesis_error_units"], 2.)
+                else:
+                    self.assertLess(sample["max_error_units"], 1e-10)
+        for key in ("native_model_read", "ff_model_verified", "runtime_animation_verified",
+                    "engine_weight_direction_verified", "note_delivery_verified",
+                    "loop_duration_verified", "ready"):
+            self.assertIs(result[key], False)
+        self.assertIs(result["clip_matches_retained_evidence_hash"], False)
+
+    def test_analytical_negative_pose_has_independent_known_point(self):
+        k = 1 / math.sqrt(2)
+        self.assertAlmostEqual(closed_form(-45)[2][1], 4 * k)
+        self.assertAlmostEqual(closed_form(-45)[2][2], 8 + 12 * k)
+        self.assertEqual(closed_form(0)[2], [0., -4., 16.])
+
+    def test_ff_note_remap_needs_explicit_profile_and_remains_data_only(self):
+        files = fixture_files()
+        with self.assertRaises(ValueError):
+            verify(files, meta(files), clip_bytes(4036))
+        result = verify(files, meta(files), clip_bytes(4036), ff_roundtrip=True)
+        self.assertEqual(result["notetrack_data"], {"name": "probe_contact", "normalized_time": .5, "script_string_id": 4036})
+        self.assertFalse(result["note_delivery_verified"])
+
+    def test_missing_channel_and_trailing_clip_data_refused(self):
+        files = fixture_files()
+        for bad in (clip_bytes().replace(b"tag_probe", b"tag_other"), clip_bytes() + b"\0"):
+            with self.assertRaises(ValueError):
+                verify(files, meta(files), bad)
+
+    def test_rehashed_geometry_and_wrong_parent_do_not_pass(self):
+        for field, value in (("parents.u8.bin", b"\0"),
+                             ("positions.f32.bin", struct.pack("<24f", *([0.] * 24)))):
+            files = fixture_files()
+            files[field] = value
+            with self.assertRaises(ValueError):
+                verify(files, meta(files), clip_bytes())
+
+    def test_rehashed_weight_profile_exchange_refused(self):
+        files = fixture_files()
+        files["first.blend.u16.bin"], files["second.blend.u16.bin"] = files["second.blend.u16.bin"], files["first.blend.u16.bin"]
+        with self.assertRaises(ValueError):
+            verify(files, meta(files), clip_bytes())
+
+    def test_neutral_bind_and_clip_root_not_replaced_by_model_global_motion(self):
+        files = fixture_files()
+        mutated = bytearray(files["base-mats.f32.bin"])
+        struct.pack_into("<f", mutated, 16, 1.)
+        files["base-mats.f32.bin"] = bytes(mutated)
+        with self.assertRaises(ValueError):
+            verify(files, meta(files), clip_bytes())
+
+    def test_cli_inspection_requires_retained_real_clip_hash(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            inputs = root / "inputs"
+            inputs.mkdir()
+            files = fixture_files()
+            for name, payload in files.items():
+                (inputs / name).write_bytes(payload)
+            (inputs / "fixture-input.json").write_text(json.dumps(meta(files)), encoding="utf-8")
+            clip = root / "synthetic.xab"
+            clip.write_bytes(clip_bytes())
+            with self.assertRaisesRegex(ValueError, "actual retained clip hash"):
+                inspect(inputs, clip)
+            (inputs / "unexpected").write_bytes(b"x")
+            with self.assertRaisesRegex(ValueError, "inventory"):
+                inspect(inputs, clip)
+
+    def test_bounded_reader_rejects_empty_large_and_relative_inputs(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "input"
+            for payload in (b"", b"x" * 17):
+                path.write_bytes(payload)
+                with self.assertRaises(ValueError):
+                    read_bounded(path, 16)
+        with self.assertRaisesRegex(ValueError, "absolute"):
+            read_bounded(Path("relative"), 16)
+
+    def test_recovery_manifest_matches_original_source_bytes(self):
+        root = Path(__file__).absolute().parent
+        recovery = json.loads((root / "recovered-source.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(recovery["recovered_files"]), 12)
+        for entry in recovery["recovered_files"]:
+            payload = (root / entry["file"]).read_bytes()
+            self.assertEqual(len(payload), entry["bytes"])
+            self.assertEqual(hashlib.sha256(payload).hexdigest(), entry["sha256"])
+
+
+if __name__ == "__main__":
+    unittest.main()

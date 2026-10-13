@@ -1,0 +1,47 @@
+{
+  "schema": "iw7.t7-resident-image-source-validation/1",
+  "date": "2026-10-12",
+  "native_source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "sources": [
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image.py",
+      "sha256": "aeef64359f5c7c4a4ce4a8b1cc61bb89ce90eaaac75a2b830fc3bf34b27f264f"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_copy.hpp",
+      "sha256": "96291c23f132e09285d4ea3171c9107ac525d8628403014eae85a895f99c324e"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_resident_image.py",
+      "sha256": "18924e85763271a246a05faa342f9e22e43a7fa37821b7ff20f9d0ce2eea5600"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_resident_image_source.py",
+      "sha256": "0561853255f85f6842fb2bc85c3762ff60f312b603fa952a9720b5f3666e3a40"
+    }
+  ],
+  "validation": {
+    "command": "python -B -S -m unittest discover -s tools-source/asset-bridge/t7-iw7 -p test_resident_image*.py -v",
+    "status": "passed",
+    "python_executable_tests": 17,
+    "cpp_source_contract_tests": 5,
+    "total_tests": 22,
+    "original_synthetic_data_only": true,
+    "independent_dds_header_oracle": true,
+    "supported_typed_dxgi_formats": 18,
+    "max_dimension": 4096,
+    "max_pixel_bytes": 16777216,
+    "dds_header_bytes": 148
+  },
+  "boundaries": {
+    "native_adapter_compiled": false,
+    "native_adapter_executed": false,
+    "real_asset_read": false,
+    "real_asset_hashed": false,
+    "directxtex_import_executed": false,
+    "iw7_runtime_verified": false,
+    "material_or_techset_converted": false,
+    "current_selected_export_modified": false,
+    "visual_quality_verified": false
+  }
+}

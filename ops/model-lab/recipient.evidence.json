@@ -1,0 +1,43 @@
+{
+  "schema": "iw7.model-recipient-evidence/1",
+  "recipient": "cp_zmb",
+  "material": "mopw/character_park_clown_zombie_shoes",
+  "technique_set": "mopw_l_sm_replace_i0c0s0o0n0p0",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "snapshot_only": true,
+  "runtime_verified": false,
+  "normal_encoding_source_supported": true,
+  "normal_encoding_runtime_verified": false,
+  "material_snapshot": {
+    "closure": {
+      "path": "dump/paris_enemy_doom_source/closure.csv",
+      "bytes": 2188,
+      "sha256": "ca4a771420356ef465b0cf975834e567dc90411e7f7d9e8dbce072ce9722ed21"
+    },
+    "load_log": {
+      "path": "doom-source-canonical-20261006-184929-180-abffcbd811874a2b8e729aa8e949411d.stdout.log",
+      "bytes": 2285,
+      "sha256": "683ca650526ed01b65e0aef257857eeb6853a6d55e20f7bd0ac5042936a68cee"
+    },
+    "material_json": {
+      "path": "dump/paris_enemy_doom_source/materials/mopw/character_park_clown_zombie_shoes.json",
+      "bytes": 1405,
+      "sha256": "687924c80afb088a285c5df4704475b0786310738687fc555db77a3974c7c8b6"
+    }
+  },
+  "normal_encoding_source": [
+    {
+      "path": "src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp",
+      "sha256": "3399ce3d1b96cb8db87c18c882009d99d53e63534f7e7ea4e9705ecb0a7386b6"
+    },
+    {
+      "path": "src/zonetool/zonetool/iw7/converter/h1/assets/xsurface.cpp",
+      "sha256": "565e64df3c3f9408e64d8a4cd8bdfd04c21612381968b1379aec5735cf4f2210"
+    },
+    {
+      "path": "src/zonetool/game/shared.cpp",
+      "sha256": "de421b87b65d230622e77c6bca1da2d2435ddf646b2ab9c506cc55c043301d41"
+    }
+  ],
+  "interpretation": "Pinned experimental H1->IW7 converter copies normal/tangent/UV packed values unchanged and initializes self-visibility; reverse converter also copies vertex fields. Source compatibility evidence, not shader/pixel proof. Material is a recipient reference, no retail payload copied."
+}

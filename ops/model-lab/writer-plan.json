@@ -1,0 +1,71 @@
+{
+  "schema": "iw7.model-writer-plan/1",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_root": "tools/x64-zt-enemy",
+  "shared_source_mutations": false,
+  "standalone_process": true,
+  "game_process": false,
+  "generated_model": "paris_model_probe",
+  "geometry_source": "ops/model-lab/geometry.py",
+  "geometry": {
+    "vertices": 24,
+    "triangles": 12,
+    "bones": 1,
+    "surfaces": 1,
+    "lods": 1,
+    "bone_name": "tag_origin",
+    "retail_model_template": false,
+    "physics": false,
+    "animation": false,
+    "subdivision": false
+  },
+  "pinned_interfaces": [
+    "src/zonetool/zonetool/utils/io/assetmanager.hpp",
+    "src/zonetool/zonetool/utils/io/filesystem.hpp",
+    "src/zonetool/zonetool/utils/memory.hpp",
+    "src/zonetool/zonetool/iw7/structs.hpp"
+  ],
+  "serializer_order_references": [
+    "src/zonetool/zonetool/iw7/assets/xmodel.cpp",
+    "src/zonetool/zonetool/iw7/assets/xsurface.cpp"
+  ],
+  "compile_strategy": {
+    "architecture": "x64",
+    "workers": 1,
+    "precompiled_header": false,
+    "whole_zonetool_rebuild": false,
+    "filesystem_adapter": "minimal standalone implementation of the pinned file interface; direct explicit output only, no retail search paths",
+    "output": "fresh ignored runtime/model-lab run; never shared tools or game root",
+    "source_hashes_required_before_compile": true,
+    "resource_reservation_required": true,
+    "command": "pwsh -NoProfile -File ops/model-lab/Build-Writer.ps1 -PreparedRoot runtime/model-writer-source-20261007",
+    "physical_bytes": 2147483648,
+    "commit_bytes": 3221225472
+  },
+  "expected_structure_bytes": {
+    "XModel": 736,
+    "XModelSurfs": 56,
+    "XSurface": 256
+  },
+  "planned_outputs": [
+    "xmodel/paris_model_probe.xmb",
+    "xsurface/paris_model_probe_lod0.xsb",
+    "writer-provenance.json",
+    "geometry-roundtrip.json"
+  ],
+  "pending_before_engine_build": [
+    "compile standalone writer against exact pin interfaces",
+    "verify packed normal/tangent encoding instead of copying retail vertex bytes",
+    "identify one exact recipient-stock material reference",
+    "compare every generated position/index/UV/bone/rest-pose/LOD/bounds field after pinned reader roundtrip",
+    "reserve actual FF build and recipient offline inventory"
+  ],
+  "compiled": false,
+  "geometry_roundtrip_verified": false,
+  "ff_built": false,
+  "pixels_verified": false,
+  "ready": false,
+  "prepared_source_run": "runtime/model-writer-source-20261007",
+  "normal_encoding_candidate": "H1-1010102 formula from pinned game/shared.cpp, IW7 decoder/shader confirmation pending",
+  "source_preparation_tests": "3 asset-free tests pass; compiler DryRun passes, no actual compile yet"
+}

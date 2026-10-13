@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-12",
+  "scope": "Read-only retained Beacon success versus recipient timeout; no native rerun",
+  "beacon_state_sha256": "b0b5f007a45c5605b64c33d5dae6ff5a49dd75edb736ba7c6679cf8649f5c5be",
+  "recipient_state_sha256": "512247ffca1ddc8ff18bd710d0a717bfef7ab8b055628248a63ee2fab8227d26",
+  "same_bound_stock_entries": 72,
+  "same_stock_fields": [
+    "Source",
+    "Mode",
+    "Bytes",
+    "ModifiedUtc",
+    "Attributes",
+    "ExpectedSourceId",
+    "ExpectedSHA256",
+    "SourceId"
+  ],
+  "stock_field_differences": [],
+  "same_candidate_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "same_job_source_sha256": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
+  "same_python_path": true,
+  "common_native_flags": [
+    "-headless",
+    "-unbuffered-io",
+    "-strict-content-sources"
+  ],
+  "beacon_native_phases": [
+    "-buildzone sdk_beacon",
+    "-verifyzone sdk_beacon",
+    "-dumpzone sdk_beacon"
+  ],
+  "recipient_attempted_native_phase": "-enemy-reference-check cp_zmb recipient-material.csv sdk_beacon_recipient_a",
+  "beacon_cp_preload": false,
+  "beacon_stdin": "Popen argument omitted; inherited/None, exact original handle not recorded",
+  "recipient_stdin": "PIPE held open by phase adapter",
+  "python_flag_difference": "Recipient adds -B; Beacon does not; native command unaffected",
+  "creation_flags": "Shared original BuildJob NO_WINDOW|BELOW_NORMAL|SUSPENDED; native Popen CREATE_NO_WINDOW, no breakaway",
+  "environment": "Both source paths inherit process environment without explicit env override; historical environment contents not captured and equality not established",
+  "beacon_logs": [
+    {
+      "phase": "build",
+      "bytes": 1212,
+      "sha256": "6a768160c2eaeade7fb9ad5fb56a612fbb2ddf21211feced48edfffd0348fcb3",
+      "initialization_marker_present": true
+    },
+    {
+      "phase": "verify",
+      "bytes": 1095,
+      "sha256": "3883812e8acea4ac26feebed85b11c77afa35d26f72af0c2dbfd7ca4e7e094d7",
+      "initialization_marker_present": true
+    },
+    {
+      "phase": "dump",
+      "bytes": 668,
+      "sha256": "f5f291a3ccd1e1171a28b75e841199fe25174da65873c18feba05fd7feeacb4d",
+      "initialization_marker_present": true
+    }
+  ],
+  "shared_drain": {
+    "sha256": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d",
+    "operation": "BufferedReader.read(4096)",
+    "live_short_output_visibility": "Can remain buffered until 4096 bytes or EOF",
+    "timeout": "os._exit(2) may discard daemon drain partial buffered output",
+    "pipe_fixture_sha256": "61b2125dda109a1fa88521b1e1108f28e2cc21ebc1c9f59aa32ba9723be0f168",
+    "zero_logs_locate_native_stall": false
+  },
+  "cause": "unknown",
+  "candidate_hypotheses": [
+    "Open stdin can change the preexisting std::getline console thread wait behavior; no stack confirms causality.",
+    "Recipient loads 25 source zones after CLI dispatch, whereas Beacon does not preload cp_zmb; hidden partial output currently prevents locating the stop."
+  ],
+  "source_hashes": {
+    "sdk/modding/Build-BeaconFF.ps1": "03d367882d57ce0dc1cf2e9487f6187e86f478843b54e305fd4e3fb9eff11e2b",
+    "sdk/modding/beacon_tool_phase.py": "a2ab493cf551a43eea3797e5e8437e41aa8f0246d770838956d8984b68c4701d",
+    "tools-source/asset-bridge/model/BuildJob.cs": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
+    "ops/iw7_capture.py": "d2ec79aec62573dee8b24530cfeddb06b9410338b1b70332d2afba3d8dd7162d",
+    "ops/Debug-Server.ps1": "bd9b1bb4d78a3a79ec6cb61e13b24e5d3092ef9daa35cfe352b8cebd2c39b148",
+    "ops/hud-lab/Hud-Process.ps1": "35974fc0d0394d2ae9eb0859a0fc8d44270bb704dd22b8ad04faa91037242ca4",
+    "ops/Agent-LabCrash.Core.ps1": "fa018a5bf6836ef8ad23ca5ed25a82a7dad7fc580294edbe5b8c3a32281e715c"
+  },
+  "native_source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "native_source_hashes": {
+    "src/zonetool/main.cpp": "9d7ee573357c15554368e36542c0dad5f163e1cf069b869686f3ffb51a07bc01",
+    "src/zonetool/component/iw7/console.cpp": "1f3e951c6631b8f210814032e911d077a6b91d9b9a3eada25396057ebd91f9b9",
+    "src/zonetool/component/iw7/zonetool.cpp": "be37e50690c515fc116f0c6092f8dd361b973aa73f9b56faf32ee457f3c90ed4",
+    "src/zonetool/zonetool/iw7/zonetool.cpp": "f1c9fb861b81727dc7e3882f5116231e6dc0d1a0e6f5838953a62232171059bc"
+  }
+}

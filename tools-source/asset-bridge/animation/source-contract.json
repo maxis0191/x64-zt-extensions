@@ -1,0 +1,18 @@
+{
+  "schema": "iw7.animation-source-contract/1",
+  "repository": "https://github.com/bigmangeekf/x64-zt",
+  "revision": "fab935826c898806855376662a8a03317b3ad8f1",
+  "path_prefix": "src/zonetool/zonetool/",
+  "sha256": {
+    "utils/io/assetmanager.hpp": "674f3fd82ff519fa76d2105c05e09c7a950857a7c598ab019fbea3bab8a75b83",
+    "h1/assets/xanim.cpp": "86c5770123741e691a112f305be19b26594d7c0fa2f9e9431ffd14e792d72f69",
+    "iw7/assets/xanim.cpp": "28018aae6c3407fe7fc35b48fdec4fd98daba8ff8f6b0c1047eb383365992673",
+    "h1/structs.hpp": "cd68a7eb9ca9d16339117f5602ba17571cb923de9100aedac673419ebfcb8da4",
+    "iw7/structs.hpp": "adb62e481a533d27f97829e64d9038b13c5e9cd88e6b4aee8cac339b9492921a"
+  },
+  "platform": "x64 little endian, default Microsoft structure alignment",
+  "header_bytes": {"h1": 216, "iw7": 136},
+  "synthetic_only": true,
+  "native_layout_assertions_executed": false,
+  "runtime_verified": false
+}
