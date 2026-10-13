@@ -404,6 +404,7 @@ function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
        ($version -eq 1 -and !$diagnostic -and ($Plan.CandidateBytes -ne 21751296 -or $Plan.CandidateSHA256 -cne '31b9d908d15fb5f0bf17a7b27309dc7183458d5e586dfc6e427cc8ec2b3fa647')) -or
        @(Get-T7CatalogueBootstraps $Plan).Count -ne 23 -or
        $Plan.OutputKey -cne (Get-T7ResidentExportOutputKey $Plan) -or
+       @($Plan.Arguments).Count -ne $arguments.Count -or
        (@($Plan.Arguments) -join '|') -cne ($arguments -join '|') -or
        $Plan.ExportModelLimitBytes -ne 1MB -or $Plan.ExportMeshLimitBytes -ne 16MB -or
        $Plan.ReportLimitBytes -ne (Get-T7ResidentExportReportLimit $Plan)){
@@ -749,7 +750,7 @@ function Assert-T7SelectedStreamedClosure($Plan,$Receipt,$Build,$Pins) {
 }
 function Get-T7ResidentExportOutputKey($Plan) {
     if(!(Get-T7SelectedStreamedExport $Plan)){return (Get-T7ResidentExportKey $Plan.ExportRequest)}
-    $request=Read-H1SmallJson $Plan.ExportRequestFile.Path 4KB;Assert-T7SelectedStreamedRequest $request
+    $request=Read-T7SelectedStreamedRequestFile $Plan
     $rows=@('t7-iw7-selected-streamed-static-v1',$request.zone,$request.model,'0',$request.xpak_key,
         $request.packages[0].path,$request.packages[0].identity,[string]$request.packages[0].bytes)
     't7_iw7_streamed_'+[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::ASCII.GetBytes(($rows -join "`n")))).ToLowerInvariant()
@@ -771,7 +772,7 @@ function Assert-T7SelectedStreamedProvider($Plan) {
     if($Plan.ExportRequestFile.Bytes -ne 377 -or $Plan.ExportRequestFile.SHA256 -cne '2f79f63fdf6378ee420b0f63ef5e1d19dedcb55909a77f759ac071247839502c'){
         throw 'Exact independently validated request bytes required.'
     }
-    $request=Read-H1SmallJson $Plan.ExportRequestFile.Path 4KB;Assert-T7SelectedStreamedRequest $request
+    $request=Read-T7SelectedStreamedRequestFile $Plan
     foreach($metadata in @($m,$Plan.SelectedStreamedRequestMetadata)){
         Assert-T7CatalogueMetadata $metadata
         $rows=@($Plan.InputMetadata|Where-Object Path -CEQ $metadata.Path)
@@ -847,4 +848,11 @@ function Assert-T7SelectedStreamedPayload($Payload,$Plan,[int]$Surfaces) {
        $Payload.opcodes.Count -gt 30*$Payload.opaque_header_offsets.Count){throw 'Bounded observed packet commands required.'}
     foreach($v in $Payload.opaque_header_offsets){if(!(Test-T7CatalogueInteger $v ([uint32]::MaxValue))){throw 'Bounded opaque header offsets required.'}}
     foreach($v in $Payload.opcodes){if(!(Test-T7CatalogueInteger $v 3) -or $v -cnotin @(0,3)){throw 'Only observed raw/LZ4 opcodes admitted.'}}
+}
+function Read-T7SelectedStreamedRequestFile($Plan) {
+    Assert-T7CatalogueTextPin $Plan.ExportRequestFile $Plan.Bindings
+    if($Plan.ExportRequestFile.Bytes -gt 4KB){throw 'Bounded flat request required.'}
+    $guard=Open-H1Pin $Plan.ExportRequestFile
+    try{$request=Read-H1SmallJson $Plan.ExportRequestFile.Path 4KB;Assert-T7SelectedStreamedRequest $request;return $request}
+    finally{$guard.Dispose()}
 }
