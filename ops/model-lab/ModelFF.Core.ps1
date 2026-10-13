@@ -14,6 +14,7 @@ function Get-ModelFFRigidVersion($Metadata) {
     switch -CaseSensitive ($Metadata.geometry_profile) {
         't7-iw7-resident-static-v1' {return 1}
         't7-iw7-resident-static-v2' {return 2}
+        't7-iw7-selected-streamed-static-v1' {return 2}
         default {throw 'Unknown resident geometry profile.'}
     }
 }
