@@ -89,7 +89,8 @@ def packed_unit(word):
     return tuple(2 * ((word >> shift) & 1023) / 1023 - 1 for shift in (0, 10, 20)), word >> 30
 
 
-def read_surface(payload, inputs, hypothesis):
+def read_surface(payload, inputs, hypothesis, *, cpu_ff_loaded=False):
+    require(type(cpu_ff_loaded) is bool, "explicit CPU read scope flag")
     require(hypothesis in ("first", "second"), "explicit profile hypothesis")
     name = "paris_doom_skin_two_bone_" + hypothesis + "_a_lod0"
     reader = Reader(payload)
@@ -105,8 +106,12 @@ def read_surface(payload, inputs, hypothesis):
     for offset in (32, 40, 80):
         pointer(surface, offset, True)
     require(struct.unpack_from("<8I", surface, 224) == PARTS, "native proposed surface partBits")
-    # Every GPU pointer, rigid pointer and unsupported stream must remain null.
-    zero_except(surface, [(0, 28), (32, 16), (80, 8), (224, 32)])
+    # Authored input must have no GPU state. A separately selected CPU-only FF
+    # read preserves the observed opaque buffer slot without qualifying it.
+    allowed = [(0, 28), (32, 16), (80, 8), (224, 32)]
+    if cpu_ff_loaded:
+        allowed.append((88, 8))
+    zero_except(surface, allowed)
     vertices = reader.array(32, 8)
     positions = inputs["positions.f32.bin"]
     uv_source = inputs["uv.f32.bin"]
@@ -140,7 +145,8 @@ def read_surface(payload, inputs, hypothesis):
             "source_codec_words_verified": True, "iw7_shader_encoding_verified": False}, blend
 
 
-def read_model(payload, inputs, hypothesis):
+def read_model(payload, inputs, hypothesis, *, cpu_ff_loaded=False):
+    require(type(cpu_ff_loaded) is bool, "explicit CPU read scope flag")
     name = "paris_doom_skin_two_bone_" + hypothesis + "_a"
     reader = Reader(payload)
     model = reader.array(736, 1)
@@ -151,7 +157,11 @@ def read_model(payload, inputs, hypothesis):
         pointer(model, offset, True)
     require(struct.unpack_from("<fHH", model, 224) == (1000000., 1, 0) and struct.unpack_from("<8I", model, 240) == PARTS, "native LOD0 descriptor")
     require(model[704] == 255 and model[720] == 255, "native unused-index sentinels")
-    zero_except(model, [(0, 15), (20, 2), (26, 6), (40, 28), (152, 48), (216, 56), (616, 16), (704, 1), (720, 1)])
+    allowed = [(0, 15), (20, 2), (26, 6), (40, 28), (152, 48), (216, 56), (616, 16), (704, 1), (720, 1)]
+    if cpu_ff_loaded:
+        pointer(model, 272, True)
+        allowed.append((272, 8))
+    zero_except(model, allowed)
     reader.name(expected=name)
     reader.name(expected="tag_origin")
     reader.name(expected="tag_probe")

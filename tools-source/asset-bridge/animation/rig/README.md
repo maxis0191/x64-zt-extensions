@@ -1,10 +1,44 @@
 # Original two-bone rig and four-key clip binding
 
-This is a source-only recovery and CPU checkpoint. The original ribbon contains
+The original preparation below was a source-only recovery and CPU checkpoint.
+The later [attempt B](RIG-RUN-2026-10-12-B.md) built and dumped the FF but remains
+historically `FailedRestored`. The explicit CPU-only follow-up below has its own
+scope and does not change that result. The original ribbon contains
 8 vertices, 6 triangles, one surface, `tag_origin` and child `tag_probe`. Its
 channel order matches the passed `paris_original_probe_bend` clip. No compiler,
 native writer, FF builder, stock transaction or game ran for this rig tranche.
 The existing animation FF result remains separate.
+
+## CPU-only FF readback - 2026-10-13
+
+`read_rig_chain.py --cpu-only-ff-readback` selects a separate FF data scope.
+The authored native records still use the strict reader. In the redumps, it
+requires a present `XModel.lodInfo[0].surfs` numeric value equal to the paired
+`XModelSurfs.surfs`, and preserves `XSurface.blendVertsBuffer` as an opaque
+eight-byte value. It reports the value category and observed numeric equality
+to the outer name value without printing or dereferencing either. It does not
+validate buffer production, GPU objects, lifetimes or the retail field ABI.
+All other unsupported pointer/stream/padding rules remain enforced.
+
+The actual retained B pairs and native/final clip passed this new reader:
+22 small original-data inputs, 15,143 bytes, byte/hash unchanged before/after;
+output status `rig-chain-cpu-ff-data-pass`. All nine recorded native/redump
+assets matched the historical B hashes. Both numeric LOD links matched; both
+buffer-slot values were nonzero and equaled their captured outer-name values.
+That equality remains an observation of opaque numbers. Actual geometry, tags,
+bind matrices, blend bytes, channel mapping and decoded CPU poses matched
+between native and FF data. The largest analytical pose error was
+0.004260786588817347 units. This proves CPU data preservation for the original
+two-bone fixture, not visible skinning or a BO3 import.
+
+The full local report SHA256 is
+`ec2c6f0b0d6bb7d906b43dd7d549e4a2c98f340bfa5201082a1272ec2311b0d8`.
+The 23 chain tests and 16 strict native-reader tests pass. New cases cover
+mismatched/absent LOD links, unsupported fields, corrupted geometry/blends,
+truncation, preservation of the strict native stage and explicit FF selection.
+No native tool, compiler, stock staging or game was launched for this read.
+The next proof is the protected two-bone playback described in
+[RUNTIME-CONTRACT.md](RUNTIME-CONTRACT.md), after the real BO3 prop demonstration.
 
 ## Reused original sources
 

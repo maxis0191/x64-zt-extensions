@@ -28,12 +28,94 @@ def data():
     return files, meta(files), {"first": (a, b), "second": (c, d)}
 
 
+def loaded_pairs(pairs):
+    result = {}
+    for profile, (xmb, xsb) in pairs.items():
+        model, surface = bytearray(xmb), bytearray(xsb)
+        # Numeric links are fixture values, never addresses to dereference.
+        outer_name, outer_surfs = struct.unpack_from("<QQ", surface, 6)
+        struct.pack_into("<Q", model, 6 + 272, outer_surfs)
+        struct.pack_into("<Q", surface, surface_offsets(surface)[0] + 88, outer_name)
+        result[profile] = bytes(model), bytes(surface)
+    return result
+
+
 def inventory_log(rows=None):
     rows = expected_inventory() if rows is None else rows
     return 'Loading zone "' + ZONE + '"\n' + "\n".join('Loading asset "' + row.split(',', 1)[1] + '" of type ' + row.split(',', 1)[0] + '.' for row in rows)
 
 
 class RigChainDataTests(unittest.TestCase):
+    def test_cpu_ff_scope_reads_real_streams_and_retains_opaque_field_limits(self):
+        files, manifest, pairs = data()
+        redumps = loaded_pairs(pairs)
+        before = dict(redumps)
+        report = verify_chain(files, manifest, pairs, clip_bytes(), redumps, clip_bytes(4036),
+                              cpu_only_ff_readback=True)
+        self.assertEqual(report["status"], "rig-chain-cpu-ff-data-pass")
+        self.assertFalse(report["native"]["cpu_only_ff_readback"])
+        self.assertTrue(report["redump"]["complete_model_surface_read"])
+        for profile in ("first", "second"):
+            fields = report["redump"]["models"][profile]["opaque_runtime_fields"]
+            self.assertTrue(fields["lod_surface_numeric_link_matches"])
+            self.assertTrue(fields["buffer_slot_equals_outer_name_value"])
+            self.assertEqual(fields["buffer_slot_category"], "nonzero-8-byte-value")
+            self.assertFalse(fields["buffer_slot_dereferenced"])
+            self.assertFalse(fields["gpu_resource_verified"])
+            self.assertEqual(report["native"]["clip_rig_cpu"]["profiles"][profile],
+                             report["redump"]["clip_rig_cpu"]["profiles"][profile])
+        self.assertEqual(redumps, before)
+        self.assertFalse(report["gpu_resource_verified"])
+        self.assertFalse(report["runtime_field_semantics_verified"])
+        self.assertFalse(report["ff_execution_verified"])
+
+    def test_cpu_ff_scope_requires_present_matching_lod_surface_numeric_link(self):
+        files, manifest, pairs = data()
+        for value in (0, 0x2223):
+            bad = loaded_pairs(pairs)
+            model = bytearray(bad["first"][0])
+            struct.pack_into("<Q", model, 6 + 272, value)
+            bad["first"] = bytes(model), bad["first"][1]
+            with self.assertRaises(ValueError):
+                verify_chain(files, manifest, pairs, clip_bytes(), bad, clip_bytes(4036),
+                             cpu_only_ff_readback=True)
+
+    def test_cpu_ff_scope_keeps_other_gpu_rigid_and_unknown_fields_refused(self):
+        files, manifest, pairs = data()
+        for offset in (48, 72, 96, 104, 128, 136, 144, 200):
+            bad = loaded_pairs(pairs)
+            surface = bytearray(bad["first"][1])
+            struct.pack_into("<Q", surface, surface_offsets(surface)[0] + offset, 1234)
+            bad["first"] = bad["first"][0], bytes(surface)
+            with self.assertRaisesRegex(ValueError, "unexpected native field"):
+                verify_chain(files, manifest, pairs, clip_bytes(), bad, clip_bytes(4036),
+                             cpu_only_ff_readback=True)
+
+    def test_cpu_ff_scope_does_not_relax_authored_native_records(self):
+        files, manifest, pairs = data()
+        with self.assertRaisesRegex(ValueError, "native-data/first/xmodel"):
+            verify_chain(files, manifest, loaded_pairs(pairs), clip_bytes(), loaded_pairs(pairs),
+                         clip_bytes(4036), cpu_only_ff_readback=True)
+        for flag in (True, "true"):
+            with self.assertRaisesRegex(ValueError, "explicit CPU FF scope"):
+                verify_chain(files, manifest, pairs, clip_bytes(), cpu_only_ff_readback=flag)
+
+    def test_cpu_ff_scope_rejects_geometry_blend_and_truncated_stream_changes(self):
+        files, manifest, pairs = data()
+        original = loaded_pairs(pairs)
+        xmb, xsb = original["first"]
+        surface, vertices, triangles, blend = surface_offsets(xsb)
+        changed = []
+        for offset in (vertices, triangles, blend):
+            blob = bytearray(xsb)
+            blob[offset] ^= 1
+            changed.append((xmb, bytes(blob)))
+        changed += [(xmb[:-1], xsb), (xmb, xsb[:-1])]
+        for pair in changed:
+            with self.assertRaises(ValueError):
+                verify_chain(files, manifest, pairs, clip_bytes(), {**original, "first": pair},
+                             clip_bytes(4036), cpu_only_ff_readback=True)
+
     def test_complete_native_and_ff_read_plus_actual_stream_oracle(self):
         files, manifest, pairs = data()
         result = verify_chain(files, manifest, pairs, clip_bytes(), pairs, clip_bytes(4036))

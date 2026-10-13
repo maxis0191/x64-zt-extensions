@@ -58,14 +58,34 @@ def reader_refusal(error, payload, kind, hypothesis, stage):
     return ValueError(f"{stage}/{hypothesis}/{kind}: {str(error)[:160]}{detail}")
 
 
-def read_asset(reader, payload, files, hypothesis, kind, stage):
+def read_asset(reader, payload, files, hypothesis, kind, stage, *, cpu_ff_loaded=False):
     try:
-        return reader(payload, files, hypothesis)
+        return reader(payload, files, hypothesis, cpu_ff_loaded=cpu_ff_loaded)
     except ValueError as error:
         raise reader_refusal(error, payload, kind, hypothesis, stage) from None
 
 
-def read_stage(files, manifest, pairs, xab, *, ff_roundtrip=False):
+def cpu_ff_links(xmb, xsb, hypothesis):
+    """Compare captured numeric links without dereferencing or printing them."""
+    model = Reader(xmb).array(736, 1)
+    reader = Reader(xsb)
+    outer = reader.array(56, 1)
+    reader.name(expected=MODELS[hypothesis] + "_lod0")
+    surface = reader.array(256, 1)
+    lod_surfs = struct.unpack_from("<Q", model, 272)[0]
+    surfs = struct.unpack_from("<Q", outer, 8)[0]
+    require(lod_surfs != 0 and lod_surfs == surfs, "loaded LOD surface link mismatch")
+    value = struct.unpack_from("<Q", surface, 88)[0]
+    name_value = struct.unpack_from("<Q", outer, 0)[0]
+    return {"lod_surface_numeric_link_matches": True,
+            "buffer_slot_category": "nonzero-8-byte-value" if value else "zero",
+            "buffer_slot_equals_outer_name_value": bool(value and value == name_value),
+            "buffer_slot_dereferenced": False, "gpu_resource_verified": False,
+            "runtime_slot_production_verified": False}
+
+
+def read_stage(files, manifest, pairs, xab, *, ff_roundtrip=False, cpu_only_ff_readback=False):
+    require(not cpu_only_ff_readback or ff_roundtrip, "CPU FF scope requires FF redumps")
     verify_payloads(files, manifest)
     require(set(pairs) == set(PROFILES), "both distinct two-bone model profiles required")
     extracted = dict(files)
@@ -76,8 +96,10 @@ def read_stage(files, manifest, pairs, xab, *, ff_roundtrip=False):
         xmb, xsb = pairs[hypothesis]
         require(isinstance(xmb, bytes) and isinstance(xsb, bytes) and
                 0 < len(xmb) <= 65536 and 0 < len(xsb) <= 65536, "64 KiB per model/surface limit")
-        model, bind = read_asset(read_model, xmb, files, hypothesis, "xmodel", stage)
-        surface, blend = read_asset(read_surface, xsb, files, hypothesis, "xsurface", stage)
+        model, bind = read_asset(read_model, xmb, files, hypothesis, "xmodel", stage,
+                                cpu_ff_loaded=cpu_only_ff_readback)
+        surface, blend = read_asset(read_surface, xsb, files, hypothesis, "xsurface", stage,
+                                   cpu_ff_loaded=cpu_only_ff_readback)
         require(shared_bind is None or bind == shared_bind, "profile skeleton/bind disagreement")
         shared_bind = bind
         extracted[hypothesis + ".blend.u16.bin"] = blend
@@ -88,6 +110,8 @@ def read_stage(files, manifest, pairs, xab, *, ff_roundtrip=False):
             "xsb_sha256": hashlib.sha256(xsb).hexdigest(),
             "actual_blend_sha256": hashlib.sha256(blend).hexdigest(),
         }
+        if cpu_only_ff_readback:
+            models[hypothesis]["opaque_runtime_fields"] = cpu_ff_links(xmb, xsb, hypothesis)
     # Bind and blend inputs here come from the completely read XMB/XSB, not just
     # the original source bundle. The strict readers also check actual geometry.
     for key, payload in zip(("parents.u8.bin", "tag-angles.i16.bin",
@@ -96,16 +120,22 @@ def read_stage(files, manifest, pairs, xab, *, ff_roundtrip=False):
     cpu = verify_clip(extracted, manifest, xab, ff_roundtrip=ff_roundtrip)
     return {"stage": stage, "models": models,
             "clip_rig_cpu": cpu, "complete_model_surface_read": True,
+            "cpu_only_ff_readback": cpu_only_ff_readback,
+            "gpu_resource_verified": False, "runtime_field_semantics_verified": False,
             "writer_provenance_verified": False, "ff_provenance_verified": False,
             "material_resolution_verified": False, "runtime_verified": False, "ready": False}
 
 
-def verify_chain(files, manifest, native_pairs, native_xab, redump_pairs=None, redump_xab=None):
+def verify_chain(files, manifest, native_pairs, native_xab, redump_pairs=None, redump_xab=None,
+                 *, cpu_only_ff_readback=False):
     require((redump_pairs is None) == (redump_xab is None), "FF model and clip redumps must be supplied together")
+    require(type(cpu_only_ff_readback) is bool and (not cpu_only_ff_readback or redump_pairs is not None),
+            "explicit CPU FF scope requires FF redumps")
     native = read_stage(files, manifest, native_pairs, native_xab)
     redump = None
     if redump_pairs is not None:
-        redump = read_stage(files, manifest, redump_pairs, redump_xab, ff_roundtrip=True)
+        redump = read_stage(files, manifest, redump_pairs, redump_xab, ff_roundtrip=True,
+                            cpu_only_ff_readback=cpu_only_ff_readback)
         a, b = native["clip_rig_cpu"], redump["clip_rig_cpu"]
         # Whole-file pointer/script-string IDs may change, but exact reader
         # profiles, decoded keys, actual binds, blends and CPU positions cannot.
@@ -114,7 +144,10 @@ def verify_chain(files, manifest, native_pairs, native_xab, redump_pairs=None, r
         for key in ("name", "normalized_time"):
             require(a["notetrack_data"][key] == b["notetrack_data"][key], "native-to-FF note mismatch")
     return {"schema": "iw7.original-rig-chain-data/1",
-            "status": "rig-chain-data-pass" if redump else "rig-native-data-pass",
+            "status": ("rig-chain-cpu-ff-data-pass" if cpu_only_ff_readback else
+                       "rig-chain-data-pass" if redump else "rig-native-data-pass"),
+            "cpu_only_ff_readback": cpu_only_ff_readback,
+            "gpu_resource_verified": False, "runtime_field_semantics_verified": False,
             "native": native, "redump": redump,
             "native_execution_verified": False, "ff_execution_verified": False,
             "stock_restoration_verified": False, "material_resolution_verified": False,
@@ -134,13 +167,16 @@ def main():
     parser.add_argument("--native-xab", type=Path, required=True)
     parser.add_argument("--redump-root", type=Path)
     parser.add_argument("--redump-xab", type=Path)
+    parser.add_argument("--cpu-only-ff-readback", action="store_true",
+                        help="compare CPU rig data and numeric LOD links; leave runtime buffer semantics unverified")
     args = parser.parse_args()
     try:
         require((args.redump_root is None) == (args.redump_xab is None), "paired FF paths required")
         files, meta = load_inputs(args.inputs)
         report = verify_chain(files, meta, load_pairs(args.native_root, split_profiles=True), read_bounded(args.native_xab, 65536),
                               load_pairs(args.redump_root) if args.redump_root else None,
-                              read_bounded(args.redump_xab, 65536) if args.redump_xab else None)
+                              read_bounded(args.redump_xab, 65536) if args.redump_xab else None,
+                              cpu_only_ff_readback=args.cpu_only_ff_readback)
         print(json.dumps(report, indent=2, allow_nan=False))
         return 0
     except (ValueError, OSError, KeyError, TypeError, struct.error) as error:
