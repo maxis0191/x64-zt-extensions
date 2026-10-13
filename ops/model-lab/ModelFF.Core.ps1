@@ -18,7 +18,27 @@ function Get-ModelFFRigidVersion($Metadata) {
     }
 }
 function Get-ModelFFMaterials($Metadata) {
+    if($Metadata.geometry_profile -ceq 'iw7-original-arena-rigid-v1'){return $Metadata.material_reference}
     if((Get-ModelFFRigidVersion $Metadata) -eq 2){$Metadata.material_references}else{$Metadata.material_reference}
+}
+function Assert-ModelFFOriginalArenaGeometry($Metadata) {
+    if($Metadata.geometry_profile -cne 'iw7-original-arena-rigid-v1' -or $Metadata.origin -cne 'authored-arena' -or
+        $Metadata.model_name -cne 'paris_original_arena' -or $Metadata.mesh_name -cne 'paris_original_arena_lod0' -or
+        $Metadata.material_reference -cne 'mopw/character_park_clown_zombie_shoes'){throw 'Explicit original arena identity/material required.'}
+    $counts=$Metadata.selected_counts
+    if((@($counts.PSObject.Properties.Name | Sort-Object) -join ',') -cne 'bones,roots,surfaces,triangles,vertices'){throw 'Exact original arena count fields required.'}
+    foreach($entry in @(@('bones',1,1),@('roots',1,1),@('surfaces',1,1),@('vertices',24,192),@('triangles',12,96))){
+        $value=$counts.($entry[0])
+        if(($value -isnot [int] -and $value -isnot [long]) -or $value -lt $entry[1] -or $value -gt $entry[2]){throw 'Original arena count outside small rigid profile.'}
+    }
+    if($counts.vertices % 24 -ne 0 -or $counts.triangles*2 -ne $counts.vertices){throw 'Original box topology counts differ.'}
+}
+function Assert-ModelFFOriginalArenaPlan($Plan) {
+    Assert-ModelFFOriginalArenaGeometry $Plan
+    Assert-ModelFFDistanceCandidate $Plan
+    if($Plan.schema -cne 'iw7.model-ff-plan/1' -or $Plan.zone -cne 'paris_model_probe' -or $Plan.recipient -cne 'cp_zmb' -or
+        $Plan.material_payload_copied -isnot [bool] -or $Plan.material_payload_copied -or
+        $Plan.physics_serialized -isnot [bool] -or $Plan.physics_serialized){throw 'Original arena recipient/reference-only profile required.'}
 }
 function Assert-ModelFFRigidGeometry($Metadata) {
     $version=Get-ModelFFRigidVersion $Metadata
@@ -67,7 +87,8 @@ function Assert-ModelFFRigidPlan($Plan) {
 }
 function Get-ModelFFSourceNames($Plan) {
     if('geometry_profile' -cin $Plan.PSObject.Properties.Name){
-        Assert-ModelFFRigidPlan $Plan
+        if($Plan.geometry_profile -ceq 'iw7-original-arena-rigid-v1'){Assert-ModelFFOriginalArenaPlan $Plan}
+        else{Assert-ModelFFRigidPlan $Plan}
         "xmodel/$($Plan.model_name).xmb";"xsurface/$($Plan.mesh_name).xsb"
     }else{'xmodel/paris_model_probe.xmb';'xsurface/paris_model_probe_lod0.xsb'}
     'zone_source/paris_model_probe.csv';'zone_source/paris_model_probe_recipient.csv';'netconststrings/ncs_mdl_paris_model_probe.json'

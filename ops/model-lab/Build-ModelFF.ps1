@@ -24,15 +24,23 @@ $planPath=Resolve-IW7BasePath $source 'model-ff-plan.json'
 if((Get-Item -LiteralPath $planPath).Length -gt 1MB){throw 'Bounded model FF preparation required.'}
 $plan=Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
 $sourceNames=@(Get-ModelFFSourceNames $plan)
-$rigid='geometry_profile' -cin $plan.PSObject.Properties.Name
+$profile='geometry_profile' -cin $plan.PSObject.Properties.Name
+$arena=$profile -and $plan.geometry_profile -ceq 'iw7-original-arena-rigid-v1'
+$rigid=$profile -and !$arena
 if((!$rigid -or $plan.geometry_profile -cne 't7-iw7-resident-static-v2') -and (Get-Item -LiteralPath $planPath).Length -gt 64KB){throw 'Legacy model FF preparation exceeds bound.'}
-$modelName=if($rigid){$plan.model_name}else{'paris_model_probe'}
-$meshName=if($rigid){$plan.mesh_name}else{'paris_model_probe_lod0'}
+$modelName=if($rigid -or $arena){$plan.model_name}else{'paris_model_probe'}
+$meshName=if($rigid -or $arena){$plan.mesh_name}else{'paris_model_probe_lod0'}
 $artifactNames=@($sourceNames[0],$sourceNames[1])
 $planVersion=if($rigid){Get-ModelFFRigidVersion $plan}else{1}
 if($plan.schema -cne "iw7.model-ff-plan/$planVersion" -or $plan.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or $plan.ff_built -or $plan.ready -or
     @($plan.source_files.PSObject.Properties).Count -ne 5 -or @($sourceNames | Where-Object {$_ -cnotin $plan.source_files.PSObject.Properties.Name}).Count){throw 'Pinned five-input original FF preparation required.'}
-if($rigid){
+if($arena){
+    if($ReaderRun){throw 'Original arena uses its independent arena reader, not the cube native reader.'}
+    $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+    $arenaReader=Join-Path $repo 'tools-source/asset-bridge/world/original-arena/model_lab.py'
+    $validation=& $Python -B -S $arenaReader verify-stage --source $source
+    if($LASTEXITCODE -ne 0){throw 'Original arena source/byte validation failed.'}
+}elseif($rigid){
     if($ReaderRun){throw 'Cube native reader is not the resident rigid reader.'}
     $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
     $validation=& $Python -B -S "$PSScriptRoot/rigid_export.py" verify-stage --source $source
@@ -77,7 +85,7 @@ if($ReaderRun){$readerRoot=Assert-IW7LabPath ((Resolve-Path -LiteralPath $Reader
 if($DryRun){[ordered]@{Schema='iw7.model-ff-admission/1';RunRoot=$RunRoot;Inputs=$inputs.Relative;OriginalInputs=$sourceNames;PhysicalBytes=8GB;CommitBytes=11GB;PAKs=@('zone/assetfile1.pak');CPPreload=$false;MaterialRuntimeBound=$false;Reader=$reader;Ready=$false}|ConvertTo-Json -Depth 8;return}
 $lease=Enter-IW7ResourceLease -Scope $work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Original model FF bootstrap/inventory/roundtrip'
 $state=[ordered]@{Schema='iw7.model-ff-build/1';Work=$work;Inputs=$inputs;RetainedLeaseToken=$lease.Token;Restored=$false;StockPreserved=$false;RestorationStatus='Pending';CleanupError=$null;Status='Preparing';SourcePlan=$plan;ToolSHA256=$provenance.BinarySHA256;InventoryVerified=$false;GeometryRoundtripVerified=$false;RecipientReferenceResolved=$false;SymbolsVerified=$false;Ready=$false}
-if($rigid){$state.SourcePlanSHA256=(Get-FileHash -LiteralPath (Join-Path $source 'model-ff-plan.json')).Hash}
+if($rigid -or $arena){$state.SourcePlanSHA256=(Get-FileHash -LiteralPath (Join-Path $source 'model-ff-plan.json')).Hash}
 $cleanup=[pscustomobject]@{Confirmed=$true};$transactionSaved=$false
 try{
     [IO.Directory]::CreateDirectory($work)|Out-Null
@@ -98,20 +106,22 @@ try{
     $state.FF=[ordered]@{Path='mod.ff';Bytes=(Get-Item -LiteralPath $ff).Length;SHA256=(Get-FileHash -LiteralPath $ff).Hash};$state.Status='CompiledRetained';Write-ModelFFState $state $statePath
     $state.Offline=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols (Split-Path $ToolProvenance -Parent) -Phase hud-offline -ToolArguments @('-headless','-unbuffered-io','-verifyzone','paris_model_probe')
     if($state.Offline.ExitCode){$state.Status='OfflineUnresolved';throw 'Bootstrap reference/inventory load failed; retained FF is not recipient-linked.'}
-    $materials=if($rigid){@(Get-ModelFFMaterials $plan)}else{@('mopw/character_park_clown_zombie_shoes')}
+    $materials=if($rigid -or $arena){@(Get-ModelFFMaterials $plan)}else{@('mopw/character_park_clown_zombie_shoes')}
     $rows=@(Get-ModelFFInventory ([IO.File]::ReadAllText($state.Offline.Stdout)) $modelName $meshName $materials);[IO.File]::WriteAllLines((Join-Path $RunRoot 'assets.csv'),[string[]]$rows)
     $state.InventoryVerified=$true;$state.Status='BootstrapInventoryVerified';Write-ModelFFState $state $statePath
     $state.Dump=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols (Split-Path $ToolProvenance -Parent) -Phase hud-roundtrip -ToolArguments @('-headless','-unbuffered-io','-dumpzone','paris_model_probe')
     if($state.Dump.ExitCode){throw 'Bootstrap model re-dump failed.'}
     $dump=Join-Path $work 'dump/paris_model_probe'
     foreach($name in $artifactNames){$p=Resolve-IW7BasePath $dump $name;$target=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $target))|Out-Null;Copy-Item -LiteralPath $p -Destination $target}
-    if($rigid){
-        $state.GeometryReader=Invoke-IW7LabAssetProcess -Executable $Python -ToolArguments @('-B','-S',"$PSScriptRoot/rigid_export.py",'verify-dump','--source',$source,'--dump',(Join-Path $RunRoot 'roundtrip'),'--ff',(Join-Path $RunRoot 'mod.ff')) -WorkingDirectory $repo -LogDirectory $RunRoot -Phase model-rigid-geometry -LeaseToken $lease.Token -CleanupState $cleanup -TimeoutSeconds 30
-        $version=Get-ModelFFRigidVersion $plan;$metadataLimit=if($version -eq 2){1MB}else{64KB}
+    if($rigid -or $arena){
+        $geometryReader=if($arena){$arenaReader}else{"$PSScriptRoot/rigid_export.py"}
+        $state.GeometryReader=Invoke-IW7LabAssetProcess -Executable $Python -ToolArguments @('-B','-S',$geometryReader,'verify-dump','--source',$source,'--dump',(Join-Path $RunRoot 'roundtrip'),'--ff',(Join-Path $RunRoot 'mod.ff')) -WorkingDirectory $repo -LogDirectory $RunRoot -Phase model-rigid-geometry -LeaseToken $lease.Token -CleanupState $cleanup -TimeoutSeconds 30
+        $version=if($arena){1}else{Get-ModelFFRigidVersion $plan};$metadataLimit=if($version -eq 2){1MB}else{64KB}
         if($state.GeometryReader.ExitCode -ne 0 -or (Get-Item -LiteralPath $state.GeometryReader.Stdout).Length -gt $metadataLimit){throw 'Resident rigid FF readback failed.'}
         $verified=[IO.File]::ReadAllText($state.GeometryReader.Stdout)|ConvertFrom-Json
-        Assert-ModelFFRigidGeometry $verified
-        if($verified.schema -cne "iw7.model-rigid-roundtrip/$version" -or $verified.geometry_profile -cne $plan.geometry_profile -or
+        if($arena){Assert-ModelFFOriginalArenaGeometry $verified}else{Assert-ModelFFRigidGeometry $verified}
+        $schema=if($arena){'iw7.model-original-arena-roundtrip/1'}else{"iw7.model-rigid-roundtrip/$version"}
+        if($verified.schema -cne $schema -or $verified.geometry_profile -cne $plan.geometry_profile -or
             $verified.geometry_roundtrip_verified -ne $true -or $verified.ready -ne $false -or
             $verified.ff.sha256 -ine $state.FF.SHA256 -or $verified.source_plan_sha256 -ine $state.SourcePlanSHA256){throw 'Resident readback receipt binding failed.'}
         Copy-Item -LiteralPath $state.GeometryReader.Stdout -Destination (Join-Path $RunRoot 'geometry-roundtrip.json')
