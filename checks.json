@@ -80,6 +80,14 @@
       ]
     },
     {
+      "id": "world-original-arena",
+      "command": [
+        "python", "-B", "-m", "unittest", "discover",
+        "-s", "tools-source/asset-bridge/world/original-arena",
+        "-p", "test_arena.py", "-v"
+      ]
+    },
+    {
       "id": "tools-source-asset-bridge-world",
       "command": [
         "python",
