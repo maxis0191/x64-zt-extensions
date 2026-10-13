@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path, PureWindowsPath
 import unittest
+from unittest.mock import patch
 import prepare_build as p
 
 
@@ -175,6 +176,140 @@ class ReuseTests(unittest.TestCase):
                              'duplicate':fresh+fresh,'missing':''}[mode]
                 payloads['link.rsp']=payloads['link.rsp'].decode().replace(fresh,replacement).encode()
                 with self.assertRaises(ValueError): self.publication_reuse(fixture)
+
+    def surface_count_fixture(self):
+        prior_raw,r,payloads,run=self.publication_fixture()
+        prior=json.loads(prior_raw)
+        name=p.prepare_catalog_trace.SURFACE_COUNT_HEADER
+        payloads[name]=(p.HERE.parent/'t7-bridge'/Path(name).name).read_text(encoding='utf-8').encode()
+        pin=next(row for row in prior['Bindings'] if row['Path'].endswith('t7_iw7_resident_model.hpp'))
+        pin.update(Bytes=p.prepare_catalog_trace.SURFACE_COUNT_OLD_PIN[0],
+                   SHA256=p.prepare_catalog_trace.SURFACE_COUNT_OLD_PIN[1])
+        prior_raw=json.dumps(prior).encode();r['PlanSHA256']=hashlib.sha256(prior_raw).hexdigest()
+        fixture={'base':(prior_raw,r,payloads,run),'dependencies':{}}
+        for stage,source in (('helper','test_t7_asset_name.cpp'),('zonetool11','zonetool.cpp'),('xpak','common/xpak.cpp')):
+            doc={'Version':'1.2','Data':{'Source':str(PureWindowsPath(prior['PreparedRoot'])/source),
+                 'ProvidedModule':'','Includes':[r'C:\sdk\vector'],'ImportedModules':[],'ImportedHeaderUnits':[]}}
+            if stage=='zonetool11': doc['Data']['Includes'].append(r'C:\old\prepared\t7_iw7_resident_model.hpp')
+            self.set_dependency(fixture,stage,doc)
+        fixture['journals']={
+            'read':(''.join(f'^C:\\src\\tu{i}.cpp\nC:\\sdk\\vector\n' for i in range(413))).encode('utf-16'),
+            'compile':(''.join(f'^C:\\src\\tu{i}.cpp\n/Fo"C:\\e7\\obj\\" /c C:\\src\\tu{i}.cpp\n'
+                               for i in range(413))).encode('utf-16'),
+            'link':('^C:\\e7\\bin\\tool.exe\n/INCREMENTAL:NO\n'+
+                    ''.join(f'"C:\\e7\\obj\\tu{i}.OBJ"\n' for i in range(413))).encode('utf-16')}
+        self.pin_fixture_journals(fixture)
+        return fixture
+
+    def pin_fixture_journals(self,fixture):
+        fixture['journal_pins']={name:(len(raw),hashlib.sha256(raw).hexdigest())
+                                 for name,raw in fixture['journals'].items()}
+
+    def set_dependency(self,fixture,stage,doc):
+        raw=json.dumps(doc).encode();fixture['dependencies'][stage]=raw
+        row=next(s for s in fixture['base'][1]['Stages'] if s['Name']==stage)
+        pin=next(p for p in row['Artifacts'] if p['Path'].endswith('dependencies.json'))
+        pin.update(Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest())
+
+    def surface_count_reuse(self,fixture,**overrides):
+        prior,r,payloads,run=fixture['base']
+        flags=dict(recompile_main=True,catalog_trace=True,recompile_zonetool=True,
+                   surface_count_dependencies=fixture['dependencies'],e7_dependency_text=fixture['journals'])
+        flags.update(overrides)
+        with patch.object(p,'E7_READ_PIN',fixture['journal_pins']['read']), \
+             patch.object(p,'CL_LOG_SHA',fixture['journal_pins']['compile'][1]), \
+             patch.object(p,'LINK_LOG_SHA',fixture['journal_pins']['link'][1]):
+            return p.reuse_compilation(prior,json.dumps(r).encode(),payloads,run,**flags)
+
+    def test_surface_count_keeps_two_fresh_objects_and_explicit_dependency_proof(self):
+        fixture=self.surface_count_fixture();reuse,pins,text=self.surface_count_reuse(fixture)
+        proof=reuse['ResidentSurfaceCountDiagnostic']
+        self.assertEqual(proof['E7TranslationUnits'],413)
+        self.assertEqual(proof['E7Objects'],413)
+        self.assertEqual(len(proof['DependencyJSON']),3)
+        self.assertEqual(proof['PreviousSHA256'],p.prepare_catalog_trace.SURFACE_COUNT_OLD_PIN[1])
+        self.assertEqual(proof['SHA256'],p.prepare_catalog_trace.SURFACE_COUNT_NEW_PIN[1])
+        self.assertEqual((len(pins),len(text),reuse['StageRoots']),(7,7,[r'C:\old\xpak']))
+        response=fixture['base'][2]['link.rsp'].decode()
+        for stage in ('main','zonetool11'):
+            self.assertEqual(response.count(f'C:\\fresh\\{stage}\\{stage}.obj'),1)
+        self.assertEqual(response.count('C:\\old'),1)
+
+    def test_surface_count_refuses_other_header_or_hash_and_missing_opt_in(self):
+        for mode in ('other_header','new_hash','old_hash','missing_transition','no_evidence'):
+            with self.subTest(mode=mode):
+                fixture=self.surface_count_fixture();prior,r,payloads,run=fixture['base']
+                if mode=='other_header': payloads['prepared/common/xpak.hpp']=b'changed'
+                elif mode=='new_hash': payloads[p.prepare_catalog_trace.SURFACE_COUNT_HEADER]+=b' '
+                elif mode=='old_hash':
+                    doc=json.loads(prior)
+                    next(row for row in doc['Bindings'] if row['Path'].endswith('t7_iw7_resident_model.hpp'))['SHA256']='f'*64
+                    raw=json.dumps(doc).encode();r['PlanSHA256']=hashlib.sha256(raw).hexdigest()
+                    fixture['base']=(raw,r,payloads,run)
+                elif mode=='missing_transition': del payloads[p.prepare_catalog_trace.SURFACE_COUNT_HEADER]
+                with self.assertRaises(ValueError):
+                    if mode=='no_evidence': self.publication_reuse(fixture['base'])
+                    else: self.surface_count_reuse(fixture)
+
+    def test_surface_count_refuses_a_retained_helper_or_xpak_consumer_even_at_other_path(self):
+        for stage in ('helper','xpak'):
+            fixture=self.surface_count_fixture();doc=json.loads(fixture['dependencies'][stage])
+            doc['Data']['Includes'].append(r'C:\other\T7_IW7_RESIDENT_MODEL.HPP')
+            self.set_dependency(fixture,stage,doc)
+            with self.assertRaisesRegex(ValueError,'only the recompiled CLI'): self.surface_count_reuse(fixture)
+
+    def test_surface_count_refuses_missing_changed_or_wrong_source_dependency_evidence(self):
+        for mode in ('missing','changed','document','source','module','header_unit','cli_missing_header','cli_wrong_header','relative'):
+            with self.subTest(mode=mode):
+                fixture=self.surface_count_fixture()
+                if mode=='missing': del fixture['dependencies']['xpak']
+                elif mode=='changed': fixture['dependencies']['helper']+=b' '
+                elif mode=='document': self.set_dependency(fixture,'zonetool11',[])
+                else:
+                    doc=json.loads(fixture['dependencies']['zonetool11'])
+                    if mode=='source': doc['Data']['Source']=r'C:\other\zonetool.cpp'
+                    elif mode=='module': doc['Data']['ImportedModules']=['unknown module']
+                    elif mode=='header_unit': doc['Data']['ImportedHeaderUnits']=['unknown header unit']
+                    elif mode=='cli_missing_header': doc['Data']['Includes'].pop()
+                    elif mode=='cli_wrong_header': doc['Data']['Includes'][-1]=r'C:\other\t7_iw7_resident_model.hpp'
+                    elif mode=='relative': doc['Data']['Includes'][0]='relative.hpp'
+                    self.set_dependency(fixture,'zonetool11',doc)
+                with self.assertRaises(ValueError): self.surface_count_reuse(fixture)
+
+    def test_surface_count_refuses_unsealed_incomplete_or_consuming_e7_journal(self):
+        for mode in ('hash','missing_record','consumer'):
+            with self.subTest(mode=mode):
+                fixture=self.surface_count_fixture()
+                if mode=='hash': fixture['journals']['read']+=b' '
+                else:
+                    text=fixture['journals']['read'].decode('utf-16')
+                    if mode=='missing_record': text=text.replace('^C:\\src\\tu0.cpp\nC:\\sdk\\vector\n','')
+                    else: text=text.replace('C:\\sdk\\vector',r'C:\old\t7_iw7_resident_model.hpp',1)
+                    fixture['journals']['read']=text.encode('utf-16')
+                    self.pin_fixture_journals(fixture)
+                with self.assertRaises(ValueError): self.surface_count_reuse(fixture)
+
+    def test_surface_count_refuses_missing_ambiguous_or_unmatched_object_provenance(self):
+        for mode in ('missing_tu','extra_tu','duplicate_output','missing_fo','unknown_object','duplicate_link','command_hash'):
+            with self.subTest(mode=mode):
+                fixture=self.surface_count_fixture();journals=fixture['journals']
+                compile_text=journals['compile'].decode('utf-16');link_text=journals['link'].decode('utf-16')
+                if mode=='missing_tu': compile_text='\n'.join(compile_text.splitlines()[2:])+'\n'
+                elif mode=='extra_tu': compile_text+='^C:\\src\\extra.cpp\n/Fo"C:\\e7\\obj\\extra.obj" /c extra.cpp\n'
+                elif mode=='duplicate_output':
+                    compile_text=compile_text.replace('/Fo"C:\\e7\\obj\\"','/Fo"C:\\e7\\obj\\same.obj"',2)
+                elif mode=='missing_fo': compile_text=compile_text.replace('/Fo"C:\\e7\\obj\\"','',1)
+                elif mode=='unknown_object': link_text=link_text.replace('tu0.OBJ','unknown.OBJ')
+                elif mode=='duplicate_link': link_text=link_text.replace('tu0.OBJ','tu1.OBJ')
+                journals['compile']=compile_text.encode('utf-16');journals['link']=link_text.encode('utf-16')
+                self.pin_fixture_journals(fixture)
+                if mode=='command_hash': journals['compile']+=b' '
+                with self.assertRaises(ValueError): self.surface_count_reuse(fixture)
+
+    def test_surface_count_refuses_incomplete_pair_or_reused_cli(self):
+        for flags in ({'recompile_zonetool':False}, {'e7_dependency_text':None},
+                      {'surface_count_dependencies':None}, {'recompile_main':False}):
+            with self.assertRaises(ValueError): self.surface_count_reuse(self.surface_count_fixture(),**flags)
 
 
 @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE') and os.environ.get('IW7_T7_E7_BUILD'),

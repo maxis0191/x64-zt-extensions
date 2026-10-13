@@ -13,6 +13,7 @@ import prepare_message_publication
 HERE = Path(__file__).resolve().parent
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
 LINK_LOG_SHA = '70455d2f32a9b034dda20fbaf48443ee68a02e552381edbf88b19d219f1f66b2'
+E7_READ_PIN = (15206288, 'd9cdd533796a9fe14e0d5140d8adcbf5cbc932fafd4c06e18a615d15199a2185')
 SEED_SHA = 'f52867e7c26d05466ba57d72eef601d42376c1109dfcf61f219a1a028229f388'
 CL_SHA = 'fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619'
 JOB_SHA = '5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8'
@@ -116,8 +117,85 @@ def read_records(text):
     return records
 
 
+def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals):
+    """Check compiler text evidence, not retained object or library contents."""
+    require(type(dependency_json) is dict and set(dependency_json) == {'helper','zonetool11','xpak'},
+            'Exact helper/CLI/xpak dependency JSON set required')
+    prepared = PureWindowsPath(prior['PreparedRoot']); old_root = PureWindowsPath(prior['RunRoot'])
+    header = prepared/prepare_catalog_trace.SURFACE_COUNT_HEADER.removeprefix('prepared/')
+    header_name = header.name.casefold()
+    pins = []
+    for stage, source in (('helper','test_t7_asset_name.cpp'), ('zonetool11','zonetool.cpp'), ('xpak','common/xpak.cpp')):
+        rows = [s for s in receipt['Stages'] if s['Name'] == stage]
+        require(len(rows) == 1, 'Unique dependency stage required')
+        matches = [p for p in rows[0]['Artifacts'] if key(p['Path']) == key(old_root/stage/'dependencies.json')]
+        require(len(matches) == 1, 'Receipt-bound dependency JSON required')
+        pin = matches[0]; raw = dependency_json[stage]
+        require(isinstance(raw, bytes) and 0 < len(raw) <= 128*1024 and
+                (len(raw), hashlib.sha256(raw).hexdigest()) == (pin['Bytes'], pin['SHA256']),
+                'Dependency JSON pin differs')
+        doc = json.loads(raw)
+        require(type(doc) is dict and set(doc) == {'Version','Data'}, 'Unambiguous compiler dependency document required')
+        data = doc['Data']
+        require(doc.get('Version') == '1.2' and type(data) is dict and
+                set(data) == {'Source','ProvidedModule','Includes','ImportedModules','ImportedHeaderUnits'} and
+                type(data['Source']) is str and key(data['Source']) == key(prepared/source) and
+                data['ProvidedModule'] == '' and data['ImportedModules'] == [] and data['ImportedHeaderUnits'] == [],
+                'Complete non-module dependency record for the exact source required')
+        includes = data['Includes']
+        require(type(includes) is list and 0 < len(includes) <= 4096 and
+                all(type(p) is str and PureWindowsPath(p).is_absolute() and
+                    not any(c in p for c in '\r\n\0') and '..' not in PureWindowsPath(p).parts for p in includes),
+                'Bounded absolute include list required')
+        consumers = [key(p) for p in includes if PureWindowsPath(p).name.casefold() == header_name]
+        require(consumers == ([key(header)] if stage == 'zonetool11' else []),
+                'Diagnostic header consumer must be only the recompiled CLI')
+        pins.append(pin)
+    require(type(e7_journals) is dict and set(e7_journals) == {'read','compile','link'},
+            'Complete sealed E7 read/compile/link journal set required')
+    e7_read_raw = e7_journals['read']
+    require(isinstance(e7_read_raw, bytes) and
+            (len(e7_read_raw), hashlib.sha256(e7_read_raw).hexdigest()) == E7_READ_PIN,
+            'Exact sealed E7 dependency journal required')
+    for name, limit, digest in (('compile',4*1024**2,CL_LOG_SHA), ('link',256*1024,LINK_LOG_SHA)):
+        raw = e7_journals[name]
+        require(isinstance(raw, bytes) and 0 < len(raw) <= limit and hashlib.sha256(raw).hexdigest() == digest,
+                'Exact sealed E7 command journal required')
+    records = read_records(e7_read_raw.decode('utf-16'))
+    require(len(records) == 413 and all(records.values()), 'Complete E7 dependency journal required')
+    commands = read_records(e7_journals['compile'].decode('utf-16'))
+    require(set(commands) == set(records), 'Every E7 compilation must have one dependency record')
+    objects = {}
+    for source, rows in commands.items():
+        require(PureWindowsPath(source).is_absolute() and len(rows) == 1, 'Unique absolute E7 translation unit required')
+        outputs = re.findall(r'/Fo"([^"\r\n]+)"', rows[0])
+        require(len(outputs) == 1 and PureWindowsPath(outputs[0]).is_absolute(), 'One absolute compiler object output required')
+        output = PureWindowsPath(outputs[0])
+        if output.suffix.casefold() != '.obj':
+            require(outputs[0].endswith(('\\','/')), 'Explicit compiler output directory required')
+            output /= PureWindowsPath(source).with_suffix('.obj').name
+        require(key(output) not in objects, 'Ambiguous E7 object producer refused')
+        objects[key(output)] = source
+    link_rows = e7_journals['link'].decode('utf-16').splitlines()
+    require(len(link_rows) == 415 and link_rows[0].startswith('^') and
+            all(re.fullmatch(r'"[^"\r\n]+\.OBJ"', row) for row in link_rows[2:]),
+            'Exact E7 413-object link inventory required')
+    linked = [key(row[1:-1]) for row in link_rows[2:]]
+    require(len(set(linked)) == 413 and set(linked) == set(objects),
+            'Every linked E7 object must have one compiler and dependency record')
+    require(not any(PureWindowsPath(p).name.casefold() == header_name
+                    for source, includes in records.items() for p in (source, *includes)),
+            'Retained E7 consumer of diagnostic header refused')
+    return {'Header':prepare_catalog_trace.SURFACE_COUNT_HEADER,
+            'PreviousSHA256':prepare_catalog_trace.SURFACE_COUNT_OLD_PIN[1],
+            'SHA256':prepare_catalog_trace.SURFACE_COUNT_NEW_PIN[1],
+            'DependencyJSON':pins,'E7ReadSHA256':E7_READ_PIN[1],
+            'E7CompileSHA256':CL_LOG_SHA,'E7LinkSHA256':LINK_LOG_SHA,
+            'E7TranslationUnits':len(records),'E7Objects':len(objects)}
+
+
 def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False,
-                      recompile_zonetool=False):
+                      recompile_zonetool=False, surface_count_dependencies=None, e7_dependency_text=None):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -138,6 +216,17 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     require(type(recompile_zonetool) is bool and
             (not recompile_zonetool or (recompile_main is True and catalog_trace is True)),
             'CLI rebuild requires the explicit two-TU catalogue path')
+    diagnostic = surface_count_dependencies is not None
+    require((e7_dependency_text is not None) == diagnostic and
+            (not diagnostic or (recompile_main is True and catalog_trace is True and recompile_zonetool is True)),
+            'Surface-count diagnostic requires both fresh TUs and complete dependency evidence')
+    diagnostic_proof = None
+    if diagnostic:
+        name = prepare_catalog_trace.SURFACE_COUNT_HEADER
+        require(prepare_catalog_trace.surface_count_header_delta(name, payloads.get(name),
+                prior_bindings.get(key(prepared/name.removeprefix('prepared/')))),
+                'Exact surface-count diagnostic transition required')
+        diagnostic_proof = surface_count_dependency_proof(prior, receipt, surface_count_dependencies, e7_dependency_text)
     if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
     require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
             'Exact native payload inventory required for reuse')
@@ -149,6 +238,9 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             continue
         path = prepared/name.removeprefix('prepared/')
         pin = prior_bindings.get(key(path))
+        if diagnostic and prepare_catalog_trace.surface_count_header_delta(name, raw, pin):
+            old_text.append(pin)
+            continue
         if (recompile_main and name == 'prepared/main.cpp') or (recompile_zonetool and name == 'prepared/zonetool.cpp'):
             require(pin and pin['SHA256'] != hashlib.sha256(raw).hexdigest(),
                     'Recompiled TU must differ from its retained source: '+name)
@@ -186,6 +278,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     return {'OriginalStatus':'Failed','SourcePlanSHA256':receipt['PlanSHA256'],
             'ReceiptSHA256':hashlib.sha256(receipt_raw).hexdigest(),'Checks':51,
             'RecompiledMain':recompile_main, **({'RecompiledZonetool':True} if recompile_zonetool else {}),
+            **({'ResidentSurfaceCountDiagnostic':diagnostic_proof} if diagnostic else {}),
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
@@ -198,12 +291,16 @@ def prepare(args):
     text_inputs = []
     def read(path, limit=1024*1024, expected=None):
         raw, pin = text_pin(path, limit, expected); text_inputs.append(pin); return raw
-    cl = read(e7/'obj/tlog/CL.command.1.tlog', 4*1024**2, CL_LOG_SHA).decode('utf-16')
-    link = read(e7/'obj/tlog/link.command.1.tlog', 256*1024, LINK_LOG_SHA).decode('utf-16')
+    cl_raw = read(e7/'obj/tlog/CL.command.1.tlog', 4*1024**2, CL_LOG_SHA)
+    link_raw = read(e7/'obj/tlog/link.command.1.tlog', 256*1024, LINK_LOG_SHA)
+    cl, link = cl_raw.decode('utf-16'), link_raw.decode('utf-16')
     payloads, replaced = command_payloads(cl, link, source, output/'prepared', run)
     _, patched = prepare_cli.render(source)
     prepatch_helper = getattr(args, 'prepatch_helper', None)
     catalog_publication = bool(getattr(args, 'catalog_message_publication', False))
+    surface_count_diagnostic = getattr(args, 'resident_surface_count_diagnostic', False)
+    require(type(surface_count_diagnostic) is bool and (not surface_count_diagnostic or catalog_publication),
+            'Surface-count diagnostic requires the existing main/CLI publication profile')
     catalog_message = bool(getattr(args, 'catalog_message', False) or catalog_publication)
     catalog_callers = bool(getattr(args, 'catalog_callers', False) or catalog_message)
     catalog_exit = bool(getattr(args, 'catalog_exit', False) or catalog_callers)
@@ -276,7 +373,9 @@ def prepare(args):
             require(re.fullmatch('[0-9a-f]{64}',pin['SHA256']) and type(pin['Bytes']) is int and 0 < pin['Bytes'] < 16*1024**2,
                     'Bounded exact supplemental object pin required')
             expected[key(pin['Path'])] = pin
-    deps = read_records(read(e7/'obj/tlog/CL.read.1.tlog', 16*1024**2).decode('utf-16'))
+    e7_dependency_text = read(e7/'obj/tlog/CL.read.1.tlog', 16*1024**2,
+                              E7_READ_PIN[1] if surface_count_diagnostic else None)
+    deps = read_records(e7_dependency_text.decode('utf-16'))
     wanted = set()
     for path in [source/row[0] for row in UNITS]+[source/'src/zonetool/std_include.cpp']:
         require(key(path) in deps, 'Affected TU/PCH dependency record missing')
@@ -324,11 +423,21 @@ def prepare(args):
     if args.reuse_plan:
         prior_raw = read(args.reuse_plan,2*1024**2)
         prior_receipt_raw = read(args.reuse_compile_receipt,128*1024)
+        surface_count_dependencies = None
         if catalog_trace:
             prepare_catalog_trace.verify_base(
                 read(args.ordinary_plan,2*1024**2,prepare_catalog_trace.BASE_PLAN_SHA),
                 read(args.ordinary_receipt,128*1024,prepare_catalog_trace.BASE_RECEIPT_SHA),
-                prior_raw, prior_receipt_raw, payloads)
+                prior_raw, prior_receipt_raw, payloads, surface_count_diagnostic=surface_count_diagnostic)
+            if surface_count_diagnostic:
+                prior = json.loads(prior_raw); receipt = json.loads(prior_receipt_raw)
+                surface_count_dependencies = {}
+                for stage in ('helper','zonetool11','xpak'):
+                    path = PureWindowsPath(prior['RunRoot'])/stage/'dependencies.json'
+                    pins = [p for s in receipt['Stages'] if s['Name'] == stage
+                            for p in s['Artifacts'] if key(p['Path']) == key(path)]
+                    require(len(pins) == 1, 'Receipt-bound dependency JSON required')
+                    surface_count_dependencies[stage] = read(Path(path),128*1024,pins[0]['SHA256'])
             wire = (prepare_catalog_trace.wire_message_main if catalog_message else
                     prepare_catalog_trace.wire_callers_main if catalog_callers else
                     prepare_catalog_trace.wire_exit_main if catalog_exit else prepare_catalog_trace.wire_main)
@@ -339,7 +448,8 @@ def prepare(args):
                 payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'] = main.encode(), cli.encode()
         reuse, reused_inputs, reused_text = reuse_compilation(prior_raw,
             prior_receipt_raw, payloads, run, recompile_main=recompile_main, catalog_trace=catalog_trace,
-            recompile_zonetool=catalog_publication)
+            recompile_zonetool=catalog_publication, surface_count_dependencies=surface_count_dependencies,
+            e7_dependency_text={'read':e7_dependency_text,'compile':cl_raw,'link':link_raw} if surface_count_diagnostic else None)
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
                       'Receipt':str(path_checked(args.reuse_compile_receipt))})
         for pin in reused_inputs:
@@ -425,6 +535,7 @@ if __name__ == '__main__':
     parser.add_argument('--catalog-callers',action='store_true')
     parser.add_argument('--catalog-message',action='store_true')
     parser.add_argument('--catalog-message-publication',action='store_true')
+    parser.add_argument('--resident-surface-count-diagnostic',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

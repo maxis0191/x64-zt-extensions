@@ -83,7 +83,7 @@ class CatalogueBaseTests(unittest.TestCase):
                 'Stages':[{'Name':'link'}],'Inputs':[s['Artifacts'][0] for s in stages]}
         return base, prior_raw, old_raw, payloads
 
-    def verify(self, base, prior, old, payloads, mutate_receipt=None):
+    def verify(self, base, prior, old, payloads, mutate_receipt=None, *, surface_count_diagnostic=False):
         raw = json.dumps(base).encode(); sha = hashlib.sha256(raw).hexdigest()
         receipt = {'Schema':'iw7.t7-minimal-build/1','PlanSHA256':sha,'Status':'Passed',
                    'InputsReverified':True,'TreeClosureConfirmed':True,'LeaseReleased':True,'Quarantined':False,
@@ -91,7 +91,37 @@ class CatalogueBaseTests(unittest.TestCase):
         if mutate_receipt: mutate_receipt(receipt)
         receipt_raw = json.dumps(receipt).encode()
         with patch.object(p, 'BASE_PLAN_SHA', sha), patch.object(p, 'BASE_RECEIPT_SHA', hashlib.sha256(receipt_raw).hexdigest()):
-            p.verify_base(raw, receipt_raw, prior, old, payloads)
+            p.verify_base(raw, receipt_raw, prior, old, payloads, surface_count_diagnostic=surface_count_diagnostic)
+
+    def surface_count_fixture(self):
+        base, prior_raw, old, payloads = self.fixture()
+        name = p.SURFACE_COUNT_HEADER
+        payloads[name] = (p.prepare_cli.HERE.parent/'t7-bridge'/Path(name).name).read_text(encoding='utf-8').encode()
+        pin = next(row for row in base['Bindings'] if row['Path'].endswith(Path(name).name))
+        pin.update(Bytes=p.SURFACE_COUNT_OLD_PIN[0], SHA256=p.SURFACE_COUNT_OLD_PIN[1])
+        prior = json.loads(prior_raw); prior['Bindings'] = base['Bindings']
+        prior_raw = json.dumps(prior).encode()
+        base['ReuseCompile']['SourcePlanSHA256'] = hashlib.sha256(prior_raw).hexdigest()
+        return base, prior_raw, old, payloads
+
+    def test_accepts_only_exact_opted_in_surface_count_header_transition(self):
+        self.verify(*self.surface_count_fixture(), surface_count_diagnostic=True)
+        with self.assertRaises(ValueError): self.verify(*self.surface_count_fixture())
+
+    def test_diagnostic_refuses_other_header_new_hash_or_old_pin(self):
+        for mode in ('other_header','new_hash','old_pin'):
+            with self.subTest(mode=mode):
+                args = self.surface_count_fixture()
+                if mode == 'other_header': args[3]['prepared/t7_asset_name.hpp'] = b'changed'
+                elif mode == 'new_hash': args[3][p.SURFACE_COUNT_HEADER] += b' '
+                else:
+                    row = next(r for r in args[0]['Bindings'] if r['Path'].endswith('t7_iw7_resident_model.hpp'))
+                    row['SHA256'] = '0'*64
+                with self.assertRaises(ValueError): self.verify(*args, surface_count_diagnostic=True)
+
+    def test_diagnostic_refuses_truthy_flag_or_missing_transition(self):
+        with self.assertRaises(ValueError): self.verify(*self.surface_count_fixture(), surface_count_diagnostic='true')
+        with self.assertRaises(ValueError): self.verify(*self.fixture(), surface_count_diagnostic=True)
 
     def test_accepts_same_sources_and_exact_retained_artifacts(self):
         self.verify(*self.fixture())
