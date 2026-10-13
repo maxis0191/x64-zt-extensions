@@ -194,8 +194,50 @@ namespace
     int failed_decoder(const char*, char*, int, int) { return -1; }
     int oversized_decoder(const char*, char*, int, int capacity) { return capacity + 1; }
 
+    void run_generic()
+    {
+        for (const auto size : {std::uint32_t{1}, std::uint32_t{1024}, xpak::max_decoded_bytes})
+        {
+            const auto original = original_bytes(size);
+            auto file = make_file(size == xpak::max_decoded_bytes ?
+                one_group(3, compressed(original)) : one_group(0, original));
+            const std::array packages{file.package()};
+            auto result = xpak::read_bounded_selected_key(packages, selected_key, size, &LZ4_decompress_safe);
+            check(result.bytes == original, "generic exact-size roundtrip differs");
+            file.storage[data_offset + 128u] ^= 0xffu;
+            check(result.bytes == original, "generic result aliases input");
+            ++copied_cases;
+        }
+        auto single = make_file(one_group(0, bytes{42}));
+        const std::array packages{single.package()};
+        for (const auto size : {std::uint32_t{0}, xpak::max_decoded_bytes + 1u})
+            refusal("generic decoded bound accepted", [&] {
+                (void)xpak::read_bounded_selected_key(packages, selected_key, size, &LZ4_decompress_safe);
+            });
+        check(single.header_reads == 0 && single.payload_reads == 0, "generic bound refusal read input");
+        for (const auto size : {std::uint32_t{1}, xpak::max_decoded_bytes})
+            refusal("strict mesh wrapper accepts generic size", [&] {
+                (void)xpak::read_selected_key(packages, selected_key, size, &LZ4_decompress_safe);
+            });
+        check(single.header_reads == 0, "strict mesh wrapper refusal read input");
+        refusal("generic decoded-length mismatch accepted", [&] {
+            (void)xpak::read_bounded_selected_key(packages, selected_key, 2, &LZ4_decompress_safe);
+        });
+        auto truncated = make_file(bytes(127));
+        const std::array short_group{truncated.package()};
+        refusal("generic truncated command header accepted", [&] {
+            (void)xpak::read_bounded_selected_key(short_group, selected_key, 1, &LZ4_decompress_safe);
+        });
+        auto lz4 = make_file(one_group(3, compressed(bytes{42})));
+        const std::array compressed_package{lz4.package()};
+        refusal("generic oversized LZ4 return accepted", [&] {
+            (void)xpak::read_bounded_selected_key(compressed_package, selected_key, 1, &oversized_decoder);
+        });
+    }
+
     void run()
     {
+        run_generic();
         const auto original = original_bytes();
         const auto raw = one_group(0, original, 0x89abcdefu);
         const auto lz4 = one_group(3, compressed(original));

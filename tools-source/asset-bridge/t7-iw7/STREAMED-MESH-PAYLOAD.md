@@ -14,6 +14,16 @@ and a signed `int(const char*, char*, int, int)` LZ4 decoder. It returns
 `payload{bytes, observed}` or throws `std::runtime_error`; no partial payload is
 returned. The returned `vector<uint8_t>` owns its bytes.
 
+The separately named raw-payload API read_bounded_selected_key(packages, key,
+expected, decoder) accepts exact decoded sizes 1 through 262144. It reuses the
+same parser, input sealing, limits, unique-key pass and signed LZ4 checks. It
+does not establish a geometry or other asset layout. The original
+read_selected_key wrapper still rejects every size except 18624 before reading
+input; the existing E3 profile remains strict. This source extension is not
+covered by the historical PR12 native receipt. Its added generic boundary and
+refusal fixtures require a new authorized native qualification. The frozen E3
+binary and its recorded reader bytes are not rebuilt by this change.
+
 Each package provides a name, stable identity, declared file size and exact-read
 callback `(uint64_t offset, span<uint8_t>) -> size_t`. Portable callers must
 retain immutable backing data. On Windows, `sealed_file(absolutePath).view()`
