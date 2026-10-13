@@ -45,9 +45,9 @@ jobs:
               [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process')
             }
           }
-          cl /nologo /c /TC /O2 /MT /W3 /I runtime/selected-xpak/lz4 /Fo:runtime/selected-xpak/lz4.obj runtime/selected-xpak/lz4/lz4.c
+          cl /nologo /c /TC /O2 /MT /W3 /I runtime/selected-xpak/lz4 /Foruntime/selected-xpak/lz4.obj runtime/selected-xpak/lz4/lz4.c
           if ($LASTEXITCODE) { throw 'Pinned LZ4 compilation failed' }
-          cl /nologo /std:c++20 /EHsc /O2 /MT /W4 /WX /I runtime/selected-xpak/lz4 /Fo:runtime/selected-xpak/fixture.obj /Fe:runtime/selected-xpak/fixture.exe tools-source/asset-bridge/t7-iw7/test_streamed_mesh_payload.cpp runtime/selected-xpak/lz4.obj
+          cl /nologo /std:c++20 /EHsc /O2 /MT /W4 /WX /I runtime/selected-xpak/lz4 /Foruntime/selected-xpak/fixture.obj /Feruntime/selected-xpak/fixture.exe tools-source/asset-bridge/t7-iw7/test_streamed_mesh_payload.cpp runtime/selected-xpak/lz4.obj
           if ($LASTEXITCODE) { throw 'Selected XPAK fixture compilation failed' }
           & ./runtime/selected-xpak/fixture.exe
           if ($LASTEXITCODE) { throw 'Selected XPAK synthetic fixture failed' }
