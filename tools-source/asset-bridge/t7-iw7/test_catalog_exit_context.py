@@ -13,6 +13,9 @@ class ExitContextWiringTests(unittest.TestCase):
     def setUpClass(cls):
         _, sources = prepare_cli.render(Path(os.environ['IW7_T7_SOURCE']))
         cls.original = sources[prepare_cli.PATHS[0]]
+        # Reconstruct the historically compiled v1 guards, preserving its pins.
+        for option in ('t7-iw7-model-v2', 't7-iw7-model-streamed-v1'):
+            cls.original = cls.original.replace(' || utils::flags::has_flag("'+option+'")', '')
         cls.trace = p.wire_main(cls.original)
         cls.context = p.wire_exit_main(cls.original)
 

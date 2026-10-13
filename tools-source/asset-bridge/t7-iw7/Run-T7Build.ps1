@@ -104,7 +104,10 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     foreach($name in $paths.Keys) {
         $pin=$profile.$name
         $limit=if($name -ceq 'BaseBuildPlan'){2MB}elseif($name -ceq 'BaseBuildReceipt'){128KB}
-               elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PublicationSource'){16KB}else{64KB}
+               elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PublicationSource'){16KB}
+               elseif($name -ceq 'PreparedCLI' -and $Plan.ReuseCompile.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1' -and
+                   $Plan.ReuseCompile.SelectedStreamedStaticV1.Schema -ceq 'iw7.t7-selected-streamed-static-build/1' -and
+                   $Plan.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile -ceq 't7-iw7-selected-streamed-static-v1'){128KB}else{64KB}
         if($pin.Path -cne $paths[$name] -or $pin.Bytes -le 0 -or $pin.Bytes -gt $limit -or
            $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Diagnostic source pin differs.'}
         $match=@($Plan.Bindings|Where-Object {$_.Path -ceq $pin.Path -and $_.IsText -is [bool] -and $_.IsText -and
@@ -115,15 +118,18 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
 }
 function Assert-T7InputBindings($Plan) {
     # This runs before any binding is opened, binary metadata is queried or
-    # provider is loaded. Legacy stays 128; v2 adds three sealed observer sources.
+    # provider is loaded. Legacy128 and sealed E2/v2144 remain unchanged;
+    # the explicit selected-streamed marker adds five exact source bindings.
     $bindings=@($Plan.Bindings);$inputs=@($Plan.Inputs)
-    if($bindings.Count -gt 144 -or $inputs.Count -gt 2048 -or
+    if($bindings.Count -gt 149 -or $inputs.Count -gt 2048 -or
         @($bindings.Path|Sort-Object -Unique).Count -ne $bindings.Count -or
         @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
     if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}
     $reuse=if($Plan.PSObject.Properties.Name -contains 'ReuseCompile'){$Plan.ReuseCompile}else{$null}
     $v2=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ResidentMultiSurfaceV2'
+    $streamed=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1'
     if(!$v2) {
+        if($streamed){throw 'Selected-streamed marker requires the exact common geometry proof.'}
         if($bindings.Count -gt 128){throw 'Legacy input binding limit is 128.'}
         return
     }
@@ -133,13 +139,32 @@ function Assert-T7InputBindings($Plan) {
         $reuse.RecompiledMain -isnot [bool] -or !$reuse.RecompiledMain -or
         $reuse.RecompiledZonetool -isnot [bool] -or !$reuse.RecompiledZonetool -or
         $reuse.PSObject.Properties.Name -contains 'ResidentSurfaceCountDiagnostic' -or
-        $bindings.Count -ne 144 -or $inputs.Count -ne 1146 -or
-        @($bindings|Where-Object IsText).Count -ne 138){throw 'Exact multisurface publication input profile required.'}
+        $bindings.Count -ne $(if($streamed){149}else{144}) -or $inputs.Count -ne 1146 -or
+        @($bindings|Where-Object IsText).Count -ne $(if($streamed){143}else{138})){throw 'Exact multisurface publication input profile required.'}
     $observerRoot=[IO.Path]::GetDirectoryName($Plan.Runner)
+    if($streamed) {
+        $marker=$reuse.SelectedStreamedStaticV1
+        if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'GeometryProfile,Schema' -or
+            $marker.Schema -cne 'iw7.t7-selected-streamed-static-build/1' -or
+            $marker.GeometryProfile -cne 't7-iw7-selected-streamed-static-v1'){throw 'Exact selected-streamed source marker required.'}
+        foreach($source in @(
+            @('streamed_mesh_payload.hpp',17917,'4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f'),
+            @('t7_iw7_streamed_model.hpp',10708,'baacda879ad058bbcba115362d8b86d10efd40c70040efd6bd036047b387f139'),
+            @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
+            @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
+            @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))) {
+            $path=Join-Path $observerRoot $source[0]
+            if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and
+                $_.Bytes -eq $source[1] -and $_.SHA256 -ceq $source[2]}).Count -ne 1){throw 'Exact selected-streamed source binding required.'}
+        }
+    }
+    $materialHeader=if($streamed){@('selected_material_observation.hpp',15261,'699796230fb3b626c9faf8ebb3e06c75eb376048c5f9928f341636235683d4da')}
+        else{@('selected_material_observation.hpp',12765,'a935803571f04b3a2cad7346824bf3194f5d44aeada15b224a3faa75ea292d7f')}
+    $materialFixture=if($streamed){@('selected_material_observation_fixture.cpp',10869,'d5e30aba27684ef68b60c269d1afa22c9b0e8eedad697b40412d45fce3ce8029')}
+        else{@('selected_material_observation_fixture.cpp',8146,'f011131feeb5495b3bfb0a1e86ad34aad20fc7869ec775c861290df6e3e1a05b')}
     foreach($observer in @(
         @('resident_image_copy.hpp',6366,'96291c23f132e09285d4ea3171c9107ac525d8628403014eae85a895f99c324e'),
-        @('selected_material_observation.hpp',12765,'a935803571f04b3a2cad7346824bf3194f5d44aeada15b224a3faa75ea292d7f'),
-        @('selected_material_observation_fixture.cpp',8146,'f011131feeb5495b3bfb0a1e86ad34aad20fc7869ec775c861290df6e3e1a05b'))) {
+        $materialHeader,$materialFixture)) {
         $path=Join-Path $observerRoot $observer[0]
         if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and
             $_.Bytes -eq $observer[1] -and $_.SHA256 -ceq $observer[2]}).Count -ne 1){
@@ -229,8 +254,11 @@ function Assert-T7InputBindings($Plan) {
             $_.SHA256 -ceq $row.WiredSHA256}).Count -ne 1){throw 'Wired v2 transition binding differs.'}
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
-    if($bytes.Length -ne 714 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
-        'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'){throw 'Reviewed v2 source transitions differ.'}
+    $transitionBytes=if($streamed){716}else{714}
+    $transitionSHA=if($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}else{
+        'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}
+    if($bytes.Length -ne $transitionBytes -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
+        $transitionSHA){throw 'Reviewed versioned source transitions differ.'}
 }
 function Split-T7ResponseArguments([string]$Text) {
     # Deliberately bounded MSVC response syntax: space/tab separators and quoted

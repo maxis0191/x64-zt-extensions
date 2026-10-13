@@ -31,6 +31,9 @@ def safe_name(value, *, zone=False):
 
 
 def validate_request(value):
+    if type(value) is dict and value.get('schema') == 'iw7.t7-iw7-selected-streamed-request/1':
+        from streamed_contract import validate_request as validate_streamed_request
+        return validate_streamed_request(value)
     require(type(value) is dict and set(value) == FIELDS, 'Exact request fields required')
     require(value['schema'] == SCHEMA and value['target'] == 'iw7' and value['profile'] == PROFILE,
             'Only the explicit resident T7-to-IW7 profile is proposed')
@@ -50,8 +53,11 @@ def export_option(version):
     return PROPOSED_OPTION if version == 1 else PROPOSED_OPTION_V2
 
 
-def command_review(value, *, version=1):
+def command_review(value, *, version=1, request_path=None):
     value = validate_request(value)
+    if value['schema'] != SCHEMA:
+        from streamed_contract import command_review as review_streamed
+        return review_streamed(value, request_path)
     option = export_option(version)
     key_input = f"{value['zone']}\n{value['model']}\n{value['lod']}".encode('ascii')
     return {'schema': 'iw7.t7-iw7-boot-command-review/1',

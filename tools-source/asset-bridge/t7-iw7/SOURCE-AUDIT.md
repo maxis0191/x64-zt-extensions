@@ -1,5 +1,13 @@
 # T7 / Black Ops 3 to IW7: retained source audit
 
+2026-10-13 selected-streamed source epoch: see
+[SELECTED-STREAMED-STATIC.md](SELECTED-STREAMED-STATIC.md). This adds an explicit
+selected-key reader/owned CPU view and separate source-build proof. E2's real
+headers/key are observed, but the checked container scopes have not supplied
+that key. Source checks and DEFAULT do not prove native compilation or export.
+The noncopyable selection correction and source-preparation refusals are
+preserved there. Existing dated evidence and frozen packages remain unchanged.
+
 2026-10-12. Source-only inventory of the existing ZoneTool commit
 `fab935826c898806855376662a8a03317b3ad8f1`. No upstream update, new tool installation,
 retail enumeration, FF/XPAK read, native launch or extraction occurred. The BO3

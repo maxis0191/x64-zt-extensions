@@ -15,6 +15,7 @@ import stat
 import struct
 
 from export_contract import validate_export, geometry_work_bytes_upper_bound, MANIFEST_LIMIT_V2, GEOMETRY_WORK_LIMIT
+from streamed_contract import EXPORT_SCHEMA as STREAMED_SCHEMA, GEOMETRY_PROFILE as STREAMED_PROFILE
 
 _base_path = Path(__file__).resolve().parent.parent / "h1-fixture" / "inspect_fixture.py"
 _spec = importlib.util.spec_from_file_location("_t7_readback_record_base", _base_path)
@@ -110,7 +111,8 @@ def geometry_layout(manifest):
     """
     version = manifest.get('geometry_profile')
     check((manifest.get('schema'), version) in (('iw7.t7-iw7-resident-export/1', V1),
-                                               ('iw7.t7-iw7-resident-export/2', V2)), 'mixed export/profile versions')
+                                               ('iw7.t7-iw7-resident-export/2', V2),
+                                               (STREAMED_SCHEMA, STREAMED_PROFILE)), 'mixed export/profile versions')
     counts = manifest['selected_counts']
     check(type(counts) is dict and set(counts) == {'bones', 'roots', 'surfaces', 'vertices', 'triangles'} and
           all(type(v) is int for v in counts.values()) and counts['bones'] == counts['roots'] == 1,
@@ -134,7 +136,7 @@ def geometry_layout(manifest):
     work = geometry_work_bytes_upper_bound(n, vertices, triangles)
     check(vertices == counts['vertices'] and triangles == counts['triangles'],
           'aggregate geometry count/work budget')
-    if version == V2:
+    if version != V1:
         check(type(manifest['geometry_work_bytes_upper_bound']) is int and
               manifest['geometry_work_bytes_upper_bound'] == work, 'geometry work formula mismatch')
     check(type(manifest['material_dependencies']) is list and len(manifest['material_dependencies']) == n,
@@ -369,7 +371,7 @@ def read_json(path, *, manifest=False):
     raw = read_bounded(path, MANIFEST_LIMIT if manifest else 4096)
     result = json.loads(raw.decode("utf-8"), object_pairs_hook=pairs, parse_constant=nonfinite)
     if manifest:
-        limit = MANIFEST_LIMIT if type(result) is dict and result.get('schema') == 'iw7.t7-iw7-resident-export/2' else 4096
+        limit = MANIFEST_LIMIT if type(result) is dict and result.get('schema') in ('iw7.t7-iw7-resident-export/2', STREAMED_SCHEMA) else 4096
         check(len(raw) <= limit, 'manifest exceeds its version size bound')
     return result
 

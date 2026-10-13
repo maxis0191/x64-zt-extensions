@@ -7,28 +7,28 @@
       "lf_sha256": "ce1a8c3ef96c5d8f741c4eb21e8ef1b4e66861921a8cb5d21fc88d1dc8dee501"
     },
     "SOURCE-AUDIT.md": {
-      "lf_bytes": 19552,
-      "lf_sha256": "a59b79ce509adfee9652719754c5f9186294e1361c394bf363c8606904d17a6e"
+      "lf_bytes": 20068,
+      "lf_sha256": "c4a922b1c3cdcc10f3a5d72ac61552ce159f03a56ff01b72921c9f670c021925"
     },
     "source-inventory.json": {
       "lf_bytes": 3133,
       "lf_sha256": "e0a8a99fed0d76f2db0df5d87d0c6a2bd63cd20399504b6ae04bf31588607b84"
     },
     "boot_contract.py": {
-      "lf_bytes": 3737,
-      "lf_sha256": "f57fa1996ebfde5ca459d8c774ca5ca997a1831e4238078197a50cea7652caa9"
+      "lf_bytes": 4142,
+      "lf_sha256": "94cbec106c2e49e6a50d22e76c792ff2ef9a312f44bf98e84a4984db8a6f89cb"
     },
     "test_boot_contract.py": {
       "lf_bytes": 3417,
       "lf_sha256": "92b8073d1ab72c6f34b5b7e5db30c0dbbc2160909b083e08a4a66568b4eecd66"
     },
     "native_cli.inc": {
-      "lf_bytes": 1460,
-      "lf_sha256": "80fa0a07d766be8463422983a4d1368e3ca3fd3f44f730778be317c68f49c760"
+      "lf_bytes": 1857,
+      "lf_sha256": "46153315b6962b5a96bc5eaede305abea5c3e261ef6da756e8270d71f9f09102"
     },
     "native_export.inc": {
-      "lf_bytes": 17096,
-      "lf_sha256": "7ad6c120adb021c7097080f71cae566fcaf2436ad5a1907b6ef57d020459d343"
+      "lf_bytes": 18268,
+      "lf_sha256": "c6a197911d7adfef96273e29367e090666b130580356658478859f007165fa3d"
     },
     "native_catalog.inc": {
       "lf_bytes": 3699,
@@ -47,24 +47,24 @@
       "lf_sha256": "c59ed465bf7b2116c40b59be6c0a686dce342aa4a2c6b39ae024a43c186f776b"
     },
     "prepare_cli.py": {
-      "lf_bytes": 6037,
-      "lf_sha256": "a3678911fe4b3b30c36133929ce3ec0972b1cf8d2c5219a68c5d08ced63bae35"
+      "lf_bytes": 6795,
+      "lf_sha256": "c907caa70355dfec50b0b0b6c94284fe262dc7818514d8f9d75d965da583e0d2"
     },
     "test_cli_patch.py": {
-      "lf_bytes": 5903,
-      "lf_sha256": "6d6fbad47cb95dfc8fcafb201a0d18c4bc4c004ff7b60083a3f1c2967755d000"
+      "lf_bytes": 5970,
+      "lf_sha256": "646930a4b76c1927bf5b7bc046aaeda19c743be5db1797c722a5d51bc2af8030"
     },
     "export_contract.py": {
-      "lf_bytes": 7049,
-      "lf_sha256": "067a1c3494eff6767e8258028a2d6fc6510c850b92e019606e4b7113e571ea06"
+      "lf_bytes": 7586,
+      "lf_sha256": "4c24f8840156e26424356d7837da9fb378636b3c0efb194d7cd8d9d9526472c0"
     },
     "test_export_contract.py": {
       "lf_bytes": 11760,
       "lf_sha256": "9d1c04e1309cab82e9dfbadc4bc7aa56a91fed40bef7960a63372341f5155db9"
     },
     "zonetool-fab9358-t7-resident-cli.patch": {
-      "lf_bytes": 47189,
-      "lf_sha256": "5ac7e9093527b847b75b68c56cc41c4823d8acb77e1915a30e5ec26d11da9a55"
+      "lf_bytes": 90662,
+      "lf_sha256": "3936798daab1710c623f1100ddf92712041ccdb895a17cc5f9261decf5db1b6b"
     },
     "test_triangle_ownership.py": {
       "lf_bytes": 4756,
@@ -75,12 +75,32 @@
       "lf_sha256": "96291c23f132e09285d4ea3171c9107ac525d8628403014eae85a895f99c324e"
     },
     "selected_material_observation.hpp": {
-      "lf_bytes": 12765,
-      "lf_sha256": "a935803571f04b3a2cad7346824bf3194f5d44aeada15b224a3faa75ea292d7f"
+      "lf_bytes": 15261,
+      "lf_sha256": "699796230fb3b626c9faf8ebb3e06c75eb376048c5f9928f341636235683d4da"
     },
     "selected_material_observation_fixture.cpp": {
-      "lf_bytes": 8146,
-      "lf_sha256": "f011131feeb5495b3bfb0a1e86ad34aad20fc7869ec775c861290df6e3e1a05b"
+      "lf_bytes": 10869,
+      "lf_sha256": "d5e30aba27684ef68b60c269d1afa22c9b0e8eedad697b40412d45fce3ce8029"
+    },
+    "streamed_mesh_payload.hpp": {
+      "lf_bytes": 17917,
+      "lf_sha256": "4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f"
+    },
+    "t7_iw7_streamed_model.hpp": {
+      "lf_bytes": 10708,
+      "lf_sha256": "baacda879ad058bbcba115362d8b86d10efd40c70040efd6bd036047b387f139"
+    },
+    "native_streamed_export.inc": {
+      "lf_bytes": 9823,
+      "lf_sha256": "60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123"
+    },
+    "streamed_contract.py": {
+      "lf_bytes": 7996,
+      "lf_sha256": "b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f"
+    },
+    "test_streamed_contract.py": {
+      "lf_bytes": 8796,
+      "lf_sha256": "fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16"
     }
   },
   "external_adapter": {
@@ -109,8 +129,8 @@
     ]
   },
   "patched_source_lf_sha256": {
-    "src/zonetool/main.cpp": "ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615",
-    "src/zonetool/zonetool/t7/zonetool.cpp": "c080e69319ccff31fd8a25747210baeddc95269d6b416d18321ea272935ffff8",
+    "src/zonetool/main.cpp": "ca8875cf36bdf9a8c8e6142969eab95194d214d09c90064e202d68ff9302fcb3",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "7b76fc52769de8648a3449fd94007ed6047f0963d97d06fdc88f90753442fd48",
     "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
     "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
   },
