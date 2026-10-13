@@ -55,8 +55,42 @@ of source `e345195` passed: main/CLI/link exit0 with input revalidation, origina
 job closure and reservation release. Candidate21,916,160 bytes SHA256
 `2de24e4a715d92cebe767073f212241319c85bd7a5863201f1eaf9da39f9ff7d`.
 The C++ move/copy assertions compiled. Its original host exited0, and the owned
-hosts/stages were absent afterward. The candidate has not run; real decoding,
-conversion, independent byte readback and gameplay remain separate gates.
+hosts/stages were absent afterward. At this build checkpoint the candidate had
+not run; the later stock result is recorded below.
+
+## Actual stock refusal and diagnostic source on 2026-10-14
+
+The one authorized E3 stock invocation exited1 after 5.88 seconds. It refused
+`selected streamed rigid coverage differs` before `read_selected_key`, with no
+manifest, XMB or XSB. Input and selected-provider metadata rechecks, owned job
+closure and lease release passed; the original host actually exited1 and was
+absent afterward. No selected payload read or decompression was reached by this
+control flow. The compiled `e345195`/reader457/candidate2de tuple remains frozen.
+
+The refusal combines five checks: root bone offset, full vertex coverage,
+zero triangle offset, full triangle coverage and no collision tree. The stock
+log did not contain their actual values, so no one field is established as the
+cause. The new source reports the failing surface index, the captured rigid
+values, expected surface vertex/triangle counts and collision-tree presence.
+The condition and its position before payload access are unchanged. Values
+come from the already captured header; no pointer address or extra dereference
+is added. This source has not yet been compiled or used on stock.
+
+The pinned ZoneTool type declares four 16-bit fields followed by a collision
+tree pointer. That is a source layout, not runtime ABI proof. Greyhound's
+[BO3 surface declaration](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/DBGameAssets.h#L849-L864)
+leaves the corresponding tail opaque, and its
+[simple root-weight fallback](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/GameBlackOps3.cpp#L817-L821)
+does not verify the retail rigid-list layout or coverage. The next useful native
+observation is the detailed refusal on the same selected donor; no guard is
+relaxed and no geometry or ModelFF result is inferred.
+
+Source validation passed296 Python tests with five optional skips and454
+PowerShell build/profile checks. Fresh preparation and DEFAULT confirmed149
+bindings (143 text/six opaque), 1,146 inputs and66 headers/87,204 bytes, without
+native types, opaque-input hashes, lease or run-root creation. The PS synthetic
+streamed transition initially retained the earlier CLI tuple and was correctly
+refused; its exact new tuple was updated. Legacy transition tables are unchanged.
 
 ## Build preparation
 

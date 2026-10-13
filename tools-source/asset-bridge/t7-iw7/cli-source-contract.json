@@ -63,8 +63,8 @@
       "lf_sha256": "9d1c04e1309cab82e9dfbadc4bc7aa56a91fed40bef7960a63372341f5155db9"
     },
     "zonetool-fab9358-t7-resident-cli.patch": {
-      "lf_bytes": 90662,
-      "lf_sha256": "3936798daab1710c623f1100ddf92712041ccdb895a17cc5f9261decf5db1b6b"
+      "lf_bytes": 91250,
+      "lf_sha256": "9f5e11d0404912fd9e1ef87c83447c7ce4310829a219c9eb18e0a6e0221398ca"
     },
     "test_triangle_ownership.py": {
       "lf_bytes": 4756,
@@ -87,8 +87,8 @@
       "lf_sha256": "4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f"
     },
     "t7_iw7_streamed_model.hpp": {
-      "lf_bytes": 10708,
-      "lf_sha256": "baacda879ad058bbcba115362d8b86d10efd40c70040efd6bd036047b387f139"
+      "lf_bytes": 11289,
+      "lf_sha256": "5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0"
     },
     "native_streamed_export.inc": {
       "lf_bytes": 9823,
@@ -130,7 +130,7 @@
   },
   "patched_source_lf_sha256": {
     "src/zonetool/main.cpp": "ca8875cf36bdf9a8c8e6142969eab95194d214d09c90064e202d68ff9302fcb3",
-    "src/zonetool/zonetool/t7/zonetool.cpp": "7b76fc52769de8648a3449fd94007ed6047f0963d97d06fdc88f90753442fd48",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "eacd6cca7483f781ffa6202d7b10cb05c8ee81fc56e74e15c8d144ff6994a515",
     "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
     "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
   },

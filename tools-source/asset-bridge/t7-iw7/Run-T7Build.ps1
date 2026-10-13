@@ -149,7 +149,7 @@ function Assert-T7InputBindings($Plan) {
             $marker.GeometryProfile -cne 't7-iw7-selected-streamed-static-v1'){throw 'Exact selected-streamed source marker required.'}
         foreach($source in @(
             @('streamed_mesh_payload.hpp',17917,'4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f'),
-            @('t7_iw7_streamed_model.hpp',10708,'baacda879ad058bbcba115362d8b86d10efd40c70040efd6bd036047b387f139'),
+            @('t7_iw7_streamed_model.hpp',11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
             @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
             @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
             @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))) {
@@ -255,7 +255,7 @@ function Assert-T7InputBindings($Plan) {
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
     $transitionBytes=if($streamed){716}else{714}
-    $transitionSHA=if($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}else{
+    $transitionSHA=if($streamed){'a6a17454c7f9f9dcae2a59b7a4e5bc0d822f037ba5eec9c6dedd4ab9deb6d34d'}else{
         'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}
     if($bytes.Length -ne $transitionBytes -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
         $transitionSHA){throw 'Reviewed versioned source transitions differ.'}
