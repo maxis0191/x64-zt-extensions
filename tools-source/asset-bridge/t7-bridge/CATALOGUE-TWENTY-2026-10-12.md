@@ -186,3 +186,99 @@ absent from the installation. No FF content or hash was read in that inspection.
 Next, qualify only this additional input through the existing bounded pipeline,
 then prepare a distinct updated input plan if it passes. This does not prove
 the remaining dependency closure complete or resolve the partial trace.
+
+## Subsequent D attempt: complete diagnostic, no catalogue
+
+On 2026-10-13, the exact 1664-byte `en_mp_freerun_04_patch.ff` input completed
+two guarded identity/hash passes. Its SHA256 is
+`efcf733703ca03412f72c9f16e2e8f3d7cbce62dcdd32040e076a7aaa7dd92e0`;
+the 4428-byte individual qualification receipt has SHA256
+`46b079a65ee640e8f995844e5411d320ada68af5de0d6b50351495a432296a6f`.
+Status remains IdentityAndHashObservedCompatibilityUnknown. Independent absence
+at 03:43:43.0081993Z confirms closure; the 4728-byte witness has SHA256
+`cbc398dafbbe17fe48f1b44536de8e05cc7c6d727d3badd97975627ca5771bb4`.
+No engine compatibility or complete dependency closure follows from these reads.
+
+D then invoked once under 6/8 GiB admission with 21 bootstraps, 25 guarded
+native inputs and their aliases. The native process exited one naturally after
+about 6.21 seconds, without requested termination. InputsReverified,
+EngineOutputsValidated, original metadata, tree closure and lease release pass;
+normal host completion observed CanExit=true and zero wrapper guards. The actual
+host PTY also exited one. Failed/NoCatalogue is preserved.
+
+The 33363-byte receipt has SHA256
+`e1ad77b7ecc9cb549ab52ab149a79fb3162e90cdff5a1a843be974b067e75e65`.
+The 9024-byte completion record has SHA256
+`7e04c322a65ba71f128677b1edd84dc4f67c28bb45c56d4f334ddcb55f7b7ac2`.
+Unlike C's partial trailing record, D's bounded parser records TraceObserved,
+MessageOutcome=Observed and SameThreadBeforeExit. The complete 49-byte message
+is `ERROR: Could not find zone 'mp_freerun_04_patch'` followed by LF. The exit
+hook reports code zero on that thread; the actual process exit is one. These
+values have different meanings and do not convert the run into a success.
+
+Independent absence at 03:59:39.6283752Z links the actual completed host command
+and confirms host/parent/native absence, no descendants/root processes, leases,
+heavy/game processes or owned ports, with stopped Main and preserved Python.
+Its 5820-byte witness has SHA256
+`667ebeabaf5526059a0653b1f1be199d76f6b84b04f3b97aa166b648fd77e838`.
+The completion record's earlier pending-witness flag stays immutable. Scoped
+new-data accounting is 272778 bytes including this witness, excluding 25
+existing-payload hardlinks; it is neither global growth nor NTFS allocation.
+
+The exact next 9664-byte `mp_freerun_04_patch.ff` singleton then completed two
+guarded identity/hash passes under 6/8 GiB admission. Its FF SHA256 is
+`3b98e7a46fde3a83e84e2c0e8c64b01e54136908bfb69fc3df095ad3b878fbda`;
+the 4425-byte qualification receipt has SHA256
+`6ca25ee622225b51814492ba5de52ebbd3d053133a0c677c8b34ec44d82fd5d8`.
+Status remains IdentityAndHashObservedCompatibilityUnknown. The 4211-byte result
+pin is `edcf1d3a2d49accc8a8a4d48659c3da06a58260b2ec412c51a4811a114e57057`;
+the 1895-byte actual-exit receipt pin is
+`96db8db37fdb56e6529c59e478762b36eb8bff6bf2a9f7913e2a430389f78a04`.
+Original context closure, zero guards, lease release and absence of quarantine
+are reported; PTY43061 actually exited zero. Independent absence at
+04:06:12.5227567Z links four small JSON proofs and confirms host/parent absence,
+no leases/heavy/game processes or owned ports, stopped Main and preserved Python.
+Its 4712-byte witness has SHA256
+`782c37d57ed8dc180d8246b0f60ba8c77b30983d43ba00c15db9e25a64661b75`.
+Scoped new-data accounting totals 59933 bytes including this witness, rather
+than a global or NTFS allocation measurement.
+
+At that checkpoint E was preparation only. The subsequent result follows;
+preserve A/B/C/D and their consumed plans without automatic retries.
+
+## Subsequent E attempt: next localized zone named
+
+E ran once on 2026-10-13 with 22 bootstraps, including the newly qualified
+9664-byte patch, using the same `31b9d908` native candidate and existing profiles.
+The native process exited one naturally after about 6.394 seconds, without
+requested termination. Failed/NoCatalogue remains unchanged. InputsReverified,
+EngineOutputsValidated, normal tree/lease closure and 52 original/alias file IDs
+rechecked pass, with no quarantine. Normal Complete observed CanExit=true and
+zero wrapper guards. The actual host PTY51070 exited one; tool chunk `87f8ca`
+records that exit separately from process absence.
+
+The 34611-byte receipt has SHA256
+`9ffebde9de7564a2e6a182fbab742814a47b9323ab3bafc432d84ad5c050ca7e`.
+The 1374-byte host-exit receipt has SHA256
+`cf4004c6302961e51a0760fc2d0c4b3b4694cf7e7e1c675ddaa7f5df9d0e1936`.
+TraceObserved, MessageOutcome=Observed and SameThreadBeforeExit establish the
+complete 46-byte message `ERROR: Could not find zone 'en_mp_freerun_04'` followed
+by LF. Hook code zero is distinct from the actual process exit one. No catalogue,
+initialization-complete, export or general compatibility is qualified.
+
+Independent absence at 04:16:25.8462064Z links four small JSON proofs and the
+actual completed PTY51070 exit one. Host/parent/native generations, descendants,
+leases, heavy/game processes and owned ports are absent; Main stays stopped and
+Python preserved. The 5819-byte witness has SHA256
+`f3ef6f28343c165389fbf67641298982e3ea5a6be3613407a78da9b65c25ed27`.
+The 8930-byte final completion record has SHA256
+`ca3437c2eb927cdec92140c99df4593e218fa836a6d7fe03664fefe8fb4158c4`.
+It records 278597 new bytes across 18 files, excluding 26 existing-payload
+hardlinks representing 808848152 logical bytes. Including the separate
+5819-byte witness gives 284416 scoped bytes. This is a file-length count, not
+global growth or NTFS allocation. The eight-byte opaque manifest and temporary
+DLL were observed through metadata only after release; no payload was rehashed.
+Only preparation of
+the exact 1536-byte `en_mp_freerun_04.ff` singleton and distinct F plan follows;
+neither has a qualification or runtime result. Lookup r2 has a distinct GO
+after independent E closure, only if its fresh complete admission succeeds.
