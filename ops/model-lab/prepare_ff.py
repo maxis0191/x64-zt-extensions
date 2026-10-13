@@ -75,17 +75,20 @@ if __name__=='__main__':
     source.add_argument('--export-root',type=Path)
     parser.add_argument('--request',type=Path)
     parser.add_argument('--manifest',type=Path)
-    parser.add_argument('--rebind-material')
+    materials=parser.add_mutually_exclusive_group()
+    materials.add_argument('--rebind-material')
+    materials.add_argument('--material-rebinds',type=Path)
     parser.add_argument('--lod-distance',type=float)
     parser.add_argument('--output',required=True,type=Path)
     args=parser.parse_args()
     if args.export_root:
-        if not args.request or not args.manifest or not args.rebind_material:
-            parser.error('Resident export requires --request, --manifest and explicit --rebind-material')
+        if not args.request or not args.manifest or not (args.rebind_material or args.material_rebinds):
+            parser.error('Resident export requires --request, --manifest and explicit material rebinds')
         import rigid_export
-        result=rigid_export.stage(args.export_root,args.request,args.manifest,args.output,args.rebind_material,args.lod_distance)
+        rebinds=rigid_export.read_document(args.material_rebinds,256*1024) if args.material_rebinds else None
+        result=rigid_export.stage(args.export_root,args.request,args.manifest,args.output,args.rebind_material,args.lod_distance,rebinds=rebinds)
     else:
-        if args.request or args.manifest or args.rebind_material or args.lod_distance is not None:
+        if args.request or args.manifest or args.rebind_material or args.material_rebinds or args.lod_distance is not None:
             parser.error('Resident derivation options require --export-root')
         result=stage(args.writer_run,args.output)
     print(json.dumps(result,indent=2))
