@@ -27,7 +27,7 @@ def fixture_v2(counts=((17, 23),) * 5):
                   surface_records=[{'index':i, 'material_slot':i, 'vertices':v, 'triangles':t}
                                    for i, (v, t) in enumerate(counts)],
                   material_dependencies=['fixture/material'] * len(counts),
-                  geometry_work_bytes_upper_bound=256 + 368*len(counts) + 60*vertices + 12*triangles)
+                  geometry_work_bytes_upper_bound=256 + 384*len(counts) + 60*vertices + 12*triangles)
     return request, report
 
 
@@ -77,10 +77,16 @@ class ExportContractTests(unittest.TestCase):
 
 class MultisurfaceContractTests(unittest.TestCase):
     def test_one_five_and_maximum_surface_count(self):
-        for count in (1, 5, 255):
+        for count, expected in ((1, 832), (5, 3136), (255, 147136)):
             with self.subTest(count=count):
                 request, report = fixture_v2(((3, 1),) * count)
+                self.assertEqual(e.geometry_work_bytes_upper_bound(count, 3*count, count), expected)
+                self.assertEqual(report['geometry_work_bytes_upper_bound'], expected)
                 self.assertTrue(e.validate_export(report, request)['receipt_contract_verified'])
+                # Historical surface80/368 metadata cannot understate the work.
+                report['geometry_work_bytes_upper_bound'] = expected - 16*count
+                with self.assertRaisesRegex(ValueError, 'work bound differs'):
+                    e.validate_export(report, request)
         for count in (256,):
             request, report = fixture_v2(((3, 1),) * count)
             with self.assertRaises(ValueError): e.validate_export(report, request)
@@ -129,7 +135,7 @@ class MultisurfaceContractTests(unittest.TestCase):
 
     def test_exact_work_boundary_then_one_more_triangle_refused(self):
         # Six legal uint16 surfaces reach exactly 16 MiB of expanded work.
-        counts = ((50000, 65535), (50000, 65535), (50000, 16823),
+        counts = ((50000, 65535), (50000, 65535), (50000, 16815),
                   (50000, 1), (49997, 1), (3, 1))
         request, report = fixture_v2(counts)
         self.assertEqual(report['geometry_work_bytes_upper_bound'], 16777216)
@@ -137,13 +143,22 @@ class MultisurfaceContractTests(unittest.TestCase):
         request, report = fixture_v2(counts[:-1] + ((3, 2),))
         with self.assertRaisesRegex(ValueError, 'exceeds 16 MiB'): e.validate_export(report, request)
 
+    def test_surface96_reduces_the_old_boundary_by_eight_triangles(self):
+        self.assertEqual(e.geometry_work_bytes_upper_bound(6, 267000, 62888), 16777216)
+        # The old surface80 budget admitted 62896: it now exceeds the cap by 96.
+        self.assertEqual(120+80+6*(96+16)+267000*28+62896*6 +
+                         56+6*(256+16)+267000*32+62896*6, 16777312)
+        for triangles in (62889, 62896):
+            with self.subTest(triangles=triangles), self.assertRaisesRegex(ValueError, 'exceeds 16 MiB'):
+                e.geometry_work_bytes_upper_bound(6, 267000, triangles)
+
     def test_alias_amplification_refuses_even_when_artifact_sizes_are_tiny(self):
         # Five occurrences may reference the same source/serialized arrays;
         # their expanded work must still be counted five times.
         request, report = fixture_v2(((65535, 65535),) * 5)
         self.assertEqual(report['model']['bytes'], 1)
         self.assertEqual(report['mesh']['bytes'], 1)
-        report['geometry_work_bytes_upper_bound'] = 624 + 72*65535
+        report['geometry_work_bytes_upper_bound'] = 640 + 72*65535
         with self.assertRaisesRegex(ValueError, 'exceeds 16 MiB'): e.validate_export(report, request)
 
     def test_work_bound_is_exact_integer_not_trusted_metadata(self):

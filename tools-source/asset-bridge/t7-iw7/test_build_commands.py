@@ -8,6 +8,20 @@ import prepare_build as p
 
 
 class RecipeTests(unittest.TestCase):
+    def test_historical_surface80_adapter_is_rejected_by_the_current_v2_transition(self):
+        current=(p.HERE.parent/'t7-bridge/t7_iw7_resident_model.hpp').read_text(encoding='utf-8')
+        historical=current.replace('surface96 + rigid16', 'surface80 + rigid16').replace(
+            'sizeof(XSurface) == 96', 'sizeof(XSurface) == 80').replace(
+            '256 + 384 * surfaces', '256 + 368 * surfaces').encode()
+        self.assertEqual((len(historical),hashlib.sha256(historical).hexdigest()),
+                         (21290,'97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed'))
+        name=p.prepare_catalog_trace.SURFACE_COUNT_HEADER
+        old=p.prepare_catalog_trace.MULTISURFACE_TRANSITIONS[name][0]
+        pin={'Bytes':old[0],'SHA256':old[1]}
+        for wired in (False,True):
+            self.assertFalse(p.prepare_catalog_trace.multisurface_payload_delta(name,historical,pin,wired=wired))
+            self.assertTrue(p.prepare_catalog_trace.multisurface_payload_delta(name,current.encode(),pin,wired=wired))
+
     def test_historical_diagnostic_fixture_keeps_its_exact_reviewed_pin(self):
         raw=(p.HERE/'fixtures/resident-surface-count-v1.hpp').read_text(encoding='utf-8').encode()
         self.assertEqual((len(raw),hashlib.sha256(raw).hexdigest()),p.prepare_catalog_trace.SURFACE_COUNT_NEW_PIN)
@@ -38,6 +52,9 @@ class RecipeTests(unittest.TestCase):
                 raw = (p.HERE/name).read_text(encoding='utf-8').replace('\r\n', '\n').encode()
                 self.assertEqual(len(raw), pin['lf_bytes'])
                 self.assertEqual(hashlib.sha256(raw).hexdigest(), pin['lf_sha256'])
+        pin=contract['external_adapter']
+        raw=(p.HERE.parents[2]/pin['repository_path']).read_text(encoding='utf-8').encode()
+        self.assertEqual((len(raw),hashlib.sha256(raw).hexdigest()),(pin['lf_bytes'],pin['lf_sha256']))
 
     def test_response_paths_reject_quote_or_newline(self):
         for value in ('a"b', 'a\nb', 'a\0b'):

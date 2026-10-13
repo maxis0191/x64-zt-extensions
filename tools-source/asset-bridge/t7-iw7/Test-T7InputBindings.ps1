@@ -1,5 +1,5 @@
-# Exercise the actual early validator. Optional frozen-plan DEFAULT tests use
-# temporary JSON text only and never pass -Run or change the frozen plan.
+# Exercise the actual early validator. Optional frozen-B DEFAULT rejection
+# tests use temporary JSON text only, never -Run or a changed prepared source.
 [CmdletBinding()]
 param([string]$MultisurfaceFixturePlanPath)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
@@ -22,7 +22,7 @@ function New-BindingFixture {
     $transitions=@(foreach($row in @(
         @('main.cpp',12854,'40de5fda829cec32a5d75359f58e69c84db7d8ee54f198cf6befa2a6ebe6f86e',12944,'ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615',43038,'3ff489d38adfa4da640c5acd6a78b1600f312fbaef47d41b118fabd7dcd3fb84'),
         @('zonetool.cpp',35974,'106ccdb4aec584184132c309c117f778d504ca9e64e8a821d23bfecc83bc8635',39356,'27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e',39410,'b470e08edaa26c3527d02cab89a867192371290dda02c16c5569acd7d6819279'),
-        @('t7_iw7_resident_model.hpp',13444,'6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777',21290,'97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed',21290,'97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed'))) {
+        @('t7_iw7_resident_model.hpp',13444,'6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777',21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4',21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'))) {
         [pscustomobject]@{Path=('prepared/'+$row[0]);PreviousBytes=$row[1];PreviousSHA256=$row[2];Bytes=$row[3];SHA256=$row[4];WiredBytes=$row[5];WiredSHA256=$row[6]}
     })
     $dependencies=@(foreach($row in @(
@@ -75,7 +75,7 @@ foreach($mode in 'missing-marker','null-marker','old-profile','mixed','false-mai
     'proof-missing','proof-count','proof-bytes','context','journal','pch','input-count','binding-count','classification',
     'header-input','header-binding','header-missing','header-extra','header-duplicate','header-mutant-all','header-path-all',
     'duplicate-input','duplicate-binding','journal-binding','dep-json','transition','wired-binding','string-classification',
-    'binary-mutant','binary-as-text','header-length') {
+    'binary-mutant','binary-as-text','header-length','old-surface80-all','old-surface80-transition') {
     $f=New-BindingFixture;$p=$f.ReuseCompile.ResidentMultiSurfaceV2;$h=$p.AdditionalHeaderInputs
     switch($mode) {
         missing-marker {$f.ReuseCompile.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}
@@ -111,6 +111,13 @@ foreach($mode in 'missing-marker','null-marker','old-profile','mixed','false-mai
         journal-binding {$f.Bindings[69].SHA256=('0'*64)}
         dep-json {$p.DependencyJSON[0].SHA256=('0'*64)}
         transition {$p.SourceTransitions[0].PreviousBytes++}
+        {$_ -in 'old-surface80-all','old-surface80-transition'} {
+            $oldSHA='97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed'
+            $row=@($p.SourceTransitions|Where-Object Path -CEQ 'prepared/t7_iw7_resident_model.hpp')[0]
+            $row.SHA256=$oldSHA;$row.WiredSHA256=$oldSHA
+            @($f.Bindings|Where-Object Path -CEQ 'C:\plan\prepared\t7_iw7_resident_model.hpp')[0].SHA256=$oldSHA
+            if($mode -ceq 'old-surface80-all'){$p.SHA256=$oldSHA}
+        }
         wired-binding {$f.Bindings[72].SHA256=('0'*64)}
     }
     Must-RefuseBinding $f
@@ -133,14 +140,16 @@ if($MultisurfaceFixturePlanPath) {
     if($baseRaw.Length -ne 365638 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($baseRaw)).ToLowerInvariant() -cne
         '23b93e754c725b81b438e12498fac8c93257aa43368889fecc22e3ff1fefa3dc'){throw 'Frozen B fixture differs.'}
     $base=[Text.Encoding]::UTF8.GetString($baseRaw)|ConvertFrom-Json -Depth 25
-    Assert-T7InputBindings $base;$checks++
+    # B still contains the historical surface80 adapter. It is never promoted
+    # to a positive fixture by rewriting its sealed source/proof in place.
+    Must-RefuseBinding $base
     if(Test-Path -LiteralPath $base.RunRoot){throw 'Fixture run root must remain absent.'}
     $runnerRaw=[IO.File]::ReadAllBytes($runner);$runnerSHA=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($runnerRaw)).ToLowerInvariant()
     $fixtureRoot=[IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('iw7-t7-binding-fixture-'+[guid]::NewGuid().ToString('N'))))
     [IO.Directory]::CreateDirectory($fixtureRoot)|Out-Null
     $fixturePath=Join-Path $fixtureRoot 'fixture.json'
     try {
-        foreach($mode in 'nominal','missing-proof','header-classification','legacy129') {
+        foreach($mode in 'old-surface80','missing-proof','header-classification','legacy129') {
             $f=[Text.Encoding]::UTF8.GetString($baseRaw)|ConvertFrom-Json -Depth 25
             $hostPin=@($f.Bindings|Where-Object Path -CEQ $runner)
             if($hostPin.Count -ne 1){throw 'Runner fixture binding absent.'}
@@ -165,20 +174,14 @@ if($MultisurfaceFixturePlanPath) {
             $saved=$ErrorActionPreference;$ErrorActionPreference='Continue'
             try{$output= & (Join-Path $PSHOME 'pwsh.exe') -NoLogo -NoProfile -File $runner -PlanPath $fixturePath -PlanSHA256 $sha 2>&1;$code=$LASTEXITCODE}
             finally{$ErrorActionPreference=$saved}
-            if($mode -eq 'nominal') {
-                if($code -ne 0){throw ('Nominal DEFAULT failed: '+($output -join "`n"))}
-                $result=($output -join "`n")|ConvertFrom-Json
-                if($result.ExpectedInputs -ne 1146 -or $result.NativeTypesLoaded -or $result.BinaryInputsHashed -or
-                    $result.LeaseAcquired -or $result.RunRootCreated){throw 'DEFAULT crossed native boundary.'}
-            } else {
-                $expected=switch($mode) {
-                    missing-proof {'AdditionalHeaderInputs'}
-                    header-classification {'Opaque build input cannot be a text binding.'}
-                    legacy129 {'Legacy input binding limit is 128.'}
-                }
-                if($code -eq 0 -or !($output -join "`n").Contains($expected)){
-                    throw ('Actual DEFAULT did not fail at the expected early gate for '+$mode+': '+($output -join "`n"))
-                }
+            $expected=switch($mode) {
+                old-surface80 {'Complete pinned multisurface dependency proof required.'}
+                missing-proof {'AdditionalHeaderInputs'}
+                header-classification {'Opaque build input cannot be a text binding.'}
+                legacy129 {'Legacy input binding limit is 128.'}
+            }
+            if($code -eq 0 -or !($output -join "`n").Contains($expected)){
+                throw ('Actual DEFAULT did not fail at the expected early gate for '+$mode+': '+($output -join "`n"))
             }
             if(Test-Path -LiteralPath $base.RunRoot){throw 'DEFAULT created a run root.'}
             $entryChecks++

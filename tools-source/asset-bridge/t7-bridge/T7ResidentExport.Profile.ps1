@@ -229,10 +229,11 @@ function Assert-T7ResidentExportGeometryV2($Manifest) {
         $vertices+=[long]$row.vertices;$triangles+=[long]$row.triangles
     }
     if($vertices -ne $counts.vertices -or $triangles -ne $counts.triangles){throw 'Exact v2 vertex and triangle sums required.'}
+    # T7XSurface is 96 bytes: source bookkeeping adds 16 per occurrence.
     # The validated upper bounds make every intermediate exact in Int64.
-    $source=200L+96L*$n+28L*$vertices+6L*$triangles
+    $source=200L+112L*$n+28L*$vertices+6L*$triangles
     $destination=56L+272L*$n+32L*$vertices+6L*$triangles
-    $work=256L+368L*$n+60L*$vertices+12L*$triangles
+    $work=256L+384L*$n+60L*$vertices+12L*$triangles
     if($source+$destination -ne $work -or $work -gt 16MB -or
        !(Test-T7CatalogueInteger $Manifest.geometry_work_bytes_upper_bound 16MB) -or
        $Manifest.geometry_work_bytes_upper_bound -ne $work){throw 'Exact v2 geometry work bytes within 16 MiB required.'}

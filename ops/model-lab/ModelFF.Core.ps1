@@ -48,8 +48,8 @@ function Assert-ModelFFRigidGeometry($Metadata) {
         if($Metadata.material_references[$i] -cne 'mopw/character_park_clown_zombie_shoes'){throw 'Unreviewed recipient material.'}
         $vertices+=$record.vertices;$triangles+=$record.triangles
     }
-    # Counts above bound every operand. Aliases count in full per logical slot.
-    [long]$work=256+368*$counts.surfaces+60*$vertices+12*$triangles
+    # Includes the 96-byte T7 surface. Aliases count in full per logical slot.
+    [long]$work=256+384*$counts.surfaces+60*$vertices+12*$triangles
     if($vertices -ne $counts.vertices -or $triangles -ne $counts.triangles -or $work -gt 16MB -or
         ($Metadata.geometry_work_bytes_upper_bound -isnot [int] -and $Metadata.geometry_work_bytes_upper_bound -isnot [long]) -or
         $Metadata.geometry_work_bytes_upper_bound -ne $work){throw 'Aggregate resident geometry work exceeds bound or differs.'}

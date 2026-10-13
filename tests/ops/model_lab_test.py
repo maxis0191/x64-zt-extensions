@@ -56,6 +56,74 @@ foreach($value in @('true',1,$false)){
             result = subprocess.run(['pwsh', '-NoProfile', '-File', str(path), str(ROOT)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_resident_surface96_work_admission_boundaries(self):
+        # Metadata-only fixtures exercise the real PowerShell admission gate.
+        # Expected totals are independent fixed cases, not a copied calculator.
+        def metadata(records, work):
+            return {
+                'schema': 'iw7.model-ff-plan/2',
+                'geometry_profile': 't7-iw7-resident-static-v2',
+                'model_name': 'synthetic/model', 'mesh_name': 'synthetic/mesh',
+                'zone': 'paris_model_probe', 'recipient': 'cp_zmb',
+                'material_payload_copied': False, 'has_lods': True,
+                'lod0_dist': 1000000, 'shadow_cutoff_lod': 6, 'collision_lod': 255,
+                'selected_counts': {'bones': 1, 'roots': 1, 'surfaces': len(records),
+                                    'vertices': sum(v for v, _ in records),
+                                    'triangles': sum(t for _, t in records)},
+                'surface_records': [{'index': i, 'material_slot': i, 'vertices': v, 'triangles': t}
+                                    for i, (v, t) in enumerate(records)],
+                'material_references': [rigid_export.MATERIAL] * len(records),
+                'geometry_work_bytes_upper_bound': work,
+            }
+
+        cases = []
+        for label, records, expected in (
+            ('minimum-one', [(3, 1)], 832),
+            ('minimum-five', [(3, 1)] * 5, 3136),
+            ('minimum-255', [(3, 1)] * 255, 147136),
+            ('two-surfaces-face', [(5, 2), (3, 1)], 1540),
+            ('exact-16MiB', [(44500, 10482)] * 5 + [(44500, 10478)], 16777216),
+        ):
+            cases.append({'label': label, 'accepted': True, 'metadata': metadata(records, expected)})
+            # The old coefficient undercounted every logical surface by 16 B.
+            cases.append({'label': label + '-old-claim', 'accepted': False,
+                          'metadata': metadata(records, expected - 16 * len(records))})
+        old_boundary = [(44500, 10482)] * 5 + [(44500, 10486)]
+        cases.extend([
+            {'label': 'old-boundary-corrected-over-96', 'accepted': False,
+             'metadata': metadata(old_boundary, 16777312)},
+            {'label': 'old-boundary-stale-16MiB-claim', 'accepted': False,
+             'metadata': metadata(old_boundary, 16777216)},
+            {'label': 'one-triangle-over', 'accepted': False,
+             'metadata': metadata([(44500, 10482)] * 5 + [(44500, 10479)], 16777228)},
+        ])
+        legacy = metadata([(3, 1)], 832)
+        legacy.update(schema='iw7.model-ff-plan/1', geometry_profile='t7-iw7-resident-static-v1',
+                      material_reference=rigid_export.MATERIAL)
+        for key in ('surface_records', 'material_references', 'geometry_work_bytes_upper_bound'):
+            del legacy[key]
+        cases.append({'label': 'v1-unchanged', 'accepted': True, 'metadata': legacy})
+        crossed = copy.deepcopy(legacy)
+        crossed['geometry_work_bytes_upper_bound'] = 832
+        cases.append({'label': 'v1-cannot-claim-v2-work', 'accepted': False, 'metadata': crossed})
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder)
+            (base / 'cases.json').write_text(json.dumps(cases), encoding='utf-8')
+            script = base / 'surface96-work.ps1'
+            script.write_text(r'''param($Repo,$Cases)
+$ErrorActionPreference='Stop'
+. "$Repo/ops/model-lab/ModelFF.Core.ps1"
+foreach($case in (Get-Content -LiteralPath $Cases -Raw | ConvertFrom-Json)){
+    $accepted=$true
+    try{Assert-ModelFFRigidPlan $case.metadata}catch{$accepted=$false}
+    if($accepted -ne $case.accepted){throw "Unexpected admission for $($case.label): $accepted"}
+    if($accepted -and @(Get-ModelFFSourceNames $case.metadata).Count -ne 5){throw 'Source inventory changed'}
+}
+''', encoding='utf-8')
+            result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), str(base / 'cases.json')],
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     @classmethod
     def setUpClass(cls):
         # Match canonical runtime roots and keep NTFS fixtures on one volume in CI.
@@ -780,7 +848,7 @@ foreach($case in @('schema','profile','order','totals','work','slots','bool','st
             $p.surface_records=@(0..5|ForEach-Object{[pscustomobject]@{index=$_;material_slot=$_;vertices=65535;triangles=65535}})
             $p.material_references=@($valid.material_references[0])*6
             $p.selected_counts.surfaces=6;$p.selected_counts.vertices=6*65535;$p.selected_counts.triangles=6*65535
-            $p.geometry_work_bytes_upper_bound=256+368*6+72*6*65535
+            $p.geometry_work_bytes_upper_bound=256+384*6+72*6*65535
         }
     }
     $refused=$false;try{Assert-ModelFFRigidPlan $p}catch{$refused=$true}
@@ -789,7 +857,7 @@ foreach($case in @('schema','profile','order','totals','work','slots','bool','st
 # Aggregate counts are not uint16; each individual surface remains bounded.
 $p=$raw|ConvertFrom-Json
 foreach($record in $p.surface_records){$record.vertices=40000}
-$p.selected_counts.vertices=80000;$p.geometry_work_bytes_upper_bound=256+368*2+60*80000+12*10
+$p.selected_counts.vertices=80000;$p.geometry_work_bytes_upper_bound=256+384*2+60*80000+12*10
 Assert-ModelFFRigidPlan $p
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/Agent-Lab.ps1",[ref]$tokens,[ref]$errors)
