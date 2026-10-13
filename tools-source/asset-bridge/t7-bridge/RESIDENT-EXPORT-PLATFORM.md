@@ -16,6 +16,96 @@ and [the v2 export C attempt](RESIDENT-EXPORT-C.md). C retained its reviewed v2
 request and build D candidate but returned the v1 single-surface refusal without
 an export. These later records do not change this original v1 contract.
 
+## Selected mesh/material observation E2 stock A, 2026-10-13
+
+The E2 build qualification was independently reviewed and merged in
+[asset PR15](https://github.com/maxis0191/x64-zt-extensions/pull/15), merge
+`b2730c6044c4184b7b115892714ca62a1097948d`. Its targeted source suite passed
+1,139 checks; the read-only real-build qualification passed on 23 held texts.
+The separate compiled synthetic material fixture passed 32 checks. Those
+results qualified source/build/fixture behavior, not stock material readability.
+
+A fresh source package at that merge contained 870 text files / 8,040,231 bytes
+and explicitly adopted the current H1 telemetry policy. The stock plan had
+106 bindings and retained the same selected MP model, request, 23 F bootstraps,
+shared qualification and source catalogue. It reused E2 candidate 21,849,600
+bytes / `7c7ad775b201dea60ec050a28e5943cbf1eeeaa8e6386eba675c7ffc001f5e7f`.
+No native rebuild or stock clone was made.
+
+Preparation first refused an incorrect array traversal, before creating a plan.
+After correcting it, default validation refused the proposed run-root prefix.
+A distinct plan revision uses the existing `t7-export-*` root contract; the
+earlier scripts, sealed plan and unused root remain retained. Default validation
+passed without binary hashes, native types, admission or Run. A separate
+coordinator grant and fresh zero-group observation preceded the unique stock
+invocation of `-t7-iw7-model-v2 mp_freerun_04 p7_fre_platform_cap_02 0`.
+
+The native process exited naturally 1 after 6,302.1892 ms. The runner returned
+**Failed / NoExport**, retaining this refusal:
+
+```text
+t7-iw7-resident-static-v2: selected mesh must use one bounded resident shared buffer; flags=9 bytes=18624
+```
+
+Before that refusal it captured one bounded mesh record from the requested
+model. Raw JSON was retained, parsed with exact Python integers and rendered
+as 16-character hexadecimal strings; no JavaScript Number conversion occurred.
+
+| Observation | Exact value |
+| --- | --- |
+| XPAK key | `f58d58f1fc9b6b01` |
+| Three opaque uint64 words, in order | `0000000000000000`, `0000000000000000`, `0003ffffffffc000` |
+| Shared flags / declared data bytes | 9 / 18,624 |
+| Shared vertices / indices / surfaces | 560 / 1,470 / 5 |
+| Position / attribute / index / skin-weight offsets | 2,944 / 9,664 / 0 / 0 |
+| Payload bytes read by the observation | 0 |
+
+The descriptor field semantics, atomic snapshot, retained allocation, geometry
+and runtime verification flags remain false. These are observed header values,
+not decoded XPAK payload or proven geometry. No manifest, XMB, XSB or successful
+readback was produced. The resident guard was not relaxed.
+
+Material slot 0 separately retained the five ordered names
+`mc/t7_metal_trim_safehouse_mobile_09`, `mc/t7_metal_trim_freerun_black_01`,
+`mc/t7_rubber_floor_grip_white_fr_diamond_blk`, `mc/metal_chrome_01` and
+`mc/t7_fre_emissive_teal_01`, with aliased slots `[0]`. Its deeper observation
+refused `t7-iw7-resident-static-v1: range is not committed readable memory`.
+No texture header, diffuse selection or pixels were captured. The synthetic
+fixture pass does not convert this engine-side readability refusal into success.
+
+The original native owner confirmed root exit / zero active processes, normal
+tree closure, released lease, guarded input revalidation, unchanged metadata,
+validated output scope and all 27 original/alias pairs. The host's initial
+conservative process observation refused a native-PID/run ambiguity. Its cause
+was not established; fresh metadata then showed absence. The unchanged original
+`Finish` passed with `Closed`, `CanExit=true` and zero wrapper guards. No process
+was killed, guard bypassed, original receipt altered or native invocation retried.
+PTY 91936 actually exited 1 (tool chunk `cc532d`). The 21:00:56 UTC observation
+confirmed both owned identities absent, zero leases/heavy/game processes and
+the stopped Main/UDP baseline preserved, before handing the slot to another
+authorized test. No stock payload was read or hashed after lease release.
+
+Private bounded evidence under `t7-e2-stock-platform-a-20261013/` pins the
+preparation, exact JSON extraction, original exit and subsequent absence;
+runtime receipt/stdout remain in the composed package's E2 stock A directory.
+
+| Evidence | Bytes | SHA256 |
+| --- | ---: | --- |
+| Plan revision 2 | 67,435 | `dbf39b436d82a175a936365d3f24264f056081ff5379188a222a46c03cc04eb3` |
+| Host contract revision 2 | 1,415 | `871c50b62e7f02511a3f9b73152340f3b19a698e958e3fc99b6859e87d3b5c1e` |
+| Runtime receipt | 35,077 | `8f1446ae5e6d3430725026fd2fa8b1e4dcbe08fc5d39eebe057c7013b2313626` |
+| Stdout | 2,727 | `d8a0e60b176af71ebcbfac7718d487a1e47c5f120736b1f64e3613d421f26196` |
+| Exact mesh JSON line plus newline | 1,483 | `be56661e12a192c346613fe5ab1ac5f4606621e7a230c33bef1ce55d8e53a021` |
+| Exact material JSON line plus newline | 526 | `d936810e073c6056fdaa6230e4ad1777ad649fb67be80ee8454140f94d9ab5e7` |
+| Completion | 5,850 | `a4086e2e0510a20dc53922a431c5cbc3df4ef5a54e2ed8257811e890a367ef02` |
+
+Next action: qualify the exact selected XPAK package identities under separate
+admission, then give the bounded reader this key and the genuine observed
+extent request. Investigate the selected material's first failed readability
+check before choosing a diffuse. The native serializer, XPAK and material
+owners received the exact raw texts; this checkpoint authorizes no additional
+stock run and proves neither rendering nor owner gameplay acceptance.
+
 ## Corrected v2 export D, 2026-10-13
 
 [Launcher PR2](https://github.com/maxis0191/x64-zt-extensions/pull/2) fixed the

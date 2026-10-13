@@ -1,15 +1,22 @@
 """Targeted original geometry/invalid-format/collision-reference checks; no native."""
 import copy
+import hashlib
 import json
 import math
 from pathlib import Path
 import struct
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import arena
 import prepare
 import readback
+import model_lab
+import prepare_writer
 
 
 class ArenaTests(unittest.TestCase):
@@ -118,7 +125,7 @@ class ArenaTests(unittest.TestCase):
         self.assertEqual(prepare.literal(-(1+2**-24)), '-1.0f')
 
 
-def synthetic_records(mesh):
+def synthetic_records(mesh, material=None):
     """Tiny authored typed streams for reader fault injection, never retail data."""
     def array(payload, count):
         return b'\x08\x00' if not count else b'\x08\x01'+struct.pack('<I',count)+payload
@@ -129,15 +136,18 @@ def synthetic_records(mesh):
     midpoint, half = mesh['bounds']['midpoint'], mesh['bounds']['half_size']
     radius = max(sum(v*v for v in item['position']) for item in surface['vertices'])
     h = bytearray(736);h[20:23]=bytes((1,1,0))
+    h[8:15] = bytes((0,1,0,1,255,6,1))
     radius_f32, = struct.unpack('<f',struct.pack('<f',radius))
     struct.pack_into('<HHf',h,24,0,1,1);struct.pack_into('<f',h,40,math.sqrt(radius_f32))
     struct.pack_into('<6f',h,44,*(midpoint+half));struct.pack_into('<fHH',h,224,1000000,1,0)
+    struct.pack_into('<I',h,240,0x80000000)
     model = array(h,1)+name(mesh['name'])+name('tag_origin')+array(b'',0)*3+array(bytes(1),1)
     model += array(struct.pack('<8f',0,0,0,1,0,0,0,2),1)+array(b'',0)*3
-    model += array(struct.pack('<7f',*(midpoint+half+[radius])),1)+array(bytes(2),1)+array(bytes(8),1)
-    model += name(None,7)+name(mesh['name']+'_lod0',7)+name(None,7)*9+array(b'',0)*3
+    model += array(struct.pack('<7f',*(midpoint+half+[radius])),1)+array(bytes(2),1)+array(struct.pack('<Q',bool(material)),1)
+    model += name(material,7)+name(mesh['name']+'_lod0',7)+name(None,7)*9+array(b'',0)*3
     g = bytearray(56);struct.pack_into('<H',g,16,1)
     s = bytearray(256);struct.pack_into('<3H2B',s,0,0x82,n,t,1,0)
+    struct.pack_into('<I',g,20,0x80000000);struct.pack_into('<I',s,224,0x80000000)
     vertices = b''
     for v in surface['vertices']:
         packed_normal = 0xc0000000
@@ -150,6 +160,26 @@ def synthetic_records(mesh):
 
 
 class IndependentReaderTests(unittest.TestCase):
+    def test_all_three_rigid_masks_refuse_lod_group_and_surface_corruption(self):
+        source=arena.geometry(arena.original_scene());model,mesh=synthetic_records(source)
+        surface_offset=6+56+2+len('paris_original_arena_lod0')+1+6
+        for role,offset in (('model',6+240),('group',6+20),('surface',surface_offset+224)):
+            for byte in (0,31):
+                changed=bytearray(model if role=='model' else mesh);changed[offset+byte]^=1
+                with self.subTest(role=role,byte=byte),self.assertRaisesRegex(ValueError,'root part bits'):
+                    readback.inspect(bytes(changed) if role=='model' else model,
+                                     mesh if role=='model' else bytes(changed),source)
+    def test_explicit_material_binding_and_opaque_pointer_relocation(self):
+        source=arena.geometry(arena.original_scene())
+        unbound,mesh=synthetic_records(source)
+        bound,_=synthetic_records(source,readback.MATERIAL)
+        self.assertTrue(readback.inspect(bound,mesh,source,expected_material=readback.MATERIAL)['material_bound'])
+        with self.assertRaises(ValueError):readback.inspect(bound,mesh,source)
+        with self.assertRaises(ValueError):readback.inspect(unbound,mesh,source,expected_material=readback.MATERIAL)
+        with self.assertRaises(ValueError):readback.inspect(bound,mesh,source,expected_material='invented')
+        for offset in (9,12,13):
+            changed=bytearray(bound);changed[6+offset]=0
+            with self.assertRaises(ValueError):readback.inspect(bytes(changed),mesh,source,expected_material=readback.MATERIAL)
     def test_valid_original_records_and_native_limits_remain_explicit(self):
         source = arena.geometry(arena.original_scene());model,mesh = synthetic_records(source)
         report=readback.inspect(model,mesh,source)
@@ -192,6 +222,149 @@ class IndependentReaderTests(unittest.TestCase):
         for m,s in variants:
             with self.subTest(model=len(m),mesh=len(s)):
                 with self.assertRaises(ValueError):readback.inspect(m,s,source)
+
+
+class ModelLabTests(unittest.TestCase):
+    def binding_fixture(self,root):
+        tool,stock=root/'tool',root/'stock'
+        for name in prepare_writer.INTERFACES:
+            path=tool/name;path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(('Original source fixture '+name).encode())
+        snapshots={}
+        for name in ('closure','load_log','material_json'):
+            raw=('Original evidence fixture '+name).encode();path=stock/(name+'.txt')
+            path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
+            snapshots[name]={'path':path.name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+        evidence={'schema':'iw7.model-recipient-evidence/1','source_pin':prepare_writer.PIN,'recipient':'cp_zmb',
+                  'material':readback.MATERIAL,'snapshot_only':True,'runtime_verified':False,'material_snapshot':snapshots,
+                  'normal_encoding_source':[{'path':name,'sha256':hashlib.sha256((tool/name).read_bytes()).hexdigest()}
+                                            for name in prepare_writer.INTERFACES[-3:]]}
+        path=root/'recipient.json';path.write_text(json.dumps(evidence))
+        return tool,stock,path,evidence
+
+    def prepare_fixture(self,root):
+        tool,stock,evidence,_=self.binding_fixture(root)
+        prepared=root/'prepared'
+        # Test-authored interfaces/evidence; this bypass is scoped to this mock,
+        # never a production CLI flag or a claim about live retail snapshots.
+        hashes=prepare_writer.source_hashes(tool,check_pin=False)
+        with patch.object(prepare,'source_hashes',return_value=hashes):
+            prepare.prepare(prepared,tool_source=tool,recipient_evidence=evidence,stock_root=stock)
+        geometry=json.loads((prepared/'geometry.source.json').read_bytes())
+        artifacts=root/'artifacts'
+        for name,raw in zip(model_lab.PAIR,synthetic_records(geometry,readback.MATERIAL)):
+            path=artifacts/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
+        return prepared,artifacts
+
+    def test_material_source_is_separate_from_unchanged_unbound_variant(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);prepared,_=self.prepare_fixture(root)
+            manifest=json.loads((prepared/'arena-writer-source.json').read_bytes())
+            self.assertEqual(manifest['selected_counts']['vertices'],168)
+            self.assertFalse(manifest['compiled']);self.assertFalse(manifest['physics_serialized'])
+            self.assertIn('model.lodInfo[0].partBits[0]=surf.partBits[0]',(prepared/'arena_writer.cpp').read_text())
+            self.assertIn(json.dumps(readback.MATERIAL),(prepared/'probe_geometry.hpp').read_text())
+            unbound=root/'unbound';prepare.prepare(unbound)
+            self.assertEqual(len(list(unbound.iterdir())),7)
+            self.assertNotIn(readback.MATERIAL,(unbound/'probe_geometry.hpp').read_text())
+            for name in ('geometry.source.json','arena.source.json','route.reference.json'):
+                self.assertEqual((prepared/name).read_bytes(),(unbound/name).read_bytes())
+            with self.assertRaises(ValueError):prepare.prepare(root/'partial',recipient_evidence=root/'recipient.json')
+
+    def test_shared_recipient_validator_refuses_missing_changed_and_escape_proofs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);tool,stock,path,evidence=self.binding_fixture(root)
+            self.assertEqual(prepare_writer.validate_recipient_evidence(tool,path,stock)[0],readback.MATERIAL)
+            for kind in ('empty','changed','escape','normal','runtime'):
+                altered=copy.deepcopy(evidence)
+                if kind=='empty':altered['material_snapshot']={}
+                if kind=='changed':altered['material_snapshot']['closure']['sha256']='0'*64
+                if kind=='escape':altered['material_snapshot']['closure']['path']='../recipient.json'
+                if kind=='normal':altered['normal_encoding_source'].pop()
+                if kind=='runtime':altered['runtime_verified']=True
+                path.write_text(json.dumps(altered))
+                with self.subTest(kind=kind),self.assertRaises(ValueError):
+                    prepare_writer.validate_recipient_evidence(tool,path,stock)
+
+    def test_five_payload_stage_uses_existing_zone_and_original_profile(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);prepared,artifacts=self.prepare_fixture(root)
+            output=root/'stage';plan=model_lab.stage(artifacts,prepared,output)
+            self.assertEqual(plan['geometry_profile'],model_lab.PROFILE)
+            self.assertEqual(len(plan['source_files']),5);self.assertEqual(len(plan['validation_files']),8)
+            self.assertEqual(model_lab.verify_stage(output)[0],plan)
+            self.assertFalse(plan['native_provenance_verified']);self.assertFalse(plan['ready'])
+            self.assertEqual((output/'zone_source/paris_model_probe.csv').read_bytes(),
+                             model_lab.assets(model_lab.MODEL,model_lab.MESH)['zone_source/paris_model_probe.csv'])
+            with self.assertRaises(ValueError):model_lab.stage(artifacts,prepared,output)
+            isolated=subprocess.run([sys.executable,'-I','-S','-B',str(Path(model_lab.__file__)),'verify-stage',
+                                      '--source',str(output)],capture_output=True,text=True,timeout=20)
+            self.assertEqual(isolated.returncode,0,isolated.stderr)
+            self.assertEqual(json.loads(isolated.stdout),plan)
+
+    def test_shared_python_process_ignores_foreign_named_module_cache(self):
+        with patch.dict(sys.modules,{'readback':object(),'prepare_writer':object(),'rigid_export':object(),'geometry':object()}):
+            fresh=model_lab.local_module('_arena_test_foreign_cache',Path(model_lab.__file__))
+            self.assertEqual(fresh.readback.MATERIAL,readback.MATERIAL)
+            self.assertEqual(fresh.PIN,prepare_writer.PIN)
+
+    def test_changed_prepared_and_every_consulted_staged_input_refused(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);prepared,artifacts=self.prepare_fixture(root)
+            output=root/'stage';plan=model_lab.stage(artifacts,prepared,output)
+            header=prepared/'probe_geometry.hpp';header.write_bytes(header.read_bytes()+b'changed')
+            with self.assertRaises(ValueError):model_lab.stage(artifacts,prepared,root/'bad-stage')
+            for name in plan['validation_files']:
+                path=output/name;original=path.read_bytes();path.write_bytes(original+b'x')
+                try:
+                    with self.subTest(name=name),self.assertRaises(ValueError):model_lab.verify_stage(output)
+                finally:path.write_bytes(original)
+
+    def test_redump_packed_stream_corruption_refused_and_pointer_relocation_allowed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);prepared,artifacts=self.prepare_fixture(root)
+            output=root/'stage';model_lab.stage(artifacts,prepared,output)
+            ff=root/'fixture.ff';ff.write_bytes(b'Original test fixture; not a native fastfile')
+            proof=model_lab.verify_dump(output,artifacts,ff)
+            self.assertEqual(proof['schema'],'iw7.model-original-arena-roundtrip/1')
+            self.assertTrue(proof['packed_attributes_byte_identical']);self.assertFalse(proof['runtime_verified'])
+            model_path=artifacts/model_lab.PAIR[0];model=model_path.read_bytes()
+            changed=bytearray(model);changed[6+240]^=1;model_path.write_bytes(changed)
+            with self.assertRaisesRegex(ValueError,'root part bits'):model_lab.verify_dump(output,artifacts,ff)
+            model_path.write_bytes(model)
+            mesh_path=artifacts/model_lab.PAIR[1];mesh=mesh_path.read_bytes()
+            p=6+56+2+len(model_lab.MESH)+1+6+256+6
+            for offset in (12,28):
+                changed=bytearray(mesh);changed[p+offset]^=1;mesh_path.write_bytes(changed)
+                with self.assertRaises(ValueError):model_lab.verify_dump(output,artifacts,ff)
+            mesh_path.write_bytes(mesh)
+            model_path=artifacts/model_lab.PAIR[0];model=model_path.read_bytes()
+            token=b'\x08\x01'+struct.pack('<IQ',1,1)+b'\x07\x01'+readback.MATERIAL.encode()
+            replacement=b'\x08\x01'+struct.pack('<IQ',1,1234)+b'\x07\x01'+readback.MATERIAL.encode()
+            self.assertEqual(model.count(token),1);model_path.write_bytes(model.replace(token,replacement))
+            self.assertTrue(model_lab.verify_dump(output,artifacts,ff)['geometry_roundtrip_verified'])
+
+    @unittest.skipUnless(shutil.which('pwsh'),'PowerShell source dispatch check unavailable')
+    def test_modelf_five_asset_dispatch_inventory_and_parser(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);prepared,artifacts=self.prepare_fixture(root)
+            output=root/'stage';plan=model_lab.stage(artifacts,prepared,output)
+            core=str(arena.REPO/'ops/model-lab/ModelFF.Core.ps1').replace("'","''")
+            builder=str(arena.REPO/'ops/model-lab/Build-ModelFF.ps1').replace("'","''")
+            source=str(output/'model-ff-plan.json').replace("'","''")
+            script=root/'source-test.ps1'
+            script.write_text("$ErrorActionPreference='Stop'\n. '"+core+"'\n"+
+                "$p=Get-Content -Raw -LiteralPath '"+source+"'|ConvertFrom-Json\n"+
+                "$names=@(Get-ModelFFSourceNames $p)\n"+
+                "if($names.Count -ne 5 -or $names[0] -cne 'xmodel/paris_original_arena.xmb'){throw 'Arena dispatch'}\n"+
+                "if(@(Get-ModelFFSourceNames ([pscustomobject]@{}))[0] -cne 'xmodel/paris_model_probe.xmb'){throw 'Cube dispatch'}\n"+
+                "$p.geometry_profile='t7-iw7-resident-static-v1';$null=Get-ModelFFSourceNames $p\n"+
+                "$p.geometry_profile='iw7-original-arena-rigid-v1';$p.selected_counts.vertices=$true\n"+
+                "$refused=$false;try{$null=Get-ModelFFSourceNames $p}catch{$refused=$true};if(!$refused){throw 'Boolean count accepted'}\n"+
+                "$tokens=$null;$errors=$null;$null=[Management.Automation.Language.Parser]::ParseFile('"+builder+"',[ref]$tokens,[ref]$errors)\n"+
+                "if($errors.Count){throw ($errors|Out-String)}\n")
+            result=subprocess.run([shutil.which('pwsh'),'-NoProfile','-File',str(script)],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
 
 if __name__ == '__main__':

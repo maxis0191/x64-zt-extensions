@@ -345,6 +345,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $diagnostic=[bool]$Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']
     if($diagnostic -and !$export){throw 'Surface-count diagnostic is restricted to ResidentExportV1.'}
     if($Plan.PSObject.Properties['ResidentMultiSurfaceV2'] -and !$export){throw 'Resident multi-surface v2 is restricted to the export operation.'}
+    if($Plan.PSObject.Properties['SelectedMeshMaterialObservation'] -and !$export){throw 'Selected observation probe is restricted to the export operation.'}
     $schema=if($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
     $reportLimit=if($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
@@ -371,6 +372,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($export){$bindingCount+=9}
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
         if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
+        if($export -and (Get-T7SelectedObservationProbe $Plan)){$bindingCount+=3} # E2 source/probe pins and distinct closure bundle.
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
            !(Test-T7CatalogueInteger $Plan.OutputLimitBytes ($zoneSpec.FixedBytes+64MB+$limits.TotalBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}

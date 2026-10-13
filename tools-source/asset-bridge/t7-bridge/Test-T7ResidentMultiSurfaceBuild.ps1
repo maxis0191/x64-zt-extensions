@@ -46,6 +46,11 @@ function New-V2BuildFixture {
     $r.Stages[2].Artifacts[0].Bytes=$p.CandidateBytes;$r.Stages[2].Artifacts[0].SHA256=$p.CandidateSHA256
     $r.PlanSHA256=$p.ExpectedBuildPlanSHA256;$r|Add-Member NoteProperty LeaseToken 'synthetic-lease'
     $inputFixture=New-BindingFixture;$proof=$inputFixture.ReuseCompile.ResidentMultiSurfaceV2
+    # The input-binding fixture advances with newer CLI probes. D remains an
+    # immutable historical contract, so keep its own original CLI transition.
+    $dCLI=@($proof.SourceTransitions|Where-Object Path -CEQ 'prepared/zonetool.cpp')[0]
+    $dCLI.Bytes=39356;$dCLI.SHA256='27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e'
+    $dCLI.WiredBytes=39410;$dCLI.WiredSHA256='b470e08edaa26c3527d02cab89a867192371290dda02c16c5569acd7d6819279'
     $proof.DependencyJSON=$b.ReuseCompile.ResidentSurfaceCountDiagnostic.DependencyJSON
     $b.ReuseCompile.PSObject.Properties.Remove('ResidentSurfaceCountDiagnostic');$b.ReuseCompile|Add-Member NoteProperty ResidentMultiSurfaceV2 $proof
     $b|Add-Member NoteProperty Inputs $inputFixture.Inputs
@@ -95,7 +100,74 @@ function New-V2BuildFixture {
     foreach($pair in @(@('Completion',$completion),@('ActualHostExit',$actual),@('OriginalHostClosure',$closure),@('HostIdentity',$identity),@('Witness',$witness))){$script:json[$pins[$pair[0]].Path]=$pair[1]}
     $f|Add-Member NoteProperty Pins $pins;$f
 }
+function New-ObservationClosureFixture {
+    $script:json=@{}
+    $p=[pscustomobject]@{Operation='ResidentExportV1';ResidentMultiSurfaceV2=[pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'};
+        SelectedMeshMaterialObservation=[pscustomobject]@{Schema='iw7.t7-selected-mesh-material-probe/1'};
+        BuildPlan=(Join-Path $root 'runtime/mesh-material-plan-e2/build-plan.local.json');BuildReceipt=(Join-Path $root 'runtime/mesh-material-build-e2/receipt.json');
+        ExpectedBuildPlanSHA256='13318cc0cdd91621c47edaf838a81357f774649a2940fc9df2e85f1351b7223f';
+        ExpectedBuildReceiptSHA256='1d54bdceca45ae97ef0875ad745eac79a9214d02927b6f444eb526bdc589a511';
+        CandidateBytes=21849600;CandidateSHA256='7c7ad775b201dea60ec050a28e5943cbf1eeeaa8e6386eba675c7ffc001f5e7f';Bindings=@()}
+    # Populate invented pins, then use the real bounded-pin validator below.
+    $pins=& {function Assert-T7CatalogueTextPin($Pin,$Bindings) {};Get-T7SelectedObservationBuildPins $p}
+    foreach($pin in $pins.Values){$p.Bindings+=@(New-Binding $pin)}
+    $r=[pscustomobject]@{LeaseToken='synthetic-e2';Stages=@()}
+    foreach($name in 'main','zonetool11','link'){
+        $r.Stages+=@([pscustomobject]@{Name=$name;Identity=[pscustomobject]@{PID=(30+$r.Stages.Count);Image='synthetic/compiler.exe';CreatedUtc='2026-10-13T19:38:05Z'};
+            CompilerTelemetry=[pscustomobject]@{Completed=$true;CompilerResult=[pscustomobject]@{BoundInputsVerified=144}};
+            LastOriginalSnapshot=[pscustomobject]@{ActiveProcesses=0}})
+    }
+    $c=[pscustomobject]@{Schema='iw7.t7-build-e2-completion/1';CompiledAssetCommit='afdd8062732499698a6a810918b8aae082ba3668';
+        NativeDependencyCommit='2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1';UpstreamSourceCommit='fab935826c898806855376662a8a03317b3ad8f1';
+        Status='Passed';LeaseToken=$r.LeaseToken;BuildPlan=$pins.BuildPlan;BuildReceipt=$pins.BuildReceipt;InputsReverified=$true;TreeClosureConfirmed=$true;LeaseReleased=$true;
+        Quarantined=$false;CandidateExecuted=$false;ArtifactBytesReadOrHashedAfterRelease=$false;FixturePassed=$false;StockSondeExecuted=$false;
+        OriginalSessionId=75422;OriginalPTYExitCode=0;Stages=@(foreach($stage in $r.Stages){[pscustomobject]@{Name=$stage.Name;Identity=(Copy-Value $stage.Identity);ExitCode=0;TreeClosureConfirmed=$true}})}
+    $h=[pscustomobject]@{Schema='iw7.t7-build-e2-host-closure/1';OriginalSessionId=75422;ActualPTYExit=[pscustomobject]@{ExitCode=0;ChunkId='96d4f3'};
+        HostState=[pscustomobject]@{Closed=$true;Lease=$null;Guards=0;Status='Passed'};
+        FreshClosureInventory=[pscustomobject]@{LeaseCount=0;OriginalHostsAndStagesAbsent=$true;HeavyAndGameProcessesAbsent=$true}}
+    $t=[pscustomobject]@{Schema='iw7.t7-build-e2-original-tool-evidence/1';Records=@(foreach($chunk in '041444','1656ef','96d4f3','8e6728','d1f504'){
+        [pscustomobject]@{ToolResult=[pscustomobject]@{chunk_id=$chunk;exit_code=0}}
+    })}
+    $s=[pscustomobject]@{product='x64-zt-extensions';revisions=[pscustomobject]@{'x64-zt-extensions'=$c.CompiledAssetCommit;'iw7-mod-components'=$c.NativeDependencyCommit}}
+    $bundle=[pscustomobject]@{Schema='iw7.t7-build-e2-closure-bundle/1';Files=@($pins.Completion,$pins.HostClosure,$pins.ToolEvidence)}
+    foreach($pair in @(@('Completion',$c),@('HostClosure',$h),@('ToolEvidence',$t),@('SourceReceipt',$s),@('Bundle',$bundle))){$script:json[$pins[$pair[0]].Path]=$pair[1]}
+    [pscustomobject]@{Plan=$p;Receipt=$r;Pins=$pins;Completion=$c;Host=$h;Tools=$t;Source=$s;Bundle=$bundle}
+}
 try {
+    $e=New-ObservationClosureFixture
+    $qualifiedPins=Get-T7ResidentMultiSurfaceBuildPins $e.Plan
+    Check ($qualifiedPins.BuildPlan.SHA256 -ceq $e.Plan.ExpectedBuildPlanSHA256 -and !$qualifiedPins.Contains('Witness')) 'E2 pins became D pins.'
+    Assert-T7SelectedObservationClosure $e.Plan $e.Receipt $e.Pins;$checks++
+    foreach($mutation in 'schema','v1','mixed','extra-marker','candidate','asset-source','native-source','upstream-source','lease','guard','exit','chunk','missing-tool','duplicate-tool','executed','fixture-overclaim','stock-overclaim','bundle','stage','stage-pid','stage-date','telemetry','bound-inputs','live-child'){
+        $e=New-ObservationClosureFixture
+        switch($mutation){
+            schema {$e.Plan.SelectedMeshMaterialObservation.Schema='other'}
+            v1 {$e.Plan.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}
+            mixed {$e.Plan|Add-Member NoteProperty ResidentSurfaceCountDiagnostic $null}
+            extra-marker {$e.Plan.SelectedMeshMaterialObservation|Add-Member NoteProperty Ready $true}
+            candidate {$e.Plan.CandidateSHA256='0'*64}
+            asset-source {$e.Completion.CompiledAssetCommit='0'*40}
+            native-source {$e.Source.revisions.'iw7-mod-components'='0'*40}
+            upstream-source {$e.Completion.UpstreamSourceCommit='0'*40}
+            lease {$e.Host.HostState.Lease='retained'}
+            guard {$e.Host.HostState.Guards=1}
+            exit {$e.Host.ActualPTYExit.ExitCode=1}
+            chunk {$e.Host.ActualPTYExit.ChunkId='different'}
+            missing-tool {$e.Tools.Records=$e.Tools.Records[0..3]}
+            duplicate-tool {$e.Tools.Records+=@($e.Tools.Records[0])}
+            executed {$e.Completion.CandidateExecuted=$true}
+            fixture-overclaim {$e.Completion.FixturePassed=$true}
+            stock-overclaim {$e.Completion.StockSondeExecuted=$true}
+            bundle {$e.Bundle.Files=$e.Bundle.Files[0..1]}
+            stage {$e.Completion.Stages[0].ExitCode=1}
+            stage-pid {$e.Completion.Stages[0].Identity.PID++}
+            stage-date {$e.Completion.Stages[0].Identity.CreatedUtc='2026-10-13T19:38:06Z'}
+            telemetry {$e.Receipt.Stages[0].CompilerTelemetry.Completed=$false}
+            bound-inputs {$e.Receipt.Stages[0].CompilerTelemetry.CompilerResult.BoundInputsVerified=141}
+            live-child {$e.Receipt.Stages[0].LastOriginalSnapshot.ActiveProcesses=1}
+        }
+        Refuses {$null=Get-T7ResidentMultiSurfaceBuildPins $e.Plan;Assert-T7SelectedObservationClosure $e.Plan $e.Receipt $e.Pins} 'required|differ|source|closure|contract|mixed|fields|scope|host exit|tool completion|bundle|creation'
+    }
     $f=New-V2BuildFixture;Assert-T7CatalogueBuild $f.Plan $f.Receipt;$checks++
     foreach($name in $f.Pins.Keys){
         foreach($change in 'missing','hash','bytes','binary','duplicate'){

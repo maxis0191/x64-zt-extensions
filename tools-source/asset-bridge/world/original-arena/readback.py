@@ -4,6 +4,7 @@ Does not import the arena generator or native serializer. Reuses only the
 existing typed-record cursor; shader compatibility and physics are not inferred.
 """
 import argparse
+import hashlib
 import importlib.util
 import json
 import math
@@ -15,6 +16,7 @@ spec = importlib.util.spec_from_file_location('_arena_record_reader', BASE)
 records = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(records)
 Reader, check, values = records.Reader, records.check, records.values
+MATERIAL = 'mopw/character_park_clown_zombie_shoes'
 
 
 def bounded(path, maximum):
@@ -35,7 +37,8 @@ def f32(value):
     return result
 
 
-def inspect(model, mesh, source):
+def inspect(model, mesh, source, *, expected_material=None):
+    check(expected_material is None or expected_material == MATERIAL, 'Explicit reviewed recipient material required')
     check(source.get('schema') == 'iw7.original-mesh-source/1' and source.get('name') == 'paris_original_arena', 'Original arena identity')
     check(len(source['surfaces']) == 1 and source['surfaces'][0]['material_reference'] is None, 'One material-unbound surface required')
     vertices, triangles = source['surfaces'][0]['vertices'], source['surfaces'][0]['triangles']
@@ -50,6 +53,7 @@ def inspect(model, mesh, source):
     # compare it to the original double sum, or tolerate unrelated large error.
     radius_f32 = f32(math.sqrt(radius_squared_f32))
     m = Reader(model); header = m.array('model', 736, 1)
+    check(tuple(header[8:15]) == (0,1,0,1,255,6,1), 'Rigid model LOD/shadow/collision metadata')
     check(values(header, 20, '3B') == (1,1,0) and values(header, 24, 'HH') == (0,1), 'One rigid root and surface')
     check(values(header, 28, 'f') == (1.0,), 'Model scale')
     check(values(header, 44, '6f') == bounds_f32, 'Authored model bounds')
@@ -65,8 +69,9 @@ def inspect(model, mesh, source):
     bone = values(m.array('bone',28,1),0,'7f')
     check(bone == bounds_f32+(radius_squared_f32,), 'Authored bone bounds')
     check(m.array('mip',2,1) == bytes(2), 'Mip metadata')
-    check(m.array('material_handles',8,1) == bytes(8), 'Material must remain unbound')
-    m.name('material',7,None);m.name('lod0',7,'paris_original_arena_lod0')
+    handle = m.array('material_handles',8,1)
+    check((handle != bytes(8)) == (expected_material is not None), 'Material handle presence differs')
+    m.name('material',7,expected_material);m.name('lod0',7,'paris_original_arena_lod0')
     for i in range(1,6):m.name('lod'+str(i),7,None)
     for name in ('physics_asset','physics_fx','scriptable','procedural'):
         m.name(name,7,None)
@@ -77,6 +82,8 @@ def inspect(model, mesh, source):
     s.name('mesh_name',6,'paris_original_arena_lod0')
     h=s.array('surface',256,1)
     check(values(h,0,'3H2B') == (0x82,len(vertices),len(triangles),1,0), 'Surface counts/flags')
+    check(values(header,240,'8I') == values(group,20,'8I') == values(h,224,'8I') ==
+          (0x80000000,0,0,0,0,0,0,0), 'Rigid LOD/group/surface root part bits')
     packed=s.array('vertices',32,len(vertices))
     for i,v in enumerate(vertices):
         check(all(type(n) in (int,float) and math.isfinite(n) for n in v['position']+v['normal']+v['uv']), 'Finite source vertex')
@@ -95,14 +102,19 @@ def inspect(model, mesh, source):
     s.finish()
     return {'schema':'iw7.original-arena-independent-readback/1','vertices':len(vertices),'triangles':len(triangles),
             'model_bytes':len(model),'mesh_bytes':len(mesh),'geometry_roundtrip_verified':True,
-            'material_bound':False,'physics_serialized':False,'runtime_verified':False}
+            'material_bound':expected_material is not None,'material_reference':expected_material,
+            'packed_streams_sha256':{key:hashlib.sha256(raw).hexdigest() for key,raw in
+                                     (('vertices',packed),('triangles',faces),('rigid',rigid))},
+            'physics_serialized':False,'runtime_verified':False}
 
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--artifacts',required=True,type=Path)
     parser.add_argument('--geometry-source',required=True,type=Path)
+    parser.add_argument('--expected-material',choices=[MATERIAL])
     args=parser.parse_args()
     source=json.loads(bounded(args.geometry_source,128*1024),parse_constant=lambda v:check(False,'Nonfinite source constant'))
     print(json.dumps(inspect(bounded(args.artifacts/'xmodel/paris_original_arena.xmb',8192),
-                             bounded(args.artifacts/'xsurface/paris_original_arena_lod0.xsb',8192),source),indent=2))
+                             bounded(args.artifacts/'xsurface/paris_original_arena_lod0.xsb',8192),source,
+                             expected_material=args.expected_material),indent=2))

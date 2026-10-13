@@ -49,11 +49,53 @@ After a coordinated build, the independent check is:
 python -B tools-source/asset-bridge/world/original-arena/readback.py --artifacts <owned-writer-artifacts> --geometry-source <prepared-geometry.source.json>
 ```
 
-Current source result: 13 targeted tests pass. Source preparation produces seven
+Current source result: 24 targeted tests pass. Default source preparation produces seven
 files, including a 55,918-byte geometry document and about 14 KiB of adapted C++.
 No native compile, fastfile, material binding or game result is implied. The
 previous World 24-case native receipt is preserved at its original paths and
 identities; it qualifies the reused lifecycle, not the relocated/new arena.
+
+## Visible original model through ModelLab
+
+The explicit `iw7-original-arena-rigid-v1` profile reuses the existing ModelLab
+FF runner, inventory, stock links and restoration. It is an authored original
+model, not a resident T7 export. One combined surface contains all seven default
+boxes (168 vertices, 84 triangles), with the existing `paris_model_probe` zone,
+NetConstStrings and rawfile names. These names require an exclusive ModelLab
+scenario; the XModel/mesh names remain `paris_original_arena` / `_lod0`.
+
+The default unbound writer and its queued native Plan remain unchanged. A future
+fresh material-bound source variant uses the cube's extracted source/recipient
+validator, rechecking its three snapshot files and three normal-source hashes:
+
+```powershell
+python -B tools-source/asset-bridge/world/original-arena/prepare.py --output <fresh-bound-source> --source <pinned-tool-source> --recipient-evidence ops/model-lab/recipient.evidence.json --stock-root <existing-recipient-snapshot>
+```
+
+This emits `arena-writer-source.json` as source metadata, with compiled=false.
+After a separately coordinated native build, stage only its bounded XMB/XSB:
+
+```powershell
+python -B tools-source/asset-bridge/world/original-arena/model_lab.py stage --artifacts <bound-writer-artifacts> --prepared-source <fresh-bound-source> --output <fresh-ff-source>
+python -B tools-source/asset-bridge/world/original-arena/model_lab.py verify-stage --source <fresh-ff-source>
+```
+
+`verify-stage` returns the five FF input hashes and all eight relative paths it
+consults under staging (`validation_files`, including source metadata and the
+plan itself). The creator SDK can capture/recheck those same bytes. The helper
+uses the existing CSV/NCS authoring adapter unchanged; it never invents a T7
+manifest or copies recipient material payloads.
+
+`Build-ModelFF.ps1` dispatches this profile to the arena's independent Python
+reader for source validation and FF re-dump. `verify-dump --source <staging>
+--dump <owned-redump> --ff <owned-ff>` checks authored positions, rig/LOD/material,
+and byte-identical packed vertex/index/rigid streams, then reports plan/geometry/
+FF hashes. Raw pointer relocation is allowed; the named material must match.
+The helper does not parse the FF container or independently establish native
+producer provenance. Its geometry checks complement the existing tool run and
+inventory evidence. Every source/test receipt keeps native provenance, pixels,
+runtime and physics unverified. No material-bound native run or FF was performed
+for this source change; collision remains a separate native engine task.
 
 ## Collision that still needs a native primitive
 
