@@ -161,35 +161,28 @@ static void resident_export_observe_mesh(const XModel* source, const std::string
     }
 }
 
-static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
-    const std::string& lod_arg, const bool multisurface = false)
+static void selected_export_observe_material(const XModel* source, const std::string& name, const unsigned lod)
 {
-    const auto zone = resident_export_name(zone_arg.c_str(), true);
-    const auto name = resident_export_name(model_arg.c_str());
-    if (lod_arg.size() != 1 || lod_arg[0] < '0' || lod_arg[0] > '5')
-        throw std::runtime_error("Explicit canonical LOD 0..5 required");
-    const auto lod = static_cast<unsigned int>(lod_arg[0] - '0');
-    resident_export_load_zone(zone);
-    const auto header = db_find_x_asset_header(ASSET_TYPE_XMODEL, name.c_str());
-    if (!header.data || DB_IsXAssetDefault(ASSET_TYPE_XMODEL, name.c_str()))
-        throw std::runtime_error("Exact nondefault source model required");
-    if (multisurface)
+    try
     {
-        resident_export_observe_mesh(reinterpret_cast<const XModel*>(header.data), zone, name, lod);
-        try
-        {
-            const auto observation = selected_material_observation::observe(
-                reinterpret_cast<const XModel*>(header.data), name, lod, 0,
-                resident_iw7::detail::readable);
-            ZONETOOL_INFO("T7_SELECTED_MATERIAL_METADATA %s", observation.c_str());
-        }
-        catch (const std::exception& error)
-        {
-            ZONETOOL_INFO("T7_SELECTED_MATERIAL_METADATA_REFUSED %s", error.what());
-        }
+        const auto observation = selected_material_observation::observe(source, name, lod, 0,
+            resident_iw7::detail::readable);
+        ZONETOOL_INFO("T7_SELECTED_MATERIAL_METADATA %s", observation.c_str());
     }
-    utils::memory::allocator allocator;
-    const auto selected = resident_iw7::select(reinterpret_cast<XModel*>(header.data), name.c_str(), lod, allocator, multisurface);
+    catch (const std::exception& error)
+    {
+        ZONETOOL_INFO("T7_SELECTED_MATERIAL_METADATA_REFUSED %s", error.what());
+    }
+}
+
+static void write_selected_model_iw7(XModel* selected, const std::string& zone,
+    const std::string& name, const std::string& lod_arg, const bool multisurface,
+    const nlohmann::ordered_json* streamed_payload = nullptr, const std::string& streamed_root_key = {})
+{
+    const auto lod = static_cast<unsigned>(lod_arg[0] - '0');
+    if (streamed_payload && (!multisurface || streamed_root_key.size() != 80 ||
+        !streamed_root_key.starts_with("t7_iw7_streamed_")))
+        throw std::runtime_error("Explicit selected-streamed output root required");
     if (!selected || resident_export_name(selected->name) != name || selected->numLods != 1 || !selected->meshes[0])
         throw std::runtime_error("Selected model contract differs");
     const auto mesh_name = resident_export_name(selected->meshes[0]->name);
@@ -233,8 +226,9 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
         {"roots", static_cast<unsigned int>(selected->numRootBones)},
         {"surfaces", surface_count}, {"vertices", vertices}, {"triangles", triangles}};
     const auto key_input = zone + "\n" + name + "\n" + lod_arg;
-    const auto key = "t7_iw7_" + utils::string::to_lower(utils::cryptography::sha256::compute(
+    const auto resident_key = "t7_iw7_" + utils::string::to_lower(utils::cryptography::sha256::compute(
         reinterpret_cast<const uint8_t*>(key_input.data()), key_input.size(), true));
+    const auto key = streamed_payload ? streamed_root_key : resident_key;
     const auto cwd = std::filesystem::current_path();
     resident_export_ancestry(cwd);
     const auto dump = cwd / "dump";
@@ -245,8 +239,8 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
     if (!CreateDirectoryW(root.c_str(), nullptr)) throw std::runtime_error("Export root must be absent");
     resident_export_ancestry(root);
     filesystem::set_fastfile(key);
-    // Bypass auto dump/ref expansion. The geometry adapter already rejected
-    // streamed data, optional physics and all but the selected resident LOD.
+    // Bypass automatic dependency expansion. Both explicit adapters give
+    // the converter validated CPU geometry with legacy XPAK reads locked.
     converter::iw7::xmodel::dump(selected);
     if (multisurface) resident_export_dump_multisurface_mesh(selected->meshes[0]);
     else converter::iw7::xmodel_mesh::dump(selected->meshes[0]);
@@ -265,11 +259,13 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
         if (++files > 2 || total > 32u * 1024u * 1024u) throw std::runtime_error("Export file budget exceeded");
     }
     if (files != 2) throw std::runtime_error("Both model and mesh outputs required");
-    nlohmann::ordered_json report = {{"schema", multisurface ? "iw7.t7-iw7-resident-export/2" : "iw7.t7-iw7-resident-export/1"},
+    nlohmann::ordered_json report = {{"schema", streamed_payload ? "iw7.t7-iw7-selected-streamed-export/1" :
+        (multisurface ? "iw7.t7-iw7-resident-export/2" : "iw7.t7-iw7-resident-export/1")},
         {"requested_zone", zone}, {"source_model", name}, {"selected_source_lod", lod},
         {"output_model_name", name}, {"output_mesh_name", mesh_name}, {"output_root_key", key},
-        {"target", "iw7"}, {"profile", "resident-rigid-one-lod"},
-        {"geometry_profile", multisurface ? resident_iw7::multisurface_profile : resident_iw7::profile},
+        {"target", "iw7"}, {"profile", streamed_payload ? "selected-streamed-rigid-one-lod" : "resident-rigid-one-lod"},
+        {"geometry_profile", streamed_payload ? streamed_iw7::profile :
+            (multisurface ? resident_iw7::multisurface_profile : resident_iw7::profile)},
         {"root_bone_name", root_bone_name}, {"selected_counts", selected_counts},
         {"material_dependencies", material_names},
         {"model", resident_export_file(root / model_path, 1024u * 1024u)},
@@ -283,6 +279,7 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
         report["surface_records"] = surface_records;
         report["geometry_work_bytes_upper_bound"] = geometry_work;
     }
+    if (streamed_payload) report["selected_mesh_payload"] = *streamed_payload;
     report["model"]["relative_path"] = model_path.generic_string();
     report["mesh"]["relative_path"] = mesh_path.generic_string();
     const auto bytes = report.dump() + "\n";
@@ -291,5 +288,29 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
     // Reuse the retained exclusive-create + exact readback writer. Its function
     // name is historical; it writes the supplied bytes without CSV conversion.
     zonetool::iw7::write_enemy_reference_output(root / "manifest.json", bytes);
-    ZONETOOL_INFO("T7_IW7_RESIDENT_EXPORT name=%s lod=%u root=%s ready=false", name.c_str(), lod, key.c_str());
+    ZONETOOL_INFO("%s name=%s lod=%u root=%s ready=false",
+        streamed_payload ? "T7_IW7_SELECTED_STREAMED_EXPORT" : "T7_IW7_RESIDENT_EXPORT",
+        name.c_str(), lod, key.c_str());
+}
+
+static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
+    const std::string& lod_arg, const bool multisurface = false)
+{
+    const auto zone = resident_export_name(zone_arg.c_str(), true);
+    const auto name = resident_export_name(model_arg.c_str());
+    if (lod_arg.size() != 1 || lod_arg[0] < '0' || lod_arg[0] > '5')
+        throw std::runtime_error("Explicit canonical LOD 0..5 required");
+    const auto lod = static_cast<unsigned int>(lod_arg[0] - '0');
+    resident_export_load_zone(zone);
+    const auto header = db_find_x_asset_header(ASSET_TYPE_XMODEL, name.c_str());
+    if (!header.data || DB_IsXAssetDefault(ASSET_TYPE_XMODEL, name.c_str()))
+        throw std::runtime_error("Exact nondefault source model required");
+    if (multisurface)
+    {
+        resident_export_observe_mesh(reinterpret_cast<const XModel*>(header.data), zone, name, lod);
+        selected_export_observe_material(reinterpret_cast<const XModel*>(header.data), name, lod);
+    }
+    utils::memory::allocator allocator;
+    const auto selected = resident_iw7::select(reinterpret_cast<XModel*>(header.data), name.c_str(), lod, allocator, multisurface);
+    write_selected_model_iw7(selected, zone, name, lod_arg, multisurface);
 }

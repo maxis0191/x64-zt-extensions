@@ -28,12 +28,12 @@ def render(native):
     main, target, xpak, header = PATHS
     patched[main] = helper.once(patched[main], 'int main()\n{', '''int main()
 {
-	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-catalog")) && !utils::io::file_exists(T7_BINARY))
+	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-catalog")) && !utils::io::file_exists(T7_BINARY))
 	{
 		std::fputs("T7 resident export requires the pinned unranked dedicated engine.\\n", stderr);
 		return EXIT_FAILURE;
 	}''')
-    patched[main] = helper.once(patched[main], '\treturn main_internal();', '''	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-catalog")) && game::get_mode() != game::t7)
+    patched[main] = helper.once(patched[main], '\treturn main_internal();', '''	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-catalog")) && game::get_mode() != game::t7)
 	{
 		std::fputs("T7 resident export refuses competing engine mode.\\n", stderr);
 		return EXIT_FAILURE;
@@ -41,6 +41,7 @@ def render(native):
 	return main_internal();''')
     includes = '''#include "common/xpak.hpp"
 #include <array>
+#include "lz4.h"
 #include <utils/cryptography.hpp>
 #include <utils/flags.hpp>
 #include "t7_iw7_resident_model.hpp"
@@ -60,6 +61,13 @@ namespace zonetool::iw7
     material_observer = helper.once(material_observer, '#pragma once\n', '')
     material_observer = helper.once(material_observer, '#include "resident_image_copy.hpp"\n', '')
     includes += '\n\n'+image_observer+'\n'+material_observer
+    streamed_reader = (HERE/'streamed_mesh_payload.hpp').read_text(encoding='utf-8')
+    # Publication has one exact <mutex> anchor. The global include above also
+    # supplies the inlined reader; do not change its standalone source header.
+    streamed_reader = helper.once(streamed_reader, '#include <mutex>\n', '')
+    streamed_model = (HERE/'t7_iw7_streamed_model.hpp').read_text(encoding='utf-8')
+    includes += '\n\n'+helper.once(streamed_reader, '#pragma once\n', '')
+    includes += '\n\n'+helper.once(streamed_model, '#pragma once\n', '')
     patched[target] = helper.once(patched[target], '#include "common/xpak.hpp"', includes)
     capture = (HERE/'native_catalog_capture.inc').read_text(encoding='utf-8')
     patched[target] = helper.once(patched[target], '\tutils::hook::detour db_add_xasset_hook;',
@@ -67,6 +75,7 @@ namespace zonetool::iw7
     patched[target] = helper.once(patched[target], '\t\tdump_asset(&xasset);',
         '\t\tresident_catalog_capture(type, header);\n\t\tdump_asset(&xasset);')
     export = (HERE/'native_export.inc').read_text(encoding='utf-8')
+    export += '\n'+(HERE/'native_streamed_export.inc').read_text(encoding='utf-8')
     export += '\n'+(HERE/'native_catalog.inc').read_text(encoding='utf-8')
     patched[target] = helper.once(patched[target], '\tvoid handle_params()\n',
         '\n'.join('\t'+line if line else '' for line in export.splitlines())+'\n\n\tvoid handle_params()\n')

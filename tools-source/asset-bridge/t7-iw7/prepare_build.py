@@ -313,7 +313,7 @@ def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals,
 
 def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False,
                       recompile_zonetool=False, surface_count_dependencies=None, e7_dependency_text=None,
-                      resident_multisurface_v2=False):
+                      resident_multisurface_v2=False, selected_streamed_static_v1=False):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -335,6 +335,12 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             (not recompile_zonetool or (recompile_main is True and catalog_trace is True)),
             'CLI rebuild requires the explicit two-TU catalogue path')
     require(type(resident_multisurface_v2) is bool, 'Multisurface selection must be boolean')
+    require(type(selected_streamed_static_v1) is bool and
+            (not selected_streamed_static_v1 or resident_multisurface_v2), 'Explicit selected-streamed reuse required')
+    transitions = (prepare_catalog_trace.SELECTED_STREAMED_TRANSITIONS if selected_streamed_static_v1 else
+                   prepare_catalog_trace.MULTISURFACE_TRANSITIONS)
+    wired_pins = (prepare_catalog_trace.SELECTED_STREAMED_WIRED_PINS if selected_streamed_static_v1 else
+                  prepare_catalog_trace.MULTISURFACE_WIRED_PINS)
     header_evidence = surface_count_dependencies is not None
     diagnostic = header_evidence and not resident_multisurface_v2
     require((e7_dependency_text is not None) == header_evidence and
@@ -344,8 +350,8 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     diagnostic_proof = None
     if resident_multisurface_v2:
         require(all(prepare_catalog_trace.multisurface_payload_delta(name, payloads.get(name),
-                    prior_bindings.get(key(prepared/name.removeprefix('prepared/'))), wired=True)
-                    for name in prepare_catalog_trace.MULTISURFACE_TRANSITIONS),
+                    prior_bindings.get(key(prepared/name.removeprefix('prepared/'))), wired=True,
+                    selected_streamed=selected_streamed_static_v1) for name in transitions),
                 'Exact wired multisurface v2 transitions required')
     elif diagnostic:
         name = prepare_catalog_trace.SURFACE_COUNT_HEADER
@@ -359,9 +365,8 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             diagnostic_proof.update(Schema='iw7.t7-resident-multi-surface-build/2',
                 SourceTransitions=[{'Path':name,'PreviousBytes':old[0],'PreviousSHA256':old[1],
                     'Bytes':new[0],'SHA256':new[1],
-                    'WiredBytes':prepare_catalog_trace.MULTISURFACE_WIRED_PINS[name][0],
-                    'WiredSHA256':prepare_catalog_trace.MULTISURFACE_WIRED_PINS[name][1]}
-                    for name,(old,new) in prepare_catalog_trace.MULTISURFACE_TRANSITIONS.items()])
+                    'WiredBytes':wired_pins[name][0], 'WiredSHA256':wired_pins[name][1]}
+                    for name,(old,new) in transitions.items()])
     if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
     require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
             'Exact native payload inventory required for reuse')
@@ -373,7 +378,8 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             continue
         path = prepared/name.removeprefix('prepared/')
         pin = prior_bindings.get(key(path))
-        if resident_multisurface_v2 and prepare_catalog_trace.multisurface_payload_delta(name, raw, pin, wired=True):
+        if resident_multisurface_v2 and prepare_catalog_trace.multisurface_payload_delta(name, raw, pin, wired=True,
+                selected_streamed=selected_streamed_static_v1):
             old_text.append(pin)
             continue
         if diagnostic and prepare_catalog_trace.surface_count_header_delta(name, raw, pin):
@@ -418,6 +424,8 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'RecompiledMain':recompile_main, **({'RecompiledZonetool':True} if recompile_zonetool else {}),
             **({'ResidentSurfaceCountDiagnostic':diagnostic_proof} if diagnostic else {}),
             **({'ResidentMultiSurfaceV2':diagnostic_proof} if resident_multisurface_v2 else {}),
+            **({'SelectedStreamedStaticV1':{'Schema':'iw7.t7-selected-streamed-static-build/1',
+                'GeometryProfile':'t7-iw7-selected-streamed-static-v1'}} if selected_streamed_static_v1 else {}),
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
@@ -438,7 +446,11 @@ def prepare(args):
     prepatch_helper = getattr(args, 'prepatch_helper', None)
     catalog_publication = bool(getattr(args, 'catalog_message_publication', False))
     surface_count_diagnostic = getattr(args, 'resident_surface_count_diagnostic', False)
-    resident_multisurface_v2 = getattr(args, 'resident_multisurface_v2', False)
+    selected_streamed_static_v1 = getattr(args, 'selected_streamed_static_v1', False)
+    resident_requested = getattr(args, 'resident_multisurface_v2', False)
+    require(type(selected_streamed_static_v1) is bool and type(resident_requested) is bool and
+            not (selected_streamed_static_v1 and resident_requested), 'One explicit resident or selected-streamed profile required')
+    resident_multisurface_v2 = resident_requested or selected_streamed_static_v1
     require(type(resident_multisurface_v2) is bool and
             (not resident_multisurface_v2 or (catalog_publication and surface_count_diagnostic is False)),
             'Multisurface v2 requires exclusive two-TU publication selection')
@@ -579,7 +591,7 @@ def prepare(args):
                 read(args.ordinary_plan,2*1024**2,prepare_catalog_trace.BASE_PLAN_SHA),
                 read(args.ordinary_receipt,128*1024,prepare_catalog_trace.BASE_RECEIPT_SHA),
                 prior_raw, prior_receipt_raw, payloads, surface_count_diagnostic=surface_count_diagnostic,
-                resident_multisurface_v2=resident_multisurface_v2)
+                resident_multisurface_v2=resident_multisurface_v2, selected_streamed_static_v1=selected_streamed_static_v1)
             if surface_count_diagnostic or resident_multisurface_v2:
                 prior = json.loads(prior_raw); receipt = json.loads(prior_receipt_raw)
                 surface_count_dependencies = {}
@@ -602,7 +614,7 @@ def prepare(args):
             recompile_zonetool=catalog_publication, surface_count_dependencies=surface_count_dependencies,
             e7_dependency_text={'read':e7_dependency_text,'compile':cl_raw,'link':link_raw}
                 if surface_count_diagnostic or resident_multisurface_v2 else None,
-            resident_multisurface_v2=resident_multisurface_v2)
+            resident_multisurface_v2=resident_multisurface_v2, selected_streamed_static_v1=selected_streamed_static_v1)
         if resident_multisurface_v2:
             reuse['ResidentMultiSurfaceV2']['AdditionalHeaderInputs'] = multisurface_headers
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
@@ -692,6 +704,7 @@ if __name__ == '__main__':
     parser.add_argument('--catalog-message-publication',action='store_true')
     parser.add_argument('--resident-surface-count-diagnostic',action='store_true')
     parser.add_argument('--resident-multisurface-v2',action='store_true')
+    parser.add_argument('--selected-streamed-static-v1',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

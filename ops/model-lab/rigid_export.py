@@ -27,6 +27,7 @@ finally:
 
 PROFILE = 't7-iw7-resident-static-v1'
 PROFILE_V2 = 't7-iw7-resident-static-v2'
+MULTISURFACE_PROFILES = (PROFILE_V2, rb.STREAMED_PROFILE)
 MATERIAL = 'mopw/character_park_clown_zombie_shoes'
 SCENE_MIN_DISTANCE = 256
 FF_LIMIT = 32 * 1024**2
@@ -79,7 +80,7 @@ def derive(model, mesh, manifest, request, material=None, lod_distance=None, *, 
         start, end = entry['string_span']
         change = {'field': 'material', 'old': entry['source'], 'new': entry['target'],
                   'source_string_span': [start, end]}
-        if manifest['geometry_profile'] == PROFILE_V2:
+        if manifest['geometry_profile'] in MULTISURFACE_PROFILES:
             change.update(definition=entry['definition'], slots=entry['slots'])
         transformations.append(change)
     derived = model
@@ -115,7 +116,7 @@ def derive(model, mesh, manifest, request, material=None, lod_distance=None, *, 
                      'mesh_sha256': digest(mesh), 'mesh_byte_identical': True,
                      'only_declared_bytes_changed': True, 'native_provenance_verified': False,
                      'runtime_verified': False, 'pixels_verified': False, 'ready': False}
-    if manifest['geometry_profile'] == PROFILE_V2:
+    if manifest['geometry_profile'] in MULTISURFACE_PROFILES:
         receipt['material_rebinds'] = copy.deepcopy(bindings)
     rb.check(len(json_bytes(receipt)) <= DOCUMENT_LIMIT, 'Derived metadata exceeds independent bound')
     return derived, receipt
@@ -130,7 +131,7 @@ def load_export(root, request_path, manifest_path):
     manifest_bytes = rb.read_bounded(manifest_path, rb.MANIFEST_LIMIT)
     request, manifest = decode_document(request_bytes), decode_document(manifest_bytes)
     rb.check(type(manifest) is dict, 'Export manifest object required')
-    rb.check(manifest.get('schema') == 'iw7.t7-iw7-resident-export/2' or len(manifest_bytes) <= 4096,
+    rb.check(manifest.get('schema') in ('iw7.t7-iw7-resident-export/2', rb.STREAMED_SCHEMA) or len(manifest_bytes) <= 4096,
              'V1 manifest exceeds 4 KiB')
     rb.validate_export(manifest, request)
     model = rb.read_bounded(root / manifest['model']['relative_path'], rb.MODEL_LIMIT)
@@ -178,7 +179,7 @@ def make_plan(manifest, request, receipt, payloads):
     from prepare_writer import PIN
     model_name, mesh_name = manifest['output_model_name'], manifest['output_mesh_name']
     distance = receipt['derived_model']['lod_distance']
-    v2 = manifest['geometry_profile'] == PROFILE_V2
+    v2 = manifest['geometry_profile'] in MULTISURFACE_PROFILES
     plan = {'schema': 'iw7.model-ff-plan/' + ('2' if v2 else '1'),
             'geometry_profile': manifest['geometry_profile'], 'source_pin': PIN,
             'zone': 'paris_model_probe', 'recipient': 'cp_zmb', 'model_name': model_name,
@@ -233,7 +234,7 @@ def verify_stage(root, *, scene=False):
     distances = [item['new'] for item in transforms if item.get('field') == 'lodInfo[0].dist']
     rb.check(len(distances) <= 1, 'Duplicate LOD change')
     distance = distances[0] if distances else None
-    v2 = manifest['geometry_profile'] == PROFILE_V2
+    v2 = manifest['geometry_profile'] in MULTISURFACE_PROFILES
     rebinds = receipt.get('material_rebinds') if v2 else None
     derived, expected_receipt = derive(model, mesh, manifest, request, None if v2 else MATERIAL,
                                        distance, rebinds=rebinds)
@@ -273,7 +274,7 @@ def packed_geometry(mesh, manifest):
 def verify_dump(source, dump, ff):
     plan, manifest, request, model, mesh, receipt = verify_stage(source, scene=True)
     context = copy.deepcopy(manifest)
-    v2 = manifest['geometry_profile'] == PROFILE_V2
+    v2 = manifest['geometry_profile'] in MULTISURFACE_PROFILES
     context['material_dependencies'] = plan['material_references'] if v2 else [MATERIAL]
     dumped = {role: rb.read_bounded(dump / manifest[role]['relative_path'], limit)
               for role, limit in (('model', rb.MODEL_LIMIT), ('mesh', rb.MESH_LIMIT))}

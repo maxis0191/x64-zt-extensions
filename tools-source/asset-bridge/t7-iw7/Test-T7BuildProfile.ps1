@@ -137,6 +137,22 @@ function New-PublicationFixture {
     return $fixture
 }
 if(!(Assert-T7BuildProfile (New-PublicationFixture) $PSScriptRoot)){throw 'Qualified two-TU publication fixture refused.'};$checks++
+$large=New-PublicationFixture
+$large.BuildProfile.PreparedCLI.Bytes=102665
+$pin=@($large.Bindings|Where-Object Path -CEQ $large.BuildProfile.PreparedCLI.Path)[0];$pin.Bytes=102665
+Must-Refuse $large
+$large.ReuseCompile|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{
+    Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'})
+if(!(Assert-T7BuildProfile $large $PSScriptRoot)){throw 'Explicit bounded streamed CLI source refused.'};$checks++
+foreach($mode in 'schema','profile','oversize') {
+    $changed=$large|ConvertTo-Json -Depth 15|ConvertFrom-Json -Depth 15
+    switch($mode) {
+        schema {$changed.ReuseCompile.SelectedStreamedStaticV1.Schema='wrong'}
+        profile {$changed.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile='t7-iw7-resident-static-v2'}
+        oversize {$changed.BuildProfile.PreparedCLI.Bytes=131073;@($changed.Bindings|Where-Object Path -CEQ $changed.BuildProfile.PreparedCLI.Path)[0].Bytes=131073}
+    }
+    Must-Refuse $changed
+}
 $fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool=$false;Must-Refuse $fixture
 $fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool='true';Must-Refuse $fixture
 $fixture=New-PublicationFixture;$fixture.ReuseCompile.PSObject.Properties.Remove('RecompiledZonetool');Must-Refuse $fixture

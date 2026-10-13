@@ -25,7 +25,8 @@ class NativeGuardSourceTests(unittest.TestCase):
     def test_selection_and_xpak_refusal_precede_converter_calls(self):
         source = (p.HERE/'native_export.inc').read_text()
         self.assertLess(source.index('xpak::deny_reads_for_resident_export();'), source.index('load_zone(zone, true, false)'))
-        self.assertLess(source.index('resident_iw7::select('), source.index('converter::iw7::xmodel::dump(selected);'))
+        handler = source.split('static void export_resident_model_iw7(', 1)[1]
+        self.assertLess(handler.index('resident_iw7::select('), handler.index('write_selected_model_iw7('))
         self.assertLess(source.index('const auto root_bone_name ='), source.index('converter::iw7::xmodel::dump(selected);'))
         self.assertIn('SL_ConvertToString(selected->boneNames[0])', source)
         self.assertNotIn('tag_origin', source)

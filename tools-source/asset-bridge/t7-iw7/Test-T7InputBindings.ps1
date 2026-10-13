@@ -76,6 +76,63 @@ function Must-RefuseBinding($Fixture) {
     if(!$refused){throw 'Unqualified extended binding set accepted.'}
     $script:checks++
 }
+function New-StreamedBindingFixture {
+    $fixture=New-BindingFixture
+    foreach($row in @(
+        @('selected_material_observation.hpp',15261,'699796230fb3b626c9faf8ebb3e06c75eb376048c5f9928f341636235683d4da'),
+        @('selected_material_observation_fixture.cpp',10869,'d5e30aba27684ef68b60c269d1afa22c9b0e8eedad697b40412d45fce3ce8029'))) {
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
+        $pin.Bytes=$row[1];$pin.SHA256=$row[2]
+    }
+    $fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{
+        Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'})
+    foreach($row in @(
+        @('prepared/main.cpp',13052,'ca8875cf36bdf9a8c8e6142969eab95194d214d09c90064e202d68ff9302fcb3',43146,'e599c3e6945e2192443b8a3a3e274d5d36b133b41beb38d6d9234c669defca01'),
+        @('prepared/zonetool.cpp',105327,'7b76fc52769de8648a3449fd94007ed6047f0963d97d06fdc88f90753442fd48',105381,'501570c6b69971052f32b8ebdf1dfc1318a73b55d251c1f2ab8655625d412afe'))) {
+        $transition=@($fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions|Where-Object Path -CEQ $row[0])[0]
+        $transition.Bytes=$row[1];$transition.SHA256=$row[2];$transition.WiredBytes=$row[3];$transition.WiredSHA256=$row[4]
+        $path='C:\plan\'+$row[0].Replace('/','\')
+        $binding=@($fixture.Bindings|Where-Object Path -CEQ $path)[0]
+        $binding.Bytes=$row[3];$binding.SHA256=$row[4]
+    }
+    foreach($row in @(
+        @('streamed_mesh_payload.hpp',17917,'4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f'),
+        @('t7_iw7_streamed_model.hpp',10708,'baacda879ad058bbcba115362d8b86d10efd40c70040efd6bd036047b387f139'),
+        @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
+        @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
+        @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))) {
+        $fixture.Bindings+=@([pscustomobject]@{Path=('C:\fixture\'+$row[0]);Bytes=$row[1];SHA256=$row[2];IsText=$true})
+    }
+    $fixture
+}
+Assert-T7InputBindings (New-StreamedBindingFixture);$checks++
+foreach($mode in 'missing-marker','null-marker','schema','profile','extra-marker','missing-common-proof','old-transition') {
+    $f=New-StreamedBindingFixture
+    switch($mode) {
+        missing-marker {$f.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedStaticV1')}
+        null-marker {$f.ReuseCompile.SelectedStreamedStaticV1=$null}
+        schema {$f.ReuseCompile.SelectedStreamedStaticV1.Schema='iw7.t7-selected-streamed-static-build/2'}
+        profile {$f.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile='t7-iw7-resident-static-v2'}
+        extra-marker {$f.ReuseCompile.SelectedStreamedStaticV1|Add-Member NoteProperty Guess $true}
+        missing-common-proof {$f.ReuseCompile.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}
+        old-transition {$f.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions[0].WiredSHA256=('0'*64)}
+    }
+    Must-RefuseBinding $f
+}
+foreach($name in 'streamed_mesh_payload.hpp','t7_iw7_streamed_model.hpp','native_streamed_export.inc','streamed_contract.py','test_streamed_contract.py') {
+    foreach($mode in 'missing','sha','size','path','classification') {
+        $f=New-StreamedBindingFixture;$path='C:\fixture\'+$name
+        $pin=@($f.Bindings|Where-Object Path -CEQ $path)[0]
+        switch($mode) {
+            missing {$f.Bindings=@($f.Bindings|Where-Object Path -CNE $path)}
+            sha {$pin.SHA256=('0'*64)}
+            size {$pin.Bytes++}
+            path {$pin.Path='C:\unowned\'+$name}
+            classification {$pin.IsText=$false}
+        }
+        Must-RefuseBinding $f
+    }
+}
 Assert-T7InputBindings (New-BindingFixture);$checks++
 foreach($mode in 'missing-marker','null-marker','old-profile','mixed','false-main','string-cli','schema','source',
     'proof-missing','proof-count','proof-bytes','context','journal','pch','input-count','binding-count','classification',
