@@ -59,7 +59,70 @@ function New-PublicationFixture {
     [IO.File]::WriteAllLines($f.Rsp,@($flags)+@($objects|ForEach-Object {'"'+$_+'"'}))
     return $f
 }
+function New-ZombiesObservationFixture {
+    $f=New-PublicationFixture;$p=$f.Build.BuildProfile
+    $p.Name='t7-zombies-catalogue-observation-c';$f.Plan.CandidateProfile=$p.Name
+    $f.Plan|Add-Member NoteProperty ZombiesObservationC ([pscustomobject]@{Schema='iw7.t7-zm-observation-plan/1'})
+    $f.Plan|Add-Member NoteProperty Zone ([pscustomobject]@{Path=(Join-Path $root 'zone/zm_common.ff')})
+    $f.Plan|Add-Member NoteProperty TraceStderrLimitBytes 16384
+    $p|Add-Member NoteProperty ObservationSchema 'iw7.t7-zm-observation/1'
+    foreach($spec in @(
+        @('ObserverSource','native_catalog_zombies_observation.inc',9668,'50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181'),
+        @('ObserverAdapter','prepare_catalog_zombies_observation.py',7613,'1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445'))){
+        $pin=New-Pin (Join-Path $root $spec[1]) $spec[3];$pin.Bytes=$spec[2]
+        $p|Add-Member NoteProperty $spec[0] $pin
+        $f.Plan.Bindings+=@(New-Binding $pin);$f.Build.Bindings+=@(New-Binding $pin)
+    }
+    $transition=[pscustomobject]@{Schema='iw7.t7-zm-observation-build/1';SourceProfile=$p.Name;
+        BaseCLIBytes=107785;BaseCLISHA256='c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50';
+        CLIBytes=118485;CLISHA256='917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987'}
+    $f.Build.ReuseCompile|Add-Member NoteProperty ZombiesObservationC $transition
+    foreach($pin in @($p.PreparedCLI)+@($f.Plan.Bindings|Where-Object Path -CEQ $p.PreparedCLI.Path)+@($f.Build.Bindings|Where-Object Path -CEQ $p.PreparedCLI.Path)){
+        $pin.Bytes=$transition.CLIBytes;$pin.SHA256=$transition.CLISHA256
+    }
+    $f.Receipt.BuildProfile=Copy-Value $p
+    $f
+}
 try {
+    $f=New-ZombiesObservationFixture
+    Assert-T7CatalogueZombiesObservationPlan $f.Plan;$checks++
+    Assert-T7CatalogueZombiesSourceTransition $f.Build;$checks++
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'native build and closure are not yet qualified'
+    foreach($change in 'profile','marker','schema','extra','zone','operation','bound','export'){
+        $f=New-ZombiesObservationFixture
+        switch($change){
+            profile{$f.Plan.CandidateProfile='t7-catalog-message-publication'}
+            marker{$f.Plan.PSObject.Properties.Remove('ZombiesObservationC')}
+            schema{$f.Plan.ZombiesObservationC.Schema='iw7.t7-zm-observation-plan/2'}
+            extra{$f.Plan.ZombiesObservationC|Add-Member NoteProperty Retry $true}
+            zone{$f.Plan.Zone.Path=Join-Path $root 'zone/mp_freerun_04.ff'}
+            operation{$f.Plan|Add-Member NoteProperty Operation 'ResidentExportV1'}
+            bound{$f.Plan.TraceStderrLimitBytes=8192}
+            export{$f.Plan|Add-Member NoteProperty ResidentMultiSurfaceV2 ([pscustomobject]@{})}
+        }
+        Refuses {Assert-T7CatalogueZombiesObservationPlan $f.Plan} 'Catalogue C|Exact catalogue fields|Resident export'
+    }
+    foreach($field in 'Schema','SourceProfile','BaseCLIBytes','BaseCLISHA256','CLIBytes','CLISHA256'){
+        $f=New-ZombiesObservationFixture;$f.Build.ReuseCompile.ZombiesObservationC.$field='unknown'
+        Refuses {Assert-T7CatalogueZombiesSourceTransition $f.Build} 'Exact reviewed'
+        $f=New-ZombiesObservationFixture;$f.Build.ReuseCompile.ZombiesObservationC.PSObject.Properties.Remove($field)
+        Refuses {Assert-T7CatalogueZombiesSourceTransition $f.Build} 'Exact catalogue fields'
+    }
+    $f=New-ZombiesObservationFixture;$f.Build.ReuseCompile.PSObject.Properties.Remove('ZombiesObservationC')
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Explicit Catalogue C source transition'
+    foreach($field in 'ObservationSchema','ObserverSource','ObserverAdapter'){
+        $f=New-ZombiesObservationFixture;$f.Receipt.BuildProfile.PSObject.Properties.Remove($field)
+        Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact catalogue fields'
+    }
+    foreach($name in 'ObserverSource','ObserverAdapter'){
+        foreach($collection in 'Plan','Build'){
+            $f=New-ZombiesObservationFixture;$path=$f.Build.BuildProfile.$name.Path
+            $f.$collection.Bindings=@($f.$collection.Bindings|Where-Object Path -CNE $path)
+            Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'pin is not guarded'
+        }
+        $f=New-ZombiesObservationFixture;$f.Build.BuildProfile.$name.SHA256='0'*64
+        Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'pin is not guarded'
+    }
     $f=New-PublicationFixture
     Assert-T7CatalogueBuild $f.Plan $f.Receipt;$checks++
     Check ((Get-T7CatalogueCandidateProfile $f.Plan) -ceq 't7-catalog-message-publication') 'New profile was relabeled.'
