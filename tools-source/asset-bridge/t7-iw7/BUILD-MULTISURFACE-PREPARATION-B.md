@@ -55,11 +55,12 @@ their reviewed pins and bindings. No automatic input discovery was added.
 
 Tests exercise the runner's actual validator and its placement before binding
 access, binary metadata, providers and admission. The full profile test reports
-**409 checks**, including 44 new checks for nominal v2, missing/mutated/extra
+**409 checks**, including 43 new checks for nominal v2, missing/mutated/extra
 headers, missing proof, mixed profiles, classification swaps, changed retained
 proof and legacy 128/129 boundaries. The Python recipe suite passes all 56 tests.
 
-Four additional calls use the real DEFAULT entry without `-Run`: nominal v2
+The optional retained-plan fixture adds a 44th binding check. Four additional
+calls use the real DEFAULT entry without `-Run`: nominal v2
 passes; missing proof, swapped header/binary classification and legacy 129 fail
 at their expected early gates. These use a single temporary JSON fixture derived
 from B with only the current runner pin updated before each case's deliberate
