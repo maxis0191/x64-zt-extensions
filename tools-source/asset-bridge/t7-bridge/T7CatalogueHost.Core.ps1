@@ -1,5 +1,14 @@
 # Functions only. The existing runner/H1 primitives retain native ownership.
 Set-StrictMode -Version Latest
+function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
+    $export=[bool]($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ResidentExportV1')
+    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1'))){throw 'Unknown T7 host operation.'}
+    $prefix=if($export){'iw7.t7-resident-export-'}else{'iw7.t7-catalogue-'}
+    $prefix+$Kind+'/1'
+}
+function Get-T7CatalogueHostOutcomeName($Plan) {
+    if((Get-T7CatalogueHostSchema $Plan 'run') -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}else{'CatalogueOutcome'}
+}
 function Get-T7CatalogueHostIdentity {
     $process=[Diagnostics.Process]::GetCurrentProcess()
     [pscustomobject]@{PID=$PID;CreatedUtc=$process.StartTime.ToUniversalTime().ToString('o');Image=$process.MainModule.FileName}
@@ -35,7 +44,7 @@ function Open-T7CatalogueHostInputs([string]$PlanPath,[string]$PlanSHA256,[strin
         $core=Join-Path (Split-Path $EntryPath -Parent) 'T7CatalogueHost.Core.ps1'
         $h1=Join-Path $Repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
         Assert-H1Path $RunRoot;Assert-H1Path $contract.HostImage
-        if($contract.Schema -cne 'iw7.t7-catalogue-host/1' -or $contract.PlanPath -cne $PlanPath -or
+        if($contract.Schema -cne (Get-T7CatalogueHostSchema $plan 'host') -or $contract.PlanPath -cne $PlanPath -or
            $contract.PlanSHA256 -cne $PlanSHA256 -or $contract.RunRoot -cne $RunRoot -or
            $plan.RunRoot -cne $RunRoot -or $plan.Runner -cne $runner -or
            [IO.Path]::GetDirectoryName($RunRoot) -cne (Join-Path $Repo 'runtime') -or
@@ -63,6 +72,10 @@ function Open-T7CatalogueHostInputs([string]$PlanPath,[string]$PlanSHA256,[strin
             (Join-Path (Split-Path $EntryPath -Parent) 'T7Catalogue.Profile.ps1'))){
             if(@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true}).Count -ne 1){throw 'Required pinned host dependency missing.'}
         }
+        if((Get-T7CatalogueHostOutcomeName $plan) -ceq 'ExportOutcome'){
+            $exportProfile=Join-Path (Split-Path $EntryPath -Parent) 'T7ResidentExport.Profile.ps1'
+            if(@($plan.Bindings|Where-Object {$_.Path -ceq $exportProfile -and $_.IsText -eq $true}).Count -ne 1){throw 'Required pinned export dependency missing.'}
+        }
         $state.Plan=$plan;$state.Contract=$contract
         return $state
     }catch{Close-T7CatalogueHostGuards $state;throw}
@@ -78,14 +91,14 @@ function Assert-T7CatalogueHostArguments($State,[string[]]$ActualArguments,$Host
     }
 }
 function Assert-T7CatalogueHostReceipt($State,$Receipt) {
-    if($Receipt.Schema -cne 'iw7.t7-catalogue-run/1' -or $Receipt.PlanSHA256 -cne $State.PlanSHA256){throw 'Receipt belongs to another plan.'}
+    if($Receipt.Schema -cne (Get-T7CatalogueHostSchema $State.Plan 'run') -or $Receipt.PlanSHA256 -cne $State.PlanSHA256){throw 'Receipt belongs to another plan.'}
     foreach($name in @('TreeClosureConfirmed','LeaseReleased','InputsReverified','OriginalInputMetadataUnchanged','AliasesRetained')){
         if($Receipt.$name -isnot [bool] -or !$Receipt.$name){throw ('Receipt lacks closure proof: '+$name)}
     }
     Assert-T7CatalogueHostReceiptIdentity $State $Receipt
 }
 function Assert-T7CatalogueHostReceiptIdentity($State,$Receipt) {
-    if($Receipt.Schema -cne 'iw7.t7-catalogue-run/1' -or $Receipt.PlanSHA256 -cne $State.PlanSHA256){throw 'Receipt belongs to another plan.'}
+    if($Receipt.Schema -cne (Get-T7CatalogueHostSchema $State.Plan 'run') -or $Receipt.PlanSHA256 -cne $State.PlanSHA256){throw 'Receipt belongs to another plan.'}
     if($Receipt.Quarantined -isnot [bool] -or $Receipt.Quarantined -or
        $Receipt.Identity.PID -le 0 -or $Receipt.Identity.PID -eq $State.Host.PID -or
        $Receipt.Identity.Image -cne $State.Plan.Image -or $Receipt.LeaseToken -cnotmatch '^[0-9a-f]{32}$'){
@@ -145,7 +158,7 @@ function Assert-T7CatalogueHostReturn($State) {
 function Get-T7CatalogueHostClosureObservation($State,$Receipt) {
     if($null -ne [AppDomain]::CurrentDomain.GetData('IW7.H1.Quarantine.'+$Receipt.LeaseToken)){throw 'Native quarantine remains; retain host.'}
     $attempt=Read-H1SmallJson (Join-Path $State.RunRoot 'attempt.json')
-    if($attempt.Schema -cne 'iw7.t7-catalogue-attempt/1' -or $attempt.PlanSHA256 -cne $State.PlanSHA256 -or
+    if($attempt.Schema -cne (Get-T7CatalogueHostSchema $State.Plan 'attempt') -or $attempt.PlanSHA256 -cne $State.PlanSHA256 -or
        ([datetimeoffset]$attempt.StartedUtc).UtcTicks -lt ([datetimeoffset]$State.Host.CreatedUtc).UtcTicks -or
        ([datetimeoffset]$attempt.StartedUtc).UtcTicks -gt ([datetimeoffset]$Receipt.StartedUtc).UtcTicks){throw 'Attempt marker differs.'}
     $status=Get-IW7ResourceStatus;$processes=@(Get-IW7ResourceProcesses)
@@ -158,6 +171,7 @@ function Get-T7CatalogueHostClosureObservation($State,$Receipt) {
     [pscustomobject]@{Main=$main;Processes=$processes}
 }
 function Complete-T7CatalogueHost($State) {
+    $outcomeName=Get-T7CatalogueHostOutcomeName $State.Plan
     if([AppDomain]::CurrentDomain.GetData('IW7.T7CatalogueHost') -ne $State -or
        !$State.RunnerReturned -or $State.Phase -cnotin @('Returned','ClosurePending')){throw 'Same returned host state required; no re-entry.'}
     $State.CanExit=$false
@@ -167,11 +181,11 @@ function Complete-T7CatalogueHost($State) {
         $receipt=Read-H1SmallJson (Join-Path $State.Plan.StageRoot 'receipt.json') 512KB
         Assert-T7CatalogueHostReceipt $State $receipt
         $observation=Get-T7CatalogueHostClosureObservation $State $receipt
-        $proof=[ordered]@{Schema='iw7.t7-catalogue-host-closure/1';CapturedUtc=[DateTime]::UtcNow.ToString('o');
+        $proof=[ordered]@{Schema=(Get-T7CatalogueHostSchema $State.Plan 'host-closure');CapturedUtc=[DateTime]::UtcNow.ToString('o');
             Host=$State.Host;Native=$receipt.Identity;PlanSHA256=$State.PlanSHA256;ContractSHA256=$State.ContractSHA256;
             Main=$observation.Main;MetadataCount=@($State.Plan.InputMetadata).Count;FileIdsCount=2*@($State.Plan.InputMetadata).Count;
             LeaseCount=0;HeavyCount=0;QuarantinePresent=$false;RootPresent=$false;PreservedProcessesUnchanged=$true;
-            RuntimeStatus=$receipt.Status;CatalogueOutcome=$receipt.CatalogueOutcome;PayloadHashesReadAfterRelease=$false;
+            RuntimeStatus=$receipt.Status;($outcomeName)=$receipt.$outcomeName;PayloadHashesReadAfterRelease=$false;
             RunnerGuardDisposalEvidence='Pinned runner finally clears guards after native closure and release, before the observed wrapper return.';
             ActualPTYExitObserved=$false;IndependentAbsencePending=$true}
         # Publish proof before disposing wrapper guards. CanExit is not inferred from a file.
@@ -179,10 +193,11 @@ function Complete-T7CatalogueHost($State) {
         Close-T7CatalogueHostGuards $State
         $State.Phase='Closed';$State.CanExit=$true;$State.ClosureError=$null
         [ordered]@{Postflight='Passed';HostPID=$State.Host.PID;CanExit=$true;WrapperGuardCount=$State.Guards.Count;
-            CatalogueOutcome=$receipt.CatalogueOutcome;ActualPTYExitObserved=$false;IndependentAbsencePending=$true}|ConvertTo-Json
+            ($outcomeName)=$receipt.$outcomeName;ActualPTYExitObserved=$false;IndependentAbsencePending=$true}|ConvertTo-Json
     }catch{$State.ClosureError=$_.Exception.Message;throw}
 }
 function Complete-T7CatalogueHostIncident($State,[string]$ReceiptSHA256) {
+    $outcomeName=Get-T7CatalogueHostOutcomeName $State.Plan
     # This is an explicit failure closure, never a replacement for normal Finish.
     if([AppDomain]::CurrentDomain.GetData('IW7.T7CatalogueHost') -ne $State -or
        !$State.RunnerReturned -or $State.Phase -cnotin @('Returned','ClosurePending') -or
@@ -221,9 +236,9 @@ function Complete-T7CatalogueHostIncident($State,[string]$ReceiptSHA256) {
             }
         }
         $guardSnapshot=@($State.Guards|ForEach-Object {$_})
-        $proof=[ordered]@{Schema='iw7.t7-catalogue-host-incident-preflight/1';CapturedUtc=[DateTime]::UtcNow.ToString('o');
+        $proof=[ordered]@{Schema=(Get-T7CatalogueHostSchema $State.Plan 'host-incident-preflight');CapturedUtc=[DateTime]::UtcNow.ToString('o');
             Host=$State.Host;Native=$receipt.Identity;PlanSHA256=$State.PlanSHA256;ContractSHA256=$State.ContractSHA256;
-            ReceiptSHA256=$ReceiptSHA256;RuntimeStatus=$receipt.Status;CatalogueOutcome=$receipt.CatalogueOutcome;
+            ReceiptSHA256=$ReceiptSHA256;RuntimeStatus=$receipt.Status;($outcomeName)=$receipt.$outcomeName;
             InputsReverified=$false;CanExit=$false;IncidentCanExit=$false;Main=$observation.Main;
             MetadataCount=@($State.Plan.InputMetadata).Count;FileIdsCount=2*@($State.Plan.InputMetadata).Count;
             LeaseCount=0;HeavyCount=0;QuarantinePresent=$false;RootPresent=$false;DirectChildrenPresent=$false;
@@ -241,16 +256,16 @@ function Complete-T7CatalogueHostIncident($State,[string]$ReceiptSHA256) {
         if(!$receiptGuard.SafeFileHandle.IsClosed){throw 'Incident receipt guard remains open.'}
         $receiptGuard=$null
         Write-T7CatalogueHostEvidence $postflightPath ([ordered]@{
-            Schema='iw7.t7-catalogue-host-incident-closure/1';CapturedUtc=[DateTime]::UtcNow.ToString('o');
+            Schema=(Get-T7CatalogueHostSchema $State.Plan 'host-incident-closure');CapturedUtc=[DateTime]::UtcNow.ToString('o');
             Host=$State.Host;Native=$receipt.Identity;PlanSHA256=$State.PlanSHA256;ContractSHA256=$State.ContractSHA256;
             ReceiptSHA256=$ReceiptSHA256;PreflightPath=$preflightPath;RuntimeStatus=$receipt.Status;
-            CatalogueOutcome=$receipt.CatalogueOutcome;InputsReverified=$false;CanExit=$false;
+            ($outcomeName)=$receipt.$outcomeName;InputsReverified=$false;CanExit=$false;
             ObservedClosedWrapperGuards=$guardSnapshot.Count;ObservedOpenWrapperGuards=0;ReceiptGuardClosed=$true;
             FailedReceiptChanged=$false;PayloadHashesReadAfterRelease=$false;ActualPTYExitObserved=$false;
             IndependentAbsencePending=$true;Ready=$false})
         $State.Phase='IncidentClosed';$State.IncidentCanExit=$true;$State.IncidentError=$null
         [ordered]@{Incident='FailedRunClosed';CanExit=$State.CanExit;IncidentCanExit=$true;
-            RuntimeStatus=$receipt.Status;CatalogueOutcome=$receipt.CatalogueOutcome;InputsReverified=$false;
+            RuntimeStatus=$receipt.Status;($outcomeName)=$receipt.$outcomeName;InputsReverified=$false;
             WrapperGuardCount=$State.Guards.Count;ActualPTYExitObserved=$false;IndependentAbsencePending=$true;Ready=$false}|ConvertTo-Json
     }catch{
         $State.IncidentCanExit=$false;$State.IncidentError=$_.Exception.Message

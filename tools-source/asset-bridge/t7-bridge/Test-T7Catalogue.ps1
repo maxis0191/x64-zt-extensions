@@ -245,7 +245,7 @@ try {
     $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7Catalogue.ps1'),[ref]$tokens,[ref]$errors)
     Check ($errors.Count -eq 0) 'Runner parse failed.'
     $outer=@($ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})[0]
-    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2))
+    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2));$export=$false
     function Read-T7CatalogueReport($Plan,$State,$Context){$script:reportReads++;if($mode -cin @('trace-only','context-only','context-partial','callers-only','callers-partial','message-only','message-prefix','message-partial')){'NoCatalogue'}else{'EmptyCatalogue'}}
     function Read-T7CatalogueTrace($Plan,$State,$Context){
         if((Get-T7CatalogueCandidateProfile $Plan) -ceq 'ordinary-d2'){return}
@@ -284,6 +284,40 @@ try {
         [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
         Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
         if(Test-Path -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')){Remove-Item -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')}
+        . $core
+        function Get-H1Clock {$script:clock}
+        function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
+    }
+    # Exercise the same runner finally AST through selective-export outcomes.
+    # Export payload inspection must occur once under admission, or never after forced closure.
+    function Read-T7ResidentExportReport($Plan,$State,$Context){
+        if(!$Context.Closed -or !$Context.Lease){throw 'Export read escaped original admission.'}
+        $script:exportReads++
+        switch($mode){'export-missing'{'NoExport'};'export-nonzero'{'ValidExportFromFailedProcess'};default{'ExportFilesObserved'}}
+    }
+    $export=$true
+    foreach($mode in @('export-normal','export-missing','export-nonzero','export-forced','export-unclosed','export-release-failed')){
+        Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
+        $guards=$context.Guards;$attempted=$true;$failure=$null;$zonePin=[pscustomobject]@{Path='synthetic'}
+        $state.InputsReverified=$false;$state.ExportOutcome='NoExport';$state.Identity=$identity;$state.ExitCode=0
+        $state.TraceOutcome='DisabledForResidentExportCLI';$state.EngineOutputsValidated=$false
+        $script:exportReads=0;$script:traceReads=0;$script:reportReads=0;$script:pinReads=0;$script:mainChecks=0
+        Enable-T7CatalogueRuntimeProfile $plan
+        if($mode -ceq 'export-nonzero'){$state.ExitCode=1;$failure='original nonzero exit';$state.Status='Failed'}
+        if($mode -ceq 'export-release-failed'){$script:releaseFails=$true}
+        if($mode -cin @('export-forced','export-unclosed')){
+            $context.Closed=$false;$failure='injected runtime failure';$state.Status='Failed';$fakeOwner.StopFails=$mode -ceq 'export-unclosed'
+        }
+        . $finalizer
+        $saved=Get-Content -Raw -LiteralPath (Join-Path $evidence 'receipt.json')|ConvertFrom-Json
+        Check ($traceReads -eq 0 -and $reportReads -eq 0 -and $saved.TraceOutcome -ceq 'DisabledForResidentExportCLI') 'Export claimed catalogue diagnostics.'
+        if($mode -ceq 'export-normal'){Check ($saved.Status -ceq 'ExportObservedPendingReadback' -and $state.LeaseReleased -and $exportReads -eq 1) 'Export completion differs.'}
+        elseif($mode -ceq 'export-forced'){Check ($state.TerminationRequested -and $state.LeaseReleased -and $exportReads -eq 0 -and $pinReads -eq 0 -and $saved.Status -ceq 'Failed') 'Forced export read payload after release.'}
+        elseif($mode -ceq 'export-unclosed'){Check ($state.Quarantined -and $context.Lease -and $exportReads -eq 0 -and $pinReads -eq 0) 'Unclosed export lost ownership or read payload.'}
+        elseif($mode -ceq 'export-release-failed'){Check ($state.Quarantined -and $context.Lease -and $exportReads -eq 1 -and $saved.Status -cne 'ExportObservedPendingReadback') 'Failed release accepted export.'}
+        else{Check ($saved.Status -ceq 'Failed' -and $state.LeaseReleased -and $exportReads -eq 1) 'Missing/nonzero export upgraded.'}
+        [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
+        Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
         . $core
         function Get-H1Clock {$script:clock}
         function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}

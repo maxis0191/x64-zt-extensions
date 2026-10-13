@@ -312,7 +312,16 @@ function Assert-T7CatalogueDistinctInputIds($Plan,$InputFileIds) {
         if($bootstrap.Count -and $bootstrap[0].FileId -cne $row.FileId){throw 'Original bootstrap identity differs from qualification.'}
     }
 }
+function Get-T7CatalogueOperation($Plan) {
+    if(!$Plan.PSObject.Properties['Operation']){return 'Catalogue'}
+    if($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1')){throw 'Unknown T7 operation.'}
+    $Plan.Operation
+}
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
+    $export=(Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'
+    $schema=if($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
+    $reportLimit=if($export){4KB}else{512KB}
+    if($export){Assert-T7ResidentExportPlan $Plan $Repo}
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     $null=Get-T7CatalogueMainBaseline $Plan
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
@@ -333,16 +342,17 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($shared){$bindingCount=24+2*$bootstraps.Count+@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count}
         # Five new profile text pins (link.rsp already exists), plus CLI dependencies.
         if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingCount+=6}
+        if($export){$bindingCount+=9}
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
            !(Test-T7CatalogueInteger $Plan.OutputLimitBytes (106059160L+64MB+$limits.TotalBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
     }
-    if($Plan.Schema -cne 'iw7.t7-catalogue-plan/1' -or $Plan.Runner -cne $Runner -or
+    if($Plan.Schema -cne $schema -or $Plan.Runner -cne $Runner -or
        $Plan.EngineOutputProfile -cnotin @('ObservedStartupA','ObservedStartupManifestA') -or
        $Plan.PhysicalBytes -ne 6GB -or $Plan.CommitBytes -ne 8GB -or
        $Plan.GroupDeadlineSeconds -ne 200 -or $Plan.DeadlineSeconds -ne 120 -or
        $Plan.MutableOutputLimitBytes -ne 64MB -or $Plan.MetadataReserveBytes -ne 64KB -or
-       $Plan.CleanupSeconds -ne 5 -or $Plan.ReportLimitBytes -ne 512KB -or
+       $Plan.CleanupSeconds -ne 5 -or $Plan.ReportLimitBytes -ne $reportLimit -or
        $Plan.LogLimitBytes -ne 1MB -or $Plan.OutputLimitBytes -ne $expectedOutputBytes -or
        $Plan.RetryAuthorized -isnot [bool] -or $Plan.RetryAuthorized){throw 'Fixed catalogue plan differs.'}
     if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
@@ -354,14 +364,15 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
+    $rootPattern=if($export){'^t7-export-[a-z][a-z0-9-]*$'}else{'^t7-catalog-[a-z][a-z0-9-]*$'}
     if([IO.Path]::GetDirectoryName($Plan.RunRoot) -cne (Join-Path $Repo 'runtime') -or
-       [IO.Path]::GetFileName($Plan.RunRoot) -cnotmatch '^t7-catalog-[a-z][a-z0-9-]*$' -or
+       [IO.Path]::GetFileName($Plan.RunRoot) -cnotmatch $rootPattern -or
        $Plan.WorkingDirectory -cne (Join-Path $Plan.RunRoot 'work') -or
        $Plan.StageRoot -cne (Join-Path $Plan.RunRoot 'evidence') -or
-       $Plan.Image -cne (Join-Path $Plan.WorkingDirectory 't7-zonetool-candidate.exe') -or
-       @($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -cne '-t7-iw7-catalog' -or
+       $Plan.Image -cne (Join-Path $Plan.WorkingDirectory 't7-zonetool-candidate.exe')){throw 'Exact catalogue command/root required.'}
+    if(!$export -and (@($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -cne '-t7-iw7-catalog' -or
        $Plan.Arguments[1] -cne 'mp_freerun_04' -or
-       $Plan.OutputKey -cne 't7_iw7_catalog_1d7749fdf2454720fad852816e9ddde027a157a4cc486aa18b3eb8fd4a25c2ce'){throw 'Exact catalogue command/root required.'}
+       $Plan.OutputKey -cne 't7_iw7_catalog_1d7749fdf2454720fad852816e9ddde027a157a4cc486aa18b3eb8fd4a25c2ce')){throw 'Exact catalogue command/root required.'}
     foreach($dir in @($Plan.RunRoot,$Plan.WorkingDirectory,$Plan.StageRoot,(Join-Path $Plan.RunRoot 'temp'))) {
         Assert-H1Path $dir
         if(![IO.Directory]::Exists($dir)){throw 'Prepared empty ordinary directories required.'}
@@ -373,6 +384,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     }
     $bindingLimit=if($qualified){22+3*$limits.ItemCount+$(if($shared){2}else{0})}else{32}
     if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingLimit+=6}
+    if($export){$bindingLimit+=9}
     if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
     $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
@@ -672,6 +684,11 @@ function New-T7CatalogueAlias($Pin,[string]$Destination,$Context) {
 function New-T7CatalogueStart($Plan) {
     $start=New-T7PrepatchStart $Plan # Environment setup only; diagnostic is not invoked.
     $start.ArgumentList.Clear();$start.ArgumentList.Add('-t7-iw7-catalog');$start.ArgumentList.Add('mp_freerun_04')
+    if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'){
+        Assert-T7ResidentExportRequest $Plan.ExportRequest
+        $start.ArgumentList.Clear()
+        foreach($argument in @('-t7-iw7-model',$Plan.ExportRequest.zone,$Plan.ExportRequest.model,'0')){$start.ArgumentList.Add($argument)}
+    }
     $start
 }
 function Assert-T7CatalogueFields($Value,[string[]]$Fields) {
@@ -1201,6 +1218,7 @@ function Assert-T7CatalogueOpaqueManifest($Plan,[string]$Path,$Observation,[swit
     $Observation.Seen=$true;$Observation.FileId=$fileId
 }
 function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
+    $export=(Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'
     $opaque=[bool]($Plan.PSObject.Properties['EngineOutputProfile'] -and
         $Plan.EngineOutputProfile -ceq 'ObservedStartupManifestA')
     $manifestSeen=$false;$observation=$null
@@ -1246,7 +1264,9 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
             }
             continue
         }
-        if($name -cnotin @('zone',$Plan.OutputKey) -or ![IO.Directory]::Exists($entry)){throw 'Unexpected engine output; preserve and stop.'}
+        if($export -and $name -ceq 'dump'){$null=@(Get-T7ResidentExportFiles $Plan);continue}
+        $allowedDirectories=if($export){@('zone')}else{@('zone',$Plan.OutputKey)}
+        if($name -cnotin $allowedDirectories -or ![IO.Directory]::Exists($entry)){throw 'Unexpected engine output; preserve and stop.'}
         $allowed=@(if($name -ceq 'zone'){'mp_freerun_04.ff'}else{'catalog.json'})
         if($name -ceq 'zone'){$allowed+=@(Get-T7CatalogueBootstraps $Plan|ForEach-Object {[IO.Path]::GetFileName($_.RelativePath)})}
         foreach($child in [IO.Directory]::EnumerateFileSystemEntries($entry)) {
