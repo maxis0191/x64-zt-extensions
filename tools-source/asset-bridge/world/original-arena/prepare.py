@@ -4,12 +4,16 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import struct
 
 from arena import NAME, REPO, geometry, goal_trigger, original_scene, parse, route_check, validate
 from prepare_writer import safe_path
 
 
 def literal(value):
+    # Round to the actual declared C++ type first. Formatting an unrounded
+    # double midpoint can move a float32 halfway value to the wrong side.
+    value, = struct.unpack('<f', struct.pack('<f', value))
     text = f'{value:.9g}'
     return text+('.0' if '.' not in text and 'e' not in text.lower() else '')+'f'
 

@@ -113,6 +113,10 @@ class ArenaTests(unittest.TestCase):
         self.assertEqual(report['schema'], 'iw7.original-arena-roundtrip/1')
         self.assertFalse(report['physics_serialized'])
 
+    def test_halfway_float32_literal_rounds_before_decimal_formatting(self):
+        self.assertEqual(prepare.literal(1+2**-24), '1.0f')
+        self.assertEqual(prepare.literal(-(1+2**-24)), '-1.0f')
+
 
 def synthetic_records(mesh):
     """Tiny authored typed streams for reader fault injection, never retail data."""
@@ -125,7 +129,8 @@ def synthetic_records(mesh):
     midpoint, half = mesh['bounds']['midpoint'], mesh['bounds']['half_size']
     radius = max(sum(v*v for v in item['position']) for item in surface['vertices'])
     h = bytearray(736);h[20:23]=bytes((1,1,0))
-    struct.pack_into('<HHf',h,24,0,1,1);struct.pack_into('<f',h,40,math.sqrt(radius))
+    radius_f32, = struct.unpack('<f',struct.pack('<f',radius))
+    struct.pack_into('<HHf',h,24,0,1,1);struct.pack_into('<f',h,40,math.sqrt(radius_f32))
     struct.pack_into('<6f',h,44,*(midpoint+half));struct.pack_into('<fHH',h,224,1000000,1,0)
     model = array(h,1)+name(mesh['name'])+name('tag_origin')+array(b'',0)*3+array(bytes(1),1)
     model += array(struct.pack('<8f',0,0,0,1,0,0,0,2),1)+array(b'',0)*3
@@ -150,6 +155,30 @@ class IndependentReaderTests(unittest.TestCase):
         report=readback.inspect(model,mesh,source)
         self.assertEqual((report['vertices'],report['triangles']),(168,84))
         self.assertFalse(report['physics_serialized']);self.assertFalse(report['runtime_verified'])
+
+    def test_decimal_scene_uses_actual_float32_bounds_positions_and_radius(self):
+        for change in ('floor', 'radius'):
+            with self.subTest(change=change):
+                scene=arena.original_scene()
+                if change == 'floor':
+                    scene['solids'][0]['minimum'][2] = -16.1
+                else:
+                    scene['solids'][3]['maximum'][0] = 272.1
+                    scene['solids'][3]['maximum'][2] = 96.1
+                self.assertTrue(arena.route_check(scene)['clear'])
+                source=arena.geometry(scene);model,mesh=synthetic_records(source)
+                self.assertTrue(readback.inspect(model,mesh,source)['geometry_roundtrip_verified'])
+                # A one-ULP corruption remains refused; the fix is not epsilon.
+                broken=bytearray(model)
+                bits,=struct.unpack_from('<I',broken,6+44)
+                struct.pack_into('<I',broken,6+44,bits+1)
+                with self.assertRaisesRegex(ValueError,'model bounds'):
+                    readback.inspect(bytes(broken),mesh,source)
+                broken=bytearray(model)
+                bits,=struct.unpack_from('<I',broken,6+40)
+                struct.pack_into('<I',broken,6+40,bits+1)
+                with self.assertRaisesRegex(ValueError,'radius'):
+                    readback.inspect(bytes(broken),mesh,source)
 
     def test_truncation_type_count_trailing_and_geometry_corruption(self):
         source = arena.geometry(arena.original_scene());model,mesh = synthetic_records(source)
