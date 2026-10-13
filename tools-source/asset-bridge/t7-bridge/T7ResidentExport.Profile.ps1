@@ -184,7 +184,7 @@ function Assert-T7ResidentMultiSurfaceBuild($Plan,$Receipt,$Build) {
     $observation=[bool](Get-T7SelectedObservationProbe $Plan)
     $streamed=[bool](Get-T7SelectedStreamedExport $Plan)
     $bindingCount=if($streamed){149}elseif($observation){144}else{141}
-    $transitionSHA=if($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}elseif($observation){'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}else{'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'}
+    $transitionSHA=if($streamed -and (Test-T7SelectedStreamedE4Build $Plan)){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}elseif($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}elseif($observation){'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}else{'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'}
     if(!$Build.ReuseCompile.PSObject.Properties['ResidentMultiSurfaceV2'] -or
        $Build.ReuseCompile.PSObject.Properties['ResidentSurfaceCountDiagnostic']){throw 'Exact resident v2 reuse marker required.'}
     $proof=$Build.ReuseCompile.ResidentMultiSurfaceV2
@@ -655,6 +655,7 @@ function Get-T7SelectedStreamedExport($Plan) {
 }
 function Get-T7SelectedStreamedBuildPins($Plan) {
     if(!(Get-T7SelectedStreamedExport $Plan)){throw 'Explicit E3 selector required.'}
+    if(Test-T7SelectedStreamedE4Build $Plan){return (Get-T7SelectedStreamedE4BuildPins $Plan)}
     $prepared=Join-Path (Split-Path $Plan.BuildPlan -Parent) 'prepared'
     $source=Split-Path (Split-Path (Split-Path $Plan.BuildPlan -Parent) -Parent) -Parent
     $root=Split-Path $Plan.BuildReceipt -Parent
@@ -688,6 +689,7 @@ function Get-T7SelectedStreamedBuildPins($Plan) {
     $pins
 }
 function Assert-T7SelectedStreamedClosure($Plan,$Receipt,$Build,$Pins) {
+    if(Test-T7SelectedStreamedE4Build $Plan){Assert-T7SelectedStreamedE4Closure $Plan $Receipt $Build $Pins;return}
     Assert-T7CatalogueFields $Build.ReuseCompile.SelectedStreamedStaticV1 @('Schema','GeometryProfile')
     if($Build.ReuseCompile.SelectedStreamedStaticV1.Schema -cne 'iw7.t7-selected-streamed-static-build/1' -or
        $Build.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile -cne 't7-iw7-selected-streamed-static-v1'){
@@ -738,7 +740,113 @@ function Assert-T7SelectedStreamedClosure($Plan,$Receipt,$Build,$Pins) {
        ([datetimeoffset]$exitProof.CapturedUtc).UtcTicks -le ([datetimeoffset]$hostProof.CapturedUtc).UtcTicks){
         throw 'E3 host/exit/absence ordering differs.'
     }
-}function Assert-T7SelectedStreamedRequest($Request) {
+}
+# E4 changes only the finite compiled-build projection. Request, provider sealing,
+# argv, geometry guards and the historical E3 projection retain their contracts.
+function Test-T7SelectedStreamedE4Build($Plan) {
+    [bool]($Plan.PSObject.Properties['ExpectedBuildPlanSHA256'] -and
+        $Plan.ExpectedBuildPlanSHA256 -ceq '26b46072a089c4ae67f601b134791c829a6223ce7a6c82b576f7bfce592c1c4d')
+}
+function Get-T7SelectedStreamedE4BuildPins($Plan) {
+    if(!(Get-T7SelectedStreamedExport $Plan) -or !(Test-T7SelectedStreamedE4Build $Plan)){throw 'Exact E4 build selector required.'}
+    $prepared=Join-Path (Split-Path $Plan.BuildPlan -Parent) 'prepared'
+    $source=Split-Path (Split-Path (Split-Path $Plan.BuildPlan -Parent) -Parent) -Parent
+    $root=Split-Path $Plan.BuildReceipt -Parent;$pins=[ordered]@{}
+    foreach($row in @(
+        @('BuildPlan',$Plan.BuildPlan,367367,'26b46072a089c4ae67f601b134791c829a6223ce7a6c82b576f7bfce592c1c4d'),
+        @('BuildReceipt',$Plan.BuildReceipt,23683,'7f26c634aec1062440e68d0bcb50c0360d58196404ddf829d99422bf9b5e61f5'),
+        @('Header',(Join-Path $prepared 't7_iw7_resident_model.hpp'),21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'),
+        @('HostClosure',(Join-Path $root 'original-host-closure.local.json'),247,'a700e7ab1a0eac91943ca9b32827f8913778570aec44057b27c36df7b074d563'),
+        @('HostExit',(Join-Path $root 'original-host-exit-request.local.json'),371,'d1e2eb794d5814de8cf91886059b7d9742f963f285e9dde351b686749a086e25'),
+        @('Inventory',(Join-Path $root 'post-host-inventory.local.json'),1022,'1dddec32ce20a1321176d78608e08df85914516d334bce0a0d69ad80173f48e9'),
+        @('Bundle',(Join-Path $root 'closure-bundle-final.local.json'),1438,'f91e4574d8e72d259b7794ff8a80e605bdb6f3b40c43f54edb70122f891a8cae'),
+        @('ToolReturn',(Join-Path $root 'original-host-tool-return.local.json'),395,'e9497a0a36542134397577817ed5585681f98e26ba82093ff4239cf16a6ae6be'),
+        @('Completion',(Join-Path $root 'completion.local.json'),8829,'2a08b8f0c139a29346d4733b6c02ad981713bc461adff809a35392b282cc9955'),
+        @('SourceReceipt',(Join-Path $source 'source-workspace.json'),311246,'85f3b846aa0391a4b29cde9dff9aac6a24addbed86cfed22ab993379683c52d8'),
+        @('NativeExport',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/native_export.inc'),18268,'c6a197911d7adfef96273e29367e090666b130580356658478859f007165fa3d'),
+        @('MaterialHeader',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/selected_material_observation.hpp'),16489,'0ea84735fca2502033cc48a4eede6a19e1bd1283ba1975829f763c16e5ef343a'),
+        @('MaterialFixture',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/selected_material_observation_fixture.cpp'),13721,'cb27d4df66f3a186de3e0f5faedf7bf713610a2da0fc599861e5a4838ea2dfed'),
+        @('PayloadHeader',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/streamed_mesh_payload.hpp'),18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+        @('StreamedHeader',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/t7_iw7_streamed_model.hpp'),11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
+        @('NativeStreamed',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/native_streamed_export.inc'),9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
+        @('StreamedContract',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/streamed_contract.py'),7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
+        @('StreamedTest',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/test_streamed_contract.py'),8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))){
+        $pin=[pscustomobject]@{Path=$row[1];Bytes=$row[2];SHA256=$row[3]}
+        Assert-T7CatalogueTextPin $pin $Plan.Bindings;$pins[$row[0]]=$pin
+    }
+    if($Plan.ExpectedBuildReceiptSHA256 -cne $pins.BuildReceipt.SHA256 -or $Plan.CandidateBytes -ne 21919232 -or
+       $Plan.CandidateSHA256 -cne '3dfa1b7851b7532526c38c295b1ed7014613dfbf3fd4db0225afd26b0457be71'){
+        throw 'Exact compiled E4 receipt and candidate required.'
+    }
+    $pins
+}
+function Assert-T7SelectedStreamedE4Closure($Plan,$Receipt,$Build,$Pins) {
+    Assert-T7CatalogueFields $Build.ReuseCompile.SelectedStreamedStaticV1 @('Schema','GeometryProfile')
+    if($Build.ReuseCompile.SelectedStreamedStaticV1.Schema -cne 'iw7.t7-selected-streamed-static-build/1' -or
+       $Build.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile -cne 't7-iw7-selected-streamed-static-v1' -or
+       $Build.ReuseCompile.PSObject.Properties['ZombiesObservationC'] -or
+       $Build.BuildProfile.PreparedCLI.Bytes -ne 107785 -or
+       $Build.BuildProfile.PreparedCLI.SHA256 -cne 'c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50'){
+        throw 'Exact E4 selected-streamed source profile required.'
+    }
+    foreach($name in 'NativeExport','MaterialHeader','MaterialFixture','PayloadHeader','StreamedHeader','NativeStreamed','StreamedContract','StreamedTest'){
+        Assert-T7CatalogueTextPin $Pins[$name] $Build.Bindings
+    }
+    $source=Read-H1SmallJson $Pins.SourceReceipt.Path 512KB
+    if($source.schema -cne 'iw7.source-workspace/1' -or
+       $source.revisions.'x64-zt-extensions' -cne '8ff96b53ca4cc374b31f09182bd334770603e3fb' -or
+       $source.revisions.'iw7-mod-components' -cne '2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1'){
+        throw 'Exact E4 compilation source provenance required.'
+    }
+    $hostProof=Read-H1SmallJson $Pins.HostClosure.Path 2KB;$exitProof=Read-H1SmallJson $Pins.HostExit.Path 2KB
+    $inventory=Read-H1SmallJson $Pins.Inventory.Path 2KB;$bundle=Read-H1SmallJson $Pins.Bundle.Path 4KB
+    $tool=Read-H1SmallJson $Pins.ToolReturn.Path 2KB;$completion=Read-H1SmallJson $Pins.Completion.Path 16KB
+    Assert-T7CatalogueFields $hostProof @('Schema','Host','HostCreationUtc','Session','Closed','LeaseNull','Guards','Status','CanExit')
+    Assert-T7CatalogueFields $exitProof @('Schema','Host','HostCreationUtc','Session','PlanSHA256','CapturedUtc','Closed','LeaseNull','Guards','RequestedExitCode')
+    foreach($proof in @($hostProof,$exitProof)){
+        foreach($name in 'Closed','LeaseNull'){if($proof.$name -isnot [bool] -or !$proof.$name){throw 'E4 original host is not closed.'}}
+        if($proof.Host -ne 400 -or $proof.Session -ne 19852 -or $proof.Guards -ne 0 -or
+           ([datetimeoffset]$proof.HostCreationUtc).UtcTicks -ne ([datetimeoffset]'2026-10-13T23:23:48.5108279Z').UtcTicks){throw 'Exact E4 original host identity required.'}
+    }
+    if($hostProof.Schema -cne 'iw7.t7-original-build-host-closure/1' -or $hostProof.Status -cne 'Passed' -or
+       $hostProof.CanExit -isnot [bool] -or !$hostProof.CanExit -or
+       $exitProof.Schema -cne 'iw7.t7-original-build-host-exit-request/1' -or $exitProof.RequestedExitCode -ne 0 -or
+       $exitProof.PlanSHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or
+       $inventory.Schema -cne 'iw7.t7-e4-post-host-inventory/1' -or $inventory.OriginalPTY -ne 19852 -or
+       $inventory.ActualExitCode -ne 0 -or $inventory.OriginalExitChunk -cne 'b5624c' -or
+       (@($inventory.OwnPIDSet) -join '|') -cne '25300|400|25580|20080|15196|21056|492|12008' -or
+       @($inventory.OwnPresent).Count -ne 0 -or @($inventory.Heavy).Count -ne 0 -or @($inventory.ResourceStatus.Leases).Count -ne 0 -or
+       $bundle.Schema -cne 'iw7.t7-e4-build-closure-bundle/2' -or $bundle.SourceMain -cne $source.revisions.'x64-zt-extensions' -or
+       $bundle.PlanSHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or $bundle.OriginalPTY -ne 19852 -or
+       $bundle.ActualExitCode -ne 0 -or $bundle.ActualExitChunk -cne 'b5624c' -or @($bundle.Files).Count -ne 6){throw 'Exact original E4 closure evidence required.'}
+    if($tool.Schema -cne 'iw7.t7-e4-original-host-tool-return/1' -or $tool.Session -ne 19852 -or
+       $tool.ChunkId -cne 'b5624c' -or $tool.ExitCode -ne 0 -or $tool.OriginalInnerPID -ne 400 -or $tool.OriginalOuterPID -ne 25300 -or
+       $completion.Schema -cne 'iw7.t7-e4-native-build-completion/1' -or $completion.SourceMain -cne $source.revisions.'x64-zt-extensions' -or
+       $completion.PlanPath -cne $Pins.BuildPlan.Path -or $completion.PlanSHA256 -cne $Pins.BuildPlan.SHA256 -or
+       $completion.ReceiptPath -cne $Pins.BuildReceipt.Path -or $completion.PostflightPath -cne $Pins.Inventory.Path -or
+       $completion.Status -cne 'Passed' -or $completion.LeaseToken -cne $Receipt.LeaseToken){throw 'Exact E4 actual tool return and completion required.'}
+    foreach($name in 'TreeClosureConfirmed','InputsReverified','LeaseReleased'){
+        if($completion.$name -isnot [bool] -or !$completion.$name){throw 'E4 completion is not closed.'}
+    }
+    foreach($name in 'CandidateExecuted','Quarantined','Ready','StockExecuted','GeometryVerified','RuntimeVerified'){
+        if($completion.$name -isnot [bool] -or $completion.$name){throw 'E4 build completion overclaims its scope.'}
+    }
+    foreach($name in 'Path','Bytes','SHA256'){
+        if($completion.OriginalToolReturn.$name -cne $Pins.ToolReturn.$name){throw 'E4 completion tool pin differs.'}
+    }
+    foreach($pin in @($Pins.BuildReceipt,$Pins.HostClosure,$Pins.HostExit,$Pins.Inventory,$Pins.ToolReturn,$Pins.Completion)){
+        if(@($bundle.Files|Where-Object {$_.Name -ceq [IO.Path]::GetFileName($pin.Path) -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256}).Count -ne 1){throw 'E4 bundle pin differs.'}
+    }
+    for($i=0;$i -lt 3;$i++){
+        $stage=$Receipt.Stages[$i];$snap=$stage.LastOriginalSnapshot
+        if($stage.Identity.PID -ne @(25580,20080,15196)[$i] -or $snap.RootExited -isnot [bool] -or !$snap.RootExited -or
+           $snap.RootExitCode -ne 0 -or $snap.ActiveProcesses -ne 0 -or $snap.PID -ne $stage.Identity.PID -or
+           $snap.Image -cne $stage.Identity.Image -or ([datetimeoffset]$snap.CreatedUtc).UtcTicks -ne ([datetimeoffset]$stage.Identity.CreatedUtc).UtcTicks){throw 'Exact closed original E4 compiler/link jobs required.'}
+    }
+    if(([datetimeoffset]$inventory.CapturedUtc).UtcTicks -le ([datetimeoffset]$exitProof.CapturedUtc).UtcTicks -or
+       ([datetimeoffset]$exitProof.CapturedUtc).UtcTicks -le ([datetimeoffset]$hostProof.HostCreationUtc).UtcTicks){throw 'E4 host/exit/absence ordering differs.'}
+}
+function Assert-T7SelectedStreamedRequest($Request) {
     Assert-T7CatalogueFields $Request @('schema','target','profile','zone','model','lod','xpak_key','packages')
     if($Request.schema -cne 'iw7.t7-iw7-selected-streamed-request/1' -or $Request.target -cne 'iw7' -or
        $Request.profile -cne 'selected-streamed-rigid-one-lod' -or $Request.zone -cne 'mp_freerun_04' -or

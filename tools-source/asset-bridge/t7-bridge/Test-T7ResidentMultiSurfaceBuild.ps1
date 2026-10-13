@@ -233,6 +233,13 @@ try {
     }
     $marker=[pscustomobject]@{Operation='ResidentExportV1';ResidentMultiSurfaceV2=[pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'};SelectedStreamedStaticV1=[pscustomobject]@{Schema='iw7.t7-selected-streamed-export-plan/1'}}
     Check ([bool](Get-T7SelectedStreamedExport $marker)) 'E3 marker refused.'
+    Check (!(Test-T7SelectedStreamedE4Build $marker)) 'Unqualified historical selector became E4.'
+    $historical=New-V2BuildFixture
+    $historical.Plan|Add-Member NoteProperty SelectedStreamedStaticV1 (Copy-Value $marker.SelectedStreamedStaticV1)
+    $historical.Plan.ExpectedBuildPlanSHA256='26b46072a089c4ae67f601b134791c829a6223ce7a6c82b576f7bfce592c1c4d'
+    Refuses {Get-T7SelectedStreamedBuildPins $historical.Plan} 'pin is not guarded'
+    $historical.Plan.ExpectedBuildPlanSHA256='6df0db3f13852df5b70e660de915e376f5339f44ad04327166f82304b71ce4e8'
+    Check (!(Test-T7SelectedStreamedE4Build $historical.Plan)) 'Frozen E3 identity became E4.'
     foreach($mode in 'schema','extra','v1','mixed-e2','diagnostic'){
         $bad=Copy-Value $marker
         switch($mode){schema{$bad.SelectedStreamedStaticV1.Schema='other'}extra{$bad.SelectedStreamedStaticV1|Add-Member NoteProperty Ready $true}v1{$bad.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}mixed-e2{$bad|Add-Member NoteProperty SelectedMeshMaterialObservation ([pscustomobject]@{Schema='iw7.t7-selected-mesh-material-probe/1'})}diagnostic{$bad|Add-Member NoteProperty ResidentSurfaceCountDiagnostic ([pscustomobject]@{Schema='other'})}}

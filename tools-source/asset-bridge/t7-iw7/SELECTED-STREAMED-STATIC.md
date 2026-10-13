@@ -1,5 +1,37 @@
 # Selected streamed static model
 
+## E4 compiled build projection, 2026-10-14
+
+E4 is selected only by exact build-plan SHA256
+`26b46072a089c4ae67f601b134791c829a6223ce7a6c82b576f7bfce592c1c4d`.
+Its build source is asset main `8ff96b53ca4cc374b31f09182bd334770603e3fb`,
+receipt 23,683 bytes / `7f26c634aec1062440e68d0bcb50c0360d58196404ddf829d99422bf9b5e61f5`,
+and admitted candidate tuple 21,919,232 bytes /
+`3dfa1b7851b7532526c38c295b1ed7014613dfbf3fd4db0225afd26b0457be71`.
+The source transition digest is 716 bytes /
+`76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b`.
+The three actual Compile/Compile/Link stages passed, their original job snapshots
+have zero active processes, and original host session 19852 exited zero in chunk
+`b5624c`. The new six-text closure bundle includes the actual tool return and
+completion in addition to receipt, host context, exit request and inventory.
+The qualifier binds all six identities, source provenance and the admitted tuple.
+
+The build keeps 149 bindings (143 text and six opaque), 1,146 inputs and 66
+writer headers. Its newer source pins are reader `53265601...` (18,512 bytes),
+material observer `0ea84735...` (16,489 bytes), fixture `cb27d4df...` (13,721
+bytes), and rigid diagnostic header `5eeaa895...` (11,289 bytes). E4 adds two
+runtime text bindings for tool return/completion, making 114 operation bindings;
+29 original inputs, output budgets, five native arguments, request and provider
+sealing stay unchanged. F/E3 pins and frozen receipts remain exact.
+
+The real build was qualified from 30 guarded source/JSON/response texts totaling
+1,549,943 bytes, without opening or hashing an opaque artifact, taking a lease,
+preparing an operational plan or starting native code. This source delivery does
+not report the stock sonde, geometry, engine/runtime or owner gameplay passed.
+The rigid-coverage guard still runs before payload decode and is not relaxed;
+E4 only exposes its exact observed fields on refusal. A fresh, separate stock
+invocation and original-host closure remain required.
+
 The explicit option is `-t7-iw7-model-streamed-v1 <zone> <model> <lod> <flat-request.json>`.
 It preserves resident v1/v2 refusal and the lock on the legacy global XPAK cache.
 Request schema: `iw7.t7-iw7-selected-streamed-request/1`; export schema:
