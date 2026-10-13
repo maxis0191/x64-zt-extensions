@@ -41,16 +41,22 @@ helper is explicitly adopted for this fresh source epoch: failure stages and
 partial textures preserve all full-result/pixel gates false on refusal. Its
 changed synthetic native fixture passed50; E2/old helper bytes remain frozen.
 
-The key is absent from eight checked map/core Hash24 tables, three checked
-base/initial/base_patch containers and eight selected TU32–TU24 patch tables.
-Other Index sections have not been interpreted as Hash24 or payload routes.
-No executable request is manufactured from a missing match. A proven provider
-or key/layout correction is required before retail export. No payload, FF or
-gameplay result exists.
+The key was absent from the first map/core, base/initial/base_patch and selected
+TU patch scopes. The later bounded metadata discovery found it exactly once
+among 203 admitted package tables: `zone/mp_initial.xpak`, 654,311,424 bytes,
+HashCount1,298 and HashSize31,152. The selected encoded extent is [146723456,
+146731136), 7,680 bytes. Other Index sections were not reinterpreted as Hash24.
+This identifies a provider and permits a real one-package request; native
+rechecking and decoding remain required. No payload, FF or gameplay is proved.
 
 Source checks cover exact keys/identities, malformed provenance, version mixing,
-serialized two-surface readback and Model Lab derivation. Native compilation,
-the move/copy static assertions and real conversion remain separate gates.
+serialized two-surface readback and Model Lab derivation. The native E3 build
+of source `e345195` passed: main/CLI/link exit0 with input revalidation, original
+job closure and reservation release. Candidate21,916,160 bytes SHA256
+`2de24e4a715d92cebe767073f212241319c85bd7a5863201f1eaf9da39f9ff7d`.
+The C++ move/copy assertions compiled. Its original host exited0, and the owned
+hosts/stages were absent afterward. The candidate has not run; real decoding,
+conversion, independent byte readback and gameplay remain separate gates.
 
 ## Build preparation
 
