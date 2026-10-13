@@ -135,12 +135,12 @@ namespace zonetool::t7::resident_iw7
     }
 
     // Expanded logical geometry, not file size, CPU traffic or process RAM.
-    // Source = mesh120 + shared80 + N*(surface80 + rigid16) + V*28 + T*6.
+    // Source = mesh120 + shared80 + N*(surface96 + rigid16) + V*28 + T*6.
     // Destination = mesh56 + N*(surface256 + rigid16) + V*32 + T*6.
     // Count each occurrence, including borrowed/aliased indices. Names, model,
     // bone/material metadata and container/allocator overhead have separate bounds.
     static_assert(sizeof(XModelMesh) == 120 && sizeof(XSurfaceShared) == 80 &&
-        sizeof(XSurface) == 80 && sizeof(XRigidVertList) == 16);
+        sizeof(XSurface) == 96 && sizeof(XRigidVertList) == 16);
     static_assert(sizeof(vec3_t) == 12 && sizeof(GfxStreamVertex) == 16 && sizeof(GfxStreamFace) == 6);
     static_assert(sizeof(zonetool::iw7::XModelSurfs) == 56 && sizeof(zonetool::iw7::XSurface) == 256 &&
         sizeof(zonetool::iw7::XRigidVertList) == 16 && sizeof(zonetool::iw7::GfxPackedVertex) == 32 &&
@@ -153,7 +153,7 @@ namespace zonetool::t7::resident_iw7
             vertices <= 65535 * surfaces && triangles >= surfaces && triangles <= 65535 * surfaces,
             "aggregate geometry counts outside v2");
         // Bounds above establish that every product and this sum fit uint64.
-        const auto work = 256 + 368 * surfaces + 60 * vertices + 12 * triangles;
+        const auto work = 256 + 384 * surfaces + 60 * vertices + 12 * triangles;
         detail::require(work <= max_buffer_bytes,
             ("expanded logical geometry exceeds 16 MiB; surfaces=" + std::to_string(surfaces) +
              " vertices=" + std::to_string(vertices) + " triangles=" + std::to_string(triangles) +

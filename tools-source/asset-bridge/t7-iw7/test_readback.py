@@ -454,7 +454,7 @@ class SyntheticMulti(Synthetic):
                                               for i, (p, t) in enumerate(surfaces)])
         counts = self.manifest['selected_counts']
         counts.update(surfaces=n, vertices=sum(len(p) for p, _ in surfaces), triangles=sum(len(t) for _, t in surfaces))
-        self.manifest['geometry_work_bytes_upper_bound'] = 256 + 368*n + 60*counts['vertices'] + 12*counts['triangles']
+        self.manifest['geometry_work_bytes_upper_bound'] = 256 + 384*n + 60*counts['vertices'] + 12*counts['triangles']
         self.outputs['model'] = bytearray(base_model[:old['model']['mip_radius']])
         struct.pack_into('<H', self.outputs['model'], 6+26, n)
         struct.pack_into('<H', self.outputs['model'], 6+228, n)
@@ -526,7 +526,7 @@ class MultisurfaceReadbackTests(unittest.TestCase):
         self.assertEqual(records[0]['string_span'], records[2]['string_span'])
         surfaces = result['mesh']['surface_records']
         self.assertEqual(surfaces[0]['packed_sha256'], surfaces[2]['packed_sha256'])
-        self.assertEqual(result['mesh']['geometry_work_bytes_upper_bound'], 256+368*3+60*15+12*18)
+        self.assertEqual(result['mesh']['geometry_work_bytes_upper_bound'], 2524)
 
     def test_last_surface_invalid_geometry_and_late_count_mismatch_refuse(self):
         for label, offset, fmt, value in (('surface_1.vertices', 6, 'f', float('nan')),
@@ -548,7 +548,7 @@ class MultisurfaceReadbackTests(unittest.TestCase):
         for i, row in enumerate(f.manifest['surface_records']):
             f.manifest['surface_records'][i] = dict(row, index=i, material_slot=i)
         f.manifest['selected_counts'].update(surfaces=6, vertices=6*65535, triangles=6*65535)
-        f.manifest['geometry_work_bytes_upper_bound'] = 256+368*6+72*6*65535
+        f.manifest['geometry_work_bytes_upper_bound'] = 256+384*6+72*6*65535
         f.manifest['material_dependencies'] *= 3
         with patch.object(rb, 'Reader', side_effect=AssertionError('reader created before work gate')):
             for parse, role in ((rb.parse_model, 'model'), (rb.parse_mesh, 'mesh')):
@@ -572,7 +572,7 @@ class MultisurfaceReadbackTests(unittest.TestCase):
     def test_exact_work_boundary_and_aggregate_counts_above_uint16(self):
         f = SyntheticMulti([(PYRAMID, PYRAMID_FACES)] * 6, alias_geometry=True)
         # Exact logical cap, tested before a Reader or any payload allocation.
-        triangles = (rb.GEOMETRY_WORK_LIMIT - 256 - 368*6 - 60*240000) // 12
+        triangles = (rb.GEOMETRY_WORK_LIMIT - 256 - 384*6 - 60*240000) // 12
         for i, record in enumerate(f.manifest['surface_records']):
             record.update(vertices=40000, triangles=triangles//6 + (i < triangles % 6))
         f.manifest['selected_counts'].update(vertices=240000, triangles=triangles)
@@ -583,6 +583,14 @@ class MultisurfaceReadbackTests(unittest.TestCase):
         f.manifest['geometry_work_bytes_upper_bound'] += 12
         with patch.object(rb, 'Reader', side_effect=AssertionError('reader before work gate')):
             with self.assertRaises(ValueError):rb.parse_mesh(bytes(f.outputs['mesh']), f.manifest)
+
+    def test_old_surface80_work_is_refused_before_reader_allocation(self):
+        f = SyntheticMulti()
+        f.manifest['geometry_work_bytes_upper_bound'] -= 16 * f.manifest['selected_counts']['surfaces']
+        with patch.object(rb, 'Reader', side_effect=AssertionError('reader before corrected work gate')):
+            for parse, role in ((rb.parse_model, 'model'), (rb.parse_mesh, 'mesh')):
+                with self.subTest(role=role), self.assertRaisesRegex(ValueError, 'work'):
+                    parse(bytes(f.outputs[role]), f.manifest)
 
     def test_late_alias_wrong_type_range_and_forward_reference_refuse(self):
         for role, label, offset, value in (

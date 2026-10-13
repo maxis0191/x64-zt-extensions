@@ -60,7 +60,7 @@ class TriangleOwnershipTests(unittest.TestCase):
                 a,b,c = (self.positions[index] for index in face)
                 area = (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0])
                 self.assertNotEqual(area, 0)
-        self.assertEqual(geometry_work_bytes_upper_bound(2, 8, 3), 1508)
+        self.assertEqual(geometry_work_bytes_upper_bound(2, 8, 3), 1540)
         return ranges, expected
 
     def test_pinned_writer_silently_changes_valid_plus_two_and_plus_four_byte_faces(self):

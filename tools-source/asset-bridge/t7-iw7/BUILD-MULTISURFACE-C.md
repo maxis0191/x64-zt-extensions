@@ -137,3 +137,64 @@ Next: reviewed correction of the layout assertion and any affected
 cross-language geometry budget, then separately
 authorized preparation/build. Do not rerun C, delete the assertion or infer a
 successful v2 export, fastfile, rendering or owner acceptance from this attempt.
+
+## Source correction after C: 96-byte T7 surfaces
+
+The retained `fab935826c898806855376662a8a03317b3ad8f1` source declares a
+96-byte T7 `XSurface`: 16 bytes of scalar fields, two 8-byte pointers,
+48-byte `XPartBits`, one 8-byte unknown field and an 8-byte name pointer.
+The adapter now retains its compile-time assertion with `sizeof(XSurface) == 96`.
+The other asserted sizes remain mesh120, shared80, rigid16 and the existing IW7
+destination sizes. No packing or native layout was changed.
+
+The corrected expanded logical geometry bound is:
+
+```text
+source      = 120 + 80 + N*(96 + 16) + V*28 + T*6
+destination = 56 + N*(256 + 16) + V*32 + T*6
+total       = 256 + 384*N + 60*V + 12*T <= 16777216
+```
+
+This increases the old accounting by `16*N` (at most 4080 bytes), retaining the
+16 MiB cap, per-surface limits and occurrence-based alias accounting. The native
+adapter and Python contract agree; the readback module already imports that
+contract. Separate coordinated commits cover the PowerShell export profile and
+ModelLab consumer. This note does not claim that those commits were integrated
+when these local tests ran.
+
+The minimum legal geometries for N=1/5/255 cost 832/3136/147136 bytes. The
+two-surface Face-ownership fixture `(N=2,V=8,T=3)` costs 1540 bytes and still
+copies exactly 18 index bytes. `(N=6,V=267000,T=62888)` is exactly at the cap;
+the previously admitted T=62896 is now 96 bytes over and is refused.
+
+The adapter remains 21290 LF bytes, with SHA256
+`857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4`.
+The recipe and runner require that exact corrected adapter. The canonical
+three-transition proof remains 714 bytes, SHA256
+`fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46`.
+The previous C/D2 source pins, main/CLI overlays, 66-header closure, six binary
+metadata pins and lifecycle/admission guards are unchanged. `prepare_build.py`
+already consumes the transition table and needs no duplicate constant.
+
+Source-only validation on 2026-10-13:
+
+- 129 Python tests passed with zero skips across export contract, readback,
+  Face ownership, native source wiring, header closure, build recipe and catalogue
+  trace. Existing exact source-render and source-contract pin checks passed.
+- `Test-T7BuildProfile.ps1` passed 411 checks, including 45 input-binding checks.
+- The optional frozen-B binding test passed 46 checks plus four actual DEFAULT
+  rejection cases. The old adapter, missing proof, opaque-as-text classification
+  and oversized legacy binding set all failed at their expected early gates.
+  The frozen B plan's original hash was verified unchanged afterwards.
+- Synthetic old-368 receipts are refused before Reader allocation. Both a fully
+  old surface80 binding proof and old transitions hidden under a new header proof
+  are refused. Recipe checks reject reconstructed historical adapter bytes.
+- `git diff --check` passed. No native compile/link/export, asset or opaque binary
+  content read/hash, lease acquisition, runtime directory creation or new plan D
+  was performed for this correction. Compiler acceptance of the corrected
+  assertion remains pending a separately authorized native build.
+
+The C failure/closure evidence above remains historical and unchanged. The
+272 MiB allocation remains in force, including all retained C outputs; there is
+no reclaimed margin. Next is coordinated source review/integration, followed by
+separate authorization for a new preparation and native build.

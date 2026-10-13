@@ -1,10 +1,27 @@
 import os
+import re
 from pathlib import Path
 import unittest
 import prepare_cli as p
 
 
 class NativeGuardSourceTests(unittest.TestCase):
+    def test_native_work_expression_matches_independent_surface96_goldens(self):
+        source = (p.HERE.parent/'t7-bridge/t7_iw7_resident_model.hpp').read_text()
+        # Keep compile-time layout checking; these source-only tests do not
+        # claim that a compiler has evaluated the corrected native assertion.
+        self.assertRegex(source, r'static_assert\(sizeof\(XModelMesh\) == 120 && sizeof\(XSurfaceShared\) == 80 &&\s+'
+                                 r'sizeof\(XSurface\) == 96 && sizeof\(XRigidVertList\) == 16\);')
+        match = re.search(r'const auto work = (\d+) \+ (\d+) \* surfaces \+ (\d+) \* vertices \+ (\d+) \* triangles;', source)
+        self.assertIsNotNone(match)
+        base, surface, vertex, triangle = map(int, match.groups())
+        for n, v, t, expected in ((1, 3, 1, 832), (5, 15, 5, 3136), (255, 765, 255, 147136),
+                                  (2, 8, 3, 1540), (6, 267000, 62888, 16777216),
+                                  (6, 267000, 62896, 16777312)):
+            with self.subTest(n=n, v=v, t=t):
+                self.assertEqual(base+surface*n+vertex*v+triangle*t, expected)
+        self.assertIn('detail::require(work <= max_buffer_bytes,', source)
+
     def test_selection_and_xpak_refusal_precede_converter_calls(self):
         source = (p.HERE/'native_export.inc').read_text()
         self.assertLess(source.index('xpak::deny_reads_for_resident_export();'), source.index('load_zone(zone, true, false)'))

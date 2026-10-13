@@ -19,7 +19,8 @@ SURFACE_COUNT_HEADER = 'prepared/t7_iw7_resident_model.hpp'
 SURFACE_COUNT_OLD_PIN = (13444, '6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777')
 SURFACE_COUNT_NEW_PIN = (13545, '701e3d1eccb0e98ecccfd2012215aaf7eff8db7bd974b184e86648a138b6e3c3')
 
-# Source-only v2 commit 927e5ebab6bf864e78ffbc6d68bac7d767066a17.
+# Source-only v2 originated at 927e5ebab6bf864e78ffbc6d68bac7d767066a17.
+# Adapter pin below includes the post-build-C surface96/work384 correction.
 # C/D2 -> rendered source before the unchanged message/publication overlays.
 MULTISURFACE_TRANSITIONS = {
     'prepared/main.cpp': (
@@ -30,7 +31,7 @@ MULTISURFACE_TRANSITIONS = {
         (39356, '27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e')),
     SURFACE_COUNT_HEADER: (
         SURFACE_COUNT_OLD_PIN,
-        (21290, '97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed')),
+        (21290, '857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4')),
 }
 MULTISURFACE_WIRED_PINS = {
     'prepared/main.cpp': (43038, '3ff489d38adfa4da640c5acd6a78b1600f312fbaef47d41b118fabd7dcd3fb84'),

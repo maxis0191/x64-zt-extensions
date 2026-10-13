@@ -20,7 +20,7 @@ SURFACE_FIELDS = {'index', 'material_slot', 'vertices', 'triangles'}
 def geometry_work_bytes_upper_bound(surfaces, vertices, triangles):
     """Expanded logical geometry, counting every occurrence even when aliased.
 
-    Source: mesh120 + shared80 + N*(surface80 + rigid16) + V*28 + T*6.
+    Source: mesh120 + shared80 + N*(surface96 + rigid16) + V*28 + T*6.
     Destination: mesh56 + N*(surface256 + rigid16) + V*32 + T*6.
     Indices count in both representations even when native conversion borrows
     them. This is not serialized size, CPU traffic or process/Python heap RAM.
@@ -31,7 +31,7 @@ def geometry_work_bytes_upper_bound(surfaces, vertices, triangles):
             type(vertices) is int and 3 * surfaces <= vertices <= 65535 * surfaces and
             type(triangles) is int and surfaces <= triangles <= 65535 * surfaces,
             'Aggregate geometry counts outside v2')
-    result = 256 + 368 * surfaces + 60 * vertices + 12 * triangles
+    result = 256 + 384 * surfaces + 60 * vertices + 12 * triangles
     require(result <= GEOMETRY_WORK_LIMIT, 'Expanded logical geometry exceeds 16 MiB')
     return result
 

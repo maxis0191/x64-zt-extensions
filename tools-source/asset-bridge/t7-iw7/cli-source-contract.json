@@ -51,16 +51,16 @@
       "lf_sha256": "025e4480bf0b55025d3a2ebeaff8b538c9ca4ac76151dd68c338464341c16331"
     },
     "test_cli_patch.py": {
-      "lf_bytes": 4687,
-      "lf_sha256": "df9ec92060ac77350327c20526f500b0c005c55c742487956e9490ea90eaad16"
+      "lf_bytes": 5903,
+      "lf_sha256": "6d6fbad47cb95dfc8fcafb201a0d18c4bc4c004ff7b60083a3f1c2967755d000"
     },
     "export_contract.py": {
       "lf_bytes": 7049,
-      "lf_sha256": "8ead620a323903e552540d1e3c8f0922234c6795608c0efb4e4af158a5c92030"
+      "lf_sha256": "067a1c3494eff6767e8258028a2d6fc6510c850b92e019606e4b7113e571ea06"
     },
     "test_export_contract.py": {
-      "lf_bytes": 10651,
-      "lf_sha256": "c0ff869f76080550dcd3e6b876d2648936499bd8a55611c78cb32fe181ae9b74"
+      "lf_bytes": 11760,
+      "lf_sha256": "9d1c04e1309cab82e9dfbadc4bc7aa56a91fed40bef7960a63372341f5155db9"
     },
     "zonetool-fab9358-t7-resident-cli.patch": {
       "lf_bytes": 23419,
@@ -68,14 +68,14 @@
     },
     "test_triangle_ownership.py": {
       "lf_bytes": 4756,
-      "lf_sha256": "76b5c2dcaa6c8017a9097a6e0755d2a0d66cfc954c99ff660c84cb631cecb864"
+      "lf_sha256": "4ad5dd4d4e6214e105cc5918e7f5a0c5b6747a6da79177bebfc5243009d8f830"
     }
   },
   "external_adapter": {
     "repository_path": "tools-source/asset-bridge/t7-bridge/t7_iw7_resident_model.hpp",
     "profile": "t7-iw7-resident-static-v1",
     "lf_bytes": 21290,
-    "lf_sha256": "97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed",
+    "lf_sha256": "857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4",
     "compile_verified": false,
     "source_commit": "cf1949658fa374bcd14db79865247243fca7c34c",
     "required_sibling": {

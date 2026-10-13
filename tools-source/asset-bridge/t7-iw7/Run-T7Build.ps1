@@ -155,7 +155,7 @@ function Assert-T7InputBindings($Plan) {
     if($proof.Schema -cne 'iw7.t7-resident-multi-surface-build/2' -or
         $proof.Header -cne 'prepared/t7_iw7_resident_model.hpp' -or
         $proof.PreviousSHA256 -cne '6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777' -or
-        $proof.SHA256 -cne '97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed' -or
+        $proof.SHA256 -cne '857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4' -or
         $proof.E7ReadSHA256 -cne $readSHA -or $proof.E7CompileSHA256 -cne $compileSHA -or
         $proof.E7LinkSHA256 -cne $linkSHA -or $proof.E7TranslationUnits -ne 413 -or $proof.E7Objects -ne 413 -or
         $headers.Count -ne 66 -or $headers.Bytes -ne 87204 -or @($headers.Inputs).Count -ne 66 -or
@@ -219,7 +219,7 @@ function Assert-T7InputBindings($Plan) {
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
     if($bytes.Length -ne 714 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
-        '6e2bb519b7a6a2a2bb4653f3530049ca75775d41e8566e704ea5917de559c3f7'){throw 'Reviewed v2 source transitions differ.'}
+        'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'){throw 'Reviewed v2 source transitions differ.'}
 }
 function Split-T7ResponseArguments([string]$Text) {
     # Deliberately bounded MSVC response syntax: space/tab separators and quoted
