@@ -100,7 +100,8 @@ foreach($bad in @(@('fragments',9),@('instructions','8192'),@('fragment_bytes',1
     try{Assert-LocatorTargetedPlan $targetPlan}catch{$blocked=$true}
     Check $blocked 'Targeted Plan refuses widened or untyped bound';$targetPlan.TargetedLimits.($bad[0])=$old
 }
-foreach($entry in '0x140a17971','0x140a7ca90','0x140dd1f90,0x140a7ca90','0X140DD1F90'){
+foreach($entry in '0x140a17971','0x140a7ca90','0x140dd1f90,0x140a7ca90','0X140DD1F90',
+    '0x1405f04a1','0X1405F04A0','0x1405f04a0,0x140dd1f90','0x1403bc140','0x14126a090'){
     $targetPlan.Entry=$entry;$blocked=$false
     try{Assert-LocatorTargetedPlan $targetPlan}catch{$blocked=$true}
     Check $blocked 'Targeted Plan refuses unselected, multiple or noncanonical seeds'
@@ -109,6 +110,8 @@ $targetPlan.Entry='0x140a17e70';Assert-LocatorTargetedPlan $targetPlan
 Check ((Get-LocatorArguments $targetPlan).EndsWith('"--entry" "0x140a17e70"')) 'Second reviewed seed uses only its own exact entry'
 $targetPlan.Entry='0x140dd1f90';Assert-LocatorTargetedPlan $targetPlan
 Check ((Get-LocatorArguments $targetPlan).EndsWith('"--entry" "0x140dd1f90"')) 'G explicitly selects only the output-pointer callee seed'
+$targetPlan.Entry='0x1405f04a0';Assert-LocatorTargetedPlan $targetPlan
+Check ((Get-LocatorArguments $targetPlan).EndsWith('"--entry" "0x1405f04a0"')) 'H explicitly selects only the R9 output-pointer handoff seed'
 $targetPlan.Entry='0x140a17970'
 $targetReport=$report|ConvertTo-Json -Depth 8|ConvertFrom-Json
 $fields=@{schema='iw7.rig-targeted-static/2';entry='0x140a17970';limits=[pscustomobject](Get-LocatorTargetedLimits);
@@ -153,6 +156,11 @@ Check $true 'G report accepted only against the explicitly selected callee entry
 $targetReport.entry='0x140a17e70';$blocked=$false
 try{Assert-LocatorReport $targetReport -Targeted $true -ExpectedEntry '0x140dd1f90'}catch{$blocked=$true}
 Check $blocked 'Previous F entry cannot satisfy the G report binding';$targetReport.entry='0x140a17970'
+$targetReport.entry='0x1405f04a0';Assert-LocatorReport $targetReport -Targeted $true -ExpectedEntry '0x1405f04a0'
+Check $true 'H report accepted only against its exact Plan entry'
+$targetReport.entry='0x140dd1f90';$blocked=$false
+try{Assert-LocatorReport $targetReport -Targeted $true -ExpectedEntry '0x1405f04a0'}catch{$blocked=$true}
+Check $blocked 'Previous G entry cannot satisfy the H report binding';$targetReport.entry='0x140a17970'
 $edgeReport=$targetReport|ConvertTo-Json -Depth 8|ConvertFrom-Json
 $edgeReport.control_edges=@(1..512|ForEach-Object {[pscustomobject]@{kind='call-not-followed';target='0x140011000'}})
 $edgeReport.control_edge_count=512

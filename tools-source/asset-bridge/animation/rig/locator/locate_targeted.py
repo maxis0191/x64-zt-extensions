@@ -13,7 +13,7 @@ from capstone import (Cs, CS_ARCH_X86, CS_MODE_64, CS_OP_IMM, CS_OP_MEM,
                       CS_GRP_IRET, CS_GRP_INT, CS_GRP_BRANCH_RELATIVE)
 
 IMAGE, TEXT = 0x140000000, 0x140001000
-ALLOWED_ENTRIES = (0x140a17970, 0x140a17e70, 0x140dd1f90)
+ALLOWED_ENTRIES = (0x140a17970, 0x140a17e70, 0x140dd1f90, 0x1405f04a0)
 LIMITS = {"root_entries": 1, "fragments": 8, "fragment_bytes": 16384,
           "decoded_bytes": 32768, "instructions": 8192, "control_edges": 512,
           "seconds": 10, "text_scans": 0, "external_callees_followed": 0}
