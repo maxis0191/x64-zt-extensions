@@ -114,25 +114,33 @@ namespace zonetool::t7::selected_material_observation
         nlohmann::ordered_json result = {{"schema", "iw7.t7-selected-material-observation/1"},
             {"headers_rechecked", false}, {"allocation_retained", false},
             {"atomic_snapshot_proven", false}, {"pixels_copied", false}, {"ready", false}};
+        const char* stage = "model_header";
+        std::size_t stage_index = 0;
+        bool indexed_stage = false;
         try
         {
             reader<Readable> read(readable);
             const auto model = read.one(source);
+            stage = "model_name";
             const auto model_name = read.name(model.name);
             resident_image::require(model_name == expected_model && model.numLods &&
                 model.numLods <= 8 && lod < model.numLods, "Exact selected model/LOD required");
+            stage = "lod_material_table";
             const auto lod_materials = read.array(model.meshMaterials, model.numLods, 8);
             const auto& table = lod_materials[lod];
             resident_image::require(table.numMaterials && slot < table.numMaterials,
                 "Explicit selected material slot required");
+            stage = "material_pointer_table";
             const auto materials = read.array(table.materials, table.numMaterials, 32);
             auto names = nlohmann::ordered_json::array();
             auto aliases = nlohmann::ordered_json::array();
             std::vector<Material> material_headers;
             for (std::size_t i = 0; i < materials.size(); ++i)
             {
+                stage = "material_header"; stage_index = i; indexed_stage = true;
                 const auto material = read.one(materials[i]);
                 material_headers.push_back(material);
+                stage = "material_name";
                 names.push_back(read.name(material.name));
                 if (materials[i] == materials[slot]) aliases.push_back(i);
             }
@@ -141,15 +149,23 @@ namespace zonetool::t7::selected_material_observation
             result["slot"] = slot;
             result["material_names"] = names;
             result["aliased_slots"] = aliases;
+            stage = "selected_material_header"; indexed_stage = false;
             const auto selected = read.one(materials[slot]);
+            result["selected_header"] = {{"texture_count", selected.textureCount},
+                {"sampler_count", selected.samplerCount}, {"constant_count", selected.constantCount},
+                {"texture_table_present", selected.textureTable != nullptr},
+                {"sampler_table_present", selected.samplerTable != nullptr},
+                {"constant_table_present", selected.constantTable != nullptr},
+                {"technique_set_present", selected.techniqueSet != nullptr}};
+            stage = "texture_table";
             const auto textures = read.array(selected.textureTable, selected.textureCount, 16);
-            const auto samplers = read.array(selected.samplerTable, selected.samplerCount, 16);
-            const auto constants = read.array(selected.constantTable, selected.constantCount, 32);
-            auto texture_rows = nlohmann::ordered_json::array();
+            result["textures"] = nlohmann::ordered_json::array();
             std::vector<std::pair<const GfxImage*, GfxImage>> image_headers;
             std::vector<std::string> image_names;
+            std::vector<std::size_t> image_texture_indices;
             for (std::size_t i = 0; i < textures.size(); ++i)
             {
+                stage_index = i; indexed_stage = true;
                 const auto& texture = textures[i];
                 std::array<std::uint32_t, 2> uv_bits;
                 static_assert(sizeof(uv_bits) == sizeof(texture.uvScale));
@@ -161,24 +177,34 @@ namespace zonetool::t7::selected_material_observation
                     {"isMatureContent", texture.isMatureContent}};
                 if (texture.image)
                 {
+                    stage = "image_header";
                     const auto image = read.one(texture.image);
+                    stage = "image_name";
                     const auto image_name = read.name(image.name);
                     row["image_name"] = image_name;
                     row["image"] = image_metadata(image);
                     image_headers.emplace_back(texture.image, image);
                     image_names.push_back(image_name);
+                    image_texture_indices.push_back(i);
                 }
                 else row["image"] = nullptr;
-                texture_rows.push_back(std::move(row));
+                stage = "texture_recheck";
                 read.unchanged(selected.textureTable + i, texture);
+                result["textures"].push_back(std::move(row));
             }
+            stage = "sampler_table"; indexed_stage = false;
+            const auto samplers = read.array(selected.samplerTable, selected.samplerCount, 16);
             auto sampler_rows = nlohmann::ordered_json::array();
             for (std::size_t i = 0; i < samplers.size(); ++i)
             {
                 sampler_rows.push_back({{"nameHash", samplers[i].nameHash},
                     {"samplerState", samplers[i].samplerState}});
+                stage = "sampler_recheck"; stage_index = i; indexed_stage = true;
                 read.unchanged(selected.samplerTable + i, samplers[i]);
             }
+            result["samplers"] = sampler_rows;
+            stage = "constant_table"; indexed_stage = false;
+            const auto constants = read.array(selected.constantTable, selected.constantCount, 32);
             auto constant_rows = nlohmann::ordered_json::array();
             for (std::size_t i = 0; i < constants.size(); ++i)
             {
@@ -188,44 +214,57 @@ namespace zonetool::t7::selected_material_observation
                 const auto end = std::find(constants[i].name, constants[i].name + 12, '\0');
                 constant_rows.push_back({{"nameHash", constants[i].nameHash},
                     {"name", std::string(constants[i].name, end)}, {"literalBits", literal_bits}});
+                stage = "constant_recheck"; stage_index = i; indexed_stage = true;
                 read.unchanged(selected.constantTable + i, constants[i]);
             }
+            result["constants"] = constant_rows;
+            stage = "technique_name_pointer"; indexed_stage = false;
             nlohmann::ordered_json technique_name = nullptr;
             const char* technique_name_pointer = nullptr;
             if (selected.techniqueSet)
             {
                 technique_name_pointer = read.one(&selected.techniqueSet->name);
+                stage = "technique_name";
                 technique_name = read.name(technique_name_pointer);
             }
+            result["technique_set"] = technique_name;
             for (std::size_t i = 0; i < image_headers.size(); ++i)
             {
+                stage = "image_recheck"; stage_index = image_texture_indices[i]; indexed_stage = true;
                 read.unchanged(image_headers[i].first, image_headers[i].second);
+                stage = "image_name_recheck";
                 resident_image::require(read.name(image_headers[i].second.name) == image_names[i],
                     "Selected image name changed during observation");
             }
             if (selected.techniqueSet)
             {
+                stage = "technique_recheck"; indexed_stage = false;
                 read.unchanged(&selected.techniqueSet->name, technique_name_pointer);
+                stage = "technique_name_recheck";
                 resident_image::require(read.name(technique_name_pointer) == technique_name.get<std::string>(),
                     "Selected technique name changed during observation");
             }
+            stage = "selected_material_recheck"; indexed_stage = false;
             read.unchanged(materials[slot], selected);
             for (std::size_t i = 0; i < materials.size(); ++i)
             {
+                stage = "material_recheck"; stage_index = i; indexed_stage = true;
                 read.unchanged(materials[i], material_headers[i]);
+                stage = "material_name_recheck";
                 resident_image::require(read.name(material_headers[i].name) == names[i].get<std::string>(),
                     "Selected-material name changed during observation");
+                stage = "material_pointer_recheck";
                 read.unchanged(table.materials + i, materials[i]);
             }
+            stage = "lod_material_recheck"; indexed_stage = false;
             read.unchanged(model.meshMaterials + lod, table);
+            stage = "model_recheck";
             read.unchanged(source, model);
+            stage = "model_name_recheck";
             resident_image::require(read.name(model.name) == model_name,
                 "Selected model name changed during observation");
-            result["technique_set"] = technique_name;
-            result["textures"] = texture_rows;
-            result["samplers"] = sampler_rows;
-            result["constants"] = constant_rows;
             result["headers_rechecked"] = true;
+            stage = "serialization";
             const auto output = result.dump();
             resident_image::require(output.size() <= output_limit, "Material observation output exceeds bound");
             return output;
@@ -234,6 +273,8 @@ namespace zonetool::t7::selected_material_observation
         {
             result["refused"] = true;
             result["headers_rechecked"] = false;
+            result["failure_stage"] = stage;
+            if (indexed_stage) result["failure_index"] = stage_index;
             result["reason"] = std::string(error.what()).substr(0, 256);
             try
             {
@@ -243,6 +284,7 @@ namespace zonetool::t7::selected_material_observation
             catch (const std::exception&) {} // Invalid names must not escape as invalid JSON.
             return nlohmann::ordered_json({{"schema", "iw7.t7-selected-material-observation/1"},
                 {"refused", true}, {"reason", "Observation could not be serialized within bounds"},
+                {"failure_stage", "serialization"},
                 {"pixels_copied", false}, {"ready", false}}).dump();
         }
     }
