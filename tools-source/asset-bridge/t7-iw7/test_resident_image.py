@@ -1,10 +1,14 @@
 """Original tiny image fixtures and an independent DDS-header oracle. No game data."""
 from dataclasses import replace
+from contextlib import redirect_stdout
+import io
 import json
+import hashlib
 from pathlib import Path
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import resident_image as subject
 
@@ -179,6 +183,100 @@ class ResidentImageTests(unittest.TestCase):
             corrupted = bytearray(blob)
             corrupted[offset] ^= 0x80
             with self.subTest(offset=offset), self.assertRaises(ValueError): dds_oracle(bytes(corrupted))
+
+
+class IW7ReadbackTests(unittest.TestCase):
+    def dump(self, view, pixels, name="community_bo3_color", semantic=2):
+        # Independent pinned GfxImage/assetmanager offsets; no native binary.
+        scalar = bytearray(112)
+        struct.pack_into("<I", scalar, 24, view.dxgi_format)
+        scalar[32:35] = bytes((3, semantic, 3))
+        struct.pack_into("<II4H", scalar, 40,
+                         len(pixels), len(pixels), view.width, view.height, 1, 1)
+        scalar[56] = view.level_count
+        struct.pack_into("<Q", scalar, 64, 1)
+        return (b"\x08\x01\x01\0\0\0" + scalar + b"\x06\x01" + name.encode() +
+                b"\0\x08\x01" + struct.pack("<I", len(pixels)) + pixels)
+
+    def verify(self, view, pixels, raw, name="community_bo3_color", semantic=2):
+        return subject.verify_iw7_image(view, pixels, raw, name, semantic)
+
+    def test_non_square_full_mips_are_verified_without_a_32px_assumption(self):
+        view = copied(3, 5, 3, 29, 72)
+        pixels = b"\x11"*60 + b"\x22"*8 + b"\x33"*4
+        result = self.verify(view, pixels, self.dump(view, pixels))
+        self.assertEqual((result["width"], result["height"], result["mip_count"]), (3, 5, 3))
+        self.assertEqual(result["pixel_sha256"], hashlib.sha256(pixels).hexdigest())
+        self.assertTrue(result["serialized_pixel_bytes_verified"])
+        self.assertFalse(result["material_verified"])
+        self.assertFalse(result["rendered_verified"])
+
+    def test_all_typed_formats_compare_bytes_including_bc_tails(self):
+        for fmt, size in {28:4,29:4,49:2,61:1,71:8,72:8,74:16,75:16,77:16,78:16,
+                          80:8,81:8,83:16,84:16,87:4,91:4,98:16,99:16}.items():
+            with self.subTest(fmt=fmt):
+                view, pixels = copied(1, 1, 1, fmt, size), bytes(range(size))
+                self.assertEqual(self.verify(view, pixels, self.dump(view, pixels))["dxgi_format"], fmt)
+        view, pixels = copied(7, 5, 3, 98, 96), bytes(range(96))
+        self.assertEqual(self.verify(view, pixels, self.dump(view, pixels))["mip_count"], 3)
+
+    def test_metadata_shape_format_and_mip_corruption_is_refused(self):
+        view, pixels = copied(), bytes(16)
+        raw = self.dump(view, pixels)
+        for offset in (0, 6+24, 6+32, 6+34, 6+40, 6+44, 6+48, 6+50, 6+52, 6+54, 6+56, 6+57, 6+64):
+            changed = bytearray(raw)
+            changed[offset] ^= 1
+            with self.subTest(offset=offset), self.assertRaises(ValueError):
+                self.verify(view, pixels, bytes(changed))
+
+    def test_semantic_is_explicit_and_not_inferred_from_t7(self):
+        view, pixels = replace(copied(), source_semantic=4), bytes(16)
+        raw = self.dump(view, pixels, semantic=5)
+        self.assertEqual(self.verify(view, pixels, raw, semantic=5)["iw7_semantic"], 5)
+        for semantic in (4, True, -1, 17, None):
+            with self.subTest(semantic=semantic), self.assertRaises(ValueError):
+                self.verify(view, pixels, raw, semantic=semantic)
+
+    def test_wrong_identity_trailing_truncated_or_changed_pixels_are_refused(self):
+        view, pixels = copied(), bytes(range(16))
+        raw = self.dump(view, pixels)
+        for changed in (raw[:-1], raw+b"x", raw[:-1]+b"x"):
+            with self.assertRaises(ValueError): self.verify(view, pixels, changed)
+        for name in ("other", "", "bad\0name", "x"*256, None):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                self.verify(view, pixels, raw, name=name)
+
+    def test_readback_only_reads_explicit_tiny_files_and_creates_no_dds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            meta, data, dump = root/"copy.json", root/"pixels.bin", root/"image.iw7Image"
+            view, pixels = copied(), bytes(range(16))
+            meta.write_text(json.dumps(subject.metadata(view)))
+            data.write_bytes(pixels)
+            dump.write_bytes(self.dump(view, pixels))
+            result = subject.verify_files(meta, data, dump, "community_bo3_color", 2)
+            self.assertTrue(result["serialized_pixel_bytes_verified"])
+            self.assertEqual(len(list(root.iterdir())), 3)
+
+    def test_cli_readback_and_original_conversion_arguments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            meta, data, dump, output = (root/name for name in
+                                       ("copy.json", "pixels.bin", "image.iw7Image", "image.dds"))
+            view, pixels = copied(), bytes(range(16))
+            meta.write_text(json.dumps(subject.metadata(view)))
+            data.write_bytes(pixels)
+            dump.write_bytes(self.dump(view, pixels))
+            prefix = ["resident_image.py", str(meta), str(data)]
+            for arguments, expected in (
+                (["--verify-iw7-image", str(dump)], 2),
+                (["--verify-iw7-image", str(dump), "--image-name", "community_bo3_color",
+                  "--iw7-semantic", "2"], 0),
+                ([str(output)], 0),
+            ):
+                with patch("sys.argv", prefix+arguments), redirect_stdout(io.StringIO()):
+                    self.assertEqual(subject.main(), expected)
+            self.assertEqual(dds_oracle(output.read_bytes())["pixels"], pixels)
 
 
 if __name__ == "__main__":
