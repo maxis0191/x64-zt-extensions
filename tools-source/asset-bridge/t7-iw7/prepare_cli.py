@@ -40,6 +40,7 @@ def render(native):
 	}
 	return main_internal();''')
     includes = '''#include "common/xpak.hpp"
+#include <array>
 #include <utils/cryptography.hpp>
 #include <utils/flags.hpp>
 #include "t7_iw7_resident_model.hpp"
@@ -51,6 +52,14 @@ namespace zonetool::iw7
 {
 	void write_enemy_reference_output(const std::filesystem::path&, const std::string&);
 }'''
+    # Render the two source-pinned observers at global scope. This keeps the
+    # same prepared-TU closure instead of creating an unbound include path.
+    image_observer = (HERE/'resident_image_copy.hpp').read_text(encoding='utf-8')
+    material_observer = (HERE/'selected_material_observation.hpp').read_text(encoding='utf-8')
+    image_observer = helper.once(image_observer, '#pragma once\n', '')
+    material_observer = helper.once(material_observer, '#pragma once\n', '')
+    material_observer = helper.once(material_observer, '#include "resident_image_copy.hpp"\n', '')
+    includes += '\n\n'+image_observer+'\n'+material_observer
     patched[target] = helper.once(patched[target], '#include "common/xpak.hpp"', includes)
     capture = (HERE/'native_catalog_capture.inc').read_text(encoding='utf-8')
     patched[target] = helper.once(patched[target], '\tutils::hook::detour db_add_xasset_hook;',

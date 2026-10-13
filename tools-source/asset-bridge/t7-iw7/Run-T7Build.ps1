@@ -115,9 +115,9 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
 }
 function Assert-T7InputBindings($Plan) {
     # This runs before any binding is opened, binary metadata is queried or
-    # provider is loaded. The legacy bound stays 128; the exact v2 closure is 141.
+    # provider is loaded. Legacy stays 128; v2 adds three sealed observer sources.
     $bindings=@($Plan.Bindings);$inputs=@($Plan.Inputs)
-    if($bindings.Count -gt 141 -or $inputs.Count -gt 2048 -or
+    if($bindings.Count -gt 144 -or $inputs.Count -gt 2048 -or
         @($bindings.Path|Sort-Object -Unique).Count -ne $bindings.Count -or
         @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
     if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}
@@ -133,8 +133,19 @@ function Assert-T7InputBindings($Plan) {
         $reuse.RecompiledMain -isnot [bool] -or !$reuse.RecompiledMain -or
         $reuse.RecompiledZonetool -isnot [bool] -or !$reuse.RecompiledZonetool -or
         $reuse.PSObject.Properties.Name -contains 'ResidentSurfaceCountDiagnostic' -or
-        $bindings.Count -ne 141 -or $inputs.Count -ne 1146 -or
-        @($bindings|Where-Object IsText).Count -ne 135){throw 'Exact multisurface publication input profile required.'}
+        $bindings.Count -ne 144 -or $inputs.Count -ne 1146 -or
+        @($bindings|Where-Object IsText).Count -ne 138){throw 'Exact multisurface publication input profile required.'}
+    $observerRoot=[IO.Path]::GetDirectoryName($Plan.Runner)
+    foreach($observer in @(
+        @('resident_image_copy.hpp',6366,'96291c23f132e09285d4ea3171c9107ac525d8628403014eae85a895f99c324e'),
+        @('selected_material_observation.hpp',12765,'a935803571f04b3a2cad7346824bf3194f5d44aeada15b224a3faa75ea292d7f'),
+        @('selected_material_observation_fixture.cpp',8146,'f011131feeb5495b3bfb0a1e86ad34aad20fc7869ec775c861290df6e3e1a05b'))) {
+        $path=Join-Path $observerRoot $observer[0]
+        if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and
+            $_.Bytes -eq $observer[1] -and $_.SHA256 -ceq $observer[2]}).Count -ne 1){
+            throw 'Exact read-only selected-metadata source binding required.'
+        }
+    }
     # Check classification by the retained six-tool metadata inventory too.
     # Counts alone must not permit an EXE to become a pre-admission text read.
     $binaryRows=[Collections.Generic.List[string]]::new()
@@ -219,7 +230,7 @@ function Assert-T7InputBindings($Plan) {
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
     if($bytes.Length -ne 714 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
-        'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'){throw 'Reviewed v2 source transitions differ.'}
+        'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'){throw 'Reviewed v2 source transitions differ.'}
 }
 function Split-T7ResponseArguments([string]$Text) {
     # Deliberately bounded MSVC response syntax: space/tab separators and quoted

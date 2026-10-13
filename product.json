@@ -611,6 +611,8 @@
     "tools-source/asset-bridge/t7-iw7/resident_image_fixture_validation-20261012-a.json",
     "tools-source/asset-bridge/t7-iw7/resident_image_fixture_validation-20261012-b.json",
     "tools-source/asset-bridge/t7-iw7/resident_image_validation-20261012.json",
+    "tools-source/asset-bridge/t7-iw7/selected_material_observation.hpp",
+    "tools-source/asset-bridge/t7-iw7/selected_material_observation_fixture.cpp",
     "tools-source/asset-bridge/t7-iw7/source-inventory.json",
     "tools-source/asset-bridge/t7-iw7/test_boot_contract.py",
     "tools-source/asset-bridge/t7-iw7/test_build_commands.py",
@@ -684,7 +686,7 @@
     {
       "id": "iw7-mod-components",
       "repository": "https://github.com/maxis0191/iw7-mod-components.git",
-      "revision": "93fd16b1b7e9da0b46b0348973baa55cd363b1ca",
+      "revision": "2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1",
       "files": [
         "ops/Apply-DebuggerOverlay.ps1",
         "ops/Apply-DownloadCacheOverlay.ps1",

@@ -169,6 +169,20 @@ The callback scope above remains a placement to qualify, not a lifetime guarante
 Use narrowly bounded metadata instrumentation for these observations before
 adding pixel capture; this decision does not require a pixel exporter to exist first.
 
+The separate [metadata helper](selected_material_observation.hpp) accepts the
+exact model name, LOD, selected slot and existing throwing readability callback.
+It records at most 32 ordered material names, then one material's aliases,
+16 texture/sampler entries and 32 constants. UV scales/constants stay raw float
+bits; image fields stay typed metadata. Reads are capped at 64 KiB and JSON at
+32 KiB. It never reads pixels/streams, writes a file or calls the engine. Header
+rechecks do not pin allocations or establish an atomic snapshot. Refusal returns
+non-ready JSON, retaining names already collected when they can be serialized.
+The native caller must log that diagnostic separately and continue its original
+geometry selection, so this observation cannot erase its geometry refusal.
+The [tiny fixture](selected_material_observation_fixture.cpp) has synthetic
+headers and an unreadable pixel sentinel; it is prepared for the converter owner's
+combined compile/run, not yet qualified by native execution at this checkpoint.
+
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
 contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`

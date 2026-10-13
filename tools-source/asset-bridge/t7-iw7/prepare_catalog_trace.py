@@ -28,14 +28,14 @@ MULTISURFACE_TRANSITIONS = {
         (12944, 'ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615')),
     'prepared/zonetool.cpp': (
         (35974, '106ccdb4aec584184132c309c117f778d504ca9e64e8a821d23bfecc83bc8635'),
-        (39356, '27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e')),
+        (62674, 'c080e69319ccff31fd8a25747210baeddc95269d6b416d18321ea272935ffff8')),
     SURFACE_COUNT_HEADER: (
         SURFACE_COUNT_OLD_PIN,
         (21290, '857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4')),
 }
 MULTISURFACE_WIRED_PINS = {
     'prepared/main.cpp': (43038, '3ff489d38adfa4da640c5acd6a78b1600f312fbaef47d41b118fabd7dcd3fb84'),
-    'prepared/zonetool.cpp': (39410, 'b470e08edaa26c3527d02cab89a867192371290dda02c16c5569acd7d6819279'),
+    'prepared/zonetool.cpp': (62728, 'd9e25c2cdd8a422fdf5312ad3dc4596fb60482ee165e77f59bff1a30d436fe7f'),
     SURFACE_COUNT_HEADER: MULTISURFACE_TRANSITIONS[SURFACE_COUNT_HEADER][1],
 }
 
