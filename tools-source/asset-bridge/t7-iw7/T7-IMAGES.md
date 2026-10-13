@@ -180,9 +180,9 @@ non-ready JSON, retaining names already collected when they can be serialized.
 The native caller must log that diagnostic separately and continue its original
 geometry selection, so this observation cannot erase its geometry refusal.
 The [tiny fixture](selected_material_observation_fixture.cpp) has synthetic
-headers and an unreadable pixel sentinel. Its standalone attempt C passed all
-**32 checks** on 2026-10-13; the qualification and earlier failed attempts are
-recorded below. This does not qualify a real material capture.
+headers and an unreadable pixel sentinel. Original attempt C passed **32 checks**
+and the diagnostic correction passed **50 checks** in D on 2026-10-13, as recorded
+below. Neither result qualifies a real material capture.
 
 ### Selected-material fixture: 32 checks passed (2026-10-13)
 
@@ -250,11 +250,37 @@ texture binding, lifetime or pixels. Complete header/name rechecks and the exist
 64 KiB read/32 KiB JSON bounds still apply before success.
 
 New synthetic cases cover unreadable texture/sampler/constant tables, refusal
-stages, partial texture preservation and sparse image bindings. Their native
-execution is pending; the earlier 32-check C result belongs only to its recorded
-input bytes. E2 and its compiled observer remain immutable. A future diagnostic
-epoch must explicitly adopt the new helper and requalify the native CLI; no diffuse
-image is inferred from a material name or an incomplete observation.
+stages, partial texture preservation and sparse image bindings. Attempt D compiled
+and executed them from source `966c98f9edaef07753421f56189997da0d4531e8` with
+MSVC C++20 `/W4 /WX`, passing the actual transcript:
+
+```text
+PASS selected material metadata fixture: 50 checks; no pixels or engine calls.
+```
+
+Compile/link and the separate fixture each exited 0. Two original-job captures
+proved the same pinned `vctip` child after compiler exit 0; only that owned job
+was stopped, then fresh root0/active0/members0 preceded ordinary closure and the
+test. All jobs closed before lease release; fresh postflight showed zero leases
+and heavy/game processes, and the invoking host exited 0. The executable measured
+183,808 bytes, SHA-256
+`38c1849ee7f89d292954a16b68b80c838ec96c54eb7c7c0206f67e3243f8f1fa`.
+All retained outputs total 4,314,643 bytes, within D's 6 MiB bound. The earlier
+32-check C result remains attached only to its original input bytes.
+
+A primary-source comparison with Greyhound
+[`22c3d17`, BO3 structures](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/DBGameAssets.h#L817-L839)
+corroborates material texture count at `0x270`, texture table at `0x280`, binding
+image/nameHash at `0x00/0x08` and binding stride `0x20`. Its material description
+ends at `0x288`, so it is a partial prefix rather than a conflicting complete
+size. Its [BO3 reader](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/GameBlackOps3.cpp#L582-L620)
+uses those entries. It does not corroborate sampler/constant pointers, UV decoding,
+the loaded engine version or E2 allocation validity. No ABI mismatch is established.
+
+E2 and the geometry owner's compiled observer remain immutable. A future
+diagnostic epoch must explicitly adopt the new helper and requalify the native
+CLI; D's synthetic cases do not supply that engine evidence. No diffuse image is
+inferred from a material name or an incomplete observation.
 
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
