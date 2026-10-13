@@ -80,7 +80,7 @@ static void resident_export_load_zone(const std::string& zone)
 }
 
 static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
-    const std::string& lod_arg)
+    const std::string& lod_arg, const bool multisurface = false)
 {
     const auto zone = resident_export_name(zone_arg.c_str(), true);
     const auto name = resident_export_name(model_arg.c_str());
@@ -92,24 +92,49 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
     if (!header.data || DB_IsXAssetDefault(ASSET_TYPE_XMODEL, name.c_str()))
         throw std::runtime_error("Exact nondefault source model required");
     utils::memory::allocator allocator;
-    const auto selected = resident_iw7::select(reinterpret_cast<XModel*>(header.data), name.c_str(), lod, allocator);
+    const auto selected = resident_iw7::select(reinterpret_cast<XModel*>(header.data), name.c_str(), lod, allocator, multisurface);
     if (!selected || resident_export_name(selected->name) != name || selected->numLods != 1 || !selected->meshes[0])
         throw std::runtime_error("Selected model contract differs");
     const auto mesh_name = resident_export_name(selected->meshes[0]->name);
-    if (!selected->meshMaterials || selected->meshMaterials[0].numMaterials != 1 ||
-        !selected->meshMaterials[0].materials || !selected->meshMaterials[0].materials[0])
-        throw std::runtime_error("Exactly one explicit material dependency required");
-    const auto material_name = resident_export_name(selected->meshMaterials[0].materials[0]->name);
+    const auto selected_mesh = selected->meshes[0];
+    const auto surface_count = static_cast<unsigned int>(selected_mesh->numSurfs);
+    if (!surface_count || (!multisurface && surface_count != 1) || !selected->meshMaterials ||
+        selected->meshMaterials[0].numMaterials != surface_count || !selected->meshMaterials[0].materials)
+        throw std::runtime_error("Explicit surface/material slot counts differ");
+    auto material_names = nlohmann::ordered_json::array();
+    auto surface_records = nlohmann::ordered_json::array();
+    std::uint64_t vertices = 0, triangles = 0;
+    for (unsigned int i = 0; i < surface_count; ++i)
+    {
+        // select already validated every slot and payload under the logical
+        // geometry bound. Preserve pointer aliases and repeated material names.
+        const auto material = selected->meshMaterials[0].materials[i];
+        if (!material) throw std::runtime_error("Missing material at surface[" + std::to_string(i) + "]");
+        try
+        {
+            material_names.push_back(resident_export_name(material->name));
+        }
+        catch (const std::runtime_error& error)
+        {
+            throw std::runtime_error("surface[" + std::to_string(i) + "] material_slot=" +
+                std::to_string(i) + "; " + error.what());
+        }
+        const auto& surface = selected_mesh->surfs[i];
+        vertices += surface.vertCount;
+        triangles += surface.triCount;
+        if (multisurface)
+            surface_records.push_back({{"index", i}, {"material_slot", i},
+                {"vertices", surface.vertCount}, {"triangles", surface.triCount}});
+    }
+    const auto geometry_work = multisurface ?
+        resident_iw7::geometry_work_bytes_upper_bound(surface_count, vertices, triangles) : 0;
     // Capture observed selection metadata in the same stable DB scope. Bone
     // strings are observations, not paths: preserve their actual T7 spelling.
     const auto root_bone_name = resident_iw7::detail::name(SL_ConvertToString(selected->boneNames[0]));
-    const auto selected_mesh = selected->meshes[0];
     const nlohmann::ordered_json selected_counts = {
         {"bones", static_cast<unsigned int>(selected->numBones)},
         {"roots", static_cast<unsigned int>(selected->numRootBones)},
-        {"surfaces", static_cast<unsigned int>(selected_mesh->numSurfs)},
-        {"vertices", static_cast<unsigned int>(selected_mesh->surfs[0].vertCount)},
-        {"triangles", static_cast<unsigned int>(selected_mesh->surfs[0].triCount)}};
+        {"surfaces", surface_count}, {"vertices", vertices}, {"triangles", triangles}};
     const auto key_input = zone + "\n" + name + "\n" + lod_arg;
     const auto key = "t7_iw7_" + utils::string::to_lower(utils::cryptography::sha256::compute(
         reinterpret_cast<const uint8_t*>(key_input.data()), key_input.size(), true));
@@ -142,23 +167,29 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
         if (++files > 2 || total > 32u * 1024u * 1024u) throw std::runtime_error("Export file budget exceeded");
     }
     if (files != 2) throw std::runtime_error("Both model and mesh outputs required");
-    nlohmann::ordered_json report = {{"schema", "iw7.t7-iw7-resident-export/1"},
+    nlohmann::ordered_json report = {{"schema", multisurface ? "iw7.t7-iw7-resident-export/2" : "iw7.t7-iw7-resident-export/1"},
         {"requested_zone", zone}, {"source_model", name}, {"selected_source_lod", lod},
         {"output_model_name", name}, {"output_mesh_name", mesh_name}, {"output_root_key", key},
         {"target", "iw7"}, {"profile", "resident-rigid-one-lod"},
-        {"geometry_profile", resident_iw7::profile},
+        {"geometry_profile", multisurface ? resident_iw7::multisurface_profile : resident_iw7::profile},
         {"root_bone_name", root_bone_name}, {"selected_counts", selected_counts},
-        {"material_dependencies", nlohmann::ordered_json::array({material_name})},
+        {"material_dependencies", material_names},
         {"model", resident_export_file(root / model_path, 1024u * 1024u)},
         {"mesh", resident_export_file(root / mesh_path, 16u * 1024u * 1024u)},
         {"zonetool_xpak_helper_reads_allowed", false}, {"engine_io_verified", false},
         {"dependency_payloads_verified", false},
         {"asset_zone_ownership_verified", false},
         {"serialized_parse_verified", false}, {"runtime_verified", false}, {"ready", false}};
+    if (multisurface)
+    {
+        report["surface_records"] = surface_records;
+        report["geometry_work_bytes_upper_bound"] = geometry_work;
+    }
     report["model"]["relative_path"] = model_path.generic_string();
     report["mesh"]["relative_path"] = mesh_path.generic_string();
     const auto bytes = report.dump() + "\n";
-    if (bytes.size() > 4096) throw std::runtime_error("Export receipt exceeds 4096 bytes");
+    const size_t manifest_limit = multisurface ? 256u * 1024u : 4096u;
+    if (bytes.size() > manifest_limit) throw std::runtime_error("Export receipt exceeds explicit version's byte limit");
     // Reuse the retained exclusive-create + exact readback writer. Its function
     // name is historical; it writes the supplied bytes without CSV conversion.
     zonetool::iw7::write_enemy_reference_output(root / "manifest.json", bytes);

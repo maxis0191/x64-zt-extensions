@@ -28,12 +28,12 @@ def render(native):
     main, target, xpak, header = PATHS
     patched[main] = helper.once(patched[main], 'int main()\n{', '''int main()
 {
-	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-catalog")) && !utils::io::file_exists(T7_BINARY))
+	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-catalog")) && !utils::io::file_exists(T7_BINARY))
 	{
 		std::fputs("T7 resident export requires the pinned unranked dedicated engine.\\n", stderr);
 		return EXIT_FAILURE;
 	}''')
-    patched[main] = helper.once(patched[main], '\treturn main_internal();', '''	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-catalog")) && game::get_mode() != game::t7)
+    patched[main] = helper.once(patched[main], '\treturn main_internal();', '''	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-catalog")) && game::get_mode() != game::t7)
 	{
 		std::fputs("T7 resident export refuses competing engine mode.\\n", stderr);
 		return EXIT_FAILURE;
