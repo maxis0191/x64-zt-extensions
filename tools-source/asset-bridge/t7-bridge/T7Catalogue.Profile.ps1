@@ -321,6 +321,7 @@ function Assert-T7CatalogueDistinctInputIds($Plan,$InputFileIds) {
     if((Get-T7CatalogueBootstrapPolicy $Plan) -ceq 'Legacy'){return}
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
     $expected=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.Zone.Path)+@($bootstraps.Path)
+    if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1' -and (Get-T7SelectedStreamedExport $Plan)){$expected+=@($Plan.SelectedXpakProvider.Metadata.Path,$Plan.ExportRequestFile.Path)}
     if(@($InputFileIds).Count -ne $expected.Count){throw 'Complete original input IDs required before aliases.'}
     $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $ids=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)

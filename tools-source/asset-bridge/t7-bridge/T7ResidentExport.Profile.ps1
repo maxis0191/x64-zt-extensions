@@ -427,7 +427,9 @@ function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
         (Join-Path $Repo 'tools-source/asset-bridge/t7-iw7/export_contract.py'),
         (Join-Path $Repo 'tools-source/asset-bridge/h1-fixture/inspect_fixture.py'))
     if($streamed){$expected+=@(Join-Path $Repo 'tools-source/asset-bridge/t7-iw7/streamed_contract.py')}
-    if(@($Plan.ReadbackSources).Count -ne $expected.Count -or @($Plan.ReadbackSources.Path|Sort-Object -Unique).Count -ne $expected.Count){throw 'Exact independent reader source pins required.'}
+    if(@($Plan.ReadbackSources).Count -ne $expected.Count -or @($Plan.ReadbackSources.Path|Sort-Object -Unique).Count -ne $expected.Count){
+        if($streamed){throw 'Five independent reader source pins required.'}else{throw 'Four independent reader source pins required.'}
+    }
     foreach($pin in $Plan.ReadbackSources){
         if($pin.Path -cnotin $expected){throw 'Unexpected independent reader source.'}
         Assert-T7CatalogueTextPin $pin $Plan.Bindings
