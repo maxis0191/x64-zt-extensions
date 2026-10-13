@@ -16,6 +16,16 @@ and [the v2 export C attempt](RESIDENT-EXPORT-C.md). C retained its reviewed v2
 request and build D candidate but returned the v1 single-surface refusal without
 an export. These later records do not change this original v1 contract.
 
+## Selected streamed E4 stock A, 2026-10-14 Paris
+
+The [separate E4 stock evidence](../t7-iw7/SELECTED-STREAMED-STATIC.md#e4-stock-a-refusal-observed-2026-10-14-paris)
+is now closed: Failed / NoExport, with exact surface-zero offsets/counts matching
+and `collisionTreePresent=1` triggering the existing guard before payload decode.
+Seven raw material bindings were retained, but image zero remained unreadable.
+The original host exited and fresh absence confirmed no lease or heavy process.
+Geometry, collision semantics, image pixels, runtime and owner acceptance remain
+unverified. E3 artifacts and its uncaptured rigid values remain unchanged.
+
 ## Selected streamed E3 stock A, 2026-10-14 Paris
 
 The exact E3 runtime source was independently reviewed and merged in
