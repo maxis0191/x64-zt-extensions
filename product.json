@@ -705,6 +705,7 @@
         "ops/agent-capacity/reset-entry-plan.json",
         "ops/agent-capacity/test_build_copy.ps1",
         "ops/iw7_capture.py",
+        "ops/iw7_debugger.py",
         "ops/native/LabProcess.cs",
         "ops/native/ResourceMemory.cs",
         "ops/voice-agent/Analyze-WAV.cs",
