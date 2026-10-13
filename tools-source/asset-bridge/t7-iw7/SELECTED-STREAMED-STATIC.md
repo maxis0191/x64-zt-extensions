@@ -1,5 +1,68 @@
 # Selected streamed static model
 
+## E4 stock A refusal observed, 2026-10-14 Paris
+
+The separately authorized E4 stock sonde used operator source
+`93864cd62974656239261777427876c9d9c4de50`, merged in
+[PR #30](https://github.com/maxis0191/x64-zt-extensions/pull/30) as
+`6abf84601949e1184e167066faa2756cc60c52ec`, and the exact compiled 8ff/26b/3dfa
+tuple below. Its fresh runtime plan was
+`59178a77882aa6d69bee474405e78ceff64d91ea621585e1e05ef9a3c2fb9f0f`;
+host contract `0ccae3c3c676b233df96f87d7c50636bd50519fb55f5fd295514069ca9928f3d`.
+It preserved 23 qualified bootstraps, 29 original/alias inputs, the same request
+and selected provider, and exactly five native arguments. No C overlay ran.
+
+The native process exited naturally 1 after 5,547.5249 ms: **Failed / NoExport**.
+The new diagnostic records the refusal on surface zero:
+
+| Field | Observed | Required |
+| --- | ---: | ---: |
+| boneOffset | 0 | 0 |
+| vertices | 208 | 208 |
+| triOffset | 0 | 0 |
+| triangles | 200 | 200 |
+| collisionTreePresent | 1 | 0 |
+
+The non-null foreign collision pointer is the only differing condition in this
+captured guard. Its contents and semantics were not inspected or established.
+In the compiled `5eeaa895...` header, the require at lines 103–112 precedes
+`selected_xpak::read_selected_key` at line 136. Therefore payload decoding was
+not reached by that control flow; this is not an independent byte counter.
+No geometry or export was validated, and E3's earlier uncaptured values remain
+unknown. No collision waiver, second stock run or new key read followed.
+
+Material E output now retains all seven raw binding rows, with usage values
+`[16,0,2,8,1,0,4]` and image pointers present. Row zero has
+`image_read_state=refused` at `image_header`; the six later rows are
+`not_attempted`. The selected header still reports seven textures, eight
+samplers and zero constants. Image names/formats/pixels, appearance and material
+semantics remain unverified; readiness, atomic snapshot, allocation retention,
+header recheck and pixels copied are false.
+
+Tree closure, input revalidation, unchanged original metadata, retained aliases,
+engine output guards and selected-provider revalidation all passed. The provider
+was never a whole-file SHA binding. The original NoExit host reached Closed with
+CanExit, zero guards and zero leases. Its actual PTY 79301 then exited 1 in chunk
+`06863c`; fresh absence at `2026-10-13T23:54:04.0224932Z` confirmed both original
+host/native processes absent, no heavy/game process and an empty lease registry.
+No opaque artifact or XPAK was read/hashed after release. Main retained its
+stopped/absent baseline, whose cause remains unknown.
+
+Private completed text evidence remains outside Git: receipt 36,743 bytes /
+`5c7454181c2e266c81d86ac44814a8ba539f0f2aeb142e95e82355709523c302`,
+stdout 3,282 bytes / `1ffe68788acf748ff9e1a51d48d8f852504aaf31be2c8779a8bd3ed2418b46d4`,
+stderr zero bytes, completion 10,641 bytes /
+`1dd4ce15810473d6ccea01d4766978e36f81dcc187d76f50b8ef24dfafe0f937`.
+Preparation's DEFAULT passed before a wrapper attempted an unset LASTEXITCODE;
+the failed source wrapper is retained and that check was removed. DEFAULT passed
+again on the same frozen plan. The copied historical E3 completion template was
+renamed and never executed; E4 has its own result-derived completion.
+
+Next action: review a source-only policy for a render view that does not consume
+foreign collision data, while preserving exact bone/vertex/triangle coverage and
+engine objects. Any native build and subsequent stock sonde require their own
+new identity, qualification and coordinator slot. Owner gameplay is not accepted.
+
 ## E4 compiled build projection, 2026-10-14
 
 E4 is selected only by exact build-plan SHA256
