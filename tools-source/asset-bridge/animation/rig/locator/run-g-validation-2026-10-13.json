@@ -70,8 +70,29 @@
   "main_state_after": "StoppedConfirmed",
   "main_state_unchanged": true,
   "known_recorder_tuple_preserved": true,
-  "closure_evidence_scope": "local retained-handle closure and local postcheck",
-  "independent_closure_review": "pending at this checkpoint",
+  "closure_evidence_scope": "original retained-handle closure receipts, local postcheck and independent absence witness",
+  "independent_closure_review": "passed",
+  "independent_witness": {
+    "schema": "iw7.rig-locator-independent-absence/1",
+    "captured_utc": "2026-10-13T05:22:18.2210757Z",
+    "bytes": 6356,
+    "absent_exact_identities": 4,
+    "observed_descendant_count": 0,
+    "lease_count": 0,
+    "heavy_count": 0,
+    "game_or_client_count": 0,
+    "main_remained_stopped": true,
+    "preserved_recorder_identity_unchanged": true,
+    "actual_pty_exit_code_verified": 0,
+    "exit_inferred_from_absence": false,
+    "tracked_runtime_sources_unmodified": true,
+    "concurrent_changes_were_two_document_files": true,
+    "original_job_facts_basis": "pinned original runner state and postcheck",
+    "foreign_managed_handles_inspected": false,
+    "foreign_job_adopted": false,
+    "report_or_payload_read": false,
+    "complete_combined_growth_computed": false
+  },
   "original_host_parent_runhost_child_tuples_retained": true,
   "actual_pty_output_retained": true,
   "pty_outer_exit_code": 0,
@@ -93,7 +114,8 @@
     "dispatch": "97d31c71266146fbfd8a799e9bd92e71ff6691e4f7ed5b0eae45d82608bcc9ad",
     "actual_pty_capture": "b2c8dc15083db87176ee84ad4ba9f6f040f804898cc2b147e67a6da61ae28246",
     "prior_refused_preflight": "4428a547dd550961bcacf5e2e3b9c8fd7ea32084f1ea865f1103659fae305b34",
-    "helper_r2_validation": "2125755399a325be709efd7e028ca55f3f9177da9fccd0250af3d49301af6a6a"
+    "helper_r2_validation": "2125755399a325be709efd7e028ca55f3f9177da9fccd0250af3d49301af6a6a",
+    "independent_absence_witness": "bb847b5c53211105a712db1b50732f6ae6363004cd81a34e072e2ead29f524a7"
   },
   "initial_preflight_refusal_preserved": true,
   "helper_r2_synthetic_checks_passed": 28,
@@ -114,5 +136,5 @@
   "proposed_next_seed": "0x1405f04a0",
   "proposed_seed_call_site": "0x140dd1fe6",
   "proposed_seed_read_or_allowlisted": false,
-  "next_action": "Coordinator independent closure and report review; source proposal for 0x1405f04a0 only. No further Run, seed expansion or callee read is authorized."
+  "next_action": "Coordinator report review and integration; source proposal for 0x1405f04a0 only. No further Run, seed expansion or callee read is authorized."
 }

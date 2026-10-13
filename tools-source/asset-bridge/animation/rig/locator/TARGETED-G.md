@@ -15,8 +15,14 @@ The original child exited 0, job Active=0; guarded inputs were unchanged,
 the job closed and its full 1 GiB/2 GiB reservation was released. The local
 postcheck found no lease or original child. Main remained `StoppedConfirmed`,
 with no game process or UDP 27016 endpoint, and the known recorder tuple survived.
-Independent reviewer closure is pending at this checkpoint; it is not inferred
-from the local retained-handle and postcheck evidence.
+An independent absence witness passed at `2026-10-13T05:22:18.2210757Z`,
+pinned in the sanitized receipt. It verified all four original process tuples
+absent, no descendants, lease, heavy work, game or monitored endpoint, and the
+recorder tuple unchanged. The real PTY exit was verified separately. Original
+job/handle closure facts come from the pinned runner receipts; the witness did
+not adopt or inspect the terminated job. Runtime sources were unchanged while
+the two documentary files were being edited. This closes the execution review,
+without establishing any functional or gameplay acceptance.
 
 The initial G preflight had incorrectly required Main to be running. Its refusal
 and original helpers remain intact. After independent confirmation that Main
