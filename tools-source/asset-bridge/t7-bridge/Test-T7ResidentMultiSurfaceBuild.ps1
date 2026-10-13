@@ -223,6 +223,29 @@ try {
     $p=[pscustomobject]@{CandidateSource='new';CandidateBytes=2;InputMetadata=(Copy-Value $base.InputMetadata)}
     $p.InputMetadata[0]=[pscustomobject]@{Path='new';Bytes=2};Assert-T7ResidentExportDiagnosticMetadata $p $base;$checks++
     foreach($i in 1..26){$bad=Copy-Value $p;$bad.InputMetadata[$i].Bytes++;Refuses {Assert-T7ResidentExportDiagnosticMetadata $bad $base} 'noncandidate'}
+    # E3 request/provenance refusals are pure metadata. No 654 MiB fixture file.
+    $request=[pscustomobject]@{schema='iw7.t7-iw7-selected-streamed-request/1';target='iw7';profile='selected-streamed-rigid-one-lod';zone='mp_freerun_04';model='p7_fre_platform_cap_02';lod=0;xpak_key='f58d58f1fc9b6b01';packages=@([pscustomobject]@{path='zone/mp_initial.xpak';identity='D088B64A:000C0000001EB2FD';bytes=654311424})}
+    Assert-T7SelectedStreamedRequest $request;$checks++
+    foreach($mode in 'schema','profile','model','lod','numeric-key','upper-key','no-package','two-packages','traversal','identity','bytes-as-string'){
+        $bad=Copy-Value $request
+        switch($mode){schema{$bad.schema='iw7.t7-iw7-resident-model-request/1'}profile{$bad.profile='resident-rigid-one-lod'}model{$bad.model='other'}lod{$bad.lod=1}numeric-key{$bad.xpak_key=17693896307356953345UL}upper-key{$bad.xpak_key='F58D58F1FC9B6B01'}no-package{$bad.packages=@()}two-packages{$bad.packages+=@($bad.packages[0])}traversal{$bad.packages[0].path='zone/../mp_initial.xpak'}identity{$bad.packages[0].identity='D088B64A:000C0000001EB2FE'}bytes-as-string{$bad.packages[0].bytes='654311424'}}
+        Refuses {Assert-T7SelectedStreamedRequest $bad} 'observed E3|Exact observed'
+    }
+    $marker=[pscustomobject]@{Operation='ResidentExportV1';ResidentMultiSurfaceV2=[pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'};SelectedStreamedStaticV1=[pscustomobject]@{Schema='iw7.t7-selected-streamed-export-plan/1'}}
+    Check ([bool](Get-T7SelectedStreamedExport $marker)) 'E3 marker refused.'
+    foreach($mode in 'schema','extra','v1','mixed-e2','diagnostic'){
+        $bad=Copy-Value $marker
+        switch($mode){schema{$bad.SelectedStreamedStaticV1.Schema='other'}extra{$bad.SelectedStreamedStaticV1|Add-Member NoteProperty Ready $true}v1{$bad.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}mixed-e2{$bad|Add-Member NoteProperty SelectedMeshMaterialObservation ([pscustomobject]@{Schema='iw7.t7-selected-mesh-material-probe/1'})}diagnostic{$bad|Add-Member NoteProperty ResidentSurfaceCountDiagnostic ([pscustomobject]@{Schema='other'})}}
+        Refuses {Get-T7SelectedStreamedExport $bad} 'fields|distinct|Distinct|mixed'
+    }
+    $payloadPlan=[pscustomobject]@{SelectedXpakProvider=[pscustomobject]@{RelativePath='zone/mp_initial.xpak';FileId='D088B64A:000C0000001EB2FD';Metadata=[pscustomobject]@{Bytes=654311424};IndexOffset=653787136;IndexBytes=31152;EntryOffset=653815768;PayloadOffset=146723456;PayloadBytes=7680}}
+    $payload=[pscustomobject]@{key_hex='f58d58f1fc9b6b01';source_shared_flags=9;cpu_view_shared_flags=8;source_surface_flags=@(32,32,32,32,32);opaque_descriptor_words_hex=@('0000000000000000','0000000000000000','0003ffffffffc000');descriptor_field_semantics_verified=$false;package_path='zone/mp_initial.xpak';package_identity='D088B64A:000C0000001EB2FD';file_bytes=654311424;hash_table_offset=653787136;hash_entry_offset=653815768;payload_offset=146723456;compressed_bytes=7680;packed_entry_size=7680;indexed_bytes=31152;opcodes=@(3);opaque_header_offsets=@(0);payload_bytes=18624;payload_sha256=('a'*64);headers_rechecked=$true;atomic_snapshot_proven=$false;engine_object_writes=$false}
+    Assert-T7SelectedStreamedPayload $payload $payloadPlan 5;$checks++
+    foreach($mode in 'key','provider','row','extent','encoded','decoded','numeric-string','raw-flags','cpu-flags','atomic','engine-write','descriptor','opaque-decimal','surface-count','skin','opcode','header-offset'){
+        $bad=Copy-Value $payload
+        switch($mode){key{$bad.key_hex='0'*16}provider{$bad.package_identity='other'}row{$bad.hash_entry_offset++}extent{$bad.payload_offset++}encoded{$bad.compressed_bytes++}decoded{$bad.payload_bytes++}numeric-string{$bad.file_bytes='654311424'}raw-flags{$bad.source_shared_flags=8}cpu-flags{$bad.cpu_view_shared_flags=9}atomic{$bad.atomic_snapshot_proven=$true}engine-write{$bad.engine_object_writes=$true}descriptor{$bad.descriptor_field_semantics_verified=$true}opaque-decimal{$bad.opaque_descriptor_words_hex[0]=0}surface-count{$bad.source_surface_flags=@(32)}skin{$bad.source_surface_flags[0]=2}opcode{$bad.opcodes=@(1)}header-offset{$bad.opaque_header_offsets=@(-1)}}
+        Refuses {Assert-T7SelectedStreamedPayload $bad $payloadPlan 5} 'payload|overclaims|arrays|hex|rigid|opcodes|offsets'
+    }
     [ordered]@{Status='Passed';Checks=$checks;Evidence='Synthetic metadata and text';BinaryRead=$false;OperationalPlanCreated=$false;NativeRun=$false}|ConvertTo-Json
 }finally{
     $full=[IO.Path]::GetFullPath($root);$temp=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')+'\'
