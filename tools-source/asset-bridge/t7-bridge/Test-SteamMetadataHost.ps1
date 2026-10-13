@@ -114,13 +114,22 @@ try {
     Remove-Item -LiteralPath (Join-Path $outer 'manifest-test.txt')
 
     function Measure-SteamAttempt($Settings,$Started){$script:clock+=$script:budgetDelay;[pscustomobject]@{TotalBytes=5}}
-    function Get-IW7ResourceSnapshot {[pscustomobject]@{CommitLimit=100;Committed=$script:commit}}
+    function Get-IW7ResourceSnapshot {
+        $script:memoryReads++
+        if($script:memoryFails){throw 'Synthetic native memory provider failed.'}
+        [pscustomobject]@{CommitLimit=$script:commitLimit;Committed=$script:commit}
+    }
     function Start-Sleep {param([int]$Milliseconds,[int]$Seconds);$script:clock+=$Milliseconds+1000*$Seconds}
-    function Get-H1OriginalState($Owner){$script:clock+=$script:sampleDelay;$script:samples.Dequeue()}
+    function Get-H1OriginalState($Owner){
+        $script:clock+=$script:sampleDelay
+        if($script:advanceCommitOnSample){$script:commit=99}
+        $script:samples.Dequeue()
+    }
     function Stop-H1OriginalJob($Owner){$script:events.Add('stop');if($script:stopFails){throw 'injected stop failure'}}
     function Exit-IW7ResourceLease($Token){$script:events.Add('release');if($script:releaseFails){throw 'injected release failure'}}
     function Reset-Case {
-        $script:clock=0;$script:budgetDelay=0;$script:sampleDelay=0;$script:commit=20
+        $script:clock=0;$script:budgetDelay=0;$script:sampleDelay=0;$script:commit=20;$script:commitLimit=100
+        $script:memoryReads=0;$script:memoryFails=$false;$script:advanceCommitOnSample=$false
         $script:stopFails=$false;$script:releaseFails=$false
         $script:events=[Collections.Generic.List[string]]::new()
         $script:samples=[Collections.Generic.Queue[object]]::new()
@@ -159,8 +168,33 @@ try {
     Reset-Case;Enqueue-Sample $true 0 0 'different-python'
     Refuses {Wait-SteamOriginal $settings $state $context 0} 'identity changed'
 
-    Reset-Case;$script:commit=86
-    Refuses {Wait-SteamOriginal $settings $state $context 0} 'Commit high water'
+    foreach($percent in @(84.99,85,85.01,99,100)){
+        Reset-Case;$script:commit=$percent;Enqueue-Sample $true 0
+        Wait-SteamOriginal $settings $state $context 0
+        Check ($context.Closed -and !$state.ForcedStop -and $script:memoryReads -eq 1 -and
+            $state.LastMemoryObservation.Policy -ceq 'TelemetryOnly' -and
+            $state.LastMemoryObservation.CommitUsedPercent -eq $percent) 'Commit percentage aborted or lost telemetry.'
+    }
+    Reset-Case;$script:commit=85.01;$script:advanceCommitOnSample=$true
+    Enqueue-Sample $false 1;Enqueue-Sample $true 0
+    Wait-SteamOriginal $settings $state $context 0
+    Check ($context.Closed -and $script:memoryReads -eq 2 -and $state.LastMemoryObservation.CommitUsedPercent -eq 99 -and
+        @($state.Keys | Where-Object {$_ -eq 'LastMemoryObservation'}).Count -eq 1) 'Fresh samples must replace a single bounded observation.'
+    Reset-Case;$script:commitLimit=0
+    Refuses {Wait-SteamOriginal $settings $state $context 0} 'Invalid fresh memory telemetry'
+    Reset-Case;$script:commit=-1
+    Refuses {Wait-SteamOriginal $settings $state $context 0} 'Invalid fresh memory telemetry'
+    Reset-Case;$script:commit=101
+    Refuses {Wait-SteamOriginal $settings $state $context 0} 'Invalid fresh memory telemetry'
+    Reset-Case;$script:memoryFails=$true
+    Refuses {Wait-SteamOriginal $settings $state $context 0} 'Synthetic native memory provider failed'
+    Check (!$context.Closed -and !$state.LeaseReleased) 'Invalid telemetry must not claim closed ownership.'
+    Reset-Case;$script:commit=99;Enqueue-Sample $true 0 -1073741801
+    Refuses {Wait-SteamOriginal $settings $state $context 0} 'root failed'
+    Enqueue-Sample $true 0 -1073741801
+    Close-SteamAttempt $state $context
+    Check ($state.Status -ceq 'Failed' -and $state.LastOriginalSnapshot.RootExitCode -eq -1073741801 -and
+        $context.Closed -and $state.LeaseReleased) 'OOM native failure/confirmed cleanup was hidden by telemetry-only policy.'
 
     Reset-Case;Enqueue-Sample $false 2;Enqueue-Sample $true 0 375
     Close-SteamAttempt $state $context

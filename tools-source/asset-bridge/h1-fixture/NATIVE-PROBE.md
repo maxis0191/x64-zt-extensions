@@ -1,5 +1,23 @@
 # Prepared production-parser -> production-converter observation
 
+Owner update, 2026-10-13: future `H1Native.Core.ps1::Test-H1Budget` observations
+retain fresh system memory telemetry without aborting on a commit percentage.
+The removed 85% gate is superseded, including when the helper is reused by T7.
+`LastMemoryObservation` stores one current snapshot/percentage with policy
+`TelemetryOnly`. The separate `Wait-SteamOriginal` memory observer in
+`t7-bridge/Invoke-SteamMetadata.ps1` follows the same policy. Invalid/unavailable telemetry, output caps, deadlines, native
+failure, exact process identity, confirmed closure and quarantine still apply.
+Plans/receipts and qualified E2/F helper snapshots remain immutable; this source
+change requires fresh exact helper bindings and does not requalify old runs.
+No compiler, game, extraction or runtime acceptance is established by this update.
+
+The light source regression exercises 84.99%, 85%, 85.01%, 99% and 100% with
+synthetic snapshots and no pressure allocation. It verifies dictionary/object
+state recording and bounded fresh replacement, while unavailable/invalid
+telemetry and output overflow still fail. A synthetic native out-of-memory exit
+remains failure with its exact exit/confirmed cleanup preserved at 99% telemetry.
+These are source/lifecycle assertions, not an induced OOM or an actual native run.
+
 **Compile B and a separately admitted Probe passed, with 111 native checks and
 confirmed original-tree closure/lease release. Compile A remains Failed.**
 The result covers extracted production methods with the declaration adapter;
@@ -185,8 +203,9 @@ Both stages use the original process/job handles, a BelowNormal process tree,
 create-only logs, the original PID/creation/image tuple for scheduler
 registration, a fresh monotonic deadline after telemetry, a combined 32 MiB
 output cap (including temporary compiler outputs/logs/receipts), a 1 MiB final
-metadata reserve and the scheduler's 85% commit high water. These are admission
-estimates and monitored limits, not hard kernel memory/output quotas or measured
+metadata reserve and fresh memory telemetry. The former 85% commit stop is
+superseded by the 2026-10-13 owner update above. Estimates and output limits are
+not hard kernel memory/output quotas or measured
 peaks. A synchronous filesystem/CIM operation may delay a deadline observation;
 late completion is rejected. Cleanup allows five additional seconds and proves
 original-root exit plus zero active job descendants before lease release.
