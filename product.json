@@ -633,6 +633,7 @@
     "tools-source/asset-bridge/t7-iw7/test_catalog_exit_context.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_message.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_trace.py",
+    "tools-source/asset-bridge/t7-iw7/test_catalog_zombies_build.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_zombies_observation.py",
     "tools-source/asset-bridge/t7-iw7/test_cli_patch.py",
     "tools-source/asset-bridge/t7-iw7/test_compare_prepatch_reports.py",

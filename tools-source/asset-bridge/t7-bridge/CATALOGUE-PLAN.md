@@ -11,6 +11,46 @@ receipts and helper snapshots are not rewritten or requalified by this change.
 Prepare and review fresh helper bindings for future runs; no run is authorized
 or claimed by the source update itself.
 
+## Catalogue C launcher source, 2026-10-14
+
+The distinct `t7-zombies-catalogue-observation-c` profile is opt-in and requires
+`ZombiesObservationC: {Schema: "iw7.t7-zm-observation-plan/1"}` on a Catalogue
+plan for `zm_common`, with `TraceStderrLimitBytes=16384`. Export experiment
+markers and a C marker on an older profile are refused. The publication build
+profile keeps every F field and adds only `ObservationSchema` plus the two
+guarded text pins `ObserverSource` and `ObserverAdapter`. The runtime binding
+formula adds two text bindings to F; binary/input/output budgets do not grow.
+
+The source module pin is 9,668 bytes,
+`50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181`;
+the adapter is 7,613 bytes,
+`1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445`.
+`ReuseCompile.ZombiesObservationC` has exactly six fields: `Schema`,
+`SourceProfile`, `BaseCLIBytes`, `BaseCLISHA256`, `CLIBytes`, `CLISHA256`.
+Its schema is `iw7.t7-zm-observation-build/1`, its source profile is the C name,
+and its reviewed source transition is 107,785 bytes / `c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50`
+to 118,485 bytes / `917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987`.
+These are text TU identities, not compiled artifact evidence. The prepared CLI
+cap becomes 128 KiB only for C and the existing selected-streamed export.
+
+The splitter removes only complete, finite `[T7_ZM_OBS]` records, retaining all
+other bytes and their LF/CRLF terminators. It enforces ASCII, 16 KiB combined,
+8 KiB observations, at most 38 records and 512 bytes per observation line.
+Unique sequences, one-shot phases, field widths, name lengths and termination
+are checked. The retained F parser still enforces its own 8 KiB/fourteen-line
+contract. Observations preserve uint64 values and never make a missing report
+or an engine exit zero a successful catalogue.
+
+This delivery is source/parser only. Operational build qualification ends with
+`Catalogue C native build and closure are not yet qualified.` A future reviewed
+change must bind the actual C artifact, exact compiler transition, common source
+closure and original-host completion before a launch can pass. F, E3 and E4
+receipts cannot be relabelled as C. No native build or stock run follows from
+these source tests. During implementation, tests caught a 63-digit copied module
+hash; it was replaced with the exact hash read from the source. Standalone F
+qualification also exposed an export-helper lookup on the Catalogue branch;
+that lookup now runs only for the export operation.
+
 ## Zombies locale qualification and catalogue B, 2026-10-13
 
 The separate locale qualification completed two guarded 148,160-byte passes of

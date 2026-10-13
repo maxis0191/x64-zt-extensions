@@ -22,8 +22,24 @@ function Get-T7CataloguePlanZoneSpec($Plan) {
 }
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
+}
+function Assert-T7CatalogueZombiesObservationPlan($Plan) {
+    $selected=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c'
+    $present=[bool]$Plan.PSObject.Properties['ZombiesObservationC']
+    if(!$selected -and !$present){return}
+    if(!$selected -or !$present){throw 'Catalogue C profile and observation plan must be selected together.'}
+    Assert-T7CatalogueFields $Plan.ZombiesObservationC @('Schema')
+    if($Plan.ZombiesObservationC.Schema -cne 'iw7.t7-zm-observation-plan/1' -or
+       (Get-T7CatalogueOperation $Plan) -cne 'Catalogue' -or !$Plan.PSObject.Properties['Zone'] -or
+       (Get-T7CataloguePlanZoneSpec $Plan).Name -cne 'zm_common' -or
+       !(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes 16384) -or $Plan.TraceStderrLimitBytes -ne 16384){
+        throw 'Catalogue C requires its exact schema, Zombies zone and 16 KiB trace bound.'
+    }
+    foreach($name in 'ResidentSurfaceCountDiagnostic','ResidentMultiSurfaceV2','SelectedMeshMaterialObservation','SelectedStreamedStaticV1'){
+        if($Plan.PSObject.Properties[$name]){throw 'Catalogue C cannot select an export experiment.'}
+    }
 }
 function Get-T7CatalogueMainBaseline($Plan) {
     if(!$Plan.PSObject.Properties['MainBaseline']){return 'Running'}
@@ -115,7 +131,7 @@ function Get-T7CatalogueBootstraps($Plan) {
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
             throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
         }
-        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication')){throw 'Qualified collection requires MSG profile.'}
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){throw 'Qualified collection requires MSG profile.'}
         $items=@($Plan.Bootstraps);$total=0L
         $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -185,7 +201,7 @@ function Get-T7CatalogueBootstraps($Plan) {
     for($index=0;$index -lt $items.Count;$index++){
         $bootstrap=$items[$index];$spec=$specs[$index]
         Assert-T7CatalogueFields $bootstrap @('Path','Bytes','SHA256','FileId','RelativePath','HashProvenance','QualificationReceipt','QualificationScript')
-        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication') -or
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -or
            !(Test-T7CatalogueInteger $bootstrap.Bytes $spec.Bytes) -or $bootstrap.Bytes -ne $spec.Bytes -or
            $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) $spec.Name) -or
            $bootstrap.RelativePath -cne ('zone/'+$spec.Name) -or
@@ -353,6 +369,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $reportLimit=if($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
+    Assert-T7CatalogueZombiesObservationPlan $Plan
     $null=Get-T7CatalogueMainBaseline $Plan
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
     $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -cne 'Legacy'
@@ -373,7 +390,8 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         $bindingCount=22+3*$bootstraps.Count
         if($shared){$bindingCount=24+2*$bootstraps.Count+@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count}
         # Five new profile text pins (link.rsp already exists), plus CLI dependencies.
-        if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingCount+=6}
+        if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$bindingCount+=6}
+        if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingCount+=2}
         if($export){$bindingCount+=9}
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
         if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
@@ -397,7 +415,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
     if($candidateProfile -cne 'ordinary-d2') {
-        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192}}
+        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192};'t7-zombies-catalogue-observation-c'{16384}}
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
@@ -421,7 +439,8 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if(@([IO.Directory]::EnumerateFileSystemEntries($dir)).Count){throw 'Prepared work/evidence/temp must be empty.'}
     }
     $bindingLimit=if($qualified){22+3*$limits.ItemCount+$(if($shared){2}else{0})}else{32}
-    if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingLimit+=6}
+    if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$bindingLimit+=6}
+    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingLimit+=2}
     if($export){$bindingLimit+=9}
     if($diagnostic){$bindingLimit++}
     if($streamed){$bindingLimit+=9}
@@ -463,6 +482,9 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
 }
 function Assert-T7CatalogueBuild($Plan,$Receipt) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
+    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c' -or $Plan.PSObject.Properties['ZombiesObservationC']){
+        Assert-T7CatalogueZombiesObservationPlan $Plan
+    }
     foreach($field in 'InputsReverified','TreeClosureConfirmed','LeaseReleased','Quarantined','CandidateExecuted') {
         if($Receipt.$field -isnot [bool]){throw 'Build lifecycle booleans required.'}
     }
@@ -485,7 +507,7 @@ function Assert-T7CatalogueTextPin($Pin,$Bindings) {
 }
 function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
-    $publication=$candidateProfile -ceq 't7-catalog-message-publication'
+    $publication=$candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
     $buildPin=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.BuildPlan -and $_.IsText})
     if($buildPin.Count -ne 1 -or $buildPin[0].SHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or
        $buildPin[0].Bytes -gt 1MB -or $Plan.ExpectedBuildPlanSHA256 -ceq 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'){throw 'Trace requires its own guarded build plan.'}
@@ -494,23 +516,27 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
        $build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1'){throw 'Trace build source/schema differs.'}
     $profile=$build.BuildProfile
     $fields=@('Name','Option','ArgumentCount','TraceSchema','Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
-    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')){$fields+=@('ContextSchema')}
-    if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')){$fields+=@('CallerSchema')}
-    if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication')){$fields+=@('MessageSchema')}
+    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$fields+=@('ContextSchema')}
+    if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$fields+=@('CallerSchema')}
+    if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$fields+=@('MessageSchema')}
     $pinNames=@('Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
     if($publication){
         $extraPins=@('PublicationWiring','PublicationSource','PreparedCLI','MainResponse','CLIResponse','LinkResponse')
         $fields+=@('PublicationSchema')+$extraPins;$pinNames+=$extraPins
+    }
+    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){
+        $fields+=@('ObservationSchema','ObserverSource','ObserverAdapter');$pinNames+=@('ObserverSource','ObserverAdapter')
     }
     foreach($p in @($profile,$Receipt.BuildProfile)) {
         Assert-T7CatalogueFields $p $fields
         if($p.Name -cne $candidateProfile -or $p.Option -cne '-t7-iw7-catalog' -or
            ($p.ArgumentCount -isnot [long] -and $p.ArgumentCount -isnot [int]) -or $p.ArgumentCount -ne 3 -or
            $p.TraceSchema -cne 'iw7.t7-catalog-trace/1'){throw 'Exact catalogue trace profile required.'}
-        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
-        if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
-        if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication') -and $p.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
+        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
+        if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
+        if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -and $p.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
         if($publication -and $p.PublicationSchema -cne 'iw7.t7-message-publication-build/1'){throw 'Exact publication build schema required.'}
+        if($candidateProfile -ceq 't7-zombies-catalogue-observation-c' -and $p.ObservationSchema -cne 'iw7.t7-zm-observation/1'){throw 'Exact C observation build schema required.'}
     }
     foreach($name in $pinNames) {
         $pin=$profile.$name;$other=$Receipt.BuildProfile.$name
@@ -598,10 +624,25 @@ function Assert-T7CatalogueResponseOutputs([string[]]$Arguments,[System.Collecti
     }
     if($seen.Count -ne $Outputs.Count){throw 'Missing publication output option.'}
 }
+function Assert-T7CatalogueZombiesSourceTransition($Build) {
+    if(!$Build.ReuseCompile.PSObject.Properties['ZombiesObservationC']){throw 'Explicit Catalogue C source transition required.'}
+    $proof=$Build.ReuseCompile.ZombiesObservationC
+    Assert-T7CatalogueFields $proof @('Schema','SourceProfile','BaseCLIBytes','BaseCLISHA256','CLIBytes','CLISHA256')
+    if($proof.Schema -cne 'iw7.t7-zm-observation-build/1' -or
+       $proof.SourceProfile -cne 't7-zombies-catalogue-observation-c' -or
+       !(Test-T7CatalogueInteger $proof.BaseCLIBytes 107785) -or $proof.BaseCLIBytes -ne 107785 -or
+       $proof.BaseCLISHA256 -cne 'c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50' -or
+       !(Test-T7CatalogueInteger $proof.CLIBytes 118485) -or $proof.CLIBytes -ne 118485 -or
+       $proof.CLISHA256 -cne '917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987' -or
+       $Build.BuildProfile.PreparedCLI.Bytes -ne $proof.CLIBytes -or
+       $Build.BuildProfile.PreparedCLI.SHA256 -cne $proof.CLISHA256){throw 'Exact reviewed Catalogue C source transition required.'}
+}
 function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
     # Only guarded source/response/dependency text is read here. Binary artifacts
     # are receipt metadata; their actual verification remains under admission.
     $profile=$Build.BuildProfile;$reuse=$Build.ReuseCompile
+    $zombies=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c'
+    if($reuse.PSObject.Properties['ZombiesObservationC'] -and !$zombies){throw 'C reuse marker requires the C catalogue profile.'}
     if(!$reuse.PSObject.Properties['RecompiledZonetool'] -or $reuse.RecompiledZonetool -isnot [bool] -or
        !$reuse.RecompiledZonetool){throw 'Publication requires a fresh CLI compilation.'}
     $retained=@($Base.ReuseCompile.StageRoots|Where-Object {[IO.Path]::GetFileName($_) -ceq 'xpak'})
@@ -613,10 +654,21 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
     $paths=[ordered]@{PublicationWiring=(Join-Path $sourceRoot 'prepare_message_publication.py');
         PublicationSource=(Join-Path $sourceRoot 'native_message_publication.inc');PreparedCLI=(Join-Path $Build.PreparedRoot 'zonetool.cpp');
         MainResponse=(Join-Path $responseRoot 'main.obj.rsp');CLIResponse=(Join-Path $responseRoot 'zonetool11.obj.rsp');LinkResponse=(Join-Path $responseRoot 'link.rsp')}
+    if($zombies){
+        $paths.ObserverSource=Join-Path $sourceRoot 'native_catalog_zombies_observation.inc'
+        $paths.ObserverAdapter=Join-Path $sourceRoot 'prepare_catalog_zombies_observation.py'
+    }
     foreach($name in $paths.Keys) {
-        $limit=if($name -ceq 'PublicationSource'){16KB}elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PreparedCLI' -and (Get-T7SelectedStreamedExport $Plan)){128KB}else{64KB}
+        $limit=if($name -cin @('PublicationSource','ObserverSource','ObserverAdapter')){16KB}elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PreparedCLI' -and ($zombies -or ((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1' -and (Get-T7SelectedStreamedExport $Plan)))){128KB}else{64KB}
         if($profile.$name.Path -cne $paths[$name] -or $profile.$name.Bytes -gt $limit){throw 'Publication source/response path or bound differs.'}
     }
+    if($zombies -and ($profile.ObserverSource.Bytes -ne 9668 -or
+       $profile.ObserverSource.SHA256 -cne '50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181' -or
+       $profile.ObserverAdapter.Bytes -ne 7613 -or
+       $profile.ObserverAdapter.SHA256 -cne '1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445')){
+        throw 'Reviewed Catalogue C observer source pins differ.'
+    }
+    if($zombies){Assert-T7CatalogueZombiesSourceTransition $Build}
     foreach($rows in @(@{Value=@($Build.Stages)},@{Value=@($Receipt.Stages)})) {
         if($rows.Value.Count -ne 3 -or ($rows.Value.Name -join '|') -cne 'main|zonetool11|link' -or
            ($rows.Value.Stage -join '|') -cne 'Compile|Compile|Link'){throw 'Publication requires two actual Compile stages then Link.'}
@@ -669,6 +721,12 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
         if($matches.Count -ne 1 -or $matches[0] -cne $expected){throw 'Publication link must consume both fresh objects and exact retained xpak.'}
     }
     if($Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe')){throw 'Publication candidate is not the new link output.'}
+    if($zombies){
+        # Source/parser delivery only. A future C build must bring its own exact
+        # CPP transition, compiled artifact and closed original-host evidence.
+        # Neither F nor an export receipt qualifies that currently absent epoch.
+        throw 'Catalogue C native build and closure are not yet qualified.'
+    }
     if($Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic'] -or $reuse.PSObject.Properties['ResidentSurfaceCountDiagnostic']){
         Assert-T7ResidentExportDiagnosticBuild $Plan $Receipt $Build
     }
@@ -833,12 +891,13 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $profile=Get-T7CatalogueCandidateProfile $Plan
     if($profile -ceq 'ordinary-d2'){return}
     $State.TraceOutcome='NoTrace'
-    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')
-    $hasCallers=$profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')
-    $hasMessage=$profile -cin @('t7-catalog-message','t7-catalog-message-publication')
+    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
+    $hasCallers=$profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
+    $hasMessage=$profile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
     if($hasContext){$State.ExitContextOutcome='Absent';$State.ExitContext=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
     if($hasCallers){$State.CallersOutcome='Absent';$State.Callers=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
     if($hasMessage){$State.MessageOutcome='Absent';$State.Message=[ordered]@{Captures=@();IncompleteTrailingLine=$false;ExitCorrelated=$false}}
+    if($profile -ceq 't7-zombies-catalogue-observation-c'){$State.ZombiesObservations=@();$State.ZombiesObservationBytes=0}
     $path=Join-Path $Plan.StageRoot 'stderr.log'
     if(!(Test-Path -LiteralPath $path)){return}
     $State.TraceOutcome='TracePresentUnqualified'
@@ -854,11 +913,15 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $result=switch($profile){
         't7-catalog-message'{ConvertFrom-T7CatalogueMessage $text}
         't7-catalog-message-publication'{ConvertFrom-T7CatalogueMessage $text}
+        't7-zombies-catalogue-observation-c'{ConvertFrom-T7CatalogueZombiesObservation $text}
         't7-catalog-callers'{ConvertFrom-T7CatalogueCallers $text}
         't7-catalog-exit-context'{ConvertFrom-T7CatalogueExitContext $text}
         default{ConvertFrom-T7CatalogueTrace $text}
     }
     $State.TraceOutcome=$result.Outcome;$State.TraceEvents=$result.Events
+    if($profile -ceq 't7-zombies-catalogue-observation-c'){
+        $State.ZombiesObservations=$result.ZombiesObservations;$State.ZombiesObservationBytes=$result.ZombiesObservationBytes
+    }
     if($hasContext){$State.ExitContextOutcome=$result.ContextOutcome;$State.ExitContext=$result.Context}
     if($hasCallers){$State.CallersOutcome=$result.CallersOutcome;$State.Callers=$result.Callers}
     if($hasMessage){$State.MessageOutcome=$result.MessageOutcome;$State.Message=$result.Message}
@@ -866,7 +929,7 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
 function Assert-T7CatalogueTraceSize([string]$Profile,[long]$Bytes) {
     if(($Profile -ceq 't7-catalog-trace' -and $Bytes -ge 1536) -or
        ($Profile -ceq 't7-catalog-exit-context' -and $Bytes -gt 4096) -or
-       ($Profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $Bytes -gt 8192)){throw 'Trace stderr cap exceeded.'}
+       ($Profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $Bytes -gt 8192) -or ($Profile -ceq 't7-zombies-catalogue-observation-c' -and $Bytes -gt 16384)){throw 'Trace stderr cap exceeded.'}
 }
 function Get-T7CatalogueContextNumber($Match,[string]$Name,[ulong]$Maximum=[uint]::MaxValue) {
     $value=[ulong]::Parse($Match.Groups[$Name].Value,[Globalization.CultureInfo]::InvariantCulture)
@@ -1369,4 +1432,64 @@ function Enable-T7CatalogueRuntimeProfile($Plan) {
         Assert-T7CatalogueEngineOutputs $Plan
         Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     }
+}
+# C observation splitter: only finite opt-in markers are removed. Legacy text is untouched.
+function Split-T7CatalogueZombiesObservation([string]$Text) {
+    if($Text -cmatch '[^\x00-\x7f]' -or [Text.Encoding]::ASCII.GetByteCount($Text) -gt 16KB){throw 'Bounded ASCII combined Zombies trace required.'}
+    $legacy=[Text.StringBuilder]::new();$records=[Collections.Generic.List[object]]::new()
+    $sequences=[Collections.Generic.HashSet[uint]]::new();$phases=[Collections.Generic.HashSet[uint]]::new();$counts=@{};$observedBytes=0
+    $patterns=@(
+        'kind=phase phase=(?<phase>[0-9]+)',
+        'kind=raw_enter phase=(?<phase>[0-9]+) caller=(?<caller>[0-9A-Fa-f]{16}) type=47 error=(?<error>[01]) wait=(?<wait>-?[0-9]+)',
+        'kind=raw_return phase=(?<phase>[0-9]+) result=(?<result>[0-9A-Fa-f]{16})',
+        'kind=load_enter phase=(?<phase>[0-9]+) caller=(?<caller>[0-9A-Fa-f]{16}) count=(?<count>[0-9]+) sync=(?<sync>-?[0-9]+) suppress=(?<suppress>-?[0-9]+)',
+        'kind=load_return phase=(?<phase>[0-9]+)',
+        'kind=zone index=(?<index>[01]) status=unreadable',
+        'kind=zone index=(?<index>[01]) status=(?<status>read|unreadable) nul=(?<nul>[01]) name_hex=(?<name_hex>[0-9a-f]{0,128}) alloc=(?<alloc>[0-9]+) free=(?<free>[0-9]+) alloc_slot=(?<alloc_slot>[0-9]+) free_slot=(?<free_slot>[0-9]+)')
+    # Regex retains each terminator, including CRLF, and never invents the final newline.
+    $lines=[regex]::Matches($Text,'[^\n]*\n|[^\n]+\z')
+    foreach($item in $lines){
+        $line=$item.Value
+        if(!$line.StartsWith('[T7_ZM_OBS]',[StringComparison]::Ordinal)){[void]$legacy.Append($line);continue}
+        if(!$line.EndsWith("`n") -or $line.Length -gt 512){throw 'Complete bounded Zombies observation line required.'}
+        $row=$line.Substring(0,$line.Length-1) -creplace '\r$',''
+        $head=[regex]::Match($row,'\A\[T7_ZM_OBS\] schema=iw7\.t7-zm-observation/1 seq=([0-9]+) tid=([0-9]+) (.+)\z')
+        if(!$head.Success){throw 'Exact Zombies observation schema required.'}
+        try{$sequence=[uint]::Parse($head.Groups[1].Value);$thread=[uint]::Parse($head.Groups[2].Value)}catch{throw 'Observation sequence/thread exceeds native width.'}
+        if($sequence -gt 63 -or !$thread -or !$sequences.Add($sequence)){throw 'Observation sequence/thread invalid or duplicated.'}
+        $body=$head.Groups[3].Value;$match=$null
+        foreach($pattern in $patterns){$candidate=[regex]::Match($body,('\A'+$pattern+'\z'));if($candidate.Success){$match=$candidate;break}}
+        if(!$match){throw 'Unknown Zombies observation record.'}
+        $kind=($body.Split(' ')[0]).Substring(5)
+        $fields=[ordered]@{kind=$kind;sequence=$sequence;thread=$thread}
+        foreach($name in @($match.Groups.Keys|Where-Object {$_ -notmatch '^[0-9]+$'})){
+            $group=$match.Groups[$name];if(!$group.Success){continue};$value=$group.Value
+            if($name -cin @('caller','result','status','name_hex')){$fields[$name]=$value;continue}
+            try{$number=if($name -cin @('wait','sync','suppress')){[long]::Parse($value)}else{[ulong]::Parse($value)}}catch{throw 'Observation integer exceeds native width.'}
+            if($name -cin @('wait','sync','suppress') -and ($number -lt [int]::MinValue -or $number -gt [int]::MaxValue)){throw 'Observation integer exceeds int32.'}
+            $fields[$name]=$number
+        }
+        if(($fields.Contains('phase') -and $fields.phase -ge 14) -or ($fields.Contains('count') -and $fields.count -gt [uint]::MaxValue)){throw 'Observation phase/count outside bounds.'}
+        if($kind -ceq 'phase' -and !$phases.Add([uint]$fields.phase)){throw 'Duplicate one-shot phase.'}
+        if($fields.Contains('name_hex')){
+            $hex=$fields.name_hex
+            if($hex.Length%2 -or ($fields.status -ceq 'unreadable' -and ($hex.Length -or $fields.nul)) -or
+               ($fields.status -ceq 'read' -and (($hex.Length -eq 128) -ne ($fields.nul -eq 0)))){throw 'Observed name length/termination differs.'}
+        }
+        if(!$counts.ContainsKey($kind)){$counts[$kind]=0};$counts[$kind]++
+        $cap=if($kind -ceq 'phase'){14}elseif($kind -ceq 'zone'){8}else{4}
+        if($counts[$kind] -gt $cap){throw 'Observation event cap exceeded.'}
+        $observedBytes+=$line.Length
+        if($observedBytes -gt 8KB -or $records.Count -ge 38){throw 'Observation trace cap exceeded.'}
+        $records.Add([pscustomobject]$fields)
+    }
+    [pscustomobject]@{LegacyText=$legacy.ToString();Records=$records.ToArray();ObservationBytes=$observedBytes;CombinedBytes=[Text.Encoding]::ASCII.GetByteCount($Text)}
+}
+function ConvertFrom-T7CatalogueZombiesObservation([string]$Text) {
+    $split=Split-T7CatalogueZombiesObservation $Text
+    # F still enforces its original ASCII/8KiB/fourteen-line contract on all other bytes.
+    $result=ConvertFrom-T7CatalogueMessage $split.LegacyText
+    $result|Add-Member -NotePropertyName ZombiesObservations -NotePropertyValue $split.Records
+    $result|Add-Member -NotePropertyName ZombiesObservationBytes -NotePropertyValue $split.ObservationBytes
+    $result
 }

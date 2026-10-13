@@ -9,6 +9,7 @@ import prepare_cli
 import prepare_prepatch
 import prepare_catalog_trace
 import prepare_message_publication
+import prepare_catalog_zombies_observation as zombies_observer
 
 HERE = Path(__file__).resolve().parent
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
@@ -21,6 +22,39 @@ UNITS = tuple(zip(prepare_cli.PATHS[:3], ('main.obj', 'zonetool11.obj', 'xpak.ob
                   ('main.cpp', 'zonetool.cpp', 'common/xpak.cpp')))
 SDK_PINS = {'rc.exe': (55640, '43da1503c262c30894c851589bf0155f8365d77e63a5f7bc13982320e3a6b42d'),
             'rcdll.dll': (264536, '9a11e4759adc48abe1fa9e3082ad7db4b53f4d6d77701c13729f4ffd47ae934c')}
+
+# Source25 approved module; this finite C transition does not relax E4 reuse.
+ZOMBIES_SOURCE_PINS = {
+    'native_catalog_zombies_observation.inc': (9668, '50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181'),
+    'prepare_catalog_zombies_observation.py': (7613, '1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445'),
+}
+ZOMBIES_BASE_CLI_PIN = (107785, 'c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50')
+ZOMBIES_CLI_PIN = (118485, '917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987')
+
+
+def zombies_observation_selected(args):
+    selected = getattr(args, 'zombies_catalogue_observation', False)
+    require(type(selected) is bool, 'Explicit boolean Zombies observation selector required')
+    if selected:
+        require(getattr(args, 'catalog_message_publication', False) is True and
+                getattr(args, 'selected_streamed_static_v1', False) is True and
+                bool(getattr(args, 'reuse_plan', None)) and bool(getattr(args, 'reuse_compile_receipt', None)),
+                'Zombies observation requires explicit publication, selected-streamed and retained proofs')
+    return selected
+
+
+def zombies_observation_transition(raw):
+    require(type(raw) is bytes and (len(raw), hashlib.sha256(raw).hexdigest()) == ZOMBIES_BASE_CLI_PIN,
+            'Exact current publication CLI required before Zombies observation')
+    for name, pin in ZOMBIES_SOURCE_PINS.items():
+        source = (HERE/name).read_bytes()
+        require((len(source), hashlib.sha256(source).hexdigest()) == pin, 'Approved Zombies observation source differs')
+    rendered = zombies_observer.wire_cli(raw.decode('utf-8')).encode()
+    require((len(rendered), hashlib.sha256(rendered).hexdigest()) == ZOMBIES_CLI_PIN,
+            'Exact reviewed Zombies observation transition required')
+    return rendered, {'Schema':'iw7.t7-zm-observation-build/1', 'SourceProfile':zombies_observer.SOURCE_PROFILE,
+        'BaseCLIBytes':ZOMBIES_BASE_CLI_PIN[0], 'BaseCLISHA256':ZOMBIES_BASE_CLI_PIN[1],
+        'CLIBytes':ZOMBIES_CLI_PIN[0], 'CLISHA256':ZOMBIES_CLI_PIN[1]}
 
 
 # The explicit IW7 writer include pulls in this exact 66-header facade. These
@@ -430,6 +464,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
 
 
 def prepare(args):
+    zombies_observation = zombies_observation_selected(args)
     source, e7, output, run, adapter, providers, job = [path_checked(getattr(args, n)) for n in
         ('source', 'e7', 'output', 'run', 'adapter', 'providers', 'job')]
     runtime = HERE.parents[2]/'runtime'
@@ -491,6 +526,10 @@ def prepare(args):
     if catalog_publication:
         read(HERE/'prepare_message_publication.py',64*1024)
         read(HERE/'native_message_publication.inc',16*1024)
+    if zombies_observation:
+        for name, pin in ZOMBIES_SOURCE_PINS.items():
+            raw = read(HERE/name,16*1024,pin[1])
+            require(len(raw) == pin[0], 'Approved Zombies observation source length differs')
     read(HERE.parent/'recipient/script-names/prepare_observer.py')
     roles = {'Core': 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1',
              'CompilerCore': 'tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1',
@@ -626,6 +665,11 @@ def prepare(args):
         inputs += reused_inputs
         stages = [s for s in stages if s['Name'] in (('main','zonetool11','link') if catalog_publication
                                                    else ('main','link') if recompile_main else ('link',))]
+    if zombies_observation:
+        require(reuse is not None and catalog_publication and selected_streamed_static_v1,
+                'Zombies observation requires the verified current publication reuse closure')
+        payloads['prepared/zonetool.cpp'], reuse['ZombiesObservationC'] = zombies_observation_transition(
+            payloads['prepared/zonetool.cpp'])
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -668,6 +712,12 @@ def prepare(args):
                                ('MainResponse',output/'main.obj.rsp'),('CLIResponse',output/'zonetool11.obj.rsp'),
                                ('LinkResponse',output/'link.rsp')]:
                 profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+        if zombies_observation:
+            profile['Name'] = zombies_observer.SOURCE_PROFILE
+            profile['ObservationSchema'] = zombies_observer.SCHEMA
+            for name, path in [('ObserverSource',HERE/'native_catalog_zombies_observation.inc'),
+                               ('ObserverAdapter',HERE/'prepare_catalog_zombies_observation.py')]:
+                profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     plan = {'Schema':'iw7.t7-minimal-build-plan/1','SourceCommit':contract['native_source_commit'],
         'RunRoot':str(run),'PreparedRoot':str(output/'prepared'),'Runner':str(HERE/'Run-T7Build.ps1'),
         'Profile':str(HERE/'T7Build.Profile.ps1'), **{k:str(providers/v) for k,v in roles.items()},
@@ -705,6 +755,7 @@ if __name__ == '__main__':
     parser.add_argument('--resident-surface-count-diagnostic',action='store_true')
     parser.add_argument('--resident-multisurface-v2',action='store_true')
     parser.add_argument('--selected-streamed-static-v1',action='store_true')
+    parser.add_argument('--zombies-catalogue-observation',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))
