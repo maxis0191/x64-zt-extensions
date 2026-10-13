@@ -1,0 +1,4694 @@
+{
+  "schema": 1,
+  "source_repository": "maxis0191/iw7-paris-server",
+  "source_commit": "5e47dc2299fde638f31af6c026c0e17ee9ddb8ef",
+  "imported_tip": "8da20837e790cdabcdadd7b227768977db752c4f",
+  "tool": "git-filter-repo 2.47.0",
+  "tool_distribution_sha256": "2cd04929b9024e83e65db571cbe36aec65ead0cb5f9ec5abe42158654af5ad83",
+  "files": [
+    {
+      "path": "docs/ANIMATION-AI-BRIDGE.md",
+      "blob": "1bd9e29e0c0786333b6112355bbfdaa7eda26a72",
+      "bytes": 15848,
+      "mode": "100644",
+      "destination": "docs/ANIMATION-AI-BRIDGE.md"
+    },
+    {
+      "path": "docs/ASSET-BRIDGE-H1.md",
+      "blob": "0559b12f909c6269fb7e05af188f116d3c137f6b",
+      "bytes": 40198,
+      "mode": "100644",
+      "destination": "docs/ASSET-BRIDGE-H1.md"
+    },
+    {
+      "path": "docs/CONTENT-SURFACES-BRIDGE.md",
+      "blob": "524ad6d3b61a2083947643f8d00855694ab62a2e",
+      "bytes": 57918,
+      "mode": "100644",
+      "destination": "docs/CONTENT-SURFACES-BRIDGE.md"
+    },
+    {
+      "path": "docs/DOOM-SOURCE-CANDIDATES.md",
+      "blob": "5b2afa2eb3a9f66f6a2e1a40cbc8052163d20a92",
+      "bytes": 16059,
+      "mode": "100644",
+      "destination": "docs/DOOM-SOURCE-CANDIDATES.md"
+    },
+    {
+      "path": "docs/DOOM-TEXTURES.md",
+      "blob": "9aceebeae570b2655d225c832ee3c3c83ff54781",
+      "bytes": 11404,
+      "mode": "100644",
+      "destination": "docs/DOOM-TEXTURES.md"
+    },
+    {
+      "path": "docs/MATERIAL-C-WITNESS.md",
+      "blob": "acc5cc9a3b62ac66e63957c8b1d280e3fd66cd6f",
+      "bytes": 7239,
+      "mode": "100644",
+      "destination": "docs/MATERIAL-C-WITNESS.md"
+    },
+    {
+      "path": "docs/MODEL-LAB.md",
+      "blob": "dbc0003b14a39ba4813d8d25a69ee8560ba4028e",
+      "bytes": 21225,
+      "mode": "100644",
+      "destination": "docs/MODEL-LAB.md"
+    },
+    {
+      "path": "docs/NATIVE-SOUND-RELEASE-2026-10-12.md",
+      "blob": "1f7952b5e7d736ded1c4e196c8684b28c6a32321",
+      "bytes": 4757,
+      "mode": "100644",
+      "destination": "docs/NATIVE-SOUND-RELEASE-2026-10-12.md"
+    },
+    {
+      "path": "docs/SOUND-CLIENT-LOOKUP.md",
+      "blob": "ebb7be4a10e38d5a90c055d09b17337926015394",
+      "bytes": 8659,
+      "mode": "100644",
+      "destination": "docs/SOUND-CLIENT-LOOKUP.md"
+    },
+    {
+      "path": "docs/SOUND-CLOSURE-REPRESENTATIONS.md",
+      "blob": "3fc9b8c4db3d3e1617d8e57f0dc9eb1220ba8f53",
+      "bytes": 7054,
+      "mode": "100644",
+      "destination": "docs/SOUND-CLOSURE-REPRESENTATIONS.md"
+    },
+    {
+      "path": "docs/SOUND-HTTP-TRANSPORT.md",
+      "blob": "3df37fde3f6531912fd179560492727b81fced47",
+      "bytes": 5451,
+      "mode": "100644",
+      "destination": "docs/SOUND-HTTP-TRANSPORT.md"
+    },
+    {
+      "path": "docs/SOUND-JOB-MEMORY.md",
+      "blob": "bc00390cedc855b31de494a9ba4c8ee735c104a6",
+      "bytes": 6806,
+      "mode": "100644",
+      "destination": "docs/SOUND-JOB-MEMORY.md"
+    },
+    {
+      "path": "docs/SOUND-SOURCE-PROJECTION.md",
+      "blob": "2d41f23875cd7d4412646d9ae7cd069e16daea88",
+      "bytes": 4692,
+      "mode": "100644",
+      "destination": "docs/SOUND-SOURCE-PROJECTION.md"
+    },
+    {
+      "path": "docs/SOUND-STANDARDMOD-C-2026-10-13.md",
+      "blob": "90449307be400a567bc0b98f9ad050d622470680",
+      "bytes": 13907,
+      "mode": "100644",
+      "destination": "docs/SOUND-STANDARDMOD-C-2026-10-13.md"
+    },
+    {
+      "path": "docs/WEAPON-ASSET-BRIDGE.md",
+      "blob": "c9b5d31d3f99096679fd7dd74c0783750f00aa86",
+      "bytes": 11791,
+      "mode": "100644",
+      "destination": "docs/WEAPON-ASSET-BRIDGE.md"
+    },
+    {
+      "path": "docs/WORLD-ASSET-BRIDGE.md",
+      "blob": "a20ddebdd11fc469c0f7c4b872c00679b509618d",
+      "bytes": 75943,
+      "mode": "100644",
+      "destination": "docs/WORLD-ASSET-BRIDGE.md"
+    },
+    {
+      "path": "ops/Build-DoomTextureTool.ps1",
+      "blob": "eb050bd79f365dc5a0a8161a8e8f3f4f8feeca16",
+      "bytes": 5762,
+      "mode": "100644",
+      "destination": "ops/Build-DoomTextureTool.ps1"
+    },
+    {
+      "path": "ops/Build-EnemyZoneTool.ps1",
+      "blob": "172f664f17898c310bf344bfd3d796a8545a9980",
+      "bytes": 10607,
+      "mode": "100644",
+      "destination": "ops/Build-EnemyZoneTool.ps1"
+    },
+    {
+      "path": "ops/Build-RhinoZoneTool.ps1",
+      "blob": "b7275910100482305ec838a5c6cc52829fc3648f",
+      "bytes": 30334,
+      "mode": "100644",
+      "destination": "ops/Build-RhinoZoneTool.ps1"
+    },
+    {
+      "path": "ops/Inspect-Texture.py",
+      "blob": "f2a325b04547bac3725bc1dac988dd64c5cb2bf7",
+      "bytes": 2156,
+      "mode": "100644",
+      "destination": "ops/Inspect-Texture.py"
+    },
+    {
+      "path": "ops/Prepare-DoomTextureWork.ps1",
+      "blob": "a3423c75a6fb26fdb350e21aec3d1a381c9be568",
+      "bytes": 3336,
+      "mode": "100644",
+      "destination": "ops/Prepare-DoomTextureWork.ps1"
+    },
+    {
+      "path": "ops/doom-source/Acquire-Blender.ps1",
+      "blob": "43396ed6789546d271884aa2f03a9a302ac90995",
+      "bytes": 1796,
+      "mode": "100644",
+      "destination": "ops/doom-source/Acquire-Blender.ps1"
+    },
+    {
+      "path": "ops/doom-source/Build-FF.ps1",
+      "blob": "3d35e4c0755c6baa6d36346abb09c4b8fb69b218",
+      "bytes": 13227,
+      "mode": "100644",
+      "destination": "ops/doom-source/Build-FF.ps1"
+    },
+    {
+      "path": "ops/doom-source/Build-Writer.ps1",
+      "blob": "6b2860fba774aed8d98cd7d36bde6a8656e3176a",
+      "bytes": 8313,
+      "mode": "100644",
+      "destination": "ops/doom-source/Build-Writer.ps1"
+    },
+    {
+      "path": "ops/doom-source/Doom-ModelLab.ps1",
+      "blob": "030697adc920f1f1eb4f3f6e7058553997b2a6b1",
+      "bytes": 21211,
+      "mode": "100644",
+      "destination": "ops/doom-source/Doom-ModelLab.ps1"
+    },
+    {
+      "path": "ops/doom-source/DoomHttp.cs",
+      "blob": "d11939c2256d6f9b33a83f2faeaed203658fb157",
+      "bytes": 5519,
+      "mode": "100644",
+      "destination": "ops/doom-source/DoomHttp.cs"
+    },
+    {
+      "path": "ops/doom-source/FF.Core.ps1",
+      "blob": "d787255cedad883916773382dac4a8dfb0bad0fc",
+      "bytes": 3640,
+      "mode": "100644",
+      "destination": "ops/doom-source/FF.Core.ps1"
+    },
+    {
+      "path": "ops/doom-source/README.md",
+      "blob": "529e8c10ecfd063ae7fc5b222f75d229756129bd",
+      "bytes": 9563,
+      "mode": "100644",
+      "destination": "ops/doom-source/README.md"
+    },
+    {
+      "path": "ops/doom-source/Writer.Core.ps1",
+      "blob": "6ff6405cce135a6765fd4664f7a1be0afd203836",
+      "bytes": 5769,
+      "mode": "100644",
+      "destination": "ops/doom-source/Writer.Core.ps1"
+    },
+    {
+      "path": "ops/doom-source/doom_model_fixture.gsc",
+      "blob": "caad6f634a764a743ede87b91b40f63f6c3315c4",
+      "bytes": 5876,
+      "mode": "100644",
+      "destination": "ops/doom-source/doom_model_fixture.gsc"
+    },
+    {
+      "path": "ops/doom-source/half_uv.hpp",
+      "blob": "bf6a26ac2aad4962e58320396a5a1dfc6e912cfd",
+      "bytes": 1377,
+      "mode": "100644",
+      "destination": "ops/doom-source/half_uv.hpp"
+    },
+    {
+      "path": "ops/doom-source/inspect_blender.py",
+      "blob": "051773b3ff15d338a44f66a7285aea394b29f963",
+      "bytes": 5952,
+      "mode": "100644",
+      "destination": "ops/doom-source/inspect_blender.py"
+    },
+    {
+      "path": "ops/doom-source/inspect_fbx.py",
+      "blob": "685f2a7b22626e9ad4048cf3928eb87a7ff03bf5",
+      "bytes": 8803,
+      "mode": "100644",
+      "destination": "ops/doom-source/inspect_fbx.py"
+    },
+    {
+      "path": "ops/doom-source/inspect_sources.py",
+      "blob": "a735044b14bc1e28b6f7641a27950783e4f88b42",
+      "bytes": 11668,
+      "mode": "100644",
+      "destination": "ops/doom-source/inspect_sources.py"
+    },
+    {
+      "path": "ops/doom-source/prepare_checker.py",
+      "blob": "af1c95180b949e468d9aa19e7e71fa1c07a86836",
+      "bytes": 8260,
+      "mode": "100644",
+      "destination": "ops/doom-source/prepare_checker.py"
+    },
+    {
+      "path": "ops/doom-source/prepare_ff.py",
+      "blob": "db47287bbb7bf06f2e8135b7536855b1cf91d63e",
+      "bytes": 6590,
+      "mode": "100644",
+      "destination": "ops/doom-source/prepare_ff.py"
+    },
+    {
+      "path": "ops/doom-source/prepare_rigid_mesh.py",
+      "blob": "5f75dda1d52bd0b72ff2c8b192d93db726057b02",
+      "bytes": 12942,
+      "mode": "100644",
+      "destination": "ops/doom-source/prepare_rigid_mesh.py"
+    },
+    {
+      "path": "ops/doom-source/prepare_writer.py",
+      "blob": "e20c6fd4599848c7c560b1ec51fc8862c6320fcd",
+      "bytes": 8322,
+      "mode": "100644",
+      "destination": "ops/doom-source/prepare_writer.py"
+    },
+    {
+      "path": "ops/doom-source/requirements-win-cp312.txt",
+      "blob": "926866474bd7bfba11ad404de5260c703fc1c92d",
+      "bytes": 166,
+      "mode": "100644",
+      "destination": "ops/doom-source/requirements-win-cp312.txt"
+    },
+    {
+      "path": "ops/doom-source/scenario.json",
+      "blob": "477cf4b803e9a1b00e50a80a6c263e3ab9bb1aa9",
+      "bytes": 402,
+      "mode": "100644",
+      "destination": "ops/doom-source/scenario.json"
+    },
+    {
+      "path": "ops/doom-source/test_ff.ps1",
+      "blob": "343d614ead630aab8321baf7ca9a6c0a423d35df",
+      "bytes": 3530,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_ff.ps1"
+    },
+    {
+      "path": "ops/doom-source/test_half_uv.cpp",
+      "blob": "976904b443735f8650ae236ebac329dddec1f744",
+      "bytes": 951,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_half_uv.cpp"
+    },
+    {
+      "path": "ops/doom-source/test_inspect_fbx.py",
+      "blob": "98bbd893a3c2ec3d1c1b749f975b3c82ebbf40a6",
+      "bytes": 3430,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_inspect_fbx.py"
+    },
+    {
+      "path": "ops/doom-source/test_inspect_sources.py",
+      "blob": "46ff9553235dc9f612c528653856f512b9879068",
+      "bytes": 1760,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_inspect_sources.py"
+    },
+    {
+      "path": "ops/doom-source/test_prepare_checker.py",
+      "blob": "598834bcfa027abb9f20f90e93eff93ae111254c",
+      "bytes": 2204,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_prepare_checker.py"
+    },
+    {
+      "path": "ops/doom-source/test_prepare_ff.py",
+      "blob": "85811023dd18be97fa3ca4b8cb5fe4354d093ea5",
+      "bytes": 4530,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_prepare_ff.py"
+    },
+    {
+      "path": "ops/doom-source/test_prepare_rigid_mesh.py",
+      "blob": "84fa1163a9bd1940f9ddaba9a0eb4fe48a79ebe6",
+      "bytes": 4665,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_prepare_rigid_mesh.py"
+    },
+    {
+      "path": "ops/doom-source/test_prepare_writer.py",
+      "blob": "9eebc079673c0becd5a8a867f24428fa970abb07",
+      "bytes": 3136,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_prepare_writer.py"
+    },
+    {
+      "path": "ops/doom-source/test_writer.ps1",
+      "blob": "c0952b265686e1fd8ceea6c8a19b6b59e738e0c1",
+      "bytes": 6059,
+      "mode": "100644",
+      "destination": "ops/doom-source/test_writer.ps1"
+    },
+    {
+      "path": "ops/doom-source/texture-stage.plan.json",
+      "blob": "2f1835779fc7a6236455768792b1a752bd410773",
+      "bytes": 1891,
+      "mode": "100644",
+      "destination": "ops/doom-source/texture-stage.plan.json"
+    },
+    {
+      "path": "ops/doom-source/verify_prepared.py",
+      "blob": "1beece90543b42c0d6e2a11df55ef1d79c6f3b44",
+      "bytes": 1174,
+      "mode": "100644",
+      "destination": "ops/doom-source/verify_prepared.py"
+    },
+    {
+      "path": "ops/doom-source/writer_rigid.cpp",
+      "blob": "128d46e977a6528b663d6eebbacc6d6538269ac8",
+      "bytes": 14783,
+      "mode": "100644",
+      "destination": "ops/doom-source/writer_rigid.cpp"
+    },
+    {
+      "path": "ops/doom-textures/doom_texture_extract.hpp",
+      "blob": "b59a9e2851ad953b24ec816c26313145e8ac4266",
+      "bytes": 18724,
+      "mode": "100644",
+      "destination": "ops/doom-textures/doom_texture_extract.hpp"
+    },
+    {
+      "path": "ops/doom-textures/prepare_negative.py",
+      "blob": "43cfa3f4c137b582c386915e7f168d13f5ec213f",
+      "bytes": 14151,
+      "mode": "100644",
+      "destination": "ops/doom-textures/prepare_negative.py"
+    },
+    {
+      "path": "ops/doom-textures/requirements-win-py312.txt",
+      "blob": "02a856667fab2ed9baef19034a70800e0e652880",
+      "bytes": 161,
+      "mode": "100644",
+      "destination": "ops/doom-textures/requirements-win-py312.txt"
+    },
+    {
+      "path": "ops/model-lab/Build-ModelFF.ps1",
+      "blob": "adc9c6b45be882818a797618efcb0b19c5dda11e",
+      "bytes": 14939,
+      "mode": "100644",
+      "destination": "ops/model-lab/Build-ModelFF.ps1"
+    },
+    {
+      "path": "ops/model-lab/Build-Writer.ps1",
+      "blob": "202e0e27f4af9f8c5b8da51e5939def49102d27a",
+      "bytes": 7195,
+      "mode": "100644",
+      "destination": "ops/model-lab/Build-Writer.ps1"
+    },
+    {
+      "path": "ops/model-lab/ModelFF.Core.ps1",
+      "blob": "fbd1b299f5fadc538211ed4516aa2b395c2c6cc7",
+      "bytes": 9370,
+      "mode": "100644",
+      "destination": "ops/model-lab/ModelFF.Core.ps1"
+    },
+    {
+      "path": "ops/model-lab/RESIDENT-RIGID.md",
+      "blob": "0b8aecc8770169ab04078363f832a74da0e86e5a",
+      "bytes": 11133,
+      "mode": "100644",
+      "destination": "ops/model-lab/RESIDENT-RIGID.md"
+    },
+    {
+      "path": "ops/model-lab/Read-RetainedRoundtrip.ps1",
+      "blob": "176e8fcf541f9c1de62ac3d49a1a7ed9197ffe15",
+      "bytes": 3710,
+      "mode": "100644",
+      "destination": "ops/model-lab/Read-RetainedRoundtrip.ps1"
+    },
+    {
+      "path": "ops/model-lab/artifact.ff.measured.json",
+      "blob": "2202e9bc1b51ed5bac122c9f1f4052daaedd4b61",
+      "bytes": 1754,
+      "mode": "100644",
+      "destination": "ops/model-lab/artifact.ff.measured.json"
+    },
+    {
+      "path": "ops/model-lab/artifact.material.measured.json",
+      "blob": "d803bc49de5de9e8cd39e02b2855f1a7f547c5b2",
+      "bytes": 1375,
+      "mode": "100644",
+      "destination": "ops/model-lab/artifact.material.measured.json"
+    },
+    {
+      "path": "ops/model-lab/artifact.measured.json",
+      "blob": "7630a9a3f8a08b0c6f7f82b2fc5cc342177cb336",
+      "bytes": 1151,
+      "mode": "100644",
+      "destination": "ops/model-lab/artifact.measured.json"
+    },
+    {
+      "path": "ops/model-lab/geometry.py",
+      "blob": "d3195ff712ec8fec2359ea57c1aa4b78708faa6c",
+      "bytes": 5019,
+      "mode": "100644",
+      "destination": "ops/model-lab/geometry.py"
+    },
+    {
+      "path": "ops/model-lab/prepare_ff.py",
+      "blob": "962fba11b3379c6a7dd031ececbc03912f5a5a7a",
+      "bytes": 6398,
+      "mode": "100644",
+      "destination": "ops/model-lab/prepare_ff.py"
+    },
+    {
+      "path": "ops/model-lab/prepare_writer.py",
+      "blob": "dba83bd81ac3e3c3550e880e507b37575f50915f",
+      "bytes": 6497,
+      "mode": "100644",
+      "destination": "ops/model-lab/prepare_writer.py"
+    },
+    {
+      "path": "ops/model-lab/recipient.evidence.json",
+      "blob": "d2ac3a14b975dbd5bb5a916bc533da15951b2f39",
+      "bytes": 1891,
+      "mode": "100644",
+      "destination": "ops/model-lab/recipient.evidence.json"
+    },
+    {
+      "path": "ops/model-lab/rigid_export.py",
+      "blob": "69e377196af054579ab23d513868fcec2dddf331",
+      "bytes": 17774,
+      "mode": "100644",
+      "destination": "ops/model-lab/rigid_export.py"
+    },
+    {
+      "path": "ops/model-lab/writer-plan.json",
+      "blob": "2c5f30101f50f7005059b691ed4f0fcb09e7db2d",
+      "bytes": 2706,
+      "mode": "100644",
+      "destination": "ops/model-lab/writer-plan.json"
+    },
+    {
+      "path": "ops/model-lab/writer.cpp",
+      "blob": "61a7d3aa9b12ed567634e8bebd2dd0a1577d3052",
+      "bytes": 13833,
+      "mode": "100644",
+      "destination": "ops/model-lab/writer.cpp"
+    },
+    {
+      "path": "src/custom_scripts/cp/experiments/zonetool_rhino.hpp",
+      "blob": "a9659719faf3d3b222eee389d0ac417d71ac2e94",
+      "bytes": 11929,
+      "mode": "100644",
+      "destination": "src/custom_scripts/cp/experiments/zonetool_rhino.hpp"
+    },
+    {
+      "path": "tests/ops/doom_texture_test.py",
+      "blob": "bf05025a742686604804cb5630330c0cbba71f75",
+      "bytes": 9978,
+      "mode": "100644",
+      "destination": "tests/ops/doom_texture_test.py"
+    },
+    {
+      "path": "tests/ops/model_lab_test.py",
+      "blob": "21e9addcd1425c1a3bba8d15644b9ec0155890f0",
+      "bytes": 59955,
+      "mode": "100644",
+      "destination": "tests/ops/model_lab_test.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/AnimationFF.Core.ps1",
+      "blob": "6734c0bfbc1ac6a73baea9dfbebf4a6b489fdf50",
+      "bytes": 12877,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/AnimationFF.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/Build-AnimationFF.ps1",
+      "blob": "058611a2702889a4099138260c55f5296219a01a",
+      "bytes": 13238,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/Build-AnimationFF.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/FF-ROUNDTRIP.md",
+      "blob": "00789ad826c14b34d2a4d051ad607f80232dbcc3",
+      "bytes": 16298,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/FF-ROUNDTRIP.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/NATIVE-JOB-WITNESS.md",
+      "blob": "34895e836fd7a1bdeddc83b6c00bbbddd6563f44",
+      "bytes": 5846,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/NATIVE-JOB-WITNESS.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/NativeJob-WitnessNode.ps1",
+      "blob": "4fa64a2e2fae5e0bb12c6caed35553667ec9a0fd",
+      "bytes": 3433,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/NativeJob-WitnessNode.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/PROBE-WRITER.md",
+      "blob": "723160760ba98bcac6af8eacd7746a201261e3f0",
+      "bytes": 11760,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/PROBE-WRITER.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/Probe-NativeJob.cs",
+      "blob": "740282a3a63b5a1239e028f7796289eb3ffa7448",
+      "bytes": 15067,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/Probe-NativeJob.cs"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/README.md",
+      "blob": "16d8ccdb08d66d076ea8951de2036314fd065b4f",
+      "bytes": 3583,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/RUNNER-CORRECTIONS.md",
+      "blob": "978b62b9aa8030ee3cc218b26d286d071966ea33",
+      "bytes": 6487,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/RUNNER-CORRECTIONS.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/Run-NativeJobWitness.ps1",
+      "blob": "4b8dff5a4262b4251dff4eb5859e4dc789ed5b89",
+      "bytes": 10796,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/Run-NativeJobWitness.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/Run-NativeProbe.ps1",
+      "blob": "f60e0ea939818b4ad3b88e04d511b1b0acb1f32c",
+      "bytes": 12008,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/Run-NativeProbe.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/STOCK-BINDING.md",
+      "blob": "07b25e0d8f2d9f7c5af26dd477ceea7305399382",
+      "bytes": 5910,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/STOCK-BINDING.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/Test-AnimationFFSource.ps1",
+      "blob": "5792a6a9367b7af78b34ca3278a5fbd931aef086",
+      "bytes": 15019,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/Test-AnimationFFSource.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/Test-NativeProbeSource.ps1",
+      "blob": "d3df6bc7a930f9c8422c94c486a4f1dfcb71acf0",
+      "bytes": 8484,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/Test-NativeProbeSource.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/animation_tool_phase.py",
+      "blob": "05bb2104cbeea877c1c78a650b3f2a23eac589b6",
+      "bytes": 1975,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/animation_tool_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/ff-validation-2026-10-12.json",
+      "blob": "c4f891df10fde2872446254f5db03a2f6632395d",
+      "bytes": 6097,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/ff-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/fixtures/probe-clip.json",
+      "blob": "7c9b508075c4261ecffb83ed1d877a03c71feab7",
+      "bytes": 385,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/fixtures/probe-clip.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/fixtures/sdk_animation_probe.csv",
+      "blob": "fd0c5874dcf8e591ad54f7267c4dffe909847cb0",
+      "bytes": 32,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/fixtures/sdk_animation_probe.csv"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/fixtures/two-bone.skeleton.json",
+      "blob": "4cefa9803ea7cb61c6b7640b8034cc6001b65813",
+      "bytes": 167,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/fixtures/two-bone.skeleton.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/frequency-observations.json",
+      "blob": "e448f52315266cef021c4f87edc5d14a5e5a58cc",
+      "bytes": 1506,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/frequency-observations.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/job-witness-validation-2026-10-12.json",
+      "blob": "2b4f9b049ee62384e5d2ac838ccbd6fafca1c61a",
+      "bytes": 7632,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/job-witness-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/native-validation-2026-10-12.json",
+      "blob": "a2531974c1f929b624f221dceba6d51839dfcd41",
+      "bytes": 6747,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/native-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/prepare_probe.py",
+      "blob": "ae985fba103ba5d43e4edc36c95a7613bb22aa83",
+      "bytes": 6575,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/prepare_probe.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/probe-source-contract.json",
+      "blob": "d3419e6bb2ac8bc05c416c8d1fe068347e11ead4",
+      "bytes": 1797,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/probe-source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/probe_native_abi.hpp",
+      "blob": "9d4df3b7ec0bb6d8f3e4890014ed74d103efe443",
+      "bytes": 1917,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/probe_native_abi.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/read_probe.py",
+      "blob": "639aaec88f431944b4664d1b356a6087238a48ac",
+      "bytes": 5428,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/read_probe.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/.gitattributes",
+      "blob": "a340a38a4581ee07ba4d30317efe67844fb09ac3",
+      "bytes": 489,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/Build-RigChain.ps1",
+      "blob": "6053117a235da171fe60e000cc580138be72e755",
+      "bytes": 19814,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/Build-RigChain.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/CHAIN-PLAN.md",
+      "blob": "97c82f6c2af11a6b305065eb18a9f0aa7819e51b",
+      "bytes": 10631,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/CHAIN-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/README.md",
+      "blob": "7fe0f0cf66816717ae2598627fba1297a3271909",
+      "bytes": 7759,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/RIG-RUN-2026-10-12-A.md",
+      "blob": "53222c68a67e4b52170ae3837a0f88996c677812",
+      "bytes": 4550,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/RIG-RUN-2026-10-12-A.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/RIG-RUN-2026-10-12-B.md",
+      "blob": "e35a316c00ef08db3032d98fca0ef2a483a982c1",
+      "bytes": 5233,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/RIG-RUN-2026-10-12-B.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/RUNTIME-CONTRACT.md",
+      "blob": "438f134c8710c51d72dbee5b35c1549f1ce8302e",
+      "bytes": 6068,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/RUNTIME-CONTRACT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/Rig.Compiler.ps1",
+      "blob": "67d469fc2be26d2afcbcf2c01dcf60a38978c232",
+      "bytes": 5038,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/Rig.Compiler.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/Rig.Core.ps1",
+      "blob": "c730778c21094e19437fa8251b975acb8ea9bb70",
+      "bytes": 15960,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/Rig.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/Rig.JobMembers.cs",
+      "blob": "821c47da9495871afd27b0aa9afe68c27ee9a0b4",
+      "bytes": 7076,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/Rig.JobMembers.cs"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/chain-validation-2026-10-12.json",
+      "blob": "eeecaca1bcc312ed11cb5be37fc17e7510fefab7",
+      "bytes": 3161,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/chain-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/closure-reference.json",
+      "blob": "348db71490c4626525a560a634c425a9f6c4d198",
+      "bytes": 890,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/closure-reference.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/half_uv.hpp",
+      "blob": "bf6a26ac2aad4962e58320396a5a1dfc6e912cfd",
+      "bytes": 1377,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/half_uv.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/Locator.Supervisor.Core.ps1",
+      "blob": "23366b9618c290a160d8d15a10673f70be207f5e",
+      "bytes": 15598,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/Locator.Supervisor.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/README.md",
+      "blob": "86556bafba7fd4e3db5eabfaa0403800209ee075",
+      "bytes": 11043,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/REPORT-E-LAYOUT.md",
+      "blob": "4fb138bf489099ccfa4d82469f24d9a0c21b3463",
+      "bytes": 3193,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/REPORT-E-LAYOUT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/REPORT-G-BOUNDARY.md",
+      "blob": "dc62893cada1485432a2f18cd10a994a862b5631",
+      "bytes": 2982,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/REPORT-G-BOUNDARY.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/REPORT-H-WRITER.md",
+      "blob": "e775a78bf5f04c1464c695c03b381afcfec55092",
+      "bytes": 3565,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/REPORT-H-WRITER.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/Run-Locator.ps1",
+      "blob": "3e9b5cbc880d8d2e9cf3f91a836c9077d490bf3d",
+      "bytes": 7967,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/Run-Locator.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/SUPERVISOR.md",
+      "blob": "afa924582c68edb58cd21932a29c15b838819123",
+      "bytes": 6166,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/SUPERVISOR.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/SURFACE-BUFFER-SOURCE-MAP.md",
+      "blob": "ee330a6c84ae955091e2a75eee79523002f68a69",
+      "bytes": 4842,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/SURFACE-BUFFER-SOURCE-MAP.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/TARGETED-D.md",
+      "blob": "0dbd7b082df8fc430ad8d567d44b01e1b391d239",
+      "bytes": 6871,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/TARGETED-D.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/TARGETED-E.md",
+      "blob": "1969c995dd5515b8357429788100527a2e31154e",
+      "bytes": 4778,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/TARGETED-E.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/TARGETED-F.md",
+      "blob": "dd8822accb9e9a6501d9cceef926f1392220d64f",
+      "bytes": 5314,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/TARGETED-F.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/TARGETED-G.md",
+      "blob": "f05af7ed6ce86d088372c1d5c80ab22425045031",
+      "bytes": 8701,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/TARGETED-G.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/TARGETED-H.md",
+      "blob": "5b86d9cdbdbc1451a9ec8db852495197f770fd65",
+      "bytes": 8717,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/TARGETED-H.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/TARGETED.md",
+      "blob": "d5d5f31655be6bedea87f03e1dc24c0759916d8d",
+      "bytes": 8083,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/TARGETED.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/locate_static.py",
+      "blob": "3f95890e42b0901bc5e107615fc600920743be32",
+      "bytes": 12494,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/locate_static.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/locate_targeted.py",
+      "blob": "a9637f8bdf6b02f89338ff3352b4d10126cad703",
+      "bytes": 16004,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/locate_targeted.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/metadata-2026-10-12.json",
+      "blob": "3f7ce08be9187ba316193c6495bb0feeaeaf670a",
+      "bytes": 3445,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/metadata-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/run-b-validation-2026-10-12.json",
+      "blob": "7517744a7b285fccf88e59a452f082f496401fc9",
+      "bytes": 2695,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/run-b-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/run-c-validation-2026-10-12.json",
+      "blob": "b8f09d4d9dc6af64a6039b350dddaa24136a3131",
+      "bytes": 2974,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/run-c-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/run-d-validation-2026-10-12.json",
+      "blob": "cd32a648c1683af9934fa264142a934fa65de8f2",
+      "bytes": 1995,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/run-d-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/run-e-validation-2026-10-12.json",
+      "blob": "42cf8fca6099ca671e0318b48cb46fab21f1fcf6",
+      "bytes": 2485,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/run-e-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/run-f-validation-2026-10-12.json",
+      "blob": "b9fd3c4cfcba4d53e9d97bf9cd4805f11c621154",
+      "bytes": 4164,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/run-f-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/run-g-validation-2026-10-13.json",
+      "blob": "35ca26fb190177c41bb1deeb81767204dff8a151",
+      "bytes": 5824,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/run-g-validation-2026-10-13.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/run-h-validation-2026-10-13.json",
+      "blob": "62e21bfecc0a9a638168a69d90949be2411346f7",
+      "bytes": 6579,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/run-h-validation-2026-10-13.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/supervisor-validation-2026-10-12.json",
+      "blob": "6a198f1ab5b4f1d3d5b4ecee85c0d2dec59684e1",
+      "bytes": 1784,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/supervisor-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/targeted-d-validation-2026-10-12.json",
+      "blob": "e4b617871dbabb637867e59edb21a8ca34006384",
+      "bytes": 2075,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/targeted-d-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/targeted-e-validation-2026-10-12.json",
+      "blob": "c8b3390d2890ff8ddbcef4eb182c7a63d2cfa47c",
+      "bytes": 2209,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/targeted-e-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/targeted-f-validation-2026-10-12.json",
+      "blob": "607472159677fd93e455ff9b04823ff46668fa5f",
+      "bytes": 3166,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/targeted-f-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/targeted-g-validation-2026-10-12.json",
+      "blob": "bd766ce8fd05e984db4e3cb22a58ac44ba9dd82c",
+      "bytes": 3089,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/targeted-g-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/targeted-h-validation-2026-10-13.json",
+      "blob": "83aea3f2441733b2c52308edde7fb1fba1738158",
+      "bytes": 4036,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/targeted-h-validation-2026-10-13.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/targeted-validation-2026-10-12.json",
+      "blob": "224942d94bc52e6613f2efc2010b6630a1e2cf6d",
+      "bytes": 2204,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/targeted-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/test_locate_static.py",
+      "blob": "de57895e51f44dcd2b74f069f9b9a0578e649a1a",
+      "bytes": 5831,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/test_locate_static.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/test_locate_targeted.py",
+      "blob": "07a4a34dc39c9de6285e79844ff16630ea8c46d4",
+      "bytes": 18211,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/test_locate_targeted.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/locator/test_locator_supervisor.ps1",
+      "blob": "3c3080d91de96a3b77c396c51e6a31f62ac28518",
+      "bytes": 16811,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/locator/test_locator_supervisor.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/plan_rig_chain.py",
+      "blob": "385effaccf6e596d9f1836882a202c095f6b75dc",
+      "bytes": 21585,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/plan_rig_chain.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/prepare_skin_fixture.py",
+      "blob": "9d97ca776859305e03b48d00ed2257c7e473dc51",
+      "bytes": 5865,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/prepare_skin_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/prepare_skin_writer.py",
+      "blob": "17077507f242f6e2be53bec779795fbaa8a763d5",
+      "bytes": 9023,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/prepare_skin_writer.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/read-diagnostic-validation-2026-10-12.json",
+      "blob": "b0f0d673d440819c03dadf101d4e9c1281c4e998",
+      "bytes": 1699,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/read-diagnostic-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/read_rig_chain.py",
+      "blob": "b8d33931df3c1f07bba05192d635ef1bc2398f13",
+      "bytes": 7577,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/read_rig_chain.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/read_skin_fixture.py",
+      "blob": "a52a969e10176d24cf7c6d3547f99305b168f4d7",
+      "bytes": 8784,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/read_skin_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/read_skin_native.py",
+      "blob": "d5cc5e848f05e63eeb7de85c4581b2878eab32fa",
+      "bytes": 11783,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/read_skin_native.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/recovered-source.json",
+      "blob": "8899942e7724159fb647a60fa585e9727b21106c",
+      "bytes": 2495,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/recovered-source.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/rig_phase.py",
+      "blob": "a099d26c76fdfd7a1e5c13acaac65eb43b380ce4",
+      "bytes": 8619,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/rig_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/run-validation-2026-10-12-a.json",
+      "blob": "bdf16b1972fb6477acb471e198f3a56bb00b6b3e",
+      "bytes": 5647,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/run-validation-2026-10-12-a.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/run-validation-2026-10-12-b.json",
+      "blob": "ea8c89b55969b6776ddfaf215a9477434b568a51",
+      "bytes": 9193,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/run-validation-2026-10-12-b.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/runner-validation-2026-10-12.json",
+      "blob": "5ed6c5127a6ef622f299e518b7b9d5ac58687435",
+      "bytes": 4310,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/runner-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/skin_native_abi.hpp",
+      "blob": "48ec2b845b1c26a960b0d22eb6dcebbcbc56854f",
+      "bytes": 2667,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/skin_native_abi.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/skin_oracle.py",
+      "blob": "b950478cd5bb359c7943336049cb5c5d4798258d",
+      "bytes": 11697,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/skin_oracle.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_clip_rig.py",
+      "blob": "a3e67aa1dc84a93f51c695d97205efec31bfd89f",
+      "bytes": 6779,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_clip_rig.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_prepare_skin_writer.py",
+      "blob": "dc480838d72097885cfc3af2650f5517d5a5dd56",
+      "bytes": 13072,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_prepare_skin_writer.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_rig_chain.py",
+      "blob": "f98bf2133437c3e0c8c2850c19fefe15fc012d77",
+      "bytes": 13410,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_rig_chain.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_rig_compiler.ps1",
+      "blob": "d1cdfa4a8630a80f367aa940c8fe0b14e782bb7a",
+      "bytes": 6561,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_rig_compiler.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_rig_executor.py",
+      "blob": "85408ebcf0b5e90cd4332dfd7d698addbe30f316",
+      "bytes": 3792,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_rig_executor.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_rig_owned_phase.ps1",
+      "blob": "2fa0db7e705e6bfda8409b7d055548eebeaa4cb4",
+      "bytes": 10590,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_rig_owned_phase.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_rig_phase.py",
+      "blob": "b18ec5c5c143f1936a0bc05f7f19ec80d4e1a638",
+      "bytes": 8891,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_rig_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_rig_readback.ps1",
+      "blob": "39fc5c257872eb681c2d2de4391f0f32cb2b81e0",
+      "bytes": 1884,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_rig_readback.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_rig_runner.ps1",
+      "blob": "fe82ded69762e6902af09a85db123a233d6f0af9",
+      "bytes": 10063,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_rig_runner.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_skin_fixture.py",
+      "blob": "4f6bba6a61b56ae809a3017a6bef10c7f2c4533b",
+      "bytes": 8161,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_skin_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_skin_native.py",
+      "blob": "bc1310d8935dd9ba7dd53414a257a7306c5dc8cc",
+      "bytes": 9921,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_skin_native.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/test_skin_oracle.py",
+      "blob": "5d885859815542da01adc76a4441522c716fba37",
+      "bytes": 7917,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/test_skin_oracle.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/validation-2026-10-12.json",
+      "blob": "cc590c7e13131c62dde0cc2f66f23b2f9038f23e",
+      "bytes": 9436,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/verify_clip_rig.py",
+      "blob": "3960b9a6d6bce1e2d35311c192cc63fec213486c",
+      "bytes": 7023,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/verify_clip_rig.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/rig/writer_skin_two_bone.cpp",
+      "blob": "049cecef9be638620224481f27c0dad862e53cad",
+      "bytes": 12252,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/rig/writer_skin_two_bone.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/source-contract.json",
+      "blob": "d4abbc452a8b551f589f095280bec7c35edf2732",
+      "bytes": 917,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/test_animation_phase.py",
+      "blob": "32c50a7287cb4ae09117a0ca1b62734ae74e844e",
+      "bytes": 3494,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/test_animation_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/test_probe.py",
+      "blob": "aec474f02c511f45b7bd12913f289cd2f331ce5b",
+      "bytes": 10294,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/test_probe.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/test_xab_preflight.py",
+      "blob": "5b17a9e69dbc2c3ecff1f3ef5b2459500a55b900",
+      "bytes": 14521,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/test_xab_preflight.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/writer_probe.cpp",
+      "blob": "4a16ccb56dc27355cb06de7a5c93dafde0a9539d",
+      "bytes": 6343,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/writer_probe.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/animation/xab_preflight.py",
+      "blob": "01b9be301b1481badaa9247b7a6c5d4e28f58f71",
+      "bytes": 13033,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/animation/xab_preflight.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/common/StockBinding.Core.ps1",
+      "blob": "11e9c0d3f4676c14c324f788301221b432af1064",
+      "bytes": 6387,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/common/StockBinding.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/common/Test-StockBindingSource.ps1",
+      "blob": "05e9611ee5e66a167bbbcd4d2005a4b2899298e6",
+      "bytes": 6419,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/common/Test-StockBindingSource.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/.gitattributes",
+      "blob": "023fba68b4aab28347280d9ec88f3ad7a4fd2ff1",
+      "bytes": 122,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/.gitignore",
+      "blob": "5d1bc29c0f4ccef27b9208a26f0d7812c110b630",
+      "bytes": 44,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/.gitignore"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/DUMP-PROBE.md",
+      "blob": "a5a045e000036d64a626015c2f40baf7ad114c75",
+      "bytes": 15330,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/DUMP-PROBE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1",
+      "blob": "890b225023d41eac577a279dc6240f05647191e4",
+      "bytes": 8510,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1",
+      "blob": "48c6889c40fdf2b566ba57a76b2f43247a96c391",
+      "bytes": 11084,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/H1Native.JobMembers.cs",
+      "blob": "7c6d00a56f78167efd891a20aac946bc610911ea",
+      "bytes": 7341,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/H1Native.JobMembers.cs"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/NATIVE-PROBE.md",
+      "blob": "7023f95d2a316b80e6a71f8b0a403a65a4e33d00",
+      "bytes": 26325,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/NATIVE-PROBE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/README.md",
+      "blob": "c71b921b71b353349b7bf1ee1ca1409211fa80d3",
+      "bytes": 7733,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/Run-H1Native.ps1",
+      "blob": "63a2fdb6aeae1f61a69528402f842a74f74231aa",
+      "bytes": 11508,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/Run-H1Native.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/Test-H1Compiler.ps1",
+      "blob": "f10a9e54730a2af84f0d7b4f6d556e34eb5ff9cf",
+      "bytes": 8845,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/Test-H1Compiler.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/Test-H1Dump.ps1",
+      "blob": "f1c9418d465219663ee78216aa91be2e066d943a",
+      "bytes": 4161,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/Test-H1Dump.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/Test-H1Native.ps1",
+      "blob": "4d69809357efa12c28b6f4a10abc1fbf259e6d2d",
+      "bytes": 7890,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/Test-H1Native.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/Test-H1Observer.ps1",
+      "blob": "d1d63b079a4b3155a2c34ddcc0a18070a8d155a5",
+      "bytes": 4208,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/Test-H1Observer.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/Test-H1Plan.ps1",
+      "blob": "36ac2f0d3c55e3acfcf983826388cb4079162788",
+      "bytes": 4569,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/Test-H1Plan.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/Test-H1ProviderAdapter.ps1",
+      "blob": "ec074b183fd36513f2ac101c545fff37c21f14d1",
+      "bytes": 4181,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/Test-H1ProviderAdapter.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/dump-compile-observation-2026-10-12.json",
+      "blob": "3fd07e63c231c737ccfe1439e7745ff5df52ee75",
+      "bytes": 3312,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/dump-compile-observation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/dump-probe-observation-2026-10-12.json",
+      "blob": "068a8523b96c25e01010c280b2458a196699cd3a",
+      "bytes": 3216,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/dump-probe-observation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/dump-readback-observation-2026-10-12.json",
+      "blob": "0b75ea8baa7d093f8bfacd6f07a8a53b9c61c2e7",
+      "bytes": 2015,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/dump-readback-observation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/dump-source-contract.json",
+      "blob": "2b5f4d5a373d1fa1c8949b8f49d8ad77aabb8acf",
+      "bytes": 626,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/dump-source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/dump-source-validation.json",
+      "blob": "51b21c776b90010296a8c52559164a84e933926d",
+      "bytes": 1865,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/dump-source-validation.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/generate.py",
+      "blob": "8d98be2e27286131b2b33cb08a49f9244eb16863",
+      "bytes": 7824,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/generate.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/h1-xsurface-reviewed.patch",
+      "blob": "52b94f83b1cf445a4d71532ce628ef1d4c605f44",
+      "bytes": 2839,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/h1-xsurface-reviewed.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/inspect_dump.py",
+      "blob": "712fbd9ca0cd526be4745ab8bd7b76b54a69cefb",
+      "bytes": 8268,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/inspect_dump.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/inspect_fixture.py",
+      "blob": "c558fcc8174bc5c79a689660b8d8afdb53ad14d9",
+      "bytes": 8927,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/inspect_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native-compile-attempt-2026-10-12.json",
+      "blob": "4aa097e2cb70d99250a236eda482d935a11cae87",
+      "bytes": 1948,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native-compile-attempt-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native-compiler-closure-validation.json",
+      "blob": "525b6c0c21a02f4dfb56b7126059a387d7547739",
+      "bytes": 1613,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native-compiler-closure-validation.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native-observation-2026-10-12.json",
+      "blob": "9f514dc985e7cd9546111a2282ddd7f81bf4a130",
+      "bytes": 5117,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native-observation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native-preparation-validation.json",
+      "blob": "8377bd42f9858e54728118a741110077db92a502",
+      "bytes": 4231,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native-preparation-validation.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native-runner-validation.json",
+      "blob": "c5bada83ac854e11de51d2e512d70849cf851d9a",
+      "bytes": 1698,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native-runner-validation.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native-source-contract.json",
+      "blob": "b2b19b6e7165cef701bd6848049ab19ff9ce9bf8",
+      "bytes": 2630,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native-source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native_dump_adapter.inc",
+      "blob": "357e1ca9cd03a169eebc4a64cef7ab8ec5c41979",
+      "bytes": 5632,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native_dump_adapter.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/native_probe.cpp",
+      "blob": "2da279ef9ac8efe097e873f788ed40b82db6033b",
+      "bytes": 13048,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/native_probe.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/plan_native.py",
+      "blob": "d55eef8c8ac66fe4cc6f2ee6cf76787b1157e336",
+      "bytes": 8982,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/plan_native.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/prepare_dump.py",
+      "blob": "6310bb6233c57f616f2da0a60a4ac736b289b2bf",
+      "bytes": 6038,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/prepare_dump.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/prepare_native.py",
+      "blob": "06b3c81c780cf36e7a915db7290b33b2f2ba3ce3",
+      "bytes": 14470,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/prepare_native.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/source-contract.json",
+      "blob": "cd06839fb36dde85e3a557a61aac7e6e96177bde",
+      "bytes": 1665,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/test_dump.py",
+      "blob": "d38378f0d0e1dd9f22e447420e387f9798f78147",
+      "bytes": 10615,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/test_dump.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/test_fixture.py",
+      "blob": "42263b2aed8e3e928d3eb73a3b6dedb5b6f5db55",
+      "bytes": 5181,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/test_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/test_native_preparation.py",
+      "blob": "9862715cf210a78c118b8189c99134f040d0e555",
+      "bytes": 10897,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/test_native_preparation.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/h1-fixture/validation.json",
+      "blob": "950fccd947d9b0e7b8339aca2dd5144b7fc9c960",
+      "bytes": 901,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/h1-fixture/validation.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/.gitattributes",
+      "blob": "aa6b1ad55b96fcffcb4428060ceaaa111cc8f17a",
+      "bytes": 315,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/Build-FullZoneTool.ps1",
+      "blob": "6a3d7ae4e64cabfff303ddb0aa09cd20537a62a3",
+      "bytes": 9602,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/Build-FullZoneTool.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/BuildJob.cs",
+      "blob": "55240dfeff4ffbcc70ad92c7165b77516a78ab1c",
+      "bytes": 6224,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/BuildJob.cs"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/blend_bridge.py",
+      "blob": "e25aca3ed0887dbafc61644c81c38220c2ee4f5d",
+      "bytes": 8406,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/blend_bridge.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/finalize_full_build.py",
+      "blob": "fd279cf0cb75d13873395f05b2a0018beca0987b",
+      "bytes": 4338,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/finalize_full_build.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/full-build-plan-2026-10-12.json",
+      "blob": "7c979f18ff846f42b4516631f38e9baaa584c44d",
+      "bytes": 3235,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/full-build-plan-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/full-build-validation-2026-10-12.json",
+      "blob": "9c94b35376f061cce5e5e2d84e542e1841896842",
+      "bytes": 4164,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/full-build-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/map-layout-source.json",
+      "blob": "4f7649ced6af621adda2b8d1d46e544cfad1bc1a",
+      "bytes": 1194,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/map-layout-source.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/native-preparation-2026-10-12.json",
+      "blob": "13a61edc22b45e6de8183e2428b73db2f8d9a4de",
+      "bytes": 1524,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/native-preparation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/native-validation-2026-10-12.json",
+      "blob": "1f745e79f02be2d2152c3e6cfef5e2431634c601",
+      "bytes": 5768,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/native-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/native_fixture.cpp",
+      "blob": "e364be56ff2575aaa627f793ca5219406b0f407e",
+      "bytes": 7080,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/native_fixture.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/packed-frame-validation-2026-10-12.json",
+      "blob": "f201b0d0c3abf5dceeb31a6a26f552ba83ce60cd",
+      "bytes": 2894,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/packed-frame-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/packed_frame_audit.py",
+      "blob": "c26203af75c5f446eef94c5f04a30d59110bbe0f",
+      "bytes": 7690,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/packed_frame_audit.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/prepare_full_build.py",
+      "blob": "73226d229ea267e58d4e1a461b28586878c60e43",
+      "bytes": 9693,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/prepare_full_build.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/prepare_native_fixture.py",
+      "blob": "122cfc9b7e7f71d3c84c75e2839895b1962c93c4",
+      "bytes": 4754,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/prepare_native_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/prepare_zonetool_patch.py",
+      "blob": "21b94f54abea9751b8f332269f1e3b6f29807e32",
+      "bytes": 5421,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/prepare_zonetool_patch.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/retail-frame-probe-2026-10-12.json",
+      "blob": "80963e8a1a3c96f7240caeab3007dbc34dac8e2e",
+      "bytes": 4323,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/retail-frame-probe-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/retail_frame_probe.py",
+      "blob": "6817664468ff3b00487880dc5b2dc74ab6de5474",
+      "bytes": 5907,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/retail_frame_probe.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/test_blend_bridge.py",
+      "blob": "d1bad289b580e3f064d23ab195492dccff61be57",
+      "bytes": 7305,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/test_blend_bridge.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/test_packed_frame_audit.py",
+      "blob": "9dc9602170a17c094f8036de0cb0ed1a01466d5b",
+      "bytes": 2194,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/test_packed_frame_audit.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/validation-2026-10-12.json",
+      "blob": "a9aa01197a6036bf5e094d92a08d02c8bf17c247",
+      "bytes": 7033,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/verify_full_overlay.py",
+      "blob": "464525610d05f54a94600baec39e6f900f1349b3",
+      "bytes": 3509,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/verify_full_overlay.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/verify_retained_two_bone.py",
+      "blob": "e104ea781ad1d914da057dda71cd6b4b7a1675f0",
+      "bytes": 3996,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/verify_retained_two_bone.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/verify_zonetool_patch.py",
+      "blob": "d603861df221f8665a33ccfdbebee54604bc8cb2",
+      "bytes": 1838,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/verify_zonetool_patch.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/zonetool-fab9358-h1-map-layout.patch",
+      "blob": "334d0e29b46c963d3cb381662d1120930a8b73e6",
+      "bytes": 2565,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/zonetool-fab9358-h1-map-layout.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/model/zonetool-fab9358-h1-xsurface.patch",
+      "blob": "52b94f83b1cf445a4d71532ce628ef1d4c605f44",
+      "bytes": 2839,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/model/zonetool-fab9358-h1-xsurface.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/COMPLETE-PAK-SCOPE.md",
+      "blob": "7c8badcba3934de5d7c0d471e204dd45a88636b5",
+      "bytes": 18007,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/COMPLETE-PAK-SCOPE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/DIAGNOSTIC-PLAN.md",
+      "blob": "cd21f44bd47c8fa895e81bb982fce644b828fc9c",
+      "bytes": 29398,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/DIAGNOSTIC-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/README.md",
+      "blob": "5f4263dd6897b761226d3c1a956d4f83db708202",
+      "bytes": 37338,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Recipient.Core.ps1",
+      "blob": "53bbe6505a3085a8004db0bb12b32b31d9ffa58c",
+      "bytes": 12919,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Recipient.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Recipient.Light.ps1",
+      "blob": "467685a6c00e5a2c09824a02ae1732e8a33b4219",
+      "bytes": 5464,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Recipient.Light.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Recipient.Stock.ps1",
+      "blob": "b67021e12ef9f4d98aa6cb9df38ce1035ad0965c",
+      "bytes": 11078,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Recipient.Stock.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Run-RecipientClosure.ps1",
+      "blob": "1dacc06f1bfbff5df2aec9d8b3a1434f267498fc",
+      "bytes": 11882,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Run-RecipientClosure.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/SCRIPT-INDEX-ANALYSIS.md",
+      "blob": "280a6d9ac65ab987f5651b25c0c355ac03b01cf4",
+      "bytes": 9994,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/SCRIPT-INDEX-ANALYSIS.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/SCRIPT-PLAN.md",
+      "blob": "597717984310829d5627192f34260aec5106d68a",
+      "bytes": 10810,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/SCRIPT-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/STOCK-PROFILE.md",
+      "blob": "13fbaf781268d0e5dd4255723da583f4470af4a0",
+      "bytes": 15048,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/STOCK-PROFILE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Test-Recipient.ps1",
+      "blob": "516ac21a2740471aa627ed6fa794916452f40af7",
+      "bytes": 12252,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Test-Recipient.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Test-RecipientCompleteStock.ps1",
+      "blob": "0459e30587058cdedc10fce7ea5ffa744bb3606a",
+      "bytes": 8271,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Test-RecipientCompleteStock.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Test-RecipientInventorySnapshot.ps1",
+      "blob": "79dfbaab31b2f94b1b35a822f53f8073755394f3",
+      "bytes": 7738,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Test-RecipientInventorySnapshot.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Test-RecipientLight.ps1",
+      "blob": "141fa5eb4f67a0dffccd03b11a0c0872c744a0a9",
+      "bytes": 2828,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Test-RecipientLight.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/Test-RecipientStock.ps1",
+      "blob": "c73b999c4f53fd8e5b6ac2237f890ce34afdb3a9",
+      "bytes": 10098,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/Test-RecipientStock.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/asset-pak-scope-proposal-2026-10-12.json",
+      "blob": "2a139fa379e3b642089e7a99799ed85928160f72",
+      "bytes": 12037,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/asset-pak-scope-proposal-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/bootstrap-comparison-2026-10-12.json",
+      "blob": "2806936c47a0afed3f3dbff95ab7bea80db7630d",
+      "bytes": 4324,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/bootstrap-comparison-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/check_drain_visibility.py",
+      "blob": "0b737341e9d43c2cca1a2b254a93744e2cf7dbd7",
+      "bytes": 3341,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/check_drain_visibility.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/check_recipient_streams.py",
+      "blob": "c0218daeb00dfe192b1ea96c7c5cb9c3fb56a386",
+      "bytes": 17945,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/check_recipient_streams.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-2026-10-12.json",
+      "blob": "233ada936ccaa982d1adee0e9cc06c85064cc3c3",
+      "bytes": 5037,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-b-2026-10-12.json",
+      "blob": "942f6eb8e77441bec08e75bc12c97fc9ee213c9d",
+      "bytes": 8380,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-b-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-c-2026-10-12.json",
+      "blob": "92f7506e50b8a42a0c522a5077b57f4f540af9bd",
+      "bytes": 6378,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-c-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-d-2026-10-12.json",
+      "blob": "5c4881d5667bd01f5b0f00c1655b6a77634442ab",
+      "bytes": 7628,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-d-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-e2-2026-10-12.json",
+      "blob": "00f6ce143bcbd93708d407aa22544f6d3ec9fc8e",
+      "bytes": 9718,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-e2-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-f-2026-10-12.json",
+      "blob": "12662c090dea7fd0c76dbc05cb9af10153aca2a8",
+      "bytes": 10537,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-f-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-h-2026-10-12.json",
+      "blob": "f43fe22d003ad8ab9fdce0d4edb6bf5ef25a8f53",
+      "bytes": 8477,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-h-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/native-validation-i-2026-10-12.json",
+      "blob": "d6c0db3bb0ed62665967751eedd1d9040ce48fcf",
+      "bytes": 12794,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/native-validation-i-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/provider-pins.json",
+      "blob": "62d8f243c41547d18f6b01e4740060713b1509f0",
+      "bytes": 1313,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/provider-pins.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/recipient_contract.py",
+      "blob": "b037abc3b62c9e3d74c57a69699c89d666654db5",
+      "bytes": 6286,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/recipient_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/recipient_dialog.py",
+      "blob": "76c4f38f9d3e3b473f5831c4ede65ae257bfbae8",
+      "bytes": 11105,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/recipient_dialog.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/recipient_phase.py",
+      "blob": "189b430dd2c451b69beb09f3d141bd3e4ebc9722",
+      "bytes": 10992,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/recipient_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/.gitattributes",
+      "blob": "c6f5489e2510df22a7327be0d540ef900f187a06",
+      "bytes": 161,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/README.md",
+      "blob": "2921332b0d151aac8f3f6f7331f33569ac04ea12",
+      "bytes": 9959,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/build-proposal.json",
+      "blob": "f6ada0c628d20e4ac4e7b397113ea176c42ccfda",
+      "bytes": 2547,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/build-proposal.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/native_cli.inc",
+      "blob": "375a3a73b1649c470bffb154a53b493a4aa71853",
+      "bytes": 936,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/native_cli.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/native_observer.inc",
+      "blob": "d35612b5fca66d9a65acf8470d3e64edca428a46",
+      "bytes": 2772,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/native_observer.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/prepare_observer.py",
+      "blob": "76e5fae0cdc582604de2403aabc4eb2a3fb96950",
+      "bytes": 3137,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/prepare_observer.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/recipient_script_names.hpp",
+      "blob": "aa6864b8570f9fa973a3e753cf440457005c9e8f",
+      "bytes": 7569,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/recipient_script_names.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/script_name_contract.py",
+      "blob": "cb8d5ea5242a0c6c3a77a5c334239230ba3b0b54",
+      "bytes": 5578,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/script_name_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/source-contract.json",
+      "blob": "b14091c62ebdf24b56ff4ef72612593b33320583",
+      "bytes": 2637,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/test_prepare_observer.py",
+      "blob": "b71e213a4bd72dd6e628988a61990de37dd8d1bf",
+      "bytes": 4034,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/test_prepare_observer.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/test_recipient_script_names.cpp",
+      "blob": "3b8503b0840004716b887f237460015c38232142",
+      "bytes": 4988,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/test_recipient_script_names.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/test_script_name_contract.py",
+      "blob": "6886162def371af5d08e4c2ae0c2de7b6c322f1d",
+      "bytes": 6050,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/test_script_name_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/script-names/zonetool-fab9358-script-names.patch",
+      "blob": "5a9619d6a2504184deb7312d06f91d38dfbae065",
+      "bytes": 4510,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/script-names/zonetool-fab9358-script-names.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/test_recipient.py",
+      "blob": "b3a59b67c15c2cfa59d245c302fc19c33b671dbd",
+      "bytes": 5996,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/test_recipient.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/test_recipient_dialog.py",
+      "blob": "ba2687d7f3df16526ecb93e86c96d0965e9e88f7",
+      "bytes": 17607,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/test_recipient_dialog.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/recipient/test_recipient_snapshot.py",
+      "blob": "7e91ba3becbfce8a84742f4af54a0c52b88a6569",
+      "bytes": 8143,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/recipient/test_recipient_snapshot.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/CDB-DIAGNOSTIC-PLAN.md",
+      "blob": "0e3e5ac3ec62910d7e7ae5c58fd05719a1ca5cb7",
+      "bytes": 5061,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/CDB-DIAGNOSTIC-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/CDB-FIXTURE-2026-10-12-A.md",
+      "blob": "7a5647c6568dbca9d297dbb556ff996b4a83ec17",
+      "bytes": 5404,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/CDB-FIXTURE-2026-10-12-A.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/CDB-FIXTURE-2026-10-12-B.md",
+      "blob": "e1429930a742bafcbccc4ae9be0d0b864e4d2b4f",
+      "bytes": 5153,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/CDB-FIXTURE-2026-10-12-B.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/OWNED-CREATION-PLAN.md",
+      "blob": "c72cc7599a5e67b64c8bcb697e257078c8d5afe6",
+      "bytes": 8766,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/OWNED-CREATION-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/README.md",
+      "blob": "0f62815d25775d4ccdb0e43299e9c01b3206e32a",
+      "bytes": 16665,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/RESOURCE-PROFILES.md",
+      "blob": "0ac63c8dc8b1a74880aeb81ff9981aaed72051eb",
+      "bytes": 6100,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/RESOURCE-PROFILES.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/Run-WatchFixture.ps1",
+      "blob": "6b9aece50f541f6c5c3feed5f892beb6f30c5d8c",
+      "bytes": 16234,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/Run-WatchFixture.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/SUPERVISION.md",
+      "blob": "4399e42285d7b80f17d63742883d6e86015b17ee",
+      "bytes": 12967,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/SUPERVISION.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/Test-WatchMembership.ps1",
+      "blob": "0bdea55440fab97acd9443085f464032b5992608",
+      "bytes": 4094,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/Test-WatchMembership.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/Test-WatchSourceBindings.ps1",
+      "blob": "07f27a3afef5741842fdd1c022b52ca09117e925",
+      "bytes": 5783,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/Test-WatchSourceBindings.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/Test-Watchpoint.ps1",
+      "blob": "3ac7e1989e9b62bd234727cc7b2e565bdbfff368",
+      "bytes": 16467,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/Test-Watchpoint.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/Watchpoint.Core.ps1",
+      "blob": "b967aa365b37d70f954f738cc7083ecd812abd4d",
+      "bytes": 16616,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/Watchpoint.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/WatchpointDeadline.cs",
+      "blob": "613e80d80f564ce95caefca53571a94069d3e207",
+      "bytes": 4002,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/WatchpointDeadline.cs"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/capture.py",
+      "blob": "0fb14d7c561a5343702afb63503dc341deeaef1c",
+      "bytes": 13529,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/capture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/cdb_transport.py",
+      "blob": "dbb5746db726ee078ff21afdef5662fdafd349e9",
+      "bytes": 27128,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/cdb_transport.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/context.template.json",
+      "blob": "ea82e44bd4b54df8a7c749816592b00b66b5e275",
+      "bytes": 701,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/context.template.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/debug_fixture.py",
+      "blob": "a064b6c82e3374f3f650815cc2a71abb508f0ae6",
+      "bytes": 4543,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/debug_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/fixture-providers.json",
+      "blob": "5a3beb2e17467c43483f71ff9aa9584971b97065",
+      "bytes": 904,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/fixture-providers.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/owned_fixture.py",
+      "blob": "f8faafa4d88e8e243ca8f3df19a6c092f5e48489",
+      "bytes": 7698,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/owned_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/symbol_identity.py",
+      "blob": "01d22a3a964467271119271af0f2c025faf0f9c4",
+      "bytes": 7273,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/symbol_identity.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/test_cdb_transport.py",
+      "blob": "dd9f455066442c4531ab0b4beb0d892aa4b9be0a",
+      "bytes": 15322,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/test_cdb_transport.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/test_job_diagnostics.py",
+      "blob": "23f6a95649493a1580144e4acf0cd6fbfd87c930",
+      "bytes": 8362,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/test_job_diagnostics.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/test_owned_fixture.py",
+      "blob": "d81a602b43388e2e22adac07e7e7bf8e5090d693",
+      "bytes": 6632,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/test_owned_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/rig-abi/test_rig_abi.py",
+      "blob": "45e296a42e1428f40716529c56d97331b8a776b2",
+      "bytes": 12206,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/rig-abi/test_rig_abi.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/.gitattributes",
+      "blob": "1bd64fa4ab82748d20e90cb4f546935e487e5b31",
+      "bytes": 158,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/Build-MaterialV2.ps1",
+      "blob": "98f00633e93ad775831ef4dd1a16dd4ef76ebb13",
+      "bytes": 18993,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/Build-MaterialV2.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/Diagnose-MaterialV2Compile.ps1",
+      "blob": "6db7192b1b63d9ad7e6a61813ca4119dc7cd1fc1",
+      "bytes": 9159,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/Diagnose-MaterialV2Compile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1",
+      "blob": "067e204db43d7c00d0ba9c9fa13b511a5135b208",
+      "bytes": 5054,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1",
+      "blob": "d71b5edd82b25d215d49a9cc4aabe165d3e5730b",
+      "bytes": 9284,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs",
+      "blob": "4aa7acadf457ccb3c3009a845451ec650a9d12e3",
+      "bytes": 7009,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/MaterialV2.JobMembers.cs"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/inspect_content.py",
+      "blob": "ae18062e6b523120f17ab41e3f90e610c6c5a745",
+      "bytes": 22546,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/inspect_content.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/material_v2_checks.py",
+      "blob": "52ffd5d12479991992caecc3d1a651d212dbb69e",
+      "bytes": 7186,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/material_v2_checks.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/material_v2_helpers.json",
+      "blob": "01e212ea9bac51122de6e877579b129b43f09ee3",
+      "bytes": 868,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/material_v2_helpers.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/material_v2_phase.py",
+      "blob": "21fbe4ff74159d44d60221e667d28787fb7f378a",
+      "bytes": 4937,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/material_v2_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/prepare_beacon.py",
+      "blob": "ec96ec4a9eee7e815159f0e819f8f4f34aed87ea",
+      "bytes": 5061,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/prepare_beacon.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/prepare_material_v2.py",
+      "blob": "0cc08d3c633618dc77639484a744bd72562f679f",
+      "bytes": 11465,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/prepare_material_v2.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/prepare_reader_patch.py",
+      "blob": "ab7a3a7691b3be3089d450a6bf4b27b8399ece24",
+      "bytes": 7933,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/prepare_reader_patch.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/Build-SoundFF.ps1",
+      "blob": "68e303db90cc6fff057d886f9daef182065c9f8f",
+      "bytes": 1176,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/Build-SoundFF.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/CODEC-DUMP-F-PLAN.md",
+      "blob": "de944e697f381288fd96f91d8a5737256280c587",
+      "bytes": 7299,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/CODEC-DUMP-F-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/CODEC-DUMP-F-RESULT.md",
+      "blob": "ac316f04422e5b6734bda0d33ad52b1858c5d6cf",
+      "bytes": 3863,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/CODEC-DUMP-F-RESULT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/CODEC-DUMP-ONLY.md",
+      "blob": "e6db0b283394761f208eadef9b7bc215ae119e49",
+      "bytes": 3146,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/CODEC-DUMP-ONLY.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/DUMP-ONLY.md",
+      "blob": "2fabab819d712fcd30b803c4287489d9372ce6d8",
+      "bytes": 3351,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/DUMP-ONLY.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/Invoke-SoundCodec.ps1",
+      "blob": "4a1e153454ef070482125c38efba810345e67154",
+      "bytes": 23059,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/Invoke-SoundCodec.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/Prepare-SoundFF.ps1",
+      "blob": "2666d6ea93e19a770d531c1c8181bcb78ae46bf3",
+      "bytes": 12030,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/Prepare-SoundFF.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/README.md",
+      "blob": "ab16b297928c9cdd4641fd0414f84bf8ee92a4fd",
+      "bytes": 35523,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/RUNTIME-LOOKUP-PLAN.md",
+      "blob": "e302fc9818388f0dbc255d5fa4a5bdbf73b05549",
+      "bytes": 17035,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/RUNTIME-LOOKUP-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/SAB-FF-CANDIDATE-F.md",
+      "blob": "77344729cd1f1c682310f17ddf02953286d46df0",
+      "bytes": 5757,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/SAB-FF-CANDIDATE-F.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/SAB-FF-F-RESULT.md",
+      "blob": "fe5b777bbb8e658b863fc0c4064f5aa489e96dfb",
+      "bytes": 5677,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/SAB-FF-F-RESULT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/STANDARD-MOD-PLAN.md",
+      "blob": "d48c9b2e5621da43e517929511e8a58bb42e596b",
+      "bytes": 6613,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/STANDARD-MOD-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs",
+      "blob": "ee757d9a88255c0eed5e5c972b97f38b2a4a041d",
+      "bytes": 6999,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/SoundFF.Core.ps1",
+      "blob": "806d257a82940bc15e9d9983bf6afcc9f8598eea",
+      "bytes": 50427,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/SoundFF.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/codec-checkpoint-2026-10-12.json",
+      "blob": "53051e42e5b5483af2c41b07c93d39f779fb5190",
+      "bytes": 2441,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/codec-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/codec_worker.py",
+      "blob": "e45ce9a2850c60a3678624e817d6ed9d58046aa1",
+      "bytes": 8717,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/codec_worker.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/dump-codec-checkpoint-2026-10-12.json",
+      "blob": "29491307d7ece7500a3c9bdbf4a9d3d6bc72ab10",
+      "bytes": 5875,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/dump-codec-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/dump-only-checkpoint-2026-10-12.json",
+      "blob": "7293671fdfb2ca474fc488f54911014c84e7f519",
+      "bytes": 4890,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/dump-only-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/dump-only-codec-checkpoint-2026-10-12.json",
+      "blob": "0806762d541249fa129b64d5cecf66e6549326e8",
+      "bytes": 7023,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/dump-only-codec-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/BUILD-E-RESULT.md",
+      "blob": "5d7435cf0247ea9545bcfbde37c735ecc5fa230a",
+      "bytes": 3916,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/BUILD-E-RESULT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/BUILD-F-RESULT.md",
+      "blob": "9cc68339a11198a346c699b2284965709bb76540",
+      "bytes": 4636,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/BUILD-F-RESULT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/BUILD-PLAN.md",
+      "blob": "b326c87369930810e3e5db5e6db16cd137ec03b7",
+      "bytes": 13487,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/BUILD-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/Build-ChecksumCandidate.ps1",
+      "blob": "3c8fff96ae8e687430eac60bf973e5268bfc3dd9",
+      "bytes": 6374,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/Build-ChecksumCandidate.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/BuildCandidate.Core.ps1",
+      "blob": "4836bf46eb8962e57cdf4cf7132ab42cc74c7b89",
+      "bytes": 21745,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/BuildCandidate.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/BuildReceipt.Core.ps1",
+      "blob": "19f61b47a8c9edd628ce069c60fcb8b46e0e795d",
+      "bytes": 10178,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/BuildReceipt.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-ARGUMENT-FIX.md",
+      "blob": "f7f031acabc996d55cef032e9fd22a4f1e03f06b",
+      "bytes": 5689,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-ARGUMENT-FIX.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-C.md",
+      "blob": "646bf54f0e1d2144c3a21c5f6bffd5b4a6cd86fd",
+      "bytes": 2772,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-C.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-INCLUDE-ORDER.md",
+      "blob": "0d075f02fc531eefdd7e4e125c2b9af8a20917d8",
+      "bytes": 4777,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-INCLUDE-ORDER.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-PROFILE.md",
+      "blob": "daff6675cd3a59ec276db75f0521b5f359201eb9",
+      "bytes": 6523,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-PROFILE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-DUMP-METADATA-PROPOSAL.md",
+      "blob": "91e54ea80333d6fcc3330bcac7a6728acdbacb3e",
+      "bytes": 9512,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-DUMP-METADATA-PROPOSAL.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/FlacBuild.Profile.ps1",
+      "blob": "4150c48c72cd5b151342de6ada57fefaf7ed4f9a",
+      "bytes": 6481,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/FlacBuild.Profile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/INPUT-SEALING.md",
+      "blob": "a5ac12ca02774806c61964aa17152ebaa74c2234",
+      "bytes": 6928,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/INPUT-SEALING.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/README.md",
+      "blob": "301eaebb2ff76c3868e55246ca91ff5a9e6b3f83",
+      "bytes": 14681,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/RESPONSE-REVISION.md",
+      "blob": "2500f1f8731d0b9a82ce626fb9a51c5d105bf0e9",
+      "bytes": 4978,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/RESPONSE-REVISION.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/SDK-RESOURCE-TOOLS.md",
+      "blob": "b3b6eda4555dde233ef930e445fcde59190cd1cf",
+      "bytes": 4567,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/SDK-RESOURCE-TOOLS.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/Seal-ChecksumInputs.ps1",
+      "blob": "11cef1e98c95cc4db5890fcdc03a59d02252c0f1",
+      "bytes": 3846,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/Seal-ChecksumInputs.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/SealInputs.Core.ps1",
+      "blob": "7e3883022323fd6af63a4821b5253ad92d632085",
+      "bytes": 10026,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/SealInputs.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-checkpoint-2026-10-12.json",
+      "blob": "2101d8fbaddaa55e705cfab3d6f19ce272ff59e4",
+      "bytes": 2577,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-e-checkpoint-2026-10-12.json",
+      "blob": "ecaded73638ce1660c800ce4338f659fc6dead1e",
+      "bytes": 14571,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-e-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-f-checkpoint-2026-10-12.json",
+      "blob": "50012355248b204853ed0c407a63cc2e0d9526b5",
+      "bytes": 24219,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-f-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-proposal.json",
+      "blob": "8dab9db2d1c8f44f097fefe39fc301147299bccc",
+      "bytes": 3369,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/build-proposal.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/build_contract.py",
+      "blob": "66c72c332753749d85f4e4943c068e6eaf619098",
+      "bytes": 13197,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/build_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/build_worker.py",
+      "blob": "ee3b7763c2a4754465bfa6471564307d75917b87",
+      "bytes": 12964,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/build_worker.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/checksum_probe.cpp",
+      "blob": "446987703bff985d33f7d3e0876e35f08ed59909",
+      "bytes": 3837,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/checksum_probe.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/.gitattributes",
+      "blob": "aaad1bebe2fee8afe26a319f132503c10b811190",
+      "bytes": 157,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/README.md",
+      "blob": "43973136d1fe2254c15d3a111677dfc267306722",
+      "bytes": 9010,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/flac_dump_probe.cpp",
+      "blob": "5a5a53af2626aa7413a24a82be55facab05f60ca",
+      "bytes": 2226,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/flac_dump_probe.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/flac_dump_vectors.py",
+      "blob": "e2d8cf571cb62534f01cbd181127b026b8120b04",
+      "bytes": 7456,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/flac_dump_vectors.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/prepare_flac_dump_source.py",
+      "blob": "6661591271e4863b9b7cd9f2397e4922127af70a",
+      "bytes": 5419,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/prepare_flac_dump_source.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/sound_flac_metadata.hpp",
+      "blob": "cc842979ab19c549257b07b853021b7211fbae41",
+      "bytes": 6337,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/sound_flac_metadata.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/source-checkpoint.json",
+      "blob": "18964d3edc341ca9f50e23ba68df78841217897b",
+      "bytes": 2876,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/source-checkpoint.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/test_flac_dump_source.py",
+      "blob": "990076e269cbaf0088e4304593c0dfeac671f576",
+      "bytes": 6390,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/test_flac_dump_source.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/zonetool-fab9358-flac-dump.patch",
+      "blob": "a1149722696547405354c3b72ced59f0d8b73558",
+      "bytes": 5572,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac-dump/zonetool-fab9358-flac-dump.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac_build_profile.py",
+      "blob": "0dfac6b3f478f19457ce676169881d9ff83bc2f1",
+      "bytes": 7323,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/flac_build_profile.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/input-seal-checkpoint-2026-10-12.json",
+      "blob": "51e5ec8c0ed0ab2ea473e39c3955e94a1eb3a84f",
+      "bytes": 1640,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/input-seal-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/prepare_build_plan.py",
+      "blob": "dd63a4ffd906ed0d6903e00ca993ad95148f2b87",
+      "bytes": 8887,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/prepare_build_plan.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/prepare_flac_build_plan.py",
+      "blob": "5a6535b36411f5ead715f3698950ec1a2fcadb2d",
+      "bytes": 6632,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/prepare_flac_build_plan.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/response_revision.py",
+      "blob": "004d99799878b288b85e95a88165b99cd06e69ab",
+      "bytes": 8086,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/response_revision.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/source-contract.json",
+      "blob": "2b2006f48b743bad50a11f14aa2fd6daaac57398",
+      "bytes": 2173,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_contract.py",
+      "blob": "d3cd7df8c9a27077f8fff0896996153a024b5dfb",
+      "bytes": 4581,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_entry_guards.ps1",
+      "blob": "3a8caf2195f62accef52ad258163f60c3cdbee10",
+      "bytes": 7090,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_entry_guards.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_lifecycle.ps1",
+      "blob": "603ebb1fd330154b0e121027f472e67e739e06ca",
+      "bytes": 12268,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_lifecycle.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_quarantine.ps1",
+      "blob": "287d23fb77e6c95696177c26046ab9b6f99fae11",
+      "bytes": 4625,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_quarantine.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_receipt.ps1",
+      "blob": "1b5919e2c6eaa6f114bc5cc32f69e813ca48a109",
+      "bytes": 12347,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_receipt.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_worker.py",
+      "blob": "210513a7043c81d5bccaa54ee6b7a8f797922c8f",
+      "bytes": 5022,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_build_worker.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_flac_build_profile.py",
+      "blob": "64e37908afc78ef0000053067f87e399539b241a",
+      "bytes": 11206,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_flac_build_profile.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_flac_include_order.ps1",
+      "blob": "baba1f9879389aa8f814ad013ce57fca88e71e56",
+      "bytes": 4107,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_flac_include_order.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_response_plan.ps1",
+      "blob": "9df5731105ef4f0763d1f17fe42d8635121e7c40",
+      "bytes": 3204,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_response_plan.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_response_revision.py",
+      "blob": "0c334a5ac36f91b03aae29a071088f66d8cf4e76",
+      "bytes": 4031,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_response_revision.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_sdk_plan.ps1",
+      "blob": "095b57d2cc0667e634928ab374ec3af55e2ac41a",
+      "bytes": 2310,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_sdk_plan.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_sdk_tools.py",
+      "blob": "5289fc27cde5e0a4cf7e6bf8455223f9d38bc04b",
+      "bytes": 3863,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_sdk_tools.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_seal_entry_guards.ps1",
+      "blob": "b82221670d5fcb95adbede766ed3eb342ddb28f8",
+      "bytes": 6180,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_seal_entry_guards.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_seal_inputs.ps1",
+      "blob": "8b3e14bb717f13c4cecd9bbc6e559eb133804e3b",
+      "bytes": 6285,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/test_seal_inputs.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/native-checksum/zonetool-fab9358-bytewise-source-md5.patch",
+      "blob": "003e32b99596b41905bfd5af88b34f9e9cc2913a",
+      "bytes": 387,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/native-checksum/zonetool-fab9358-bytewise-source-md5.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/pcm_source.py",
+      "blob": "3b90647c530d0f20580f8fb2b3d576f7db6b65fb",
+      "bytes": 3605,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/pcm_source.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/prepare_sab_ff.py",
+      "blob": "366f5ebd430a47eecbbdb394dd47479931dc4b94",
+      "bytes": 9688,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/prepare_sab_ff.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/prepare_sound.py",
+      "blob": "30aa43c4d9ee1f88f1dce2457ca64fd21d6e7952",
+      "bytes": 10101,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/prepare_sound.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/read_flac.py",
+      "blob": "559be843efb80afc3b7b5d75eaa904bc08916461",
+      "bytes": 4515,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/read_flac.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/read_sab.py",
+      "blob": "d7d7ee3d6b5e6587563804275807e531f13b6729",
+      "bytes": 26408,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/read_sab.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/sab-ff-checkpoint-2026-10-12.json",
+      "blob": "d29401875e5818ac3b9b69515bd23bb90d65dc90",
+      "bytes": 8530,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/sab-ff-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/sab-ff-f-checkpoint-2026-10-12.json",
+      "blob": "b194ed6e8b0ac239f66a6e6701d48ce12cb535e0",
+      "bytes": 23132,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/sab-ff-f-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/sab_contract.json",
+      "blob": "8965a5a5a9e8ae27a03950054f4e48ea377e0d8b",
+      "bytes": 1258,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/sab_contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/sab_ff_helpers.json",
+      "blob": "90a55b9f6a134cd65c48b2f930b03dfd6e74e886",
+      "bytes": 1969,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/sab_ff_helpers.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/sound_ff_phase.py",
+      "blob": "d2f75ce4cb51c15c942e36c0b38430b5a8345c5a",
+      "bytes": 7188,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/sound_ff_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/standard-mod-capacity-b-checkpoint-2026-10-12.json",
+      "blob": "a141ec60d82d090396e0ec09bdb8553e7bccac5f",
+      "bytes": 2928,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/standard-mod-capacity-b-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/standard-mod-capacity-checkpoint-2026-10-12.json",
+      "blob": "c24d75784e36dfba0bfd8ce5ad735b0f3095d980",
+      "bytes": 2859,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/standard-mod-capacity-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/standard-mod/soundbank/community_original_sound_v1.all.json",
+      "blob": "5ad55506c455b9226da1bb1aebf20451dd8ae0e5",
+      "bytes": 554,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/standard-mod/soundbank/community_original_sound_v1.all.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/standard-mod/zone_source/mod.csv",
+      "blob": "6f1b3710e05f5a12fd956570a9e98600d11d3694",
+      "bytes": 42,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/standard-mod/zone_source/mod.csv"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_codec_admission.ps1",
+      "blob": "48901eafc81ba838a420862db86c49013451c0a0",
+      "bytes": 5223,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_codec_admission.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_codec_cleanup.ps1",
+      "blob": "c00801349df73af1bb7d0d4c6b1c2034c8911865",
+      "bytes": 4629,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_codec_cleanup.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_codec_plan.ps1",
+      "blob": "408239214352ee7d60f3f2b3b45cf901c6c12a43",
+      "bytes": 4281,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_codec_plan.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_codec_profiles.ps1",
+      "blob": "446d8d354b00c13c7e4651398a7d823e976076c4",
+      "bytes": 10104,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_codec_profiles.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_codec_worker.py",
+      "blob": "8a840fda7007570e307d3f878c536d39b1800ef0",
+      "bytes": 14401,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_codec_worker.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_dump_only.py",
+      "blob": "5ebbc2ae08aec30c41f77415eefb0cefbb634aca",
+      "bytes": 4539,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_dump_only.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_helper_sources.py",
+      "blob": "2957872dd4ecf4c3d80410247ec6084c98c32c50",
+      "bytes": 5023,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_helper_sources.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_native_checksum.py",
+      "blob": "ae59bf82ca7f9f6a438c33792d37767334ff2f01",
+      "bytes": 5602,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_native_checksum.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sab.py",
+      "blob": "40aaecc96117d3499ef278bfeb0bd030f3721bca",
+      "bytes": 12515,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sab.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sab_ff.py",
+      "blob": "4376817fe68d77efe3e4cbe9dab9fd92a13e8590",
+      "bytes": 10881,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sab_ff.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound.py",
+      "blob": "0cb633eebffd872246bd5ef063b6fcb00672cd43",
+      "bytes": 11301,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_closure.py",
+      "blob": "9932abf5f872294663bba41de6c38890b4200b63",
+      "bytes": 11000,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_closure.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_dump_only.ps1",
+      "blob": "dbf5a34a82a9b5b3057012d1871ca26aadc741a6",
+      "bytes": 6625,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_dump_only.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_accounting.ps1",
+      "blob": "6940862074212d0bf13098b05d41781704130311",
+      "bytes": 8318,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_accounting.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_candidate.ps1",
+      "blob": "4ec5f52b4189d0c194c7714078464d71c4ecf50a",
+      "bytes": 2553,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_candidate.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_deadlines.ps1",
+      "blob": "3bd0be81ecdb0dece84410fcf41efaa592597845",
+      "bytes": 5239,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_deadlines.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_plan.ps1",
+      "blob": "5001588194e1950d5b5e4c0f1c39f7cd6e3369e6",
+      "bytes": 4946,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_plan.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1",
+      "blob": "4bb958f3ff5c3538ded48072725a13b0626055b5",
+      "bytes": 16994,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_job_memory.ps1",
+      "blob": "f305b8ed13fa7f22828375b67d89b4298abfe084",
+      "bytes": 10761,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_job_memory.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_source_projection.ps1",
+      "blob": "98b8b4d7e431b137390f76fb6564706fc7958f12",
+      "bytes": 6774,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_source_projection.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_sound_standard_mod.ps1",
+      "blob": "d22cc745abfd39d50b0f73f8007fc527a4ffcade",
+      "bytes": 6511,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_sound_standard_mod.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/sound/test_standard_mod.py",
+      "blob": "32f6caf3c5ae38962daf7831c9fd67bc49b7416c",
+      "bytes": 6494,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/sound/test_standard_mod.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/source_contract.json",
+      "blob": "f96db80b9fa2abe7d490612972632e54f8f6d24a",
+      "bytes": 4527,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/source_contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/strict-content-sources.patch",
+      "blob": "c3c6dbdc287de556d06918c269d73ca81bea0869",
+      "bytes": 5867,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/strict-content-sources.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/test_material_v2.py",
+      "blob": "49eabcabc188d8c5f81116a0dcc7b6876a89d0ce",
+      "bytes": 4066,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/test_material_v2.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/test_material_v2_adapter.ps1",
+      "blob": "c82b5760230be3d0b3061c30ef9fce033786524b",
+      "bytes": 13910,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/test_material_v2_adapter.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/test_material_v2_adapter.py",
+      "blob": "1b25f6c9dd0c1da3acd751da32970ffe8fb557bc",
+      "bytes": 12260,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/test_material_v2_adapter.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/test_material_v2_compiler.ps1",
+      "blob": "9dd9aee82bf3bff3857b91d5bd91c53b8a7d08f4",
+      "bytes": 6615,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/test_material_v2_compiler.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/test_material_v2_diagnostic.ps1",
+      "blob": "5ddaa17d6d08b72b0c962807a16aebbab5bbe6ff",
+      "bytes": 6257,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/test_material_v2_diagnostic.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/test_pinned_source.py",
+      "blob": "8ecfd7b5b71890ebac528262bdc0e7d3800619d0",
+      "bytes": 6321,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/test_pinned_source.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/surfaces/test_surfaces.py",
+      "blob": "a88f2b0811d90ee55c3f3828ae69967e2d01770d",
+      "bytes": 12041,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/surfaces/test_surfaces.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/.gitattributes",
+      "blob": "0a6c3494ffebbfd23f45b092f052392b7e58f282",
+      "bytes": 199,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/CATALOGUE-PLAN.md",
+      "blob": "5cb7157325b8d1791b027f46867baca742d7e58f",
+      "bytes": 101056,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/CATALOGUE-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/CATALOGUE-TWENTY-2026-10-12.md",
+      "blob": "335450c3185d3329428c796f45f3b5507d888aec",
+      "bytes": 20001,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/CATALOGUE-TWENTY-2026-10-12.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/HOST.md",
+      "blob": "39e9daa5b3ce5edf89607b21f63057cf137c1041",
+      "bytes": 10610,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/HOST.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Invoke-SteamMetadata.ps1",
+      "blob": "7d84379a29cf3781f5ff3299f4976bdf4fd9ea76",
+      "bytes": 26162,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Invoke-SteamMetadata.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Invoke-T7CatalogueHost.ps1",
+      "blob": "33a7573989f9d45fbcf89c84b0ee6dcdfeb9244a",
+      "bytes": 4429,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Invoke-T7CatalogueHost.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/OPAQUE-MANIFEST-PROFILE.md",
+      "blob": "df8d2943cf0fbb246a2cbb80a64631a8f3b22ade",
+      "bytes": 2351,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/OPAQUE-MANIFEST-PROFILE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/PREPATCH-ENVIRONMENT.md",
+      "blob": "e4e8344c7153da0e847be9ada6045f9eac5da107",
+      "bytes": 10224,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/PREPATCH-ENVIRONMENT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/PUBLICATION-RUNTIME-PROFILE.md",
+      "blob": "7ac7e770bdd3c1e8a2a63d685741a232993a3606",
+      "bytes": 4118,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/PUBLICATION-RUNTIME-PROFILE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/QUALIFIED-COLLECTION-V3.md",
+      "blob": "4e8a2aeb875e3cff9cfc21750c02d59185a7d251",
+      "bytes": 6440,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/QUALIFIED-COLLECTION-V3.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Qualify-T7BootstrapGroup.ps1",
+      "blob": "dd6f96512854c5781a2496831309c21928f7dd72",
+      "bytes": 22005,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Qualify-T7BootstrapGroup.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/README.md",
+      "blob": "4c618fe700becaa940b2890374dba7362e6cb439",
+      "bytes": 30539,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/RESIDENT-EXPORT-A.md",
+      "blob": "3eda7dd934109a32a3622b45ce8b23905ef00b78",
+      "bytes": 4749,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/RESIDENT-EXPORT-A.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/RESIDENT-EXPORT-B.md",
+      "blob": "aa99888350fa362effeb19f2d5922eb891f5ed5a",
+      "bytes": 5201,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/RESIDENT-EXPORT-B.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/RESIDENT-EXPORT-PLATFORM.md",
+      "blob": "dabc5f7d406a892bedf01ba4ddbe3b1e538aa32c",
+      "bytes": 5424,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/RESIDENT-EXPORT-PLATFORM.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/RESIDENT-MULTISURFACE-QUALIFICATION.md",
+      "blob": "40159e67fef5b4b599c3af060a4ae1f02816ff4b",
+      "bytes": 6314,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/RESIDENT-MULTISURFACE-QUALIFICATION.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Run-T7Catalogue.ps1",
+      "blob": "1b52f428922b1a6021d06b85a2f01cbea8fd9d5a",
+      "bytes": 14133,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Run-T7Catalogue.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Run-T7Prepatch.ps1",
+      "blob": "14aac46e361e536329956458232fd99cae8e53ab",
+      "bytes": 10101,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Run-T7Prepatch.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/SHARED-QUALIFICATION-V3.md",
+      "blob": "1c99995020b4a64565ba3d8b4131738c6709e050",
+      "bytes": 10119,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/SHARED-QUALIFICATION-V3.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/T7Catalogue.Profile.ps1",
+      "blob": "1fa481d4de58de894395c1aaaef3781037eb654b",
+      "bytes": 101891,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/T7Catalogue.Profile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/T7CatalogueHost.Core.ps1",
+      "blob": "27561b27b4fc0e2ff255f959ba2c891d38eeb096",
+      "bytes": 21025,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/T7CatalogueHost.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/T7Prepatch.Profile.ps1",
+      "blob": "01860a90d9dda1bc3fecc083c80b1b84a171e9e5",
+      "bytes": 11884,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/T7Prepatch.Profile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/T7ResidentExport.Profile.ps1",
+      "blob": "f16219d884a80ca5b33a0341390a3f11bd821ba1",
+      "bytes": 41477,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/T7ResidentExport.Profile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-SteamMetadataHost.ps1",
+      "blob": "ce4040f7123b964e067be2a7104f03b06fdcc210",
+      "bytes": 13718,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-SteamMetadataHost.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7BootstrapGroup.ps1",
+      "blob": "b9cc3c7e04587b7e54c884afef3f516213f9da78",
+      "bytes": 29079,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7BootstrapGroup.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7Catalogue.ps1",
+      "blob": "786601e3f211a1b4e10c5af89f20d7533e1c8a12",
+      "bytes": 28691,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7Catalogue.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueBootstrap.ps1",
+      "blob": "c4024fdbbc5dff84957e332f95cafde78af281b8",
+      "bytes": 13232,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueBootstrap.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueBootstraps.ps1",
+      "blob": "da78fbf6b9a5a6dab6ac87dd07c811b274e66e10",
+      "bytes": 33496,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueBootstraps.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueCallers.ps1",
+      "blob": "a8742b97801ef144812e1757745af17fc7459d41",
+      "bytes": 14723,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueCallers.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueExitContext.ps1",
+      "blob": "b2b1bf99a25a9eaaf4fb90e5d992374ca4e50c0a",
+      "bytes": 10704,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueExitContext.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueHost.ps1",
+      "blob": "01392c032008e6b10d82c2effe930118fb2ad8c0",
+      "bytes": 24636,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueHost.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueHostIncident.ps1",
+      "blob": "9ddf76ace4a21f385ae50816dfdcd66a6de516c6",
+      "bytes": 23312,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueHostIncident.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueMain.ps1",
+      "blob": "460a4a2348624762b61197e4e498cbfba883f8e3",
+      "bytes": 5606,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueMain.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueMessage.ps1",
+      "blob": "158bdc7581bdc0fbd085fd133b750b2e0401b786",
+      "bytes": 15407,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueMessage.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueOpaqueManifest.ps1",
+      "blob": "564eaec8fca4a1c83c22853284faa65ae08623a6",
+      "bytes": 12784,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueOpaqueManifest.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CataloguePublication.ps1",
+      "blob": "1b68426d4f02e50cf8bed96d5b13d0a1cde6f402",
+      "bytes": 17974,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CataloguePublication.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueTrace.ps1",
+      "blob": "e236d41bcd9de87473e7984b76d8cf7b99a4b27a",
+      "bytes": 16744,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueTrace.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7Prepatch.ps1",
+      "blob": "fde801233a20ae7bf1db6df63e796d3e501bc5e3",
+      "bytes": 12961,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7Prepatch.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExport.ps1",
+      "blob": "4723ed88fc79e3cf82c0bc25af905d1d29eb1861",
+      "bytes": 28107,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExport.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportDiagnostic.ps1",
+      "blob": "bd5d2a9c2a0178b1f6c6f6a3d0bc4cc2fb2b812b",
+      "bytes": 14420,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportDiagnostic.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportV2.ps1",
+      "blob": "e1cf8022da9e804648b2cd0b877c17fda3d7c6ce",
+      "bytes": 15950,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportV2.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentMultiSurfaceBuild.ps1",
+      "blob": "5276548fe2c02288088cd85880f1b4140a210d8c",
+      "bytes": 19299,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/Test-T7ResidentMultiSurfaceBuild.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/bo3-executable-observation-20261012.json",
+      "blob": "b4d7f501e65a4bf6e12e920febb6785b8c7b1a43",
+      "bytes": 3387,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/bo3-executable-observation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/bo3-executable-selection.json",
+      "blob": "99a9e0ecb74e7e1bb24ba9a0b8b0e41f8c202e65",
+      "bytes": 2110,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/bo3-executable-selection.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/bo3-inventory-20261012.json",
+      "blob": "39a85db86512ff63af06173ea4ba7305a03af395",
+      "bytes": 2206,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/bo3-inventory-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-bootstrap-j-20261012.json",
+      "blob": "f1bf7e4b83b24dd3bcf98cd3844660f99995389f",
+      "bytes": 5683,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-bootstrap-j-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-core-bootstrap-k-20261012.json",
+      "blob": "a816e7a8011807e8ac8c65223ebc36d08d296695",
+      "bytes": 6595,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-core-bootstrap-k-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-core-gfx-preparation-o-20261012.json",
+      "blob": "459317eb5d281dcbf4b5b5f9927eac2f273cece8",
+      "bytes": 4994,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-core-gfx-preparation-o-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-core-gfx-qualified-o-20261012.json",
+      "blob": "441c8f7fa0d10e1c0902d99fc88d22fdc1c4c1ed",
+      "bytes": 5282,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-core-gfx-qualified-o-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-core-patch-preparation-m-20261012.json",
+      "blob": "8885030279027ba83cab9483744dd9f2829ad0ff",
+      "bytes": 5279,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-core-patch-preparation-m-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-core-post-gfx-preparation-q-20261012.json",
+      "blob": "f8154026d8b590b62312bc3b0fde3562f128a76d",
+      "bytes": 6395,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-core-post-gfx-preparation-q-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-core-post-gfx-qualified-q-preparation-20261012.json",
+      "blob": "3e5cc62eba4749aeb560a6c94efa343441da44b1",
+      "bytes": 9550,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-core-post-gfx-qualified-q-preparation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-dispatch-i-20261012.json",
+      "blob": "a9d8c242642467e92c0b7297be1f02a60e7fc880",
+      "bytes": 3283,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-dispatch-i-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-en-core-post-gfx-preparation-p-20261012.json",
+      "blob": "ec73e0f56defe44062daa801ef0aa611b8607451",
+      "bytes": 5476,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-en-core-post-gfx-preparation-p-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-en-core-post-gfx-qualified-p-stopped-20261012.json",
+      "blob": "82bc638c6b2d0f7a11bef10f28f922df6caf9441",
+      "bytes": 5087,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-en-core-post-gfx-qualified-p-stopped-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-preflight-g-20261012.json",
+      "blob": "56492c6606da95bae50c512a20c0a4d1bea3eb18",
+      "bytes": 1850,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-preflight-g-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-20261012.json",
+      "blob": "64e9fda4fd8131ad34254848dcdf84fe67491076",
+      "bytes": 2326,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-b-20261012.json",
+      "blob": "732e03627f7d3ce51195c4c8eb4ecaede856a64e",
+      "bytes": 2479,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-b-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-h-20261012.json",
+      "blob": "5a25513c4172322d5d2d45d7ff04eb804bf000d0",
+      "bytes": 4111,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-h-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-p-corrected-20261012.json",
+      "blob": "b741b4c4bba5ba4653a4924a94f0c4b33f7d169a",
+      "bytes": 6834,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-preparation-p-corrected-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-qualified-collection-l-20261012.json",
+      "blob": "3572cee3893c2fc156df09722a820a63a6207265",
+      "bytes": 8047,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-qualified-collection-l-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-a-20261012.json",
+      "blob": "a85bddcd3878cc5add336f72cd569987f2acc330",
+      "bytes": 3736,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-a-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-b-20261012.json",
+      "blob": "e68251668249ead9cb186d48ac291e0afa23d66f",
+      "bytes": 3853,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-b-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-d-20261012.json",
+      "blob": "18145de357a15cd0f63d75a0bf924f59f7fc0085",
+      "bytes": 5769,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-d-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-e-20261012.json",
+      "blob": "5de9be39a2483d40a319e88f79e325704dd5117d",
+      "bytes": 7409,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-e-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-f-20261012.json",
+      "blob": "51400cce19eedd0c08a956e6b94de2f2a1547d53",
+      "bytes": 9928,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-f-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-i-20261012.json",
+      "blob": "7c82ab5c16853f6e24ddde438ae1df9e843b972d",
+      "bytes": 4797,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-i-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-j-20261012.json",
+      "blob": "25d029c5d6e000f017783a0ee02e2f250f75cb1c",
+      "bytes": 7964,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-j-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-k-20261012.json",
+      "blob": "297641d0f102a47b7679be3cb6e7d22385700eb8",
+      "bytes": 8802,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-k-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-l-20261012.json",
+      "blob": "8fdc1efe2419822413202a622ec3335baf7835e7",
+      "bytes": 8942,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-l-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-m-20261012.json",
+      "blob": "182d868f46009f7d5a5c0f66518775dc53411a26",
+      "bytes": 11502,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-m-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-n-20261012.json",
+      "blob": "31cd06bf57cb8a49481abff99b4c93ef1581d987",
+      "bytes": 12823,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-n-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-o-20261012.json",
+      "blob": "9bcd5a86bc323fcb3af84b2cae6db1642554d2e6",
+      "bytes": 11426,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-o-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-p-20261012.json",
+      "blob": "36c82120ae20747b2a2244777f84e4715c4c0207",
+      "bytes": 11472,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-p-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-q-20261012.json",
+      "blob": "4cc6840f26e4740d2dcc4509aeb919d3518b0543",
+      "bytes": 12027,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/catalogue-runtime-q-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/depot-manifest-observation-20261012.json",
+      "blob": "30f4ef917dfe864abb16978d21fe83c9b0285d08",
+      "bytes": 3065,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/depot-manifest-observation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/depotdownloader-preparation-20261012.json",
+      "blob": "c1a33db2d7f1448de6eebc4464a25e176b3fa710",
+      "bytes": 2097,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/depotdownloader-preparation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/integration-validation-20261012.json",
+      "blob": "3198fb54fb919d0a87b3fb26cc5d8f97c8320faf",
+      "bytes": 1315,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/integration-validation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/prepare_depotdownloader.py",
+      "blob": "32e32434a98187eb38617c1929d64a6ff132af0b",
+      "bytes": 5974,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/prepare_depotdownloader.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/prepatch-environment-20261012.json",
+      "blob": "8faea1ffb5a687f7c6122eccc4fa71c887ea4e12",
+      "bytes": 1666,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/prepatch-environment-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/prepatch-runtime-observation-20261012.json",
+      "blob": "9835d05d3f1eacda490e711796a4c7aa4a5bb56e",
+      "bytes": 3621,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/prepatch-runtime-observation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/source-contract.json",
+      "blob": "ce91023f35699dc166284dcf61c04478444a4f82",
+      "bytes": 3511,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/steamcmd-appinfo-observation-20261012.json",
+      "blob": "9fb4d41fd2693729a9b03a9a1bcca1086e13d41b",
+      "bytes": 4531,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/steamcmd-appinfo-observation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/steamcmd-bootstrap.json",
+      "blob": "23d264a286104b5247817b569cc41dd700a749bb",
+      "bytes": 1404,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/steamcmd-bootstrap.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/steamcmd_metadata_phase.py",
+      "blob": "5a794cb592fa91cc13fee337c5e61d5a40219fb9",
+      "bytes": 7671,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/steamcmd_metadata_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/t7_asset_name.hpp",
+      "blob": "dd1e65c5c5a6c9552c402b1fe8da2a52ebc98cd6",
+      "bytes": 1945,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/t7_asset_name.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/t7_iw7_resident_model.hpp",
+      "blob": "08bc22a386f94d645c1af5af216576455b08cc1d",
+      "bytes": 21290,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/t7_iw7_resident_model.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/test_steamcmd_metadata_phase.py",
+      "blob": "5e47e24065b3d2068da2ddb394c85d83ba621ad4",
+      "bytes": 8169,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/test_steamcmd_metadata_phase.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-bridge/test_t7_asset_name.cpp",
+      "blob": "8f29a7b0c3ddd3a26a24691d2a5096ac7212637b",
+      "bytes": 2170,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-bridge/test_t7_asset_name.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/.gitattributes",
+      "blob": "f4c2a0bf6aa9a4015bedba702d91d7573a68ccd0",
+      "bytes": 258,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-C.md",
+      "blob": "a8361b0031d8bbbb541744082c009526c614f767",
+      "bytes": 11370,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-C.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-D.md",
+      "blob": "d2b6985786061879c81b959ad8e7d48003b87344",
+      "bytes": 10805,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-D.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-PREPARATION-A.md",
+      "blob": "bcbae48a0952750c1f6ecf0be7b386e4e7e6c43f",
+      "bytes": 4451,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-PREPARATION-A.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-PREPARATION-B.md",
+      "blob": "827c89312d57b3bb56fad391f7ce044f89f6b301",
+      "bytes": 4539,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/BUILD-MULTISURFACE-PREPARATION-B.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/BUILD-PLAN.md",
+      "blob": "83a6ff61a1c5756e2c665a1830f1fa6097ba4957",
+      "bytes": 63631,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/BUILD-PLAN.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/BUILD-SURFACE-COUNT-A.md",
+      "blob": "bba7a95fa4abe6ae8a9b28311721183ff5ce764e",
+      "bytes": 7286,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/BUILD-SURFACE-COUNT-A.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/CALLER-F-ANALYSIS.md",
+      "blob": "d41cd6e48f38be6ca035f6579b9810a3373cc4b6",
+      "bytes": 10928,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/CALLER-F-ANALYSIS.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/EXECUTABLE-COMPATIBILITY.md",
+      "blob": "36b56d911a89ea95523cbd4377e3588b45620e69",
+      "bytes": 12830,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/EXECUTABLE-COMPATIBILITY.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/MESSAGE-I-ANALYSIS.md",
+      "blob": "201d3f474d95b617e7d91145830a0692ea1bc12a",
+      "bytes": 7594,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/MESSAGE-I-ANALYSIS.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/MESSAGE-PUBLICATION-BUILD.md",
+      "blob": "f3937e2542d9f01ed3f31342ffd5b789379b8c8c",
+      "bytes": 11421,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/MESSAGE-PUBLICATION-BUILD.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/MESSAGE-PUBLICATION.md",
+      "blob": "5115487f365d7af048c6e39a50d2b624494334bb",
+      "bytes": 8950,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/MESSAGE-PUBLICATION.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/PREPATCH-COMPARISON.md",
+      "blob": "6572d5bd266b00da510be3e433d0481bf9fa6500",
+      "bytes": 5820,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/PREPATCH-COMPARISON.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/PREPATCH-PROBE.md",
+      "blob": "e61864d9d0e2c8da18e2fb1b53e064a28ff88281",
+      "bytes": 5192,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/PREPATCH-PROBE.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/PUBLICATION-BUILD-A.md",
+      "blob": "6ae104203d7e88b14bce459b34ae147cbe2e38dd",
+      "bytes": 8256,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/PUBLICATION-BUILD-A.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/Run-T7Build.ps1",
+      "blob": "49ebb92a6ab495e22b75fce35394bfd10ea77850",
+      "bytes": 34246,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/Run-T7Build.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/SOURCE-AUDIT.md",
+      "blob": "76f9f6018f91469611c7b0294a73dcd1eaf2e41a",
+      "bytes": 16453,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/SOURCE-AUDIT.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/T7-IMAGES.md",
+      "blob": "2f73f1a527af9140d8fafcc6c1e6c13efd1229ad",
+      "bytes": 22261,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/T7-IMAGES.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/T7-READBACK.md",
+      "blob": "ea695da30635c5320f5faf9cc5892e51864f2611",
+      "bytes": 6943,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/T7-READBACK.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/T7Build.Profile.ps1",
+      "blob": "c8d2d310b3a621f31d65cebe5a97eb9239019192",
+      "bytes": 5645,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/T7Build.Profile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/Test-T7BuildDeadline.ps1",
+      "blob": "31740c7440669123cc5e9f9961f291350142688f",
+      "bytes": 4401,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/Test-T7BuildDeadline.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/Test-T7BuildProfile.ps1",
+      "blob": "552c9cb8e0ad286777c08bcbff4767a0f6e68081",
+      "bytes": 19777,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/Test-T7BuildProfile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/Test-T7InputBindings.ps1",
+      "blob": "cc0657d2289b65f019074e7645dd7fc9cb777b33",
+      "bytes": 14961,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/Test-T7InputBindings.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/Test-T7LinkTelemetry.ps1",
+      "blob": "e7408d8ca9b86a354aa2c43791c89364d958b063",
+      "bytes": 5370,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/Test-T7LinkTelemetry.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/.gitattributes",
+      "blob": "6926a6548a259cec290a5f0c79c44f5d7ef70cc3",
+      "bytes": 133,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/README.md",
+      "blob": "de2488605337b9b050f60028781bf2af6ff5ced0",
+      "bytes": 10191,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/README.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/VALIDATION.md",
+      "blob": "b304e3728361f6ecfaca5770fa4dfea4f9f65786",
+      "bytes": 4096,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/VALIDATION.md"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/demonstrate_losses.py",
+      "blob": "d66a0a2fb105aa47bd3a24d64c68cf3f2be91bc0",
+      "bytes": 2286,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/demonstrate_losses.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/fixtures.py",
+      "blob": "783edb43ecb74db2b79b880fc6993c80d8f99ef0",
+      "bytes": 2156,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/fixtures.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/preflight.py",
+      "blob": "80f6c1bafb4229bb056802583b6c5a8ee93fd6da",
+      "bytes": 11697,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/preflight.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/proposed-mesh-reorder.patch",
+      "blob": "6f7cfdef15115cc6562dfa0b3a27a5d3de41d6a6",
+      "bytes": 3010,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/proposed-mesh-reorder.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/proposed-xanim-loss-guards.patch",
+      "blob": "10a7f478484c96d8f5c88970da993b4c9c9b8996",
+      "bytes": 2040,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/proposed-xanim-loss-guards.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/read_blend.py",
+      "blob": "b2dc938b709a96846fd1f342a06c00d739faca83",
+      "bytes": 1589,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/read_blend.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/reorder_proposal.py",
+      "blob": "89decadd22424e68346805e8c34f8ed8fe306b68",
+      "bytes": 2203,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/reorder_proposal.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/source-contract.json",
+      "blob": "68c90b999fe309cd1996327f8e6d7dbf7cfc07b9",
+      "bytes": 1065,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/animated/test_animated.py",
+      "blob": "8ceb318e6048f57717391ac2a3d8597e66666516",
+      "bytes": 12024,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/animated/test_animated.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/boot_contract.py",
+      "blob": "2fe5a91f41f156f9239b773d2ba20fb17f6b4fbf",
+      "bytes": 3737,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/boot_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/catalog_contract.py",
+      "blob": "beae9830f07a3755ab5b67365f31acac12b3dfb2",
+      "bytes": 2725,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/catalog_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/cli-source-contract.json",
+      "blob": "3c52021d3459cee8c63127de030074d049b174f1",
+      "bytes": 5573,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/cli-source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/compare_prepatch_reports.py",
+      "blob": "d1fd501317c56a45edad57d67b4af3aa87f988f7",
+      "bytes": 18443,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/compare_prepatch_reports.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/executable-static-observation-20261012.json",
+      "blob": "a748b44ffccb72cacf886d7ba5e04b52b6b29a86",
+      "bytes": 4406,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/executable-static-observation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/export_contract.py",
+      "blob": "5a1a22c9b92811773fd83ee983fc5972f2ab5bb0",
+      "bytes": 7049,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/export_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/fixtures/resident-surface-count-v1.hpp",
+      "blob": "88ae02a2d0a78927e9e6d15629b89ad15efda546",
+      "bytes": 13545,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/fixtures/resident-surface-count-v1.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/inspect_t7_executable.py",
+      "blob": "7096942719d384ebdc246c8c50ba9ce0c1cf22b6",
+      "bytes": 18617,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/inspect_t7_executable.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/native_catalog.inc",
+      "blob": "f753c2a0df0c03deb02109062ffd4f95f907657a",
+      "bytes": 3699,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/native_catalog.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/native_catalog_capture.inc",
+      "blob": "028351b9af58dc709028d6d8cd20d6715e3edf50",
+      "bytes": 1532,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/native_catalog_capture.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/native_cli.inc",
+      "blob": "c5d0cacf3e5ece8ee8a5ff8bf768a3ee5ee389d4",
+      "bytes": 1460,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/native_cli.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/native_export.inc",
+      "blob": "0a05d189d95dd97b9c1a6cc0952351c3833ae7ba",
+      "bytes": 12940,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/native_export.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/native_message_publication.inc",
+      "blob": "16c7182e6a7b0a78d1e8dbf9db2288b0c5414db0",
+      "bytes": 5279,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/native_message_publication.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/native_prepatch_probe.inc",
+      "blob": "e0fdc52c4ca4705df247f10c822cb38112d3ca54",
+      "bytes": 16281,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/native_prepatch_probe.inc"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/prepare_build.py",
+      "blob": "765ec83e2af33584b8821640ffb827b16c7061aa",
+      "bytes": 51320,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/prepare_build.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/prepare_catalog_trace.py",
+      "blob": "f11e757230e2fa0db724d91e5093a1352c28efa4",
+      "bytes": 34819,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/prepare_catalog_trace.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/prepare_cli.py",
+      "blob": "6ac0da211c720e0c99983be264216bde03ccc0c9",
+      "bytes": 5382,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/prepare_cli.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/prepare_message_publication.py",
+      "blob": "dfe3a878806cb1b309f40300162f083bf270e331",
+      "bytes": 5286,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/prepare_message_publication.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/prepare_prepatch.py",
+      "blob": "47516aeef8d02540ccca7b30513529eefd974dd1",
+      "bytes": 3078,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/prepare_prepatch.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/prepatch-comparison-20261012.json",
+      "blob": "115c0fbefc263686fcaffa7d4389e3c3bc8628ef",
+      "bytes": 10100,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/prepatch-comparison-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/readback.py",
+      "blob": "1bfed201e76bbc3e88e026a86410a57800699f97",
+      "bytes": 21162,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/readback.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image.py",
+      "blob": "b8dc903124e9bb0357d85a7a286626b7cad25ea4",
+      "bytes": 8455,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_copy.hpp",
+      "blob": "eec505ca556172d3e7cf37a242bc1b349724fb56",
+      "bytes": 6366,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image_copy.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_fixture.cpp",
+      "blob": "4007e9c84917d63660302814f4596584f903fe79",
+      "bytes": 11238,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image_fixture.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_check.py",
+      "blob": "e55c4ae5875f3a2dd25edf6c20e08bfd5b923636",
+      "bytes": 2127,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_check.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_plan.json",
+      "blob": "d82fd87291ebd2d873db4bdb374873e97089b0c4",
+      "bytes": 4150,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_plan.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_validation-20261012-a.json",
+      "blob": "7aad31958e6aebf5779dfde60a7711a19ca58ed6",
+      "bytes": 4580,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_validation-20261012-a.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_validation-20261012-b.json",
+      "blob": "5f9f498fe70a2079e3d8f0304379c5212e19e238",
+      "bytes": 9212,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image_fixture_validation-20261012-b.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/resident_image_validation-20261012.json",
+      "blob": "ce6b36eee080e14ee71c7d88d7467f964d8e1ade",
+      "bytes": 1686,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/resident_image_validation-20261012.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/source-inventory.json",
+      "blob": "56c6d5ee78011b690780ec0c08065a368025f384",
+      "bytes": 3133,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/source-inventory.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_boot_contract.py",
+      "blob": "513eb1d08513f1eb918af6a735fbc8a9c1eadd1c",
+      "bytes": 3417,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_boot_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_build_commands.py",
+      "blob": "8515c4b9860a1868105997cd82a6f39dd565fe82",
+      "bytes": 31526,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_build_commands.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_catalog_callers.py",
+      "blob": "a957053eadc606c5ab6c7aee678f4d48403280ad",
+      "bytes": 8032,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_catalog_callers.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_catalog_contract.py",
+      "blob": "86648f2e70ad33e3257537a847701cc2fcbd7d37",
+      "bytes": 3296,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_catalog_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_catalog_exit_context.py",
+      "blob": "44c144d889bc2439022ee858326611ddfd6ebfaa",
+      "bytes": 7434,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_catalog_exit_context.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_catalog_message.py",
+      "blob": "788aeb908bb53bef9e776514c33bd401614b202c",
+      "bytes": 12227,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_catalog_message.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_catalog_trace.py",
+      "blob": "83e6ddf39d4e2d1f03813ec88df284ecca270bf8",
+      "bytes": 11526,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_catalog_trace.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_cli_patch.py",
+      "blob": "1d86221a8012a753bef17e64d19a996e0f288407",
+      "bytes": 5903,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_cli_patch.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_compare_prepatch_reports.py",
+      "blob": "3924f8ba29d665d079abe72676daedf1eabc40c2",
+      "bytes": 11014,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_compare_prepatch_reports.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_export_contract.py",
+      "blob": "66f65d0f3a9caf57cd115d0445b6ee55be95e207",
+      "bytes": 11760,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_export_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_inspect_t7_executable.py",
+      "blob": "632b4051ad240613f8ce9e041d8c491d3b0f7098",
+      "bytes": 9791,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_inspect_t7_executable.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_message_publication.py",
+      "blob": "0cfc3e41e28aa43b5f7018c1bd5cdabdf36c3128",
+      "bytes": 13345,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_message_publication.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_multisurface_headers.py",
+      "blob": "265fde2683ffb9f7b7e56260b136bd34577d6cef",
+      "bytes": 6952,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_multisurface_headers.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_prepatch_source.py",
+      "blob": "fb55370349d8ef4569ea7c6d5cebbf488b8be6c0",
+      "bytes": 5715,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_prepatch_source.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_prepatch_wiring.py",
+      "blob": "6b61669f862f6e60a78756833170fc0f7ec14252",
+      "bytes": 2967,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_prepatch_wiring.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_readback.py",
+      "blob": "f4ece6580e7c4f38c8824281afacd479579f6f8c",
+      "bytes": 35883,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_readback.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_resident_image.py",
+      "blob": "3611ad964442ac220bad11aa79995c2b320fc6cf",
+      "bytes": 10409,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_resident_image.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_resident_image_fixture.py",
+      "blob": "96f06cfd23b77e44d8a30a323f8111ba1deef983",
+      "bytes": 8987,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_resident_image_fixture.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_resident_image_source.py",
+      "blob": "360942ce8dc6d126838594a7406eb83ee9d3933c",
+      "bytes": 2721,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_resident_image_source.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/test_triangle_ownership.py",
+      "blob": "e240b42398cb0a0f25f7025b4fd92a30d9ff35c2",
+      "bytes": 4756,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/test_triangle_ownership.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/t7-iw7/zonetool-fab9358-t7-resident-cli.patch",
+      "blob": "97b7a1d6689c7970d0e3b27157c11ef87e586412",
+      "bytes": 23419,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/t7-iw7/zonetool-fab9358-t7-resident-cli.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/weapon/slot-contract.json",
+      "blob": "14592ecc52b30ed55839f3df83b277e864039e1b",
+      "bytes": 36853,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/weapon/slot-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/weapon/source_contract.py",
+      "blob": "12f5a058290c36040c14b415093884bef2c16fbe",
+      "bytes": 3744,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/weapon/source_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/weapon/test_weapon_anim_bridge.py",
+      "blob": "8a32f3480e04edc0268a2b4d99b8fd9a2617b428",
+      "bytes": 7143,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/weapon/test_weapon_anim_bridge.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/weapon/validation-2026-10-12.json",
+      "blob": "81b0fd237d3f90492b22de31901e56d7f6220b15",
+      "bytes": 1062,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/weapon/validation-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/weapon/weapon_anim_bridge.py",
+      "blob": "dbe6d3c8b4f536257948169ae330aca13a8183d7",
+      "bytes": 11224,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/weapon/weapon_anim_bridge.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/.gitattributes",
+      "blob": "b5a9cc36a54237e1272ddb74a64b4d8182c826c4",
+      "bytes": 263,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/.gitattributes"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/.gitignore",
+      "blob": "d6d2ea69520e3550888899b80c443c669faa958b",
+      "bytes": 92,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/.gitignore"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/ObserverHarness.Core.ps1",
+      "blob": "8731fbe15bda4f00c5b197a36e2784d2b261f3de",
+      "bytes": 15006,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/ObserverHarness.Core.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/ObserverStages.Profile.ps1",
+      "blob": "280cdf618cdf07fee6576966f948481a1ec379b9",
+      "bytes": 6913,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/ObserverStages.Profile.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/Run-ObserverHarness.ps1",
+      "blob": "f00b6d1540db36cd998b81baf07e433f24c6275c",
+      "bytes": 13274,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/Run-ObserverHarness.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/check_observer_harness.py",
+      "blob": "0e0c0d3774d42324ed08091fdec535445df2dcac",
+      "bytes": 4926,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/check_observer_harness.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/fixtures/original-collision-box-plan.json",
+      "blob": "1c5605811e9f96a9b196a29e5f83add692798236",
+      "bytes": 1230,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/fixtures/original-collision-box-plan.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/fixtures/original-trigger.iw7.json",
+      "blob": "79bfdcb5a96691521e7a20d3ccfa61828c031054",
+      "bytes": 1528,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/fixtures/original-trigger.iw7.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/fixtures/original-trigger.json",
+      "blob": "d6220671051c37d65cd16c452c668096e19c5984",
+      "bytes": 557,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/fixtures/original-trigger.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/havok-audit-2026-10-12.json",
+      "blob": "e3e30831152ec850134cded14afac15d589d5783",
+      "bytes": 13690,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/havok-audit-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/havok_probe.py",
+      "blob": "4605ab4c179e530e7423daf540f109a8a0a951e5",
+      "bytes": 6161,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/havok_probe.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/inspect_world_consumer.py",
+      "blob": "f4671823b5e235663113d8f3730cc37e99c0f096",
+      "bytes": 6097,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/inspect_world_consumer.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12-detached.json",
+      "blob": "042e590cb4b1f142d68b930bc2d627010d907899",
+      "bytes": 4059,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12-detached.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12-retry.json",
+      "blob": "928cff8afda10f74e7a5d4bcb90bc85b34c72ccb",
+      "bytes": 2819,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12-retry.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12-stages.json",
+      "blob": "c4510db8310878bd46b4d6f123113adfc032c5fd",
+      "bytes": 4744,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12-stages.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12.json",
+      "blob": "6120d4e96edffd486815b71774a8ed06ef829125",
+      "bytes": 2285,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/native-checkpoint-2026-10-12.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/observer-harness-plan.json",
+      "blob": "5399356a50e09dc98c5ce257bc4012cbf69fe882",
+      "bytes": 9165,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/observer-harness-plan.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/observer_harness_driver.py",
+      "blob": "982864c7dab982635b20680cef88239ce6bc58a2",
+      "bytes": 7891,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/observer_harness_driver.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/source-contract.json",
+      "blob": "735ea45ea6dad26289d5c6d17519cb1770e37e88",
+      "bytes": 1573,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/source-contract.json"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_havok_probe.py",
+      "blob": "551f54c95f31a8fa1fb501b21fa63e0963bd8d9c",
+      "bytes": 3251,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_havok_probe.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_adapter.ps1",
+      "blob": "7559f2c43a32b3c0bdecdad3e2024a6b44d09484",
+      "bytes": 8608,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_adapter.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_console.ps1",
+      "blob": "e41bfc04d0ebcf3f8d0ed5003a3ad637cd586dcf",
+      "bytes": 9213,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_console.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_driver.py",
+      "blob": "e00d14948cf21387db3a343a11dc7e6a4efcad73",
+      "bytes": 9682,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_driver.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_finalization.ps1",
+      "blob": "631bf12a47e7fbaa521a17ebb5034a5c94bf1b2f",
+      "bytes": 7207,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_finalization.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_harness_check.py",
+      "blob": "902b99461bfb5222c1e34063b7ea96ccdc89e3a1",
+      "bytes": 3955,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_harness_check.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_output_contract.py",
+      "blob": "eca1fc9bde190760f19f24f410fb628fefc303a6",
+      "bytes": 1943,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_output_contract.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_plan.ps1",
+      "blob": "ec8dd15829506c6a7531a97f591ee4d242ce0296",
+      "bytes": 3426,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_plan.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_observer_stages.ps1",
+      "blob": "f450c0b1537d42ab67e4c3eebb2f6d3013db4a0e",
+      "bytes": 9398,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_observer_stages.ps1"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_trigger_bridge.py",
+      "blob": "b7d38adc7657b37a9371e5a431c909df4c1b9531",
+      "bytes": 11124,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_trigger_bridge.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp",
+      "blob": "95790e357ddb362d13494e4bb026c149041058ca",
+      "bytes": 16936,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/test_world_clipmap_observer.cpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/trigger_bridge.py",
+      "blob": "4bf8c18c03a9f46bc4ad1db7bde6edfa96645d15",
+      "bytes": 9682,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/trigger_bridge.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/verify_observer_patch.py",
+      "blob": "836613ad845ff5d4cf22442607a629d6300b099f",
+      "bytes": 6171,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/verify_observer_patch.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/verify_source.py",
+      "blob": "37811b47d13d6c1cb8c2627af601835fde552f2d",
+      "bytes": 5345,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/verify_source.py"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/world_clipmap_observer.hpp",
+      "blob": "9da53aa55b649e311d7cc330c67f0483794d2606",
+      "bytes": 16975,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/world_clipmap_observer.hpp"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/zonetool-fab9358-trigger-types.patch",
+      "blob": "a47523549b1f96147c12426f98cae6770c527690",
+      "bytes": 1015,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/zonetool-fab9358-trigger-types.patch"
+    },
+    {
+      "path": "tools-source/asset-bridge/world/zonetool-fab9358-world-observer.patch",
+      "blob": "0d064e547ab3acb6a0229a454b6cfc0373f324f7",
+      "bytes": 19829,
+      "mode": "100644",
+      "destination": "tools-source/asset-bridge/world/zonetool-fab9358-world-observer.patch"
+    }
+  ],
+  "policy": "Source remains published unchanged; destination history extraction preserves authors and messages. Runtime evidence remains tied to its original input identities."
+}
