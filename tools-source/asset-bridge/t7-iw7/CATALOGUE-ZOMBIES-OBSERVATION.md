@@ -89,3 +89,37 @@ comment after an intact anchor; those four expectations were corrected to
 actually remove/duplicate the anchors. A source review also reserved the possible
 Windows CRLF byte in the native logging budget. Native compilation and a real
 C catalogue remain pending.
+
+## Explicit C compilation plan, 2026-10-14
+
+The build producer now accepts `--zombies-catalogue-observation` only together
+with `--catalog-message-publication`, `--selected-streamed-static-v1` and both
+retained compilation proofs. It first validates the unchanged current E4 reuse
+closure, then applies one exact additional CLI transition. Existing legacy
+transition rows stay unchanged. The separate six-field
+`ReuseCompile.ZombiesObservationC` records schema, source profile, base CLI
+length/hash and final CLI length/hash. There is no arbitrary changed-TU allowance.
+
+`BuildProfile.Name` is `t7-zombies-catalogue-observation-c`. It retains every F
+publication field and adds only `ObservationSchema`, `ObserverSource` and
+`ObserverAdapter`. The two source pins are the approved Source25 module/adapter;
+no new contract file is required. C has exactly 151 bindings (145 text, six
+binary), 1,146 input pins and the same 66-header proof. F/E4 retain their existing
+149-binding branch. C still compiles fresh main and zonetool11, then links; it
+retains only the already qualified xpak dependencies.
+
+The base published CLI is 107,785 bytes / SHA256
+`c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50`.
+Its source-only C output is 118,485 bytes / SHA256
+`917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987`.
+This tuple is a prepared source file, not a compiled executable.
+
+The preliminary DEFAULT plan passes with no missing expected pins; native
+types, binary hashing, leases and the future build root remain absent. Five
+actual DEFAULT mutations refuse the missing marker, altered module, altered C
+transition, renamed F profile and relabeled base CLI before a deliberately
+missing binary path can be queried. Six new Python source tests and 485 combined
+PowerShell profile/input checks pass. Existing Python preparation tests also
+pass (32 executed, three optional retained-command tests skipped without E7).
+Final committed-source preparation and exact-head CI are recorded in the PR.
+This source validation does not grant a build or qualify a native C catalogue.
