@@ -319,6 +319,8 @@ function Get-T7CatalogueOperation($Plan) {
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $export=(Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'
+    $diagnostic=[bool]$Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']
+    if($diagnostic -and !$export){throw 'Surface-count diagnostic is restricted to ResidentExportV1.'}
     $schema=if($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
     $reportLimit=if($export){4KB}else{512KB}
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
@@ -343,6 +345,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         # Five new profile text pins (link.rsp already exists), plus CLI dependencies.
         if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingCount+=6}
         if($export){$bindingCount+=9}
+        if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
            !(Test-T7CatalogueInteger $Plan.OutputLimitBytes (106059160L+64MB+$limits.TotalBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
@@ -385,6 +388,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $bindingLimit=if($qualified){22+3*$limits.ItemCount+$(if($shared){2}else{0})}else{32}
     if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingLimit+=6}
     if($export){$bindingLimit+=9}
+    if($diagnostic){$bindingLimit++}
     if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
     $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
@@ -626,6 +630,9 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
         if($matches.Count -ne 1 -or $matches[0] -cne $expected){throw 'Publication link must consume both fresh objects and exact retained xpak.'}
     }
     if($Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe')){throw 'Publication candidate is not the new link output.'}
+    if($Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic'] -or $reuse.PSObject.Properties['ResidentSurfaceCountDiagnostic']){
+        Assert-T7ResidentExportDiagnosticBuild $Plan $Receipt $Build
+    }
 }
 function Get-T7CatalogueFileId([string]$Path) { [IW7HudFileIdentity]::Read($Path) }
 function Open-T7CatalogueV3Pin($Plan,$Pin,[scriptblock]$DefaultReader) {

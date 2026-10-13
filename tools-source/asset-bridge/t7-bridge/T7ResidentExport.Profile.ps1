@@ -25,12 +25,97 @@ function Assert-T7ResidentExportName($Name) {
         }
     }
 }
+function Get-T7ResidentExportDiagnostic($Plan) {
+    if(!$Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']){return $null}
+    $diagnostic=$Plan.ResidentSurfaceCountDiagnostic
+    Assert-T7CatalogueFields $diagnostic @('Schema','Header')
+    if((Get-T7CatalogueOperation $Plan) -cne 'ResidentExportV1' -or
+       $Plan.CandidateProfile -cne 't7-catalog-message-publication' -or
+       $diagnostic.Schema -isnot [string] -or $diagnostic.Schema -cne 'iw7.t7-resident-surface-count-diagnostic/1'){
+        throw 'Explicit resident surface-count diagnostic contract required.'
+    }
+    Assert-T7CatalogueTextPin $diagnostic.Header $Plan.Bindings
+    if($diagnostic.Header.Bytes -ne 13545 -or
+       $diagnostic.Header.SHA256 -cne '701e3d1eccb0e98ecccfd2012215aaf7eff8db7bd974b184e86648a138b6e3c3'){
+        throw 'Exact surface-count diagnostic header required.'
+    }
+    $build=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.BuildPlan -and $_.IsText -is [bool] -and $_.IsText})
+    if($build.Count -ne 1 -or $build[0].Bytes -ne 303182 -or
+       $Plan.ExpectedBuildPlanSHA256 -cne '4bfb8c9aa45352b0e99acc0a66eab8df93eec8bcac15b9443b766e01a8fcb9e6' -or
+       $build[0].SHA256 -cne $Plan.ExpectedBuildPlanSHA256){throw 'Exact approved diagnostic build plan required.'}
+    $receipt=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.BuildReceipt -and $_.IsText -is [bool] -and $_.IsText})
+    if($receipt.Count -ne 1 -or $receipt[0].Bytes -ne 22393 -or
+       $Plan.ExpectedBuildReceiptSHA256 -cne '6cc2cab523115defa9ee0df2a9c5292a286236ce96d935fb374145a663510810' -or
+       $receipt[0].SHA256 -cne $Plan.ExpectedBuildReceiptSHA256){throw 'Exact closed diagnostic build receipt required.'}
+    $diagnostic
+}
+function Assert-T7ResidentExportDiagnosticBuild($Plan,$Receipt,$Build) {
+    # Called after the existing publication build qualifier. All reads are guarded
+    # source/dependency JSON; the real link artifact tuple is receipt metadata only.
+    $diagnostic=Get-T7ResidentExportDiagnostic $Plan
+    if(!$diagnostic -or !$Build.ReuseCompile.PSObject.Properties['ResidentSurfaceCountDiagnostic']){
+        throw 'Explicit resident surface-count diagnostic contract and reuse proof required.'
+    }
+    $header=$diagnostic.Header
+    if($header.Path -cne (Join-Path $Build.PreparedRoot 't7_iw7_resident_model.hpp')){throw 'Diagnostic prepared header path differs.'}
+    Assert-T7CatalogueTextPin $header $Build.Bindings
+    $old=[pscustomobject]@{Path=(Join-Path (Split-Path $Build.ReuseCompile.SourcePlan -Parent) 'prepared/t7_iw7_resident_model.hpp');
+        Bytes=13444;SHA256='6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777'}
+    Assert-T7CatalogueTextPin $old $Build.Bindings
+    $proof=$Build.ReuseCompile.ResidentSurfaceCountDiagnostic
+    Assert-T7CatalogueFields $proof @('Header','PreviousSHA256','SHA256','DependencyJSON','E7ReadSHA256','E7CompileSHA256','E7LinkSHA256','E7TranslationUnits','E7Objects')
+    if($proof.Header -cne 'prepared/t7_iw7_resident_model.hpp' -or $proof.PreviousSHA256 -cne $old.SHA256 -or
+       $proof.SHA256 -cne $header.SHA256 -or
+       $proof.E7ReadSHA256 -cne 'd9cdd533796a9fe14e0d5140d8adcbf5cbc932fafd4c06e18a615d15199a2185' -or
+       $proof.E7CompileSHA256 -cne 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333' -or
+       $proof.E7LinkSHA256 -cne '70455d2f32a9b034dda20fbaf48443ee68a02e552381edbf88b19d219f1f66b2' -or
+       !(Test-T7CatalogueInteger $proof.E7TranslationUnits 413) -or $proof.E7TranslationUnits -ne 413 -or
+       !(Test-T7CatalogueInteger $proof.E7Objects 413) -or $proof.E7Objects -ne 413 -or
+       $proof.DependencyJSON -isnot [array] -or $proof.DependencyJSON.Count -ne 3){throw 'Exact diagnostic reuse proof required.'}
+    $specs=@(@('helper',16296,'6897d27e8fe0754509e52258082d6178c8cb74fe21a8ef4b006006e97ab9dd12'),
+        @('zonetool11',76744,'cfe62be9ce9bf87abd8e6713f1e1f334d76f69472500d2cb260696de26ee8273'),
+        @('xpak',64444,'3d742923def4fb049d82853ac0e776ffd071228deaf1da1a624603d10dfd3908'))
+    for($i=0;$i -lt 3;$i++){
+        $pin=$proof.DependencyJSON[$i];Assert-T7CatalogueTextPin $pin $Build.Bindings
+        if($pin.Path -cne (Join-Path (Split-Path $Build.ReuseCompile.Receipt -Parent) ($specs[$i][0]+'/dependencies.json')) -or
+           $pin.Bytes -ne $specs[$i][1] -or $pin.SHA256 -cne $specs[$i][2]){throw 'Diagnostic reuse dependency pin differs.'}
+    }
+    $depPath=Join-Path $Build.RunRoot 'zonetool11/dependencies.json'
+    $dep=@($Receipt.Stages[1].Artifacts|Where-Object Path -CEQ $depPath)
+    if($dep.Count -ne 1){throw 'Diagnostic CLI dependency artifact required.'}
+    Assert-T7CatalogueTextPin $dep[0] $Plan.Bindings
+    $doc=Read-H1SmallJson $depPath 1MB
+    $includes=$doc.Data.Includes
+    if($includes -isnot [array] -or $includes.Count -lt 1 -or $includes.Count -gt 4096){throw 'Bounded diagnostic CLI includes required.'}
+    $matches=@(foreach($path in $includes){
+        if($path -isnot [string] -or ![IO.Path]::IsPathFullyQualified($path) -or $path -match '[\x00\r\n]' -or
+           '..' -cin ($path -split '[/\\]')){throw 'Absolute diagnostic CLI include required.'}
+        if([IO.Path]::GetFileName($path) -ieq 't7_iw7_resident_model.hpp'){[IO.Path]::GetFullPath($path)}
+    })
+    if($matches.Count -ne 1 -or $matches[0] -ine $header.Path){throw 'CLI dependencies must include the exact diagnostic header once.'}
+}
+function Assert-T7ResidentExportDiagnosticMetadata($Plan,$Base) {
+    $old=@($Base.InputMetadata);$current=@($Plan.InputMetadata)
+    if($old.Count -ne 27 -or $current.Count -ne 27 -or
+       @($old|Where-Object Path -CEQ $Base.CandidateSource).Count -ne 1 -or
+       @($current|Where-Object Path -CEQ $Plan.CandidateSource).Count -ne 1){throw 'Exact diagnostic candidate metadata row required.'}
+    for($i=0;$i -lt 27;$i++){
+        if($old[$i].Path -ceq $Base.CandidateSource){
+            Assert-T7CatalogueFields $current[$i] @($old[$i].PSObject.Properties.Name)
+            if($old[$i].Bytes -ne $Base.CandidateBytes -or $current[$i].Path -cne $Plan.CandidateSource -or
+               $current[$i].Bytes -ne $Plan.CandidateBytes){throw 'Diagnostic candidate metadata differs.'}
+        }elseif(($old[$i]|ConvertTo-Json -Depth 20 -Compress) -cne ($current[$i]|ConvertTo-Json -Depth 20 -Compress)){
+            throw 'Qualified source inputs changed: noncandidate InputMetadata'
+        }
+    }
+}
 function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
     Assert-T7ResidentExportRequest $Plan.ExportRequest
+    $diagnostic=Get-T7ResidentExportDiagnostic $Plan
     if((Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV3' -or
        $Plan.EngineOutputProfile -cne 'ObservedStartupManifestA' -or
        $Plan.CandidateProfile -cne 't7-catalog-message-publication' -or
-       $Plan.CandidateBytes -ne 21751296 -or $Plan.CandidateSHA256 -cne '31b9d908d15fb5f0bf17a7b27309dc7183458d5e586dfc6e427cc8ec2b3fa647' -or
+       (!$diagnostic -and ($Plan.CandidateBytes -ne 21751296 -or $Plan.CandidateSHA256 -cne '31b9d908d15fb5f0bf17a7b27309dc7183458d5e586dfc6e427cc8ec2b3fa647')) -or
        @(Get-T7CatalogueBootstraps $Plan).Count -ne 23 -or
        $Plan.OutputKey -cne (Get-T7ResidentExportKey $Plan.ExportRequest) -or
        @($Plan.Arguments).Count -ne 4 -or (@($Plan.Arguments) -join '|') -cne '-t7-iw7-model|mp_freerun_04|p7_fre_platform_cap_02|0' -or
@@ -77,7 +162,12 @@ function Assert-T7ResidentExportCatalogue($Plan) {
     foreach($field in 'Path','Bytes','SHA256'){
         if($receipt.Report.$field -cne $Plan.SourceCatalogue.$field){throw 'Catalogue report pin differs from source receipt.'}
     }
-    foreach($field in 'CandidateSource','CandidateBytes','CandidateSHA256','EngineSource','SteamSource','Zone','Bootstraps','SharedQualification','InputMetadata'){
+    $fields=@('CandidateSource','CandidateBytes','CandidateSHA256','EngineSource','SteamSource','Zone','Bootstraps','SharedQualification','InputMetadata')
+    if(Get-T7ResidentExportDiagnostic $Plan){
+        Assert-T7ResidentExportDiagnosticMetadata $Plan $base
+        $fields=@('EngineSource','SteamSource','Zone','Bootstraps','SharedQualification')
+    }
+    foreach($field in $fields){
         if(($base.$field|ConvertTo-Json -Depth 20 -Compress) -cne ($Plan.$field|ConvertTo-Json -Depth 20 -Compress)){
             throw ('Qualified source inputs changed: '+$field)
         }

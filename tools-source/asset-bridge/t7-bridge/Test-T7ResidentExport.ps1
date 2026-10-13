@@ -198,8 +198,42 @@ try {
         $bad=Copy-Value $p;$bad.SourceCatalogue.SHA256='a'*64
         ($bad.Bindings|Where-Object Path -CEQ $bad.SourceCatalogue.Path).SHA256='a'*64
         Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact observed catalogue F'
+        # Entire common plan gate with invented diagnostic metadata, never a real plan.
+        $diagnostic=Copy-Value $p
+        foreach($spec in @(@('BuildPlan','ExpectedBuildPlanSHA256',0,303182,'4bfb8c9aa45352b0e99acc0a66eab8df93eec8bcac15b9443b766e01a8fcb9e6'),
+            @('BuildReceipt','ExpectedBuildReceiptSHA256',1,22393,'6cc2cab523115defa9ee0df2a9c5292a286236ce96d935fb374145a663510810'))){
+            $pin=@($diagnostic.Bindings|Where-Object {$_.Path -ceq (Join-Path $root ('base-text-'+$spec[2]+'.json'))})[0]
+            $pin.Bytes=$spec[3];$pin.SHA256=$spec[4]
+            $diagnostic|Add-Member NoteProperty $spec[0] $pin.Path
+            $diagnostic|Add-Member NoteProperty $spec[1] $pin.SHA256
+            $script:provider[$pin.Path]=[pscustomobject]@{PSIsContainer=$false;Length=$pin.Bytes}
+        }
+        $header=[pscustomobject]@{Path=(Join-Path $root 'diagnostic/t7_iw7_resident_model.hpp');Bytes=13545;SHA256='701e3d1eccb0e98ecccfd2012215aaf7eff8db7bd974b184e86648a138b6e3c3'}
+        $diagnostic|Add-Member NoteProperty ResidentSurfaceCountDiagnostic ([pscustomobject]@{Schema='iw7.t7-resident-surface-count-diagnostic/1';Header=$header})
+        $binding=Copy-Value $header;$binding|Add-Member NoteProperty IsText $true;$diagnostic.Bindings+=@($binding)
+        $script:provider[$header.Path]=[pscustomobject]@{PSIsContainer=$false;Length=$header.Bytes}
+        $diagnostic.CandidateBytes+=1024;$diagnostic.CandidateSHA256='9'*64;$diagnostic.OutputLimitBytes+=1024
+        $diagnostic.Bindings[0].Bytes=$diagnostic.CandidateBytes;$diagnostic.Bindings[0].SHA256=$diagnostic.CandidateSHA256
+        $diagnostic.InputMetadata[0].Bytes=$diagnostic.CandidateBytes;$script:provider[$diagnostic.CandidateSource].Length=$diagnostic.CandidateBytes
+        Assert-T7CataloguePlan $diagnostic $f.Repo 'synthetic-runner';$script:checks++
+        Check ($diagnostic.Bindings.Count -eq $p.Bindings.Count+1 -and $diagnostic.OutputLimitBytes -eq $p.OutputLimitBytes+1024) 'Diagnostic added more than one text binding or changed fixed output budgets.'
+        $bad=Copy-Value $diagnostic;$bad.PSObject.Properties.Remove('ResidentSurfaceCountDiagnostic')
+        Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
+        foreach($spec in @(@('Operation','Catalogue'),@('PhysicalBytes',7GB),@('CommitBytes',9GB),@('DeadlineSeconds',121),
+            @('GroupDeadlineSeconds',201),@('CleanupSeconds',6),@('MutableOutputLimitBytes',65MB),@('ReportLimitBytes',4097),
+            @('ExportModelLimitBytes',2MB),@('ExportMeshLimitBytes',17MB),@('OutputLimitBytes',$p.OutputLimitBytes))){
+            $bad=Copy-Value $diagnostic;$bad.($spec[0])=$spec[1];Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} '.'
+        }
+        $bad=Copy-Value $diagnostic;$bad.Bindings=$bad.Bindings[0..($bad.Bindings.Count-2)]
+        Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'not guarded'
+        foreach($name in @('SourceCataloguePlan','SourceCatalogueReceipt','SourceCatalogue')){
+            $bad=Copy-Value $diagnostic;$bad.$name.SHA256='a'*64
+            ($bad.Bindings|Where-Object Path -CEQ $bad.$name.Path).SHA256='a'*64
+            Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact observed catalogue F'
+        }
     }
     [ordered]@{Status='Passed';Checks=$checks;OwnerStockRead=$false;NativeProcessStarted=$false;RealLeaseAcquired=$false}|ConvertTo-Json
+    & (Join-Path $PSScriptRoot 'Test-T7ResidentExportDiagnostic.ps1')
 }finally{
     Close-Guards
     $resolved=[IO.Path]::GetFullPath($root);$parent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')+'\'

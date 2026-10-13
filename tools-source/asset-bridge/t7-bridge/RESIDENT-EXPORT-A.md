@@ -65,6 +65,12 @@ reserved in the orchestration ledger.
 
 ## Next action
 
+Later checkpoint: the [numeric diagnostic build](../t7-iw7/BUILD-SURFACE-COUNT-A.md)
+has passed and closed independently. The exact candidate transition in
+ResidentExportV1 has favorable source review; a new operational export plan and
+fresh admission remain required. The following paragraph records A's original
+next action, before that build. A and its receipts remain unchanged.
+
 Build the reviewed numeric diagnostic through the existing incremental pipeline
 after its exact header-dependency transition is supported and reviewed. Freeze a
 new candidate/plan and obtain a fresh shared admission before another attempt.

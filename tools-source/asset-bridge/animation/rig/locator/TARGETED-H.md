@@ -1,10 +1,48 @@
 # Locator Plan H: trace the R9 output-pointer handoff
 
-This is source and Plan preparation only. No H Run, reference-content read,
-binary rehash, live attachment or game launch is authorized by this checkpoint.
-The coordinator owns independent review, shared-slot allocation and a later GO.
-BO3 export keeps its assigned priority. H remains an IW7 destination-side
-investigation; it establishes no T7 skeleton, weight or animation compatibility.
+The original sections below record source and Plan preparation only. A later
+explicit GO authorized exactly one H Run on 2026-10-13, recorded here; it does
+not authorize another Run, callee read or live attachment. H remains an IW7
+destination-side investigation and establishes no T7 rig/animation compatibility.
+
+## Run H: explicit pointer store found, local execution closed
+
+The [sanitized receipt](run-h-validation-2026-10-13.json) records the same Plan
+and clean source HEAD `a49adc9`, integrated into main by PR192. A fresh ready
+preflight preceded one dispatch. The actual PTY host exited 0; original child
+exit=0, job Active=0, guarded inputs unchanged, closed=true and reservation
+released. The local postcheck found no child or lease, Main still stopped with
+no game/UDP27016 endpoint, and the known recorder identity preserved. The
+independent absence witness passed at `2026-10-13T06:20:28.3078480Z`: all four
+original identities/descendants absent, no lease/heavy work/game/monitored port,
+Main stopped and recorder tuple preserved. It separately verified the real PTY
+exit; original job/handle closure facts are bound to the runner receipts rather
+than inferred from process absence. Runtime sources were unchanged while the
+two report documents were being edited. This closes the execution review,
+without establishing functional or owner gameplay acceptance.
+
+One owner range of 211 bytes decoded/visited 56 instructions and five control
+edges, with no pending/refused/unresolved frontier. The
+[report-only review](REPORT-H-WRITER.md) finds an explicit eight-byte store at `0x1405f055c` through
+the RBX alias of entry R9. Its value comes from a local slot after an unexamined
+call. This is a concrete static store candidate; first-writer, live provenance,
+field ABI and gameplay acceptance remain unproved. No other callee was opened.
+
+Two Run files total/max 13,641 bytes: report 11,700 and state 1,941. The original
+lifecycle took 500 ms and analysis 0.016 s, within unchanged limits. No game,
+stock copy, restoration or attachment occurred. Post-release review read only
+small JSON receipts/report; no snapshot or binary was rehashed.
+
+Before the Run, the explicitly authorized default Plan completed without a lease
+or native execution types. Its first attempt had refused before hashing Python:
+an added checker counter resolved in the called script's scope as null. The
+original checker/refusal and pure scope reproduction are retained; a local
+counter-scope correction completed the Plan. The prepared command and production
+supervisor stayed unchanged. One actual Plan hash plus the Run's two source-
+defined pre-admission hashes account for the authorized 314,856 Python bytes;
+the snapshots and runtime payload hashes remained under Run admission.
+
+## Original source/Plan preparation
 
 ## Exact selection and evidence boundary
 
