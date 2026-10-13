@@ -1119,3 +1119,20 @@ stock copy or native observation was performed for this source correction.
 The three failed native attempts remain documented above.
 Only a successful real record can advance the root-class finding; collision
 creation/serialization and the original-box test remain subsequent work.
+
+## 2026-10-13: authored original arena ModelLab source route
+
+The original seven-box arena now has an explicit material-bound source variant
+and `iw7-original-arena-rigid-v1` ModelLab dispatch. It uses one combined surface
+(168 vertices / 84 triangles), the existing named cp_zmb recipient material and
+the existing FF runner/transaction/inventory/restoration. It does not masquerade
+as a resident T7 export. The independent reader rechecks authored geometry and
+packed streams after a future owned FF dump; the creator SDK receives all eight
+relative staging paths for its own byte snapshots. See
+`tools-source/asset-bridge/world/original-arena/README.md` for the source CLI.
+
+Twenty-three source tests pass using authored synthetic records/evidence only.
+No material-bound native writer, FF, game or collision test was run for this
+source change. The queued null-material World Plan remains byte-exact and does
+not qualify this separate source variant. Rendering can be validated before
+collision; visible geometry still cannot be called a solid or navigable arena.

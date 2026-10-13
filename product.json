@@ -663,6 +663,7 @@
     "tools-source/asset-bridge/world/observer_harness_driver.py",
     "tools-source/asset-bridge/world/original-arena/README.md",
     "tools-source/asset-bridge/world/original-arena/arena.py",
+    "tools-source/asset-bridge/world/original-arena/model_lab.py",
     "tools-source/asset-bridge/world/original-arena/prepare.py",
     "tools-source/asset-bridge/world/original-arena/readback.py",
     "tools-source/asset-bridge/world/original-arena/test_arena.py",

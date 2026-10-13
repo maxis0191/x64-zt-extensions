@@ -1,11 +1,15 @@
 """Prepare source/header only for an original, fixed probe; never compile or launch."""
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
 import os
-from geometry import original_cube, validate
+_spec=importlib.util.spec_from_file_location('_model_writer_original_cube',Path(__file__).with_name('geometry.py'))
+_geometry=importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_geometry)
+original_cube,validate=_geometry.original_cube,_geometry.validate
 
 PIN = 'fab935826c898806855376662a8a03317b3ad8f1'
 SHADOW_SENTINEL_SOURCE = 'src/zonetool/zonetool/h1/converter/iw7/assets/xmodel.cpp'
@@ -42,10 +46,9 @@ def header(data, material=None):
     material_decl='inline constexpr const char* probe_material_name = '+(json.dumps(material) if material else 'nullptr')+';\n'
     return material_decl+'#pragma once\nstruct ProbeVertex { float xyz[3], normal[3], uv[2], tangent[3]; };\ninline constexpr ProbeVertex probe_vertices[24] = {\n'+',\n'.join(rows)+'\n};\ninline constexpr unsigned short probe_triangles[12][3] = {\n'+',\n'.join(triangles)+'\n};\n'
 
-def prepare(output, source, *, check_pin=True, recipient_evidence=None, stock_root=None):
-    output, source = safe_path(output), safe_path(source)
-    if output.exists():
-        raise ValueError('Fresh output directory required')
+def source_hashes(source, *, check_pin=True):
+    """Existing pinned source validation shared by small original writers."""
+    source = safe_path(source)
     if check_pin:
         head = subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'], text=True).strip()
         if head != PIN:
@@ -56,32 +59,51 @@ def prepare(output, source, *, check_pin=True, recipient_evidence=None, stock_ro
     for name in INTERFACES:
         p=safe_path(source/name)
         hashes[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+    return hashes
+
+
+def validate_recipient_evidence(source, recipient_evidence, stock_root):
+    """Reuse the cube's measured reference checks without emitting another cube."""
+    source = safe_path(source)
+    with safe_path(recipient_evidence).open('rb') as stream:
+        evidence_bytes=stream.read(1024**2+1)
+    if not 0 < len(evidence_bytes) <= 1024**2:
+        raise ValueError('Bounded recipient evidence required')
+    evidence=json.loads(evidence_bytes)
+    if (evidence.get('schema')!='iw7.model-recipient-evidence/1' or evidence.get('source_pin')!=PIN or
+        evidence.get('recipient')!='cp_zmb' or evidence.get('material')!='mopw/character_park_clown_zombie_shoes' or
+        evidence.get('snapshot_only') is not True or evidence.get('runtime_verified') is not False):
+        raise ValueError('Exact measured recipient reference required, gameplay remains pending')
+    if stock_root is None:
+        raise ValueError('Measured stock snapshot must be rechecked before binding the material')
+    stock=safe_path(stock_root)
+    if set(evidence.get('material_snapshot',{})) != {'closure','load_log','material_json'}:
+        raise ValueError('Complete measured recipient snapshot required')
+    for key,ref in evidence['material_snapshot'].items():
+        path=safe_path(stock/ref['path'])
+        if (not path.is_relative_to(stock) or type(ref['bytes']) is not int or not 0 < ref['bytes'] <= 1024**2 or
+            path.stat().st_size!=ref['bytes'] or
+            hashlib.sha256(path.read_bytes()).hexdigest()!=ref['sha256']):
+            raise ValueError('Measured recipient snapshot changed')
+    expected_refs=set(INTERFACES[-3:])
+    if len(evidence['normal_encoding_source']) != 3 or set(ref['path'] for ref in evidence['normal_encoding_source'])!=expected_refs:
+        raise ValueError('Exact pinned normal source proof set required')
+    for ref in evidence['normal_encoding_source']:
+        path=safe_path(source/ref['path'])
+        if not path.is_relative_to(source) or hashlib.sha256(path.read_bytes()).hexdigest()!=ref['sha256']:
+            raise ValueError('Normal encoding source proof changed')
+    return evidence['material'], hashlib.sha256(evidence_bytes).hexdigest()
+
+
+def prepare(output, source, *, check_pin=True, recipient_evidence=None, stock_root=None):
+    output, source = safe_path(output), safe_path(source)
+    if output.exists():
+        raise ValueError('Fresh output directory required')
+    hashes=source_hashes(source, check_pin=check_pin)
     material=None
     evidence_hash=None
     if recipient_evidence is not None:
-        evidence_bytes=safe_path(recipient_evidence).read_bytes()
-        evidence=json.loads(evidence_bytes)
-        if (evidence.get('schema')!='iw7.model-recipient-evidence/1' or evidence.get('source_pin')!=PIN or
-            evidence.get('recipient')!='cp_zmb' or evidence.get('material')!='mopw/character_park_clown_zombie_shoes' or
-            evidence.get('snapshot_only') is not True or evidence.get('runtime_verified') is not False):
-            raise ValueError('Exact measured recipient reference required, gameplay remains pending')
-        if stock_root is None:
-            raise ValueError('Measured stock snapshot must be rechecked before binding the material')
-        stock=safe_path(stock_root)
-        for key,ref in evidence['material_snapshot'].items():
-            path=safe_path(stock/ref['path'])
-            if (not path.is_relative_to(stock) or path.stat().st_size!=ref['bytes'] or ref['bytes']>1024**2 or
-                hashlib.sha256(path.read_bytes()).hexdigest()!=ref['sha256']):
-                raise ValueError('Measured recipient snapshot changed')
-        expected_refs=set(INTERFACES[-3:])
-        if set(ref['path'] for ref in evidence['normal_encoding_source'])!=expected_refs:
-            raise ValueError('Exact pinned normal source proof set required')
-        for ref in evidence['normal_encoding_source']:
-            path=safe_path(source/ref['path'])
-            if not path.is_relative_to(source) or hashlib.sha256(path.read_bytes()).hexdigest()!=ref['sha256']:
-                raise ValueError('Normal encoding source proof changed')
-        material=evidence['material']
-        evidence_hash=hashlib.sha256(evidence_bytes).hexdigest()
+        material,evidence_hash=validate_recipient_evidence(source,recipient_evidence,stock_root)
     original=validate(original_cube())
     own=Path(__file__).parent/'writer.cpp'
     payload=own.read_bytes()
