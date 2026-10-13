@@ -46,6 +46,11 @@ function New-V2BuildFixture {
     $r.Stages[2].Artifacts[0].Bytes=$p.CandidateBytes;$r.Stages[2].Artifacts[0].SHA256=$p.CandidateSHA256
     $r.PlanSHA256=$p.ExpectedBuildPlanSHA256;$r|Add-Member NoteProperty LeaseToken 'synthetic-lease'
     $inputFixture=New-BindingFixture;$proof=$inputFixture.ReuseCompile.ResidentMultiSurfaceV2
+    # The input-binding fixture advances with newer CLI probes. D remains an
+    # immutable historical contract, so keep its own original CLI transition.
+    $dCLI=@($proof.SourceTransitions|Where-Object Path -CEQ 'prepared/zonetool.cpp')[0]
+    $dCLI.Bytes=39356;$dCLI.SHA256='27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e'
+    $dCLI.WiredBytes=39410;$dCLI.WiredSHA256='b470e08edaa26c3527d02cab89a867192371290dda02c16c5569acd7d6819279'
     $proof.DependencyJSON=$b.ReuseCompile.ResidentSurfaceCountDiagnostic.DependencyJSON
     $b.ReuseCompile.PSObject.Properties.Remove('ResidentSurfaceCountDiagnostic');$b.ReuseCompile|Add-Member NoteProperty ResidentMultiSurfaceV2 $proof
     $b|Add-Member NoteProperty Inputs $inputFixture.Inputs
