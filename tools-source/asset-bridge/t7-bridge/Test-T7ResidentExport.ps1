@@ -16,6 +16,34 @@ function Copy-Value($Value){$Value|ConvertTo-Json -Depth 20|ConvertFrom-Json}
 function Pin([string]$Path){[pscustomobject]@{Path=$Path;Bytes=(Get-Item -LiteralPath $Path).Length;SHA256=(Get-FileHash -LiteralPath $Path).Hash.ToLowerInvariant();IsText=$true}}
 function Save-Json($Path,$Value){[IO.File]::WriteAllText($Path,($Value|ConvertTo-Json -Depth 20))}
 function Close-Guards {foreach($guard in $context.Guards){$guard.Dispose()};$context.Guards.Clear()}
+function Assert-LaunchCommand($LaunchPlan,[string[]]$Expected) {
+    # Execute only the runner's launch expression, not its admission/Run body.
+    # The real builder and owned-stage function reach a synthetic NativeJob.Start
+    # boundary which records the ProcessStartInfo and stops before all native IO.
+    $tokens=$null;$errors=$null
+    $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7Catalogue.ps1'),[ref]$tokens,[ref]$errors)
+    Check (!$errors.Count) 'Runner source did not parse.'
+    $calls=@($ast.FindAll({param($node) $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'Invoke-H1OwnedStage'},$true))
+    Check ($calls.Count -eq 1) 'One owned-stage launch expression required.'
+    $launchOwner=[pscustomobject]@{ReceivedStart=$null;ReceivedHash=$null;Stdout=$null;Stderr=$null}
+    $launchOwner|Add-Member ScriptMethod Start {
+        param($Start,$Hash,$Stdout,$Stderr)
+        $this.ReceivedStart=$Start;$this.ReceivedHash=$Hash;$this.Stdout=$Stdout;$this.Stderr=$Stderr
+        throw 'Synthetic native boundary captured.'
+    }
+    function New-H1Owner { $launchOwner }
+    $plan=$LaunchPlan;$state=[ordered]@{DeadlineSeconds=120}
+    $context=[pscustomobject]@{Closed=$true;Owner=$null}
+    Refuses {& ([scriptblock]::Create($calls[0].Extent.Text))} 'Synthetic native boundary captured'
+    $start=$launchOwner.ReceivedStart
+    Check ($null -ne $start -and $start.ArgumentList.Count -eq $Expected.Count -and
+        ($start.ArgumentList -join '|') -ceq ($Expected -join '|')) ('Native launch arguments differ: '+($start.ArgumentList -join '|'))
+    Check ($start.FileName -ceq $plan.Image -and $start.WorkingDirectory -ceq $plan.WorkingDirectory -and
+        !$start.UseShellExecute -and $start.CreateNoWindow -and $start.Arguments -ceq '') 'Native launch image/environment mode changed.'
+    Check ($launchOwner.ReceivedHash -ceq $plan.CandidateSHA256 -and
+        $launchOwner.Stdout -ceq (Join-Path $plan.StageRoot 'stdout.log') -and
+        $launchOwner.Stderr -ceq (Join-Path $plan.StageRoot 'stderr.log')) 'Owned-stage candidate/log wiring changed.'
+}
 $root=Join-Path ([IO.Path]::GetTempPath()) ('t7-export-tests-'+[guid]::NewGuid().ToString('N'))
 $null=[IO.Directory]::CreateDirectory($root)
 $context=[pscustomobject]@{Closed=$true;Lease=[pscustomobject]@{Token='synthetic'};Guards=[Collections.Generic.List[object]]::new()}
@@ -183,6 +211,7 @@ try {
             $p.ReadbackSources+=@(Add-TextPin (Join-Path $f.Repo ('tools-source/asset-bridge/'+$path)))
         }
         Assert-T7CataloguePlan $p $f.Repo 'synthetic-runner';$script:checks++
+        Assert-LaunchCommand $p @('-t7-iw7-model','mp_freerun_04','p7_fre_platform_cap_02','0')
         # V2 requires the exact closed D bundle; relabeling a v1 plan is refused.
         $v2=Copy-Value $p
         $v2|Add-Member NoteProperty ResidentMultiSurfaceV2 ([pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'})
@@ -225,6 +254,7 @@ try {
             Add-DClosureBindings $p (Join-Path $root 'independent.json')
             foreach($pin in $p.Bindings[-5..-1]){$script:provider[$pin.Path]=[pscustomobject]@{PSIsContainer=$false;Length=$pin.Bytes}}
             Assert-T7CataloguePlan $p $f.Repo 'synthetic-runner';$script:checks++
+            Assert-LaunchCommand $p @('-t7-iw7-model-v2','mp_freerun_04','p7_fre_platform_cap_02','0')
             $bad=Copy-Value $p;$bad.Bindings+=@($p.Bindings[-1]);Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'witness binding'
             $bad=Copy-Value $p;$bad.Bindings+=@(New-Binding ([pscustomobject]@{Path=(Join-Path $root 'extra.txt');Bytes=100;SHA256=('a'*64)}))
             Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'binding count'
@@ -240,6 +270,14 @@ try {
             $bad=Copy-Value $p;$bad.$name.SHA256='a'*64;Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'not guarded'
         }
         $bad=Copy-Value $p;$bad.Arguments=@('-t7-iw7-model|mp_freerun_04|p7_fre_platform_cap_02|0');Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
+        foreach($arguments in @(
+            @('-t7-iw7-model','mp_freerun_04','p7_fre_platform_cap_02','0','+set'),
+            @('-t7-iw7-model','mp_other','p7_fre_platform_cap_02','0'),
+            @('-t7-iw7-model','mp_freerun_04',"p7_fre_platform_cap_02`n-extra",'0'),
+            @('-t7-iw7-model','mp_freerun_04','p7_fre_platform_cap_02','1'))){
+            $bad=Copy-Value $p;$bad.Arguments=$arguments
+            Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
+        }
         $bad=Copy-Value $p;$bad.Bindings=$bad.Bindings[1..($bad.Bindings.Count-1)];Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'binding count'
         $bad=Copy-Value $p;$bad.ReadbackSources=$bad.ReadbackSources[0..2];Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Four independent'
         $bad=Copy-Value $p;$bad.Bootstraps=$bad.Bootstraps[0..21];Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
@@ -264,6 +302,7 @@ try {
         $diagnostic.Bindings[0].Bytes=$diagnostic.CandidateBytes;$diagnostic.Bindings[0].SHA256=$diagnostic.CandidateSHA256
         $diagnostic.InputMetadata[0].Bytes=$diagnostic.CandidateBytes;$script:provider[$diagnostic.CandidateSource].Length=$diagnostic.CandidateBytes
         Assert-T7CataloguePlan $diagnostic $f.Repo 'synthetic-runner';$script:checks++
+        Assert-LaunchCommand $diagnostic @('-t7-iw7-model','mp_freerun_04','p7_fre_platform_cap_02','0')
         Check ($diagnostic.Bindings.Count -eq $p.Bindings.Count+1 -and $diagnostic.OutputLimitBytes -eq $p.OutputLimitBytes+1024) 'Diagnostic added more than one text binding or changed fixed output budgets.'
         $bad=Copy-Value $diagnostic;$bad.PSObject.Properties.Remove('ResidentSurfaceCountDiagnostic')
         Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
