@@ -49,7 +49,7 @@ After a coordinated build, the independent check is:
 python -B tools-source/asset-bridge/world/original-arena/readback.py --artifacts <owned-writer-artifacts> --geometry-source <prepared-geometry.source.json>
 ```
 
-Current source result: 23 targeted tests pass. Default source preparation produces seven
+Current source result: 24 targeted tests pass. Default source preparation produces seven
 files, including a 55,918-byte geometry document and about 14 KiB of adapted C++.
 No native compile, fastfile, material binding or game result is implied. The
 previous World 24-case native receipt is preserved at its original paths and

@@ -1131,7 +1131,12 @@ packed streams after a future owned FF dump; the creator SDK receives all eight
 relative staging paths for its own byte snapshots. See
 `tools-source/asset-bridge/world/original-arena/README.md` for the source CLI.
 
-Twenty-three source tests pass using authored synthetic records/evidence only.
+Twenty-four source tests pass using authored synthetic records/evidence only.
+Review found that the first reader variant omitted the model LOD partBits mask;
+the correction checks the model LOD, surface group and surface masks together,
+with corrupt first/last mask-byte cases and a failed re-dump case. The original
+writer already initializes the LOD mask from the surface; the source fixture was
+corrected to match it. The first candidate and review correction remain in Git.
 No material-bound native writer, FF, game or collision test was run for this
 source change. The queued null-material World Plan remains byte-exact and does
 not qualify this separate source variant. Rendering can be validated before

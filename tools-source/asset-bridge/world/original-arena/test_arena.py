@@ -140,6 +140,7 @@ def synthetic_records(mesh, material=None):
     radius_f32, = struct.unpack('<f',struct.pack('<f',radius))
     struct.pack_into('<HHf',h,24,0,1,1);struct.pack_into('<f',h,40,math.sqrt(radius_f32))
     struct.pack_into('<6f',h,44,*(midpoint+half));struct.pack_into('<fHH',h,224,1000000,1,0)
+    struct.pack_into('<I',h,240,0x80000000)
     model = array(h,1)+name(mesh['name'])+name('tag_origin')+array(b'',0)*3+array(bytes(1),1)
     model += array(struct.pack('<8f',0,0,0,1,0,0,0,2),1)+array(b'',0)*3
     model += array(struct.pack('<7f',*(midpoint+half+[radius])),1)+array(bytes(2),1)+array(struct.pack('<Q',bool(material)),1)
@@ -159,6 +160,15 @@ def synthetic_records(mesh, material=None):
 
 
 class IndependentReaderTests(unittest.TestCase):
+    def test_all_three_rigid_masks_refuse_lod_group_and_surface_corruption(self):
+        source=arena.geometry(arena.original_scene());model,mesh=synthetic_records(source)
+        surface_offset=6+56+2+len('paris_original_arena_lod0')+1+6
+        for role,offset in (('model',6+240),('group',6+20),('surface',surface_offset+224)):
+            for byte in (0,31):
+                changed=bytearray(model if role=='model' else mesh);changed[offset+byte]^=1
+                with self.subTest(role=role,byte=byte),self.assertRaisesRegex(ValueError,'root part bits'):
+                    readback.inspect(bytes(changed) if role=='model' else model,
+                                     mesh if role=='model' else bytes(changed),source)
     def test_explicit_material_binding_and_opaque_pointer_relocation(self):
         source=arena.geometry(arena.original_scene())
         unbound,mesh=synthetic_records(source)
@@ -252,6 +262,7 @@ class ModelLabTests(unittest.TestCase):
             manifest=json.loads((prepared/'arena-writer-source.json').read_bytes())
             self.assertEqual(manifest['selected_counts']['vertices'],168)
             self.assertFalse(manifest['compiled']);self.assertFalse(manifest['physics_serialized'])
+            self.assertIn('model.lodInfo[0].partBits[0]=surf.partBits[0]',(prepared/'arena_writer.cpp').read_text())
             self.assertIn(json.dumps(readback.MATERIAL),(prepared/'probe_geometry.hpp').read_text())
             unbound=root/'unbound';prepare.prepare(unbound)
             self.assertEqual(len(list(unbound.iterdir())),7)
@@ -317,6 +328,10 @@ class ModelLabTests(unittest.TestCase):
             proof=model_lab.verify_dump(output,artifacts,ff)
             self.assertEqual(proof['schema'],'iw7.model-original-arena-roundtrip/1')
             self.assertTrue(proof['packed_attributes_byte_identical']);self.assertFalse(proof['runtime_verified'])
+            model_path=artifacts/model_lab.PAIR[0];model=model_path.read_bytes()
+            changed=bytearray(model);changed[6+240]^=1;model_path.write_bytes(changed)
+            with self.assertRaisesRegex(ValueError,'root part bits'):model_lab.verify_dump(output,artifacts,ff)
+            model_path.write_bytes(model)
             mesh_path=artifacts/model_lab.PAIR[1];mesh=mesh_path.read_bytes()
             p=6+56+2+len(model_lab.MESH)+1+6+256+6
             for offset in (12,28):

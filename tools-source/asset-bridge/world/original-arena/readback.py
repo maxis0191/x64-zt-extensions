@@ -82,7 +82,8 @@ def inspect(model, mesh, source, *, expected_material=None):
     s.name('mesh_name',6,'paris_original_arena_lod0')
     h=s.array('surface',256,1)
     check(values(h,0,'3H2B') == (0x82,len(vertices),len(triangles),1,0), 'Surface counts/flags')
-    check(values(group,20,'8I') == values(h,224,'8I') == (0x80000000,0,0,0,0,0,0,0), 'Rigid root part bits')
+    check(values(header,240,'8I') == values(group,20,'8I') == values(h,224,'8I') ==
+          (0x80000000,0,0,0,0,0,0,0), 'Rigid LOD/group/surface root part bits')
     packed=s.array('vertices',32,len(vertices))
     for i,v in enumerate(vertices):
         check(all(type(n) in (int,float) and math.isfinite(n) for n in v['position']+v['normal']+v['uv']), 'Finite source vertex')
