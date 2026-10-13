@@ -1,11 +1,12 @@
 # StandardMod C production and SDK static closure
 
 Current decision, 2026-10-13: production and static assembly remain closed;
-protected lookup r1 was refused before lease acquisition or staging. Preserve
-that consumed attempt and its 12/12 GiB estimate; no lookup or playback occurred.
-The detailed admission/refusal checkpoint is appended below.
+protected lookup r1 and r2 were refused before lease acquisition or staging.
+Preserve both consumed attempts and the unchanged 12/12 GiB estimate; no lookup
+or playback occurred. Detailed admission/refusal checkpoints are appended below.
 
-Recorded on 2026-10-13. Execution times below are UTC on 2026-10-12.
+Recorded on 2026-10-13. Producer execution times are UTC on 2026-10-12;
+later lookup sections record their separate 2026-10-13 attempts.
 This is a real closed producer result and a separate static SDK result;
 engine lookup, audible playback and owner acceptance remain pending.
 
@@ -207,3 +208,25 @@ E has now returned Failed/NoCatalogue with normal closure and actual host exit
 one; independent absence passes at 04:16:25.8462064Z. Lookup r2 has received a
 separate GO, only if fresh 12/12 GiB admission allows it. No r2 runtime result is
 recorded here, and no sound lookup or playback is inferred from BO3 closure.
+
+## Lookup r2 admission refusal
+
+The distinct r2 invocation was also refused before a lease, AgentLab, payload
+reads/staging or game launch. Its host actually exited one (PTY83930, tool
+chunk `7ba5a3`); all 144 source guards were closed with none readable. The
+4513-byte refusal summary retains the admission failure and the separate later
+snapshot. The original admission instant is unknown. At 04:18:42.1466705Z,
+post-refusal projected commit reserve was short by 78479360 bytes, while physical
+RAM was sufficient. This does not attribute a leak or reconstruct the initial
+gate snapshot.
+
+The 6915-byte independent witness has SHA256
+`4bed4dc8b4e9fb3fe1037d9cf0470ffacca484c67f20a724630c1a9f05d78961`.
+At 04:22:24Z it confirms host/parent absence and no remaining lease/game/owned
+ports, with stopped Main and preserved Python. No lookup or playback occurred.
+An audit of eight existing sources confirms that 12/12 GiB composes the 4 GiB
+base and 8 GiB Reduced-client estimates; nested re-entry uses Max with the same
+lease, not a second reservation. No reduction is justified by these refusals.
+There is no active retry. Preserve both r1/r2 and require distinct review and
+fresh admission for any later attempt; F's successful BO3 catalogue does not
+qualify sound loading or audible playback.
