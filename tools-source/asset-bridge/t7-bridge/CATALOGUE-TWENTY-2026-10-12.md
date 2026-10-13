@@ -1,6 +1,11 @@
 # BO3 twenty-file catalogue attempt and closed incident
 
-All times below are UTC on 2026-10-12. The attempt ended **Failed / NoCatalogue**.
+Current checkpoint, 2026-10-13: F has produced the first CatalogueWithNames and
+closed independently. Its donor/export limits are recorded in the final section;
+the failed A/B/C/D/E attempts below remain unchanged historical evidence.
+
+The initial attempt's times are UTC on 2026-10-12; later sections are dated.
+That initial attempt ended **Failed / NoCatalogue**.
 It did not establish a usable asset catalogue, export, format compatibility or
 an exact engine load order. The failed receipt is retained unchanged.
 
@@ -282,3 +287,47 @@ Only preparation of
 the exact 1536-byte `en_mp_freerun_04.ff` singleton and distinct F plan follows;
 neither has a qualification or runtime result. Lookup r2 has a distinct GO
 after independent E closure, only if its fresh complete admission succeeds.
+
+## Subsequent F attempt: first catalogue with names
+
+The exact 1536-byte `en_mp_freerun_04.ff` singleton completed identity/hash
+qualification and original host exit zero. Independent absence at 04:27:10Z
+closed that qualification; its scoped accounting is 59782 bytes. These reads
+do not independently establish general engine compatibility.
+
+F then invoked once on 2026-10-13 with 23 bootstraps using the same native
+candidate/profiles. The native process exited zero after about 6.691 seconds,
+without requested termination or incident recovery. Status is
+CatalogueObservedPendingDonorReview and outcome CatalogueWithNames. Normal
+completion rechecked 54 original/alias IDs, observed zero wrapper guards and
+released the lease without quarantine. The actual host PTY50526 exited zero,
+recorded by tool chunk `a15723` separately from process absence.
+
+The 35780-byte receipt has SHA256
+`7347a78280abc12eedd8e5f02ff536e0c411cae2264bc7b50101136aac2a717e`.
+The 11598-byte completion record has SHA256
+`29a9d7c0709ee7eacacd1f6468da15f99480865689ff936e6d10528172b39f45`.
+Independent absence at 04:40:27.2197439Z confirms host/parent/native generations,
+descendants, leases, heavy/game processes and owned ports absent, with stopped
+Main and preserved Python. The 6142-byte witness has SHA256
+`53be943e6508ebedfab0613a232de6ed70acc8095e35c3510c273012d0086c15`.
+
+The bounded `catalog.json` is 1669 bytes, SHA256
+`d27e34f0f42ac8ccb2b675d4295b397e42636261213c149eaff942e7a7867e3f`.
+It records ten names totaling 249 name bytes: eight resolved nondefault entries
+and two references, not truncated. The eight resolved entries each have one
+bone, one root and zero cosmetic bones. No raw catalogue or game payload is
+stored in this documentation. MessageOutcome=Partial with no captured buffer
+is a separate diagnostic limit, not a failure of the observed catalogue.
+
+AssetZoneOwnership, engine-I/O semantics, geometry, runtime compatibility and
+Ready remain unqualified/false. A one-LOD `p7_fre_platform_cap_02` donor is
+proposed for source review; no selection acceptance or export is proved. The
+next operation must review the existing resident-only selective route, bind the
+exact donor and output limits, then obtain its own budget/admission and GO.
+
+F retains 287906 scoped new bytes before its separate witness, or 294048 bytes
+including it, excluding 27 existing-payload hardlinks representing 808849688
+logical bytes. These are file-length counts, not global growth, NTFS allocation
+or a continuous resource peak. Earlier failed receipts and qualifications remain
+retained; catalogue success is not an IW7 fastfile or playable asset result.
