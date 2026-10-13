@@ -19,7 +19,7 @@ SURFACE_COUNT_HEADER = 'prepared/t7_iw7_resident_model.hpp'
 SURFACE_COUNT_OLD_PIN = (13444, '6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777')
 SURFACE_COUNT_NEW_PIN = (13545, '701e3d1eccb0e98ecccfd2012215aaf7eff8db7bd974b184e86648a138b6e3c3')
 
-# Source-only v2 commit 257658a99790cbf6ffe2c6301cc8a5c33ad74e44.
+# Source-only v2 commit 927e5ebab6bf864e78ffbc6d68bac7d767066a17.
 # C/D2 -> rendered source before the unchanged message/publication overlays.
 MULTISURFACE_TRANSITIONS = {
     'prepared/main.cpp': (
@@ -27,14 +27,14 @@ MULTISURFACE_TRANSITIONS = {
         (12944, 'ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615')),
     'prepared/zonetool.cpp': (
         (35974, '106ccdb4aec584184132c309c117f778d504ca9e64e8a821d23bfecc83bc8635'),
-        (37691, 'adcfa84e085a78ca554f6a6dee8efc07c9afdae035d509f760ef4c8b6f67616d')),
+        (39356, '27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e')),
     SURFACE_COUNT_HEADER: (
         SURFACE_COUNT_OLD_PIN,
         (21290, '97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed')),
 }
 MULTISURFACE_WIRED_PINS = {
     'prepared/main.cpp': (43038, '3ff489d38adfa4da640c5acd6a78b1600f312fbaef47d41b118fabd7dcd3fb84'),
-    'prepared/zonetool.cpp': (37745, 'c125f56a8dd015f9d961c49b33f1d011de5aa81b07683bd5c196bc8fb296b40d'),
+    'prepared/zonetool.cpp': (39410, 'b470e08edaa26c3527d02cab89a867192371290dda02c16c5569acd7d6819279'),
     SURFACE_COUNT_HEADER: MULTISURFACE_TRANSITIONS[SURFACE_COUNT_HEADER][1],
 }
 
