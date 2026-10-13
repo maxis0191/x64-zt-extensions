@@ -161,6 +161,29 @@ try {
         Assert-T7CatalogueDistinctInputIds $f.Plan @(New-InputIds $f);$checks++
         Check ($f.Plan.Bindings.Count -eq 22+3*$count) 'Qualified exact binding count differs.'
     }
+    foreach($policy in 'QualifiedCollectionV1','QualifiedCollectionV2','QualifiedCollectionV3'){
+        $f=New-Qualified 2 $policy;$oldZonePath=$f.Plan.Zone.Path
+        $f.Plan.Zone.Path=Join-Path $root 'zm_common.ff';$f.Plan.Zone.Bytes=36332480
+        $f.Plan.Zone.RelativePath='zone/zm_common.ff';$f.Plan.InputMetadata[3]=$f.Plan.Zone
+        $script:provider[$f.Plan.Zone.Path]=Copy-Value $script:provider[$oldZonePath]
+        $script:provider[$f.Plan.Zone.Path].Length=36332480
+        $f.Plan.Arguments[1]='zm_common'
+        $f.Plan.OutputKey='t7_iw7_catalog_74d24f210d6f255a1e1f63a978bc4cc643496107d00de87211ef84e565de1a88'
+        $f.Plan.OutputLimitBytes+=19355136
+        Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+        $f.Plan.OutputLimitBytes+=64MB-$f.Plan.CandidateBytes
+        $f.Plan.CandidateBytes=64MB;$f.Plan.Bindings[0].Bytes=64MB;$f.Plan.InputMetadata[0].Bytes=64MB
+        $script:provider[$f.Plan.CandidateSource].Length=64MB
+        $expected=switch($policy){
+            'QualifiedCollectionV1' {Set-QualifiedBytes $f 0 16MB;Set-QualifiedBytes $f 1 16MB;226077592L}
+            'QualifiedCollectionV2' {Set-QualifiedBytes $f 0 64MB;Set-QualifiedBytes $f 1 64MB;326740888L}
+            'QualifiedCollectionV3' {Set-QualifiedBytes $f 0 512MB;Set-QualifiedBytes $f 1 256MB;997829528L}
+        }
+        Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+        Check ($f.Plan.OutputLimitBytes -eq $expected) 'Selected Zombies zone policy ceiling differs.'
+        $f.Plan.Bootstraps[0].Path=$f.Plan.Zone.Path;$f.Plan.Bootstraps[0].RelativePath=$f.Plan.Zone.RelativePath
+        Refuses {Get-T7CatalogueBootstraps $f.Plan} 'Unsafe or noncanonical'
+    }
     foreach($case in 'zero','nine','null','scalar','unknown-policy','null-policy','no-array','single','mixed','non-msg'){
         $f=New-Qualified
         switch($case){

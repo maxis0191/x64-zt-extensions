@@ -1,4 +1,25 @@
 # Fixed catalogue adapter. Ownership, pin readers and closure stay in H1Native.Core.
+function Get-T7CatalogueZoneSpec($Name='mp_freerun_04') {
+    if($Name -isnot [string] -or $Name -cnotin @('mp_freerun_04','zm_common')){throw 'Only exact allowlisted catalogue zones are allowed.'}
+    $bytes=if($Name -ceq 'mp_freerun_04'){16977344L}else{36332480L}
+    $fileName=$Name+'.ff'
+    $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::ASCII.GetBytes($Name))).ToLowerInvariant()
+    [pscustomobject]@{Name=$Name;FileName=$fileName;Bytes=$bytes;RelativePath=('zone/'+$fileName);
+        OutputKey=('t7_iw7_catalog_'+$sha);FixedBytes=($bytes+21737352L+235600L+64MB)}
+}
+function Get-T7CataloguePlanZoneSpec($Plan) {
+    # Small historical synthetic callers omit Zone; operational plans require it.
+    $spec=if($Plan.PSObject.Properties['Zone']){
+        $name=[IO.Path]::GetFileName($Plan.Zone.Path)
+        $selected=Get-T7CatalogueZoneSpec ([IO.Path]::GetFileNameWithoutExtension($name))
+        if($name -cne $selected.FileName){throw 'Exact catalogue zone filename required.'}
+        $selected
+    }else{Get-T7CatalogueZoneSpec}
+    if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1' -and $spec.Name -cne 'mp_freerun_04'){
+        throw 'Resident export retains only the observed platform donor zone.'
+    }
+    $spec
+}
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
     if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')){throw 'Unknown catalogue candidate profile.'}
@@ -89,6 +110,7 @@ function Get-T7CatalogueBootstraps($Plan) {
     if($qualified -and ($single -or !$plural)){throw 'Qualified collection requires only Bootstraps.'}
     if(!$single -and !$plural){return}
     if($qualified){
+        $zoneSpec=Get-T7CataloguePlanZoneSpec $Plan
         $limits=Get-T7CatalogueBootstrapLimits $Plan
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
             throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
@@ -117,7 +139,7 @@ function Get-T7CatalogueBootstraps($Plan) {
             $name=[IO.Path]::GetFileName($bootstrap.Path)
             $stem=[IO.Path]::GetFileNameWithoutExtension($name)
             if($name -cnotmatch '\A[a-z][a-z0-9_]{0,62}\.ff\z' -or
-               $stem -match '\A(con|prn|aux|nul|com[1-9]|lpt[1-9])\z' -or $name -ieq 'mp_freerun_04.ff' -or
+               $stem -match '\A(con|prn|aux|nul|com[1-9]|lpt[1-9])\z' -or $name -ieq $zoneSpec.FileName -or
                $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) $name) -or
                $bootstrap.RelativePath -cne ('zone/'+$name)) {throw 'Unsafe or noncanonical qualified bootstrap name/path.'}
             if(!(Test-T7CatalogueInteger $bootstrap.Bytes $limits.ItemBytes) -or $bootstrap.Bytes -le 0 -or
@@ -319,6 +341,7 @@ function Get-T7CatalogueOperation($Plan) {
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $export=(Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'
+    $zoneSpec=Get-T7CataloguePlanZoneSpec $Plan
     $diagnostic=[bool]$Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']
     if($diagnostic -and !$export){throw 'Surface-count diagnostic is restricted to ResidentExportV1.'}
     if($Plan.PSObject.Properties['ResidentMultiSurfaceV2'] -and !$export){throw 'Resident multi-surface v2 is restricted to the export operation.'}
@@ -335,7 +358,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if(!(Test-T7CatalogueInteger $bootstrap.Bytes ([long]::MaxValue-$bootstrapBytes))){throw 'Bootstrap sum exceeds integer range.'}
         $bootstrapBytes+=[long]$bootstrap.Bytes
     }
-    $fixedBytes=106059160L+[long]$Plan.CandidateBytes
+    $fixedBytes=$zoneSpec.FixedBytes+[long]$Plan.CandidateBytes
     if($bootstrapBytes -gt [long]::MaxValue-$fixedBytes){throw 'Output budget exceeds integer range.'}
     $expectedOutputBytes=$fixedBytes+$bootstrapBytes
     if($qualified){
@@ -349,7 +372,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
         if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
-           !(Test-T7CatalogueInteger $Plan.OutputLimitBytes (106059160L+64MB+$limits.TotalBytes)) -or
+           !(Test-T7CatalogueInteger $Plan.OutputLimitBytes ($zoneSpec.FixedBytes+64MB+$limits.TotalBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
     }
     if($Plan.Schema -cne $schema -or $Plan.Runner -cne $Runner -or
@@ -375,9 +398,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
        $Plan.WorkingDirectory -cne (Join-Path $Plan.RunRoot 'work') -or
        $Plan.StageRoot -cne (Join-Path $Plan.RunRoot 'evidence') -or
        $Plan.Image -cne (Join-Path $Plan.WorkingDirectory 't7-zonetool-candidate.exe')){throw 'Exact catalogue command/root required.'}
-    if(!$export -and (@($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -cne '-t7-iw7-catalog' -or
-       $Plan.Arguments[1] -cne 'mp_freerun_04' -or
-       $Plan.OutputKey -cne 't7_iw7_catalog_1d7749fdf2454720fad852816e9ddde027a157a4cc486aa18b3eb8fd4a25c2ce')){throw 'Exact catalogue command/root required.'}
+    if(!$export -and (@($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -isnot [string] -or
+       $Plan.Arguments[0] -cne '-t7-iw7-catalog' -or $Plan.Arguments[1] -isnot [string] -or
+       $Plan.Arguments[1] -cne $zoneSpec.Name -or $Plan.OutputKey -isnot [string] -or
+       $Plan.OutputKey -cne $zoneSpec.OutputKey)){throw 'Exact catalogue command/root required.'}
     foreach($dir in @($Plan.RunRoot,$Plan.WorkingDirectory,$Plan.StageRoot,(Join-Path $Plan.RunRoot 'temp'))) {
         Assert-H1Path $dir
         if(![IO.Directory]::Exists($dir)){throw 'Prepared empty ordinary directories required.'}
@@ -416,10 +440,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $paths=@($Plan.CandidateSource,$Plan.EngineSource,$Plan.SteamSource,$Plan.Zone.Path)
     if($bootstraps.Count){$paths+=@($bootstraps.Path)}
     foreach($item in $Plan.InputMetadata){if($item.Path -cnotin $paths){throw 'Unexpected input metadata.'};Assert-T7CatalogueMetadata $item}
-    if($Plan.Zone.Bytes -ne 16977344 -or $Plan.Zone.SHA256 -ne $null -or
-       $Plan.Zone.RelativePath -cne 'zone/mp_freerun_04.ff' -or
+    if(!(Test-T7CatalogueInteger $Plan.Zone.Bytes $zoneSpec.Bytes) -or $Plan.Zone.Bytes -ne $zoneSpec.Bytes -or $Plan.Zone.SHA256 -ne $null -or
+       $Plan.Zone.RelativePath -isnot [string] -or $Plan.Zone.RelativePath -cne $zoneSpec.RelativePath -or
        $Plan.Zone.HashProvenance -cne 'ObserveUnderLease' -or
-       [IO.Path]::GetFileName($Plan.Zone.Path) -cne 'mp_freerun_04.ff' -or
+       [IO.Path]::GetFileName($Plan.Zone.Path) -cne $zoneSpec.FileName -or
        @($Plan.Bindings|Where-Object Path -CEQ $Plan.Zone.Path).Count){throw 'Only the explicit unsealed owner FF is allowed.'}
     Assert-T7CatalogueMetadata $Plan.Zone
     Assert-T7CatalogueBootstrapBindings $Plan
@@ -667,12 +691,15 @@ function Open-T7CatalogueV3Pin($Plan,$Pin,[scriptblock]$DefaultReader) {
     }catch{$guard.Dispose();throw}
 }
 function Open-T7CatalogueZone($Zone,$Context) {
+    $spec=Get-T7CatalogueZoneSpec ([IO.Path]::GetFileNameWithoutExtension($Zone.Path))
+    if([IO.Path]::GetFileName($Zone.Path) -cne $spec.FileName -or
+       !(Test-T7CatalogueInteger $Zone.Bytes $spec.Bytes) -or $Zone.Bytes -ne $spec.Bytes){throw 'Observed FF length/name differs.'}
     Assert-T7CatalogueMetadata $Zone
     # The only unsealed payload. Hold this exact source open before observing its hash.
     $guard=[IO.FileStream]::new($Zone.Path,'Open','Read','Read')
     try {
         Assert-T7CatalogueMetadata $Zone
-        if($guard.Length -ne 16977344){throw 'Observed FF length differs.'}
+        if($guard.Length -ne $spec.Bytes){throw 'Observed FF length differs.'}
         $fileId=Get-T7CatalogueFileId $Zone.Path
         $hash=[Security.Cryptography.SHA256]::Create()
         try{$sha=[Convert]::ToHexString($hash.ComputeHash($guard)).ToLowerInvariant()}finally{$hash.Dispose()}
@@ -695,7 +722,8 @@ function New-T7CatalogueAlias($Pin,[string]$Destination,$Context) {
 }
 function New-T7CatalogueStart($Plan) {
     $start=New-T7PrepatchStart $Plan # Environment setup only; diagnostic is not invoked.
-    $start.ArgumentList.Clear();$start.ArgumentList.Add('-t7-iw7-catalog');$start.ArgumentList.Add('mp_freerun_04')
+    $zoneSpec=Get-T7CataloguePlanZoneSpec $Plan
+    $start.ArgumentList.Clear();$start.ArgumentList.Add('-t7-iw7-catalog');$start.ArgumentList.Add($zoneSpec.Name)
     if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'){
         Assert-T7ResidentExportRequest $Plan.ExportRequest
         $command=if((Get-T7ResidentExportVersion $Plan) -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
@@ -711,11 +739,13 @@ function Assert-T7CatalogueFields($Value,[string[]]$Fields) {
 function Test-T7CatalogueInteger($Value,[long]$Maximum) {
     ($Value -is [int] -or $Value -is [long]) -and $Value -ge 0 -and $Value -le $Maximum
 }
-function Get-T7CatalogueOutcome($Report,[Nullable[int]]$ExitCode) {
+function Get-T7CatalogueOutcome($Report,[Nullable[int]]$ExitCode,$ZoneName='mp_freerun_04') {
+    $zoneSpec=Get-T7CatalogueZoneSpec $ZoneName
     if($null -eq $Report){return 'NoCatalogue'}
     $falseFields=@('truncated','asset_zone_ownership_verified','zonetool_xpak_helper_reads_allowed','engine_io_verified','geometry_verified','runtime_verified','ready')
     Assert-T7CatalogueFields $Report (@('schema','requested_zone','provenance','model_count','name_bytes','models')+$falseFields)
-    if($Report.schema -cne 'iw7.t7-iw7-model-catalog/1' -or $Report.requested_zone -cne 'mp_freerun_04' -or
+    if($Report.schema -cne 'iw7.t7-iw7-model-catalog/1' -or $Report.requested_zone -isnot [string] -or
+       $Report.requested_zone -cne $zoneSpec.Name -or
        $Report.provenance -cne 'observed_during_requested_zone_load'){throw 'Catalogue request/provenance differs.'}
     foreach($field in $falseFields){if($Report.$field -isnot [bool] -or $Report.$field){throw 'Catalogue overclaims its scope.'}}
     if($Report.models -isnot [array] -or !(Test-T7CatalogueInteger $Report.model_count 1024) -or
@@ -752,7 +782,7 @@ function Read-T7CatalogueReport($Plan,$State,$Context) {
     $pin=[pscustomobject]@{Path=$path;Bytes=$size;SHA256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}
     $Context.Guards.Add((Open-H1Pin $pin));$State.Report=$pin
     $report=Read-H1SmallJson $path 512KB
-    $outcome=Get-T7CatalogueOutcome $report $State.ExitCode
+    $outcome=Get-T7CatalogueOutcome $report $State.ExitCode (Get-T7CataloguePlanZoneSpec $Plan).Name
     $State.ModelCount=$report.model_count
     $outcome
 }
@@ -1280,7 +1310,7 @@ function Assert-T7CatalogueEngineOutputs($Plan,[switch]$Closed,$Context) {
         if($export -and $name -ceq 'dump'){$null=@(Get-T7ResidentExportFiles $Plan);continue}
         $allowedDirectories=if($export){@('zone')}else{@('zone',$Plan.OutputKey)}
         if($name -cnotin $allowedDirectories -or ![IO.Directory]::Exists($entry)){throw 'Unexpected engine output; preserve and stop.'}
-        $allowed=@(if($name -ceq 'zone'){'mp_freerun_04.ff'}else{'catalog.json'})
+        $allowed=@(if($name -ceq 'zone'){(Get-T7CataloguePlanZoneSpec $Plan).FileName}else{'catalog.json'})
         if($name -ceq 'zone'){$allowed+=@(Get-T7CatalogueBootstraps $Plan|ForEach-Object {[IO.Path]::GetFileName($_.RelativePath)})}
         foreach($child in [IO.Directory]::EnumerateFileSystemEntries($entry)) {
             Assert-H1Path $child
