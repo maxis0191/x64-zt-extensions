@@ -74,7 +74,9 @@ cause. The new source reports the failing surface index, the captured rigid
 values, expected surface vertex/triangle counts and collision-tree presence.
 The condition and its position before payload access are unchanged. Values
 come from the already captured header; no pointer address or extra dereference
-is added. This source has not yet been compiled or used on stock.
+is added. It was first checked as source only; the E4 compilation below is its
+later native qualification. Its detailed values have not yet been observed on
+stock.
 
 The pinned ZoneTool type declares four 16-bit fields followed by a collision
 tree pointer. That is a source layout, not runtime ABI proof. Greyhound's
@@ -113,8 +115,41 @@ are recalculated together with the already merged rigid refusal diagnostic.
 Neither engine CLI logic nor geometry guards change in this compatibility
 commit. Legacy128/E2-v2144 tables, dependencies and archive stay unchanged;
 the old E3 compiled packages and receipts retain reader457 and MaterialD50.
-This new combined translation unit still needs its own native build and stock
-observation before the detailed rigid refusal can identify the failing field.
+The combined translation unit's later native build is recorded below. A stock
+observation is still needed before the detailed refusal can identify the failing
+rigid field.
+
+## Actual E4 native build on 2026-10-14
+
+A fresh source package from merged main `8ff96b53` contained884 files and
+8,311,983 bytes. Its exact plan SHA256 is
+`26b46072a089c4ae67f601b134791c829a6223ce7a6c82b576f7bfce592c1c4d`.
+The source cohort includes reader532, MaterialE/fixture63 and the strict rigid
+refusal diagnostic. The exported CatalogueC module is not overlaid into this
+build. Preparation and DEFAULT preserved149 bindings,1,146 inputs and66 headers,
+with no missing pins, native types, opaque hashes, lease or run-root creation.
+
+The separately admitted incremental build compiled main and the T7 CLI and
+linked the411 retained objects,18 libraries and resource. All three original
+creation-handle results exited0, confirmed closed trees and rechecked their
+inputs. Three owned VCTIP members were captured twice in their respective
+original jobs, then closed through those jobs. No other process was stopped.
+The build passed in25.50 seconds, released its reservation without quarantine,
+and recorded `CandidateExecuted=false`. The original host's live context was
+closed with no lease or guards; its actual terminal exit was0. A fresh global
+postflight found no lease, owned host/stage or heavy process.
+
+The receipt is23,683 bytes, SHA256
+`7f26c634aec1062440e68d0bcb50c0360d58196404ddf829d99422bf9b5e61f5`.
+It recorded the new executable21,919,232 bytes, SHA256
+`3dfa1b7851b7532526c38c295b1ed7014613dfbf3fd4db0225afd26b0457be71`,
+and PDB138,498,048 bytes, SHA256
+`851c3fc81e8d6a34221b0c2a94f41634faae11e7cb73ad56b60d848fbc0e38ed`.
+These artifact hashes were measured under admission and copied from the receipt;
+no post-release executable/PDB hash was taken. Resource helpers at the explicit
+source dependency2f were byte-identical to the current reviewed f6 policy.
+E3's source/binary/refusal records remain frozen. This build proves compilation
+and guarded closure; E4 stock, rigid conversion, textures and runtime remain open.
 
 ## Build preparation
 
