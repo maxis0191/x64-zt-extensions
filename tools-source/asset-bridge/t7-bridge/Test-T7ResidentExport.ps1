@@ -183,12 +183,11 @@ try {
             $p.ReadbackSources+=@(Add-TextPin (Join-Path $f.Repo ('tools-source/asset-bridge/'+$path)))
         }
         Assert-T7CataloguePlan $p $f.Repo 'synthetic-runner';$script:checks++
-        # V2 metadata selection is explicit, but no operational candidate is
-        # qualified until a future reviewed build supplies its actual pins.
+        # V2 requires the exact closed D bundle; relabeling a v1 plan is refused.
         $v2=Copy-Value $p
         $v2|Add-Member NoteProperty ResidentMultiSurfaceV2 ([pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'})
         $v2.Arguments[0]='-t7-iw7-model-v2';$v2.ReportLimitBytes=256KB
-        Refuses {Assert-T7CataloguePlan $v2 $f.Repo 'synthetic-runner'} 'native qualification pending real reviewed build and receipt'
+        Refuses {Assert-T7CataloguePlan $v2 $f.Repo 'synthetic-runner'} 'Exact independent D witness'
         foreach($spec in @(@('ReportLimitBytes',4KB),@('ReportLimitBytes',(256KB+1)),@('ExportModelLimitBytes',2MB),@('ExportMeshLimitBytes',17MB))){
             $bad=Copy-Value $v2;$bad.($spec[0])=$spec[1]
             Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
@@ -203,6 +202,35 @@ try {
         Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact catalogue fields'
         $bad=Copy-Value $v2;$bad|Add-Member NoteProperty ResidentSurfaceCountDiagnostic $null
         Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'cannot be mixed'
+        & {
+            $p=Copy-Value $v2
+            $p|Add-Member NoteProperty BuildPlan (Join-Path $root 'base-text-0.json')
+            $p|Add-Member NoteProperty BuildReceipt (Join-Path $root 'base-text-1.json')
+            $p|Add-Member NoteProperty ExpectedBuildPlanSHA256 '551a4017b334d573e5873dfda3e6134968549db08e0aabacbc269ad4a398488a'
+            $p|Add-Member NoteProperty ExpectedBuildReceiptSHA256 '25d2593dbb412ac676f5e11f1b4d8ae34f26623217159ddb36dfc3f42d96ce0b'
+            foreach($row in @(@($p.BuildPlan,365638,$p.ExpectedBuildPlanSHA256),@($p.BuildReceipt,22380,$p.ExpectedBuildReceiptSHA256))){
+                $pin=@($p.Bindings|Where-Object Path -CEQ $row[0])[0];$pin.Bytes=$row[1];$pin.SHA256=$row[2]
+                $script:provider[$row[0]].Length=$row[1]
+            }
+            $p.OutputLimitBytes+=21805568-$p.CandidateBytes;$p.CandidateBytes=21805568
+            $p.CandidateSHA256='3c9271a0ef0e96cce26f44c30e6b04aa4c2338c86057ac52da489a7bc0e28e7f'
+            $p.Bindings[0].Bytes=$p.CandidateBytes;$p.Bindings[0].SHA256=$p.CandidateSHA256;$p.InputMetadata[0].Bytes=$p.CandidateBytes
+            $script:provider[$p.CandidateSource].Length=$p.CandidateBytes
+            $null=Add-TextPin (Join-Path $root 'prepared/t7_iw7_resident_model.hpp') 21290 '857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'
+            $tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Test-T7ResidentMultiSurfaceBuild.ps1'),[ref]$tokens,[ref]$errors)
+            if($errors.Count){throw 'Closure fixture parse error.'}
+            $node=$ast.Find({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Add-DClosureBindings'},$true)
+            . ([scriptblock]::Create($node.Extent.Text))
+            function New-Binding($Pin){[pscustomobject]@{Path=$Pin.Path;Bytes=$Pin.Bytes;SHA256=$Pin.SHA256;IsText=$true}}
+            Add-DClosureBindings $p (Join-Path $root 'independent.json')
+            foreach($pin in $p.Bindings[-5..-1]){$script:provider[$pin.Path]=[pscustomobject]@{PSIsContainer=$false;Length=$pin.Bytes}}
+            Assert-T7CataloguePlan $p $f.Repo 'synthetic-runner';$script:checks++
+            $bad=Copy-Value $p;$bad.Bindings+=@($p.Bindings[-1]);Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'witness binding'
+            $bad=Copy-Value $p;$bad.Bindings+=@(New-Binding ([pscustomobject]@{Path=(Join-Path $root 'extra.txt');Bytes=100;SHA256=('a'*64)}))
+            Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'binding count'
+        }
+        $script:provider[$p.CandidateSource].Length=$p.CandidateBytes
+        foreach($i in 0..1){$script:provider[(Join-Path $root ('base-text-'+$i+'.json'))].Length=100}
         foreach($spec in @(@('Operation','Catalogue'),@('Operation','ResidentExportV2'),@('Schema','iw7.t7-catalogue-plan/1'),
             @('CandidateSHA256',('a'*64)),@('ReportLimitBytes',512KB),@('ExportMeshLimitBytes',32MB),@('ExportModelLimitBytes',2MB),
             @('EngineOutputProfile','ObservedStartupA'),@('OutputLimitBytes',1GB),@('BootstrapPolicy','QualifiedCollectionV2'),@('RetryAuthorized',$true))){
@@ -255,6 +283,7 @@ try {
     [ordered]@{Status='Passed';Checks=$checks;OwnerStockRead=$false;NativeProcessStarted=$false;RealLeaseAcquired=$false}|ConvertTo-Json
     & (Join-Path $PSScriptRoot 'Test-T7ResidentExportDiagnostic.ps1')
     & (Join-Path $PSScriptRoot 'Test-T7ResidentExportV2.ps1')
+    & (Join-Path $PSScriptRoot 'Test-T7ResidentMultiSurfaceBuild.ps1')
 }finally{
     Close-Guards
     $resolved=[IO.Path]::GetFullPath($root);$parent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')+'\'

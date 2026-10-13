@@ -128,6 +128,13 @@ try {
     $script:json[$p.SourceCataloguePlan.Path]=$source;$script:json[$p.SourceCatalogueReceipt.Path]=$r
     $script:json[$p.SourceCatalogue.Path]=$catalogue;$script:json[$p.ExportRequestFile.Path]=$request
     Assert-T7ResidentExportCatalogue $p;$checks++
+    $v2=Copy-Value $p;$v2.PSObject.Properties.Remove('ResidentSurfaceCountDiagnostic')
+    $v2|Add-Member NoteProperty ResidentMultiSurfaceV2 ([pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'})
+    Assert-T7ResidentExportCatalogue $v2;$checks++
+    foreach($i in 1..26){$bad=Copy-Value $v2;$bad.InputMetadata[$i].Bytes++;Refuses {Assert-T7ResidentExportCatalogue $bad} 'noncandidate InputMetadata'}
+    foreach($field in 'EngineSource','SteamSource','Zone','Bootstraps','SharedQualification'){
+        $bad=Copy-Value $v2;$bad.$field='changed';Refuses {Assert-T7ResidentExportCatalogue $bad} 'source inputs changed'
+    }
     $bad=Copy-Value $p;$bad.PSObject.Properties.Remove('ResidentSurfaceCountDiagnostic')
     Refuses {Assert-T7ResidentExportCatalogue $bad} 'source inputs changed'
     foreach($field in 'EngineSource','SteamSource','Zone','Bootstraps','SharedQualification'){

@@ -111,6 +111,169 @@ function Assert-T7ResidentExportDiagnosticBuild($Plan,$Receipt,$Build) {
     })
     if($matches.Count -ne 1 -or $matches[0] -ine $header.Path){throw 'CLI dependencies must include the exact diagnostic header once.'}
 }
+function Get-T7ResidentMultiSurfaceBuildPins($Plan) {
+    # These are the reviewed D texts, not a caller-supplied qualification flag.
+    # The caller retains all text bindings before reading any of them.
+    if((Get-T7ResidentExportVersion $Plan) -ne 2){throw 'Explicit resident v2 build contract required.'}
+    $witness=@($Plan.Bindings|Where-Object SHA256 -CEQ '29fc704e3c173b4ae1c72fe4a3e4f6627c4d6768209a5a685905ab63d039dd19')
+    if($witness.Count -ne 1){throw 'Exact independent D witness binding required.'}
+    $prepared=Join-Path (Split-Path $Plan.BuildPlan -Parent) 'prepared'
+    $prefix=Join-Path (Split-Path (Split-Path $Plan.BuildPlan -Parent) -Parent) 't7-multisurface-build-d-'
+    $pins=[ordered]@{}
+    foreach($row in @(
+        @('BuildPlan',$Plan.BuildPlan,365638,'551a4017b334d573e5873dfda3e6134968549db08e0aabacbc269ad4a398488a'),
+        @('BuildReceipt',$Plan.BuildReceipt,22380,'25d2593dbb412ac676f5e11f1b4d8ae34f26623217159ddb36dfc3f42d96ce0b'),
+        @('Header',(Join-Path $prepared 't7_iw7_resident_model.hpp'),21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'),
+        @('Completion',($prefix+'completion.local.json'),16438,'962e795e474f8fd5a86a41eff3f4bd31879ba07d77c510053b0442a98c8ae199'),
+        @('ActualHostExit',($prefix+'host-exit.local.json'),1290,'b776e7cce3ad68c0e994fb12a29aa7dcfc769663985260125c2a6308c8c2bbfe'),
+        @('OriginalHostClosure',($prefix+'original-host-closure.local.json'),368,'690e509cd2363e4937b22a915164a03bceb8b167ec6cb5c5098fda32242ff1f0'),
+        @('HostIdentity',($prefix+'host-identity.local.json'),835,'8b2726f6bcc3c27a548c9b3e3aa1e6fce97be56aaec44211de9f004c8751d217'),
+        @('Witness',$witness[0].Path,8167,'29fc704e3c173b4ae1c72fe4a3e4f6627c4d6768209a5a685905ab63d039dd19'))){
+        $pin=[pscustomobject]@{Path=$row[1];Bytes=$row[2];SHA256=$row[3]}
+        Assert-T7CatalogueTextPin $pin $Plan.Bindings;$pins[$row[0]]=$pin
+    }
+    if($Plan.ExpectedBuildPlanSHA256 -cne $pins.BuildPlan.SHA256 -or $Plan.ExpectedBuildReceiptSHA256 -cne $pins.BuildReceipt.SHA256 -or
+       $Plan.CandidateBytes -ne 21805568 -or $Plan.CandidateSHA256 -cne '3c9271a0ef0e96cce26f44c30e6b04aa4c2338c86057ac52da489a7bc0e28e7f'){
+        throw 'Exact approved D build and candidate tuple required.'
+    }
+    $pins
+}
+function Assert-T7ResidentMultiSurfaceBuild($Plan,$Receipt,$Build) {
+    # Called after the ordinary publication qualifier, including three closed
+    # stages and 413 direct link objects. Never opens a binary or a job handle.
+    $pins=Get-T7ResidentMultiSurfaceBuildPins $Plan
+    if(!$Build.ReuseCompile.PSObject.Properties['ResidentMultiSurfaceV2'] -or
+       $Build.ReuseCompile.PSObject.Properties['ResidentSurfaceCountDiagnostic']){throw 'Exact resident v2 reuse marker required.'}
+    $proof=$Build.ReuseCompile.ResidentMultiSurfaceV2
+    Assert-T7CatalogueFields $proof @('Schema','Header','PreviousSHA256','SHA256','DependencyJSON','E7ReadSHA256','E7CompileSHA256','E7LinkSHA256','E7TranslationUnits','E7Objects','SourceTransitions','AdditionalHeaderInputs')
+    $readSHA='d9cdd533796a9fe14e0d5140d8adcbf5cbc932fafd4c06e18a615d15199a2185'
+    $compileSHA='a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
+    if($proof.Schema -cne 'iw7.t7-resident-multi-surface-build/2' -or $proof.Header -cne 'prepared/t7_iw7_resident_model.hpp' -or
+       $proof.PreviousSHA256 -cne '6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777' -or $proof.SHA256 -cne $pins.Header.SHA256 -or
+       $proof.E7ReadSHA256 -cne $readSHA -or $proof.E7CompileSHA256 -cne $compileSHA -or
+       $proof.E7LinkSHA256 -cne '70455d2f32a9b034dda20fbaf48443ee68a02e552381edbf88b19d219f1f66b2' -or
+       !(Test-T7CatalogueInteger $proof.E7TranslationUnits 413) -or $proof.E7TranslationUnits -ne 413 -or
+       !(Test-T7CatalogueInteger $proof.E7Objects 413) -or $proof.E7Objects -ne 413 -or
+       $pins.Header.Path -cne (Join-Path $Build.PreparedRoot 't7_iw7_resident_model.hpp') -or
+       @($Build.Bindings).Count -ne 141 -or @($Build.Bindings.Path|Sort-Object -Unique).Count -ne 141 -or
+       @($Build.Bindings|Where-Object {$_.IsText -is [bool] -and $_.IsText}).Count -ne 135 -or
+       @($Build.Bindings|Where-Object {$_.IsText -is [bool] -and !$_.IsText}).Count -ne 6 -or
+       @($Build.Inputs).Count -ne 1146 -or @($Build.Inputs.Path|Sort-Object -Unique).Count -ne 1146){throw 'Exact resident v2 source and input closure required.'}
+    Assert-T7CatalogueTextPin $pins.Header $Build.Bindings
+    $headers=$proof.AdditionalHeaderInputs
+    Assert-T7CatalogueFields $headers @('Count','Bytes','E7TranslationUnit','E7ReadSHA256','E7CompileSHA256','CompilerContextMatchesCLI','PCHExcludedForPreparedYMinus','Inputs')
+    if(!(Test-T7CatalogueInteger $headers.Count 66) -or $headers.Count -ne 66 -or $headers.Bytes -ne 87204 -or
+       @($headers.Inputs).Count -ne 66 -or $headers.E7ReadSHA256 -cne $readSHA -or $headers.E7CompileSHA256 -cne $compileSHA -or
+       $headers.CompilerContextMatchesCLI -isnot [bool] -or !$headers.CompilerContextMatchesCLI){throw 'Exact resident v2 header closure required.'}
+    $suffix='\src\zonetool\zonetool\iw7\assets\xsurface.cpp';$tu=$headers.E7TranslationUnit
+    Assert-H1Path $tu;Assert-H1Path $headers.PCHExcludedForPreparedYMinus
+    if(!$tu.EndsWith($suffix,[StringComparison]::Ordinal) -or
+       !$headers.PCHExcludedForPreparedYMinus.EndsWith('\obj\community.pch',[StringComparison]::Ordinal)){throw 'Exact resident v2 compiler context required.'}
+    $native=$tu.Substring(0,$tu.Length-$suffix.Length)
+    $rows=[Collections.Generic.List[string]]::new();$seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($pin in $headers.Inputs){
+        Assert-T7CatalogueTextPin $pin $Build.Bindings
+        if(!$seen.Add($pin.Path) -or $pin.Bytes -gt 16KB -or
+           @($Build.Inputs|Where-Object {$_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256}).Count -ne 1){throw 'Resident v2 header Inputs/Bindings bijection differs.'}
+        $rows.Add([IO.Path]::GetRelativePath($native,$pin.Path).Replace('\','/').ToLowerInvariant()+'|'+$pin.Bytes+'|'+$pin.SHA256+"`n")
+    }
+    $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
+    if($bytes.Length -ne 7676 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
+       '5ee7ea0b46848bca9f4d365d0035cf070b2f57c6723019ab1288a54a93a7297b'){throw 'Reviewed resident v2 66-header inventory differs.'}
+    $rows.Clear()
+    if(@($proof.SourceTransitions).Count -ne 3){throw 'Exact resident v2 three source transitions required.'}
+    foreach($row in $proof.SourceTransitions){
+        Assert-T7CatalogueFields $row @('Path','PreviousBytes','PreviousSHA256','Bytes','SHA256','WiredBytes','WiredSHA256')
+        $rows.Add((@($row.Path,$row.PreviousBytes,$row.PreviousSHA256,$row.Bytes,$row.SHA256,$row.WiredBytes,$row.WiredSHA256)-join '|')+"`n")
+        Assert-T7CatalogueTextPin ([pscustomobject]@{Path=(Join-Path (Split-Path $Build.PreparedRoot -Parent) $row.Path);Bytes=$row.WiredBytes;SHA256=$row.WiredSHA256}) $Build.Bindings
+    }
+    $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
+    if($bytes.Length -ne 714 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
+       'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'){throw 'Reviewed resident v2 source transitions differ.'}
+    $specs=@(@('helper',16296,'6897d27e8fe0754509e52258082d6178c8cb74fe21a8ef4b006006e97ab9dd12'),
+        @('zonetool11',76744,'cfe62be9ce9bf87abd8e6713f1e1f334d76f69472500d2cb260696de26ee8273'),
+        @('xpak',64444,'3d742923def4fb049d82853ac0e776ffd071228deaf1da1a624603d10dfd3908'))
+    if(@($proof.DependencyJSON).Count -ne 3){throw 'Exact resident v2 retained dependencies required.'}
+    for($i=0;$i -lt 3;$i++){
+        $pin=$proof.DependencyJSON[$i];Assert-T7CatalogueTextPin $pin $Build.Bindings
+        if($pin.Path -cne (Join-Path (Split-Path $Build.ReuseCompile.Receipt -Parent) ($specs[$i][0]+'/dependencies.json')) -or
+           $pin.Bytes -ne $specs[$i][1] -or $pin.SHA256 -cne $specs[$i][2]){throw 'Resident v2 retained dependency differs.'}
+    }
+    $depPath=Join-Path $Build.RunRoot 'zonetool11/dependencies.json';$doc=Read-H1SmallJson $depPath 1MB
+    $includes=$doc.Data.Includes;$included=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    if($includes -isnot [array] -or $includes.Count -gt 4096){throw 'Bounded resident v2 includes required.'}
+    # MSVC legitimately repeats Windows packing headers; only the prepared
+    # adapter and the 66 newly bound writer headers must occur exactly once.
+    foreach($path in $includes){Assert-H1Path $path;$null=$included.Add($path)}
+    $adapter=@($includes|Where-Object {[IO.Path]::GetFileName($_) -ieq 't7_iw7_resident_model.hpp'})
+    if($adapter.Count -ne 1 -or $adapter[0] -ine $pins.Header.Path -or $included.Contains($headers.PCHExcludedForPreparedYMinus)){
+        throw 'Resident v2 CLI must include the exact adapter once without the excluded PCH.'
+    }
+    foreach($pin in $headers.Inputs){if(@($includes|Where-Object {$_ -ieq $pin.Path}).Count -ne 1){throw 'Resident v2 CLI must include each reviewed header exactly once.'}}
+    Assert-T7ResidentMultiSurfaceClosure $Plan $Receipt $pins
+}
+function Assert-T7ResidentMultiSurfaceClosure($Plan,$Receipt,$Pins) {
+    $completion=Read-H1SmallJson $Pins.Completion.Path 32KB
+    $actual=Read-H1SmallJson $Pins.ActualHostExit.Path 4KB
+    $closure=Read-H1SmallJson $Pins.OriginalHostClosure.Path 4KB
+    $identity=Read-H1SmallJson $Pins.HostIdentity.Path 4KB
+    $witness=Read-H1SmallJson $Pins.Witness.Path 16KB
+    # Private compilation checkout, deliberately distinct from upstream fab935.
+    $source='0bc0b16aafb2ceb3863f9c20b5f50fb5c8a5f777'
+    if($completion.Schema -cne 'iw7.t7-multisurface-build-completion/1' -or $completion.SourceCommit -cne $source -or
+       $completion.Status -cne 'PassedOriginalHostExitedIndependentPending' -or $completion.NativeInvocationCount -ne 1 -or
+       $actual.Schema -cne 'iw7.t7-build-d-host-exit/1' -or $closure.Schema -cne 'iw7.t7-build-d-original-host-closure/1' -or
+       $identity.Schema -cne 'iw7.t7-build-d-host-identity/1' -or $identity.PlanSHA256 -cne $Pins.BuildPlan.SHA256 -or
+       $witness.Schema -cne 'iw7.t7-build-independent-absence/1' -or $witness.WitnessStatus -cne 'Passed' -or
+       $witness.BuildStatus -cne 'Passed' -or $witness.SourceCommit -cne $source -or $witness.PlanSHA256 -cne $Pins.BuildPlan.SHA256){throw 'Exact D closure source/status required.'}
+    foreach($pair in @(@($completion.Plan,$Pins.BuildPlan),@($completion.Receipt,$Pins.BuildReceipt),
+        @($actual.HostIdentity,$Pins.HostIdentity),@($actual.OriginalHostClosure,$Pins.OriginalHostClosure))){
+        foreach($field in 'Path','Bytes','SHA256'){if($pair[0].$field -cne $pair[1].$field){throw 'D closure evidence pin differs.'}}
+    }
+    foreach($role in 'BuildReceipt','HostIdentity','OriginalHostClosure','ActualHostExit'){
+        $matches=@($witness.EvidencePins|Where-Object Role -CEQ $role)
+        if($matches.Count -ne 1){throw 'D witness evidence role differs.'}
+        foreach($field in 'Path','Bytes','SHA256'){if($matches[0].$field -cne $Pins[$role].$field){throw 'D witness evidence pin differs.'}}
+    }
+    foreach($spec in @(@($completion,@('SourceTrackedClean','InputsReverified','TreeClosureConfirmed','LeaseReleased','OriginalHostClosureConfirmed')),
+        @($closure,@('Closed','OwnerClosed','LeaseIsNull','InputsReverified','CanExit')),
+        @($identity,@('ExactPlanCommandMatched')),@($witness,@('SourceCleanAndStable','SchedulerAndIndependentCimAgree')))){
+        foreach($field in $spec[1]){if($spec[0].$field -isnot [bool] -or !$spec[0].$field){throw 'D closure positive proof missing.'}}
+    }
+    foreach($field in 'Quarantined','CandidateExecuted','ExportExecuted','FastfileBuilt','RuntimeVerified','OwnerAccepted','Ready'){
+        if($completion.$field -isnot [bool] -or $completion.$field){throw 'D build-only closure claim differs.'}
+    }
+    foreach($value in @($completion.ExitCode,$closure.NativeOwnerExitCode,$closure.GuardCount,$closure.RegistryLeaseCount,
+        $witness.ObservedDescendantCount,$witness.RootProcessCount,$witness.OtherCommandLineRootProcessCount,$witness.LeaseCount,$witness.HeavyIncludingVctipCount)){
+        if(!(Test-T7CatalogueInteger $value 0)){throw 'D closure retains live work or a failed owner.'}
+    }
+    if($closure.ReceiptStatus -cne 'Passed' -or $completion.LeaseToken -cne $Receipt.LeaseToken -or
+       $identity.SessionId -ne $actual.SessionId -or $closure.SessionId -ne $identity.SessionId -or $closure.HostPID -ne $identity.Host.PID -or
+       $witness.ActualExit.PTYSessionId -ne $actual.SessionId -or $witness.ActualExit.ToolChunkId -cne $actual.ActualCompletion.ToolChunkId -or
+       $witness.ActualExit.OwnerThreadCommandStatus -cne 'completed' -or $witness.ActualExit.ExitInferredFromAbsence -isnot [bool] -or
+       $witness.ActualExit.ExitInferredFromAbsence -or !(Test-T7CatalogueInteger $witness.ActualExit.Code 0) -or
+       !(Test-T7CatalogueInteger $witness.ActualExit.OwnerThreadCommandExitCode 0)){throw 'Actual original D host exit required.'}
+    foreach($exitProof in @($actual.ActualCompletion,$completion.ActualPTYCompletion)){
+        if($exitProof.SessionCompleted -isnot [bool] -or !$exitProof.SessionCompleted -or !(Test-T7CatalogueInteger $exitProof.ExitCode 0) -or
+           $exitProof.ToolChunkId -cne 'd29829'){throw 'Completed original D PTY proof required.'}
+    }
+    $expected=[ordered]@{Host=$identity.Host;Parent=$identity.Parent}
+    foreach($stage in $Receipt.Stages){
+        $telemetry=$stage.CompilerTelemetry
+        if($telemetry.Completed -isnot [bool] -or !$telemetry.Completed -or $telemetry.CompilerResult.BoundInputsVerified -ne 141 -or
+           !(Test-T7CatalogueInteger $telemetry.CompilerResult.ExitCode 0) -or !(Test-T7CatalogueInteger $stage.LastOriginalSnapshot.ActiveProcesses 0) -or
+           @($telemetry.BeforeStopFirst.Members).Count -ne 1 -or !(Test-T7CatalogueInteger $telemetry.AfterStopMembers.ListedCount 0)){
+            throw 'D original compiler and telemetry closure required.'
+        }
+        $expected[$stage.Name+'Root']=$stage.Identity;$expected[$stage.Name+'Telemetry']=$telemetry.BeforeStopFirst.Members[0]
+    }
+    if(@($witness.AbsentExactIdentities).Count -ne 8){throw 'Eight exact D absence identities required.'}
+    foreach($role in $expected.Keys){
+        $matches=@($witness.AbsentExactIdentities|Where-Object Role -CEQ $role);$original=$expected[$role]
+        if($matches.Count -ne 1 -or $matches[0].PID -ne $original.PID -or $matches[0].Image -cne $original.Image -or
+           ([DateTimeOffset]$matches[0].CreatedUtc).UtcTicks -ne ([DateTimeOffset]$original.CreatedUtc).UtcTicks){throw 'D witness process identity differs.'}
+    }
+}
 function Assert-T7ResidentExportDiagnosticMetadata($Plan,$Base) {
     $old=@($Base.InputMetadata);$current=@($Plan.InputMetadata)
     if($old.Count -ne 27 -or $current.Count -ne 27 -or
@@ -163,9 +326,7 @@ function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
         if($pin.Path -cnotin $expected){throw 'Unexpected independent reader source.'}
         Assert-T7CatalogueTextPin $pin $Plan.Bindings
     }
-    # No operational v2 plan can reach admission using v1/diagnostic or invented
-    # candidate pins. Add an exact build transition only after its real closure.
-    if($version -eq 2){throw 'Resident v2 native qualification pending real reviewed build and receipt.'}
+    if($version -eq 2){$null=Get-T7ResidentMultiSurfaceBuildPins $Plan}
 }
 function Assert-T7ResidentExportCatalogue($Plan) {
     # Caller retains every text binding before these reads. No stock read or new qualification.
@@ -186,7 +347,7 @@ function Assert-T7ResidentExportCatalogue($Plan) {
         if($receipt.Report.$field -cne $Plan.SourceCatalogue.$field){throw 'Catalogue report pin differs from source receipt.'}
     }
     $fields=@('CandidateSource','CandidateBytes','CandidateSHA256','EngineSource','SteamSource','Zone','Bootstraps','SharedQualification','InputMetadata')
-    if(Get-T7ResidentExportDiagnostic $Plan){
+    if((Get-T7ResidentExportDiagnostic $Plan) -or (Get-T7ResidentExportVersion $Plan) -eq 2){
         Assert-T7ResidentExportDiagnosticMetadata $Plan $base
         $fields=@('EngineSource','SteamSource','Zone','Bootstraps','SharedQualification')
     }

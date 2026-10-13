@@ -240,5 +240,5 @@ try{
     if(Test-Path -LiteralPath $resolved){Remove-Item -LiteralPath $resolved -Recurse -Force}
 }
 
-[ordered]@{Status='Passed';Checks=$checks;FixtureKind='SyntheticOnly';NativeQualification='PendingRealBuild';
+[ordered]@{Status='Passed';Checks=$checks;FixtureKind='SyntheticOnly';NativeQualification='NotAssessedByGeometryFixtures';
     OwnerStockRead=$false;NativeProcessStarted=$false;RealLeaseAcquired=$false;OperationalPlanCreated=$false}|ConvertTo-Json
