@@ -16,6 +16,72 @@ and [the v2 export C attempt](RESIDENT-EXPORT-C.md). C retained its reviewed v2
 request and build D candidate but returned the v1 single-surface refusal without
 an export. These later records do not change this original v1 contract.
 
+## Corrected v2 export D, 2026-10-13
+
+[Launcher PR2](https://github.com/maxis0191/x64-zt-extensions/pull/2) fixed the
+v1 command substitution and merged as `cd33c9fb06d3a4d9425b9ff807f473040a979993`.
+Its exact head passed targeted local checks and independent review. GitHub
+Actions did not execute: runner ID 0, no steps, and the exact-head annotation
+reported failed account payments or the spending limit. The existing owner
+exception was used; this is not a CI pass.
+
+One distinct D invocation used composed asset source
+`b96a617e25d21ef272ac645544cc77d95e94aa7a` and the retained native build D
+candidate (21,805,568 bytes, SHA256
+`3c9271a0ef0e96cce26f44c30e6b04aa4c2338c86057ac52da489a7bc0e28e7f`).
+The real launch builder's argument vector matched the frozen plan:
+
+```text
+-t7-iw7-model-v2 mp_freerun_04 p7_fre_platform_cap_02 0
+```
+
+The native process exited naturally with code 1 after 5,831.6639 ms,
+**Failed / NoExport**, with this v2 refusal:
+
+```text
+t7-iw7-resident-static-v2: selected mesh must use one bounded resident shared buffer; flags=9 bytes=18624
+```
+
+No manifest, XMB or XSB was produced; serialized readback could not run. The
+message confirms the v2 path was reached, but does not establish the meaning
+or correctness of the shared-buffer ABI fields. Never relax this guard from
+the numeric values alone. Native shared-buffer interpretation is the next
+diagnostic task, separate from the corrected launch selection.
+
+The original runner confirmed normal tree closure, input reverification,
+engine-output validation, unchanged 27 original identities, 27 retained aliases
+and lease release. Its original host reached `Closed`, `CanExit=true`, zero
+wrapper guards and zero leases before actual PTY 61743 exited with code 1
+(tool chunk `687ab5`). Fresh process/registry observations then confirmed the
+host and native identities absent, zero heavy/game processes and zero leases.
+Main and the four checked UDP ports stayed absent. An unrelated idle MSVC
+telemetry helper was preserved; it was not an active compiler.
+
+Private evidence remains under ignored `t7-export-d-20261013/` and the composed
+source package's `runtime/t7-export-platform-d-20261013/`. Only bounded text
+evidence was read or hashed after release; no opaque payload was opened.
+
+| Evidence | Bytes | SHA256 |
+| --- | ---: | --- |
+| `plan.rev2.local.json` | 66286 | `a9f01c1178e40bd6fa9b89115da6934ab56f50a608552c35531a678ddea7aba1` |
+| `host-contract.rev2.local.json` | 1362 | `e137304395ea283e070a213e55758bdb82bbc1a365e8199c8b3069ee42c82ae4` |
+| native `evidence/receipt.json` | 34257 | `fe79176cd43ffd71512d231b67ce15d4f0d5d27c8733e5f037ca48a06ac4d22a` |
+| native `evidence/stdout.log` | 551 | `457b2d4a9aa3bf383b54778cb517cc30642106860fc81e339db3ad5ba27fe785` |
+| original `.host-postflight.json` | 1639 | `744ae2ff065d034262f5bf95f6fbf8e9b35159e0ad824052b42b607c64c40509` |
+| `host-exit-request.local.json` | 554 | `30ca4c1dc44919e1c1b613a72d3044ad03812cad0f7a70eca03a34bdebdd4a2f` |
+| `completion.local.json` | 4368 | `80e414edcafe0a098cb122fb7c887f11c0703f05494afa328e9a991ab075fde7` |
+
+The first preparatory DEFAULT refused relocated historical bootstrap
+qualification references. A separate plan revision restored their exact
+original paths; its DEFAULT passed without native types, payload hashes, aliases
+or leases. Earlier plan files and C evidence remain unchanged. A local
+preflight also initially misclassified the idle telemetry process, then omitted
+the H1 path-helper import; both corrections happened before the sole Run.
+No native rebuild or automatic retry occurred. The composed source package
+contains 859 text files (7,804,942 bytes), with reused retail stock as hardlinks.
+
+## Original v1 contract
+
 ## Evidence and admission
 
 The plan has schema `iw7.t7-resident-export-plan/1`. It retains the catalogue F
