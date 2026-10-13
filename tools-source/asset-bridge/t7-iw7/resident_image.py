@@ -1,10 +1,11 @@
-"""Bounded DDS serialization of an already copied, complete resident T7 2D image.
+"""Bounded DDS serialization and IW7 readback of a copied resident T7 2D image.
 
 No engine/process access, image decoding, color conversion or XPAK fallback.
 The DDS DX10 layout follows the retained DirectXTex DDS.h/EncodeDDSHeader path.
 """
 import argparse
 from dataclasses import dataclass, fields
+import hashlib
 import json
 from pathlib import Path
 import struct
@@ -159,8 +160,8 @@ def unique_object(pairs):
     return result
 
 
-def convert_files(metadata_path, pixels_path, output_path):
-    """Offline explicit files only. Never follows paths embedded in metadata."""
+def read_copy(metadata_path, pixels_path):
+    """Read only the two explicit bounded files, never a metadata-supplied path."""
     with metadata_path.open("rb") as stream:
         raw = stream.read(16385)
     require(len(raw) <= 16384, "copy metadata exceeds 16 KiB")
@@ -169,6 +170,61 @@ def convert_files(metadata_path, pixels_path, output_path):
     image = from_metadata(value)
     with pixels_path.open("rb") as stream:
         pixels = stream.read(image.total_size + 1)
+    require(len(pixels) == image.total_size, "exact immutable copied pixels required")
+    return image, pixels
+
+
+def verify_iw7_image(image, pixels, raw, expected_name, expected_semantic):
+    """Compare one pinned IW70x70 image dump with the selected copied bytes.
+
+    Semantic is an explicit IW7 binding, never inferred from T7 source_semantic.
+    Compressed blocks are compared unchanged; this does not decode their channels
+    or establish source capture provenance, shader compatibility or rendering.
+    """
+    mips = layout(image)
+    require(type(pixels) is bytes and len(pixels) == image.total_size,
+            "exact immutable copied pixels required")
+    require(type(expected_name) is str and expected_name and "\0" not in expected_name,
+            "explicit image name required")
+    name = expected_name.encode("utf-8")
+    require(len(name) <= 255, "image name exceeds 255 bytes")
+    require(type(expected_semantic) is int and 0 <= expected_semantic < 0x11,
+            "explicit IW7 texture semantic required")
+    require(type(raw) is bytes and 126 <= len(raw) <= image.total_size + 382 and
+            raw[:6] == b"\x08\x01\x01\0\0\0", "bounded IW7 image scalar required")
+    scalar = raw[6:118]
+    require(struct.unpack_from("<I", scalar, 24)[0] == image.dxgi_format,
+            "IW7 typed format differs")
+    require(scalar[32] == 3 and scalar[33] == expected_semantic and scalar[34] == 3,
+            "IW7 2D/file-image category or explicit semantic differs")
+    require(struct.unpack_from("<II4H", scalar, 40) ==
+            (image.total_size, image.total_size, image.width, image.height, 1, 1) and
+            scalar[56] == image.level_count and scalar[57] == 0 and
+            struct.unpack_from("<Q", scalar, 64)[0] != 0,
+            "IW7 resident dimensions/mips/byte counts differ")
+    literal = b"\x06\x01" + name + b"\0"
+    require(raw[118:118 + len(literal)] == literal, "IW7 image identity differs")
+    tail = raw[118 + len(literal):]
+    require(tail[:6] == b"\x08\x01" + struct.pack("<I", image.total_size) and
+            tail[6:] == pixels, "IW7 pixel/block array differs or has trailing bytes")
+    return {"image": expected_name, "dxgi_format": image.dxgi_format,
+            "width": image.width, "height": image.height, "mip_count": len(mips),
+            "pixel_bytes": image.total_size, "iw7_semantic": expected_semantic,
+            "pixel_sha256": hashlib.sha256(pixels).hexdigest(),
+            "serialized_pixel_bytes_verified": True,
+            "material_verified": False, "rendered_verified": False}
+
+
+def verify_files(metadata_path, pixels_path, dump_path, expected_name, expected_semantic):
+    image, pixels = read_copy(metadata_path, pixels_path)
+    with dump_path.open("rb") as stream:
+        raw = stream.read(image.total_size + 383)
+    return verify_iw7_image(image, pixels, raw, expected_name, expected_semantic)
+
+
+def convert_files(metadata_path, pixels_path, output_path):
+    """Offline explicit files only. Never follows paths embedded in metadata."""
+    image, pixels = read_copy(metadata_path, pixels_path)
     payload = to_dds(image, pixels)
     require(output_path.suffix.lower() == ".dds", "DDS output extension required")
     with output_path.open("xb") as stream:
@@ -183,10 +239,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("metadata", type=Path)
     parser.add_argument("pixels", type=Path)
-    parser.add_argument("output", type=Path)
+    parser.add_argument("output", type=Path, nargs="?")
+    parser.add_argument("--verify-iw7-image", type=Path)
+    parser.add_argument("--image-name")
+    parser.add_argument("--iw7-semantic", type=int)
     args = parser.parse_args()
     try:
-        print(json.dumps(convert_files(args.metadata, args.pixels, args.output)))
+        if args.verify_iw7_image is not None:
+            require(args.output is None and args.image_name is not None and args.iw7_semantic is not None,
+                    "readback requires explicit name/semantic and no DDS output")
+            result = verify_files(args.metadata, args.pixels, args.verify_iw7_image,
+                                  args.image_name, args.iw7_semantic)
+        else:
+            require(args.output is not None and args.image_name is None and args.iw7_semantic is None,
+                    "explicit DDS output or complete readback arguments required")
+            result = convert_files(args.metadata, args.pixels, args.output)
+        print(json.dumps(result))
         return 0
     except (OSError, ValueError, TypeError, RecursionError) as exc:
         print(json.dumps({"error": str(exc), "runtime_verified": False, "material_verified": False}))

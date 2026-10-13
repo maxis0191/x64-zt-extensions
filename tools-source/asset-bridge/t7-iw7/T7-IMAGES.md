@@ -144,6 +144,21 @@ UV/constant mapping and a compatible real IW7 techset. The T7 semantic is retain
 as metadata only; this helper does not repack normals/gloss/specular, assign a
 placeholder material, or establish rendered quality.
 
+The existing Python helper can also compare a dumped IW7 image with those same
+copied bytes, including every declared mip and unchanged compressed block:
+
+```text
+python -B -S resident_image.py copied-image.json copied-pixels.bin --verify-iw7-image selected.iw7Image --image-name community_bo3_color --iw7-semantic 2
+```
+
+This readback checks the pinned IW70x70 scalar, typed format, dimensions, mips,
+resident byte counts, explicit IW7 semantic, literal name and complete pixel array.
+It creates no DDS and reports serialized-byte verification only, not capture
+provenance, channel decoding, shader compatibility or rendered quality. On
+2026-10-13, 29 tiny synthetic image/readback/source tests passed; no real T7 image
+or native DDS import was exercised by that result. The earlier Material C witness
+and its exact 32x32 oracle remain unchanged.
+
 ## Selected material decision (2026-10-13)
 
 After a real export with the D candidate provides ordered `material_dependencies`,
@@ -170,6 +185,14 @@ T7 image semantic `DIFFUSE_MAP=2` or `NORMAL_MAP=4` does not supply that channel
 mapping. Do not infer compatible alpha, normal/gloss packing, constants or shader
 behavior from the image name/semantic. Keep qualified IW7 techset/state data;
 blind copying of T7 constant buffers is not a conversion.
+
+An existing [H1-to-IW7 mapping](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/h1/converter/iw7/assets/material.cpp#L146-L150)
+suggests a simpler first candidate: `mo_l_sm_replace_i0c0` for separate colour,
+`mo_l_sm_replace_i0c0n0` with normal, or `mo_l_sm_replace_i0c0s0n0` with specular.
+These use separate IW7 semantics 2/5/8; their actual recipient availability and
+own state/constant-buffer sidecars must be established before use. Renaming the
+packed shoes template's techset is insufficient. T7 normal/specular channels,
+binding hashes, sampler bits and nontrivial UV transforms remain to be mapped.
 
 The bounded route is one admissible resident image (2D, at most 4096 per dimension
 and 16 MiB pixels), the existing copier and DDS serializer, then one derived IW7
