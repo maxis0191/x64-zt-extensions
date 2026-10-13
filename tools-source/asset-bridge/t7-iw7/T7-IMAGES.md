@@ -282,6 +282,61 @@ diagnostic epoch must explicitly adopt the new helper and requalify the native
 CLI; D's synthetic cases do not supply that engine evidence. No diffuse image is
 inferred from a material name or an incomplete observation.
 
+### E3 image-header refusal and retained binding scalars
+
+The separate E3 stock sonde observed seven textures, eight samplers and zero
+constants in selected material 0. It copied the texture table, then refused at
+`image_header`, original binding index 0, with the same committed-readable-range
+guard. No image header, image name, source semantic, format or pixels were read.
+The stdout text was 1,404 bytes with SHA-256
+`433ebb839a9b07408d58e965487c6c856e3782dbb96398728a45eaf8268e1082`.
+That failed result and its compiled inputs remain frozen.
+
+The next correction records the scalar rows already owned after the texture-table
+copy before any image dereference. `nameHash`, `usage` and UV fields remain raw;
+addresses are never published. `image_pointer_present`, `image_header_read` and
+`image_read_state` distinguish `absent`, `not_attempted`, `observed` and `refused`.
+An image-name refusal may retain its already copied header metadata. A refused
+row records its image failure stage; later rows remain explicitly not attempted,
+rather than being mistaken for missing or unreadable images. The observer still
+stops at that refusal and leaves all completeness/lifetime/pixel claims false.
+Header/texture rechecks, maximum counts and read/output limits are unchanged.
+Attempt E on 2026-10-14 (Europe/Paris), source
+`8b953041b734fd129dd9d19aa61f92d198800a3d`, actually passed the changed fixture:
+
+```text
+PASS selected material metadata fixture: 63 checks; no pixels or engine calls.
+```
+
+The checker required the exact inventory of D50 plus 13 added/updated checks,
+including retained failed-binding scalars, later unvisited bindings, an unreadable
+image name after a copied header, and sparse image indices. MSVC C++20 `/W4 /WX`
+compile/link and the separately owned fixture both exited 0. The sole pinned
+`vctip` child was captured twice through the original compiler job; only that job
+was stopped, then fresh root0/active0/members0 preceded ordinary closure and test.
+All jobs closed before lease release, fresh postflight showed zero leases and
+heavy/game processes, and the invoking host exited 0. Retained outputs total
+4,393,223 bytes under the 6 MiB bound. The 187,904-byte executable SHA-256 is
+`28aaa52b2f28227a592cebbdfed94b50557f1a2519c52366f887a3785ada4312`.
+This qualifies the new synthetic diagnostics, not an engine pointer or authentic
+image capture. The earlier D50 and E3 results belong only to their frozen bytes;
+a future native CLI must explicitly adopt these new source inputs.
+
+Greyhound
+[`22c3d17`, image structures](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/DBGameAssets.h#L776-L815)
+also describes a `0x108` image header and name pointer at `0xF8`. Its
+[BO3 material/image reader](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/GameBlackOps3.cpp#L582-L633)
+uses `ImagePtr` directly, without a handle lookup, tag mask or second header-pointer
+dereference. This does not establish E3 pointer validity. Its pixel-size and format
+interpretations differ in field width from the native declarations; no resident
+profile is changed based on that source comparison.
+
+The same primary reader classifies binding `SemanticHash` (native `nameHash` at
+`0x08`) as DiffuseMap for `0xA0AB1041`, NormalMap for `0x59D30D0F`, SpecularMap for
+`0xEC443804`, otherwise Unknown. It does not use the native `usage` field or the
+separate T7 `GfxImage::semantic`. These labels can guide a future exact binding
+selection; they supply no filename, pixel encoding, texture lifetime or IW7 mapping.
+
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
 contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`
