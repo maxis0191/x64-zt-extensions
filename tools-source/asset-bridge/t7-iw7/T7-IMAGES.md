@@ -337,6 +337,50 @@ The same primary reader classifies binding `SemanticHash` (native `nameHash` at
 separate T7 `GfxImage::semantic`. These labels can guide a future exact binding
 selection; they supply no filename, pixel encoding, texture lifetime or IW7 mapping.
 
+### E4 stock binding observations
+
+The separate E4 sonde on 2026-10-14 (Europe/Paris) observed selected material 0
+of `p7_fre_platform_cap_02`, LOD 0, and retained all seven copied binding rows.
+Its header reported seven textures, eight samplers and zero constants; texture,
+sampler and technique-set pointers were present, while the constant-table pointer
+was absent. Every binding reported an image pointer present, but binding 0 refused
+at `image_header` before copying a header. Bindings 1 through 6 were explicitly
+`not_attempted`, not proven unreadable. All seven `image_header_read` values were
+false, and every `image` was null. No image name, format or pixels were captured.
+
+| Binding index | Raw `nameHash` | Raw `usage` | Image read state | Greyhound hash classification only |
+| --- | --- | --- | --- | --- |
+| 0 | `0x07176BF2` | 16 | `refused` at `image_header` | Unknown |
+| 1 | `0x389DD40F` | 0 | `not_attempted` | Unknown |
+| 2 | `0x59D30D0F` | 2 | `not_attempted` | NormalMap |
+| 3 | `0x6D0A6C98` | 8 | `not_attempted` | Unknown |
+| 4 | `0xA0AB1041` | 1 | `not_attempted` | DiffuseMap |
+| 5 | `0xEB529B4D` | 0 | `not_attempted` | Unknown |
+| 6 | `0xEC443804` | 4 | `not_attempted` | SpecularMap |
+
+The last column is an inference from the pinned primary reader cited above, not
+an additional runtime observation or an interpretation of `usage`. Binding 4 is
+therefore a precise diffuse-header diagnostic lead; it does not provide a name,
+encoding, retained allocation, converted IW7 material or rendered texture. All
+rows had `uvScaleBits=[1065353216,1065353216]`, `texSizeShift=[0,0]`,
+`uvOffset=[0,0,0]` and `isMatureContent=0`. The copied scalars were not rechecked
+after the image refusal; `headers_rechecked`, `allocation_retained`,
+`atomic_snapshot_proven`, `pixels_copied` and `ready` remained false.
+
+The completed stdout was 3,282 bytes with SHA-256
+`1ffe68788acf748ff9e1a51d48d8f852504aaf31be2c8779a8bd3ed2418b46d4`.
+The separate export still failed before the mesh reader: its surface-0 refusal
+reported bone/triangle offsets 0, vertices 208 versus expected 208, triangles 200
+versus expected 200, and `collisionTreePresent=1`. This is not a successful model
+export. The 36,743-byte receipt SHA-256 is
+`5c7454181c2e266c81d86ac44814a8ba539f0f2aeb142e95e82355709523c302`,
+under plan SHA-256
+`59178a77882aa6d69bee474405e78ceff64d91ea621585e1e05ef9a3c2fb9f0f`.
+It records status Failed, natural native exit 1, original tree closure confirmed,
+lease released, no termination request and Ready false. These qualified binding
+diagnostics do not change the frozen D/E3 results or establish image lifetime,
+pixel acquisition, geometry conversion or owner gameplay acceptance.
+
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
 contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`
