@@ -53,7 +53,9 @@ run in the witness path, including on diagnostic failure.
 Keep the conservative planned engine admission separate from static inspection:
 6 GiB physical / 8 GiB commit is an estimate, not a measured requirement. Pin
 the reviewed stage deadlines/output caps in its final runtime plan. Existing
-85% commit pressure, explicit stop request, exact original job stop, fresh
+system commit percentage is telemetry only under the 2026-10-13 owner update;
+the former 85% stop is superseded for future helper bindings. Explicit stop
+request, exact original job stop, fresh
 root/ActiveProcesses closure and lease quarantine rules remain. Do not shrink
 budgets to bypass an occupied slot or interrupt Main/the owner's client.
 
