@@ -58,8 +58,9 @@ run-root process, heavy workload, lease, client or relevant listener. Main
 remained stopped; the preserved Python identity was unchanged. It did not
 reinspect old native handles, read stdout or independently validate the count.
 
-Filenames below are under the producer's ignored runtime; the independent
-absence file is retained by the inventory checkout.
+Filenames below are under the `modding-distribution` checkout's ignored runtime;
+this differs from export A's `modding-h1-model-bridge` checkout. The independent
+absence file is retained by the `voice-resume-inventory` checkout.
 
 | Evidence | Bytes | SHA256 |
 | --- | ---: | --- |
