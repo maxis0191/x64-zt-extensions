@@ -43,6 +43,7 @@ namespace
         bool change_model_name = false, change_image_name = false, change_technique_name = false;
         bool change_technique_pointer = false;
         bool deny_image = false;
+        bool deny_image_name = false;
         std::size_t total_read = 0;
 
         fixture()
@@ -71,6 +72,7 @@ namespace
         void readable(const void* pointer, std::size_t bytes)
         {
             if (deny_image && pointer == &image) throw std::runtime_error("Synthetic image unreadable");
+            if (deny_image_name && pointer == image_name.c_str()) throw std::runtime_error("Synthetic image name unreadable");
             if (pointer == &material && bytes == sizeof(material) && ++material_reads == 4 && change_header)
                 material.cameraRegion = static_cast<t7::GfxCameraRegion>(1);
             if (pointer == &model && bytes == sizeof(model) && ++model_reads == 2 && change_model_name)
@@ -136,6 +138,8 @@ int main()
             result.at("selected_header").at("sampler_count") == 0 &&
             result.at("selected_header").at("constant_count") == 0);
         check(result.at("selected_header").size() == 7 && !result.contains("failure_stage"));
+        check(result.at("textures")[0].at("image_read_state") == "observed" &&
+            result.at("textures")[0].at("image_header_read") == true);
 
         fixture streamed;
         streamed.image.streaming = 1;
@@ -165,7 +169,39 @@ int main()
         const auto denied = unreadable.observe();
         check(denied.at("refused") == true && denied.at("material_names").size() == 2);
         check(denied.at("failure_stage") == "image_header" && denied.at("failure_index") == 0);
-        check(denied.at("textures").empty());
+        check(denied.at("textures").size() == 1 && denied.at("textures")[0].at("nameHash") == 42 &&
+            denied.at("textures")[0].at("usage") == 0);
+        check(denied.at("textures")[0].at("image_pointer_present") == true &&
+            denied.at("textures")[0].at("image_header_read") == false &&
+            denied.at("textures")[0].at("image_read_state") == "refused" &&
+            denied.at("textures")[0].at("image_read_failure_stage") == "image_header");
+        check(!denied.at("textures")[0].contains("image_name") && denied.at("textures")[0].at("image").is_null());
+
+        fixture later_binding;
+        later_binding.material.textureCount = 2;
+        later_binding.material.textureTable = later_binding.extra_textures;
+        later_binding.extra_textures[0] = later_binding.texture;
+        later_binding.extra_textures[1] = later_binding.texture;
+        later_binding.extra_textures[1].nameHash = 99;
+        later_binding.extra_textures[1].usage = 7;
+        later_binding.deny_image = true;
+        const auto later = later_binding.observe();
+        check(later.at("failure_index") == 0 && later.at("textures").size() == 2);
+        check(later.at("textures")[1].at("nameHash") == 99 && later.at("textures")[1].at("usage") == 7);
+        check(later.at("textures")[1].at("image_read_state") == "not_attempted" &&
+            later.at("textures")[1].at("image_header_read") == false &&
+            !later.at("textures")[1].contains("image_name"));
+        check(later.at("headers_rechecked") == false && later.at("allocation_retained") == false &&
+            later.at("pixels_copied") == false && later.at("ready") == false);
+
+        fixture unreadable_image_name;
+        unreadable_image_name.deny_image_name = true;
+        const auto denied_image_name = unreadable_image_name.observe();
+        check(denied_image_name.at("failure_stage") == "image_name" &&
+            denied_image_name.at("textures")[0].at("image_header_read") == true);
+        check(denied_image_name.at("textures")[0].at("image_read_state") == "refused" &&
+            denied_image_name.at("textures")[0].at("image").at("dxgi_format") == DXGI_FORMAT_R8G8B8A8_UNORM &&
+            !denied_image_name.at("textures")[0].contains("image_name"));
 
         fixture unreadable_textures;
         unreadable_textures.material.textureTable = reinterpret_cast<t7::MaterialTextureDef*>(std::uintptr_t{1});
@@ -202,6 +238,10 @@ int main()
         const auto sparse_refusal = sparse_images.observe();
         check(sparse_refusal.at("refused") == true && sparse_refusal.at("failure_stage") == "image_name_recheck");
         check(sparse_refusal.at("failure_index") == 1 && sparse_refusal.at("textures").size() == 2);
+        check(sparse_refusal.at("textures")[0].at("image_read_state") == "absent" &&
+            sparse_refusal.at("textures")[0].at("image_pointer_present") == false);
+        check(sparse_refusal.at("textures")[1].at("image_read_state") == "refused" &&
+            sparse_refusal.at("textures")[1].at("image_header_read") == true);
 
         fixture excessive;
         excessive.material.textureCount = 17;
