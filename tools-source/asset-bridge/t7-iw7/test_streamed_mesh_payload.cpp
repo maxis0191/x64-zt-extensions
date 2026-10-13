@@ -457,7 +457,7 @@ namespace
         append_group(excessive_groups, {{0, bytes(expected_size - 128u * 120u, 0x3b)}});
         auto too_many_groups = make_file(excessive_groups);
         refusal("129 groups / 3841 blocks accepted", [&] { (void)read(too_many_groups); });
-        check(copied_cases == 10 && refused_cases == 39, "fixture case inventory changed");
+        check(copied_cases == 13 && refused_cases == 46, "fixture case inventory changed");
     }
 
 #ifdef _WIN32
