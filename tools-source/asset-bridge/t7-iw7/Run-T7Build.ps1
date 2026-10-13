@@ -113,6 +113,114 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     }
     return $true
 }
+function Assert-T7InputBindings($Plan) {
+    # This runs before any binding is opened, binary metadata is queried or
+    # provider is loaded. The legacy bound stays 128; the exact v2 closure is 141.
+    $bindings=@($Plan.Bindings);$inputs=@($Plan.Inputs)
+    if($bindings.Count -gt 141 -or $inputs.Count -gt 2048 -or
+        @($bindings.Path|Sort-Object -Unique).Count -ne $bindings.Count -or
+        @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
+    if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}
+    $reuse=if($Plan.PSObject.Properties.Name -contains 'ReuseCompile'){$Plan.ReuseCompile}else{$null}
+    $v2=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ResidentMultiSurfaceV2'
+    if(!$v2) {
+        if($bindings.Count -gt 128){throw 'Legacy input binding limit is 128.'}
+        return
+    }
+    if($Plan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+        $Plan.BuildProfile.Name -cne 't7-catalog-message-publication' -or
+        $Plan.BuildProfile.PublicationSchema -cne 'iw7.t7-message-publication-build/1' -or
+        $reuse.RecompiledMain -isnot [bool] -or !$reuse.RecompiledMain -or
+        $reuse.RecompiledZonetool -isnot [bool] -or !$reuse.RecompiledZonetool -or
+        $reuse.PSObject.Properties.Name -contains 'ResidentSurfaceCountDiagnostic' -or
+        $bindings.Count -ne 141 -or $inputs.Count -ne 1146 -or
+        @($bindings|Where-Object IsText).Count -ne 135){throw 'Exact multisurface publication input profile required.'}
+    # Check classification by the retained six-tool metadata inventory too.
+    # Counts alone must not permit an EXE to become a pre-admission text read.
+    $binaryRows=[Collections.Generic.List[string]]::new()
+    foreach($pin in $bindings) {
+        if($pin.IsText) {
+            if([IO.Path]::GetExtension($pin.Path) -in @('.exe','.dll','.obj','.pdb','.lib','.res','.pch')){
+                throw 'Opaque build input cannot be a text binding.'
+            }
+        } else {$binaryRows.Add([IO.Path]::GetFileName($pin.Path).ToLowerInvariant()+'|'+$pin.Bytes+'|'+$pin.SHA256+"`n")}
+    }
+    $binaryRows.Sort([StringComparer]::Ordinal);$binaryBytes=[Text.Encoding]::UTF8.GetBytes(($binaryRows -join ''))
+    if($binaryBytes.Length -ne 494 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($binaryBytes)).ToLowerInvariant() -cne
+        '3d5bcf2d88a865efba3e9fea62c90949a7b44330631689946f733de3497cb89d'){throw 'Exact six binary metadata bindings required.'}
+    $proof=$reuse.ResidentMultiSurfaceV2;$headers=$proof.AdditionalHeaderInputs
+    $readSHA='d9cdd533796a9fe14e0d5140d8adcbf5cbc932fafd4c06e18a615d15199a2185'
+    $compileSHA='a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
+    $linkSHA='70455d2f32a9b034dda20fbaf48443ee68a02e552381edbf88b19d219f1f66b2'
+    if($proof.Schema -cne 'iw7.t7-resident-multi-surface-build/2' -or
+        $proof.Header -cne 'prepared/t7_iw7_resident_model.hpp' -or
+        $proof.PreviousSHA256 -cne '6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777' -or
+        $proof.SHA256 -cne '97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed' -or
+        $proof.E7ReadSHA256 -cne $readSHA -or $proof.E7CompileSHA256 -cne $compileSHA -or
+        $proof.E7LinkSHA256 -cne $linkSHA -or $proof.E7TranslationUnits -ne 413 -or $proof.E7Objects -ne 413 -or
+        $headers.Count -ne 66 -or $headers.Bytes -ne 87204 -or @($headers.Inputs).Count -ne 66 -or
+        $headers.E7ReadSHA256 -cne $readSHA -or $headers.E7CompileSHA256 -cne $compileSHA -or
+        $headers.CompilerContextMatchesCLI -isnot [bool] -or !$headers.CompilerContextMatchesCLI){
+        throw 'Complete pinned multisurface dependency proof required.'
+    }
+    $suffix='\src\zonetool\zonetool\iw7\assets\xsurface.cpp'
+    $tu=$headers.E7TranslationUnit
+    if(![IO.Path]::IsPathFullyQualified($tu) -or [IO.Path]::GetFullPath($tu) -cne $tu -or
+        !$tu.EndsWith($suffix,[StringComparison]::Ordinal)){throw 'Exact IW7 writer source context required.'}
+    $native=$tu.Substring(0,$tu.Length-$suffix.Length)
+    $rows=[Collections.Generic.List[string]]::new();$seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($pin in $headers.Inputs) {
+        if(![IO.Path]::IsPathFullyQualified($pin.Path) -or [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or
+            !$seen.Add($pin.Path) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 16KB -or
+            $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Canonical unique bounded header pin required.'}
+        $relative=[IO.Path]::GetRelativePath($native,$pin.Path).Replace('\','/').ToLowerInvariant()
+        $rows.Add($relative+'|'+$pin.Bytes+'|'+$pin.SHA256+"`n")
+        $input=@($inputs|Where-Object {$_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256})
+        $binding=@($bindings|Where-Object {$_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and
+            $_.SHA256 -ceq $pin.SHA256 -and $_.IsText})
+        if($input.Count -ne 1 -or $binding.Count -ne 1){throw 'Header proof/Inputs/text Bindings bijection differs.'}
+    }
+    # Canonical sorted relative-path|raw-bytes|SHA256 LF rows from the reviewed
+    # MULTISURFACE_HEADER_PINS table. Do not duplicate or discover native files.
+    $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
+    if($bytes.Length -ne 7676 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
+        '5ee7ea0b46848bca9f4d365d0035cf070b2f57c6723019ab1288a54a93a7297b'){throw 'Reviewed 66-header pin inventory differs.'}
+    $pch=$headers.PCHExcludedForPreparedYMinus
+    if(![IO.Path]::IsPathFullyQualified($pch) -or [IO.Path]::GetFullPath($pch) -cne $pch -or
+        !$pch.EndsWith('\obj\community.pch',[StringComparison]::Ordinal)){throw 'Exact excluded E7 PCH required.'}
+    $obj=Split-Path $pch -Parent
+    foreach($row in @(@('CL.read.1.tlog',$readSHA,15206288,15206288),
+        @('CL.command.1.tlog',$compileSHA,1,4MB),@('link.command.1.tlog',$linkSHA,1,256KB))) {
+        $path=Join-Path $obj ('tlog/'+$row[0])
+        if(@($bindings|Where-Object {$_.Path -ieq $path -and $_.IsText -and $_.SHA256 -ceq $row[1] -and
+            $_.Bytes -ge $row[2] -and $_.Bytes -le $row[3]}).Count -ne 1){throw 'Sealed E7 journal text binding absent.'}
+    }
+    if(@($proof.DependencyJSON).Count -ne 3 -or @($reuse.StageRoots).Count -ne 1){throw 'Exact retained dependency proof required.'}
+    $oldRun=Split-Path $reuse.StageRoots[0] -Parent
+    $depPins=@(@('helper',16296,'6897d27e8fe0754509e52258082d6178c8cb74fe21a8ef4b006006e97ab9dd12'),
+        @('zonetool11',76744,'cfe62be9ce9bf87abd8e6713f1e1f334d76f69472500d2cb260696de26ee8273'),
+        @('xpak',64444,'3d742923def4fb049d82853ac0e776ffd071228deaf1da1a624603d10dfd3908'))
+    foreach($row in $depPins) {
+        $path=Join-Path $oldRun ($row[0]+'/dependencies.json')
+        foreach($set in @(@($proof.DependencyJSON),$bindings)) {
+            if(@($set|Where-Object {$_.Path -ceq $path -and $_.Bytes -eq $row[1] -and $_.SHA256 -ceq $row[2]}).Count -ne 1){
+                throw 'Pinned C dependency JSON or binding differs.'
+            }
+        }
+        if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText}).Count -ne 1){throw 'C dependency JSON must be text.'}
+    }
+    if(@($proof.SourceTransitions).Count -ne 3){throw 'Exact three source transitions required.'}
+    $rows.Clear()
+    foreach($row in $proof.SourceTransitions) {
+        $rows.Add((@($row.Path,$row.PreviousBytes,$row.PreviousSHA256,$row.Bytes,$row.SHA256,$row.WiredBytes,$row.WiredSHA256)-join '|')+"`n")
+        $path=Join-Path (Split-Path $Plan.PreparedRoot -Parent) $row.Path
+        if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and $_.Bytes -eq $row.WiredBytes -and
+            $_.SHA256 -ceq $row.WiredSHA256}).Count -ne 1){throw 'Wired v2 transition binding differs.'}
+    }
+    $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
+    if($bytes.Length -ne 714 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
+        '6e2bb519b7a6a2a2bb4653f3530049ca75775d41e8566e704ea5917de559c3f7'){throw 'Reviewed v2 source transitions differ.'}
+}
 function Split-T7ResponseArguments([string]$Text) {
     # Deliberately bounded MSVC response syntax: space/tab separators and quoted
     # segments within arguments. Escaped/doubled or unclosed quotes are refused,
@@ -211,8 +319,7 @@ try {
     $publication=$null -ne $buildProfile -and $buildProfile.Name -ceq 't7-catalog-message-publication'
     $names=@(if($publication){'main','zonetool11','link'}elseif($recompiled){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
     if(@($plan.Stages).Count -ne $names.Count -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact full, retained-link or diagnostic main/link stages required.'}
-    if(@($plan.Bindings).Count -gt 128 -or @($plan.Inputs).Count -gt 2048 -or
-       @($plan.Bindings.Path|Sort-Object -Unique).Count -ne @($plan.Bindings).Count){throw 'Input set bound/uniqueness differs.'}
+    Assert-T7InputBindings $plan
     foreach($pin in $plan.Bindings) {
         if($pin.IsText -isnot [bool]){throw 'Binding text/binary classification required.'}
         if($pin.IsText){$null=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256}

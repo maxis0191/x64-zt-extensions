@@ -270,4 +270,7 @@ $texts=New-Responses $fixture
 $texts[2]=$texts[2].Replace('C:\fresh\','C:\fresh space\').Replace('/INCREMENTAL:NO',
     '/INCREMENTAL:NO /MANIFESTUAC:"level=''asInvoker'' uiAccess=''false''"')
 Assert-T7PublicationResponses $fixture $texts[0] $texts[1] $texts[2];$checks++
+$bindingResult=(& (Join-Path $PSScriptRoot 'Test-T7InputBindings.ps1'))|ConvertFrom-Json
+if(!$bindingResult.Passed -or $bindingResult.NativeInvoked -or $bindingResult.OpaqueContentRead){throw 'Early input binding tests failed.'}
+$checks+=$bindingResult.Checks
 "T7_BUILD_PROFILE_CHECKS=$checks"
