@@ -51,6 +51,16 @@ try {
     Check ((Get-T7CatalogueOutcome (New-TestCatalogue 0) 0) -ceq 'EmptyCatalogue') 'Empty catalogue lost.'
     foreach($n in 1,1024){Check ((Get-T7CatalogueOutcome (New-TestCatalogue $n) 0) -ceq 'CatalogueWithNames') 'Valid bounded names lost.'}
     Check ((Get-T7CatalogueOutcome (New-TestCatalogue) 2) -ceq 'ValidCatalogueFromFailedProcess') 'Nonzero root upgraded.'
+    $r=New-TestCatalogue;$r.requested_zone='zm_common'
+    Check ((Get-T7CatalogueOutcome $r 0 'zm_common') -ceq 'CatalogueWithNames') 'Allowlisted Zombies catalogue lost.'
+    Refuses {Get-T7CatalogueOutcome $r 0} 'request/provenance'
+    $r.requested_zone='mp_freerun_04'
+    Refuses {Get-T7CatalogueOutcome $r 0 'zm_common'} 'request/provenance'
+    $r.requested_zone=@('zm_common')
+    Refuses {Get-T7CatalogueOutcome $r 0 'zm_common'} 'request/provenance'
+    foreach($name in @('unknown_zone','ZM_COMMON','zm_common.ff','../zm_common','zm_common/','zm_common ',"zm_common`n",$null,1)){
+        Refuses {Get-T7CatalogueOutcome $null 0 $name} 'allowlisted'
+    }
     Refuses {Get-T7CatalogueOutcome (New-TestCatalogue 1025) 0} 'count exceeds'
     foreach($field in 'truncated','asset_zone_ownership_verified','zonetool_xpak_helper_reads_allowed','engine_io_verified','geometry_verified','runtime_verified','ready') {
         $r=New-TestCatalogue;$r.$field=$true
@@ -90,13 +100,22 @@ try {
     Check ((Read-T7CatalogueReport $plan $s $context) -ceq 'CatalogueWithNames' -and $context.Guards.Count -eq 1) 'Guarded report failed.'
     Refuses {[IO.File]::AppendAllText($path,'x')} '.'
     foreach($g in $context.Guards){$g.Dispose()};$context.Guards.Clear()
+    $plan|Add-Member NoteProperty Zone ([pscustomobject]@{Path=(Join-Path $root 'zm_common.ff')})
+    $r=New-TestCatalogue;$r.requested_zone='zm_common'
+    [IO.File]::WriteAllText($path,($r|ConvertTo-Json -Depth 8))
+    Check ((Read-T7CatalogueReport $plan $s $context) -ceq 'CatalogueWithNames') 'Report reader ignored selected Zombies zone.'
+    foreach($g in $context.Guards){$g.Dispose()};$context.Guards.Clear()
+    [IO.File]::WriteAllText($path,((New-TestCatalogue)|ConvertTo-Json -Depth 8))
+    Refuses {Read-T7CatalogueReport $plan $s $context} 'request/provenance'
+    foreach($g in $context.Guards){$g.Dispose()};$context.Guards.Clear()
+    $plan.PSObject.Properties.Remove('Zone')
     [IO.File]::WriteAllBytes($path,[byte[]]::new(512KB+1))
     Refuses {Read-T7CatalogueReport $plan $s $context} 'JSON size'
     Remove-Item -LiteralPath $path
     Remove-Item -LiteralPath $outDir
 
     # One synthetic 16 MiB FF; never read owner stock in tests.
-    $fakeFF=Join-Path $root 'synthetic.ff'
+    $fakeFF=Join-Path $root 'mp_freerun_04.ff'
     $file=[IO.FileStream]::new($fakeFF,'CreateNew','Write','Read');try{$file.SetLength(16977344)}finally{$file.Dispose()}
     $item=Get-Item -LiteralPath $fakeFF
     $zone=[pscustomobject]@{Path=$fakeFF;Bytes=$item.Length;Attributes=[string]$item.Attributes;LastWriteUtc=$item.LastWriteTimeUtc.ToString('o')}
@@ -124,6 +143,16 @@ try {
     $start=New-T7CatalogueStart $plan
     Check (($start.ArgumentList -join '|') -ceq '-t7-iw7-catalog|mp_freerun_04' -and !$start.UseShellExecute -and $start.CreateNoWindow) 'Fixed catalogue command changed.'
     Check ($start.Environment['LOCALAPPDATA'].StartsWith((Join-Path $root 'temp'))) 'Private environment changed.'
+    $plan|Add-Member NoteProperty Zone ([pscustomobject]@{Path=(Join-Path $root 'zm_common.ff')})
+    $start=New-T7CatalogueStart $plan
+    Check (($start.ArgumentList -join '|') -ceq '-t7-iw7-catalog|zm_common') 'Selected Zombies catalogue command differs.'
+    $zoneDir=Join-Path $work 'zone';[IO.Directory]::CreateDirectory($zoneDir)|Out-Null
+    $zoneAlias=Join-Path $zoneDir 'zm_common.ff';[IO.File]::WriteAllText($zoneAlias,'authored synthetic zone name only')
+    Assert-T7CatalogueEngineOutputs $plan;$checks++
+    $wrongAlias=Join-Path $zoneDir 'mp_freerun_04.ff';[IO.File]::WriteAllText($wrongAlias,'authored wrong zone name only')
+    Refuses {Assert-T7CatalogueEngineOutputs $plan} 'Unexpected zone'
+    Remove-Item -LiteralPath $wrongAlias;Remove-Item -LiteralPath $zoneAlias;Remove-Item -LiteralPath $zoneDir
+    $plan.PSObject.Properties.Remove('Zone')
 
     $appid=Join-Path $work 'steam_appid.txt'
     [IO.File]::WriteAllText($appid,'')

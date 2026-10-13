@@ -48,6 +48,39 @@ function New-Fixture {
 try {
     Check ($null -eq (Get-T7CatalogueBootstrap ([pscustomobject]@{}))) 'Historical absence rejected.'
     $f=New-Fixture;Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    # One selected-zone success and independent binding changes; existing factory stays fixed.
+    $oldZonePath=$f.Plan.Zone.Path
+    $f.Plan.Zone.Path=Join-Path $root 'zm_common.ff';$f.Plan.Zone.Bytes=36332480
+    $f.Plan.Zone.RelativePath='zone/zm_common.ff';$f.Plan.InputMetadata[3]=$f.Plan.Zone
+    $script:provider[$f.Plan.Zone.Path]=Copy-Value $script:provider[$oldZonePath]
+    $script:provider[$f.Plan.Zone.Path].Length=36332480
+    $f.Plan.Arguments[1]='zm_common'
+    $f.Plan.OutputKey='t7_iw7_catalog_74d24f210d6f255a1e1f63a978bc4cc643496107d00de87211ef84e565de1a88'
+    $f.Plan.OutputLimitBytes+=19355136
+    Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
+    Check ($f.Plan.OutputLimitBytes -eq 147165400) 'Zombies catalogue exact byte accounting differs.'
+    foreach($case in 'arguments','arguments-array','output-key','output-key-array','relative-path','relative-path-array','filename-case','filename-extension','unknown-zone','zone-size','zone-size-string','zone-binding','budget'){
+        $bad=Copy-Value $f
+        switch($case){
+            arguments {$bad.Plan.Arguments[1]='mp_freerun_04'}
+            arguments-array {$bad.Plan.Arguments[1]=@('zm_common')}
+            output-key {$bad.Plan.OutputKey='t7_iw7_catalog_1d7749fdf2454720fad852816e9ddde027a157a4cc486aa18b3eb8fd4a25c2ce'}
+            output-key-array {$bad.Plan.OutputKey=@($bad.Plan.OutputKey)}
+            relative-path {$bad.Plan.Zone.RelativePath='zone/mp_freerun_04.ff'}
+            relative-path-array {$bad.Plan.Zone.RelativePath=@($bad.Plan.Zone.RelativePath)}
+            filename-case {$bad.Plan.Zone.Path=Join-Path $root 'ZM_COMMON.ff'}
+            filename-extension {$bad.Plan.Zone.Path=Join-Path $root 'zm_common.FF'}
+            unknown-zone {$bad.Plan.Zone.Path=Join-Path $root 'unknown_zone.ff'}
+            zone-size {$bad.Plan.Zone.Bytes++}
+            zone-size-string {$bad.Plan.Zone.Bytes='36332480'}
+            zone-binding {$bad.Plan.Bindings+=@([pscustomobject]@{Path=$bad.Plan.Zone.Path;Bytes=36332480;SHA256=('0'*64);IsText=$false})}
+            budget {$bad.Plan.OutputLimitBytes++}
+        }
+        Refuses {Assert-T7CataloguePlan $bad.Plan $bad.Repo 'synthetic-runner'}
+    }
+    $bad=Copy-Value $f;$bad.Plan|Add-Member NoteProperty Operation 'ResidentExportV1'
+    Refuses {Get-T7CataloguePlanZoneSpec $bad.Plan} 'Resident export'
+    $f=New-Fixture
     Assert-T7CatalogueBootstrapReceipt $f.Plan $f.Receipt;$checks++
     Assert-T7CatalogueBootstrapIdentity $f.Plan;$checks++
     foreach($field in 'Path','RelativePath','Bytes','SHA256','FileId','HashProvenance'){
