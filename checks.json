@@ -919,6 +919,47 @@
         "-B",
         "ops/doom-source/test_prepare_ff.py"
       ]
+    },
+    {
+      "id": "recipient_stream_contract",
+      "command": [
+        "python",
+        "-B",
+        "tools-source/asset-bridge/recipient/check_recipient_streams.py",
+        "--sdk-drain",
+        "sdk/modding/beacon_tool_phase.py"
+      ]
+    },
+    {
+      "id": "test_sound_ff_transaction_dump",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1",
+        "-DumpOnly"
+      ]
+    },
+    {
+      "id": "test_sound_ff_transaction_standard",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/surfaces/sound/test_sound_ff_transaction.ps1",
+        "-StandardMod"
+      ]
+    },
+    {
+      "id": "recipient_snapshot",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/recipient/Test-RecipientInventorySnapshot.ps1",
+        "-FixtureRoot",
+        "{run}/recipient snapshot"
+      ]
     }
   ]
 }
