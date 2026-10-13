@@ -180,8 +180,54 @@ non-ready JSON, retaining names already collected when they can be serialized.
 The native caller must log that diagnostic separately and continue its original
 geometry selection, so this observation cannot erase its geometry refusal.
 The [tiny fixture](selected_material_observation_fixture.cpp) has synthetic
-headers and an unreadable pixel sentinel; it is prepared for the converter owner's
-combined compile/run, not yet qualified by native execution at this checkpoint.
+headers and an unreadable pixel sentinel. Its standalone attempt C passed all
+**32 checks** on 2026-10-13; the qualification and earlier failed attempts are
+recorded below. This does not qualify a real material capture.
+
+### Selected-material fixture: 32 checks passed (2026-10-13)
+
+Attempt C compiled the unchanged fixture and production helper from source
+package `afdd8062732499698a6a810918b8aae082ba3668`, including the actual T7
+structs at native pin `fab935826c898806855376662a8a03317b3ad8f1`. The helper and
+fixture are identical to the author-preserving cherry-pick merged in
+[PR 11](https://github.com/maxis0191/x64-zt-extensions/pull/11), merge
+`7fd2016cafc247dca0cd8372deaa383ace99fbff`. PR 9 was closed as superseded.
+MSVC 14.44 retained C++20, `/W4 /WX`, `/MD` and `/O1`.
+
+The combined compile/link root exited 0. Two original-job captures then proved
+that its sole remaining member was the pinned `vctip.exe` child with the same
+identity and the compiler as parent. The existing H1 original-job helpers stopped
+only that retained job; fresh observations confirmed root exit 0, zero active
+processes and an empty member list before ordinary closure. No global telemetry
+setting or external PID stop was used. The separately owned fixture then exited
+0 with the actual transcript:
+
+```text
+PASS selected material metadata fixture: 32 checks; no pixels or engine calls.
+```
+
+The executable measured 178,688 bytes, SHA-256
+`d76f9d8c107a092502f18e00eefaf67a2e187ff8e534638cc72a84cc3353a716`.
+The original-job receipt records both phase exits, artifact hashes and confirmed
+tree closure before resource release. All retained outputs, including that
+receipt, total 4,173,578 bytes. Fresh postflight observed zero leases and zero
+heavy/game processes; the invoking host exited 0.
+
+Earlier attempt A remains failed: the pinned NativeJob assembly consumed
+`ProcessStartInfo.ArgumentList`, while the first driver supplied `Arguments`.
+The compiler printed usage and produced no executable. Attempt B used the
+correct argument list and produced artifacts, but its naive whole-job wait
+expired before the standalone test. Its original compiler exit was not retained;
+artifact existence is not a passed compile/test receipt. Both failed jobs were
+closed and their leases released, with their separate evidence preserved.
+Attempt C reused the existing H1 compiler/member helpers rather than adding
+another process supervisor.
+
+This qualifies standalone synthetic metadata/refusal behavior, including the
+unreadable pixel sentinel. It does not establish live pointer lifetime, atomic
+snapshots, authentic texture bindings/pixels, channel conversion, shader import
+or rendered appearance. The next step is the reviewed native BO3 metadata sonde
+under its own resource admission, then one bounded authentic image candidate.
 
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
