@@ -1,0 +1,38 @@
+name: Source checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare exact private source inputs
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./bootstrap.ps1 -Output "$PWD/runtime/ci sources"
+      - name: Install hash-pinned synthetic image dependency
+        shell: pwsh
+        run: |
+          python -m pip install --only-binary=:all: --require-hashes --index-url https://pypi.org/simple -r ops/doom-textures/requirements-win-py312.txt
+          if ($LASTEXITCODE) { throw 'Pinned Pillow installation failed' }
+      - name: Product ownership and source regressions
+        shell: pwsh
+        run: |
+          git diff --check HEAD^ HEAD
+          if ($LASTEXITCODE) { throw 'Committed whitespace errors' }
+          ./checks.ps1 -Workspace "$PWD/runtime/ci sources" -Output "$PWD/runtime/ci checks"
