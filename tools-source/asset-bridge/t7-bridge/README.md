@@ -1,5 +1,10 @@
 # BO3 / T7 to IW7: selected static model
 
+2026-10-13 build checkpoint: [multisurface D compiled and linked successfully,
+with independently confirmed closure](../t7-iw7/BUILD-MULTISURFACE-D.md). This is
+build evidence only: the candidate was not executed, and this checkpoint does
+not qualify v2 export, fastfile, rendering or gameplay.
+
 Status, 2026-10-12: exact dedicated EXE acquired, then one bounded entrypoint
 diagnostic completed under the instrumented T7 loader. The offline review found
 no concrete refusal among its sampled sites; ABI compatibility remains unproved.

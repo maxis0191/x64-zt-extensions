@@ -347,6 +347,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($candidateProfile -ceq 't7-catalog-message-publication'){$bindingCount+=6}
         if($export){$bindingCount+=9}
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
+        if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
            !(Test-T7CatalogueInteger $Plan.OutputLimitBytes (106059160L+64MB+$limits.TotalBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
@@ -633,6 +634,9 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
     if($Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe')){throw 'Publication candidate is not the new link output.'}
     if($Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic'] -or $reuse.PSObject.Properties['ResidentSurfaceCountDiagnostic']){
         Assert-T7ResidentExportDiagnosticBuild $Plan $Receipt $Build
+    }
+    if($Plan.PSObject.Properties['ResidentMultiSurfaceV2'] -or $reuse.PSObject.Properties['ResidentMultiSurfaceV2']){
+        Assert-T7ResidentMultiSurfaceBuild $Plan $Receipt $Build
     }
 }
 function Get-T7CatalogueFileId([string]$Path) { [IW7HudFileIdentity]::Read($Path) }

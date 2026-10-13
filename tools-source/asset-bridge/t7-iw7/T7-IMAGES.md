@@ -1,9 +1,10 @@
 # Selected resident T7 image to DDS
 
 This is executable **offline pixel serialization**, plus a native copy adapter
-qualified against a synthetic fixture. Neither is connected to `native_export.inc`. The existing
-`iw7.t7-iw7-resident-export/1` model contract still emits its two geometry files;
-no material/image dependency has silently become complete.
+qualified against a synthetic fixture. Neither is connected to `native_export.inc`.
+The existing `iw7.t7-iw7-resident-export/1` and `/2` model contracts still emit
+their two geometry files; v2 adds ordered surface/material records, not material
+or image payload completeness.
 
 ## Reusable pieces
 
@@ -59,7 +60,8 @@ guarantee**: the source does not expose the loader's allocation lifecycle or pro
 that every referenced material/image is ready and unchanged there. The finish-load
 callback shown in the same source is no substitute for that evidence. Catalogue
 bootstrap remains the priority; next observe the selected dependencies in the
-existing callback. Do not implement `/2` before that first real observation.
+existing callback. Do not extend the image capture/publication contract before
+that first real observation; the existing geometry `/2` is a separate contract.
 No new infrastructure or exhaustive theoretical lifetime proof is required.
 
 ## Explicit v1 profile
@@ -141,6 +143,40 @@ parse/reload has not run here. The material still needs explicit slots, samplers
 UV/constant mapping and a compatible real IW7 techset. The T7 semantic is retained
 as metadata only; this helper does not repack normals/gloss/specular, assign a
 placeholder material, or establish rendered quality.
+
+## Selected material decision (2026-10-13)
+
+After a real export with the D candidate provides ordered `material_dependencies`,
+observe one named material and one selected image, including its aliased slots.
+The seam is [native_export.inc](native_export.inc)'s
+`selected->meshMaterials[0].materials[i]`, currently reduced to `material->name`.
+The callback scope above remains a placement to qualify, not a lifetime guarantee.
+Use narrowly bounded metadata instrumentation for these observations before
+adding pixel capture; this decision does not require a pixel exporter to exist first.
+
+At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
+[T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
+contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`
+and `isMatureContent`. Material supplies `textureCount/textureTable`,
+`samplerCount/samplerTable`, `constantCount/constantTable` and `techniqueSet`.
+Preserved mesh UVs therefore do not prove preserved texture placement; mapping
+these fields, sampler state and packed offsets remains unknown.
+
+The existing [MaterialV2 template](../surfaces/prepare_material_v2.py) uses
+IW7 bindings **14 = TS_COLOR_SPECULAR_MAP** and
+**15 = TS_NORMAL_OCCLUSSION_GLOSS_MAP**, per the pinned
+[IW7 enum](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/iw7/structs.hpp#L2729-L2748).
+T7 image semantic `DIFFUSE_MAP=2` or `NORMAL_MAP=4` does not supply that channel
+mapping. Do not infer compatible alpha, normal/gloss packing, constants or shader
+behavior from the image name/semantic. Keep qualified IW7 techset/state data;
+blind copying of T7 constant buffers is not a conversion.
+
+The bounded route is one admissible resident image (2D, at most 4096 per dimension
+and 16 MiB pixels), the existing copier and DDS serializer, then one derived IW7
+material in MaterialV2 and ModelFF. It still requires real capture/lifetime,
+DDS-import, channel/UV and selected-format readback evidence. The current
+synthetic 32x32 witness cannot establish those facts or BO3 rendering parity.
+See the [five-surface decision](../../../docs/CONTENT-SURFACES-BRIDGE.md#t7-five-surface-material-boundary-2026-10-13).
 
 ## Source and validation evidence
 
