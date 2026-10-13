@@ -2,6 +2,7 @@
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'H1Native.Core.ps1')
+$reviewedBudget=${function:Test-H1Budget}
 $passed=0
 function Check([bool]$Value,[string]$Message){if(!$Value){throw $Message};$script:passed++}
 function Refuses([scriptblock]$Action,[string]$Message){$failed=$false;try{& $Action|Out-Null}catch{$failed=$true};Check $failed $Message}
@@ -94,6 +95,53 @@ try {
     Refuses {Open-H1Pin $pin} 'Same-length changed source must fail binding.'
     [IO.File]::WriteAllText($path,('x'*130))
     Refuses {Read-H1SmallJson $path 128} 'JSON size bound failed.'
+    $budgetPlan=[pscustomobject]@{RunRoot=$temp;OutputLimitBytes=16KB;MetadataReserveBytes=1KB}
+    $script:memoryReads=0;$script:memoryFails=$false
+    function Get-IW7ResourceSnapshot {
+        $script:memoryReads++
+        if($script:memoryFails){throw 'Synthetic native memory provider failed.'}
+        $script:memorySnapshot
+    }
+    foreach($percent in @(84.99,85,85.01,99,100)){
+        $script:memorySnapshot=[pscustomobject]@{CommitLimit=1000000L;Committed=[long]($percent*10000);
+            CapturedUtc=[datetime]::UtcNow.ToString('o');Source='synthetic-no-allocation'}
+        foreach($budgetState in @([ordered]@{MaxObservedOutputBytes=0L},[pscustomobject]@{MaxObservedOutputBytes=0L})){
+            & $reviewedBudget $budgetPlan $budgetState
+            Check ($budgetState.LastMemoryObservation.Policy -ceq 'TelemetryOnly' -and
+                $budgetState.LastMemoryObservation.CommitUsedPercent -eq $percent) 'Near/high commit percentage refused or lost telemetry.'
+            Check ($budgetState.MaxObservedOutputBytes -eq 130) 'Memory policy change must preserve actual output accounting.'
+        }
+    }
+    Check ($script:memoryReads -eq 10) 'Every budget observation must read fresh native telemetry.'
+    $budgetState=[ordered]@{MaxObservedOutputBytes=0L}
+    $script:memorySnapshot=[pscustomobject]@{CommitLimit=1000000L;Committed=850100L}
+    & $reviewedBudget $budgetPlan $budgetState
+    $script:memorySnapshot=[pscustomobject]@{CommitLimit=1000000L;Committed=990000L}
+    & $reviewedBudget $budgetPlan $budgetState
+    Check ($budgetState.LastMemoryObservation.CommitUsedPercent -eq 99 -and
+        @($budgetState.Keys | Where-Object {$_ -eq 'LastMemoryObservation'}).Count -eq 1) 'Fresh observations must replace one bounded record.'
+    foreach($invalid in @($null,[pscustomobject]@{CommitLimit=0;Committed=0},
+        [pscustomobject]@{CommitLimit=100;Committed=-1},[pscustomobject]@{CommitLimit=100;Committed=101})){
+        $script:memorySnapshot=$invalid
+        Refuses {& $reviewedBudget $budgetPlan $budgetState} 'Missing/impossible telemetry must still fail.'
+    }
+    $script:memoryFails=$true
+    Refuses {& $reviewedBudget $budgetPlan $budgetState} 'A native memory provider exception must still fail.'
+    $script:memoryFails=$false
+    $script:memorySnapshot=[pscustomobject]@{CommitLimit=1000000L;Committed=990000L}
+    # Exercise the actual budget observer together with synthetic original-job
+    # OOM failure/cleanup. No native process or pressure allocation is induced.
+    $lifecycleBudget=${function:Test-H1Budget}
+    try {
+        ${function:Test-H1Budget}=$reviewedBudget
+        $context=New-Case;$state=New-State $context;$script:fake=New-FakeOwner $true $false -1073741801
+        Refuses {Invoke-H1OwnedStage $budgetPlan $state $context $start ('a'*64) 'C:\unused'} 'An out-of-memory exit must not be converted to success.'
+        Complete-H1Stage $context $state
+        Check ($state.ExitCode -eq -1073741801 -and $state.LeaseReleased -and
+            $state.LastMemoryObservation.CommitUsedPercent -eq 99) 'OOM failure/confirmed teardown must survive telemetry-only memory.'
+    }finally{${function:Test-H1Budget}=$lifecycleBudget}
+    $overOutputPlan=[pscustomobject]@{RunRoot=$temp;OutputLimitBytes=130;MetadataReserveBytes=1}
+    Refuses {& $reviewedBudget $overOutputPlan $budgetState} 'Output cap must still fail even with telemetry-only memory.'
     $outputPlan=[pscustomobject]@{RunRoot=$temp;OutputLimitBytes=132;MetadataReserveBytes=128}
     Refuses {Write-H1Receipt $outputPlan ([ordered]@{Status='Passed'}) $temp} 'Final receipt must count its own bytes.'
     Check (!(Test-Path -LiteralPath (Join-Path $temp 'receipt.json'))) 'Oversized success receipt was published.'

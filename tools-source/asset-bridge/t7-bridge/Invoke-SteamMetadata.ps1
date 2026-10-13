@@ -92,7 +92,13 @@ function Wait-SteamOriginal($Settings,$State,$Context,[double]$Started) {
     while($true) {
         $State.Output=Measure-SteamAttempt $Settings $Started
         $memory=Get-IW7ResourceSnapshot
-        if($memory.CommitLimit -le 0 -or $memory.Committed -lt 0 -or $memory.Committed -gt $memory.CommitLimit*0.85){throw 'Commit high water or invalid telemetry.'}
+        if(!$memory -or $memory.CommitLimit -le 0 -or $memory.Committed -lt 0 -or
+           $memory.Committed -gt $memory.CommitLimit){throw 'Invalid fresh memory telemetry.'}
+        # Owner GO 2026-10-13: percentages are observations, not a stop policy.
+        $observation=[ordered]@{Policy='TelemetryOnly';ObservedUtc=[datetime]::UtcNow.ToString('o');
+            Snapshot=$memory;CommitUsedPercent=[math]::Round(100*$memory.Committed/$memory.CommitLimit,2)}
+        if($State -is [Collections.IDictionary]){$State['LastMemoryObservation']=$observation}
+        else {Add-Member -InputObject $State -NotePropertyName LastMemoryObservation -NotePropertyValue $observation -Force}
         Assert-H1Deadline $Started 200
         $sample=Get-H1OriginalState $Context.Owner
         Assert-SteamOriginal $sample $State.Identity

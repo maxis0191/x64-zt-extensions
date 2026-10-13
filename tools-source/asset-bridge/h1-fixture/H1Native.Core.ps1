@@ -57,7 +57,14 @@ function Test-H1Budget($Plan,$State) {
     $State.MaxObservedOutputBytes=[math]::Max($State.MaxObservedOutputBytes,$bytes)
     if($bytes -gt $Plan.OutputLimitBytes-$Plan.MetadataReserveBytes){throw 'Output budget exceeded; preserve diagnostics.'}
     $snapshot=Get-IW7ResourceSnapshot
-    if($snapshot.CommitLimit -le 0 -or $snapshot.Committed -gt $snapshot.CommitLimit*0.85){throw 'Commit high water exceeded.'}
+    if(!$snapshot -or $snapshot.CommitLimit -le 0 -or $snapshot.Committed -lt 0 -or
+       $snapshot.Committed -gt $snapshot.CommitLimit){throw 'Invalid fresh memory telemetry.'}
+    # Owner GO 2026-10-13: system memory percentages are telemetry only. Keep
+    # one current observation, not an unbounded history or a numeric stop policy.
+    $observation=[ordered]@{Policy='TelemetryOnly';ObservedUtc=[datetime]::UtcNow.ToString('o');
+        Snapshot=$snapshot;CommitUsedPercent=[math]::Round(100*$snapshot.Committed/$snapshot.CommitLimit,2)}
+    if($State -is [Collections.IDictionary]){$State['LastMemoryObservation']=$observation}
+    else {Add-Member -InputObject $State -NotePropertyName LastMemoryObservation -NotePropertyValue $observation -Force}
 }
 function Register-H1Original($Lease,$Identity) {
     # Register only the original handle tuple, never adopt a PID's new occupant.

@@ -1,5 +1,11 @@
 # Original H1 fixture: exact IW7 dump preparation
 
+Future helper policy, 2026-10-13: `Test-H1Budget` records fresh commit telemetry
+and has no percentage-based stop. This supersedes the old 85% ceiling for future
+bindings; the separately qualified historical compile/probe plans and results
+below retain their original identities. Output/deadline/ownership/closure checks
+remain. See [current helper policy](NATIVE-PROBE.md).
+
 2026-10-12: the source/light preparation below was followed by separately
 authorized **Compile A and Probe A, both passed**, then an independent readback
 of the actual two dumps, also passed. Probe A performed 149 checks. Compile B

@@ -1,5 +1,16 @@
 # First real T7 catalogue: one minimal experiment
 
+Future helper update, 2026-10-13: the shared H1 budget observer now keeps fresh
+commit snapshots/percentages as `TelemetryOnly`, without the former 85% abort.
+Catalogue/prepatch runtime wrappers inherit this shared observer. The separate
+Steam metadata original-job loop records the same policy without its former
+85% stop. Invalid
+telemetry, output limits, original identities, deadlines, stop requests, native
+failures and confirmed closure/quarantine remain guarded. Frozen E2/F plans,
+receipts and helper snapshots are not rewritten or requalified by this change.
+Prepare and review fresh helper bindings for future runs; no run is authorized
+or claimed by the source update itself.
+
 ## Zombies common catalogue A, 2026-10-13
 
 The two-zone catalogue source was reviewed and merged in
@@ -160,7 +171,7 @@ and postflight.
   conservative estimates, not measured catalogue maxima.
 - Total 200 seconds, root 120 seconds, failure closure 5 seconds. Input
   qualification and final acceptance share the total clock.
-- Stop on the existing marker, invalid telemetry, commit pressure above 85%,
+- Stop on the existing marker, invalid telemetry,
   output overflow, changed input identity, native failure or deadline. Uncertain
   closure/release retains the existing quarantine context and live host.
 - Mutable output 64 MiB, 64-entry tree bound, 64 KiB receipt reserve, logs at most
