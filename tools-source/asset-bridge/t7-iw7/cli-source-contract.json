@@ -70,8 +70,8 @@
   "external_adapter": {
     "repository_path": "tools-source/asset-bridge/t7-bridge/t7_iw7_resident_model.hpp",
     "profile": "t7-iw7-resident-static-v1",
-    "lf_bytes": 13444,
-    "lf_sha256": "6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777",
+    "lf_bytes": 13545,
+    "lf_sha256": "701e3d1eccb0e98ecccfd2012215aaf7eff8db7bd974b184e86648a138b6e3c3",
     "compile_verified": false,
     "source_commit": "cf1949658fa374bcd14db79865247243fca7c34c",
     "required_sibling": {
