@@ -102,7 +102,14 @@ namespace zonetool::t7::streamed_iw7
                 const auto& rigid = rigid_lists.back().value;
                 require(rigid.boneOffset == 0 && rigid.vertCount == surface.vertCount &&
                     rigid.triOffset == 0 && rigid.triCount == surface.triCount && !rigid.collisionTree,
-                    "selected streamed rigid coverage differs");
+                    ("selected streamed rigid coverage differs; surface=" + std::to_string(i) +
+                     " boneOffset=" + std::to_string(rigid.boneOffset) +
+                     " vertices=" + std::to_string(rigid.vertCount) +
+                     " expectedVertices=" + std::to_string(surface.vertCount) +
+                     " triOffset=" + std::to_string(rigid.triOffset) +
+                     " triangles=" + std::to_string(rigid.triCount) +
+                     " expectedTriangles=" + std::to_string(surface.triCount) +
+                     " collisionTreePresent=" + std::to_string(rigid.collisionTree != nullptr)).c_str());
                 require(std::uint64_t(surface.baseVertOffset) + surface.vertCount <= shared.value.vertCount &&
                     std::uint64_t(surface.baseIndexOffset) + std::uint64_t(surface.triCount) * 3 <= shared.value.indexCount,
                     "selected streamed surface exceeds shared counts");
