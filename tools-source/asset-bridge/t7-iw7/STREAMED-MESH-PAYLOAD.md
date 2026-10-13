@@ -94,7 +94,15 @@ sealing case. The latter checks retained-handle lifetime, ordinary write-open
 refusal and release/cleanup. Inputs are entirely synthetic; the fixture takes
 no arguments and reports `retail_files_read=false` and `engine_observed=false`.
 
-Compilation and execution are pending the coordinated HeavyGO. The new
+The admitted native attempt A on 2026-10-13 at source `be0b6727ce9dbaaa081def243d73f5bcbaf51746`
+compiled LZ4 and created `lz4.obj` (123791 bytes), but the owned compiler tree
+did not complete before the 30-second group deadline. The fixture C++ build and
+execution never started. The failure is preserved; owned-tree cleanup and lease
+release completed, and the fresh registry was empty. No decoder/Win32 pass is
+claimed. A compiler auxiliary service outliving its root is a hypothesis pending
+capture, not an established cause of this attempt.
+
+Fixture compilation and execution are pending the next coordinated HeavyGO. The new
 `Selected XPAK fixture` workflow compiles the same test on Windows with MSVC
 `/std:c++20 /MT /W4 /WX`, then executes it. A local run must use the current
 `iw7-mod-components` resource wrapper, one synchronous compile/link/run group,
