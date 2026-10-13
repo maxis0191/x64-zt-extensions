@@ -282,6 +282,43 @@ diagnostic epoch must explicitly adopt the new helper and requalify the native
 CLI; D's synthetic cases do not supply that engine evidence. No diffuse image is
 inferred from a material name or an incomplete observation.
 
+### E3 image-header refusal and retained binding scalars
+
+The separate E3 stock sonde observed seven textures, eight samplers and zero
+constants in selected material 0. It copied the texture table, then refused at
+`image_header`, original binding index 0, with the same committed-readable-range
+guard. No image header, image name, source semantic, format or pixels were read.
+The stdout text was 1,404 bytes with SHA-256
+`433ebb839a9b07408d58e965487c6c856e3782dbb96398728a45eaf8268e1082`.
+That failed result and its compiled inputs remain frozen.
+
+The next correction records the scalar rows already owned after the texture-table
+copy before any image dereference. `nameHash`, `usage` and UV fields remain raw;
+addresses are never published. `image_pointer_present`, `image_header_read` and
+`image_read_state` distinguish `absent`, `not_attempted`, `observed` and `refused`.
+An image-name refusal may retain its already copied header metadata. A refused
+row records its image failure stage; later rows remain explicitly not attempted,
+rather than being mistaken for missing or unreadable images. The observer still
+stops at that refusal and leaves all completeness/lifetime/pixel claims false.
+Header/texture rechecks, maximum counts and read/output limits are unchanged.
+New synthetic cases for retained scalars and later unvisited bindings are prepared;
+their native execution is pending. The earlier D50 result belongs to its own bytes.
+
+Greyhound
+[`22c3d17`, image structures](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/DBGameAssets.h#L776-L815)
+also describes a `0x108` image header and name pointer at `0xF8`. Its
+[BO3 material/image reader](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/GameBlackOps3.cpp#L582-L633)
+uses `ImagePtr` directly, without a handle lookup, tag mask or second header-pointer
+dereference. This does not establish E3 pointer validity. Its pixel-size and format
+interpretations differ in field width from the native declarations; no resident
+profile is changed based on that source comparison.
+
+The same primary reader classifies binding `SemanticHash` (native `nameHash` at
+`0x08`) as DiffuseMap for `0xA0AB1041`, NormalMap for `0x59D30D0F`, SpecularMap for
+`0xEC443804`, otherwise Unknown. It does not use the native `usage` field or the
+separate T7 `GfxImage::semantic`. These labels can guide a future exact binding
+selection; they supply no filename, pixel encoding, texture lifetime or IW7 mapping.
+
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
 contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`
