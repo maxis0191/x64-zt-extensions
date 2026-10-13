@@ -70,7 +70,22 @@ def stage(writer_run, output):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--writer-run',required=True,type=Path)
+    source=parser.add_mutually_exclusive_group(required=True)
+    source.add_argument('--writer-run',type=Path)
+    source.add_argument('--export-root',type=Path)
+    parser.add_argument('--request',type=Path)
+    parser.add_argument('--manifest',type=Path)
+    parser.add_argument('--rebind-material')
+    parser.add_argument('--lod-distance',type=float)
     parser.add_argument('--output',required=True,type=Path)
     args=parser.parse_args()
-    print(json.dumps(stage(args.writer_run,args.output),indent=2))
+    if args.export_root:
+        if not args.request or not args.manifest or not args.rebind_material:
+            parser.error('Resident export requires --request, --manifest and explicit --rebind-material')
+        import rigid_export
+        result=rigid_export.stage(args.export_root,args.request,args.manifest,args.output,args.rebind_material,args.lod_distance)
+    else:
+        if args.request or args.manifest or args.rebind_material or args.lod_distance is not None:
+            parser.error('Resident derivation options require --export-root')
+        result=stage(args.writer_run,args.output)
+    print(json.dumps(result,indent=2))
