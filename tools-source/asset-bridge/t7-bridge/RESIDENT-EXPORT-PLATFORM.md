@@ -11,6 +11,11 @@ This is source preparation, not a completed retail export. A frozen plan review
 and separate exact-plan GO remain required. No new qualification, FF content
 read, binary hash, native execution or real payload read was part of these tests.
 
+Subsequent observations are recorded separately: [diagnostic B](RESIDENT-EXPORT-B.md)
+and [the v2 export C attempt](RESIDENT-EXPORT-C.md). C retained its reviewed v2
+request and build D candidate but returned the v1 single-surface refusal without
+an export. These later records do not change this original v1 contract.
+
 ## Evidence and admission
 
 The plan has schema `iw7.t7-resident-export-plan/1`. It retains the catalogue F
