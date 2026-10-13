@@ -32,6 +32,11 @@ int main()
         check(selected_xpak_cli::parse(args{L"--help"}).help);
         auto inspect = valid(); inspect.erase(inspect.begin() + 4, inspect.begin() + 6); inspect.push_back(L"--inspect");
         check(selected_xpak_cli::parse(inspect).inspect);
+        check(selected_xpak_cli::lexical_path_within(L"\\\\?\\C:\\", L"\\\\?\\C:\\"));
+        check(selected_xpak_cli::lexical_path_within(L"\\\\?\\C:\\private\\mesh.bin", L"\\\\?\\C:\\"));
+        check(!selected_xpak_cli::lexical_path_within(L"\\\\?\\D:\\private\\mesh.bin", L"\\\\?\\C:\\"));
+        check(selected_xpak_cli::lexical_path_within(L"\\\\?\\C:\\game\\private\\mesh.bin", L"\\\\?\\C:\\game"));
+        check(!selected_xpak_cli::lexical_path_within(L"\\\\?\\C:\\game-neighbor\\mesh.bin", L"\\\\?\\C:\\game"));
         for (const auto* key : {L"0123456789abcdeF", L"0x0123456789abcdef", L"123", L"g123456789abcdef"})
         { auto bad = valid(); bad[1] = key; refuses(bad); }
         for (const auto* size : {L"0", L"262145", L"018624", L"+18624", L"18446744073709551616"})

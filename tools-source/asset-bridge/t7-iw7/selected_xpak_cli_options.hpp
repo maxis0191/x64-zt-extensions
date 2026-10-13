@@ -31,6 +31,14 @@ namespace selected_xpak_cli
             value[1] == L':' && value[2] == L'\\' && value.find(L'\0') == std::wstring::npos &&
             value.find(L':', 2) == std::wstring::npos;
     }
+    // Caller supplies normalized DOS paths with canonical drive-letter case.
+    inline bool lexical_path_within(const std::wstring& value, const std::wstring& root)
+    {
+        if (root.empty()) return false;
+        if (value == root) return true;
+        return value.size() > root.size() && value.compare(0, root.size(), root) == 0 &&
+            (root.back() == L'\\' || value[root.size()] == L'\\');
+    }
     inline std::uint64_t decimal(const std::wstring& value)
     {
         require(!value.empty() && (value.size() == 1 || value[0] != L'0'), "Canonical unsigned decimal required");

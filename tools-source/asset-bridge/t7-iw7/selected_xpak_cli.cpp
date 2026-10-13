@@ -81,8 +81,7 @@ namespace
     bool within(const fs::path& path, const fs::path& root)
     {
         const auto value = expected_dos(path), base = expected_dos(root);
-        return value == base || (value.size() > base.size() && value.compare(0, base.size(), base) == 0 &&
-            value[base.size()] == L'\\');
+        return selected_xpak_cli::lexical_path_within(value, base);
     }
     bool zone_name(std::wstring value)
     {

@@ -85,6 +85,8 @@ generic min/max decoded lengths, early bound refusal, exact-length mismatch,
 truncated framing, invalid signed LZ4 output and unchanged strict-mesh refusal.
 The parameter fixture checks canonical key/identity/decimal parsing, overflow,
 missing/duplicate options, inspection/output exclusivity and the eight-file cap.
+Pure output-containment cases cover a protected drive root, the same root,
+a different volume, a child directory and a sibling whose name shares a prefix.
 
 Current checkpoint: source prepared only. No new native compilation, generic
 fixture execution, CLI output creation or real selected payload decode is
