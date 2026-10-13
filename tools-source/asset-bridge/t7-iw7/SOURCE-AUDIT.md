@@ -266,3 +266,43 @@ stock read occurred. All 27 source tests and the four-file patch apply check pas
 This addition still changes only the same three translation units plus xpak.hpp;
 the prior export-only plan/pins remain historical evidence and must not be reused
 as the catalogue build identity.
+
+## Selected streamed mesh observation - 2026-10-13
+
+The D export with the corrected launcher reached v2 and refused the selected
+`p7_fre_platform_cap_02` LOD0 mesh: shared flags 9, declared data size 18,624
+bytes. No XMB, XSB or export manifest was produced. The pinned converter treats
+`shared.flags & 1` as streamed data and resolves `mesh.xpakEntry.key` through
+the XPAK provider. This agrees with the resident refusal; it does not establish
+that the live ABI is correct, nor that `shared.data` is a readable CPU buffer.
+
+The source candidate adds a bounded stdout observation before v2 selection.
+It reads only the requested model/mesh/shared/surface headers and bounded names,
+publishing the selected XPAK entry, stream offsets and individual surface counts.
+Only its key is interpreted; the following 24 descriptor bytes are reported as
+three opaque words. Independent BO3 source corroborates the key/mesh/shared
+offsets but does not establish the descriptor bitfield semantics.
+It reads no vertex/index/weight buffer or XPAK, creates no files and changes no
+engine object. Output is limited to 64 KiB. An observation error is logged
+separately and the original selector still determines export success or refusal.
+V1 behavior, irreversible XPAK-helper denial and the resident guards are retained.
+
+The existing catalogue cannot supply these fields: it reads model names and
+bone/root/LOD counts only. The new observation supplies the missing key and
+header evidence for a future single-entry provider; it does not authorize or
+implement streamed export. The legacy XPAK cache scans package directories and
+its decompressor lacks sufficient input/output range checks for this route.
+A separately declared, bounded provider needs actual entry/block evidence.
+This source addition has not yet been compiled or executed.
+
+The same candidate includes the separately bounded selected-material observer:
+ordered material names and one chosen slot's image/sampler/constant headers,
+without reading pixels. Both source-pinned headers are rendered at global scope
+in the CLI translation unit; the prepared-file inventory stays unchanged.
+The current source transition tuples are updated explicitly. Historical D/F
+receipts retain their original tuple and helper versions.
+
+An intermediate source-pin generator hashed a JSON representation instead of
+the runner's sorted newline-delimited rows. This was corrected before a build
+plan or native execution; the targeted PowerShell binding suite passed with
+the actual 714-byte row format. This is source validation, not native validation.

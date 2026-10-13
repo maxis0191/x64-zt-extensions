@@ -21,7 +21,7 @@ function New-BindingFixture {
     $linkSHA='70455d2f32a9b034dda20fbaf48443ee68a02e552381edbf88b19d219f1f66b2'
     $transitions=@(foreach($row in @(
         @('main.cpp',12854,'40de5fda829cec32a5d75359f58e69c84db7d8ee54f198cf6befa2a6ebe6f86e',12944,'ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615',43038,'3ff489d38adfa4da640c5acd6a78b1600f312fbaef47d41b118fabd7dcd3fb84'),
-        @('zonetool.cpp',35974,'106ccdb4aec584184132c309c117f778d504ca9e64e8a821d23bfecc83bc8635',39356,'27c2c8d79e6af6307315ddcd94e4abd58ab774e08895e032d09334b6ef1b360e',39410,'b470e08edaa26c3527d02cab89a867192371290dda02c16c5569acd7d6819279'),
+        @('zonetool.cpp',35974,'106ccdb4aec584184132c309c117f778d504ca9e64e8a821d23bfecc83bc8635',62674,'c080e69319ccff31fd8a25747210baeddc95269d6b416d18321ea272935ffff8',62728,'d9e25c2cdd8a422fdf5312ad3dc4596fb60482ee165e77f59bff1a30d436fe7f'),
         @('t7_iw7_resident_model.hpp',13444,'6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777',21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4',21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'))) {
         [pscustomobject]@{Path=('prepared/'+$row[0]);PreviousBytes=$row[1];PreviousSHA256=$row[2];Bytes=$row[3];SHA256=$row[4];WiredBytes=$row[5];WiredSHA256=$row[6]}
     })

@@ -103,6 +103,64 @@ static void resident_export_dump_multisurface_mesh(XModelMesh* selected_mesh)
     zonetool::iw7::xsurface::dump(converted);
 }
 
+// Observe only the selected mesh headers before a resident-profile refusal.
+// In particular, a streamed data pointer is never treated as a CPU buffer here.
+static void resident_export_observe_mesh(const XModel* source, const std::string& zone,
+    const std::string& name, const unsigned int lod)
+{
+    try
+    {
+        using namespace resident_iw7::detail;
+        const auto model = object(source);
+        require(model.numLods > 0 && model.numLods <= 8 && lod < model.numLods,
+            "mesh observation requires a valid selected LOD");
+        const auto mesh = object(model.meshes[lod]);
+        const auto shared = object(mesh.shared);
+        require(mesh.numSurfs > 0, "mesh observation requires a nonempty surface header array");
+        readable(mesh.surfs, static_cast<std::size_t>(mesh.numSurfs) * sizeof(XSurface));
+        auto surfaces = nlohmann::ordered_json::array();
+        for (unsigned int i = 0; i < mesh.numSurfs; ++i)
+        {
+            const auto surface = object(mesh.surfs + i);
+            surfaces.push_back({{"index", i}, {"flags", static_cast<unsigned int>(surface.flags)},
+                {"vertices", surface.vertCount}, {"triangles", surface.triCount},
+                {"rigid_lists", static_cast<unsigned int>(surface.vertListCount)},
+                {"base_vertex", surface.baseVertOffset}, {"base_index", surface.baseIndexOffset},
+                {"same_shared_header", surface.shared == mesh.shared}});
+        }
+        const auto& entry = mesh.xpakEntry;
+        std::array<std::uint64_t, 3> descriptor_words{};
+        static_assert(sizeof(entry) == sizeof(entry.key) + sizeof(descriptor_words));
+        std::memcpy(descriptor_words.data(), reinterpret_cast<const std::uint8_t*>(&entry) +
+            sizeof(entry.key), sizeof(descriptor_words));
+        const nlohmann::ordered_json report = {
+            {"schema", "iw7.t7-iw7-selected-mesh-observation/1"},
+            {"requested_zone", zone}, {"source_model", name}, {"selected_source_lod", lod},
+            {"observed_model_name", resident_iw7::asset_name(model.name)},
+            {"mesh_name", resident_iw7::asset_name(mesh.name)}, {"shared_flags", shared.flags},
+            {"data_size", shared.dataSize}, {"data_pointer_nonzero", shared.data != nullptr},
+            {"shared_vertices", shared.vertCount}, {"shared_skin_vertices", shared.skinVertCount},
+            {"shared_indices", shared.indexCount}, {"position_offset", shared.posOffset},
+            {"attribute_offset", shared.vertsOffset}, {"index_offset", shared.indicesOffset},
+            {"skin_weight_offset", shared.skinWeightsOffset},
+            {"xpak_entry", {{"key", entry.key}, {"opaque_descriptor_words_u64", descriptor_words},
+                {"descriptor_field_semantics_verified", false}}},
+            {"surface_headers", std::move(surfaces)},
+            {"headers_rechecked", false}, {"atomic_snapshot_proven", false},
+            {"allocation_retained", false},
+            {"payload_bytes_read", 0}, {"zonetool_xpak_helper_reads_allowed", false},
+            {"geometry_verified", false}, {"runtime_verified", false}, {"ready", false}};
+        const auto bytes = report.dump();
+        require(bytes.size() <= 64u * 1024u, "selected mesh observation exceeds 64 KiB");
+        ZONETOOL_INFO("T7_SELECTED_MESH_METADATA %s", bytes.c_str());
+    }
+    catch (const std::exception& error)
+    {
+        // Keep the original selector's outcome and refusal available afterwards.
+        ZONETOOL_INFO("T7_SELECTED_MESH_METADATA_REFUSED %s", error.what());
+    }
+}
+
 static void export_resident_model_iw7(const std::string& zone_arg, const std::string& model_arg,
     const std::string& lod_arg, const bool multisurface = false)
 {
@@ -115,6 +173,21 @@ static void export_resident_model_iw7(const std::string& zone_arg, const std::st
     const auto header = db_find_x_asset_header(ASSET_TYPE_XMODEL, name.c_str());
     if (!header.data || DB_IsXAssetDefault(ASSET_TYPE_XMODEL, name.c_str()))
         throw std::runtime_error("Exact nondefault source model required");
+    if (multisurface)
+    {
+        resident_export_observe_mesh(reinterpret_cast<const XModel*>(header.data), zone, name, lod);
+        try
+        {
+            const auto observation = selected_material_observation::observe(
+                reinterpret_cast<const XModel*>(header.data), name, lod, 0,
+                resident_iw7::detail::readable);
+            ZONETOOL_INFO("T7_SELECTED_MATERIAL_METADATA %s", observation.c_str());
+        }
+        catch (const std::exception& error)
+        {
+            ZONETOOL_INFO("T7_SELECTED_MATERIAL_METADATA_REFUSED %s", error.what());
+        }
+    }
     utils::memory::allocator allocator;
     const auto selected = resident_iw7::select(reinterpret_cast<XModel*>(header.data), name.c_str(), lod, allocator, multisurface);
     if (!selected || resident_export_name(selected->name) != name || selected->numLods != 1 || !selected->meshes[0])

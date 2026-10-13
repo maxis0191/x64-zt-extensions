@@ -219,7 +219,7 @@ function Assert-T7InputBindings($Plan) {
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
     if($bytes.Length -ne 714 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
-        'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'){throw 'Reviewed v2 source transitions differ.'}
+        'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'){throw 'Reviewed v2 source transitions differ.'}
 }
 function Split-T7ResponseArguments([string]$Text) {
     # Deliberately bounded MSVC response syntax: space/tab separators and quoted
