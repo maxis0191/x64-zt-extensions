@@ -27,11 +27,11 @@ $sourceNames=@(Get-ModelFFSourceNames $plan)
 $profile='geometry_profile' -cin $plan.PSObject.Properties.Name
 $arena=$profile -and $plan.geometry_profile -ceq 'iw7-original-arena-rigid-v1'
 $rigid=$profile -and !$arena
-if((!$rigid -or $plan.geometry_profile -cne 't7-iw7-resident-static-v2') -and (Get-Item -LiteralPath $planPath).Length -gt 64KB){throw 'Legacy model FF preparation exceeds bound.'}
+$planVersion=if($rigid){Get-ModelFFRigidVersion $plan}else{1}
+if($planVersion -ne 2 -and (Get-Item -LiteralPath $planPath).Length -gt 64KB){throw 'Legacy model FF preparation exceeds bound.'}
 $modelName=if($rigid -or $arena){$plan.model_name}else{'paris_model_probe'}
 $meshName=if($rigid -or $arena){$plan.mesh_name}else{'paris_model_probe_lod0'}
 $artifactNames=@($sourceNames[0],$sourceNames[1])
-$planVersion=if($rigid){Get-ModelFFRigidVersion $plan}else{1}
 if($plan.schema -cne "iw7.model-ff-plan/$planVersion" -or $plan.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or $plan.ff_built -or $plan.ready -or
     @($plan.source_files.PSObject.Properties).Count -ne 5 -or @($sourceNames | Where-Object {$_ -cnotin $plan.source_files.PSObject.Properties.Name}).Count){throw 'Pinned five-input original FF preparation required.'}
 if($arena){
