@@ -1,5 +1,14 @@
 # BO3 / T7 to IW7: selected static model
 
+2026-10-13 selected mesh/material observation E2: native source `afdd806` built
+successfully (main, CLI and link exited 0), with input revalidation, original-job
+closure and reservation release. Candidate: 21,849,600 bytes, SHA256
+`7c7ad775b201dea60ec050a28e5943cbf1eeeaa8e6386eba675c7ffc001f5e7f`.
+The candidate has not run. The standalone material fixture and a real observation
+remain pending; this is not an export, FastFile, texture or gameplay result.
+The corrected earlier D launch reached v2 but refused shared flags 9/18,624 bytes.
+E2 adds bounded header observations before that unchanged resident refusal.
+
 2026-10-13 build checkpoint: [multisurface D compiled and linked successfully,
 with independently confirmed closure](../t7-iw7/BUILD-MULTISURFACE-D.md). This is
 build evidence only: the candidate was not executed, and this checkpoint does
