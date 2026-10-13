@@ -26,7 +26,7 @@
  
 --- a/src/zonetool/zonetool/t7/zonetool.cpp
 +++ b/src/zonetool/zonetool/t7/zonetool.cpp
-@@ -6,6 +6,932 @@
+@@ -6,6 +6,939 @@
  #include "converter/converter.hpp"
  
  #include "common/xpak.hpp"
@@ -874,7 +874,14 @@
 +                const auto& rigid = rigid_lists.back().value;
 +                require(rigid.boneOffset == 0 && rigid.vertCount == surface.vertCount &&
 +                    rigid.triOffset == 0 && rigid.triCount == surface.triCount && !rigid.collisionTree,
-+                    "selected streamed rigid coverage differs");
++                    ("selected streamed rigid coverage differs; surface=" + std::to_string(i) +
++                     " boneOffset=" + std::to_string(rigid.boneOffset) +
++                     " vertices=" + std::to_string(rigid.vertCount) +
++                     " expectedVertices=" + std::to_string(surface.vertCount) +
++                     " triOffset=" + std::to_string(rigid.triOffset) +
++                     " triangles=" + std::to_string(rigid.triCount) +
++                     " expectedTriangles=" + std::to_string(surface.triCount) +
++                     " collisionTreePresent=" + std::to_string(rigid.collisionTree != nullptr)).c_str());
 +                require(std::uint64_t(surface.baseVertOffset) + surface.vertCount <= shared.value.vertCount &&
 +                    std::uint64_t(surface.baseIndexOffset) + std::uint64_t(surface.triCount) * 3 <= shared.value.indexCount,
 +                    "selected streamed surface exceeds shared counts");
@@ -959,7 +966,7 @@
  
  namespace zonetool::t7
  {
-@@ -348,6 +1274,37 @@
+@@ -348,6 +1281,37 @@
  		zonetool::taskbar::clear();
  	}
  
@@ -997,7 +1004,7 @@
  	utils::hook::detour db_add_xasset_hook;
  	XAssetHeader db_add_xasset_stub(XAssetType type, XAssetHeader header)
  	{
-@@ -357,6 +1314,7 @@
+@@ -357,6 +1321,7 @@
  			header
  		};
  
@@ -1005,7 +1012,7 @@
  		dump_asset(&xasset);
  
  		if (type == ASSET_TYPE_IMAGE)
-@@ -736,10 +1694,573 @@
+@@ -736,10 +1701,573 @@
  		return args;
  	}
  
