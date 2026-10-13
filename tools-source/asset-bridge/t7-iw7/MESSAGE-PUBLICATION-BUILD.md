@@ -7,6 +7,11 @@ native build, new binary, catalogue or asset extraction was produced.** The next
 heavy slot remains assigned by the coordinator; this source change supplies no
 T7 execution authorization.
 
+Later checkpoint: [publication build A](PUBLICATION-BUILD-A.md) compiled both
+fresh TUs and linked successfully under its separate reviewed plan and one-build
+GO. Its jobs and host closed; the resulting candidate remains unexecuted. The
+source-only preparation and review history below is retained as such.
+
 ## Ownership and historical boundaries
 
 The delta owns `prepare_build.py`, `Run-T7Build.ps1`, their Python/PowerShell tests

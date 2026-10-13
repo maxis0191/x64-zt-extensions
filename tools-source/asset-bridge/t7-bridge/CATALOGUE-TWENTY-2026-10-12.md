@@ -110,3 +110,79 @@ a plausible race between the message worker's publication and CLI quick_exit,
 which bypasses the instrumented exit hook. The observed ordering does not prove
 that hypothesis. Correct and test bounded diagnostic publication before another
 native candidate; do not infer missing message bytes or retry B.
+
+## C attempt: complete buffer record, missing zone reported
+
+The new publication candidate from [build A](../t7-iw7/PUBLICATION-BUILD-A.md)
+ran once under the unchanged 6/8 GiB runtime admission. The same twenty qualified
+bootstraps were retained. C uses the explicit publication profile, 79 bindings
+(54 text, 25 binary), and the same bounded opaque-manifest output profile.
+Fifteen bindings replace B's paths/candidate/build proofs, six text bindings are
+added and 58 remain unchanged. No old receipt or input qualification was rewritten.
+
+The 53009-byte plan has SHA256
+`7372feb7f824af16ff8e6301406e8d7b34e34b8a9e11be56dde97c75b4ee0783`.
+The 1601-byte host contract has SHA256
+`5bcd3e689880a595f3d04325a84dbd4f122074094228b1272d16a3bef220315b`.
+Source remained `cd392c40`. The actual default check and independent plan review
+passed before the single runtime authorization. Four empty directories were
+prepared for DEFAULT; no attempt, aliases or native invocation existed then.
+
+The native process began at 03:15:02.8926557Z on 2026-10-13 and exited one
+naturally after about 6.077 seconds. `TerminationRequested=false`; result remains
+Failed / NoCatalogue. InputsReverified, EngineOutputsValidated,
+OriginalInputMetadataUnchanged, TreeClosureConfirmed and LeaseReleased are true;
+Quarantined is false. The 30826-byte receipt has SHA256
+`c96be0a87499bfcd32182589236aa4352c5a6e8c5e7694a4426103759bf4b94c`.
+Normal completion passed with CanExit=true and zero guards; no incident route
+was used. The original host session 96223 actually exited one. Its 1328-byte exit
+receipt has SHA256
+`b1bb2bd447124e7a62ea7a0501799ff104b8898e7c7c6ad01f2c7f685aea6f8f`.
+
+The stderr now contains a complete buffer record: requested/read 384 bytes,
+length 52, nul=1, error=0. Its hexadecimal payload decodes exactly to
+`ERROR: Could not find zone 'en_mp_freerun_04_patch'` followed by LF. This gives
+a concrete missing-zone report to investigate against the installation and
+staged inputs. It does not establish whether the file is absent on disk, wrongly
+resolved or omitted from the selected inputs.
+
+The following trace still ends at `[T7_CATALOG_TRACE] sche`. Consequently the
+existing parser refuses `Unrecognized incomplete exit context line.` Both trace
+and message remain PresentUnqualified: a human-readable complete buffer record
+does not override the missing exit correlation or qualify the whole diagnostic.
+The 844-byte stderr hash is
+`0681fc046d123e0dd2ce562b93e325d452ad1400a89f33152c1c02439a5cc4b5`.
+Stdout is unchanged from B and says the exact donor zone did not finish loading.
+
+Limits remained 200/120/5 seconds, 64 MiB mutable output and 64 entries (46
+declared). The total output ceiling is 875945688 bytes: the unchanged formula
+plus the actual 21751296-byte candidate. The 24 aliases represent 808836824
+existing logical bytes, not newly copied game data. No new asset, catalogue,
+retry or donor export was produced. Preserve C and investigate the exact zone
+path and incomplete trace separately before selecting another experiment.
+
+Independent closure at 03:20:47.8087153Z confirms all three recorded process
+tuples absent through fresh scheduler and CIM observations, no observable
+descendants/scoped processes, leases, games, heavy work or relevant UDP endpoint.
+Main remained stopped and the unrelated Python identity was preserved. Actual
+host exit one was checked against the completed tool record. The 5408-byte
+witness has SHA256
+`aa34b525c223671bf0266b26be9b9fc3612d8962b51804afd003125e0954a53a`.
+Original job/guard closure remains original-host evidence; the witness read no
+payload or opaque manifest. The earlier completion summary's pending-witness
+flag remains an immutable observation-time fact.
+
+Scoped accounting including preparation, execution, completion and independent
+witness is 282940 bytes across 19 new files, excluding the 24 existing hardlinks
+and any separate reviewer output. It is a logical file-length count, not global
+or NTFS allocation accounting. C remains consumed and is not retried.
+
+Subsequent source and metadata inspection found the exact named stock file at
+`zone/en_mp_freerun_04_patch.ff`, 1664 bytes, with an ordinary Archive attribute.
+The existing twenty-entry closure declares core/en_core bootstraps and the
+`mp_freerun_04.ff` donor, but no map patch/localized file. The runner aliases only
+declared inputs; this exact file is omitted from the test input set, rather than
+absent from the installation. No FF content or hash was read in that inspection.
+Next, qualify only this additional input through the existing bounded pipeline,
+then prepare a distinct updated input plan if it passes. This does not prove
+the remaining dependency closure complete or resolve the partial trace.
