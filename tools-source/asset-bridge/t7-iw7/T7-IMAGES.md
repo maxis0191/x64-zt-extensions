@@ -146,7 +146,7 @@ placeholder material, or establish rendered quality.
 
 ## Selected material decision (2026-10-13)
 
-After export D provides real ordered `material_dependencies`, observe one named
+After a real export with the D candidate provides ordered `material_dependencies`, observe one named
 material and one selected image, including the chosen material's aliased slots.
 The seam is [native_export.inc](native_export.inc)'s
 `selected->meshMaterials[0].materials[i]`, currently reduced to `material->name`.

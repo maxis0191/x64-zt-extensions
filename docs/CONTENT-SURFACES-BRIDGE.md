@@ -772,7 +772,7 @@ only material names in `material_dependencies`; no texture pixels, binding UV
 transforms or shader settings accompany them. Names alone cannot reconstruct
 the missing material data.
 
-After export D supplies its real ordered material names, the next decision is a
+After a real export with the D candidate supplies ordered material names, the next decision is a
 bounded observation of **one material and one image**, including any aliased
 slots. The [selected-image boundary](../tools-source/asset-bridge/t7-iw7/T7-IMAGES.md#selected-material-decision-2026-10-13)
 records the exact T7 fields, residency/lifetime uncertainty and channel mismatch.
