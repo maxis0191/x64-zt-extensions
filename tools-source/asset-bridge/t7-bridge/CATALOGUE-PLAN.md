@@ -11,6 +11,74 @@ receipts and helper snapshots are not rewritten or requalified by this change.
 Prepare and review fresh helper bindings for future runs; no run is authorized
 or claimed by the source update itself.
 
+## Zombies locale qualification and catalogue B, 2026-10-13
+
+The separate locale qualification completed two guarded 148,160-byte passes of
+`en_zm_common.ff`, observing SHA256
+`785a546a1b8d81016eff33e301e1fc30579ae91ed0eda94b99510380126ef279`.
+Identity, metadata and hash revalidation passed before guard disposal and lease
+release. Its status remains `IdentityAndHashObservedCompatibilityUnknown`:
+no depot, header, compatibility or engine lookup claim follows. No native job
+or engine ran during qualification, and no payload was copied. The original
+NoExit host closed with zero guards and no lease; PTY 57857 actually exited 0
+(tool chunk `06f798`). No payload was read or hashed after release.
+
+A new B plan added exactly the qualified locale binary, its receipt and its
+qualification script to A's 88 bindings. The prior 23 F bootstrap rows and their
+shared qualification remained unchanged: B had 24 bootstraps, 91 bindings and
+28 original/alias input pairs. Default validation passed before a distinct
+coordinator-authorized B invocation. It reused the same F native candidate,
+composed source `55d751c46f4427cf7c133373d596f6b0a4cf3172` and command
+`-t7-iw7-catalog zm_common`; no native rebuild or XPAK exposure occurred.
+
+The native process exited naturally 0 after 5,731.2603 ms, but produced no
+catalogue directory/report, model names or counts. The runner correctly returned
+**Failed / NoCatalogue**. The retained 133-byte DEV message, including its
+leading engine control byte in the private capture, names:
+
+```text
+DEV: Could not load default asset '' for asset type 'rawfile'.
+Tried to load asset 'ui/uieditor/widgets/attachmentnamesdisplay.lua'.
+```
+
+Stdout contains initialization/finalization and branding only (370 bytes).
+Stderr retains 5,054 bytes of exit/trace/caller windows and the DEV capture.
+These observations do not locate the originating rawfile lookup, establish
+which FF should supply the Lua asset, or prove an ABI defect. Exit 0 is not
+catalogue success. A remains failed with its different missing-zone message.
+
+The original runner confirmed input reverification, validated output scope,
+unchanged original metadata, retained aliases, normal tree closure and lease
+release. The original host reached `Closed`, `CanExit=true`, zero guards and
+zero leases before PTY 86010 actually exited 1 (tool chunk `153c3f`). Its host,
+native root and lease were subsequently absent. A different authorized game
+test was already active at the completion observation; global zero leases or
+heavy processes is not claimed. The single historical helper borrowed for F
+was restored to its prior 34,819-byte hash and metadata, and that checkout
+returned to its clean original head. A's helper state and all consumed plans,
+receipts and failed preparation evidence were preserved.
+
+Private ignored evidence retains the following bounded text pins. Runtime
+receipt/logs remain in the composed source package's B evidence directory;
+preparation, decoded trace and completion remain in `t7-zm-catalogue-b-20261013/`.
+
+| Evidence | Bytes | SHA256 |
+| --- | ---: | --- |
+| Locale qualification receipt | 4,427 | `0063fcbb079cfba6a89df86cb8b0ddbee4f9c87662564b0feca4a49e43ff520c` |
+| B plan | 61,216 | `a43252e608089db0686f70897879ef256fda9b002a0d7b4183b982209bc66e3c` |
+| B host contract | 1,383 | `0dbd578e64c56c47a8b6f200f0946cf96eb680c5015e74b5f4f6063613c18586` |
+| B runtime receipt | 43,025 | `be5e135c293e7992866ff9024ba597a23b67673349f15cca759549822c5c9bc9` |
+| B stderr | 5,054 | `927a23d7e14e8bd64db39e2f34d707ccbe71667be12bfe9bfb08c56385b7608c` |
+| B completion | 4,603 | `54bf62f179f0451c2239bced39798dc32129087082334f71cec6808e70f838bf` |
+| Decoded DEV message | 133 | `c31ae44d6ed8f6d151730589d12fa8e62925e62ebb5812e31abcd9a153577331` |
+
+Next action: use the retained F source and caller windows to instrument the
+catalogue entry, donor DB load/return/callbacks and the first exact rawfile
+lookup, after source review and a separate runtime grant. Do not infer a missing
+FF from this Lua name or add speculative stock. This B checkpoint authorizes
+no retry, new build or extraction; the independently prepared MP mesh/material
+observation remains a separate operation.
+
 ## Zombies common catalogue A, 2026-10-13
 
 The two-zone catalogue source was reviewed and merged in
