@@ -88,9 +88,40 @@ missing/duplicate options, inspection/output exclusivity and the eight-file cap.
 Pure output-containment cases cover a protected drive root, the same root,
 a different volume, a child directory and a sibling whose name shares a prefix.
 
-Current checkpoint: source prepared only. No new native compilation, generic
-fixture execution, CLI output creation or real selected payload decode is
-qualified yet. Historical reader PR12/C receipts remain historical evidence;
-they do not qualify this new executable. Next action is independent source
-review, then one authorized small native batch using the existing pipeline,
-followed by the already identified selected 18624-byte donor input.
+## Native qualification, 2026-10-14
+
+The bounded batch on source 3c647fd passed MSVC 14.44.35207 compilation with
+/W4 /WX. The reader fixture passed 13 copies, 46 refusals and one Win32 sealing
+case; this includes the original 49 cases and ten additional generic cases.
+The CLI fixture passed 42 parameter/containment checks, including the corrected
+volume-root boundary. CLI help exited zero without retail IO.
+
+One authorized real donor extraction exited zero and wrote exactly 18624
+decoded bytes plus JSON with a matching SHA-256. It read one selected 7680-byte
+LZ4 extent and 31152 index-record bytes; no complete package was hashed. The
+private output's declared positions and half-float UVs were finite. This proves
+selected payload copying, not rigid-list coverage, model conversion, materials,
+FF loading or gameplay. Inspection-mode option parsing is covered; inspection
+was not separately run on the real donor to avoid a second payload read.
+
+The executable was 333824 bytes, SHA-256
+26fb7f9a6ecf983d8d4ff5a1b37f2940fa2b69027ef36af4fe7c2fa8ed17658c.
+The raw asset, request, provider identity, asset hash and detailed receipts stay
+in ignored private runtime storage. No game bytes or machine-specific identities
+are included here.
+
+Seven original owned jobs exited zero and closed; residual compiler telemetry
+children were verified twice and stopped only through their original job.
+The exclusive lease was released, with a fresh empty registry and no remaining
+compiler/game processes. The batch took 7.092 seconds and generated 4101359
+bytes. It used the existing C pipeline and qualified pinned LZ4 object.
+
+The first attempt is retained as Failed: the reader compiled, but its final
+inventory assertion still expected the old 10/39 counters. It stopped before
+CLI or retail IO, confirmed closure and released the lease. Commit 3c647fd
+corrected only that assertion to 13/46; the subsequent complete batch above
+passed. Historical PR12/C evidence remains separate.
+
+Next action is to integrate the source pin compatibility update with this CLI
+before the private PR merges. The previously compiled E3 input and reader bytes
+remain frozen; this qualification does not qualify that engine export.
