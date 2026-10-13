@@ -25,8 +25,25 @@ function Assert-T7ResidentExportName($Name) {
         }
     }
 }
+function Get-T7ResidentExportVersion($Plan) {
+    # The plan selects the contract before a manifest is opened. Historical v1
+    # plans retain their exact selection; a producer cannot promote itself to v2.
+    if(!$Plan.PSObject.Properties['ResidentMultiSurfaceV2']){return 1}
+    if($Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']){throw 'Resident v2 and surface-count diagnostic contracts cannot be mixed.'}
+    $contract=$Plan.ResidentMultiSurfaceV2
+    Assert-T7CatalogueFields $contract @('Schema')
+    if((Get-T7CatalogueOperation $Plan) -cne 'ResidentExportV1' -or
+       $contract.Schema -isnot [string] -or $contract.Schema -cne 'iw7.t7-resident-multi-surface/2'){
+        throw 'Explicit resident multi-surface v2 contract required.'
+    }
+    2
+}
+function Get-T7ResidentExportReportLimit($Plan) {
+    if((Get-T7ResidentExportVersion $Plan) -eq 2){256KB}else{4KB}
+}
 function Get-T7ResidentExportDiagnostic($Plan) {
     if(!$Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']){return $null}
+    if($Plan.PSObject.Properties['ResidentMultiSurfaceV2']){throw 'Resident v2 and surface-count diagnostic contracts cannot be mixed.'}
     $diagnostic=$Plan.ResidentSurfaceCountDiagnostic
     Assert-T7CatalogueFields $diagnostic @('Schema','Header')
     if((Get-T7CatalogueOperation $Plan) -cne 'ResidentExportV1' -or
@@ -111,15 +128,18 @@ function Assert-T7ResidentExportDiagnosticMetadata($Plan,$Base) {
 }
 function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
     Assert-T7ResidentExportRequest $Plan.ExportRequest
+    $version=Get-T7ResidentExportVersion $Plan
+    $command=if($version -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
     $diagnostic=Get-T7ResidentExportDiagnostic $Plan
     if((Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV3' -or
        $Plan.EngineOutputProfile -cne 'ObservedStartupManifestA' -or
        $Plan.CandidateProfile -cne 't7-catalog-message-publication' -or
-       (!$diagnostic -and ($Plan.CandidateBytes -ne 21751296 -or $Plan.CandidateSHA256 -cne '31b9d908d15fb5f0bf17a7b27309dc7183458d5e586dfc6e427cc8ec2b3fa647')) -or
+       ($version -eq 1 -and !$diagnostic -and ($Plan.CandidateBytes -ne 21751296 -or $Plan.CandidateSHA256 -cne '31b9d908d15fb5f0bf17a7b27309dc7183458d5e586dfc6e427cc8ec2b3fa647')) -or
        @(Get-T7CatalogueBootstraps $Plan).Count -ne 23 -or
        $Plan.OutputKey -cne (Get-T7ResidentExportKey $Plan.ExportRequest) -or
-       @($Plan.Arguments).Count -ne 4 -or (@($Plan.Arguments) -join '|') -cne '-t7-iw7-model|mp_freerun_04|p7_fre_platform_cap_02|0' -or
-       $Plan.ExportModelLimitBytes -ne 1MB -or $Plan.ExportMeshLimitBytes -ne 16MB -or $Plan.ReportLimitBytes -ne 4KB){
+       @($Plan.Arguments).Count -ne 4 -or (@($Plan.Arguments) -join '|') -cne ($command+'|mp_freerun_04|p7_fre_platform_cap_02|0') -or
+       $Plan.ExportModelLimitBytes -ne 1MB -or $Plan.ExportMeshLimitBytes -ne 16MB -or
+       $Plan.ReportLimitBytes -ne (Get-T7ResidentExportReportLimit $Plan)){
         throw 'Exact resident export candidate, request and output limits required.'
     }
     foreach($name in 'SourceCataloguePlan','SourceCatalogueReceipt','SourceCatalogue'){
@@ -143,6 +163,9 @@ function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
         if($pin.Path -cnotin $expected){throw 'Unexpected independent reader source.'}
         Assert-T7CatalogueTextPin $pin $Plan.Bindings
     }
+    # No operational v2 plan can reach admission using v1/diagnostic or invented
+    # candidate pins. Add an exact build transition only after its real closure.
+    if($version -eq 2){throw 'Resident v2 native qualification pending real reviewed build and receipt.'}
 }
 function Assert-T7ResidentExportCatalogue($Plan) {
     # Caller retains every text binding before these reads. No stock read or new qualification.
@@ -179,29 +202,72 @@ function Assert-T7ResidentExportCatalogue($Plan) {
         throw 'Exact observed nondefault one-root one-LOD donor required.'
     }
 }
+function Assert-T7ResidentExportGeometryV2($Manifest) {
+    # Metadata only, before artifact hashing or any downstream geometry scan.
+    # Every ordered occurrence counts in full, including repeated materials or
+    # native pointer aliases. This bounds logical geometry bytes, not total RAM.
+    $counts=$Manifest.selected_counts
+    Assert-T7CatalogueFields $counts @('bones','roots','surfaces','vertices','triangles')
+    foreach($spec in @(@('bones',1,1),@('roots',1,1),@('surfaces',1,255),
+        @('vertices',3,16711425),@('triangles',1,16711425))){
+        $value=$counts.($spec[0])
+        if(!(Test-T7CatalogueInteger $value $spec[2]) -or $value -lt $spec[1]){throw 'Export v2 geometry count outside bounded contract.'}
+    }
+    $n=[long]$counts.surfaces
+    if($Manifest.surface_records -isnot [array] -or $Manifest.surface_records.Count -ne $n){throw 'One ordered v2 surface record per surface required.'}
+    if($Manifest.material_dependencies -isnot [array] -or $Manifest.material_dependencies.Count -ne $n){throw 'One ordered v2 material occurrence per surface required.'}
+    $vertices=0L;$triangles=0L
+    for($i=0;$i -lt $n;$i++){
+        $row=$Manifest.surface_records[$i]
+        Assert-T7CatalogueFields $row @('index','material_slot','vertices','triangles')
+        foreach($field in 'index','material_slot'){
+            if(!(Test-T7CatalogueInteger $row.$field 254) -or $row.$field -ne $i){throw 'Sequential v2 surface and material indices required.'}
+        }
+        if(!(Test-T7CatalogueInteger $row.vertices 65535) -or $row.vertices -lt 3 -or
+           !(Test-T7CatalogueInteger $row.triangles 65535) -or $row.triangles -lt 1){throw 'Export v2 surface count outside bounded contract.'}
+        Assert-T7ResidentExportName $Manifest.material_dependencies[$i]
+        $vertices+=[long]$row.vertices;$triangles+=[long]$row.triangles
+    }
+    if($vertices -ne $counts.vertices -or $triangles -ne $counts.triangles){throw 'Exact v2 vertex and triangle sums required.'}
+    # The validated upper bounds make every intermediate exact in Int64.
+    $source=200L+96L*$n+28L*$vertices+6L*$triangles
+    $destination=56L+272L*$n+32L*$vertices+6L*$triangles
+    $work=256L+368L*$n+60L*$vertices+12L*$triangles
+    if($source+$destination -ne $work -or $work -gt 16MB -or
+       !(Test-T7CatalogueInteger $Manifest.geometry_work_bytes_upper_bound 16MB) -or
+       $Manifest.geometry_work_bytes_upper_bound -ne $work){throw 'Exact v2 geometry work bytes within 16 MiB required.'}
+}
 function Assert-T7ResidentExportManifest($Manifest,$Plan) {
     Assert-T7ResidentExportRequest $Plan.ExportRequest
+    $version=Get-T7ResidentExportVersion $Plan
     $falseFields=@('zonetool_xpak_helper_reads_allowed','engine_io_verified','dependency_payloads_verified',
         'asset_zone_ownership_verified','serialized_parse_verified','runtime_verified','ready')
-    Assert-T7CatalogueFields $Manifest (@('schema','requested_zone','source_model','selected_source_lod','output_model_name',
-        'output_mesh_name','output_root_key','target','profile','geometry_profile','root_bone_name','selected_counts','material_dependencies','model','mesh')+$falseFields)
+    $fields=@('schema','requested_zone','source_model','selected_source_lod','output_model_name',
+        'output_mesh_name','output_root_key','target','profile','geometry_profile','root_bone_name','selected_counts','material_dependencies','model','mesh')+$falseFields
+    if($version -eq 2){$fields+=@('surface_records','geometry_work_bytes_upper_bound')}
+    Assert-T7CatalogueFields $Manifest $fields
     foreach($field in 'schema','requested_zone','source_model','output_model_name','output_root_key','target','profile','geometry_profile'){
         if($Manifest.$field -isnot [string]){throw 'Export manifest scalar string required.'}
     }
-    if($Manifest.schema -cne 'iw7.t7-iw7-resident-export/1' -or $Manifest.target -cne 'iw7' -or
-       $Manifest.profile -cne 'resident-rigid-one-lod' -or $Manifest.geometry_profile -cne 't7-iw7-resident-static-v1' -or
+    if($Manifest.schema -cne ('iw7.t7-iw7-resident-export/'+$version) -or $Manifest.target -cne 'iw7' -or
+       $Manifest.profile -cne 'resident-rigid-one-lod' -or $Manifest.geometry_profile -cne ('t7-iw7-resident-static-v'+$version) -or
        $Manifest.requested_zone -cne $Plan.ExportRequest.zone -or $Manifest.source_model -cne $Plan.ExportRequest.model -or
        $Manifest.output_model_name -cne $Plan.ExportRequest.model -or !(Test-T7CatalogueInteger $Manifest.selected_source_lod 0) -or
        $Manifest.output_root_key -cne (Get-T7ResidentExportKey $Plan.ExportRequest)){throw 'Export manifest request or profile differs.'}
     foreach($flag in $falseFields){if($Manifest.$flag -isnot [bool] -or $Manifest.$flag){throw 'Export manifest overclaims its scope.'}}
     Assert-T7ResidentExportName $Manifest.output_mesh_name
-    if($Manifest.material_dependencies -isnot [array] -or $Manifest.material_dependencies.Count -ne 1){throw 'Exactly one unresolved material name required.'}
-    Assert-T7ResidentExportName $Manifest.material_dependencies[0]
+    if($version -eq 1){
+        if($Manifest.material_dependencies -isnot [array] -or $Manifest.material_dependencies.Count -ne 1){throw 'Exactly one unresolved material name required.'}
+        Assert-T7ResidentExportName $Manifest.material_dependencies[0]
+    }
     if($Manifest.root_bone_name -isnot [string] -or $Manifest.root_bone_name -cnotmatch '\A[\x20-\x7e]{1,255}\z'){throw 'Exact bounded root bone name required.'}
-    Assert-T7CatalogueFields $Manifest.selected_counts @('bones','roots','surfaces','vertices','triangles')
-    foreach($spec in @(@('bones',1,1),@('roots',1,1),@('surfaces',1,1),@('vertices',3,65535),@('triangles',1,65535))){
-        $v=$Manifest.selected_counts.($spec[0])
-        if(!(Test-T7CatalogueInteger $v $spec[2]) -or $v -lt $spec[1]){throw 'Export geometry count outside resident pilot.'}
+    if($version -eq 2){Assert-T7ResidentExportGeometryV2 $Manifest}
+    else{
+        Assert-T7CatalogueFields $Manifest.selected_counts @('bones','roots','surfaces','vertices','triangles')
+        foreach($spec in @(@('bones',1,1),@('roots',1,1),@('surfaces',1,1),@('vertices',3,65535),@('triangles',1,65535))){
+            $v=$Manifest.selected_counts.($spec[0])
+            if(!(Test-T7CatalogueInteger $v $spec[2]) -or $v -lt $spec[1]){throw 'Export geometry count outside resident pilot.'}
+        }
     }
     foreach($spec in @(@('model',('xmodel/'+$Plan.ExportRequest.model+'.xmb'),1MB),
         @('mesh',('xsurface/'+$Manifest.output_mesh_name.Replace('\','/')+'.xsb'),16MB))){
@@ -218,6 +284,7 @@ function Assert-T7ResidentExportZone($Plan,$ObservedZone) {
     }
 }
 function Get-T7ResidentExportFiles($Plan) {
+    $reportLimit=Get-T7ResidentExportReportLimit $Plan
     $dump=Join-Path $Plan.WorkingDirectory 'dump'
     if(!(Test-Path -LiteralPath $dump)){return}
     Assert-H1Path $dump
@@ -241,7 +308,7 @@ function Get-T7ResidentExportFiles($Plan) {
                 $pending.Push($path);continue
             }
             $limit=0
-            if($relative -ceq 'manifest.json'){$limit=4KB;if(++$manifests -gt 1){throw 'Duplicate export manifest.'}}
+            if($relative -ceq 'manifest.json'){$limit=$reportLimit;if(++$manifests -gt 1){throw 'Duplicate export manifest.'}}
             elseif($relative -ceq ('xmodel/'+$Plan.ExportRequest.model+'.xmb')){$limit=1MB;if(++$models -gt 1){throw 'Duplicate export model.'}}
             elseif($relative.StartsWith('xsurface/',[StringComparison]::Ordinal) -and $relative.EndsWith('.xsb',[StringComparison]::Ordinal)){
                 Assert-T7ResidentExportName $relative.Substring(9,$relative.Length-13)
@@ -255,6 +322,7 @@ function Get-T7ResidentExportFiles($Plan) {
 }
 function Read-T7ResidentExportReport($Plan,$State,$Context) {
     if(!$Context.Closed -or !$Context.Lease){throw 'Original job must be closed with admission retained before export reads.'}
+    $reportLimit=Get-T7ResidentExportReportLimit $Plan
     $files=@(Get-T7ResidentExportFiles $Plan)
     $manifest=@($files|Where-Object RelativePath -CEQ 'manifest.json')
     if(!$manifest.Count){return 'NoExport'}
@@ -264,12 +332,12 @@ function Read-T7ResidentExportReport($Plan,$State,$Context) {
     # must not authorize an unbounded hash if another writer replaced the file.
     $guard=[IO.FileStream]::new($manifest[0].Path,'Open','Read','Read')
     try{
-        if($guard.Length -le 0 -or $guard.Length -gt 4KB -or $guard.Length -ne $manifest[0].Bytes){throw 'Export manifest size changed.'}
+        if($guard.Length -le 0 -or $guard.Length -gt $reportLimit -or $guard.Length -ne $manifest[0].Bytes){throw 'Export manifest size changed.'}
         $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($guard)).ToLowerInvariant()
         $pin=[pscustomobject]@{Path=$manifest[0].Path;Bytes=$guard.Length;SHA256=$sha}
         Assert-H1Path $pin.Path;$guard.Position=0;$Context.Guards.Add($guard);$guard=$null;$State.Report=$pin
     }finally{if($guard){$guard.Dispose()}}
-    $report=Read-H1SmallJson $pin.Path 4KB
+    $report=Read-H1SmallJson $pin.Path $reportLimit
     Assert-T7ResidentExportManifest $report $Plan
     if($files.Count -ne 3){throw 'Exactly manifest, model and mesh files required.'}
     $root=Join-Path (Join-Path $Plan.WorkingDirectory 'dump') $Plan.OutputKey
@@ -290,6 +358,9 @@ function Read-T7ResidentExportReport($Plan,$State,$Context) {
     }
     $State.ExportArtifacts=$artifacts;$State.SelectedCounts=$report.selected_counts
     $State.MaterialDependencies=$report.material_dependencies;$State.RootBoneName=$report.root_bone_name
+    if((Get-T7ResidentExportVersion $Plan) -eq 2){
+        $State.SurfaceRecords=$report.surface_records;$State.GeometryWorkBytesUpperBound=$report.geometry_work_bytes_upper_bound
+    }
     $State.SerializedParseVerified=$false;$State.DependencyPayloadsVerified=$false
     if($State.ExitCode -ne 0){return 'ValidExportFromFailedProcess'}
     'ExportFilesObserved'

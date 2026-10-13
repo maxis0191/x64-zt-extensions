@@ -183,6 +183,26 @@ try {
             $p.ReadbackSources+=@(Add-TextPin (Join-Path $f.Repo ('tools-source/asset-bridge/'+$path)))
         }
         Assert-T7CataloguePlan $p $f.Repo 'synthetic-runner';$script:checks++
+        # V2 metadata selection is explicit, but no operational candidate is
+        # qualified until a future reviewed build supplies its actual pins.
+        $v2=Copy-Value $p
+        $v2|Add-Member NoteProperty ResidentMultiSurfaceV2 ([pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'})
+        $v2.Arguments[0]='-t7-iw7-model-v2';$v2.ReportLimitBytes=256KB
+        Refuses {Assert-T7CataloguePlan $v2 $f.Repo 'synthetic-runner'} 'native qualification pending real reviewed build and receipt'
+        foreach($spec in @(@('ReportLimitBytes',4KB),@('ReportLimitBytes',(256KB+1)),@('ExportModelLimitBytes',2MB),@('ExportMeshLimitBytes',17MB))){
+            $bad=Copy-Value $v2;$bad.($spec[0])=$spec[1]
+            Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
+        }
+        $bad=Copy-Value $v2;$bad.Arguments[0]='-t7-iw7-model'
+        Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
+        $bad=Copy-Value $p;$bad.Arguments[0]='-t7-iw7-model-v2'
+        Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact resident export'
+        $bad=Copy-Value $v2;$bad.Operation='Catalogue'
+        Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'restricted to the export operation'
+        $bad=Copy-Value $v2;$bad.ResidentMultiSurfaceV2|Add-Member NoteProperty NativeQualification 'Qualified'
+        Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'Exact catalogue fields'
+        $bad=Copy-Value $v2;$bad|Add-Member NoteProperty ResidentSurfaceCountDiagnostic $null
+        Refuses {Assert-T7CataloguePlan $bad $f.Repo 'synthetic-runner'} 'cannot be mixed'
         foreach($spec in @(@('Operation','Catalogue'),@('Operation','ResidentExportV2'),@('Schema','iw7.t7-catalogue-plan/1'),
             @('CandidateSHA256',('a'*64)),@('ReportLimitBytes',512KB),@('ExportMeshLimitBytes',32MB),@('ExportModelLimitBytes',2MB),
             @('EngineOutputProfile','ObservedStartupA'),@('OutputLimitBytes',1GB),@('BootstrapPolicy','QualifiedCollectionV2'),@('RetryAuthorized',$true))){
@@ -234,6 +254,7 @@ try {
     }
     [ordered]@{Status='Passed';Checks=$checks;OwnerStockRead=$false;NativeProcessStarted=$false;RealLeaseAcquired=$false}|ConvertTo-Json
     & (Join-Path $PSScriptRoot 'Test-T7ResidentExportDiagnostic.ps1')
+    & (Join-Path $PSScriptRoot 'Test-T7ResidentExportV2.ps1')
 }finally{
     Close-Guards
     $resolved=[IO.Path]::GetFullPath($root);$parent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')+'\'
