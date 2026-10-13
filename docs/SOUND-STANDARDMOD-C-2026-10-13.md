@@ -63,7 +63,7 @@ verified, payload not measured. Its reduced graphics setting is only preparation
 
 The 5077-byte SDK Plan hash is
 `5b9fbdc95e11ede87be6810948c7289b02032f950cbfc8c5d60c35ffaf920d33`.
-Network protocol remains null. The six small static preparation files total
+That initial Plan retains a null protocol. The six small static preparation files total
 30502 bytes. No client payload, package archive, native lookup or client run was
 created by this step.
 
@@ -72,3 +72,40 @@ the qualified r3 native identity and measure the four delivered files before
 using the existing SDK/Distribution gates. Voice Protocol=1 is a different
 field; historical joins on another executable do not attest this target.
 Protected lookup and playback remain separate future tests.
+
+## Actual target game protocol, r3
+
+After the restored r2 BaseUrl failure, the corrected source
+`e1d79179132bf5e2e5250aee9334d70b4e5e3235` ran one distinct dedicated-only
+attempt under the complete 12/12 GiB reservation. At 23:11:56.3826320Z on
+2026-10-12, its challenge-bound UDP response reported `InfoResponse.protocol=2`,
+zero clients, private status and `cp_zmb`. Ownership and loopback endpoint were
+verified before and after the synchronous request. The deployed executable was
+6097920 bytes, SHA256
+`958613f3ade0347f991071a0a8a8502cfb66c816c5c084c5214f05078f7b0296`,
+measured under the reservation. This observation applies to that exact binary.
+
+The 3029-byte observation has SHA256
+`08b958a3ccf1bad6ef7d7eb81eceefc0787f255dd320eb645e333275fa877067`.
+AgentLab reports Passed, Restored, ManagedFilesRestored and StaticMainUnchanged
+true, no cleanup error or Main bank delta, and released admission. Both original
+transactions restored. The original wrapper disposed 122 streams, with zero
+readable remaining, then actually exited zero. Its 865-byte exit receipt has SHA256
+`dee24c54dcac5af70de85a719ec7e4bd0257d9c73cc2552b307f65a33ad79a92`.
+
+An independent witness at 23:19:53.9450592Z found the host, parent, server,
+observable descendants, scoped processes, relevant UDP endpoints and leases
+absent; stopped Main and the unrelated Python identity were preserved. Its
+9048-byte receipt has SHA256
+`bbc2f860f4396fa298ac7d1da288976ff8c205bff85ebeec64e6303e3b17710d`.
+It binds fourteen small proofs. Restoration and managed-stream closure remain
+original-host evidence; the witness did not rehash restored payloads or inspect
+foreign managed handles. Observation-time pending flags remain unchanged and
+must be read with these later completion receipts.
+
+Known retained runtime output was 310105 bytes before final closure receipts,
+with no new candidate minidump. This is scoped metadata accounting, not a complete
+global disk-growth measurement or OS quota. Client join, native sound lookup,
+playback and owner acceptance remain false. The next SDK assembly must consume
+the actually received protocol field and the closed evidence chain; no new
+protocol launch is needed for the unchanged qualified binary.
