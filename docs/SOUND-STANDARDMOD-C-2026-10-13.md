@@ -1,5 +1,10 @@
 # StandardMod C production and SDK static closure
 
+Current decision, 2026-10-13: production and static assembly remain closed;
+protected lookup r1 was refused before lease acquisition or staging. Preserve
+that consumed attempt and its 12/12 GiB estimate; no lookup or playback occurred.
+The detailed admission/refusal checkpoint is appended below.
+
 Recorded on 2026-10-13. Execution times below are UTC on 2026-10-12.
 This is a real closed producer result and a separate static SDK result;
 engine lookup, audible playback and owner acceptance remain pending.
@@ -158,3 +163,47 @@ preparation, within the 4 MiB allocation inside the existing global pool. This
 small-file operation acquired no heavy lease and launched no build or game.
 Next: reuse this package and r3 for a protected lookup-only scenario, with the
 base client declared in the complete runtime reservation and full restoration.
+
+## Lookup r1 admission refusal
+
+The reviewed lookup invocation requested the complete 12 GiB physical / 12 GiB
+commit reservation with the base client declared. Admission refused before a
+lease, AgentLab invocation, payload read/staging, game launch or sound lookup.
+The original host actually exited one; its 1141-byte PTY receipt has SHA256
+`47fba77136d2f160c649244b4e92139a41e01855777284cc627915176f919e04`.
+The 4404-byte refusal summary has SHA256
+`02de76fc0c9065054cfab8272016c2d26eb3a2064b6c5a521f5308d63000e1be`.
+The wrapper reported all 144 source guards closed, with none readable.
+
+The exact initial admission snapshot was not retained. At 03:29:07.3411009Z,
+the post-refusal snapshot had 16109940736 bytes of available physical RAM,
+enough for 12 GiB. Projected remaining commit headroom was 9454571520 bytes
+against a 9512923136-byte reserve: a 58351616-byte deficit. This establishes
+commit pressure at that later snapshot, not the exact earlier rejection values.
+The 03:34:23.310051Z witness snapshot also had sufficient physical RAM and a
+356700160-byte projected commit-reserve deficit. Per-process private aggregates
+are not system commit and establish neither attribution nor a leak.
+
+Independent absence at 03:34:23.3852926Z confirms the host/parent generations
+absent, no lease/game/owned ports, stopped Main and preserved Python. Its
+28225-byte witness has SHA256
+`4cdd01e8d8526e6915a80881508f10af9b335b01cd4b4b8202f1a91c7c4600f7`.
+No process was terminated to make room; no pagefile or admission bound changed.
+There is no automatic retry. A future distinct attempt requires changed capacity,
+fresh review/admission and all existing runtime protections. Static package
+integrity, protocol evidence and production success remain separate from lookup,
+audible playback and owner acceptance.
+
+A distinct lookup r2 is now prepared, with the same wrapper pin `4076c43d` and
+new dispatch prefix `c9157aa1`, independently reviewed. Eleven targeted checks
+pass; only four dispatch fields differ and all 144 pins/wrapper match r1.
+This prepared dispatch is distinct from the consumed r1 attempt.
+At D's later 03:52:21 snapshot, committed memory was 25077284864 of
+47564615680 bytes, differing from the r1 post-refusal observations. That snapshot
+does not promise capacity at launch. After E closes, a separately reviewed r2
+may request fresh full 12/12 GiB admission; r1 itself remains consumed.
+
+E has now returned Failed/NoCatalogue with normal closure and actual host exit
+one; independent absence passes at 04:16:25.8462064Z. Lookup r2 has received a
+separate GO, only if fresh 12/12 GiB admission allows it. No r2 runtime result is
+recorded here, and no sound lookup or playback is inferred from BO3 closure.
