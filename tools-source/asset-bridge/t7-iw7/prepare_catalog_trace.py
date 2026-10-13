@@ -19,6 +19,35 @@ SURFACE_COUNT_HEADER = 'prepared/t7_iw7_resident_model.hpp'
 SURFACE_COUNT_OLD_PIN = (13444, '6d2da3d4f7c3d0686909dc488f3d176ee2dd250e8d43d9a3cd9bcfa701482777')
 SURFACE_COUNT_NEW_PIN = (13545, '701e3d1eccb0e98ecccfd2012215aaf7eff8db7bd974b184e86648a138b6e3c3')
 
+# Source-only v2 commit 257658a99790cbf6ffe2c6301cc8a5c33ad74e44.
+# C/D2 -> rendered source before the unchanged message/publication overlays.
+MULTISURFACE_TRANSITIONS = {
+    'prepared/main.cpp': (
+        (12854, '40de5fda829cec32a5d75359f58e69c84db7d8ee54f198cf6befa2a6ebe6f86e'),
+        (12944, 'ce4fdd46c2da6e777f1142a8b9cb4a7b9fb78715a14e146fcb73e7577bc68615')),
+    'prepared/zonetool.cpp': (
+        (35974, '106ccdb4aec584184132c309c117f778d504ca9e64e8a821d23bfecc83bc8635'),
+        (37691, 'adcfa84e085a78ca554f6a6dee8efc07c9afdae035d509f760ef4c8b6f67616d')),
+    SURFACE_COUNT_HEADER: (
+        SURFACE_COUNT_OLD_PIN,
+        (21290, '97a417b82ab7edf002f73039d1280b5e2a34370594e151ff07698db3a81f65ed')),
+}
+MULTISURFACE_WIRED_PINS = {
+    'prepared/main.cpp': (43038, '3ff489d38adfa4da640c5acd6a78b1600f312fbaef47d41b118fabd7dcd3fb84'),
+    'prepared/zonetool.cpp': (37745, 'c125f56a8dd015f9d961c49b33f1d011de5aa81b07683bd5c196bc8fb296b40d'),
+    SURFACE_COUNT_HEADER: MULTISURFACE_TRANSITIONS[SURFACE_COUNT_HEADER][1],
+}
+
+
+def multisurface_payload_delta(name, raw, pin, *, wired=False):
+    """Only the three sealed transitions; no name-only or arbitrary TU bypass."""
+    if type(wired) is not bool or name not in MULTISURFACE_TRANSITIONS: return False
+    old, new = MULTISURFACE_TRANSITIONS[name]
+    if wired: new = MULTISURFACE_WIRED_PINS[name]
+    return (isinstance(raw, bytes) and isinstance(pin, dict) and
+            (pin.get('Bytes'), pin.get('SHA256')) == old and
+            (len(raw), hashlib.sha256(raw).hexdigest()) == new)
+
 
 def surface_count_header_delta(name, raw, pin):
     """Only the reviewed diagnostic; never a general changed-header allowance."""
@@ -596,12 +625,15 @@ def wire_message_main(source):
         '\t\t\tcatalog_trace_once(2, "before_post_unpack");\n\t\t\tcatalog_message_initialize();')
 
 
-def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *, surface_count_diagnostic=False):
+def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *, surface_count_diagnostic=False,
+                resident_multisurface_v2=False):
     """Compare small text manifests only; never open retained binary inputs."""
     def require(ok, message):
         if not ok: raise ValueError(message)
     def key(path): return str(PureWindowsPath(path)).casefold()
     require(type(surface_count_diagnostic) is bool, 'Surface-count diagnostic flag must be boolean')
+    require(type(resident_multisurface_v2) is bool and not (resident_multisurface_v2 and surface_count_diagnostic),
+            'Multisurface v2 and diagnostic transitions are exclusive boolean choices')
     require(hashlib.sha256(plan_raw).hexdigest() == BASE_PLAN_SHA and
             hashlib.sha256(receipt_raw).hexdigest() == BASE_RECEIPT_SHA, 'Exact ordinary D2 proof required')
     base, receipt, prior, old_receipt = map(json.loads, (plan_raw, receipt_raw, prior_raw, prior_receipt_raw))
@@ -620,6 +652,10 @@ def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *
     for plan in (base, prior):
         bindings = {key(p['Path']):p for p in plan['Bindings']}
         root = PureWindowsPath(plan['PreparedRoot'])
+        if resident_multisurface_v2:
+            require(all(multisurface_payload_delta(name, payloads.get(name),
+                        bindings.get(key(root/name.removeprefix('prepared/'))))
+                        for name in MULTISURFACE_TRANSITIONS), 'Exact multisurface v2 transitions required')
         if surface_count_diagnostic:
             require(surface_count_header_delta(SURFACE_COUNT_HEADER, payloads.get(SURFACE_COUNT_HEADER),
                     bindings.get(key(root/SURFACE_COUNT_HEADER.removeprefix('prepared/')))),
@@ -627,6 +663,7 @@ def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *
         for name, raw in payloads.items():
             if not name.startswith('prepared/'): continue
             pin = bindings.get(key(root/name.removeprefix('prepared/')))
+            if resident_multisurface_v2 and multisurface_payload_delta(name, raw, pin): continue
             if surface_count_diagnostic and surface_count_header_delta(name, raw, pin): continue
             require(pin and pin['Bytes'] == len(raw) and pin['SHA256'] == hashlib.sha256(raw).hexdigest(),
                     'Ordinary D2/C native source differs: '+name)

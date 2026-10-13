@@ -8,6 +8,29 @@ import prepare_build as p
 
 
 class RecipeTests(unittest.TestCase):
+    def test_historical_diagnostic_fixture_keeps_its_exact_reviewed_pin(self):
+        raw=(p.HERE/'fixtures/resident-surface-count-v1.hpp').read_text(encoding='utf-8').encode()
+        self.assertEqual((len(raw),hashlib.sha256(raw).hexdigest()),p.prepare_catalog_trace.SURFACE_COUNT_NEW_PIN)
+        current=(p.HERE.parent/'t7-bridge/t7_iw7_resident_model.hpp').read_text(encoding='utf-8').encode()
+        old=p.prepare_catalog_trace.SURFACE_COUNT_OLD_PIN
+        self.assertFalse(p.prepare_catalog_trace.surface_count_header_delta(
+            p.prepare_catalog_trace.SURFACE_COUNT_HEADER,current,{'Bytes':old[0],'SHA256':old[1]}))
+
+    @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'), 'Retained source not supplied')
+    def test_v2_plain_and_wired_pins_match_the_frozen_native_source(self):
+        _,sources=p.prepare_cli.render(Path(os.environ['IW7_T7_SOURCE']))
+        main,cli=(sources[p.prepare_cli.PATHS[i]] for i in (0,1))
+        header=(p.HERE.parent/'t7-bridge/t7_iw7_resident_model.hpp').read_text(encoding='utf-8')
+        plain=dict(zip(('prepared/main.cpp','prepared/zonetool.cpp',p.prepare_catalog_trace.SURFACE_COUNT_HEADER),
+                       (main,cli,header)))
+        main,cli=p.prepare_message_publication.overlay(p.prepare_catalog_trace.wire_message_main(main),cli)
+        wired={**plain,'prepared/main.cpp':main,'prepared/zonetool.cpp':cli}
+        for name,(old,_) in p.prepare_catalog_trace.MULTISURFACE_TRANSITIONS.items():
+            pin={'Bytes':old[0],'SHA256':old[1]}
+            self.assertTrue(p.prepare_catalog_trace.multisurface_payload_delta(name,plain[name].encode(),pin))
+            self.assertTrue(p.prepare_catalog_trace.multisurface_payload_delta(name,wired[name].encode(),pin,wired=True))
+            self.assertFalse(p.prepare_catalog_trace.multisurface_payload_delta(name,wired[name].encode()+b' ',pin,wired=True))
+
     def test_committed_cli_source_contract_matches_current_text(self):
         contract = json.loads((p.HERE/'cli-source-contract.json').read_text(encoding='utf-8'))
         for name, pin in contract['files'].items():
@@ -181,7 +204,7 @@ class ReuseTests(unittest.TestCase):
         prior_raw,r,payloads,run=self.publication_fixture()
         prior=json.loads(prior_raw)
         name=p.prepare_catalog_trace.SURFACE_COUNT_HEADER
-        payloads[name]=(p.HERE.parent/'t7-bridge'/Path(name).name).read_text(encoding='utf-8').encode()
+        payloads[name]=(p.HERE/'fixtures/resident-surface-count-v1.hpp').read_text(encoding='utf-8').encode()
         pin=next(row for row in prior['Bindings'] if row['Path'].endswith('t7_iw7_resident_model.hpp'))
         pin.update(Bytes=p.prepare_catalog_trace.SURFACE_COUNT_OLD_PIN[0],
                    SHA256=p.prepare_catalog_trace.SURFACE_COUNT_OLD_PIN[1])
@@ -234,6 +257,82 @@ class ReuseTests(unittest.TestCase):
         for stage in ('main','zonetool11'):
             self.assertEqual(response.count(f'C:\\fresh\\{stage}\\{stage}.obj'),1)
         self.assertEqual(response.count('C:\\old'),1)
+
+    def multisurface_fixture(self):
+        fixture=self.surface_count_fixture()
+        prior_raw,r,payloads,run=fixture['base'];prior=json.loads(prior_raw)
+        transitions={};wired={}
+        for name,(old,_) in p.prepare_catalog_trace.MULTISURFACE_TRANSITIONS.items():
+            raw=('invented sealed v2 '+name).encode()
+            output=b'publication overlay '+raw
+            transitions[name]=(old,(len(raw),hashlib.sha256(raw).hexdigest()))
+            wired[name]=(len(output),hashlib.sha256(output).hexdigest())
+            payloads[name]=output
+            pin=next(row for row in prior['Bindings'] if p.key(row['Path'])==
+                     p.key(PureWindowsPath(prior['PreparedRoot'])/name.removeprefix('prepared/')))
+            pin.update(Bytes=old[0],SHA256=old[1])
+        prior_raw=json.dumps(prior).encode();r['PlanSHA256']=hashlib.sha256(prior_raw).hexdigest()
+        fixture['base']=(prior_raw,r,payloads,run)
+        fixture['v2_transitions'],fixture['v2_wired']=transitions,wired
+        return fixture
+
+    def multisurface_reuse(self,fixture,**overrides):
+        with patch.object(p.prepare_catalog_trace,'MULTISURFACE_TRANSITIONS',fixture['v2_transitions']), \
+             patch.object(p.prepare_catalog_trace,'MULTISURFACE_WIRED_PINS',fixture['v2_wired']):
+            return self.surface_count_reuse(fixture,**{'resident_multisurface_v2':True,**overrides})
+
+    def test_v2_keeps_complete_dependency_proof_and_only_two_fresh_objects(self):
+        fixture=self.multisurface_fixture();reuse,pins,text=self.multisurface_reuse(fixture)
+        proof=reuse['ResidentMultiSurfaceV2']
+        self.assertNotIn('ResidentSurfaceCountDiagnostic',reuse)
+        self.assertEqual(proof['Schema'],'iw7.t7-resident-multi-surface-build/2')
+        self.assertEqual((proof['E7TranslationUnits'],proof['E7Objects'],len(proof['DependencyJSON'])),(413,413,3))
+        self.assertEqual(len(proof['SourceTransitions']),3)
+        self.assertEqual((len(pins),len(text),reuse['StageRoots']),(7,7,[r'C:\old\xpak']))
+        response=fixture['base'][2]['link.rsp'].decode()
+        self.assertEqual(response.count('C:\\old'),1)
+        for name in ('main','zonetool11'):
+            self.assertEqual(response.count(f'C:\\fresh\\{name}\\{name}.obj'),1)
+
+    def test_v2_refuses_any_unsealed_payload_or_missing_transition(self):
+        for name in ('main.cpp','zonetool.cpp','t7_iw7_resident_model.hpp','common/xpak.cpp',
+                     'common/xpak.hpp','t7_asset_name.hpp','test_t7_asset_name.cpp'):
+            fixture=self.multisurface_fixture();fixture['base'][2]['prepared/'+name]+=b' '
+            with self.subTest(name=name),self.assertRaises(ValueError): self.multisurface_reuse(fixture)
+        fixture=self.multisurface_fixture();del fixture['base'][2]['prepared/main.cpp']
+        with self.assertRaises(ValueError): self.multisurface_reuse(fixture)
+
+    def test_v2_requires_complete_pair_and_exact_old_source_tuple(self):
+        for flags in ({'resident_multisurface_v2':False},{'resident_multisurface_v2':'true'},
+                      {'recompile_main':False},{'recompile_zonetool':False},{'catalog_trace':False},
+                      {'surface_count_dependencies':None},{'e7_dependency_text':None}):
+            with self.subTest(flags=flags),self.assertRaises(ValueError):
+                self.multisurface_reuse(self.multisurface_fixture(),**flags)
+        for name in p.prepare_catalog_trace.MULTISURFACE_TRANSITIONS:
+            fixture=self.multisurface_fixture();prior,r,payloads,run=fixture['base'];doc=json.loads(prior)
+            next(row for row in doc['Bindings'] if row['Path'].endswith(PureWindowsPath(name).name))['SHA256']='f'*64
+            prior=json.dumps(doc).encode();r['PlanSHA256']=hashlib.sha256(prior).hexdigest()
+            fixture['base']=(prior,r,payloads,run)
+            with self.assertRaises(ValueError): self.multisurface_reuse(fixture)
+
+    def test_v2_rejects_retained_consumers_or_incomplete_e7_provenance(self):
+        for mode in ('helper','xpak','e7_consumer','e7_object','e7_hash','dependency_hash'):
+            fixture=self.multisurface_fixture()
+            if mode in ('helper','xpak'):
+                doc=json.loads(fixture['dependencies'][mode])
+                doc['Data']['Includes'].append(r'C:\other\t7_iw7_resident_model.hpp')
+                self.set_dependency(fixture,mode,doc)
+            elif mode=='e7_consumer':
+                fixture['journals']['read']=fixture['journals']['read'].decode('utf-16').replace(
+                    'C:\\sdk\\vector',r'C:\other\t7_iw7_resident_model.hpp',1).encode('utf-16')
+                self.pin_fixture_journals(fixture)
+            elif mode=='e7_object':
+                fixture['journals']['link']=fixture['journals']['link'].decode('utf-16').replace(
+                    'tu412.OBJ','tu411.OBJ').encode('utf-16')
+                self.pin_fixture_journals(fixture)
+            elif mode=='e7_hash': fixture['journals']['read']+=b' '
+            else: fixture['dependencies']['zonetool11']+=b' '
+            with self.subTest(mode=mode),self.assertRaises(ValueError): self.multisurface_reuse(fixture)
 
     def test_surface_count_refuses_other_header_or_hash_and_missing_opt_in(self):
         for mode in ('other_header','new_hash','old_hash','missing_transition','no_evidence'):
