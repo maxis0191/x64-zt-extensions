@@ -102,12 +102,16 @@ per surface. The model totals must equal all surface records. Material slots
 stay in surface order, including repeated dependencies.
 
 Before reading geometry, the common contract and independent reader recompute
-`geometry_work_bytes_upper_bound = 256 + 368*N + 60*V + 12*T`, capped at 16777216
+`geometry_work_bytes_upper_bound = 256 + 384*N + 60*V + 12*T`, capped at 16777216
 bytes. `N`, `V`, `T` are surface count and summed vertex/triangle counts. Every
 logical occurrence counts in full, including aliases. This accounts for the
 source and destination geometry buffers; it is neither a total RAM/CPU estimate
-nor a serialized-file cap. V2 manifest bytes have a separate 256 KiB cap, strings
-remain bounded to 255 portable ASCII characters, XMB remains at 1 MiB and XSB at
+nor a serialized-file cap. The per-surface allowance includes the 96-byte T7
+surface; the earlier 368-byte coefficient assumed 80 bytes and is invalid.
+Model Lab rejects metadata claiming that old work value. At `N=6`, `V=267000`,
+`T=62888`, the corrected total is exactly 16 MiB; `T=62896`, previously at the
+boundary, exceeds it by 96 bytes. V2 manifest bytes have a separate 256 KiB cap,
+strings remain bounded to 255 portable ASCII characters, XMB remains at 1 MiB and XSB at
 16 MiB. Model Lab v2 derived receipts/plans have a separate 1 MiB metadata cap
 for up to 255 surface summaries and material mappings; their v1 cap stays 64 KiB.
 No resource admission, mutable-space, FF or HTTP limit is increased by v2.
