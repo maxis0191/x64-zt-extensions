@@ -29,6 +29,7 @@ namespace
         t7::Material material{};
         t7::Material* slots[2] = {&material, &material};
         t7::MaterialTextureDef texture{};
+        t7::MaterialTextureDef extra_textures[2]{};
         t7::GfxImage image{};
         t7::MaterialTechniqueSet technique{};
         std::string model_name = "original_fixture_model";
@@ -85,6 +86,7 @@ namespace
             const std::pair<const void*, std::size_t> ranges[] = {
                 {&model, sizeof(model)}, {&table, sizeof(table)}, {slots, sizeof(slots)},
                 {&material, sizeof(material)}, {&texture, sizeof(texture)}, {&image, sizeof(image)},
+                {extra_textures, sizeof(extra_textures)},
                 {&technique.name, sizeof(technique.name)},
                 {model_name.c_str(), model_name.size()+1},
                 {material_name.c_str(), material_name.size()+1}, {image_name.c_str(), image_name.size()+1},
@@ -130,6 +132,10 @@ int main()
         check(result.at("textures")[0].at("uvScaleBits") == nlohmann::ordered_json::array({0x40000000u, 0x3f000000u}));
         check(result.at("headers_rechecked") == true && result.at("pixels_copied") == false && result.at("ready") == false);
         check(good.total_read <= observation::read_limit); // The pixel sentinel was never requested.
+        check(result.at("selected_header").at("texture_count") == 1 &&
+            result.at("selected_header").at("sampler_count") == 0 &&
+            result.at("selected_header").at("constant_count") == 0);
+        check(result.at("selected_header").size() == 7 && !result.contains("failure_stage"));
 
         fixture streamed;
         streamed.image.streaming = 1;
@@ -158,6 +164,44 @@ int main()
         unreadable.deny_image = true;
         const auto denied = unreadable.observe();
         check(denied.at("refused") == true && denied.at("material_names").size() == 2);
+        check(denied.at("failure_stage") == "image_header" && denied.at("failure_index") == 0);
+        check(denied.at("textures").empty());
+
+        fixture unreadable_textures;
+        unreadable_textures.material.textureTable = reinterpret_cast<t7::MaterialTextureDef*>(std::uintptr_t{1});
+        const auto denied_textures = unreadable_textures.observe();
+        check(denied_textures.at("refused") == true && denied_textures.at("failure_stage") == "texture_table");
+        check(denied_textures.at("selected_header").at("texture_count") == 1 &&
+            denied_textures.at("selected_header").at("texture_table_present") == true);
+
+        for (unsigned table_case = 0; table_case < 2; ++table_case)
+        {
+            fixture unreadable_table;
+            if (table_case == 0)
+            {
+                unreadable_table.material.samplerCount = 1;
+                unreadable_table.material.samplerTable = reinterpret_cast<t7::MaterialSamplerDef*>(std::uintptr_t{1});
+            }
+            else
+            {
+                unreadable_table.material.constantCount = 1;
+                unreadable_table.material.constantTable = reinterpret_cast<t7::MaterialConstantDef*>(std::uintptr_t{1});
+            }
+            const auto partial = unreadable_table.observe();
+            check(partial.at("failure_stage") == (table_case == 0 ? "sampler_table" : "constant_table"));
+            check(partial.at("textures").size() == 1 && partial.at("textures")[0].at("image_name") == unreadable_table.image_name);
+            check(partial.at("refused") == true && partial.at("headers_rechecked") == false &&
+                partial.at("allocation_retained") == false && partial.at("pixels_copied") == false && partial.at("ready") == false);
+        }
+
+        fixture sparse_images;
+        sparse_images.material.textureCount = 2;
+        sparse_images.material.textureTable = sparse_images.extra_textures;
+        sparse_images.extra_textures[1] = sparse_images.texture;
+        sparse_images.change_image_name = true;
+        const auto sparse_refusal = sparse_images.observe();
+        check(sparse_refusal.at("refused") == true && sparse_refusal.at("failure_stage") == "image_name_recheck");
+        check(sparse_refusal.at("failure_index") == 1 && sparse_refusal.at("textures").size() == 2);
 
         fixture excessive;
         excessive.material.textureCount = 17;

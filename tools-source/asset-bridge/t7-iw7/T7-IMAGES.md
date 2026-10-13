@@ -188,8 +188,8 @@ recorded below. This does not qualify a real material capture.
 
 Attempt C compiled the unchanged fixture and production helper from source
 package `afdd8062732499698a6a810918b8aae082ba3668`, including the actual T7
-structs at native pin `fab935826c898806855376662a8a03317b3ad8f1`. The helper and
-fixture are identical to the author-preserving cherry-pick merged in
+structs at native pin `fab935826c898806855376662a8a03317b3ad8f1`. Those input helper
+and fixture bytes match the author-preserving cherry-pick merged in
 [PR 11](https://github.com/maxis0191/x64-zt-extensions/pull/11), merge
 `7fd2016cafc247dca0cd8372deaa383ace99fbff`. PR 9 was closed as superseded.
 MSVC 14.44 retained C++20, `/W4 /WX`, `/MD` and `/O1`.
@@ -226,8 +226,35 @@ another process supervisor.
 This qualifies standalone synthetic metadata/refusal behavior, including the
 unreadable pixel sentinel. It does not establish live pointer lifetime, atomic
 snapshots, authentic texture bindings/pixels, channel conversion, shader import
-or rendered appearance. The next step is the reviewed native BO3 metadata sonde
-under its own resource admission, then one bounded authentic image candidate.
+or rendered appearance. The subsequent real BO3 metadata sonde did not produce
+an image candidate, as recorded below.
+
+### Real selected-material read refusal and diagnostic correction
+
+The E2 engine sonde on 2026-10-13 observed five ordered material names for
+`p7_fre_platform_cap_02`, LOD 0. Selected slot 0 named
+`mc/t7_metal_trim_safehouse_mobile_09` and aliased only slot 0. Its material
+observation then refused with `range is not committed readable memory`;
+`headers_rechecked`, `pixels_copied` and `ready` remained false. No texture
+name, DXGI format, source semantic or pixel payload was captured. The old
+diagnostic cannot distinguish a table, image, technique or recheck failure;
+the exact engine-side cause remains unknown.
+
+The corrected source exposes `failure_stage` and, for indexed reads, the original
+row `failure_index`. Its `selected_header` records only table counts and pointer
+presence booleans, never addresses. Texture rows are now processed before sampler
+and constant tables and retained progressively after their own texture recheck.
+A later refusal therefore preserves candidate metadata already read. That partial
+output still has `refused=true` and `headers_rechecked=false`; it does not qualify
+texture binding, lifetime or pixels. Complete header/name rechecks and the existing
+64 KiB read/32 KiB JSON bounds still apply before success.
+
+New synthetic cases cover unreadable texture/sampler/constant tables, refusal
+stages, partial texture preservation and sparse image bindings. Their native
+execution is pending; the earlier 32-check C result belongs only to its recorded
+input bytes. E2 and its compiled observer remain immutable. A future diagnostic
+epoch must explicitly adopt the new helper and requalify the native CLI; no diffuse
+image is inferred from a material name or an incomplete observation.
 
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
