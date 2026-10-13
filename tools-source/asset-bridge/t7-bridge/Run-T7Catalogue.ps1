@@ -8,7 +8,7 @@ $core=Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
 . $core
 $guards=[Collections.Generic.List[object]]::new()
 $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards}
-$state=$null;$failure=$null;$attempted=$false;$plan=$null;$zonePin=$null
+$state=$null;$failure=$null;$attempted=$false;$plan=$null;$zonePin=$null;$export=$false
 try {
     $size=(Get-Item -LiteralPath $PlanPath).Length
     if($size -gt 128KB){throw 'Catalogue plan exceeds 128 KiB.'}
@@ -20,6 +20,9 @@ try {
     $fileIdentity=Join-Path $repo 'ops/hud-lab/HudFileIdentity.cs'
     $required=@($PSCommandPath,$profile,$prepatchProfile,$core,$scheduler,$fileIdentity,
         (Join-Path $repo 'ops/Resource-Memory.ps1'),(Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'))
+    $export=[bool]($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'ResidentExportV1')
+    $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
+    if($export){$required+=@($exportProfile)}
     foreach($path in $required) {
         $pin=@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true})
         if($pin.Count -ne 1 -or $pin[0].Bytes -gt 1MB){throw 'Bounded exact source binding missing.'}
@@ -27,8 +30,10 @@ try {
     }
     . $prepatchProfile # Functions only; reuse environment/Main checks without changing the diagnostic.
     . $profile
+    if($export){. $exportProfile}
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
+    if($export){Assert-T7ResidentExportCatalogue $plan}
     $bootstraps=@(Get-T7CatalogueBootstraps $plan)
     foreach($bootstrap in $bootstraps){Assert-T7CatalogueBootstrapReceipt $plan (Read-H1SmallJson $bootstrap.QualificationReceipt.Path 32KB) $bootstrap.Path}
     $job=@($plan.Bindings|Where-Object {$_.Path -ceq $plan.JobAssembly -and !$_.IsText})
@@ -52,17 +57,26 @@ try {
         DeadlineSeconds=120;MaxObservedOutputBytes=0L;Identity=$null;ExitCode=$null;TreeClosureConfirmed=$true;
         LeaseReleased=$false;Quarantined=$false;TerminationRequested=$false;CatalogueOutcome='NoCatalogue';
         CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;EngineOutputsValidated=$false;Aliases=@();InputFileIds=@()}
-    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'T7 single-zone catalogue'
+    $attemptSchema='iw7.t7-catalogue-attempt/1';$leaseOwner='T7 single-zone catalogue'
+    if($export){
+        $state.Schema='iw7.t7-resident-export-run/1';$state.Stage='ResidentExport';$state.Remove('CatalogueOutcome')
+        $state.ExportOutcome='NoExport';$state.ExportRequest=$plan.ExportRequest
+        $state.TraceOutcome='DisabledForResidentExportCLI';$state.MessageOutcome='DisabledForResidentExportCLI'
+        $state.SerializedParseVerified=$false;$state.DependencyPayloadsVerified=$false
+        $attemptSchema='iw7.t7-resident-export-attempt/1';$leaseOwner='T7 one-model resident export'
+    }
+    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 6GB -CommitBytes 8GB -Owner $leaseOwner
     $state.LeaseToken=$context.Lease.Token
     Enable-T7CatalogueRuntimeProfile $plan
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     $marker=[IO.FileStream]::new((Join-Path $plan.RunRoot 'attempt.json'),'CreateNew','Write','Read')
-    try{$attempted=$true;$bytes=[Text.Encoding]::UTF8.GetBytes((([ordered]@{Schema='iw7.t7-catalogue-attempt/1';PlanSHA256=$PlanSHA256;StartedUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress)+"`n"));$marker.Write($bytes,0,$bytes.Length)}finally{$marker.Dispose()}
+    try{$attempted=$true;$bytes=[Text.Encoding]::UTF8.GetBytes((([ordered]@{Schema=$attemptSchema;PlanSHA256=$PlanSHA256;StartedUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress)+"`n"));$marker.Write($bytes,0,$bytes.Length)}finally{$marker.Dispose()}
     foreach($pin in $plan.Bindings|Where-Object {!$_.IsText}){$guards.Add((Open-H1Pin $pin));Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
     Add-Type -Path $fileIdentity # Existing tiny file-ID helper, only after admission; no external compiler process.
     Assert-T7CatalogueBootstrapIdentity $plan
     $zonePin=Open-T7CatalogueZone $plan.Zone $context
     $state.ObservedZone=$zonePin
+    if($export){Assert-T7ResidentExportZone $plan $zonePin}
     Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     foreach($item in $plan.InputMetadata){Assert-T7CatalogueMetadata $item;$state.InputFileIds+=@([pscustomobject]@{Path=$item.Path;FileId=(Get-T7CatalogueFileId $item.Path)})}
     Assert-T7CatalogueDistinctInputIds $plan $state.InputFileIds
@@ -98,11 +112,12 @@ try {
     # while guards/admission remain; failure never becomes a successful catalogue.
     if($state -and $attempted -and $context.Owner -and $context.Closed -and $context.Lease) {
         try {
-            try{Read-T7CatalogueTrace $plan $state $context}
+            try{if(!$export){Read-T7CatalogueTrace $plan $state $context}}
             catch{if(!$failure){$failure=$_};$state.TraceError=$_.Exception.Message;$state.Status='Failed'}
             Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context
             $state.EngineOutputsValidated=$true
-            $state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context
+            if($export){$state.ExportOutcome=Read-T7ResidentExportReport $plan $state $context}
+            else{$state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context}
             foreach($pin in @($plan.Bindings)+@($zonePin)+@($state.Aliases)) {
                 $guard=Open-H1Pin $pin;try{}finally{$guard.Dispose()};Assert-H1Deadline $script:T7CatalogueGroupStarted 200
             }
@@ -110,8 +125,9 @@ try {
             foreach($item in @($state.InputFileIds)+@($state.Aliases)){if((Get-T7CatalogueFileId $item.Path) -cne $item.FileId){throw 'Original/alias file ID changed.'}}
             $state.InputsReverified=$true;$state.OriginalInputMetadataUnchanged=$true;$state.AliasesRetained=$true
             Test-H1Budget $plan $state
-            if(!$failure -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
-            if(!$failure -and (Get-T7CatalogueCandidateProfile $plan) -cne 'ordinary-d2' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
+            if(!$failure -and $export -and $state.ExportOutcome -cne 'ExportFilesObserved'){throw 'No qualified selective export was produced.'}
+            if(!$failure -and !$export -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
+            if(!$failure -and !$export -and (Get-T7CatalogueCandidateProfile $plan) -cne 'ordinary-d2' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
     if($state){Complete-H1Stage $context $state}
@@ -119,24 +135,26 @@ try {
         try{$state.MainAfter=Assert-T7CatalogueMain $plan}
         catch{if(!$failure){$failure=$_};$state.MainAfterError=$_.Exception.Message;$state.Status='Failed'}
     }
-    if($state -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
+    if($state -and !$export -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
         # After forced closure, inspect only bounded diagnostics, never hash payloads.
         try{Read-T7CatalogueTrace $plan $state $context}catch{$state.TraceError=$_.Exception.Message}
         try{$state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context}catch{$state.ReportError=$_.Exception.Message}
     }
-    if($state -and !$context.Closed){$state.CatalogueOutcome='NotInspectedWhileJobUnclosed'}
+    if($state -and !$context.Closed){if($export){$state.ExportOutcome='NotInspectedWhileJobUnclosed'}else{$state.CatalogueOutcome='NotInspectedWhileJobUnclosed'}}
     if($state -and $attempted) {
         if($context.Owner -and $context.Closed){$state.ClosureEvidence='Pinned NativeJob CloseConfirmed rechecks original RootExited and ActiveProcesses==0; original ExitCode retained.'}
         $state.FinishedUtc=[DateTime]::UtcNow.ToString('o')
         try {
             if(!$state.Quarantined){Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
             if(!$failure -and $context.Closed -and !$context.Lease -and $state.LeaseReleased -and
-               !$state.TerminationRequested -and $state.InputsReverified -and $state.EngineOutputsValidated -and
-               $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
+               !$state.TerminationRequested -and $state.InputsReverified -and $state.EngineOutputsValidated){
+                if($export -and $state.ExportOutcome -ceq 'ExportFilesObserved'){$state.Status='ExportObservedPendingReadback'}
+                elseif(!$export -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
+            }
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message}
         try {
             Write-H1Receipt $plan $state $plan.StageRoot
-            if($state.Status -ceq 'CatalogueObservedPendingDonorReview') {
+            if($state.Status -cin @('CatalogueObservedPendingDonorReview','ExportObservedPendingReadback')) {
                 try{Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
                 catch {
                     $failure=$_;$state.Status='Failed';$state.FinalizationError=$_.Exception.Message
@@ -152,5 +170,8 @@ if($state -and $state.Quarantined) {
     Write-Warning 'Original owner/lease/guards retained in IW7.H1.Quarantine; keep this host for recovery. No retry.'
     while($true){Start-Sleep -Seconds 1}
 }
-if($state){[ordered]@{Status=$state.Status;CatalogueOutcome=$state.CatalogueOutcome;Receipt=(Join-Path $plan.StageRoot 'receipt.json');Ready=$false}|ConvertTo-Json}
+if($state){
+    $outcomeName=if($export){'ExportOutcome'}else{'CatalogueOutcome'}
+    [ordered]@{Status=$state.Status;($outcomeName)=$state[$outcomeName];Receipt=(Join-Path $plan.StageRoot 'receipt.json');Ready=$false}|ConvertTo-Json
+}
 if($failure){throw $failure}

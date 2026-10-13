@@ -129,6 +129,14 @@ try {
         Check ($script:state.Guards.Count -eq 0 -and $script:state.Phase -ceq 'Closed' -and $script:published.Count -eq 1) 'Wrapper guard disposal/publication differs.'
         Refuses {Complete-T7CatalogueHost $script:state} 'no re-entry'
         Check $script:state.CanExit 'Rejected duplicate Finish must preserve already proven CanExit.'
+        Reset-Case
+        $script:state.Plan|Add-Member NoteProperty Operation 'ResidentExportV1'
+        $script:receipt.Schema='iw7.t7-resident-export-run/1';$script:receipt.PSObject.Properties.Remove('CatalogueOutcome')
+        $script:receipt|Add-Member NoteProperty ExportOutcome 'NoExport'
+        $script:attempt.Schema='iw7.t7-resident-export-attempt/1'
+        $exportResult=Complete-T7CatalogueHost $script:state|ConvertFrom-Json
+        Check ($exportResult.CanExit -and $exportResult.ExportOutcome -ceq 'NoExport' -and !$exportResult.PSObject.Properties['CatalogueOutcome']) 'Export host closure mislabeled or upgraded failure.'
+        Check ($script:state.Guards.Count -eq 0) 'Export host retained closed guards.'
         foreach($extraCount in @(1,8,20)){
             Reset-Case
             for($index=0;$index -lt $extraCount;$index++){

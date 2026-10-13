@@ -127,6 +127,15 @@ try {
             Refuses {Complete-T7CatalogueHost $script:state} 'no re-entry'
             Check (!$script:state.CanExit) 'Normal Finish adopted incident permission.'
         }
+        Reset-Case
+        $script:state.Plan|Add-Member NoteProperty Operation 'ResidentExportV1'
+        $script:receipt.Schema='iw7.t7-resident-export-run/1';$script:receipt.PSObject.Properties.Remove('CatalogueOutcome')
+        $script:receipt|Add-Member NoteProperty ExportOutcome 'NoExport';Save-Receipt
+        $script:attempt.Schema='iw7.t7-resident-export-attempt/1';Write-Json (Join-Path $script:state.RunRoot 'attempt.json') $script:attempt
+        $exportIncident=Complete-T7CatalogueHostIncident $script:state $script:receiptHash|ConvertFrom-Json
+        $exportPost=Read-H1SmallJson ($script:state.RunRoot+'.host-incident-postflight.json')
+        Check ($exportIncident.IncidentCanExit -and !$exportIncident.CanExit -and $exportIncident.ExportOutcome -ceq 'NoExport') 'Export incident upgraded failure.'
+        Check ($exportPost.Schema -ceq 'iw7.t7-resident-export-host-incident-closure/1' -and !$exportPost.PSObject.Properties['CatalogueOutcome'] -and !$exportPost.PayloadHashesReadAfterRelease) 'Export incident schema or payload scope differs.'
         foreach($case in @('hash','status','reverified','tree','lease-proof','schema','plan','quarantined','quarantine-domain','identity','lifetime','count','alias','duplicate',
             'lease-live','native-live','native-reused','root-live','ambiguous','heavy','host-reused','host-missing','preserved','metadata','ids','main','client','host-child','native-child','ancestry',
             'start','return','attempt','preexisting','closed-guard','active-runner','different-state')){
