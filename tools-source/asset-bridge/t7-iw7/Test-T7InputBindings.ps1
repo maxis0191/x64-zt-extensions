@@ -79,8 +79,8 @@ function Must-RefuseBinding($Fixture) {
 function New-StreamedBindingFixture {
     $fixture=New-BindingFixture
     foreach($row in @(
-        @('selected_material_observation.hpp',15261,'699796230fb3b626c9faf8ebb3e06c75eb376048c5f9928f341636235683d4da'),
-        @('selected_material_observation_fixture.cpp',10869,'d5e30aba27684ef68b60c269d1afa22c9b0e8eedad697b40412d45fce3ce8029'))) {
+        @('selected_material_observation.hpp',16489,'0ea84735fca2502033cc48a4eede6a19e1bd1283ba1975829f763c16e5ef343a'),
+        @('selected_material_observation_fixture.cpp',13721,'cb27d4df66f3a186de3e0f5faedf7bf713610a2da0fc599861e5a4838ea2dfed'))) {
         $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
         $pin.Bytes=$row[1];$pin.SHA256=$row[2]
     }
@@ -88,7 +88,7 @@ function New-StreamedBindingFixture {
         Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'})
     foreach($row in @(
         @('prepared/main.cpp',13052,'ca8875cf36bdf9a8c8e6142969eab95194d214d09c90064e202d68ff9302fcb3',43146,'e599c3e6945e2192443b8a3a3e274d5d36b133b41beb38d6d9234c669defca01'),
-        @('prepared/zonetool.cpp',105908,'eacd6cca7483f781ffa6202d7b10cb05c8ee81fc56e74e15c8d144ff6994a515',105962,'edaeaeb7865ad0ef55fa368619ed894f9ea1e10654754b0825a83ddf66f23379'))) {
+        @('prepared/zonetool.cpp',107731,'dc8211db172c1d6f470b518aa0884ff1be9e1a15faf6a739155a1cc60ca43ac5',107785,'c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50'))) {
         $transition=@($fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions|Where-Object Path -CEQ $row[0])[0]
         $transition.Bytes=$row[1];$transition.SHA256=$row[2];$transition.WiredBytes=$row[3];$transition.WiredSHA256=$row[4]
         $path='C:\plan\'+$row[0].Replace('/','\')
@@ -96,7 +96,7 @@ function New-StreamedBindingFixture {
         $binding.Bytes=$row[3];$binding.SHA256=$row[4]
     }
     foreach($row in @(
-        @('streamed_mesh_payload.hpp',17917,'4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f'),
+        @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
         @('t7_iw7_streamed_model.hpp',11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
         @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
         @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),

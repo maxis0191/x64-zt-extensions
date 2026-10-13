@@ -63,8 +63,8 @@
       "lf_sha256": "9d1c04e1309cab82e9dfbadc4bc7aa56a91fed40bef7960a63372341f5155db9"
     },
     "zonetool-fab9358-t7-resident-cli.patch": {
-      "lf_bytes": 91250,
-      "lf_sha256": "9f5e11d0404912fd9e1ef87c83447c7ce4310829a219c9eb18e0a6e0221398ca"
+      "lf_bytes": 93104,
+      "lf_sha256": "1fd59ecd03043909697373bbe367bf41f2c4693f4c63d162eac3a1f2d5448154"
     },
     "test_triangle_ownership.py": {
       "lf_bytes": 4756,
@@ -75,16 +75,16 @@
       "lf_sha256": "96291c23f132e09285d4ea3171c9107ac525d8628403014eae85a895f99c324e"
     },
     "selected_material_observation.hpp": {
-      "lf_bytes": 15261,
-      "lf_sha256": "699796230fb3b626c9faf8ebb3e06c75eb376048c5f9928f341636235683d4da"
+      "lf_bytes": 16489,
+      "lf_sha256": "0ea84735fca2502033cc48a4eede6a19e1bd1283ba1975829f763c16e5ef343a"
     },
     "selected_material_observation_fixture.cpp": {
-      "lf_bytes": 10869,
-      "lf_sha256": "d5e30aba27684ef68b60c269d1afa22c9b0e8eedad697b40412d45fce3ce8029"
+      "lf_bytes": 13721,
+      "lf_sha256": "cb27d4df66f3a186de3e0f5faedf7bf713610a2da0fc599861e5a4838ea2dfed"
     },
     "streamed_mesh_payload.hpp": {
-      "lf_bytes": 17917,
-      "lf_sha256": "4572066e2a3692bfdec563dac87e8610506836c5bd7334f85672fe574d82208f"
+      "lf_bytes": 18512,
+      "lf_sha256": "53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf"
     },
     "t7_iw7_streamed_model.hpp": {
       "lf_bytes": 11289,
@@ -130,7 +130,7 @@
   },
   "patched_source_lf_sha256": {
     "src/zonetool/main.cpp": "ca8875cf36bdf9a8c8e6142969eab95194d214d09c90064e202d68ff9302fcb3",
-    "src/zonetool/zonetool/t7/zonetool.cpp": "eacd6cca7483f781ffa6202d7b10cb05c8ee81fc56e74e15c8d144ff6994a515",
+    "src/zonetool/zonetool/t7/zonetool.cpp": "dc8211db172c1d6f470b518aa0884ff1be9e1a15faf6a739155a1cc60ca43ac5",
     "src/zonetool/zonetool/t7/common/xpak.cpp": "ab07824efb64d5535fe56a428c9fee316b5141adbcfd87b6999c352f0de8dde8",
     "src/zonetool/zonetool/t7/common/xpak.hpp": "d5ae59be9a6a30c9dbc0838fc4909cffe577314b5fa66817787fc3ee910635b7"
   },
