@@ -83,7 +83,8 @@ class CatalogueBaseTests(unittest.TestCase):
                 'Stages':[{'Name':'link'}],'Inputs':[s['Artifacts'][0] for s in stages]}
         return base, prior_raw, old_raw, payloads
 
-    def verify(self, base, prior, old, payloads, mutate_receipt=None, *, surface_count_diagnostic=False):
+    def verify(self, base, prior, old, payloads, mutate_receipt=None, *, surface_count_diagnostic=False,
+               resident_multisurface_v2=False):
         raw = json.dumps(base).encode(); sha = hashlib.sha256(raw).hexdigest()
         receipt = {'Schema':'iw7.t7-minimal-build/1','PlanSHA256':sha,'Status':'Passed',
                    'InputsReverified':True,'TreeClosureConfirmed':True,'LeaseReleased':True,'Quarantined':False,
@@ -91,12 +92,13 @@ class CatalogueBaseTests(unittest.TestCase):
         if mutate_receipt: mutate_receipt(receipt)
         receipt_raw = json.dumps(receipt).encode()
         with patch.object(p, 'BASE_PLAN_SHA', sha), patch.object(p, 'BASE_RECEIPT_SHA', hashlib.sha256(receipt_raw).hexdigest()):
-            p.verify_base(raw, receipt_raw, prior, old, payloads, surface_count_diagnostic=surface_count_diagnostic)
+            p.verify_base(raw, receipt_raw, prior, old, payloads, surface_count_diagnostic=surface_count_diagnostic,
+                          resident_multisurface_v2=resident_multisurface_v2)
 
     def surface_count_fixture(self):
         base, prior_raw, old, payloads = self.fixture()
         name = p.SURFACE_COUNT_HEADER
-        payloads[name] = (p.prepare_cli.HERE.parent/'t7-bridge'/Path(name).name).read_text(encoding='utf-8').encode()
+        payloads[name] = (p.prepare_cli.HERE/'fixtures/resident-surface-count-v1.hpp').read_text(encoding='utf-8').encode()
         pin = next(row for row in base['Bindings'] if row['Path'].endswith(Path(name).name))
         pin.update(Bytes=p.SURFACE_COUNT_OLD_PIN[0], SHA256=p.SURFACE_COUNT_OLD_PIN[1])
         prior = json.loads(prior_raw); prior['Bindings'] = base['Bindings']
@@ -107,6 +109,34 @@ class CatalogueBaseTests(unittest.TestCase):
     def test_accepts_only_exact_opted_in_surface_count_header_transition(self):
         self.verify(*self.surface_count_fixture(), surface_count_diagnostic=True)
         with self.assertRaises(ValueError): self.verify(*self.surface_count_fixture())
+
+    def multisurface_fixture(self):
+        base,prior_raw,old,payloads=self.fixture();transitions={}
+        for name,(before,_) in p.MULTISURFACE_TRANSITIONS.items():
+            raw=('invented sealed v2 '+name).encode();payloads[name]=raw
+            transitions[name]=(before,(len(raw),hashlib.sha256(raw).hexdigest()))
+            pin=next(row for row in base['Bindings'] if row['Path'].endswith(Path(name).name))
+            pin.update(Bytes=before[0],SHA256=before[1])
+        prior=json.loads(prior_raw);prior['Bindings']=base['Bindings'];prior_raw=json.dumps(prior).encode()
+        base['ReuseCompile']['SourcePlanSHA256']=hashlib.sha256(prior_raw).hexdigest()
+        return (base,prior_raw,old,payloads),transitions
+
+    def test_v2_requires_exact_three_transitions_and_explicit_exclusive_mode(self):
+        args,transitions=self.multisurface_fixture()
+        with patch.object(p,'MULTISURFACE_TRANSITIONS',transitions):
+            self.verify(*args,resident_multisurface_v2=True)
+            for flags in ({},{'resident_multisurface_v2':'true'},
+                          {'resident_multisurface_v2':True,'surface_count_diagnostic':True}):
+                with self.subTest(flags=flags),self.assertRaises(ValueError): self.verify(*args,**flags)
+
+    def test_v2_does_not_allow_changed_payload_by_name_or_unrelated_difference(self):
+        for name in ('main.cpp','zonetool.cpp','t7_iw7_resident_model.hpp','common/xpak.cpp','t7_asset_name.hpp'):
+            args,transitions=self.multisurface_fixture();args[3]['prepared/'+name]+=b' '
+            with patch.object(p,'MULTISURFACE_TRANSITIONS',transitions),self.assertRaises(ValueError):
+                self.verify(*args,resident_multisurface_v2=True)
+        args,transitions=self.multisurface_fixture();del args[3]['prepared/zonetool.cpp']
+        with patch.object(p,'MULTISURFACE_TRANSITIONS',transitions),self.assertRaises(ValueError):
+            self.verify(*args,resident_multisurface_v2=True)
 
     def test_diagnostic_refuses_other_header_new_hash_or_old_pin(self):
         for mode in ('other_header','new_hash','old_pin'):

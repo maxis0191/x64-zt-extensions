@@ -117,8 +117,9 @@ def read_records(text):
     return records
 
 
-def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals):
+def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals, *, resident_multisurface_v2=False):
     """Check compiler text evidence, not retained object or library contents."""
+    require(type(resident_multisurface_v2) is bool, 'Multisurface selection must be boolean')
     require(type(dependency_json) is dict and set(dependency_json) == {'helper','zonetool11','xpak'},
             'Exact helper/CLI/xpak dependency JSON set required')
     prepared = PureWindowsPath(prior['PreparedRoot']); old_root = PureWindowsPath(prior['RunRoot'])
@@ -188,14 +189,16 @@ def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals)
             'Retained E7 consumer of diagnostic header refused')
     return {'Header':prepare_catalog_trace.SURFACE_COUNT_HEADER,
             'PreviousSHA256':prepare_catalog_trace.SURFACE_COUNT_OLD_PIN[1],
-            'SHA256':prepare_catalog_trace.SURFACE_COUNT_NEW_PIN[1],
+            'SHA256':(prepare_catalog_trace.MULTISURFACE_TRANSITIONS[prepare_catalog_trace.SURFACE_COUNT_HEADER][1][1]
+                      if resident_multisurface_v2 else prepare_catalog_trace.SURFACE_COUNT_NEW_PIN[1]),
             'DependencyJSON':pins,'E7ReadSHA256':E7_READ_PIN[1],
             'E7CompileSHA256':CL_LOG_SHA,'E7LinkSHA256':LINK_LOG_SHA,
             'E7TranslationUnits':len(records),'E7Objects':len(objects)}
 
 
 def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False,
-                      recompile_zonetool=False, surface_count_dependencies=None, e7_dependency_text=None):
+                      recompile_zonetool=False, surface_count_dependencies=None, e7_dependency_text=None,
+                      resident_multisurface_v2=False):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -216,17 +219,34 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     require(type(recompile_zonetool) is bool and
             (not recompile_zonetool or (recompile_main is True and catalog_trace is True)),
             'CLI rebuild requires the explicit two-TU catalogue path')
-    diagnostic = surface_count_dependencies is not None
-    require((e7_dependency_text is not None) == diagnostic and
-            (not diagnostic or (recompile_main is True and catalog_trace is True and recompile_zonetool is True)),
+    require(type(resident_multisurface_v2) is bool, 'Multisurface selection must be boolean')
+    header_evidence = surface_count_dependencies is not None
+    diagnostic = header_evidence and not resident_multisurface_v2
+    require((e7_dependency_text is not None) == header_evidence and
+            (not resident_multisurface_v2 or header_evidence) and
+            (not header_evidence or (recompile_main is True and catalog_trace is True and recompile_zonetool is True)),
             'Surface-count diagnostic requires both fresh TUs and complete dependency evidence')
     diagnostic_proof = None
-    if diagnostic:
+    if resident_multisurface_v2:
+        require(all(prepare_catalog_trace.multisurface_payload_delta(name, payloads.get(name),
+                    prior_bindings.get(key(prepared/name.removeprefix('prepared/'))), wired=True)
+                    for name in prepare_catalog_trace.MULTISURFACE_TRANSITIONS),
+                'Exact wired multisurface v2 transitions required')
+    elif diagnostic:
         name = prepare_catalog_trace.SURFACE_COUNT_HEADER
         require(prepare_catalog_trace.surface_count_header_delta(name, payloads.get(name),
                 prior_bindings.get(key(prepared/name.removeprefix('prepared/')))),
                 'Exact surface-count diagnostic transition required')
-        diagnostic_proof = surface_count_dependency_proof(prior, receipt, surface_count_dependencies, e7_dependency_text)
+    if header_evidence:
+        diagnostic_proof = surface_count_dependency_proof(prior, receipt, surface_count_dependencies, e7_dependency_text,
+                                                         resident_multisurface_v2=resident_multisurface_v2)
+        if resident_multisurface_v2:
+            diagnostic_proof.update(Schema='iw7.t7-resident-multi-surface-build/2',
+                SourceTransitions=[{'Path':name,'PreviousBytes':old[0],'PreviousSHA256':old[1],
+                    'Bytes':new[0],'SHA256':new[1],
+                    'WiredBytes':prepare_catalog_trace.MULTISURFACE_WIRED_PINS[name][0],
+                    'WiredSHA256':prepare_catalog_trace.MULTISURFACE_WIRED_PINS[name][1]}
+                    for name,(old,new) in prepare_catalog_trace.MULTISURFACE_TRANSITIONS.items()])
     if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
     require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
             'Exact native payload inventory required for reuse')
@@ -238,6 +258,9 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             continue
         path = prepared/name.removeprefix('prepared/')
         pin = prior_bindings.get(key(path))
+        if resident_multisurface_v2 and prepare_catalog_trace.multisurface_payload_delta(name, raw, pin, wired=True):
+            old_text.append(pin)
+            continue
         if diagnostic and prepare_catalog_trace.surface_count_header_delta(name, raw, pin):
             old_text.append(pin)
             continue
@@ -279,6 +302,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'ReceiptSHA256':hashlib.sha256(receipt_raw).hexdigest(),'Checks':51,
             'RecompiledMain':recompile_main, **({'RecompiledZonetool':True} if recompile_zonetool else {}),
             **({'ResidentSurfaceCountDiagnostic':diagnostic_proof} if diagnostic else {}),
+            **({'ResidentMultiSurfaceV2':diagnostic_proof} if resident_multisurface_v2 else {}),
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
@@ -299,6 +323,10 @@ def prepare(args):
     prepatch_helper = getattr(args, 'prepatch_helper', None)
     catalog_publication = bool(getattr(args, 'catalog_message_publication', False))
     surface_count_diagnostic = getattr(args, 'resident_surface_count_diagnostic', False)
+    resident_multisurface_v2 = getattr(args, 'resident_multisurface_v2', False)
+    require(type(resident_multisurface_v2) is bool and
+            (not resident_multisurface_v2 or (catalog_publication and surface_count_diagnostic is False)),
+            'Multisurface v2 requires exclusive two-TU publication selection')
     require(type(surface_count_diagnostic) is bool and (not surface_count_diagnostic or catalog_publication),
             'Surface-count diagnostic requires the existing main/CLI publication profile')
     catalog_message = bool(getattr(args, 'catalog_message', False) or catalog_publication)
@@ -374,7 +402,7 @@ def prepare(args):
                     'Bounded exact supplemental object pin required')
             expected[key(pin['Path'])] = pin
     e7_dependency_text = read(e7/'obj/tlog/CL.read.1.tlog', 16*1024**2,
-                              E7_READ_PIN[1] if surface_count_diagnostic else None)
+                              E7_READ_PIN[1] if surface_count_diagnostic or resident_multisurface_v2 else None)
     deps = read_records(e7_dependency_text.decode('utf-16'))
     wanted = set()
     for path in [source/row[0] for row in UNITS]+[source/'src/zonetool/std_include.cpp']:
@@ -428,8 +456,9 @@ def prepare(args):
             prepare_catalog_trace.verify_base(
                 read(args.ordinary_plan,2*1024**2,prepare_catalog_trace.BASE_PLAN_SHA),
                 read(args.ordinary_receipt,128*1024,prepare_catalog_trace.BASE_RECEIPT_SHA),
-                prior_raw, prior_receipt_raw, payloads, surface_count_diagnostic=surface_count_diagnostic)
-            if surface_count_diagnostic:
+                prior_raw, prior_receipt_raw, payloads, surface_count_diagnostic=surface_count_diagnostic,
+                resident_multisurface_v2=resident_multisurface_v2)
+            if surface_count_diagnostic or resident_multisurface_v2:
                 prior = json.loads(prior_raw); receipt = json.loads(prior_receipt_raw)
                 surface_count_dependencies = {}
                 for stage in ('helper','zonetool11','xpak'):
@@ -449,7 +478,9 @@ def prepare(args):
         reuse, reused_inputs, reused_text = reuse_compilation(prior_raw,
             prior_receipt_raw, payloads, run, recompile_main=recompile_main, catalog_trace=catalog_trace,
             recompile_zonetool=catalog_publication, surface_count_dependencies=surface_count_dependencies,
-            e7_dependency_text={'read':e7_dependency_text,'compile':cl_raw,'link':link_raw} if surface_count_diagnostic else None)
+            e7_dependency_text={'read':e7_dependency_text,'compile':cl_raw,'link':link_raw}
+                if surface_count_diagnostic or resident_multisurface_v2 else None,
+            resident_multisurface_v2=resident_multisurface_v2)
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
                       'Receipt':str(path_checked(args.reuse_compile_receipt))})
         for pin in reused_inputs:
@@ -536,6 +567,7 @@ if __name__ == '__main__':
     parser.add_argument('--catalog-message',action='store_true')
     parser.add_argument('--catalog-message-publication',action='store_true')
     parser.add_argument('--resident-surface-count-diagnostic',action='store_true')
+    parser.add_argument('--resident-multisurface-v2',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

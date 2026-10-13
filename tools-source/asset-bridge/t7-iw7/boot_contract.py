@@ -6,6 +6,7 @@ SCHEMA = 'iw7.t7-iw7-resident-model-request/1'
 FIELDS = {'schema', 'target', 'profile', 'zone', 'model', 'lod'}
 PROFILE = 'resident-rigid-one-lod'
 PROPOSED_OPTION = '-t7-iw7-model'
+PROPOSED_OPTION_V2 = '-t7-iw7-model-v2'
 SOURCE_ENGINE = 'BlackOps3_UnrankedDedicatedServer.exe'
 RESERVED = {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$', 'CLOCK$',
             *(f'COM{i}' for i in range(10)), *(f'LPT{i}' for i in range(10))}
@@ -44,11 +45,17 @@ def make_request(zone, model, lod):
                              'zone': zone, 'model': model, 'lod': lod})
 
 
-def command_review(value):
+def export_option(version):
+    require(type(version) is int and version in (1, 2), 'Explicit export version 1 or 2 required')
+    return PROPOSED_OPTION if version == 1 else PROPOSED_OPTION_V2
+
+
+def command_review(value, *, version=1):
     value = validate_request(value)
+    option = export_option(version)
     key_input = f"{value['zone']}\n{value['model']}\n{value['lod']}".encode('ascii')
     return {'schema': 'iw7.t7-iw7-boot-command-review/1',
-            'proposed_arguments': [PROPOSED_OPTION, value['zone'], value['model'], str(value['lod'])],
+            'proposed_arguments': [option, value['zone'], value['model'], str(value['lod'])],
             'source_engine': SOURCE_ENGINE, 'expected_source_mode': 't7', 'target': 'iw7',
             'exact_model_names': [value['model']], 'selected_lod': value['lod'],
             'private_output_root_key': 't7_iw7_'+hashlib.sha256(key_input).hexdigest(),
@@ -58,10 +65,10 @@ def command_review(value):
             'native_go': False, 'native_executed': False, 'ready': False}
 
 
-def parse_proposed_arguments(arguments):
+def parse_proposed_arguments(arguments, *, version=1):
     """Review parser only; do not pass this proposal to the unmodified binary."""
     require(type(arguments) is list and len(arguments) == 4 and all(type(x) is str for x in arguments),
             'Exactly one proposed option, zone, model and LOD required')
-    require(arguments[0] == PROPOSED_OPTION and re.fullmatch(r'[0-5]', arguments[3]) is not None,
+    require(arguments[0] == export_option(version) and re.fullmatch(r'[0-5]', arguments[3]) is not None,
             'Explicit target option and canonical LOD required')
     return make_request(arguments[1], arguments[2], int(arguments[3]))

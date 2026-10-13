@@ -1,7 +1,8 @@
 # Resident rigid export connection
 
 This source addition connects the existing Model Lab to an already produced
-`t7-iw7-resident-static-v1` XMB/XSB export. It does not launch the T7 exporter,
+`t7-iw7-resident-static-v1` or explicitly versioned
+`t7-iw7-resident-static-v2` XMB/XSB export. It does not launch the T7 exporter,
 convert a second mesh, extract textures, or qualify native/exporter provenance.
 The original 24-vertex/12-triangle cube route and its measured FF/reader tuples
 remain available. Its corrected LOD0 distance of 1000000 is preserved.
@@ -89,6 +90,63 @@ The shared `HudHttp.cs` has one explicit `CreateRigidModel` factory, fixed to
 ModelRoute and at most 32 MiB, called only after the reviewed tuple gate. All
 legacy constructors and their existing size/route limits remain unchanged.
 
+## Explicit multisurface v2
+
+V1 keeps its one-surface contract, scalar `--rebind-material`, manifest schema
+`iw7.t7-iw7-resident-export/1` and 4 KiB manifest cap. V2 requires the paired
+`iw7.t7-iw7-resident-export/2` and `t7-iw7-resident-static-v2` identifiers; neither
+surface count nor file size implicitly upgrades a v1 artifact. The selected
+profile remains `resident-rigid-one-lod`: one root/bone, one LOD, 1..255 ordered
+surfaces, one rigid list per surface, 3..65535 vertices and 1..65535 triangles
+per surface. The model totals must equal all surface records. Material slots
+stay in surface order, including repeated dependencies.
+
+Before reading geometry, the common contract and independent reader recompute
+`geometry_work_bytes_upper_bound = 256 + 368*N + 60*V + 12*T`, capped at 16777216
+bytes. `N`, `V`, `T` are surface count and summed vertex/triangle counts. Every
+logical occurrence counts in full, including aliases. This accounts for the
+source and destination geometry buffers; it is neither a total RAM/CPU estimate
+nor a serialized-file cap. V2 manifest bytes have a separate 256 KiB cap, strings
+remain bounded to 255 portable ASCII characters, XMB remains at 1 MiB and XSB at
+16 MiB. Model Lab v2 derived receipts/plans have a separate 1 MiB metadata cap
+for up to 255 surface summaries and material mappings; their v1 cap stays 64 KiB.
+No resource admission, mutable-space, FF or HTTP limit is increased by v2.
+
+Future v2 preparation uses `--material-rebinds path/to/rebinds.json` in place of
+the v1 scalar option. The JSON file (at most 256 KiB) is an explicit ordered list
+with one entry per slot. For example, a **synthetic two-surface** export uses:
+
+```json
+[
+  {"slot": 0, "source": "original/clay", "target": "mopw/character_park_clown_zombie_shoes"},
+  {"slot": 1, "source": "original/clay", "target": "mopw/character_park_clown_zombie_shoes"}
+]
+```
+
+Each source must match the native manifest's material at that slot. Only the
+existing proven recipient reference above is allowed in this step. Shared
+ASSET aliases must request the same target. The independent reader identifies
+their defining string spans; derivation patches each definition once and keeps
+alias record bytes and ledger indices intact. It does not collapse surfaces,
+merge their geometry, extract textures or copy material payloads. The recipient
+CSV/inventory deduplicates recipient references, while the plan preserves all
+ordered slots. The model still has exactly two payload files and five source
+files. Optional LOD derivation keeps its existing explicit four-byte scope.
+
+V2 uses internal `iw7.model-derived-export/2`, `iw7.model-ff-plan/2` and
+`iw7.model-rigid-roundtrip/2` receipts. They retain `surface_records`, ordered
+`material_references` and the recomputed work bound where applicable. Readback
+checks every surface's packed position, UV, triangle indices/areas and rigid
+coverage. Ordered SHA-256 digests cover all packed vertex/triangle/rigid bytes
+for the subsequent FF roundtrip comparison; opaque pointer values may differ.
+There is no global expanded position/face list for v2.
+
+The existing runtime gate binds the reviewed FF/evidence tuple to the matching
+version, aggregate counts, individual ordered counts, slots and work bound.
+Only the exact v1/v2 profile allowlist selects the existing bounded HTTP factory
+and larger matching-cache path. Unknown or mixed profiles are refused. Runtime,
+pixels, donor fidelity and native provenance remain unqualified by these tests.
+
 ## Source validation
 
 `python -B -S tests/ops/model_lab_test.py -v` covers original cube regression,
@@ -98,8 +156,22 @@ explicit FF/evidence admission, cache preservation and runtime claim limits.
 Its FF stand-ins are labeled synthetic data and are never engine inputs.
 Resource/process functions are mocked where exercised; no game is launched.
 
-Source checkpoint (2026-10-13): 19 Model Lab tests, 31 independent resident
+Historical v1 source checkpoint (2026-10-13): 19 Model Lab tests, 31 independent resident
 readback tests and five existing shared HTTP regression tests passed. The agent
 ownership suite passed 41 controls; the mocked capture-evidence suite and the
 four changed PowerShell files' AST parse passed. GSC runtime compilation, native
 FF build and donor rendering remain unexecuted and unqualified.
+
+V2 source checkpoint (2026-10-13): 26 Model Lab tests and 40 independent reader
+tests passed using original synthetic bytes, including 255 surfaces, exact work
+cap/overflow before Reader allocation, repeated material and geometry aliases,
+late-surface corruptions, truncations, explicit rebind refusal, proof/plan count
+crossing, unknown-profile refusal and the actual HTTP dispatch expression.
+The 16 common export-contract tests, five shared HTTP regression tests, 41
+ownership controls, mocked capture-evidence suite and four PowerShell AST
+parses also passed at this checkpoint.
+Initial local test failures (reader return-shape unpacking and a test AST selector
+that also selected the null initialization) were corrected before this checkpoint.
+No native exporter/FF build, actual readback, game, stock payload read/hash or
+resource admission was performed. Next: coordinator source review/integration;
+native qualification and any real execution require their distinct approved step.

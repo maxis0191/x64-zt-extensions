@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from boot_contract import PROFILE, command_review, make_request
 import readback as rb
@@ -436,6 +437,189 @@ class ReadbackFileTests(unittest.TestCase):
         for data, limit in ((b"", 1), (bytearray(b"a"), 1), (b"aa", 1), (b"a", rb.MESH_LIMIT+1)):
             with self.assertRaises(ValueError):
                 rb.Reader(data, limit)
+
+
+class SyntheticMulti(Synthetic):
+    """Original independent ordered surface fixtures; no native/retail input."""
+    def __init__(self, surfaces=None, materials=None, *, names=None, alias_materials=True, alias_geometry=False):
+        surfaces = surfaces or [(PYRAMID, PYRAMID_FACES), (TETRA, TETRA_FACES)]
+        materials = materials or ['original/clay'] * len(surfaces)
+        n = len(surfaces)
+        super().__init__(tuple(p for positions, _ in surfaces for p in positions), surfaces[0][1], names=names, lod=0)
+        base_model, base_mesh = bytes(self.outputs['model']), bytes(self.outputs['mesh'])
+        old = copy.deepcopy(self.records)
+        self.manifest.update(schema='iw7.t7-iw7-resident-export/2', geometry_profile=rb.V2,
+                             material_dependencies=materials,
+                             surface_records=[dict(index=i, material_slot=i, vertices=len(p), triangles=len(t))
+                                              for i, (p, t) in enumerate(surfaces)])
+        counts = self.manifest['selected_counts']
+        counts.update(surfaces=n, vertices=sum(len(p) for p, _ in surfaces), triangles=sum(len(t) for _, t in surfaces))
+        self.manifest['geometry_work_bytes_upper_bound'] = 256 + 368*n + 60*counts['vertices'] + 12*counts['triangles']
+        self.outputs['model'] = bytearray(base_model[:old['model']['mip_radius']])
+        struct.pack_into('<H', self.outputs['model'], 6+26, n)
+        struct.pack_into('<H', self.outputs['model'], 6+228, n)
+        self.outputs['model'].extend(array(struct.pack('<'+'e'*n, *[0.375]*n), n))
+        self.records['model']['material_handles'] = len(self.outputs['model'])
+        self.outputs['model'].extend(array(struct.pack('<'+'Q'*n, *[0x12340000+i*8 for i in range(n)]), n))
+        definitions = {}
+        next_entry = 8  # Six present prefix records, mip array, handles array.
+        for i, material in enumerate(materials):
+            self.records['model']['material_'+str(i)] = len(self.outputs['model'])
+            if alias_materials and material in definitions:
+                payload = alias(definitions[material])
+            else:
+                definitions.setdefault(material, next_entry)
+                next_entry += 1
+                payload = name(material, 7)
+            self.outputs['model'].extend(payload)
+        self.records['model']['lod0'] = len(self.outputs['model'])
+        self.outputs['model'].extend(base_model[old['model']['lod0']:])
+        self.outputs['mesh'] = bytearray(base_mesh[:old['mesh']['surfaces']])
+        struct.pack_into('<H', self.outputs['mesh'], 6+16, n)
+        headers = bytearray()
+        for positions, faces in surfaces:
+            header = bytearray(base_mesh[old['mesh']['surfaces']+6:old['mesh']['surfaces']+6+256])
+            struct.pack_into('<HH', header, 2, len(positions), len(faces))
+            headers.extend(header)
+        self.outputs['mesh'].extend(array(headers, n))
+        next_entry = 3
+        first_entries = {}
+        for i, (positions, faces) in enumerate(surfaces):
+            packed = b''.join(struct.pack('<3fII2eII', *p, 0x01fe0100, 0xff804020,
+                                         float(j % 2), float((j//2) % 2), 0x12345678, 0x87654321)
+                              for j, p in enumerate(positions))
+            data = {'vertices': (packed, len(positions)),
+                    'triangles': (b''.join(struct.pack('<3H', *f) for f in faces), len(faces)),
+                    'rigid_lists': (struct.pack('<4HQ', 0, len(positions), 0, len(faces), 0), 1)}
+            for label, (payload, count) in data.items():
+                self.records['mesh'][f'surface_{i}.{label}'] = len(self.outputs['mesh'])
+                if alias_geometry and i > 0:
+                    self.outputs['mesh'].extend(alias(first_entries[label]))
+                else:
+                    first_entries.setdefault(label, next_entry)
+                    next_entry += 1
+                    self.outputs['mesh'].extend(array(payload, count))
+            for label in ('blend', 'lmap', 'tension', 'tension_accum'):
+                self.records['mesh'][f'surface_{i}.{label}'] = len(self.outputs['mesh'])
+                self.outputs['mesh'].extend(b'\x0a\x00')
+        self.refresh()
+
+
+class MultisurfaceReadbackTests(unittest.TestCase):
+    def test_ordered_geometry_and_repeated_material_slots(self):
+        f = SyntheticMulti(materials=['original/clay', 'original/metal'])
+        result = f.inspect()
+        self.assertEqual(result['schema'], 'iw7.t7-iw7-static-readback/2')
+        self.assertEqual(result['model']['materials'], ['original/clay', 'original/metal'])
+        self.assertEqual(result['mesh']['vertices'], 9)
+        self.assertEqual([row['vertices'] for row in result['mesh']['surface_records']], [5, 4])
+        self.assertEqual(result['mesh']['surface_records'][1]['position_min'], (-4., 1., 2.))
+        self.assertFalse(any(key in result['mesh'] for key in ('positions', 'triangles')))
+        self.assertFalse(result['runtime_verified'])
+
+    def test_alias_material_definition_spans_and_stable_buffer_layouts(self):
+        f = SyntheticMulti([(PYRAMID, PYRAMID_FACES)]*3, alias_geometry=True)
+        result = f.inspect()
+        model = rb.parse_model(bytes(f.outputs['model']), f.manifest, with_material_records=True)
+        records = model['material_records']
+        self.assertEqual([row['definition'] for row in records], [8, 8, 8])
+        self.assertEqual(records[0]['string_span'], records[2]['string_span'])
+        surfaces = result['mesh']['surface_records']
+        self.assertEqual(surfaces[0]['packed_sha256'], surfaces[2]['packed_sha256'])
+        self.assertEqual(result['mesh']['geometry_work_bytes_upper_bound'], 256+368*3+60*15+12*18)
+
+    def test_last_surface_invalid_geometry_and_late_count_mismatch_refuse(self):
+        for label, offset, fmt, value in (('surface_1.vertices', 6, 'f', float('nan')),
+                                          ('surface_1.triangles', 6, 'H', 4),
+                                          ('surface_1.rigid_lists', 6+2, 'H', 3)):
+            with self.subTest(label=label), self.assertRaises(ValueError):
+                SyntheticMulti().change('mesh', label, offset, fmt, value).inspect()
+        f = SyntheticMulti()
+        f.change('mesh', 'surfaces', 6+256+2, 'H', 5)
+        with patch.object(rb, 'finite', side_effect=AssertionError('geometry scan started')):
+            with self.assertRaisesRegex(ValueError, 'mesh counts'):
+                rb.parse_mesh(bytes(f.outputs['mesh']), f.manifest)
+
+    def test_work_overflow_precedes_reader_allocation_and_alias_expansion(self):
+        f = SyntheticMulti()
+        for row in f.manifest['surface_records']:
+            row.update(vertices=65535, triangles=65535)
+        f.manifest['surface_records'] *= 3
+        for i, row in enumerate(f.manifest['surface_records']):
+            f.manifest['surface_records'][i] = dict(row, index=i, material_slot=i)
+        f.manifest['selected_counts'].update(surfaces=6, vertices=6*65535, triangles=6*65535)
+        f.manifest['geometry_work_bytes_upper_bound'] = 256+368*6+72*6*65535
+        f.manifest['material_dependencies'] *= 3
+        with patch.object(rb, 'Reader', side_effect=AssertionError('reader created before work gate')):
+            for parse, role in ((rb.parse_model, 'model'), (rb.parse_mesh, 'mesh')):
+                with self.assertRaises(ValueError):
+                    parse(bytes(f.outputs[role]), f.manifest)
+
+    def test_versions_counts_slots_and_work_cannot_be_mixed(self):
+        for change in (lambda m: m.update(schema='iw7.t7-iw7-resident-export/1'),
+                       lambda m: m.update(geometry_profile=rb.V1),
+                       lambda m: m['surface_records'].reverse(),
+                       lambda m: m['selected_counts'].update(vertices=5),
+                       lambda m: m.update(geometry_work_bytes_upper_bound=1),
+                       lambda m: m['material_dependencies'].pop()):
+            f = SyntheticMulti()
+            change(f.manifest)
+            with self.assertRaises(ValueError):
+                f.inspect()
+        self.assertEqual(SyntheticMulti([(PYRAMID, PYRAMID_FACES)]).inspect()['model']['surfaces'], 1)
+        self.assertEqual(Synthetic().inspect()['schema'], 'iw7.t7-iw7-static-readback/1')
+
+    def test_exact_work_boundary_and_aggregate_counts_above_uint16(self):
+        f = SyntheticMulti([(PYRAMID, PYRAMID_FACES)] * 6, alias_geometry=True)
+        # Exact logical cap, tested before a Reader or any payload allocation.
+        triangles = (rb.GEOMETRY_WORK_LIMIT - 256 - 368*6 - 60*240000) // 12
+        for i, record in enumerate(f.manifest['surface_records']):
+            record.update(vertices=40000, triangles=triangles//6 + (i < triangles % 6))
+        f.manifest['selected_counts'].update(vertices=240000, triangles=triangles)
+        f.manifest['geometry_work_bytes_upper_bound'] = rb.GEOMETRY_WORK_LIMIT
+        self.assertEqual(rb.geometry_layout(f.manifest)[1], rb.GEOMETRY_WORK_LIMIT)
+        f.manifest['surface_records'][-1]['triangles'] += 1
+        f.manifest['selected_counts']['triangles'] += 1
+        f.manifest['geometry_work_bytes_upper_bound'] += 12
+        with patch.object(rb, 'Reader', side_effect=AssertionError('reader before work gate')):
+            with self.assertRaises(ValueError):rb.parse_mesh(bytes(f.outputs['mesh']), f.manifest)
+
+    def test_late_alias_wrong_type_range_and_forward_reference_refuse(self):
+        for role, label, offset, value in (
+                ('mesh', 'surface_1.vertices', 1, 4),  # triangle layout instead of vertices
+                ('mesh', 'surface_1.vertices', 5, 1),  # identical count cannot start at element 1
+                ('mesh', 'surface_1.vertices', 1, 99),
+                ('model', 'material_1', 1, 1),  # STRING model name is not material ASSET
+                ('model', 'material_1', 5, 1)):
+            f = SyntheticMulti([(PYRAMID, PYRAMID_FACES)] * 2, alias_geometry=True)
+            f.change(role, label, offset, 'I', value)
+            with self.subTest(role=role, offset=offset, value=value), self.assertRaises(ValueError):f.inspect()
+
+    def test_late_bounds_and_mip_metadata_are_validated(self):
+        f = SyntheticMulti().change('model', 'mip_radius', 6+2, 'e', -1)
+        with self.assertRaisesRegex(ValueError, 'mip radius'):f.inspect()
+        f = SyntheticMulti().change('mesh', 'surface_1.vertices', 6, 'f', 100)
+        with self.assertRaisesRegex(ValueError, 'outside model bounds'):f.inspect()
+
+    def test_all_v2_truncations_and_manifest_version_bounds(self):
+        f = SyntheticMulti()
+        for role in ('model', 'mesh'):
+            original = bytes(f.outputs[role])
+            for length in range(len(original)):
+                f.outputs[role] = bytearray(original[:length]);f.refresh()
+                with self.assertRaises(ValueError):
+                    f.inspect()
+            f.outputs[role] = bytearray(original);f.refresh()
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'manifest.json'
+            path.write_bytes(json.dumps(f.manifest).encode()+b' '*4096)
+            self.assertEqual(rb.read_json(path, manifest=True), f.manifest)
+            path.write_bytes(json.dumps(Synthetic().manifest).encode()+b' '*4096)
+            with self.assertRaises(ValueError):
+                rb.read_json(path, manifest=True)
+            path.write_bytes(b' '*(rb.MANIFEST_LIMIT+1))
+            with self.assertRaises(ValueError):
+                rb.read_json(path, manifest=True)
 
 
 if __name__ == "__main__":

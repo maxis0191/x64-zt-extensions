@@ -321,8 +321,9 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $export=(Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'
     $diagnostic=[bool]$Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']
     if($diagnostic -and !$export){throw 'Surface-count diagnostic is restricted to ResidentExportV1.'}
+    if($Plan.PSObject.Properties['ResidentMultiSurfaceV2'] -and !$export){throw 'Resident multi-surface v2 is restricted to the export operation.'}
     $schema=if($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
-    $reportLimit=if($export){4KB}else{512KB}
+    $reportLimit=if($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     $null=Get-T7CatalogueMainBaseline $Plan

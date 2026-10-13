@@ -22,6 +22,27 @@ class NativeGuardSourceTests(unittest.TestCase):
         self.assertIn('args.size() != 5', source)
         self.assertIn('std::quick_exit(EXIT_FAILURE)', source)
 
+    def test_v2_is_explicit_and_v1_is_not_selected_from_surface_count(self):
+        cli = (p.HERE/'native_cli.inc').read_text()
+        export = (p.HERE/'native_export.inc').read_text()
+        self.assertIn('args[1] == "-t7-iw7-model-v2"', cli)
+        self.assertIn('args[1] != "-t7-iw7-model" && args[1] != "-t7-iw7-model-v2"', cli)
+        self.assertIn('const bool multisurface = false', export)
+        self.assertIn('(!multisurface && surface_count != 1)', export)
+        self.assertIn('multisurface ? "iw7.t7-iw7-resident-export/2" : "iw7.t7-iw7-resident-export/1"', export)
+        self.assertIn('multisurface ? 256u * 1024u : 4096u', export)
+
+    def test_multisurface_selector_bounds_all_occurrences_before_payload_scan(self):
+        source = (p.HERE.parent/'t7-bridge/t7_iw7_resident_model.hpp').read_text()
+        body = source.split('inline XModel* select_impl(', 1)[1]
+        self.assertLess(body.index('geometry_work_bytes_upper_bound(mesh.numSurfs'), body.index('readable(shared.data'))
+        self.assertLess(body.index('geometry_work_bytes_upper_bound(mesh.numSurfs'), body.index('allocator.allocate<'))
+        self.assertIn('materials.numMaterials == mesh.numSurfs', body)
+        self.assertIn('surface_context(surface_index, surf)', body)
+        self.assertIn('material_slot=', body)
+        self.assertIn('surf.shared == mesh.shared', body)
+        self.assertIn('sizeof(zonetool::iw7::GfxPackedVertex) == 32', source)
+
     def test_output_receipt_keeps_dependency_and_parse_limits(self):
         source = (p.HERE/'native_export.inc').read_text()
         for name in ('dependency_payloads_verified', 'serialized_parse_verified', 'runtime_verified', 'ready'):

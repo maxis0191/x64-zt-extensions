@@ -3,6 +3,20 @@ import boot_contract as b
 
 
 class BootContractTests(unittest.TestCase):
+    def test_version_two_must_be_explicit_and_cannot_replace_default_v1(self):
+        value = b.make_request('fixture_zone', 'fixture/Model_01', 2)
+        old = b.command_review(value)
+        new = b.command_review(value, version=2)
+        self.assertEqual(old['proposed_arguments'][0], '-t7-iw7-model')
+        self.assertEqual(new['proposed_arguments'][0], '-t7-iw7-model-v2')
+        self.assertEqual(new['private_output_root_key'], old['private_output_root_key'])
+        self.assertEqual(b.parse_proposed_arguments(new['proposed_arguments'], version=2), value)
+        with self.assertRaises(ValueError): b.parse_proposed_arguments(new['proposed_arguments'])
+        with self.assertRaises(ValueError): b.parse_proposed_arguments(old['proposed_arguments'], version=2)
+        for version in (True, False, '2', 2.0, 0, 3, None):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                b.command_review(value, version=version)
+
     def test_exact_model_case_path_and_lod_survive(self):
         value = b.make_request('fixture_zone', 'fixture/Model_01', 2)
         review = b.command_review(value)

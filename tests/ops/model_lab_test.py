@@ -391,6 +391,13 @@ class ResidentRigidTests(unittest.TestCase):
         # not donor bytes, and with a mesh name unrelated to the model suffix.
         return self.fixture.Synthetic(names=('original/pilot', 'mesh/unrelated', 'root pivot', 'donor/clay'), lod=0)
 
+    def multi(self, **kwargs):
+        return self.fixture.SyntheticMulti(names=('original/pilot', 'mesh/unrelated', 'root pivot', 'donor/clay'), **kwargs)
+
+    def bindings(self, fixture):
+        return [dict(slot=i, source=name, target=rigid_export.MATERIAL)
+                for i, name in enumerate(fixture.manifest['material_dependencies'])]
+
     def write_export(self, root, fixture):
         root.mkdir()
         for role in ('model', 'mesh'):
@@ -404,8 +411,10 @@ class ResidentRigidTests(unittest.TestCase):
         fixture = fixture or self.synthetic()
         root, staged = base / 'export', base / 'prepared'
         self.write_export(root, fixture)
+        v2 = fixture.manifest['geometry_profile'] == rigid_export.PROFILE_V2
         plan = rigid_export.stage(root, root / 'request.json', root / 'manifest.json', staged,
-                                  rigid_export.MATERIAL, distance)
+                                  None if v2 else rigid_export.MATERIAL, distance,
+                                  rebinds=self.bindings(fixture) if v2 else None)
         return fixture, root, staged, plan
 
     def test_material_only_rebind_preserves_every_other_byte_and_manifest(self):
@@ -544,9 +553,15 @@ class ResidentRigidTests(unittest.TestCase):
                 rigid_export.verify_dump(staged, dump, ff)
 
     def test_rigid_runtime_requires_reviewed_tuple_and_exact_large_cache(self):
+        self.runtime_checks(self.synthetic())
+
+    def test_multisurface_runtime_requires_reviewed_tuple_and_exact_large_cache(self):
+        self.runtime_checks(self.multi())
+
+    def runtime_checks(self, fixture):
         with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
             base = Path(folder)
-            f, _, staged, plan = self.staged(base, distance=1000000)
+            f, _, staged, plan = self.staged(base, fixture, distance=1000000)
             dump = base / 'roundtrip'
             for relative in ('xmodel/original/pilot.xmb', 'xsurface/mesh/unrelated.xsb'):
                 target = dump / relative
@@ -583,6 +598,19 @@ if(!$refused){throw 'Unreviewed resident build accepted'}
 $build=Read-IW7ModelBuild $Root 'geometry-roundtrip.json' @pins
 if($build.ModelName -cne 'original/pilot' -or $build.MeshName -cne 'mesh/unrelated' -or
     $build.FsGame -cne 'mods/paris_model_probe' -or $build.Ready -or $build.PixelsVerified){throw 'Rigid route/claims differ'}
+$goodProfile=$s.SourcePlan.geometry_profile
+$s.SourcePlan.geometry_profile='t7-iw7-resident-static-v3'
+$refused=$false;try{Read-IW7RigidModelBuild $Root $s 'geometry-roundtrip.json' @pins}catch{$refused=$true}
+if(!$refused){throw 'Unknown geometry profile accepted'}
+$s.SourcePlan.geometry_profile=$goodProfile
+if($goodProfile -ceq 't7-iw7-resident-static-v2'){
+    # Same aggregate totals/work but changed per-surface attribution must fail
+    # against the independently pinned reader receipt.
+    $s.SourcePlan.surface_records[0].vertices--;$s.SourcePlan.surface_records[1].vertices++
+    $refused=$false;try{Read-IW7RigidModelBuild $Root $s 'geometry-roundtrip.json' @pins}catch{$refused=$true}
+    if(!$refused){throw 'Crossed per-surface counts accepted'}
+    $s.SourcePlan.surface_records[0].vertices++;$s.SourcePlan.surface_records[1].vertices--
+}
 foreach($i in 0..2){
     $bad=$pins.Clone();$bad[$i]=if($i -eq 0){123}else{'A'*64}
     $refused=$false;try{Read-IW7ModelBuild $Root 'geometry-roundtrip.json' @bad}catch{$refused=$true}
@@ -596,6 +624,10 @@ if(!$refused){throw 'Cube inventory silently widened'}
 $game="$Root/game";$null=New-Item -ItemType Directory "$game/mods/paris_model_probe" -Force
 [IO.File]::WriteAllBytes("$game/mods/paris_model_probe/mod.ff",$build.Bytes)
 $null=Get-IW7ModelProfilePaths $game $build
+$knownProfile=$build.GeometryProfile;$build.GeometryProfile='unknown'
+$refused=$false;try{Get-IW7ModelProfilePaths $game $build}catch{$refused=$true}
+if(!$refused){throw 'Unknown cache profile accepted'}
+$build.GeometryProfile=$knownProfile
 $refused=$false;try{Get-IW7ModelProfilePaths $game}catch{$refused=$true}
 if(!$refused){throw 'Legacy cache limit widened without review'}
 $bad=$build.Bytes.Clone();$bad[0]=$bad[0] -bxor 1
@@ -609,6 +641,181 @@ $refused=$false;try{Read-IW7ModelBuild $Root 'geometry-roundtrip.json' @pins}cat
 if(!$refused){throw 'Changed retained readback accepted'}
 ''')
             result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), folder], capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_multisurface_rebind_patches_definitions_once_and_retains_alias_bytes(self):
+        shapes = [(self.fixture.PYRAMID, self.fixture.PYRAMID_FACES)] * 4
+        for aliases in (True, False):
+            f = self.multi(surfaces=shapes, materials=['a/clay', 'b/metal', 'a/clay', 'b/metal'],
+                           alias_materials=aliases, alias_geometry=True)
+            model, mesh = bytes(f.outputs['model']), bytes(f.outputs['mesh'])
+            derived, proof = rigid_export.derive(model, mesh, f.manifest, f.request,
+                                                 rebinds=self.bindings(f))
+            changes = proof['transformations']
+            self.assertEqual(len(changes), 2 if aliases else 4)
+            expected = model
+            for item in reversed(changes):
+                a, b = item['source_string_span']
+                self.assertEqual(model[a:b].decode(), item['old'])
+                expected = expected[:a] + item['new'].encode() + expected[b:]
+            self.assertEqual(derived, expected)
+            self.assertEqual(proof['schema'], 'iw7.model-derived-export/2')
+            self.assertEqual(proof['derived_model']['materials'], [rigid_export.MATERIAL] * 4)
+            self.assertEqual(proof['source_readback']['mesh']['surfaces'], 4)
+            self.assertEqual(proof['mesh_sha256'], rigid_export.digest(mesh))
+            if aliases:
+                self.assertEqual([c['slots'] for c in changes], [[0, 2], [1, 3]])
+
+    def test_multisurface_rebind_requires_exact_explicit_order_and_alias_consistency(self):
+        f = self.multi()
+        source = bytes(f.outputs['model']), bytes(f.outputs['mesh']), f.manifest, f.request
+        for change in (lambda x: x.pop(), lambda x: x.reverse(),
+                       lambda x: x[0].update(slot=True), lambda x: x[0].update(source='wrong'),
+                       lambda x: x[0].update(target='other/recipient'), lambda x: x[0].update(extra=1)):
+            bindings = self.bindings(f);change(bindings)
+            with self.assertRaises(ValueError):
+                rigid_export.derive(*source, rebinds=bindings)
+        with self.assertRaisesRegex(ValueError, 'Aliased material slots'):
+            bindings = self.bindings(f);bindings[1]['target'] = 'conflicting/target'
+            rigid_export.derive(*source, rebinds=bindings)
+        for kwargs in ({}, {'material': rigid_export.MATERIAL},
+                       {'material': rigid_export.MATERIAL, 'rebinds': self.bindings(f)}):
+            with self.assertRaises(ValueError):
+                rigid_export.derive(*source, **kwargs)
+        legacy = self.synthetic()
+        with self.assertRaises(ValueError):
+            rigid_export.derive(bytes(legacy.outputs['model']), bytes(legacy.outputs['mesh']),
+                                legacy.manifest, legacy.request, rebinds=self.bindings(legacy))
+
+    def test_multisurface_max_slots_stage_and_metadata_bounds(self):
+        f = self.multi(surfaces=[(self.fixture.PYRAMID, self.fixture.PYRAMID_FACES)] * 255,
+                       alias_geometry=True)
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            _, root, staged, plan = self.staged(Path(folder), f, distance=1000000)
+            rigid_export.verify_stage(staged, scene=True)
+            self.assertEqual(plan['schema'], 'iw7.model-ff-plan/2')
+            self.assertEqual(plan['selected_counts']['surfaces'], 255)
+            self.assertEqual(len(plan['source_files']), 5)
+            self.assertGreater((staged / 'derived-export.json').stat().st_size, 65536)
+            self.assertGreater((root / 'manifest.json').stat().st_size, 4096)
+            self.assertEqual((staged / 'evidence/manifest.json').read_bytes(), (root / 'manifest.json').read_bytes())
+            self.assertEqual((staged / 'zone_source/paris_model_probe_recipient.csv').read_text().count('material,'), 1)
+            original = (staged / 'derived-export.json').read_bytes()
+            (staged / 'derived-export.json').write_bytes(b' ' * (rigid_export.DOCUMENT_LIMIT + 1))
+            with self.assertRaises(ValueError):rigid_export.verify_stage(staged)
+            (staged / 'derived-export.json').write_bytes(original)
+            plan['surface_records'][254]['vertices'] += 1
+            (staged / 'model-ff-plan.json').write_bytes(rigid_export.json_bytes(plan))
+            with self.assertRaises(ValueError):rigid_export.verify_stage(staged)
+
+    def test_multisurface_dump_rejects_late_packed_changes_and_undeclared_rebind(self):
+        f = self.multi(materials=['first/clay', 'last/metal'])
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder)
+            _, _, staged, plan = self.staged(base, f, distance=1000000)
+            dump = base / 'roundtrip'
+            for role in ('model', 'mesh'):
+                relative = f.manifest[role]['relative_path']
+                target = dump / relative;target.parent.mkdir(parents=True)
+                target.write_bytes((staged / relative).read_bytes())
+            ff = base / 'mod.ff';ff.write_bytes(b'SYNTHETIC NOT A FASTFILE')
+            proof = rigid_export.verify_dump(staged, dump, ff)
+            self.assertEqual(proof['schema'], 'iw7.model-rigid-roundtrip/2')
+            self.assertEqual(proof['surface_records'], f.manifest['surface_records'])
+            self.assertIs(proof['runtime_verified'], False)
+            path = dump / f.manifest['mesh']['relative_path'];original = path.read_bytes()
+            for offset in (12, 16, 20, 24, 28):
+                data = bytearray(original)
+                data[f.records['mesh']['surface_1.vertices'] + 6 + offset] ^= 1
+                path.write_bytes(data)
+                with self.assertRaisesRegex(ValueError, 'FF dump differs'):
+                    rigid_export.verify_dump(staged, dump, ff)
+            path.write_bytes(original)
+            # A valid but undeclared late material change cannot be hidden by
+            # replacing a staged hash and its mutable plan.
+            path = staged / f.manifest['model']['relative_path']
+            data = path.read_bytes().replace(rigid_export.MATERIAL.encode(), b'other/recipient', 1)
+            path.write_bytes(data);plan['source_files'][f.manifest['model']['relative_path']] = rigid_export.digest(data)
+            (staged / 'model-ff-plan.json').write_bytes(rigid_export.json_bytes(plan))
+            with self.assertRaises(ValueError):rigid_export.verify_stage(staged)
+
+    def test_multisurface_cli_explicit_bindings_and_version_dispatch(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder);root = base / 'export';f = self.multi()
+            self.write_export(root, f)
+            binding_path = base / 'bindings.json';binding_path.write_bytes(rigid_export.json_bytes(self.bindings(f)))
+            command = [sys.executable, '-B', '-S', str(ROOT / 'ops/model-lab/prepare_ff.py'),
+                       '--export-root', str(root), '--request', str(root / 'request.json'),
+                       '--manifest', str(root / 'manifest.json'), '--output', str(base / 'prepared')]
+            result = subprocess.run(command + ['--rebind-material', rigid_export.MATERIAL], capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0);self.assertFalse((base / 'prepared').exists())
+            result = subprocess.run(command + ['--material-rebinds', str(binding_path)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)['geometry_profile'], rigid_export.PROFILE_V2)
+
+    def test_multisurface_powershell_admission_and_actual_http_dispatch(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder);_, _, staged, _ = self.staged(base, self.multi(), distance=1000000)
+            script = base / 'v2-gates.ps1'
+            script.write_text(r'''param($Repo,$Source)
+$ErrorActionPreference='Stop'
+. "$Repo/ops/model-lab/ModelFF.Core.ps1"
+$raw=[IO.File]::ReadAllText("$Source/model-ff-plan.json")
+$valid=$raw|ConvertFrom-Json
+Assert-ModelFFRigidPlan $valid
+if(@(Get-ModelFFSourceNames $valid).Count -ne 5){throw 'Source inventory changed'}
+foreach($case in @('schema','profile','order','totals','work','slots','bool','string','oversize','mixed')){
+    $p=$raw|ConvertFrom-Json
+    switch($case){
+        schema {$p.schema='iw7.model-ff-plan/1'}
+        profile {$p.geometry_profile='unrecognized'}
+        order {$p.surface_records[1].index=0}
+        totals {$p.selected_counts.vertices++}
+        work {$p.geometry_work_bytes_upper_bound++}
+        slots {$p.material_references=@($p.material_references[0])}
+        bool {$p.surface_records[0].material_slot=$false}
+        string {$p.surface_records[0].vertices='5'}
+        mixed {$p|Add-Member NoteProperty material_reference 'mopw/character_park_clown_zombie_shoes'}
+        oversize {
+            $p.surface_records=@(0..5|ForEach-Object{[pscustomobject]@{index=$_;material_slot=$_;vertices=65535;triangles=65535}})
+            $p.material_references=@($valid.material_references[0])*6
+            $p.selected_counts.surfaces=6;$p.selected_counts.vertices=6*65535;$p.selected_counts.triangles=6*65535
+            $p.geometry_work_bytes_upper_bound=256+368*6+72*6*65535
+        }
+    }
+    $refused=$false;try{Assert-ModelFFRigidPlan $p}catch{$refused=$true}
+    if(!$refused){throw "Invalid v2 $case accepted"}
+}
+# Aggregate counts are not uint16; each individual surface remains bounded.
+$p=$raw|ConvertFrom-Json
+foreach($record in $p.surface_records){$record.vertices=40000}
+$p.selected_counts.vertices=80000;$p.geometry_work_bytes_upper_bound=256+368*2+60*80000+12*10
+Assert-ModelFFRigidPlan $p
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/Agent-Lab.ps1",[ref]$tokens,[ref]$errors)
+if($errors){throw $errors}
+$assignment=$ast.FindAll({param($n) $n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.Extent.Text -ceq '$modelHttp' -and $n.Right.Extent.Text.StartsWith('if(')},$true)
+if(@($assignment).Count -ne 1){throw 'Ambiguous actual HTTP dispatch'}
+$condition=$assignment[0].Right.Find({param($n) $n -is [Management.Automation.Language.IfStatementAst]},$true).Clauses[0].Item1.Extent.Text
+foreach($profile in @('t7-iw7-resident-static-v1','t7-iw7-resident-static-v2','unknown','T7-IW7-RESIDENT-STATIC-V2','original-cube')){
+    $model=[pscustomobject]@{GeometryProfile=$profile}
+    $selected=Invoke-Expression $condition
+    $expected=$profile -cin @('t7-iw7-resident-static-v1','t7-iw7-resident-static-v2')
+    if($selected -ne $expected){throw 'Actual factory dispatch differs'}
+}
+# Execute the actual pure five-input gate from the build wrapper, without its
+# stock, admission or process body. This catches an accidentally v1-only gate.
+$ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/model-lab/Build-ModelFF.ps1",[ref]$tokens,[ref]$errors)
+if($errors){throw $errors}
+$gate=$ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Pinned five-input")},$true)
+if(@($gate).Count -ne 1){throw 'Ambiguous build source gate'}
+$plan=$valid;$planVersion=2;$sourceNames=@(Get-ModelFFSourceNames $plan)
+Invoke-Expression $gate[0].Extent.Text
+$planVersion=1;$refused=$false;try{Invoke-Expression $gate[0].Extent.Text}catch{$refused=$true}
+if(!$refused){throw 'Crossed version accepted by actual build source gate'}
+''')
+            result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), str(staged)],
+                                    capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_rigid_http_explicit_bound_does_not_widen_legacy_routes(self):

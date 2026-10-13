@@ -1,10 +1,11 @@
 #pragma once
 
-// Pilot v1 for the pinned ZoneTool tree. Include after std_include.hpp.
+// Explicit v1/v2 resident profiles for the pinned tree. Include after std_include.hpp.
 // The caller pins the engine build and keeps its database stable through dump.
 // This header does not load a zone, read XPAKs, rename assets or write files.
 #include "game/shared.hpp"
 #include "zonetool/t7/structs.hpp"
+#include "zonetool/iw7/structs.hpp"
 #include "utils/memory.hpp"
 #include "t7_asset_name.hpp"
 #include <cmath>
@@ -17,6 +18,7 @@
 namespace zonetool::t7::resident_iw7
 {
     inline constexpr const char* profile = "t7-iw7-resident-static-v1";
+    inline constexpr const char* multisurface_profile = "t7-iw7-resident-static-v2";
     inline constexpr std::size_t max_buffer_bytes = 16u * 1024u * 1024u;
     inline constexpr std::size_t max_name_bytes = 255;
 
@@ -111,6 +113,52 @@ namespace zonetool::t7::resident_iw7
                     "converted bounds overflow");
             }
         }
+
+        inline std::string surface_context(const unsigned index, const XSurface& surface)
+        {
+            return "surface[" + std::to_string(index) + "] flags=" +
+                std::to_string(static_cast<unsigned>(surface.flags)) +
+                " vertices=" + std::to_string(surface.vertCount) +
+                " triangles=" + std::to_string(surface.triCount) +
+                " rigidLists=" + std::to_string(surface.vertListCount) +
+                " baseVert=" + std::to_string(surface.baseVertOffset) +
+                " baseIndex=" + std::to_string(surface.baseIndexOffset);
+        }
+
+        [[noreturn]] inline void contextual_failure(const std::string& context, const std::runtime_error& error)
+        {
+            const auto prefix = std::string(profile) + ": ";
+            const auto reason = std::string(error.what());
+            throw std::runtime_error(prefix + context + "; " +
+                (reason.compare(0, prefix.size(), prefix) == 0 ? reason.substr(prefix.size()) : reason));
+        }
+    }
+
+    // Expanded logical geometry, not file size, CPU traffic or process RAM.
+    // Source = mesh120 + shared80 + N*(surface80 + rigid16) + V*28 + T*6.
+    // Destination = mesh56 + N*(surface256 + rigid16) + V*32 + T*6.
+    // Count each occurrence, including borrowed/aliased indices. Names, model,
+    // bone/material metadata and container/allocator overhead have separate bounds.
+    static_assert(sizeof(XModelMesh) == 120 && sizeof(XSurfaceShared) == 80 &&
+        sizeof(XSurface) == 80 && sizeof(XRigidVertList) == 16);
+    static_assert(sizeof(vec3_t) == 12 && sizeof(GfxStreamVertex) == 16 && sizeof(GfxStreamFace) == 6);
+    static_assert(sizeof(zonetool::iw7::XModelSurfs) == 56 && sizeof(zonetool::iw7::XSurface) == 256 &&
+        sizeof(zonetool::iw7::XRigidVertList) == 16 && sizeof(zonetool::iw7::GfxPackedVertex) == 32 &&
+        sizeof(zonetool::iw7::Face) == 6);
+
+    inline std::uint64_t geometry_work_bytes_upper_bound(const std::uint64_t surfaces,
+        const std::uint64_t vertices, const std::uint64_t triangles)
+    {
+        detail::require(surfaces >= 1 && surfaces <= 255 && vertices >= 3 * surfaces &&
+            vertices <= 65535 * surfaces && triangles >= surfaces && triangles <= 65535 * surfaces,
+            "aggregate geometry counts outside v2");
+        // Bounds above establish that every product and this sum fit uint64.
+        const auto work = 256 + 368 * surfaces + 60 * vertices + 12 * triangles;
+        detail::require(work <= max_buffer_bytes,
+            ("expanded logical geometry exceeds 16 MiB; surfaces=" + std::to_string(surfaces) +
+             " vertices=" + std::to_string(vertices) + " triangles=" + std::to_string(triangles) +
+             " workBytes=" + std::to_string(work)).c_str());
+        return work;
     }
 
     inline std::string asset_name(const char* value)
@@ -118,8 +166,8 @@ namespace zonetool::t7::resident_iw7
         return checked_asset_name(detail::name(value));
     }
 
-    inline XModel* select(const XModel* source, const char* exact_name,
-        const unsigned int lod, utils::memory::allocator& allocator)
+    inline XModel* select_impl(const XModel* source, const char* exact_name,
+        const unsigned int lod, utils::memory::allocator& allocator, const bool multisurface)
     {
         using namespace detail;
         const auto& model = object(source);
@@ -152,75 +200,137 @@ namespace zonetool::t7::resident_iw7
 
         const auto& mesh = object(model.meshes[lod]);
         (void)asset_name(mesh.name);
-        require(mesh.numSurfs == 1, ("pilot requires one selected surface; observed numSurfs=" +
-            std::to_string(static_cast<unsigned int>(mesh.numSurfs))).c_str());
-        const auto& surf = object(mesh.surfs);
-        require((surf.flags & (XSURFACE_FLAG_SKINNED | XSURFACE_FLAG_STREAMED)) == 0,
-            "skinned or streamed surface is outside resident pilot");
-        require(surf.vertCount >= 3 && surf.triCount > 0 && surf.vertListCount == 1,
-            "pilot requires nonempty geometry and one rigid list");
-        const auto& rigid = object(surf.vertList);
-        require(rigid.boneOffset == 0 && rigid.vertCount == surf.vertCount && rigid.triOffset == 0 &&
-            rigid.triCount == surf.triCount && !rigid.collisionTree, "invalid root rigid coverage");
+        if (!multisurface)
+            require(mesh.numSurfs == 1, ("pilot requires one selected surface; observed numSurfs=" +
+                std::to_string(static_cast<unsigned int>(mesh.numSurfs))).c_str());
+        else
+            require(mesh.numSurfs > 0, "v2 requires 1..255 selected surfaces; observed numSurfs=0");
+        readable(mesh.surfs, static_cast<std::size_t>(mesh.numSurfs) * sizeof(XSurface));
+        std::uint64_t total_vertices = 0, total_triangles = 0;
+        // Count every occurrence before any payload scan or converter allocation.
+        for (unsigned i = 0; i < mesh.numSurfs; ++i)
+        {
+            const auto& surf = object(mesh.surfs + i);
+            require(surf.vertCount >= 3 && surf.triCount > 0 && surf.vertListCount == 1,
+                (surface_context(i, surf) + "; requires nonempty geometry and one rigid list").c_str());
+            total_vertices += surf.vertCount;
+            total_triangles += surf.triCount;
+        }
+        if (multisurface)
+            (void)geometry_work_bytes_upper_bound(mesh.numSurfs, total_vertices, total_triangles);
         const auto& shared = object(mesh.shared);
-        require(surf.shared == mesh.shared && !(shared.flags & 1) && shared.data &&
+        require(!(shared.flags & 1) && shared.data &&
             shared.dataSize > 0 && shared.dataSize <= max_buffer_bytes,
-            "selected mesh must use one bounded resident shared buffer");
+            ("selected mesh must use one bounded resident shared buffer; flags=" +
+             std::to_string(shared.flags) + " bytes=" + std::to_string(shared.dataSize)).c_str());
         readable(shared.data, shared.dataSize);
         require(shared.skinVertCount == 0, "resident buffer contains skin vertices");
-        require(static_cast<std::uint64_t>(surf.baseVertOffset) + surf.vertCount <= shared.vertCount &&
-            static_cast<std::uint64_t>(surf.baseIndexOffset) + surf.triCount * 3u <= shared.indexCount,
-            "surface exceeds shared element counts");
-        const auto positions = stream_start(shared.posOffset, surf.baseVertOffset, 12,
-            surf.vertCount, shared.dataSize);
-        const auto attributes = stream_start(shared.vertsOffset, surf.baseVertOffset, 16,
-            surf.vertCount, shared.dataSize);
-        const auto indices = stream_start(shared.indicesOffset, surf.baseIndexOffset, 2,
-            surf.triCount * 3u, shared.dataSize);
-        // The production converter constructs this unused pointer for rigid meshes.
-        // Require its start to be within/one-past the buffer; no skin payload needed.
-        (void)stream_start(shared.skinWeightsOffset, surf.baseVertOffset, 12, 0, shared.dataSize);
-        require((reinterpret_cast<std::uintptr_t>(shared.data) + positions) % alignof(float) == 0 &&
-            (reinterpret_cast<std::uintptr_t>(shared.data) + attributes) % alignof(GfxStreamVertex) == 0 &&
-            (reinterpret_cast<std::uintptr_t>(shared.data) + indices) % alignof(GfxStreamFace) == 0,
-            "unaligned production stream");
-
-        static_assert(sizeof(GfxStreamVertex) == 16 && sizeof(GfxStreamFace) == 6);
-        const auto* xyz = reinterpret_cast<const vec3_t*>(shared.data + positions);
-        for (unsigned i = 0; i < surf.vertCount; ++i)
+        for (unsigned surface_index = 0; surface_index < mesh.numSurfs; ++surface_index)
         {
-            for (const auto value : xyz[i]) require(std::isfinite(value), "nonfinite vertex position");
-            GfxStreamVertex vertex{};
-            std::memcpy(&vertex, shared.data + attributes + i * sizeof(vertex), sizeof(vertex));
-            require((vertex.UVUPosition & 0x7c00) != 0x7c00 &&
-                (vertex.UVVPosition & 0x7c00) != 0x7c00, "nonfinite half-float UV");
-        }
-        for (unsigned i = 0; i < surf.triCount; ++i)
-        {
-            GfxStreamFace face{};
-            std::memcpy(&face, shared.data + indices + i * sizeof(face), sizeof(face));
-            require(face.Index1 < surf.vertCount && face.Index2 < surf.vertCount &&
-                face.Index3 < surf.vertCount, "triangle index outside vertex range");
-            double u[3]{}, v[3]{};
-            for (unsigned axis = 0; axis < 3; ++axis)
+            const auto& surf = object(mesh.surfs + surface_index);
+            try
             {
-                u[axis] = static_cast<double>(xyz[face.Index2][axis]) - xyz[face.Index1][axis];
-                v[axis] = static_cast<double>(xyz[face.Index3][axis]) - xyz[face.Index1][axis];
+                require((surf.flags & (XSURFACE_FLAG_SKINNED | XSURFACE_FLAG_STREAMED)) == 0,
+                    "skinned or streamed surface is outside resident pilot");
+                require(surf.shared == mesh.shared, "surface shared buffer differs from selected mesh");
+                const auto& rigid = object(surf.vertList);
+                require(rigid.boneOffset == 0 && rigid.vertCount == surf.vertCount && rigid.triOffset == 0 &&
+                    rigid.triCount == surf.triCount && !rigid.collisionTree,
+                    ("invalid root rigid coverage; boneOffset=" + std::to_string(rigid.boneOffset) +
+                     " vertices=" + std::to_string(rigid.vertCount) + " triOffset=" + std::to_string(rigid.triOffset) +
+                     " triangles=" + std::to_string(rigid.triCount) +
+                     " collision=" + std::to_string(rigid.collisionTree != nullptr)).c_str());
+                require(static_cast<std::uint64_t>(surf.baseVertOffset) + surf.vertCount <= shared.vertCount &&
+                    static_cast<std::uint64_t>(surf.baseIndexOffset) + surf.triCount * 3u <= shared.indexCount,
+                    "surface exceeds shared element counts");
+                const auto positions = stream_start(shared.posOffset, surf.baseVertOffset, 12,
+                    surf.vertCount, shared.dataSize);
+                const auto attributes = stream_start(shared.vertsOffset, surf.baseVertOffset, 16,
+                    surf.vertCount, shared.dataSize);
+                const auto indices = stream_start(shared.indicesOffset, surf.baseIndexOffset, 2,
+                    surf.triCount * 3u, shared.dataSize);
+                // The production converter constructs this unused pointer for rigid meshes.
+                // Require its start to be within/one-past the buffer; no skin payload needed.
+                (void)stream_start(shared.skinWeightsOffset, surf.baseVertOffset, 12, 0, shared.dataSize);
+                require((reinterpret_cast<std::uintptr_t>(shared.data) + positions) % alignof(float) == 0 &&
+                    (reinterpret_cast<std::uintptr_t>(shared.data) + attributes) % alignof(GfxStreamVertex) == 0 &&
+                    (reinterpret_cast<std::uintptr_t>(shared.data) + indices) % alignof(GfxStreamFace) == 0,
+                    "unaligned production stream");
+
+                static_assert(sizeof(GfxStreamVertex) == 16 && sizeof(GfxStreamFace) == 6);
+                const auto* xyz = reinterpret_cast<const vec3_t*>(shared.data + positions);
+                for (unsigned i = 0; i < surf.vertCount; ++i)
+                {
+                    for (unsigned axis = 0; axis < 3; ++axis)
+                    {
+                        const auto value = xyz[i][axis];
+                        if (!std::isfinite(value))
+                            require(false, ("nonfinite vertex position; vertex=" +
+                                std::to_string(i) + " axis=" + std::to_string(axis)).c_str());
+                    }
+                    GfxStreamVertex vertex{};
+                    std::memcpy(&vertex, shared.data + attributes + i * sizeof(vertex), sizeof(vertex));
+                    if ((vertex.UVUPosition & 0x7c00) == 0x7c00 || (vertex.UVVPosition & 0x7c00) == 0x7c00)
+                        require(false, ("nonfinite half-float UV at vertex=" + std::to_string(i) +
+                         " uBits=" + std::to_string(vertex.UVUPosition) +
+                         " vBits=" + std::to_string(vertex.UVVPosition)).c_str());
+                }
+                for (unsigned i = 0; i < surf.triCount; ++i)
+                {
+                    GfxStreamFace face{};
+                    std::memcpy(&face, shared.data + indices + i * sizeof(face), sizeof(face));
+                    if (face.Index1 >= surf.vertCount || face.Index2 >= surf.vertCount || face.Index3 >= surf.vertCount)
+                        require(false, ("triangle index outside vertex range; triangle=" + std::to_string(i) +
+                         " indices=" + std::to_string(face.Index1) + "," + std::to_string(face.Index2) +
+                         "," + std::to_string(face.Index3)).c_str());
+                    double u[3]{}, v[3]{};
+                    for (unsigned axis = 0; axis < 3; ++axis)
+                    {
+                        u[axis] = static_cast<double>(xyz[face.Index2][axis]) - xyz[face.Index1][axis];
+                        v[axis] = static_cast<double>(xyz[face.Index3][axis]) - xyz[face.Index1][axis];
+                    }
+                    const double cross[3]{u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]};
+                    const auto area_squared = cross[0]*cross[0] + cross[1]*cross[1] + cross[2]*cross[2];
+                    if (!std::isfinite(area_squared) || area_squared <= 0)
+                        require(false, ("degenerate triangle=" + std::to_string(i)).c_str());
+                }
             }
-            const double cross[3]{u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]};
-            const auto area_squared = cross[0]*cross[0] + cross[1]*cross[1] + cross[2]*cross[2];
-            require(std::isfinite(area_squared) && area_squared > 0, "degenerate triangle");
+            catch (const std::runtime_error& error)
+            {
+                contextual_failure(surface_context(surface_index, surf) +
+                    " sharedVertices=" + std::to_string(shared.vertCount) +
+                    " sharedIndices=" + std::to_string(shared.indexCount) +
+                    " sharedBytes=" + std::to_string(shared.dataSize) +
+                    " posOffset=" + std::to_string(shared.posOffset) +
+                    " attrOffset=" + std::to_string(shared.vertsOffset) +
+                    " indexOffset=" + std::to_string(shared.indicesOffset) +
+                    " skinOffset=" + std::to_string(shared.skinWeightsOffset), error);
+            }
         }
 
         require(model.meshMaterials != nullptr, "missing mesh materials");
         readable(model.meshMaterials, model.numLods * sizeof(XModelMeshMaterials));
         const auto& materials = object(model.meshMaterials + lod);
-        require(materials.numMaterials == 1, "pilot requires one material reference");
-        const auto* material = object(materials.materials);
-        (void)name(object(material).name);
-        const auto mip = object(materials.himipInvSqRadii);
-        require(std::isfinite(mip) && mip >= 0 && std::sqrt(mip) <= 65504.0f,
-            "material radius cannot be represented as finite half float");
+        require(materials.numMaterials == mesh.numSurfs,
+            ("material slots differ from surfaces; materials=" + std::to_string(materials.numMaterials) +
+             " surfaces=" + std::to_string(mesh.numSurfs)).c_str());
+        readable(materials.materials, static_cast<std::size_t>(mesh.numSurfs) * sizeof(Material*));
+        readable(materials.himipInvSqRadii, static_cast<std::size_t>(mesh.numSurfs) * sizeof(float));
+        for (unsigned i = 0; i < mesh.numSurfs; ++i)
+        {
+            try
+            {
+                const auto* material = object(materials.materials + i);
+                (void)name(object(material).name);
+                const auto mip = object(materials.himipInvSqRadii + i);
+                require(std::isfinite(mip) && mip >= 0 && std::sqrt(mip) <= 65504.0f,
+                    ("material radius cannot be represented as finite half float; mip=" + std::to_string(mip)).c_str());
+            }
+            catch (const std::runtime_error& error)
+            {
+                contextual_failure("surface[" + std::to_string(i) + "] material_slot=" + std::to_string(i), error);
+            }
+        }
 
         // Owned view: stable after return, no writes through any engine pointer.
         auto* selected_materials = allocator.allocate<XModelMeshMaterials>();
@@ -242,5 +352,22 @@ namespace zonetool::t7::resident_iw7
         selected->highestRenderLod = XMODEL_LOD_0;
         selected->highestShadowLod = XMODEL_LOD_0;
         return selected;
+    }
+
+    inline XModel* select(const XModel* source, const char* exact_name,
+        const unsigned int lod, utils::memory::allocator& allocator, const bool multisurface = false)
+    {
+        try
+        {
+            return select_impl(source, exact_name, lod, allocator, multisurface);
+        }
+        catch (const std::runtime_error& error)
+        {
+            if (!multisurface) throw;
+            const auto prefix = std::string(profile) + ": ";
+            const auto reason = std::string(error.what());
+            throw std::runtime_error(std::string(multisurface_profile) + ": " +
+                (reason.compare(0, prefix.size(), prefix) == 0 ? reason.substr(prefix.size()) : reason));
+        }
     }
 }
