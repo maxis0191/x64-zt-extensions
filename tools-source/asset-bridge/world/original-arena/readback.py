@@ -53,7 +53,10 @@ def inspect(model, mesh, source, *, expected_material=None):
     # compare it to the original double sum, or tolerate unrelated large error.
     radius_f32 = f32(math.sqrt(radius_squared_f32))
     m = Reader(model); header = m.array('model', 736, 1)
-    check(tuple(header[8:15]) == (0,1,0,1,255,6,1), 'Rigid model LOD/shadow/collision metadata')
+    # Pinned XModel bytes8..14: unused01, hasLods, maxLoadedLod, numLods,
+    # collLod, shadowCutoffLod, characterCollBoundsType. The writer leaves the
+    # last field zero; hasLods is already the true byte at9, not at14.
+    check(tuple(header[8:15]) == (0,1,0,1,255,6,0), 'Rigid model LOD/shadow/collision metadata')
     check(values(header, 20, '3B') == (1,1,0) and values(header, 24, 'HH') == (0,1), 'One rigid root and surface')
     check(values(header, 28, 'f') == (1.0,), 'Model scale')
     check(values(header, 44, '6f') == bounds_f32, 'Authored model bounds')
