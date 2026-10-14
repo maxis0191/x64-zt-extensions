@@ -5,6 +5,7 @@ $core=Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
 . $core
 . (Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1')
 . (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
+. (Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1')
 $script:checks=0;$script:clock=0;$script:releaseDelay=0;$script:releaseFails=$false;$script:publicationLate=$false
 function Check([bool]$Value,[string]$Why){if(!$Value){throw $Why};$script:checks++}
 function Refuses([scriptblock]$Body,[string]$Pattern){
@@ -319,6 +320,8 @@ try {
     }
     # Exercise the same runner finally AST through selective-export outcomes.
     # Export payload inspection must occur once under admission, or never after forced closure.
+    # Match the real export entry's profile import; use its actual finite selector.
+    Check ($null -eq (Get-T7SelectedStreamedExport $plan)) 'Resident fixture selected streamed export.'
     function Read-T7ResidentExportReport($Plan,$State,$Context){
         if(!$Context.Closed -or !$Context.Lease){throw 'Export read escaped original admission.'}
         $script:exportReads++

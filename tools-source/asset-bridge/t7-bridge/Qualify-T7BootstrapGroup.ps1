@@ -34,6 +34,18 @@ function Open-T7QualificationText([string]$Path,[string]$SHA256,[int]$Limit,[Nul
         [pscustomobject]@{Guard=$guard;Bytes=$bytes}
     }catch{$guard.Dispose();throw}
 }
+function Assert-T7QualificationHelperBinding($Pin,[string[]]$Required,[string]$CatalogueProfile) {
+    if($Pin.Path -isnot [string] -or $Pin.Path -cnotin $Required -or $Pin.IsText -isnot [bool] -or !$Pin.IsText -or
+       ($Pin.Bytes -isnot [int] -and $Pin.Bytes -isnot [long]) -or $Pin.Bytes -le 0 -or
+       $Pin.SHA256 -isnot [string] -or $Pin.SHA256 -cnotmatch '\A[0-9a-f]{64}\z'){throw 'Small exact helper source binding required.'}
+    if($Pin.Bytes -le 128KB){return}
+    # Only this reviewed Catalogue source exceeds the historical helper bound.
+    # These are separate RAW LF/CRLF tuples; no production normalization occurs.
+    if($Pin.Path -ceq $CatalogueProfile -and (
+        ($Pin.Bytes -eq 150096 -and $Pin.SHA256 -ceq '57c9ef83b9eb9535d57f0d8d4fa1fffdff3e389849258892993715382922b6d6') -or
+        ($Pin.Bytes -eq 151909 -and $Pin.SHA256 -ceq 'a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29'))){return}
+    throw 'Oversized helper requires the exact reviewed Catalogue source tuple.'
+}
 function Assert-T7QualificationGroupPlan($Plan,[string]$Repo,[string]$Runner,[string]$Hash){
     Assert-T7CatalogueFields $Plan @('Schema','Runner','Script','SourceDirectory','RunRoot','Inputs','Bindings','HostImage','Main','PreservedPython','PhysicalBytes','CommitBytes','DeadlineSeconds','RetryAuthorized')
     Assert-T7CatalogueFields $Plan.Script @('Path','Bytes','SHA256')
@@ -212,8 +224,7 @@ try{
         (Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'),(Join-Path $repo 'ops/hud-lab/HudFileIdentity.cs'))
     if($plan.Bindings -isnot [array] -or $plan.Bindings.Count -ne $required.Count -or @($plan.Bindings.Path|Sort-Object -Unique).Count -ne $required.Count){throw 'Eight exact helper source bindings required.'}
     foreach($pin in $plan.Bindings){
-        if($pin.Path -isnot [string] -or $pin.Path -cnotin $required -or $pin.IsText -isnot [bool] -or !$pin.IsText -or
-           ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 128KB){throw 'Small exact helper source binding required.'}
+        Assert-T7QualificationHelperBinding $pin $required (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
         if($pin.Path -cne $core){$sourceGuards.Add((Open-H1Pin $pin))}
     }
     . (Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1')

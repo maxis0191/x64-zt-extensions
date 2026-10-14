@@ -1974,3 +1974,21 @@ No opaque artifact was read or hashed after lease release. This consumes the
 single retry and supplies no export or gameplay acceptance. Interpret the
 retained callback/entry evidence before proposing a separately reviewed next
 change; no second Stock invocation follows this checkpoint.
+
+## Source fixture correction, 2026-10-14
+
+The full source suite reported `Test-T7Catalogue: Export completion differs`
+outside the unused weapon-name delta. Reproducing the actual runner finally AST
+showed a failed receipt with `InputsReverified=false`: the fixture had not
+imported `T7ResidentExport.Profile.ps1`, so `Get-T7SelectedStreamedExport` was
+undefined during the normal resident-export case. The real runner already
+guards/imports that profile for export operations.
+
+The future fixture now imports the same functions and checks that its ordinary
+resident plan has no streamed selector. All existing completion, forced stop,
+release failure, quarantine and output checks remain active. The complete
+affected fixture passes 233 controls with fake job/clock/lease and authored
+synthetic files; no native types/process, real lease or owner stock is used.
+No runner/profile, historical native result, V2 capsule or build producer was
+changed. This fixes source test setup and supplies no new catalogue, export,
+readback or gameplay acceptance.
