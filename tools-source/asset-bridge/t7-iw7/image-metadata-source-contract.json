@@ -36,8 +36,8 @@
     "sha256": "b786f2db40e4c70346846bccb336c86c957efbd76f1c9365994138119a4e4363"
   },
   "cli": {
-    "bytes": 154459,
-    "sha256": "d9d3296d79ec5c33e969b773ad124c7e4cf977226e12de7593af278353d29d6e"
+    "bytes": 154456,
+    "sha256": "17c07359a55e23324239f9663a8d4ead3cb9d3343a8b7ff0d4baf01ca4dfae6b"
   },
   "guarded_observer": {
     "bytes": 18839,
