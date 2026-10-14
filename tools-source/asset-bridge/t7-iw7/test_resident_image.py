@@ -279,5 +279,56 @@ class IW7ReadbackTests(unittest.TestCase):
             self.assertEqual(dds_oracle(output.read_bytes())["pixels"], pixels)
 
 
+class CompleteObjectTests(unittest.TestCase):
+    def image(self, width=1, height=1, fmt=28, size=4):
+        return subject.CompleteImageObject(width, height, 1, 1, 1, fmt, size, "DXGI_FORMAT")
+
+    def test_all_typed_formats_preserve_whole_bytes_and_dxgi(self):
+        expected = {28:4,29:4,49:2,61:1,71:8,72:8,74:16,75:16,77:16,78:16,
+                    80:8,81:8,83:16,84:16,87:4,91:4,98:16,99:16}
+        for fmt, size in expected.items():
+            with self.subTest(fmt=fmt):
+                pixels = bytes(range(size))
+                image = self.image(fmt=fmt, size=size)
+                result = dds_oracle(subject.object_to_dds(image, pixels))
+                self.assertEqual((result["dxgi"], result["levels"], result["pixels"]), (fmt, 1, pixels))
+                self.assertEqual(subject.object_to_dds(image, pixels), subject.to_dds(copied(1,1,1,fmt,size), pixels))
+
+    def test_non_square_bc_exact_whole_object_has_no_mip_tail_or_truncation(self):
+        image = self.image(7, 5, 98, 64)
+        pixels = bytes(range(64))
+        result = dds_oracle(subject.object_to_dds(image, pixels))
+        self.assertEqual((result["pitch"], result["width"], result["height"], result["pixels"]), (64, 7, 5, pixels))
+        for size in (63, 65, 80, 96):
+            with self.subTest(size=size), self.assertRaises(ValueError):
+                subject.object_to_dds(replace(image, total_size=size), bytes(size))
+
+    def test_object_does_not_bypass_resident_contract_or_borrow_pixels(self):
+        image = self.image()
+        with self.assertRaises(ValueError): subject.to_dds(image, bytes(4))
+        with self.assertRaises(ValueError): subject.object_to_dds(copied(), bytes(16))
+        for pixels in (bytes(3), bytes(5), bytearray(4), memoryview(bytes(4))):
+            with self.assertRaises(ValueError): subject.object_to_dds(image, pixels)
+
+    def test_unqualified_shapes_namespace_mips_and_types_refuse(self):
+        image = self.image()
+        for field, value in (("format_namespace","GfxPixelFormat"), ("map_type",4), ("depth",2),
+                             ("level_count",2), ("width",0), ("height",4097), ("width",True),
+                             ("dxgi_format",27), ("total_size",16777217)):
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                subject.object_layout(replace(image, **{field:value}))
+
+    def test_object_readback_preserves_name_semantic_and_every_byte(self):
+        image, pixels = self.image(7,5,99,64), bytes(range(64))
+        raw = IW7ReadbackTests().dump(image, pixels, "authored_object_color", 2)
+        result = subject.verify_iw7_object(image, pixels, raw, "authored_object_color", 2)
+        self.assertTrue(result["serialized_pixel_bytes_verified"])
+        self.assertFalse(result["material_verified"])
+        self.assertFalse(result["rendered_verified"])
+        for bad, name, semantic in ((raw[:-1], "authored_object_color",2),
+                                     (raw, "other",2), (raw, "authored_object_color",5)):
+            with self.assertRaises(ValueError): subject.verify_iw7_object(image,pixels,bad,name,semantic)
+
+
 if __name__ == "__main__":
     unittest.main()
