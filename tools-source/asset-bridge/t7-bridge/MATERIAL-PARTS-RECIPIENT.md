@@ -102,3 +102,10 @@ parts; MSG, catalogue and E5 contracts are unchanged. Synthetic stock-gate
 coverage directly exercises the G3 profile with 23 qualified entries and rejects
 ordinary D2 there. The source helper exception adds only the new exact Catalogue
 LF/CRLF tuples; all previous tuples and other helper limits remain intact.
+
+The causal source fixture then executed actual DEFAULT against an authored
+copy of C's metadata with only controller/root routing updated. After the
+collection fix it reached the E build qualifier and exposed a local `$host`
+assignment colliding with PowerShell's read-only `$Host`. The local is renamed
+`$partsBuildHost`; no host identity or qualification constraint changes. This
+fixture is source/metadata validation, not a factory retry or native invocation.
