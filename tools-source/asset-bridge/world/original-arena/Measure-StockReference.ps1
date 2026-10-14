@@ -82,7 +82,7 @@ try{
         $null=Resolve-IW7BasePath (Split-Path $entry.Source) (Split-Path $entry.Source -Leaf)
         $stockGuards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'))
         $file=Get-Item -LiteralPath $entry.Source
-        if($file.Length -ne $entry.Bytes -or $file.LastWriteTimeUtc.ToString('o') -cne $entry.ModifiedUtc -or [int]$file.Attributes -ne $entry.Attributes){throw 'Retained stock metadata changed.'}
+        if($file.Length -ne $entry.Bytes -or $file.LastWriteTimeUtc.Ticks -ne ([datetimeoffset]$entry.ModifiedUtc).UtcDateTime.Ticks -or [int]$file.Attributes -ne $entry.Attributes){throw 'Retained stock metadata changed.'}
         $id=[IW7HudFileIdentity]::Read($entry.Source);Assert-FFStockIdentity $entry $id
         $entry|Add-Member NoteProperty SourceId $id -Force
     }
