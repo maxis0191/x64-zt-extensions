@@ -78,3 +78,13 @@ runs its extracted prelude as a file to retain the real PSCommandPath semantics.
 The initial code/package/plan and DEFAULT witness remain historical and do
 not qualify the corrected consumer. Prepare a new source/plan and fresh
 entry DEFAULT before the final review and any separate probe GO.
+
+Corrected code `06b6046f` composed a new immutable package of 904 text files /
+8799440 bytes. Its new 30-binding plan SHA256 is
+`7ac228ffe598acfb291aacde17637e9dd96550defebe3b51bca7ab665fba2d92`.
+The actual fresh NoProfile entry child naturally exited 0 with CandidateBound
+true and all five runtime flags false, then was absent in CIM. The new
+1337-byte DEFAULT witness SHA256 is
+`da835df6cc80c8739054349baee896eab48dc77374e97a6f3eb0a2115f4ec86a`.
+The producer executable and all closure tuples remain unchanged. No probe
+has run; the coordinator's separate GO remains required.
