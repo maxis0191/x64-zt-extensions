@@ -643,3 +643,46 @@ six guards/input hashes and child closure passed, then its reservation released;
 original host 30416/session 24765 actually exited zero (chunk `6c49aa`). A fresh
 03:56:46 UTC witness found host/outer/child absent and no leases. Keep the failed
 FF and both diagnostic receipts intact; no new FF build or gameplay is implied.
+
+### Actual retained FF independent readback passed on 2026-10-14
+
+PR55's reviewed reader at `ef5a3954`, merged as `bef1b592`, ran once against
+the unchanged retained FF B and its original stage/redump under a new existing
+Analysis reservation. Fourteen guarded files/99,188 bytes matched their prior
+admitted hashes before and after the read. No FF rebuild, source derivation,
+retail input or native binary read occurred. Python 27184 exited zero at
+04:24:14 UTC with `GeometryRoundtripVerified`.
+
+The real schema2 proof is 2,274 bytes/SHA256
+`7f8b628fd3dd8250c24c959017be139b81f6aad92ebe5e1e885d42c98dd6351f`.
+It binds FF 9,904 bytes/`50ca9124` to preparation plan `750d25d7`, derived receipt
+`231e9fd5`, model `p7_fre_platform_cap_02` and mesh
+`p7_fre_platform_cap_02_lod0ca80354f`. It verifies one root/bone, five surfaces,
+560 vertices and 490 triangles; ordered surface counts are 208/200, 8/4,
+34/32, 94/62 and 216/192 vertices/triangles. All five material slots reference
+the declared IW7 shoe material, LOD distance is 1,000,000 and bounded work is
+41,656 bytes. Packed attributes are byte-identical to the prepared geometry.
+
+The redump hashes remain XMB `af4cb784` and XSB `5c93d176`. The earlier diagnostic
+observed the nonzero LOD0 cache in that exact XMB; the successful reviewed parser
+requires it to equal the validated mesh's raw surface pointer, so the cross-file
+272-to-8 binding is now observed, without dereferencing or normalizing bytes.
+The original failed build state `d08f93fd` remains unchanged and failed; this new
+proof records the subsequent successful independent readback separately.
+
+All fourteen guards closed, input reverification and child closure passed, and
+reservation `219f0bca` released. Original NoExit host 26856/session 84890 actually
+exited zero (chunk `68b2a7`). The fresh 04:25:05 UTC witness found host/outer/child
+absent and no leases. The wrapper receipt is 2,517 bytes/SHA256
+`4004e43ebadc6b67655d131dd4b5aa1906f1859b70b2965b129ce4bb998958e6`;
+post-host witness SHA256 is
+`93bca62f8a4bd244d26fb1e6479647326e51cc61e886ab19744203d2052b6eb5`.
+Opaque hashes above are copied from admitted receipts, not rehashed after release.
+
+This qualifies the FF geometry roundtrip. Native provenance, source-geometry
+correspondence, dependency payloads, runtime verification, pixels and Ready remain
+false in the independent proof; no BO3 texture, collision or owner acceptance is
+claimed. The existing BO3 static scene route can bind this separate proof while
+preserving the failed historical state. Next: coordinator semantic review of the
+actual tuple, then a separately authorized real display test; no server patch or
+fabricated successful state is needed.
