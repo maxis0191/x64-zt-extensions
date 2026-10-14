@@ -8,7 +8,7 @@ import sys
 WORLD = Path(__file__).resolve().parent.parent
 REPO = WORLD.parents[2]
 sys.path.insert(0, str(WORLD))
-from trigger_bridge import fields, parse, require, vector, convert
+from trigger_bridge import fields, parse, require, vector, convert, f32
 sys.path.insert(0, str(REPO / 'ops/model-lab'))
 from geometry import original_cube
 
@@ -86,6 +86,60 @@ def geometry(scene):
             'bounds': {'midpoint': [(a+b)/2 for a,b in zip(lo, hi)], 'half_size': [(b-a)/2 for a,b in zip(lo, hi)]},
             'surfaces': [{'material_reference': None, 'vertices': vertices, 'triangles': triangles}],
             'iw7_serialized': False, 'ready': False}
+
+
+def first_box_contract(scene, solid_name, model_origin, model_scale=1):
+    """Source correspondence for one identity-rotated model/absolute native box.
+
+    This selects faces in the existing combined mesh, not a new isolated model.
+    Runtime must measure the actual model transform before using these bounds.
+    """
+    scene = validate(scene)
+    require(type(solid_name) is str, 'One named original solid required')
+    matches = [(i, s) for i, s in enumerate(scene['solids']) if s['name'] == solid_name]
+    require(len(matches) == 1, 'Selected solid is absent from original source')
+    origin = vector(model_origin, 'model origin')
+    require(origin == model_origin, 'Exact float32 model origin required')
+    scale = f32(model_scale, 'uniform model scale')
+    require(scale > 0 and scale == model_scale, 'Positive exact float32 uniform scale required')
+    index, solid = matches[0]
+    raw_lo = [origin[i]+scale*solid['minimum'][i] for i in range(3)]
+    raw_hi = [origin[i]+scale*solid['maximum'][i] for i in range(3)]
+    lo, hi = vector(raw_lo, 'absolute minimum'), vector(raw_hi, 'absolute maximum')
+    require(lo == raw_lo and hi == raw_hi and all(a < b for a, b in zip(lo, hi)),
+            'Exact float32 noncollapsed world bounds required')
+    native_origin = vector([(a+b)/2 for a, b in zip(lo, hi)], 'native origin')
+    native_half = vector([(b-a)/2 for a, b in zip(lo, hi)], 'native half size')
+    require(all(m-h == a and m+h == b for a, b, m, h in zip(lo, hi, native_origin, native_half)),
+            'Native midpoint/half rounding would change world bounds')
+    require(all(f32(h*0.03125, 'native half size in Havok units') > 0 for h in native_half),
+            'Native internal half sizes must remain positive')
+    cube = original_cube()['surfaces'][0]
+    return {
+        'schema': 'iw7.original-arena-first-box-source/1',
+        'model_name': NAME, 'solid_name': solid_name,
+        'local_bounds': {'minimum': solid['minimum'], 'maximum': solid['maximum']},
+        'local_to_world': {'axis_mapping': ['X->X', 'Y->Y', 'Z->Z'],
+                           'uniform_scale': scale, 'model_origin': origin,
+                           'model_angles': [0, 0, 0]},
+        'world_bounds': {'minimum': lo, 'maximum': hi},
+        'mesh_selection': {'surface': 0, 'first_vertex': index*len(cube['vertices']),
+                           'vertex_count': len(cube['vertices']),
+                           'first_triangle': index*len(cube['triangles']),
+                           'triangle_count': len(cube['triangles']),
+                           'isolated_render_model': False},
+        'native_box': {'world': 0, 'owner_class': 'script_model',
+                       'solid_before_create_required': True, 'observed': 1,
+                       'bounds_space': 'absolute IW7 game coordinates',
+                       'owner_transform_applied': False,
+                       'origin': native_origin, 'half_size': native_half,
+                       'rotation_xyzw': [0, 0, 0, 1],
+                       'provider_internal_game_to_havok_scale': 0.03125},
+        'material_payload_verified': False, 'render_transform_verified': False,
+        'rendered_bounds_verified': False, 'native_collision_verified': False,
+        'prediction_verified': False, 'player_movement_verified': False,
+        'physics_serialized': False, 'runtime_verified': False,
+    }
 
 
 def goal_trigger(scene):

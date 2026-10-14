@@ -76,6 +76,42 @@ class Mip:
     slice_pitch: int
 
 
+@dataclass(frozen=True)
+class CompleteImageObject:
+    """Owned decoded object view; never a fabricated resident engine header."""
+    width: int
+    height: int
+    depth: int
+    map_type: int
+    level_count: int
+    dxgi_format: int
+    total_size: int
+    format_namespace: str
+
+
+def object_layout(image):
+    """Only one entire tight 2D mip; layout does not prove capture provenance."""
+    require(type(image) is CompleteImageObject, "complete decoded object view required")
+    require(type(image.format_namespace) is str and image.format_namespace == "DXGI_FORMAT",
+            "explicit typed DXGI namespace required")
+    for field in fields(image):
+        if field.name != "format_namespace":
+            value = getattr(image, field.name)
+            require(type(value) is int and 0 <= value <= 0xFFFFFFFF, "bounded object scalar required")
+    require(1 <= image.width <= MAX_DIMENSION and 1 <= image.height <= MAX_DIMENSION,
+            "object dimensions exceed the 1..4096 pilot range")
+    require(image.map_type == 1 and image.depth == 1 and image.level_count == 1,
+            "one complete 2D mip required; no inferred stream mip count")
+    require(0 < image.total_size <= MAX_PIXEL_BYTES, "object pixel budget exceeds 16 MiB or is empty")
+    fmt = FORMATS.get(image.dxgi_format)
+    require(fmt is not None, "unsupported typed DXGI format")
+    columns = (image.width + 3) // 4 if fmt.block_compressed else image.width
+    rows = (image.height + 3) // 4 if fmt.block_compressed else image.height
+    pitch = columns * fmt.unit_bytes
+    require(pitch * rows == image.total_size, "entire decoded object must equal one tight mip; no truncation")
+    return (Mip(image.width, image.height, 0, pitch, pitch * rows),)
+
+
 def layout(image):
     """Accept a conservative v1 subset; zero unknown flags is policy, not an ABI claim."""
     require(type(image) is CopiedImage, "a copied scalar image view is required")
@@ -120,6 +156,17 @@ def to_dds(image, pixels):
     mips = layout(image)
     # bytes makes ownership/stability explicit: no borrowed memoryview/engine pointer.
     require(type(pixels) is bytes and len(pixels) == image.total_size, "exact immutable copied pixels required")
+    return _encode_dds(image, mips, pixels)
+
+
+def object_to_dds(image, pixels):
+    """Serialize all owned object bytes; never clear native streaming/fallback flags."""
+    mips = object_layout(image)
+    require(type(pixels) is bytes and len(pixels) == image.total_size, "exact immutable whole-object bytes required")
+    return _encode_dds(image, mips, pixels)
+
+
+def _encode_dds(image, mips, pixels):
     fmt = FORMATS[image.dxgi_format]
     header = [0] * 31
     header[0] = 124
@@ -182,6 +229,16 @@ def verify_iw7_image(image, pixels, raw, expected_name, expected_semantic):
     or establish source capture provenance, shader compatibility or rendering.
     """
     mips = layout(image)
+    return _verify_iw7_bytes(image, pixels, raw, expected_name, expected_semantic, mips)
+
+
+def verify_iw7_object(image, pixels, raw, expected_name, expected_semantic):
+    """Compare a complete object against IW7 bytes; material/render proof stays false."""
+    mips = object_layout(image)
+    return _verify_iw7_bytes(image, pixels, raw, expected_name, expected_semantic, mips)
+
+
+def _verify_iw7_bytes(image, pixels, raw, expected_name, expected_semantic, mips):
     require(type(pixels) is bytes and len(pixels) == image.total_size,
             "exact immutable copied pixels required")
     require(type(expected_name) is str and expected_name and "\0" not in expected_name,

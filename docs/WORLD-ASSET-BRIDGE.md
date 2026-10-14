@@ -1540,3 +1540,134 @@ unqualified. Next: review a source-only alternative to sequential dependency
 probes—an exact qualified index, or a finite manifest-bound group of existing
 assetfile packs with one reviewed modal read in the next original scenario.
 No new group is inferred to be minimally necessary or silently staged by M6.
+
+## 2026-10-14: M7 stopped at the runtime-options initializer
+
+The one approved grouped attempt used merged `ffcbb7ad`,39 source pins,104
+inputs/106 managed entries and the existing single Extract admission. All stock
+identity/content checks passed, the33 fixed PAK aliases and normal inputs were
+staged, then the shared options initializer failed under strict mode:
+`The property 'CaptureSource' cannot be found on this object.`
+The combined diagnostic specification omitted CaptureSource and CdbSHA256 while
+the runtime initializer accessed both. This was a source contract mismatch;
+the frozen generated tuple remained unchanged. No zonetool process, modal helper,
+reference reader, reference CSV or material proof was produced.
+
+The ordinary known-closure path restored all106 managed entries and proved
+source/stock preservation. The three stock-content validation passes completed;
+no managed target remains. Savedfalse/token state is pre-release history. The
+original NoExit host matched its recorded PID/image/creation at13:43:58 UTC,
+with reference quarantine null and full registry zero. Its own PTY actually
+exited with code1. Fresh13:44:51 UTC found original host/parent absent, no scope
+process and zero leases. Old packages, proof/caches, Main27016, bank/config and
+owner clients were preserved. There was no automatic retry or new dependency.
+
+The minimal source correction explicitly supplies null CaptureSource/CdbSHA256
+for the getter-only combined mode, preserving real legacy diagnostic source/hash
+contracts. Source fixtures exercise the actual options initializer under strict
+mode and its planner serialization, with old-shape failure/new-contract success.
+An additional pure probe against the frozen actual M7 composed recipe reproduced
+the failure and passed the corrected source without native/stock effects. This
+does not establish runtime/material/GPU/physics acceptance. Next: complete the
+corrected source review/private Git workflow, generate a new tuple and obtain
+a distinct coordinated GO. Consumed tupleB must not be replayed or edited.
+
+## 2026-10-14: corrected M7 D measured the nondefault CP reference
+
+One distinct GO used merged `1c1382bf`,39 source pins,104 stock inputs and106
+managed entries. Internal recipe:
+`2cff12d7958729172ac932e8f39d9ec470c0305a1d09681c106e9dad7ba32d15`;
+outer plan:
+`f4f21f6139deff0230c26c69295f8bf09bea76e5970a3b3b66dfbd0944f0c9f1`.
+The corrected original entry recorded host/parent identity before the unchanged
+reviewed capsule. All current stock identity/content checks passed under one
+admission; only the fixed existing33 assetfile providers were staged as aliases.
+This availability did not duplicate their4.7GB payload or prove a minimal subset.
+
+The original tool began14:14:03 UTC and exited0 in6,777 ms with root exited,
+active0 and job closed. Stdout2498B reported cp_zmb rows1/verified1/missing0/
+default0. The74-byte CSV marked material
+`mopw/character_park_clown_zombie_shoes` verified; SHA256:
+`b691b56baf8b9db5f887d9ce6d2005c9bc1c1bc0527c7756bc8b792b9bd6230c`.
+The existing verification reader exited0 in122 ms with root exited/active0/job
+closed. Its1385-byte reference evidence SHA256 is
+`a46fedcc0646b14a84fc80a6111142082c1edb8d09d478e0e7b2e59049fdead0`.
+Returned status was ReferenceCaptured and MaterialReferenceMeasured=true.
+No modal attempt triggered because the reference completed before45 seconds;
+NotTriggered is not a negative-window or captured-window result.
+
+Source hashes/stock content remained preserved and all106 managed entries
+restored, with all104 stock targets absent and lease released/token null. The
+same original live NoExit host matched PID/image/creation and verified reference
+quarantine null, closed original/reader jobs and full registry zero at14:17:21.
+Its original PTY actually exited0. Fresh14:18:51 UTC found original host/parent/
+target/reader absent, no scope process and zero leases. Derived CSV/dcache files
+remain local; old runtime proof/caches, Main27016, banks/configuration and owner
+clients were preserved. No automatic retry, writer/FF or client stage followed.
+
+The nondefault CP material reference snapshot is now measured and reader-checked.
+Runtime/GPU texture/shader appearance, original-arena FF, collision/physics and
+owner acceptance remain unqualified. Next: bind this immutable reference evidence
+into the existing original-arena writer proposal, inspect its encoding and normal
+source contract, then review a new operator/GO before any native build/readback.
+
+## 2026-10-14: first original box source correspondence
+
+An opt-in original-arena preparation sidecar binds its geometry SHA-256 and
+selects the obstacle's existing24 vertices/12 triangles inside the combined
+168/84 mesh. Exact local min(16,-32,0)/max(48,32,32), identity model angles,
+uniform scale and explicit model origin define the proposed world bounds.
+X/Y/Z retain their corresponding axes. Lossy/collapsed float32 world endpoints
+are refused before writing. Existing writer/header/geometry/ModelLab inputs and
+default preparation remain unchanged; the sidecar is not a build/runtime input.
+
+The native provider accepts absolute world bounds on a dedicated world0 solid
+script_model, observed1, with identity quaternion and internal1/32 conversion.
+Owner origin/angles/modelscale are not applied to its arguments. This proposal
+uses one box only and does not inherit native E's solo zero-client counter
+episode, the Rig ribbon/BO3 prop's display, or player acceptance. A measured M7
+reference may be named in the sidecar; payload/render qualification remains false.
+
+Source tests check golden bounds/face indices, transformed mesh corners, invalid
+placement rejection, unchanged writer inputs and named-only material binding.
+No compile, FF, live fixture, physics serialization, prediction, stock/opaque
+reads or game run followed. Next: independent source review/private Git workflow;
+then separately review the actual visible geometry/transform and one native-box
+episode. Isolating a24/12 rendered model would require a reviewed profile change.
+
+## 2026-10-14: standalone writer source plan and Python pin correction
+
+The next proposal reuses the existing168/84 writer/readback, M7 named reference
+and one obstacle sidecar. Pure source preparation produced nine files (seven
+default inputs plus the named-material manifest and sidecar), without compiling,
+reading stock/tool payloads, staging aliases or starting a game. The standalone
+Build uses no retail stock. Direct preparation needs `-B -S`, because `-I`
+removes the script directory required by its `import arena`; the independent
+readback continues to use `-I -S -B`.
+
+The writer still declared the stale Python digest31073dad. The actual M7D
+reference reader had already recorded Python3.12 digest
+`4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a`,
+exit0/root exited/active0/job closed. Only this pin is corrected; existing source
+tests exercise the real Pin assignment against that historical receipt contract,
+with old-pin refusal/new-pin match and no pre-admission opaque qualification.
+No binary was rehashed for this correction. The future Build must requalify
+actual cl/link/vctip/Python/NativeJob digests under its single admitted reservation
+before launching any process, and retain the original context if proof is unknown.
+
+The operator proposal keeps the source helper's exact native2f policy, direct
+Compile→Link→writer→independent readback, original PS7 NoExit host identity,
+sampled output/deadlines and guarded source-final/closure/release path. Model
+names remain paris_original_arena / paris_original_arena_lod0. Render/physics,
+prediction, player movement and GPU normal encoding remain unqualified.
+
+Current FF72 binding does not carry M7's fixed33 PAK cohort. This is an explicit
+follow-up gap, not an accepted FF recipe. Native62/Ops55 admission/consumer
+coordination is separate; Rig/BO3/ribbon assets are not World geometry proof.
+Native25 diagnostics currently probe legacy paris_model_probe names and only
+observe Rig scenes; they do not target paris_original_arena. Sharing zone/NCS
+names does not create a World diagnostic witness. This is not a general engine
+loading prohibition. Both owners reported these constraints from source only.
+Next: complete source review/private Git workflow, inspect the concrete writer
+cap and generate/review a new local recipe before any Build GO. No FF/Game stage
+or new isolated24/12 profile is authorized by this source proposal.

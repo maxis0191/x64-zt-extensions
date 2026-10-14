@@ -1,0 +1,30 @@
+{
+  "schema": "iw7.t7-image-metadata-consumer-contract/1",
+  "producer_schema": "iw7.t7-selected-image-provenance/1",
+  "producer_source_profile": "t7-image-provenance-v1",
+  "model": "p7_fre_platform_cap_02",
+  "lod": 0,
+  "slot": 0,
+  "binding_index": 4,
+  "binding_name_hash": 2695565377,
+  "report_limit_bytes": 32768,
+  "image_span_bytes": 264,
+  "maximum_regions_per_epoch": 2,
+  "epochs": ["after_original_model_add", "after_zone_model_lookup"],
+  "incoming_header_role": "scalar provenance only; never dereference or add an offset",
+  "returned_header_role": "MODEL Add return is already a header; never apply entry+8 again",
+  "complete_unreadable_query_is_valid_metadata": true,
+  "same_numeric_field_proves_same_object": false,
+  "memory_query_proves_lifetime": false,
+  "image_body_read_authorized": false,
+  "new_image_lookup_authorized": false,
+  "pointer_transform_authorized": false,
+  "extraction_authorized": false,
+  "ready": false,
+  "recipient_reference": {
+    "map": "cp_zmb",
+    "material": "mopw/character_park_clown_zombie_shoes",
+    "csv_sha256": "b691b56baf8b9db5f887d9ce6d2005c9bc1c1bc0527c7756bc8b792b9bd6230c",
+    "scope": "existing named IW7 reference only; no BO3 texture, payload, render or collision qualification"
+  }
+}

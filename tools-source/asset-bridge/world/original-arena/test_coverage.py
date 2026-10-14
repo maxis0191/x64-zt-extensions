@@ -15,6 +15,38 @@ class CoverageTests(unittest.TestCase):
                 *map(str,sources),temp],capture_output=True,text=True,timeout=20)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
+    def test_actual_grouped_diagnostic_composes_strict_runtime_options(self):
+        self.run_script(r'''
+param($Measure,$Root)
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Measure,[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'Runner parse failed'}
+$spec=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.AssignmentStatementAst] -and
+    $n.Left.Extent.Text -ceq '$diagnostic' -and $n.Right.Extent.Text.Contains("Mode='reference-with-one-modal'")},$true))
+$init=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.AssignmentStatementAst] -and
+    $n.Left.Extent.Text -ceq '$options' -and $n.Right.Extent.Text.Contains('CaptureSource=$diagnostic.CaptureSource')},$true))
+if($spec.Count -ne 1 -or $init.Count -ne 1){throw 'Exact grouped plan and real runtime initializer required'}
+$PackageRoot=$Root;$RunRoot=$Root;$DiagnosticZone='global_mp';$CandidateRoot=$Root
+$python=$Measure;$toolSHA='1'*64;$inputs=@();function Get-H1Clock {100L}
+. ([scriptblock]::Create($spec[0].Extent.Text))
+# Preserve the real planner serialization boundary, including nullable properties.
+$diagnostic=($diagnostic|ConvertTo-Json -Depth 8|ConvertFrom-Json)
+if($diagnostic.Mode -cne 'reference-with-one-modal' -or $diagnostic.CaptureSource -ne $null -or
+   $diagnostic.Cdb -ne $null -or $diagnostic.CdbSHA256 -ne $null -or $diagnostic.CPUSeconds -ne 0){throw 'Explicit combined-only optional diagnostic contract required'}
+$fixed=$diagnostic
+$old=$fixed|ConvertTo-Json -Depth 8|ConvertFrom-Json
+$old.PSObject.Properties.Remove('CaptureSource');$old.PSObject.Properties.Remove('CdbSHA256')
+$diagnostic=$old;$failed=$false
+try{. ([scriptblock]::Create($init[0].Extent.Text))}catch{$failed=$_.Exception.Message.Contains("'CaptureSource'")}
+if(!$failed){throw 'The old actual grouped shape must reproduce prelaunch failure'}
+$diagnostic=$fixed
+. ([scriptblock]::Create($init[0].Extent.Text))
+if($options.CaptureSource -ne $null -or $options.Cdb -ne $null -or $options.CdbSHA256 -ne $null -or
+   $options.StartedMs -ne 100 -or $options.Inputs.Count -ne 0){throw 'Fixed real options contract differs'}
+if('IW7.AnimationProbe.NativeJob' -as [type]){throw 'Pure initializer test loaded native job'}
+''',Path(__file__).with_name('Measure-StockReference.ps1'))
+
     def test_fixed_group_is_exact_typed_and_preserves_prior_inputs(self):
         self.run_script(r'''
 param($Core,$Root)

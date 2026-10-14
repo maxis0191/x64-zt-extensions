@@ -53,7 +53,7 @@ try {
     $clPin=Pin $cl $policy.CompilerSHA256.ToLowerInvariant()
     $linkPin=Pin $link 'a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f'
     $null=Pin $policy.Telemetry $policy.TelemetrySHA256.ToLowerInvariant()
-    $pythonPin=Pin $python '31073dad142bc7f3374e3122aa668270052c9ad37d0aaab803ae73f184c3a43b'
+    $pythonPin=Pin $python '4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a'
     $dll=Pin $NativeJobAssembly '5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8'
     $obj=Join-Path $RunRoot 'compile/arena.obj';$exe=Join-Path $RunRoot 'link/arena-writer.exe'
     $includes=@("$vc/include","$sdk/Include/$version/ucrt","$sdk/Include/$version/shared","$sdk/Include/$version/um","$ToolSource/src/zonetool",$PreparedRoot)
