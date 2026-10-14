@@ -27,6 +27,56 @@ finally:
 
 
 class ModelSourceTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock selector fixture requires pwsh')
+    def test_selected_stock_binding_is_explicitly_limited_to_render_only_candidate(self):
+        script = r'''
+param($Entry,$Root)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Entry,[ref]$tokens,[ref]$errors)
+if($errors){throw 'Entry parse failed'}
+$selector=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.Extent.Text -ceq '$renderOnlyStock'},$true))[0]
+$block=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$StockBindingPlan'},$true))[0]
+$repo=Join-Path $Root 'package';[IO.Directory]::CreateDirectory((Join-Path $repo 'tools-source/asset-bridge/common'))|Out-Null
+[IO.File]::WriteAllText((Join-Path $repo 'tools-source/asset-bridge/common/StockBinding.Core.ps1'),'# Authored source import; no asset operations')
+$StockBindingPlan=Join-Path $Root 'selected.json'
+function Write-Fixture($SentinelMode='Copy'){
+    $rows=@([pscustomobject]@{Relative='main/fileSysCheck.cfg';Mode=$SentinelMode})
+    for($i=1;$i -lt 72;$i++){$rows+=[pscustomobject]@{Relative=('zone/authored-'+$i+'.ff');Mode='HardLink'}}
+    @{stock_binding=@{inputs=$rows};runtime_verified=$false;ready=$false}|ConvertTo-Json -Depth 5|Set-Content $StockBindingPlan
+    $script:StockBindingPlanSHA256=(Get-FileHash -LiteralPath $StockBindingPlan).Hash
+}
+function Invoke-ActualSelector {
+    . ([scriptblock]::Create($selector.Extent.Text))
+    . ([scriptblock]::Create($block.Extent.Text))
+    @($inputs)
+}
+$arena=$false;$rigid=$true;$CandidateRoot='retained-candidate';$plan=[pscustomobject]@{geometry_profile='t7-iw7-selected-streamed-render-only-v2'}
+Write-Fixture
+if(@(Invoke-ActualSelector).Count -ne 72 -or $arena){throw 'Explicit render-only path must consume selected mapping without arena marker'}
+foreach($profile in @('t7-iw7-resident-static-v1','t7-iw7-resident-static-v2','t7-iw7-selected-streamed-static-v1','unknown')){
+    $plan.geometry_profile=$profile;$refused=$false
+    try{Invoke-ActualSelector|Out-Null}catch{$refused=$_.Exception.Message -eq 'Explicit bounded original-arena stock binding required.'}
+    if(!$refused){throw 'Unselected resident profile gained stock binding'}
+}
+$plan.geometry_profile='t7-iw7-selected-streamed-render-only-v2';$CandidateRoot='';$refused=$false
+try{Invoke-ActualSelector|Out-Null}catch{$refused=$true};if(!$refused){throw 'Candidate selector required'}
+$CandidateRoot='retained-candidate';Write-Fixture 'HardLink';$refused=$false
+try{Invoke-ActualSelector|Out-Null}catch{$refused=$_.Exception.Message -eq 'Existing 72-input aliases and independent copied sentinel required.'}
+if(!$refused){throw 'Independent copied sentinel must remain mandatory'}
+Write-Fixture;$StockBindingPlanSHA256='1'*64;$refused=$false
+try{Invoke-ActualSelector|Out-Null}catch{$refused=$true};if(!$refused){throw 'Binding digest must remain mandatory'}
+Write-Fixture;$arena=$true;$rigid=$false;$plan.geometry_profile='iw7-original-arena-rigid-v1'
+if(@(Invoke-ActualSelector).Count -ne 72){throw 'Original World stock selector changed'}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'selected-stock.ps1'
+            path.write_text(script, encoding='utf-8')
+            result = subprocess.run(['pwsh', '-NoLogo', '-NoProfile', '-File', str(path),
+                                     str(ROOT / 'ops/model-lab/Build-ModelFF.ps1'), folder],
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell admission fixture requires pwsh')
     def test_resident_candidate_dry_run_defers_opaque_checks_until_lease(self):
         script = r'''

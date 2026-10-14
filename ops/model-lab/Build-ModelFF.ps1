@@ -91,8 +91,9 @@ if($CandidateRoot){
 $zones=@('code_pre_gfx','code_post_gfx','common','common_mp','common_cp','common_core_mp','global','global_mp','global_cp','global_core_mp','cp_zmb')
 $names=@($zones | ForEach-Object {"$_.ff";"patch_$_.ff";"techsets_$_.ff"})
 $inputs=@()
+$renderOnlyStock=$rigid -and $plan.geometry_profile -ceq 't7-iw7-selected-streamed-render-only-v2'
 if($StockBindingPlan){
-    if(!$arena -or !$CandidateRoot -or $StockBindingPlanSHA256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
+    if((!$arena -and !$renderOnlyStock) -or !$CandidateRoot -or $StockBindingPlanSHA256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
         (Get-Item -LiteralPath $StockBindingPlan).Length -gt 1MB -or (Get-FileHash -LiteralPath $StockBindingPlan).Hash -ine $StockBindingPlanSHA256){throw 'Explicit bounded original-arena stock binding required.'}
     $boundStock=Get-Content -LiteralPath $StockBindingPlan -Raw|ConvertFrom-Json
     $inputs=@($boundStock.stock_binding.inputs)
@@ -161,6 +162,7 @@ try{
         foreach($entry in $inputs){$stockGuards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'))}
         Assert-FFStockContent $inputs
         $state.StockBindingPlanSHA256=$StockBindingPlanSHA256
+        $state.StockBindingProfile=if($renderOnlyStock){'existing-72-t7-render-only-v2'}else{'existing-72-original-arena'}
     }
     if($CandidateRoot -and $arena){
         $package=Get-Content -LiteralPath (Join-Path $repo 'source-workspace.json') -Raw|ConvertFrom-Json

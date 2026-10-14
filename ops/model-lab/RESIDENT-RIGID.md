@@ -206,3 +206,16 @@ remain unchanged. A source-only fixture runs the actual metadata and admission
 blocks: candidate preview reads no opaque bytes; changed authored fake EXE bytes
 are refused after admission; the valid candidate and diagnostic checks each run
 once. This fixture launches no engine and reads no retail or qualified tool PE.
+
+The existing selected 72-input stock mapping is also available explicitly to
+`t7-iw7-selected-streamed-render-only-v2` with a community candidate. Other
+resident profiles and the legacy tool path do not gain this option. This reuses
+the existing flat Doom sources, selected main/zone destinations, copied sentinel,
+NTFS identity/content guards and transaction restoration. No arena marker,
+game-directory copy or separate stock cache is introduced. The selected recipe
+retains 71 links and one independent sentinel copy; its historical baseline
+modes are metadata, not new runtime qualification. Actual source guards, content
+hashing, link creation and final source proof belong to the admitted FF run.
+A source-only selector fixture checks this exact profile, missing-candidate,
+wrong-profile, changed-plan and hardlinked-sentinel refusals, plus unchanged
+World selection. The frozen source stage remains separate from a future FF.
