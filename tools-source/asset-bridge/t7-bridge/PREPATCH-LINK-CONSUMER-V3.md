@@ -72,5 +72,21 @@ The first shared-plan refactor flattened a singleton PowerShell pin row. The
 causal publication test refused it; the corrected explicit nested array passes.
 No failed native attempt or heavy reservation resulted.
 
+The actual pre-merge DEFAULT uses consumer source `b442fefb9c2a0e33b5685a80edb886d3272392bd`
+(code `1b7c839`) composed into the local `plv3a` packet, 919 text files /
+8,935,424 bytes. Its producer source recipe is 304,645 bytes /
+`ba777867ec8f3516cabf7ee22b64416d85f3066ca1091c9a32f804144191b965`,
+from producer head `9338d143033cb652df5003d3bdf7c61f2eccd497`.
+Consumer plan `e6718acf843ec12e4b6a5c82150f8a7131973f3909c904969fcac3708c4f161f`
+binds 17 text files and 6 opaque metadata rows. Fresh NoProfile parent imports
+no project helpers and invokes the actual entry directly without `-Run`.
+Child PID 3404, created `2026-10-14T07:34:00.1557426Z`, exits naturally 0;
+its original process reports `HasExited=true`, empty stderr and all six
+DEFAULT execution/read/write/readiness flags false. Subsequent CIM lookup
+confirms that PID absent. Candidate, attempt, host-start, host-postflight and
+report paths remain absent. These local bounded JSON witnesses stay ignored;
+no game content or native dump is committed. This is pre-merge source evidence,
+not a qualified executable capsule.
+
 Next: close the consumer source PR and fresh DEFAULT capsule, then qualify the
 producer's real CPP tuple before proposing an executable V3 capture capsule.
