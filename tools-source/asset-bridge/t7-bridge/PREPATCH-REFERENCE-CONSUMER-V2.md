@@ -88,3 +88,22 @@ true and all five runtime flags false, then was absent in CIM. The new
 `da835df6cc80c8739054349baee896eab48dc77374e97a6f3eb0a2115f4ec86a`.
 The producer executable and all closure tuples remain unchanged. No probe
 has run; the coordinator's separate GO remains required.
+
+The first authorized wrapper invocation refused its managed-host arguments
+before admission, native types, host retention or attempt creation. The physical
+image was the pinned pwsh.exe, while Environment.GetCommandLineArgs()[0] was
+its CLR pwsh.dll. Arguments 1 through 10 matched the exact command. Original
+source guards were observed zero; PTY 49316 actually exited 1 (`67ab89`), and
+fresh absence confirmed original host 13684 absent, no heavy process or lease,
+and the unchanged stopped Main / 68 bank metadata entries. No binary or mapped
+window was read, and this launch did not consume a native capture.
+
+The validator now checks the physical host image separately and binds managed
+argv[0] to the actual EntryAssembly.Location at the same runtime's pwsh.dll.
+Every flag and operand at positions 1 through 10 remains exact. A real fresh
+NoProfile/NoExit source-only host passed 34 controls, including changed physical
+image, foreign assembly/DLL, singleton arrays and every changed argument.
+Its natural exit 0 and subsequent absence were observed. Neither a lease nor
+the native provider/engine participated; this is launch-model verification.
+The old source/plan/refusal remains frozen. A new source DEFAULT and reviewed
+capsule must precede a renewed coordinator probe GO; the CPP cohort is unchanged.

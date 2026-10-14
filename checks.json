@@ -324,6 +324,17 @@
       ]
     },
     {
+      "id": "Test-T7ReferenceV2ManagedHost",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7ReferenceV2ManagedHost.ps1"
+      ]
+    },
+    {
       "id": "Test-T7Prepatch",
       "command": [
         "pwsh",
