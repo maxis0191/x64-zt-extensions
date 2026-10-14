@@ -447,6 +447,7 @@ function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
         Assert-T7CatalogueTextPin $pin $Plan.Bindings
     }
     if($version -eq 2){$null=Get-T7ResidentMultiSurfaceBuildPins $Plan}
+    if(Get-T7SelectedStreamedRenderOnly $Plan){$null=Get-T7SelectedStreamedOutputPathProof $Plan}
 }
 function Assert-T7ResidentExportCatalogue($Plan) {
     # Caller retains every text binding before these reads. No stock read or new qualification.
@@ -992,6 +993,20 @@ function Get-T7ResidentExportOutputKey($Plan) {
     $rows=@($geometry,$request.zone,$request.model,'0',$request.xpak_key,
         $request.packages[0].path,$request.packages[0].identity,[string]$request.packages[0].bytes)
     't7_iw7_streamed_'+[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::ASCII.GetBytes(($rows -join "`n")))).ToLowerInvariant()
+}
+function Get-T7SelectedStreamedOutputPathProof($Plan) {
+    if(!(Get-T7SelectedStreamedRenderOnly $Plan)){throw 'Output path guard requires the explicit E5 donor route.'}
+    $request=Read-T7SelectedStreamedRequestFile $Plan
+    Assert-T7SelectedStreamedRequest $request -RenderOnly
+    $root=Join-Path (Join-Path $Plan.WorkingDirectory 'dump') (Get-T7ResidentExportOutputKey $Plan)
+    # This route admits only the qualified platform donor and its observed mesh name.
+    $paths=@(foreach($relative in @('manifest.json','xmodel/p7_fre_platform_cap_02.xmb','xsurface/p7_fre_platform_cap_02_lod0ca80354f.xsb')){
+        $path=[IO.Path]::GetFullPath((Join-Path $root $relative));Assert-H1Path $path
+        $characters=$path.Length+1 # MAX_PATH includes the terminating NUL.
+        if($characters -ge 260){throw 'E5 CRT output paths including NUL must be shorter than 260 characters; use a fresh short RunRoot.'}
+        [pscustomobject]@{RelativePath=$relative;Path=$path;CharactersIncludingNul=$characters}
+    })
+    [pscustomobject]@{Schema='iw7.t7-e5-output-path-proof/1';Paths=$paths;CRTPathLimitIncludingNul=260;OpaqueOutputRead=$false;NativeStarted=$false}
 }
 function Assert-T7SelectedStreamedProvider($Plan) {
     if(!(Get-T7SelectedStreamedExport $Plan)){return}
