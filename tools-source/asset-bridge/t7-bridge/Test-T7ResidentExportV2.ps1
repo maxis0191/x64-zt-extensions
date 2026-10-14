@@ -213,6 +213,16 @@ foreach($spec in @(@($streamPlan,'-t7-iw7-model-streamed-v2',5),@($legacyStreamP
 $savedReader=(Get-Item Function:Read-T7SelectedStreamedRequestFile).ScriptBlock
 function Read-T7SelectedStreamedRequestFile($Plan){$v2Request}
 try{
+    $pathPlan=Copy-Value $streamPlan;$pathPlan|Add-Member NoteProperty WorkingDirectory 'C:\short\work'
+    $pathProof=Get-T7SelectedStreamedOutputPathProof $pathPlan
+    Check ($pathProof.Paths.Count -eq 3 -and !$pathProof.OpaqueOutputRead -and !$pathProof.NativeStarted) 'Path validation opened an output or changed its fixed set.'
+    $longest=@($pathProof.Paths|Sort-Object CharactersIncludingNul -Descending)[0].CharactersIncludingNul
+    $pathPlan.WorkingDirectory='C:\'+('a'*(('C:\short\work').Length+259-$longest-3))
+    $edge=Get-T7SelectedStreamedOutputPathProof $pathPlan
+    Check ((@($edge.Paths|Measure-Object CharactersIncludingNul -Maximum)[0].Maximum) -eq 259) 'Last admitted NUL-inclusive path length differs.'
+    $pathPlan.WorkingDirectory+='a'
+    Refuses {Get-T7SelectedStreamedOutputPathProof $pathPlan} 'including NUL.*shorter than 260'
+    Refuses {Get-T7SelectedStreamedOutputPathProof $legacyStreamPlan} 'explicit E5 donor'
     $streamManifest=Copy-Value $manifest;$streamManifest.schema='iw7.t7-iw7-selected-streamed-export/2'
     $streamManifest.profile=$v2Request.profile;$streamManifest.geometry_profile='t7-iw7-selected-streamed-render-only-v2'
     $streamManifest.output_root_key=Get-T7ResidentExportOutputKey $streamPlan
