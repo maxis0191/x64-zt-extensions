@@ -68,3 +68,55 @@ Next: exact source review/private Git workflow, immutable source and fresh
 DEFAULT qualification, then separate coordinator main/link and capture GOs.
 V2 code, binary f11, report dd0d and closure evidence remain frozen. The
 reference/default branch, provider, cause and Zombies catalogue remain unqualified.
+
+## Dated OS preparation checkpoint, 2026-10-14
+
+The original V3 recipe `add72114...` remains immutable and was not executed.
+Its historical TZRES input became stale after Windows servicing. PR83 supplies
+an explicit dated context, limited to that one resource and the fixed closed
+qualification proof. The new preparation reuses the complete source packet at
+`a8ecff7cb61323cd0e6f75d10e596d55e63a7753`; later documentation heads do not
+change that packet. The V3 helper, wired main, fourteen profile fields, ten
+marker fields, retained C compilation and original V2 recipe remain unchanged.
+
+Three operator approaches were refused before real V3 preparation. A lacked
+admission and owned child lifecycle. B reused a shared helper whose unknown-exit
+branch disposed the original process handle. C retained that owner but marked
+creation as uncertain only after the factory call, permitting a throw to leave
+cleanup confirmed. The additive D correction marks uncertainty before creation
+and retains the actual owner through unknown wait/termination outcomes. Its
+five authored cases exercise the actual scoped helper and admission finally:
+known exit disposes/releases once; three unknown-owner cases retain the same
+owner without disposal/release; unknown creation retains cleanup and the lease.
+SourceE/shared helpers remain unchanged. This scoped correction does not
+qualify the shared helper's unknown-exit branch.
+
+The separately authorized D Analysis ran on 2026-10-14 at 10:39 UTC. One lease
+covered the owned Python maker and actual DEFAULT, each bounded to 60 seconds.
+Both returned zero. The original NoExit host and its external launch parent
+were recorded before preparation. The actual PTY returned zero, and a fresh
+10:40:58 UTC observation found all four owned process IDs absent, no heavy
+processes and no leases. These are real preparation/closure results, not CPP.
+
+| Closed text evidence | Bytes | SHA-256 |
+| --- | ---: | --- |
+| New recipe | 305621 | e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530 |
+| Admission receipt | 2906 | 7e6399bdfbadffb4c1898e31ce15d955171a6c05a3770d18e344d0da997ae779 |
+| Independent closure | 609 | 139ef87c16447ffdc0470b5daa54f86f5b636b2fe2115e466d9324eeb9eeb420 |
+| Generated CPP wrapper | 3639 | 583b22cc7e33099f4e8e5a1694c99c6fdca99b98d61437a1d8e4eadf82192daf |
+| Generated CPP capsule | 5911 | bf3c1c2a6efdd00da29e97f3901df3ac0376462dc1afe072fe9781c2d9ee6110 |
+
+DEFAULT validated 83 bindings (77 text, six opaque metadata), 1083 Inputs,
+no missing pins and the exact 14/10/11 profile/marker/OS-context shapes. All five
+native-type/binary-hash/lease/run-root/readiness flags stayed false. Comparing
+the old and new recipe metadata, with only the source/prepared root routing
+normalized, found exactly one changed Input hash: qualified TZRES. The other
+1082 Input hashes/sizes and prepared CPP bytes remain unchanged.
+
+The CPP wrapper was generated only from the actual new recipe hash after that
+passing DEFAULT. It retains the original dot-sourced runner/context/guards/lease
+and keeps the original NoExit host when closure is unknown. It has not been
+invoked. Next: review this concrete wrapper/capsule, obtain a separate main/link
+CPP slot, then qualify its measured closed outputs before a separate V3 capture
+GO. No executable/PDB tuple, capture, provider, failure cause, catalogue or game
+acceptance is claimed at this checkpoint.
