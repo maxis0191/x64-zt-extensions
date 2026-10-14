@@ -90,3 +90,51 @@ not a qualified executable capsule.
 
 Next: close the consumer source PR and fresh DEFAULT capsule, then qualify the
 producer's real CPP tuple before proposing an executable V3 capture capsule.
+
+## Actual closed CPP qualification, 2026-10-14
+
+The later, separate CPP used the new OS-context recipe 305,621 bytes /
+`e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530`.
+Its original 17,200-byte receipt is
+`0cc0c8b6b46fd75d09c53b3e3c3dc9af40aa4211a786629fcf2f791c52111328`.
+Main/link exit 0, original compiler jobs and VCTIP members close, inputs are
+reverified and admission releases. Original host 25996 / parent 23872 and
+compiler/VCTIP IDs 19408/27020/8216/24704 are subsequently absent, with no
+heavy process or lease. Actual PTY 85134 exits 0, chunk `aa25c2`; never poll it.
+
+The EXE tuple observed under that original lease is 21,777,408 bytes /
+`d89c4cf326f21038d9fbcc6a18c18db2c17c17f448400a8567ee2e5fdca6a8bb`.
+The PDB observation is 136,982,528 /
+`d45781dc051dd5ed2fc57c86b093296207c7623b8810df9ecd04f08851a648c3`.
+These values are copied from the closed receipt; this consumer qualification
+does not read or rehash either file. The six-role index is 2,189 bytes /
+`b13107f072b164640a4344d8281df79b5b2f3fc1ee229813764ce7e55159e4c2`,
+schema `iw7.t7-prepatch-link-v3-closed-pins/3`. Entry, completion, actual tool
+exit, independent inventory, original build receipt and closed bundle have
+distinct literal text pins. V2's original tuples and index remain unchanged.
+
+The consumer now accepts only this measured V3 candidate/recipe/receipt/index
+cohort, with the original source profile/marker and dated OS proof. Generic
+Passed receipts, mixed V2 tuples, running compiler members and incomplete
+closure evidence cannot qualify it. Earlier null drafts and old recipes retain
+their original source-only status; they are not rewritten or relabelled.
+
+`-SourceOnly` on the existing runner performs actual V3 source/closed-cohort
+checks without operational preparation. It requires the future runtime to be
+absent, opens only guarded source/closed JSON text and skips opaque metadata
+queries for the unprepared aliases. Main/bank metadata is shape-checked only;
+live preservation checks remain mandatory in the operational path. It returns
+`SourceCohortCheckedPendingPreparationGO`. Combining `-SourceOnly` with `-Run`
+fails before any plan guard, scheduler import, type load or admission.
+V2 cannot select this new source-only mode.
+
+This separation supports source/default ownership review while the coordinator
+has not authorized capture preparation. Later ordinary DEFAULT still requires
+fresh private directories, aliases and current metadata. Native execution still
+needs the exact original NoProfile/NoExit host and a distinct capture GO; CPP
+success supplies no ABI, boot, provider, catalogue or gameplay acceptance.
+
+Affected authored checks pass 39 closed-cohort controls and 91 existing V3
+source controls; the unchanged V2 consumer and causal publication controls
+pass 168 and 11. These checks use source/synthetic objects only, no native
+candidate, real admission or opaque input.

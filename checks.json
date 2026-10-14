@@ -324,6 +324,17 @@
       ]
     },
     {
+      "id": "Test-T7LinkV3ClosedConsumer",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3ClosedConsumer.ps1"
+      ]
+    },
+    {
       "id": "Test-T7LinkV3Report",
       "command": [
         "pwsh",
