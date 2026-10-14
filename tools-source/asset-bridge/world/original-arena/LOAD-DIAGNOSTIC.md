@@ -52,7 +52,32 @@ or missing PDB matches are unresolved evidence, not a diagnosis. Check PDB GUID/
 age and module bounds before assigning symbols/source locations. Neither an
 external FF inventory name nor a stock metadata match proves the CP dependency.
 
-Only this one new diagnostic experiment is proposed. Native capture, dump bytes,
-stack classification and restoration are unrun until coordinated GO. Pure source
+At source approval, only this one diagnostic experiment was proposed. Native
+capture, dump bytes, stack classification and restoration were unrun until GO. Pure source
 mocks cover the one-shot trigger, identity refusal, offline-only CDB arguments
 and unknown-diagnostic retention. They do not qualify native capture or symbols.
+
+## Recorded M2 outcome, 2026-10-14
+
+One reviewed GO executed the merged source45 plan (internal 00b4a1e6, outer
+c2df1a59), with the unchanged 72 stock bindings. The local original-host capsule
+also required effective `-NoExit` before admission; its fresh missing-switch
+entry test refused before any native job or reservation. At 45,064 ms of the
+actual run the callback captured five seconds of thread CPU/I/O, one 229,012-byte
+0x1820 dump and offline CDB output. All helper jobs exited zero and closed;
+the original target was stopped through its existing owner.
+
+The dominant CPU thread was Console, with a reported std::getline/locale-lock
+stack. Another unnamed thread waited in the retail MessageBoxW chain. No modal
+message text or dependency cause was recovered. CDB reported private tool PDB
+symbols, but GUID/age were not independently checked; retail engine symbols
+were exports only. This is a captured live wait, not a crash, material proof or
+verified engine source location. The fuller recorded facts and remaining action
+are in `docs/WORLD-ASSET-BRIDGE.md`.
+
+Source/stock proof, restoration and release completed. The original AppDomain
+had no quarantine object, its own PTY exited with actual code zero, and fresh
+postflight had no original processes or heavy candidates and zero leases.
+MaterialReferenceMeasured, runtime/owner acceptance, writer and FF remain false.
+The saved pre-release state and all plans/captures remain immutable. This GO is
+consumed; no identical repeat or automatic follow-on operation is authorized.

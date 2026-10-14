@@ -1299,6 +1299,60 @@ unloaded modules, without full-memory data. Dump acceptance is 32 MiB and output
 thresholds are sampled. The detailed single-experiment contract and its primary
 Microsoft source are in `original-arena/LOAD-DIAGNOSTIC.md`. Pure source mocks
 cover one-shot/progress gating, original identity, offline-only debugger arguments
-and unknown diagnostic retention. Capture, symbols and stack classification
-remain unrun pending a separate reviewed Plan and coordinated GO. No T7 consumer,
+and unknown diagnostic retention. At that source checkpoint, capture, symbols
+and stack classification were unrun pending a separate reviewed Plan and GO. No T7 consumer,
 caller51, loader CPP, stock payload or gameplay was changed or exercised.
+
+## 2026-10-14: M2 captured a console loop and a modal engine wait
+
+Root authorized one diagnostic using merged World source `45c4b734`, native2f
+TelemetryOnly providers, and the same 72 stock inputs. Its internal plan digest
+was `00b4a1e6c9a10644f183df07be70808e446abfdb717762ca57cc90afab9a2d00`;
+the distinct outer file digest was
+`c2df1a59935f4c5c50351df3f3071b778b3fd47fb26426d8ef4be32ac1040908`.
+The reviewed 3,742-byte local capsule required an effective host `-NoExit` before
+admission. A separate fresh production-entry refusal without that switch exited
+1 before admission/native execution, leaving no run root or receipt. The older
+capsule and plans remain immutable.
+
+The original target started at 08:17:01 UTC. Stdout stopped at global_mp with
+1,449 bytes and empty stderr. At 45,064 ms the one-shot callback captured ten
+CPU/I/O samples over five seconds, a 229,012-byte minidump, and offline CDB output.
+The dump digest is
+`4e5da3236aed1aca7be6b8fd556fd1e85658794460d24043d726e58486e6d8dd`.
+Its flags remained 0x1820; full-memory data was not requested. All three
+diagnostic jobs exited 0 with original-job closure confirmed. No live debugger
+attached and no loader zone was skipped.
+
+The samples averaged 100.61% of one CPU core for the process and 100.30% for the
+thread named Console, with zero sampled read/write byte deltas. Its reported
+stack is RtlEnterCriticalSection, std::_Lockit/use_facet/widen, std::getline,
+and iw7::console::console. Pinned fab console source ignores getline failure,
+which is consistent with an input-loop problem; stdin EOF was not measured.
+This separates the CPU-heavy console from the zone loader. It does not prove
+that the console loop caused the stalled load.
+
+A different, unnamed thread was inside NtUserWaitMessage, SoftModalMessageBox
+and MessageBoxW, returning to `iw7_ship+0xd5785b`. This proves a modal engine
+wait during the stalled load. Its message text, cause and thread role were not
+recovered; do not label it a database thread or infer a missing dependency.
+CDB reported private ZoneTool PDB symbols from the retained candidate directory,
+but PDB GUID/age were not independently compared. The engine had only export
+symbols. Raw addresses and the reported call stacks retain those limitations.
+
+After capture, the exact original owner closed its target. The 74-entry borrowed
+transaction restored the 72 selected inputs, tool and request; source hashes,
+stock content and the read-only sentinel were preserved. The returned result
+was DiagnosticCaptured with MaterialReferenceMeasured=false and release=true.
+The saved state preceded release and still shows the historical token/false;
+it is not current lease evidence. The original live AppDomain had no quarantine
+object and the authoritative registry contained zero leases. Its own PTY then
+exited with real code 0. Fresh 08:21:21 UTC postflight found original host/parent,
+tool and native heavy candidates absent, with zero leases. Main27016, banks,
+configuration and owner clients were untouched.
+
+The reference material was not measured and no CP reference proof, writer, FF,
+GPU or collision result was produced. Next: inspect the preserved modal-error
+evidence and pinned error/console source. Any further native/offline analysis
+needs its coordinated slot. Do not repeat M/M2 or skip global_mp to manufacture
+the missing nondefault CP material proof.
