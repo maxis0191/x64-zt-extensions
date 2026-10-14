@@ -71,6 +71,16 @@ the corrected path owns the finish mutex through publication and then refuses.
 There are no sleeps. Test access and its pause seam are preprocessor-only and
 absent from the operational build. This fix still needs actual admitted CPP.
 
+The first admitted fixture compilation, retained capsule F, failed with
+compiler exit 2 before running any assertion. MSVC `/W4 /WX` diagnosed C4459:
+the `stop` parameter named `publication` hid the global publication gate. Only
+that parameter and its reference were renamed `publication_mutex`; `/WX`
+remains enabled. The fixture source pin changes, while the observer, native
+entry and generated operational main/CLI pair remain unchanged. The failed
+compile receipt, stdout, original-host exit 1 and fresh empty process/lease
+closure are retained. This correction needs a fresh immutable source cohort,
+reviewed additive capsule and separate CPP GO; it is not a 53-check pass.
+
 This module currently provides a source overlay API, pinned source/output
 contract, standalone fixture and typed native entry. It is not integrated into
 the admitted build producer, operational recipient or owner launcher. Those

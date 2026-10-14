@@ -25,11 +25,11 @@ namespace
             const std::lock_guard lock(sync);
             enabled=true;paused=released=false;observed_mutex=nullptr;
         }
-        void stop(std::mutex& publication)
+        void stop(std::mutex& publication_mutex)
         {
             std::unique_lock lock(sync);
             if (!enabled) return;
-            observed_mutex=&publication;paused=true;cv.notify_all();
+            observed_mutex=&publication_mutex;paused=true;cv.notify_all();
             cv.wait(lock,[&]{return released;});
             enabled=false;
         }
