@@ -1454,3 +1454,50 @@ writer/FF, GPU and physics acceptance remain false. Next: prepare one minimal
 diagnostic of the observed global_cp wait using the reviewed original-owner
 path, only after a new plan/operator and coordinated GO. Do not infer another
 missing pack from the earlier M3 message or expand unrelated FF/rig profiles.
+
+## 2026-10-14: M5 recovered the CP fatal filename
+
+Root approved one CP-modal-only attempt from merged source `7b38766c`.
+Internal recipe digest:
+`7c6be64182199d9ec372245373bff5ee78bcf07bcf7a888bed493bf7311c955a`;
+distinct outer plan digest:
+`14e4476b6e7f761086638d1b4dfbfe9b3ff8a36951e7c991a572596b24b6ff41`.
+The reviewed 3,891-byte NoExit capsule bound 36 source pins and the unchanged
+73 stock inputs. A metadata-only prelude recorded original host/parent identities
+before invoking it; no second admission, native owner or client was introduced.
+All stock identities/content, including pack17, passed the ordinary guarded
+checks before the original target started at 11:45:17 UTC.
+
+Stdout reached global_cp and remained at 1,665 bytes, with empty stderr. At
+45,062 ms the one original-owned M3 reader found a #32770 window titled
+`Fatal Error`. Its Static control text was exactly:
+`Could not find asset file assetfile37.pak`.
+The 1,514-byte record SHA256 is
+`fb2ec614bc6ed8bce15dd8067aea4eed69b7da288e0c96fac3d8a8835350a9c6`.
+PID/image/hash/exact creation FILETIME and caller-parent checks passed, with
+identity_verified_after=true, errors=[], no saturation/truncation and no
+interaction. It contains 76 UTF-8 text bytes. This qualifies the reported fatal
+dependency filename at the CP stage; it does not prove complete CP load or the
+material, and it does not infer any further pack requirement.
+
+The reader exited zero in about 265 ms with its original job closed and zero
+active processes. The exact original target owner confirmed combined closure.
+All 75 managed entries restored, source hashes and stock content were preserved,
+and the temporary pack17 alias was removed. The returned result was
+DiagnosticCaptured/ModalObservedClosedReleased, release=true, token=null and
+MaterialReferenceMeasured=false. The pre-release saved state is a historical
+snapshot, not evidence of a currently retained lease. The original live NoExit
+AppDomain then showed no reference quarantine and the full registry zero leases;
+its original PTY exited with real code zero. Fresh 11:48:59 UTC postflight found
+original target/helper/host/parent absent, no process under the scope and zero
+leases. Four generated dcache files remain local outside the managed transaction;
+they are not borrowed stock aliases. Main 27016, banks/configuration, network
+settings and owner clients were untouched. No CPU capture, dump, CDB, other pack
+or automatic retry followed.
+
+M5 approval is consumed. Reference CSV/evidence, material, writer/FF, GPU and
+physics remain unqualified. Next: prepare the minimal source-only pack37 binding
+against retained reviewed metadata, preserving the original 72-input baseline
+and strict pack17 checks. A new 74-input World-only tuple requires its own review
+and coordinated GO before content hashing/borrowing or a reference attempt;
+other FF/rig profiles remain unchanged.
