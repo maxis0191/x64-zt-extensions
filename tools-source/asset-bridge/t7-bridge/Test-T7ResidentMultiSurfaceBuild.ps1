@@ -240,6 +240,29 @@ try {
     Refuses {Get-T7SelectedStreamedBuildPins $historical.Plan} 'pin is not guarded'
     $historical.Plan.ExpectedBuildPlanSHA256='6df0db3f13852df5b70e660de915e376f5339f44ad04327166f82304b71ce4e8'
     Check (!(Test-T7SelectedStreamedE4Build $historical.Plan)) 'Frozen E3 identity became E4.'
+    $requestV2=Copy-Value $request;$requestV2.schema='iw7.t7-iw7-selected-streamed-request/2'
+    $requestV2.profile='selected-streamed-render-only-rigid-one-lod';$requestV2|Add-Member NoteProperty collision_policy 'omit-source-rigid-collision-trees'
+    Assert-T7SelectedStreamedRequest $requestV2 -RenderOnly;$checks++
+    Refuses {Assert-T7SelectedStreamedRequest $requestV2} 'fields'
+    Refuses {Assert-T7SelectedStreamedRequest $request -RenderOnly} 'fields'
+    $wrongPolicy=Copy-Value $requestV2;$wrongPolicy.collision_policy='convert-source-collision'
+    Refuses {Assert-T7SelectedStreamedRequest $wrongPolicy -RenderOnly} 'collision policy'
+    $renderMarker=Copy-Value $marker;$renderMarker.PSObject.Properties.Remove('SelectedStreamedStaticV1')
+    $renderMarker|Add-Member NoteProperty SelectedStreamedRenderOnlyV2 ([pscustomobject]@{Schema='iw7.t7-selected-streamed-render-only-plan/2'})
+    Check ([bool](Get-T7SelectedStreamedExport $renderMarker)) 'Explicit E5 selector refused.'
+    $mixed=Copy-Value $renderMarker;$mixed|Add-Member NoteProperty SelectedStreamedStaticV1 (Copy-Value $marker.SelectedStreamedStaticV1)
+    Refuses {Get-T7SelectedStreamedExport $mixed} 'Distinct E5'
+    $collision=[pscustomobject]@{policy='omit-source-rigid-collision-trees';scope='render-only';source_tree_present=@($true,$false);
+        cpu_tree_present=@($false,$false);collision_dropped=@($true,$false);collision_tree_payload_bytes_read=0;
+        collision_conversion_attempted=$false;collision_compatibility_verified=$false;ready=$false}
+    Assert-T7SelectedStreamedCollisionPolicy $collision 2;$checks++
+    foreach($mode in 'policy','scope','count','nonboolean','cpu-tree','drop','read','conversion','compatibility','ready'){
+        $bad=Copy-Value $collision
+        switch($mode){policy{$bad.policy='preserve'}scope{$bad.scope='physics'}count{$bad.source_tree_present=@($true)}nonboolean{$bad.source_tree_present[0]=1}
+            cpu-tree{$bad.cpu_tree_present[0]=$true}drop{$bad.collision_dropped[0]=$false}read{$bad.collision_tree_payload_bytes_read=1}
+            conversion{$bad.collision_conversion_attempted=$true}compatibility{$bad.collision_compatibility_verified=$true}ready{$bad.ready=$true}}
+        Refuses {Assert-T7SelectedStreamedCollisionPolicy $bad 2} 'collision|Collision|CPU view|Foreign'
+    }
     foreach($mode in 'schema','extra','v1','mixed-e2','diagnostic'){
         $bad=Copy-Value $marker
         switch($mode){schema{$bad.SelectedStreamedStaticV1.Schema='other'}extra{$bad.SelectedStreamedStaticV1|Add-Member NoteProperty Ready $true}v1{$bad.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}mixed-e2{$bad|Add-Member NoteProperty SelectedMeshMaterialObservation ([pscustomobject]@{Schema='iw7.t7-selected-mesh-material-probe/1'})}diagnostic{$bad|Add-Member NoteProperty ResidentSurfaceCountDiagnostic ([pscustomobject]@{Schema='other'})}}
