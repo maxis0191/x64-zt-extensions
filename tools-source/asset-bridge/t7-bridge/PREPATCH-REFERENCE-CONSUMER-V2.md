@@ -107,3 +107,12 @@ Its natural exit 0 and subsequent absence were observed. Neither a lease nor
 the native provider/engine participated; this is launch-model verification.
 The old source/plan/refusal remains frozen. A new source DEFAULT and reviewed
 capsule must precede a renewed coordinator probe GO; the CPP cohort is unchanged.
+
+Corrected launch code `fca00698` composed 913 text files/8873153 bytes. Its
+actual fresh NoProfile DEFAULT child naturally exited 0 and was subsequently
+absent, with CandidateBound true and all five runtime flags false. The new
+30-binding plan SHA256 is
+`a9f7ea00efeb619366dfe660995ef8e3504cc6ab8800ac93469e72d2b863564c`;
+the 1337-byte witness SHA256 is
+`0c353409a7e7cfc56c5d15c92aec256e1aca9e09d496dc0615cb39033f8e8b8f`.
+This source qualification leaves native capture and interpretation pending.
