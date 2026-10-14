@@ -275,7 +275,7 @@ try {
     $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7Catalogue.ps1'),[ref]$tokens,[ref]$errors)
     Check ($errors.Count -eq 0) 'Runner parse failed.'
     $outer=@($ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})[0]
-    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2));$export=$false
+    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2));$export=$false;$parts=$false
     function Read-T7CatalogueReport($Plan,$State,$Context){$script:reportReads++;if($mode -cin @('trace-only','context-only','context-partial','callers-only','callers-partial','message-only','message-prefix','message-partial')){'NoCatalogue'}else{'EmptyCatalogue'}}
     function Read-T7CatalogueTrace($Plan,$State,$Context){
         if((Get-T7CatalogueCandidateProfile $Plan) -ceq 'ordinary-d2'){return}
