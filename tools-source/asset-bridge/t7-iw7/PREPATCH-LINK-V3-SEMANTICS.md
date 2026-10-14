@@ -141,10 +141,11 @@ If the return differs from the input, record `HeaderChanged` and do not label
 both samples as the same object. For each qualified selected field, retain the
 MODEL/material/table/slot association with its raw image value.
 
-The two smallest epochs are canonical Add return and the same post-load MODEL
-lookup. An additional before-Add input sample distinguishes a field already
-unreadable at input from a change across Add. Reuse existing bounded field reads
-and query only region metadata for the existing fixed image candidate span:
+The two selected epochs are canonical Add return and the same post-load MODEL
+lookup. Keep the incoming header only as a scalar provenance value; no image
+body is read before Add. Reuse existing bounded selected-field reads on the
+returned/lookup MODEL headers, and query only region metadata for the existing
+fixed image candidate span:
 state, protection, type and extent. Do not read image bytes/pixels, transform a
 pointer, invent a handle, retain an image, or add IMAGE registration/lookup/name
 getter calls. A missing or unqualified selected-field/header association refuses
