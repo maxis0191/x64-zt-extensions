@@ -73,6 +73,58 @@ function Assert-T7MaterialPartsTransition($Plan,[string]$SourceRoot) {
         throw 'Unchanged G2 observer binding required.'
     }
 }
+function Assert-T7ImageProvenanceTransition($Plan,[string]$SourceRoot) {
+    $profile=$Plan.BuildProfile;$marker=$Plan.ReuseCompile.ImageProvenance
+    if((@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseCLIBytes,BaseCLISHA256,BaseMainBytes,BaseMainSHA256,CLIBytes,CLISHA256,MainBytes,MainSHA256,Schema,SourceProfile'){
+        throw 'Exact provenance transition fields required.'
+    }
+    foreach($name in 'Schema','SourceProfile','BaseMainSHA256','BaseCLISHA256','MainSHA256','CLISHA256'){
+        if($marker.$name -isnot [string]){throw 'Provenance marker text scalar required.'}
+    }
+    foreach($name in 'BaseMainBytes','BaseCLIBytes','MainBytes','CLIBytes'){
+        if($marker.$name -isnot [int] -and $marker.$name -isnot [long]){throw 'Provenance marker integer size required.'}
+    }
+    if($marker.Schema -cne 'iw7.t7-image-provenance-build/1' -or $marker.SourceProfile -cne 't7-image-provenance-v1' -or
+       $marker.BaseMainBytes -ne 43254 -or $marker.BaseMainSHA256 -cne '5aef1fad310071f5e680a9f5b4dbd6a303af6ea8605fccb5dc5705cb386b761d' -or
+       $marker.BaseCLIBytes -ne 112377 -or $marker.BaseCLISHA256 -cne 'c63d9552464da674d3b03c35f7edc16385fb9370b113a3925fd7bc4835fb005a'){
+        throw 'Exact E5-to-provenance source transition required.'
+    }
+    $path=Join-Path $SourceRoot 'image-provenance-source-contract.json'
+    $pin=$profile.ProvenanceContract
+    if($pin.Path -isnot [string] -or $pin.Path -cne $path -or
+       ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 16KB -or
+       $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or
+       (Get-Item -LiteralPath $path).Length -ne $pin.Bytes -or (Get-FileHash -LiteralPath $path).Hash -ine $pin.SHA256){
+        throw 'Pinned bounded provenance source contract required.'
+    }
+    $contract=Get-Content -LiteralPath $path -Raw|ConvertFrom-Json
+    if((@($contract.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'cli,files,main,schema,source_profile' -or
+       $contract.schema -isnot [string] -or $contract.schema -cne 'iw7.t7-image-provenance-source/1' -or
+       $contract.source_profile -isnot [string] -or $contract.source_profile -cne 't7-image-provenance-v1' -or
+       (@($contract.files.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'native_image_provenance.inc,selected_image_provenance_fixture.cpp,selected_image_provenance.hpp'){
+        throw 'Exact provenance source contract schema/inventory required.'
+    }
+    foreach($row in @(@('main','PreparedMain','MainBytes','MainSHA256'),@('cli','PreparedCLI','CLIBytes','CLISHA256'))){
+        $output=$contract.($row[0]);$source=$profile.($row[1])
+        if((@($output.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'bytes,sha256' -or
+           ($output.bytes -isnot [int] -and $output.bytes -isnot [long]) -or $output.bytes -le 0 -or $output.bytes -gt 128KB -or
+           $output.sha256 -isnot [string] -or $output.sha256 -cnotmatch '^[0-9a-f]{64}$' -or
+           $marker.($row[2]) -ne $output.bytes -or $marker.($row[3]) -cne $output.sha256 -or
+           $source.Bytes -ne $output.bytes -or $source.SHA256 -cne $output.sha256){throw 'Provenance generated output pin differs.'}
+    }
+    foreach($row in @(@('ProvenanceSource','selected_image_provenance.hpp'),@('ProvenanceEntry','native_image_provenance.inc'),@('ProvenanceFixture','selected_image_provenance_fixture.cpp'))){
+        $expected=$contract.files.($row[1]);$source=$profile.($row[0])
+        if((@($expected.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'lf_bytes,lf_sha256' -or
+           ($expected.lf_bytes -isnot [int] -and $expected.lf_bytes -isnot [long]) -or $expected.lf_bytes -le 0 -or $expected.lf_bytes -gt 64KB -or
+           $expected.lf_sha256 -isnot [string] -or $expected.lf_sha256 -cnotmatch '^[0-9a-f]{64}$' -or
+           $source.Bytes -ne $expected.lf_bytes -or $source.SHA256 -cne $expected.lf_sha256){throw 'Provenance explicit source pin differs.'}
+    }
+    $g2=Join-Path $SourceRoot 'selected_material_observation.hpp'
+    if(@($Plan.Bindings|Where-Object {$_.Path -ceq $g2 -and $_.IsText -is [bool] -and $_.IsText -and
+        $_.Bytes -eq 18583 -and $_.SHA256 -ceq 'a8848a92b8d7918fbe91ec4b68df123b1eaab89edde9d8a7c24d5a0cfb576ffc'}).Count -ne 1){
+        throw 'Unchanged G2 observer binding required.'
+    }
+}
 function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $profile=if($Plan.PSObject.Properties.Name -contains 'BuildProfile'){$Plan.BuildProfile}else{$null}
     $recompiled=$Plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $Plan.ReuseCompile -and
@@ -89,9 +141,17 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $parts=$null -ne $profile -and $profile.Name -ceq 't7-material-parts-v1'
     $partsMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['MaterialParts']
     if($parts -ne $partsMarker){throw 'Parts profile and finite transition must be paired.'}
+    $provenance=$null -ne $profile -and $profile.Name -ceq 't7-image-provenance-v1'
+    $provenanceMarker=$null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['ImageProvenance']
+    if($provenance -ne $provenanceMarker -or ($provenance -and $partsMarker)){throw 'Exclusive provenance profile and finite transition must be paired.'}
+    if($provenance){
+        foreach($name in 'ZombiesObservationC','ZombiesAddObservationC2','PrepatchReferenceV2','PrepatchLinkV3','ResidentSurfaceCountDiagnostic','SelectedStreamedStaticV1'){
+            if($Plan.ReuseCompile.PSObject.Properties[$name]){throw 'Provenance cannot mix other observation/export markers.'}
+        }
+    }
     $referenceMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['PrepatchReferenceV2']
     if($reference -ne $referenceMarker){throw 'Prepatch V2 profile and marker must be paired.'}
-    $publication=$null -ne $profile -and $profile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')
+    $publication=$null -ne $profile -and $profile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1')
     if($cliMarker -and !$publication){throw 'CLI rebuild marker requires the publication profile.'}
     if($publication -and (!$cliMarker -or $Plan.ReuseCompile.RecompiledZonetool -isnot [bool] -or
         !$Plan.ReuseCompile.RecompiledZonetool)){throw 'Publication requires both fresh translation units.'}
@@ -122,7 +182,7 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
            $Plan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or (@($Plan.Stages.Name)-join ',') -cne 'main,link'){
             throw 'Exact three-row prepatch V3 main/link profile required.'
         }
-        foreach($name in 'RecompiledZonetool','ResidentMultiSurfaceV2','SelectedStreamedStaticV1','SelectedStreamedRenderOnlyV2','ZombiesObservationC','ZombiesAddObservationC2','ResidentSurfaceCountDiagnostic','MaterialParts','PrepatchReferenceV2'){
+        foreach($name in 'RecompiledZonetool','ResidentMultiSurfaceV2','SelectedStreamedStaticV1','SelectedStreamedRenderOnlyV2','ZombiesObservationC','ZombiesAddObservationC2','ResidentSurfaceCountDiagnostic','MaterialParts','ImageProvenance','PrepatchReferenceV2'){
             if($Plan.ReuseCompile.PSObject.Properties[$name]){throw 'Prepatch V3 cannot mix diagnostic/export markers.'}
         }
         $marker=$Plan.ReuseCompile.PrepatchLinkV3
@@ -229,17 +289,17 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             if((@($profile.$name.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
                $profile.$name.Bytes -ne $expected[$name][0] -or $profile.$name.SHA256 -cne $expected[$name][1]){throw 'Frozen prepatch V2 text pin differs.'}
         }
-    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')) {
+    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1')) {
         $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring'
-        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')) {
+        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1')) {
             if($profile.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit-context schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
-        if($profile.Name -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')) {
+        if($profile.Name -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1')) {
             if($profile.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
-        if($profile.Name -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')) {
+        if($profile.Name -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1')) {
             if($profile.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,MessageSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
@@ -267,8 +327,16 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             $fields=(@($fields.Split(','))+@('ObservationSchema','PartsWiring','PartsSource','PartsEntry','PartsContract','PartsFixture')|Sort-Object)-join ','
             Assert-T7MaterialPartsTransition $Plan $SourceRoot
         }
-        if($profile.Option -cne $(if($parts){'-t7-iw7-material-parts-v1'}else{'-t7-iw7-catalog'}) -or
-           $profile.ArgumentCount -ne $(if($parts){5}else{3}) -or
+        if($provenance){
+            if($profile.Option -isnot [string] -or $profile.Option -cne '-t7-iw7-image-provenance-v1' -or
+               ($profile.ArgumentCount -isnot [int] -and $profile.ArgumentCount -isnot [long]) -or $profile.ArgumentCount -ne 5 -or
+               $profile.ObservationSchema -isnot [string] -or $profile.ObservationSchema -cne 'iw7.t7-selected-image-provenance/1' -or
+               $profile.SourceOnlyPending -isnot [bool] -or !$profile.SourceOnlyPending){throw 'Exact source-pending provenance profile required.'}
+            $fields=(@($fields.Split(','))+@('ObservationSchema','ProvenanceBaseWiring','ProvenanceWiring','ProvenanceSource','ProvenanceEntry','ProvenanceContract','ProvenanceFixture','SourceOnlyPending')|Sort-Object)-join ','
+            Assert-T7ImageProvenanceTransition $Plan $SourceRoot
+        }
+        if($profile.Option -cne $(if($provenance){'-t7-iw7-image-provenance-v1'}elseif($parts){'-t7-iw7-material-parts-v1'}else{'-t7-iw7-catalog'}) -or
+           $profile.ArgumentCount -ne $(if($parts -or $provenance){5}else{3}) -or
            $profile.TraceSchema -cne 'iw7.t7-catalog-trace/1' -or
            (@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne $fields -or
            $profile.BaseBuildPlan.SHA256 -cne 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa' -or
@@ -316,6 +384,14 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             $paths.PartsContract=Join-Path $SourceRoot 'material-parts-source-contract.json'
             $paths.PartsFixture=Join-Path $SourceRoot 'selected_material_parts_observation_fixture.cpp'
         }
+        if($provenance){
+            $paths.ProvenanceBaseWiring=Join-Path $SourceRoot 'prepare_material_parts.py'
+            $paths.ProvenanceWiring=Join-Path $SourceRoot 'prepare_image_provenance.py'
+            $paths.ProvenanceSource=Join-Path $SourceRoot 'selected_image_provenance.hpp'
+            $paths.ProvenanceEntry=Join-Path $SourceRoot 'native_image_provenance.inc'
+            $paths.ProvenanceContract=Join-Path $SourceRoot 'image-provenance-source-contract.json'
+            $paths.ProvenanceFixture=Join-Path $SourceRoot 'selected_image_provenance_fixture.cpp'
+        }
     } else {
         throw 'Unknown T7 build profile.'
     }
@@ -350,7 +426,7 @@ function Assert-T7OSResourceContext($Plan) {
         return $null
     }
     $context=$Plan.OSResourceContext
-    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3') -or
+    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3','t7-image-provenance-v1') -or
        (@($context.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'After,Before,Evidence,KBFileAttributionVerified,Name,ProductVersion,Schema,SignatureStatus,SignatureType,SignerThumbprint,SourceOSDate'){
         throw 'Exact opt-in OS context fields/profile required.'
     }
@@ -412,35 +488,39 @@ function Assert-T7InputBindings($Plan) {
     $parts=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'MaterialParts'
     $partsProfile=$null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -ceq 't7-material-parts-v1'
     if($parts -ne $partsProfile){throw 'Parts marker/profile pairing required before inputs.'}
+    $provenance=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ImageProvenance'
+    $provenanceProfile=$null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -ceq 't7-image-provenance-v1'
+    if($provenance -ne $provenanceProfile -or ($provenance -and ($parts -or $zombies -or $add -or $reference -or $link))){throw 'Exclusive provenance marker/profile pairing required before inputs.'}
+    if($provenance){$null=Assert-T7BuildProfile $Plan ([IO.Path]::GetDirectoryName($Plan.Runner))}
     if($parts){$null=Assert-T7BuildProfile $Plan ([IO.Path]::GetDirectoryName($Plan.Runner))}
     if($parts -and ($zombies -or $add -or $reuse.PSObject.Properties['PrepatchReferenceV2'])){throw 'Parts transition cannot mix with other diagnostic markers.'}
     if($zombies -and $add){throw 'C and C2 observation markers are exclusive.'}
     $observed=$zombies -or $add
-    if($bindings.Count -gt $(if($parts){154}elseif($observed){151}else{149}) -or $inputs.Count -gt 2048 -or
+    if($bindings.Count -gt $(if($provenance){155}elseif($parts){154}elseif($observed){151}else{149}) -or $inputs.Count -gt 2048 -or
         @($bindings.Path|Sort-Object -Unique).Count -ne $bindings.Count -or
         @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
     if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}
     $v2=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ResidentMultiSurfaceV2'
     $streamedV1=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1'
     $renderOnly=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedRenderOnlyV2'
-    if($parts -and (!$renderOnly -or $streamedV1)){throw 'Parts requires the exact retained E5 source family.'}
+    if(($parts -or $provenance) -and (!$renderOnly -or $streamedV1)){throw 'Parts requires the exact retained E5 source family.'}
     if($renderOnly -and ($streamedV1 -or $zombies)){throw 'Render-only and frozen V1/C markers are exclusive.'}
     if($add -and (!$renderOnly -or $streamedV1)){throw 'C2 requires the explicit render-only V2 marker.'}
     $streamed=$streamedV1 -or $renderOnly
     if(!$v2) {
-        if($observed -or $parts){throw 'Observation requires the current selected-streamed publication proof.'}
+        if($observed -or $parts -or $provenance){throw 'Observation requires the current selected-streamed publication proof.'}
         if($streamed){throw 'Selected-streamed marker requires the exact common geometry proof.'}
         if($bindings.Count -gt 128){throw 'Legacy input binding limit is 128.'}
         return
     }
     if($Plan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
-        $Plan.BuildProfile.Name -cne $(if($parts){'t7-material-parts-v1'}elseif($add){'t7-zombies-catalogue-observation-c2'}elseif($zombies){'t7-zombies-catalogue-observation-c'}else{'t7-catalog-message-publication'}) -or
+        $Plan.BuildProfile.Name -cne $(if($provenance){'t7-image-provenance-v1'}elseif($parts){'t7-material-parts-v1'}elseif($add){'t7-zombies-catalogue-observation-c2'}elseif($zombies){'t7-zombies-catalogue-observation-c'}else{'t7-catalog-message-publication'}) -or
         $Plan.BuildProfile.PublicationSchema -cne 'iw7.t7-message-publication-build/1' -or
         $reuse.RecompiledMain -isnot [bool] -or !$reuse.RecompiledMain -or
         $reuse.RecompiledZonetool -isnot [bool] -or !$reuse.RecompiledZonetool -or
         $reuse.PSObject.Properties.Name -contains 'ResidentSurfaceCountDiagnostic' -or
-        $bindings.Count -ne $(if($parts){154}elseif($observed){151}elseif($streamed){149}else{144}) -or $inputs.Count -ne 1146 -or
-        @($bindings|Where-Object IsText).Count -ne $(if($parts){148}elseif($observed){145}elseif($streamed){143}else{138})){throw 'Exact multisurface publication input profile required.'}
+        $bindings.Count -ne $(if($provenance){155}elseif($parts){154}elseif($observed){151}elseif($streamed){149}else{144}) -or $inputs.Count -ne 1146 -or
+        @($bindings|Where-Object IsText).Count -ne $(if($provenance){149}elseif($parts){148}elseif($observed){145}elseif($streamed){143}else{138})){throw 'Exact multisurface publication input profile required.'}
     $observerRoot=[IO.Path]::GetDirectoryName($Plan.Runner)
     if($zombies) {
         $observation=$reuse.ZombiesObservationC
@@ -494,8 +574,8 @@ function Assert-T7InputBindings($Plan) {
                 @('t7_iw7_streamed_model.hpp',11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
                 @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
                 @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
-                @('test_streamed_contract.py',$(if($add -or $parts){17443}else{13768}),
-                    $(if($add -or $parts){'9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30'}else{'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'})) )
+                @('test_streamed_contract.py',$(if($add -or $parts -or ($reuse.PSObject.Properties.Name -contains 'ImageProvenance')){17443}else{13768}),
+                    $(if($add -or $parts -or ($reuse.PSObject.Properties.Name -contains 'ImageProvenance')){'9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30'}else{'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'})) )
         } else {
             $marker=$reuse.SelectedStreamedStaticV1
             if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'GeometryProfile,Schema' -or
@@ -613,6 +693,8 @@ function Assert-T7InputBindings($Plan) {
         if($parts -and $row.Path -ceq 'prepared/zonetool.cpp'){
             $wiredBytes=$reuse.MaterialParts.CLIBytes;$wiredSHA=$reuse.MaterialParts.CLISHA256
         }
+        if($provenance -and $row.Path -ceq 'prepared/main.cpp'){$wiredBytes=$reuse.ImageProvenance.MainBytes;$wiredSHA=$reuse.ImageProvenance.MainSHA256}
+        if($provenance -and $row.Path -ceq 'prepared/zonetool.cpp'){$wiredBytes=$reuse.ImageProvenance.CLIBytes;$wiredSHA=$reuse.ImageProvenance.CLISHA256}
         if($observed -and $row.Path -ceq 'prepared/zonetool.cpp') {
             if($wiredBytes -ne $observation.BaseCLIBytes -or $wiredSHA -cne $observation.BaseCLISHA256){throw 'Zombies observation base transition differs.'}
             $wiredBytes=$observation.CLIBytes;$wiredSHA=$observation.CLISHA256
@@ -722,8 +804,14 @@ try {
     $reuse=$plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $plan.ReuseCompile
     $recompiled=Assert-T7BuildProfile $plan $PSScriptRoot
     $buildProfile=if($recompiled){$plan.BuildProfile}else{$null}
-    $publication=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')
+    $publication=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1')
     $names=@(if($publication){'main','zonetool11','link'}elseif($recompiled){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
+    if($null -ne $buildProfile -and $buildProfile.Name -ceq 't7-image-provenance-v1'){
+        if($Run){throw 'Image-provenance producer is source-pending: real F53 and separately reviewed full-CLI CPP qualification required.'}
+        [ordered]@{SourceProfile='t7-image-provenance-v1';SourceOnlyPending=$true;CandidateBytes=$null;CandidateSHA256=$null;
+            NativeTypesLoaded=$false;BinaryInputsHashed=$false;ZoneHashObserved=$false;LeaseAcquired=$false;FilesCreated=$false;Ready=$false}|ConvertTo-Json -Compress
+        return
+    }
     if(@($plan.Stages).Count -ne $names.Count -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact full, retained-link or diagnostic main/link stages required.'}
     Assert-T7InputBindings $plan
     foreach($pin in $plan.Bindings) {

@@ -786,7 +786,10 @@
     "tools-source/asset-bridge/t7-iw7/prepare_image_provenance.py",
     "tools-source/asset-bridge/t7-iw7/test_image_provenance.py",
     "tools-source/asset-bridge/t7-iw7/image-provenance-source-contract.json",
-    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE.md"
+    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE.md",
+    "tools-source/asset-bridge/t7-iw7/test_image_provenance_build.py",
+    "tools-source/asset-bridge/t7-iw7/Test-ImageProvenanceBuild.ps1",
+    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE-PRODUCER.md"
   ],
   "dependencies": [
     {
