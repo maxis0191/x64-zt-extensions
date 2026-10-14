@@ -73,6 +73,8 @@ def epoch(value, phase):
     need(not value["binding_rechecked"] or (value["binding_observed"] and not value["failure"]), "rechecked binding contradicts refusal")
     rows = value["regions"]
     need(type(rows) is list and len(rows) <= 2, "bounded region list required")
+    if not value["binding_observed"]:
+        need(not rows and not any(value[name] for name in ("query_complete", "range_readable_at_query", "query_failed", "range_overflow", "region_limit_refused")), "query metadata requires an observed binding")
     readable = True
     cursor = address(value["image_field_hex"]) if value["binding_observed"] else 0
     end = cursor + 264

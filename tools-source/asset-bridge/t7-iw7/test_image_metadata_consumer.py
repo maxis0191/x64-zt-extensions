@@ -46,6 +46,18 @@ def refused(value, associated=False):
     return value
 
 
+def missing_registration():
+    value = refused(report())
+    value["matched_registrations"] = 0
+    item = value["registration"]
+    item.update(ordinal=0, thread_id=0, tick_milliseconds=0, binding_observed=False,
+                binding_rechecked=False, query_complete=False, range_readable_at_query=False,
+                texture_count=None, regions=[])
+    item.update(dict.fromkeys(c.POINTERS, None))
+    value["lookup"]["ordinal"] = 1
+    return value
+
+
 class ConsumerTests(unittest.TestCase):
     def test_complete_readable_still_has_no_body_admission_or_identity_proof(self):
         result = c.classify(report(), 0)
@@ -91,17 +103,24 @@ class ConsumerTests(unittest.TestCase):
         self.assertFalse(c.consume(value)["comparisons"]["incoming_equals_returned"])
 
     def test_no_selected_registration_keeps_null_fields_and_comparisons(self):
-        value = refused(report())
-        value["matched_registrations"] = 0
-        item = value["registration"]
-        item.update(ordinal=0, thread_id=0, tick_milliseconds=0, binding_observed=False,
-                    binding_rechecked=False, query_complete=False, range_readable_at_query=False,
-                    texture_count=None, regions=[])
-        item.update(dict.fromkeys(c.POINTERS, None))
-        value["lookup"]["ordinal"] = 1
-        result = c.classify(value, 1)
+        result = c.classify(missing_registration(), 1)
         self.assertIn("no_selected_registration", result["refusal_reasons"])
         self.assertIsNone(result["comparisons"]["incoming_equals_returned"])
+
+    def test_unobserved_binding_cannot_invent_a_memory_query(self):
+        for flag in ("query_complete", "range_readable_at_query", "query_failed", "range_overflow", "region_limit_refused"):
+            value = missing_registration()
+            value["registration"][flag] = True
+            with self.subTest(flag=flag), self.assertRaisesRegex(ValueError, "query metadata requires an observed binding"):
+                c.consume(value)
+        value = missing_registration()
+        value["registration"].update(query_complete=True, range_readable_at_query=True)
+        with self.assertRaisesRegex(ValueError, "query metadata requires an observed binding"):
+            c.consume(value)
+        value = missing_registration()
+        value["registration"]["regions"] = report()["registration"]["regions"]
+        with self.assertRaisesRegex(ValueError, "query metadata requires an observed binding"):
+            c.consume(value)
 
     def test_late_recheck_failure_preserves_observed_fields_without_association(self):
         value = refused(report())
@@ -109,6 +128,8 @@ class ConsumerTests(unittest.TestCase):
         result = c.classify(value, 1)
         self.assertIn("registration_association_not_rechecked", result["refusal_reasons"])
         self.assertIsNone(result["comparisons"]["material_changed"])
+        self.assertTrue(result["epochs"][0]["query_complete"])
+        self.assertTrue(result["epochs"][0]["range_readable_at_query"])
 
     def test_null_image_overflow_is_a_valid_refused_query(self):
         value = refused(report(), associated=True)

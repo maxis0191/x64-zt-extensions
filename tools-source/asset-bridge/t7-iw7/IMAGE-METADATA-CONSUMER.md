@@ -27,7 +27,8 @@ checks recorded scalars; it does not cast them to pointers.
 `consume(report)` requires the exact producer fields, typed booleans and bounded
 integers, canonical nullable hex strings, the two epoch phases, consistent
 association/comparisons and counters. Complete rechecked queries must have
-consistent region coverage and readability flags. A failed final binding
+consistent region coverage and readability flags. An unobserved binding must
+have all query flags false and no regions. A failed final binding
 recheck can retain the producer's earlier observed fields and query metadata;
 those remain refused association evidence. The output omits raw addresses and
 keeps the epochs' refusal flags and error text.
@@ -69,10 +70,14 @@ rendering and collision are unqualified; the future slot-0 diffuse proposal
 must preserve the other four recipient material slots. Machine receipts and
 game data remain outside Git.
 
-Validation on 2026-10-14: 21 targeted Python tests pass using authored JSON
+Validation on 2026-10-14: 22 targeted Python tests pass using authored JSON
 cases, including complete MEM_FREE, two-region coverage, null image, missing
 registration, duplicate/search refusal, late recheck failure and failed native
 exit. No native producer, memory query, engine or game was run by these tests.
+Independent review identified and corrected an invalid nonobserved binding
+that could claim complete/readable query metadata. The causal test now refuses
+each query flag or region in that case, while preserving a real observed
+binding's query metadata after a failed recheck.
 Next gates remain separate: real producer fixture, reviewed producer merge,
 launcher/result source integration, newly qualified full CLI build, fresh
 ordinary DEFAULT preparation, then an explicit native GO. Every consumer
