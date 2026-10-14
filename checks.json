@@ -430,6 +430,31 @@
       ]
     },
     {
+      "id": "Test-T7RegistrationImage",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationImage.ps1"
+      ]
+    },
+    {
+      "id": "tools-source-registration-image-probe",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/t7-bridge",
+        "-p",
+        "test_registration_image_probe.py"
+      ]
+    },
+    {
       "id": "Test-T7Catalogue",
       "command": [
         "pwsh",

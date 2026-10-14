@@ -275,7 +275,7 @@ try {
     $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7Catalogue.ps1'),[ref]$tokens,[ref]$errors)
     Check ($errors.Count -eq 0) 'Runner parse failed.'
     $outer=@($ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})[0]
-    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2));$export=$false;$parts=$false;$provenance=$false
+    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2));$export=$false;$parts=$false;$provenance=$false;$registration=$false
     function Read-T7CatalogueReport($Plan,$State,$Context){$script:reportReads++;if($mode -cin @('trace-only','context-only','context-partial','callers-only','callers-partial','message-only','message-prefix','message-partial')){'NoCatalogue'}else{'EmptyCatalogue'}}
     function Read-T7CatalogueTrace($Plan,$State,$Context){
         if((Get-T7CatalogueCandidateProfile $Plan) -ceq 'ordinary-d2'){return}
@@ -286,7 +286,7 @@ try {
         if($mode.StartsWith('message-')){$State.ExitContextOutcome='Observed';$State.CallersOutcome='Observed';$State.MessageOutcome=switch($mode){'message-prefix'{'Prefix'};'message-partial'{'Partial'};default{'Observed'}}}
         if($mode -ceq 'trace-malformed'){$State.TraceOutcome='TracePresentUnqualified';throw 'injected malformed trace'}
     }
-    function Assert-T7PrepatchMain($Expected){$script:mainChecks++;if($mode -cin @('main-changed','parts-main-changed','prov-main-changed')){throw 'injected Main state change'};[pscustomobject]@{GenerationAndUDP27016OwnerUnchanged=$true}}
+    function Assert-T7PrepatchMain($Expected){$script:mainChecks++;if($mode -cin @('main-changed','parts-main-changed','prov-main-changed','reg-main-changed')){throw 'injected Main state change'};[pscustomobject]@{GenerationAndUDP27016OwnerUnchanged=$true}}
     function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
     foreach($mode in 'normal','release-late','publication-late','release-failed','forced','unclosed','trace-valid','trace-only','trace-missing','trace-malformed','trace-forced','main-changed','context-only','context-partial','context-forced','callers-only','callers-partial','callers-forced','message-only','message-prefix','message-partial','message-forced') {
         Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
@@ -399,7 +399,7 @@ try {
         switch($mode){'prov-missing'{'ProvenanceNoReport'};'prov-nonzero'{'ProvenanceRecordFromFailedProcess'};default{'ProvenanceRecordCaptured'}}
     }
     $parts=$false;$export=$false;$provenance=$true
-    foreach($mode in @('prov-normal','prov-missing','prov-nonzero','prov-forced','prov-unclosed','prov-release-failed','prov-release-late','prov-publication-late','prov-main-changed')){
+    foreach($mode in @('prov-normal','prov-missing','prov-nonzero','prov-forced','prov-unclosed','prov-release-failed','prov-release-late','prov-publication-late','prov-main-changed','reg-main-changed')){
         Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
         $guards=$context.Guards;$attempted=$true;$failure=$null;$zonePin=[pscustomobject]@{Path='synthetic'}
         $state.InputsReverified=$false;$state.ProvenanceOutcome='ProvenanceNoReport';$state.Identity=$identity;$state.ExitCode=0
@@ -422,6 +422,42 @@ try {
         elseif($mode -ceq 'prov-unclosed'){Check ($state.Quarantined -and $context.Lease -and $provReads -eq 0 -and $pinReads -eq 0) 'Unclosed provenance route lost ownership.'}
         elseif($mode -ceq 'prov-release-failed'){Check ($state.Quarantined -and $context.Lease -and $provReads -eq 1 -and $saved.Status -cne 'ProvenanceRecordCapturedPendingReview') 'Failed lease release accepted provenance.'}
         else{Check ($saved.Status -ceq 'Failed' -and $state.LeaseReleased -and $provReads -eq 1) ('Missing/nonzero/late provenance record upgraded: '+$mode+'/'+$saved.Status+'/'+$provReads)}
+        [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
+        Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
+        if(Test-Path -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')){Remove-Item -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')}
+        . $core
+        function Get-H1Clock {$script:clock}
+        function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
+    }
+    function Read-T7RegistrationImageRecord($Plan,$State,$Context){
+        if(!$Context.Closed -or !$Context.Lease){throw 'Provenance read escaped original admission.'}
+        $script:regReads++
+        switch($mode){'reg-missing'{'RegistrationNoReport'};'reg-nonzero'{'RegistrationRecordFromFailedProcess'};default{'RegistrationRecordCaptured'}}
+    }
+    $parts=$false;$export=$false;$provenance=$false;$registration=$true
+    foreach($mode in @('reg-normal','reg-missing','reg-nonzero','reg-forced','reg-unclosed','reg-release-failed','reg-release-late','reg-publication-late','reg-main-changed','reg-main-changed')){
+        Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
+        $guards=$context.Guards;$attempted=$true;$failure=$null;$zonePin=[pscustomobject]@{Path='synthetic'}
+        $state.InputsReverified=$false;$state.RegistrationOutcome='RegistrationNoReport';$state.Identity=$identity;$state.ExitCode=0
+        $state.EngineOutputsValidated=$false;$script:regReads=0;$script:traceReads=0;$script:reportReads=0;$script:pinReads=0;$script:mainChecks=0
+        Enable-T7CatalogueRuntimeProfile $plan
+        $plan|Add-Member NoteProperty CandidateProfile 't7-registration-image-header-metadata-v1' -Force
+        if($mode -ceq 'reg-nonzero'){$state.ExitCode=1;$failure='original nonzero exit';$state.Status='Failed'}
+        if($mode -ceq 'reg-release-failed'){$script:releaseFails=$true}
+        if($mode -ceq 'reg-release-late'){$script:clock=199999;$script:releaseDelay=2}
+        if($mode -ceq 'reg-publication-late'){$script:clock=199999;$script:publicationLate=$true}
+        function Write-H1Receipt($Plan,$State,$StageRoot){if($script:publicationLate){$script:clock+=2;$script:publicationLate=$false};[IO.File]::WriteAllText((Join-Path $StageRoot 'receipt.json'),($State|ConvertTo-Json -Depth 8))}
+        if($mode -cin @('reg-forced','reg-unclosed')){
+            $context.Closed=$false;$failure='injected runtime failure';$state.Status='Failed';$fakeOwner.StopFails=$mode -ceq 'reg-unclosed'
+        }
+        . $finalizer
+        $saved=Get-Content -Raw -LiteralPath (Join-Path $evidence 'receipt.json')|ConvertFrom-Json
+        Check ($traceReads -eq 0 -and $reportReads -eq 0) 'Provenance route inspected a legacy trace/catalogue.'
+        if($mode -ceq 'reg-normal'){Check ($saved.Status -ceq 'RegistrationRecordCapturedPendingReview' -and $state.LeaseReleased -and $regReads -eq 1) 'Provenance success was not promoted through its own outcome.'}
+        elseif($mode -ceq 'reg-forced'){Check ($state.TerminationRequested -and $state.LeaseReleased -and $regReads -eq 0 -and $pinReads -eq 0 -and $saved.Status -ceq 'Failed') 'Forced provenance route inspected after release.'}
+        elseif($mode -ceq 'reg-unclosed'){Check ($state.Quarantined -and $context.Lease -and $regReads -eq 0 -and $pinReads -eq 0) 'Unclosed provenance route lost ownership.'}
+        elseif($mode -ceq 'reg-release-failed'){Check ($state.Quarantined -and $context.Lease -and $regReads -eq 1 -and $saved.Status -cne 'RegistrationRecordCapturedPendingReview') 'Failed lease release accepted provenance.'}
+        else{Check ($saved.Status -ceq 'Failed' -and $state.LeaseReleased -and $regReads -eq 1) ('Missing/nonzero/late provenance record upgraded: '+$mode+'/'+$saved.Status+'/'+$regReads)}
         [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
         Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
         if(Test-Path -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')){Remove-Item -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')}
