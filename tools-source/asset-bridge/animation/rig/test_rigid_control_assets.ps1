@@ -164,13 +164,18 @@ try{
     Check ($mockContext.Closed -and !$mockContext.Owner -and $mockContext.State.Phases[0].JobActiveAtClose -eq 0) 'Successful source mock closes original object'
     # Real existing restoration primitives on tiny synthetic transaction only.
     $work=Join-Path $temp 'work';[IO.Directory]::CreateDirectory($work)|Out-Null
-    $transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$work;MutableFiles=@('zone/tiny.ff');ProfileDirectory='unused';ProfileDirectories=@('zone')}) (Join-Path $temp 'backup')
-    [IO.Directory]::CreateDirectory((Join-Path $work 'zone'))|Out-Null;[IO.File]::WriteAllText((Join-Path $work 'zone/tiny.ff'),'tiny synthetic')
+    $ownedOutputs=@(Get-RCAOwnedOutputs 'FF' 'sdk_original_rig_rigid_control')
+    Check (($ownedOutputs -join ',') -ceq 'zone/sdk_original_rig_rigid_control.ff,__iw7_ship') 'Only FF and engine marker are additional mutable outputs'
+    Check (@(Get-RCAOwnedOutputs 'Emit' 'sdk_original_rig_rigid_control').Count -eq 0) 'Emit declares no engine output'
+    Refuse {Get-RCAOwnedOutputs 'FF' 'another_zone'}
+    $transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$work;MutableFiles=$ownedOutputs;ProfileDirectory='unused';ProfileDirectories=@('zone')}) (Join-Path $temp 'backup')
+    [IO.Directory]::CreateDirectory((Join-Path $work 'zone'))|Out-Null;[IO.File]::WriteAllText((Join-Path $work $ownedOutputs[0]),'tiny synthetic')
+    $marker=Join-Path $work '__iw7_ship';[IO.File]::WriteAllBytes($marker,[BitConverter]::GetBytes([uint32]24084));(Get-Item -LiteralPath $marker).Attributes=[IO.FileAttributes]::Hidden
     $close=[ordered]@{Closed=$false;SourceIntact=$true;Saved=$true;Transaction=$transaction;Work=$work;Baselines=@();Inputs=@();Lease=@{Token='synthetic'};State=[ordered]@{Restored=$false;SourceInputsUnchanged=$false;RetainedLeaseToken='synthetic';LeaseReleased=$false}}
     function Assert-RigBaselines($Baselines,[switch]$Hashes){$script:events.Add('source-proof')}
     function Exit-IW7ResourceLease($Token){$script:events.Add('release')}
     function Invoke-IW7ResourceLock($Body){if($script:releaseUnconfirmed){@{Token='synthetic'}}}
-    Check (!(Complete-RCAGroup $close) -and (Test-Path -LiteralPath (Join-Path $work 'zone/tiny.ff'))) 'Unknown closure prevents restoration/release'
+    Check (!(Complete-RCAGroup $close) -and (Test-Path -LiteralPath $marker)) 'Unknown closure preserves even the owned hidden marker'
     $close.Closed=$true;$close.SourceIntact=$false
     Check (!(Complete-RCAGroup $close) -and !$close.State.LeaseReleased) 'Unproved source prevents restoration/release'
     $close.SourceIntact=$true;$script:releaseUnconfirmed=$true
@@ -179,6 +184,7 @@ try{
     $script:releaseUnconfirmed=$false
     Check (Complete-RCAGroup $close) 'Synthetic restoration and confirmed release'
     Check (!$close.Lease -and $close.State.Restored -and $close.State.LeaseReleased -and @(Get-ChildItem -LiteralPath $work -Force).Count -eq 0) 'Proof precedes release and transaction restores empty work'
+    Check (!(Test-Path -LiteralPath $marker)) 'Existing transaction removes declared hidden PID marker after proof'
 }finally{
     # This test created its fresh GUID root; verify containment before cleanup.
     if($temp -and [IO.Path]::GetFullPath($temp).StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase)){
