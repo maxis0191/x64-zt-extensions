@@ -37,7 +37,7 @@ try{
         $f=New-BuildFixture;$f.Plan.Bindings|Where-Object Path -CEQ $f.Build.BuildProfile.$role.Path|ForEach-Object {$_.IsText=$false};Refuses {Assert-T7RefV2Build $f.Plan $f.Build $null $protocol.Name} 'binding'
     }
     foreach($marker in 'PrepatchReferenceV2','ZombiesObservationC','ZombiesAddObservationC2','MaterialParts'){$f=New-BuildFixture;$f.Build.ReuseCompile|Add-Member NoteProperty $marker @{};Refuses {Assert-T7RefV2Build $f.Plan $f.Build $null $protocol.Name} 'mix'}
-    $f=New-BuildFixture;Refuses {Assert-T7RefV2Build $f.Plan $f.Build ([pscustomobject]@{}) $protocol.Name} 'not qualified'
+    $f=New-BuildFixture;Refuses {Assert-T7RefV2Build $f.Plan $f.Build $null @($protocol.Name)} 'scalar'
     $pending=[pscustomobject]@{CandidateSource=$null;CandidateSHA256=$null;BuildReceipt=$null;ExpectedBuildReceiptSHA256=$null;BuildClosedPins=$null;CandidateBytes=0}
     Assert-T7LinkV3PendingCandidate $pending;$script:checks++
     foreach($field in 'CandidateSource','CandidateSHA256','BuildReceipt','ExpectedBuildReceiptSHA256','BuildClosedPins'){$bad=Clone $pending;$bad.$field='unqualified';Refuses {Assert-T7LinkV3PendingCandidate $bad} 'null placeholders'}
@@ -45,8 +45,8 @@ try{
     $startPlan=[pscustomobject]@{Image=(Join-Path $root $protocol.Image);WorkingDirectory=$root;RunRoot=$root}
     $start=New-T7RefV2Start $startPlan $protocol.Name;Check ($start.ArgumentList.Count -eq 1 -and $start.ArgumentList[0] -ceq '-t7-prepatch-link-v3' -and $start.Environment.Count -eq 9 -and !$start.UseShellExecute) 'Actual V3 native arguments/environment differ'
     $runner=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Run-T7PrepatchReferenceV2.ps1') -Raw
-    $gate=$runner.IndexOf("if(`$protocol.Name -ceq 't7-prepatch-link-v3'){throw")
-    Check ($gate -gt $runner.IndexOf('if(!$Run)') -and $gate -lt $runner.IndexOf('Enter-IW7ResourceLease')) 'V3 CPP gate can admit native work'
+    $gate=$runner.IndexOf('if($SourceOnly -and $Run)')
+    Check ($gate -ge 0 -and $gate -lt $runner.IndexOf('Enter-IW7ResourceLease')) 'Source-only review can admit native work'
     [ordered]@{Schema='iw7.t7-link-v3-consumer-source-tests/3';Checks=$script:checks;Status='Passed';NativeExecuted=$false;LeaseAcquired=$false;OpaqueInputsRead=$false;CPPQualified=$false}|ConvertTo-Json
 }finally{
     $resolved=[IO.Path]::GetFullPath($root)

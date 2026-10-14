@@ -1,9 +1,10 @@
 # Default: source/pin metadata check only. -Run consumes one reviewed attempt.
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run)
+param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run,[switch]$SourceOnly)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 if(!$IsWindows -or [IntPtr]::Size -ne 8 -or $PSVersionTable.PSVersion.Major -lt 7){throw 'Windows x64 PowerShell 7 required.'}
 if($PlanSHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'V2 exact reviewed plan SHA256 required.'}
+if($SourceOnly -and $Run){throw 'Source-only closure review cannot execute Run.'}
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 $core=Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
 . $core # Trusted repository functions only; no type, process or lease is loaded.
@@ -28,7 +29,7 @@ try {
     }
     . $profile
     $plan=Read-T7RefV2Json $PlanPath
-    Assert-T7RefV2Plan $plan $repo $PSCommandPath
+    Assert-T7RefV2Plan $plan $repo $PSCommandPath -SourceOnly:$SourceOnly
     $protocol=Get-T7ReferenceProtocol $plan.CandidateProfile
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
     $job=@($plan.Bindings|Where-Object {$_.Path -ceq $plan.JobAssembly -and !$_.IsText})
@@ -41,19 +42,20 @@ try {
     if($candidateReady) {
         Assert-T7RefV2String $plan.CandidateSource 'CandidateSource';Assert-T7RefV2String $plan.CandidateSHA256 'CandidateSHA256'
         Assert-T7RefV2String $plan.BuildReceipt 'BuildReceipt';Assert-T7RefV2String $plan.ExpectedBuildReceiptSHA256 'ExpectedBuildReceiptSHA256'
-        if($plan.CandidateBytes -ne 21777408 -or $plan.CandidateSHA256 -cne 'f11c683b5379e08cca4e881a7a412a2a8a45b5f872acb690ac62218fce6717f5' -or $plan.ExpectedBuildReceiptSHA256 -cne '77e7fecfbf47217cee2fb5f4e371e76350961b759007130d1d4980488168b9f8'){throw 'Exact original V2 candidate/receipt cohort required.'}
+        $cohort=Get-T7ReferenceBuildCohort $protocol.Name
+        Assert-T7ReferenceCandidate $plan $protocol.Name
         $candidate=@($plan.Bindings|Where-Object {$_.Path -ceq $plan.CandidateSource -and !$_.IsText})
         if($candidate.Count -ne 1 -or $candidate[0].SHA256 -cne $plan.CandidateSHA256 -or $candidate[0].Bytes -ne $plan.CandidateBytes){throw 'Candidate pin differs.'}
         $build=@($plan.Bindings|Where-Object {$_.Path -ceq $plan.BuildReceipt -and $_.IsText})
-        if($build.Count -ne 1 -or $build[0].Bytes -ne 16885 -or $build[0].SHA256 -cne $plan.ExpectedBuildReceiptSHA256){throw 'Actual instrumented build receipt binding missing.'}
-        Assert-T7RefV2Build $plan (Read-T7RefV2Json $plan.BuildPlan 1MB) (Read-T7RefV2Json $plan.BuildReceipt 1MB)
+        if($build.Count -ne 1 -or $build[0].Bytes -ne $cohort.ReceiptBytes -or $build[0].SHA256 -cne $plan.ExpectedBuildReceiptSHA256){throw 'Actual instrumented build receipt binding missing.'}
+        Assert-T7RefV2Build $plan (Read-T7RefV2Json $plan.BuildPlan 1MB) (Read-T7RefV2Json $plan.BuildReceipt 1MB) $protocol.Name
+        if($protocol.Name -ceq 't7-prepatch-link-v3'){Assert-T7LinkV3ClosedBuildPins $plan (Read-T7RefV2Json $plan.BuildClosedPins)}
     }elseif($plan.CandidateBytes -ne 0 -or $null -ne $plan.CandidateSHA256 -or $null -ne $plan.BuildReceipt -or $null -ne $plan.ExpectedBuildReceiptSHA256){throw 'Incomplete candidate placeholder differs.'}
     if(!$Run) {
-        [ordered]@{Status=$(if($candidateReady){'PlanCheckedPendingGO'}else{'PlanCheckedPendingInstrumentedCandidate'});
+        [ordered]@{Status=$(if($SourceOnly){'SourceCohortCheckedPendingPreparationGO'}elseif($candidateReady){'PlanCheckedPendingGO'}else{'PlanCheckedPendingInstrumentedCandidate'});
             CandidateBound=$candidateReady;NativeTypesLoaded=$false;BinaryInputsHashed=$false;LeaseAcquired=$false;FilesCreated=$false;Ready=$false}|ConvertTo-Json
         return
     }
-    if($protocol.Name -ceq 't7-prepatch-link-v3'){throw 'V3 actual CPP receipt/closure cohort must be qualified before Run.'}
     if(!$candidateReady){throw 'Instrumented candidate required before Run.'}
     Assert-T7RefV2HostArguments $plan $PlanPath $PlanSHA256 ([Environment]::GetCommandLineArgs()) $shell ([Reflection.Assembly]::GetEntryAssembly().Location)
     if([AppDomain]::CurrentDomain.GetData('IW7.T7PrepatchReferenceV2')){throw 'Original V2 host already consumed; no re-entry.'}

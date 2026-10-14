@@ -525,6 +525,7 @@
     "tools-source/asset-bridge/t7-bridge/Test-T7Prepatch.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7PrepatchReferenceV2Consumer.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3Consumer.ps1",
+    "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3ClosedConsumer.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3Report.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7ReferenceV2HostPublication.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7ReferenceV2ManagedHost.ps1",
