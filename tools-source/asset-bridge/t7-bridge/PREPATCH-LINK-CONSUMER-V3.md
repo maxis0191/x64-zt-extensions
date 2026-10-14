@@ -40,7 +40,7 @@ under the original V2 recipe `0aca63cb09e8ecfc96dee34e1fdf94f8cb66e400f8a190ffde
 Retained C plan/receipt and V2 helper/adapter pins remain literal. Mixed
 V2/V3/catalogue/export/parts markers and array/string coercions are refused.
 
-## Source-only gate
+## Initial source-only gate (historical)
 
 At this checkpoint V3 has no qualified CPP receipt, executable tuple or six
 original build-closure pins. A V3 plan must contain explicit null values for
@@ -88,8 +88,9 @@ report paths remain absent. These local bounded JSON witnesses stay ignored;
 no game content or native dump is committed. This is pre-merge source evidence,
 not a qualified executable capsule.
 
-Next: close the consumer source PR and fresh DEFAULT capsule, then qualify the
-producer's real CPP tuple before proposing an executable V3 capture capsule.
+Next at that source-only checkpoint: close the consumer source PR and fresh
+DEFAULT capsule, then qualify the producer's real CPP tuple before proposing
+an executable V3 capture capsule.
 
 ## Actual closed CPP qualification, 2026-10-14
 
@@ -152,3 +153,100 @@ binary hashes, lease, files created or readiness. Subsequent independent CIM
 lookup confirms the child absent and the future runtime still absent. Bank and
 retail metadata are not refreshed; operational preparation/capture remain
 unauthorized. The earlier d904 null draft and frozen V2/E5 files are intact.
+
+## Merged source and operational preparation, 2026-10-14
+
+PR #100 merged as `3f3cb55283f591f1976f1c4c7caf37a474e00eaa`.
+Its fresh source package contains 960 text files / 9,384,002 bytes. The merged
+source-only plan is 36,485 bytes /
+`c8380f5b40201c2b86857122e4c9394c09b63bbe320b8cea399c71c40539d630`.
+The actual `-SourceOnly` child 27548, created
+`2026-10-14T12:10:35.8407095Z`, exits naturally 0, returns the source-qualified
+pending-preparation status and is independently absent. Its future runtime
+remains absent at that checkpoint; no operational preparation is inferred.
+
+A separate authorized Analysis reservation then performs exactly two owned
+PowerShell phases: operational plan preparation and ordinary DEFAULT.
+Preparation refreshes Main/bank metadata and creates only two engine/Steam
+hardlinks; it copies no game bytes, creates no candidate alias and reads/hashes
+no opaque content. The existing scoped original-owner helper is reused.
+Unconfirmed creation/wait/termination retains the original owner/context/lease
+and NoExit host; no process adoption or second host framework is introduced.
+
+Independent source review found that the original local outer required an
+Int32 parent PID, while the real JSON round trip returns Int64. That local A
+packet remains immutable and unexecuted. The B correction accepts only scalar
+Int32/Int64 values in `1..Int32.MaxValue`, without permissive casts; exact live
+parent PID, image and UTC creation identity comparisons remain intact.
+The causal source fixture reproduces A's refusal and passes B's real JSON
+round trip with 14 invalid mutations rejected (17 checks total). The existing
+host exit gate passes 7 controls; original-owner cleanup passes 5 cases.
+These fixtures do not acquire a real lease or execute preparation.
+
+Actual B preparation records parent 25920 before original NoExit host 5920.
+Owned preparation child 6824 and ordinary DEFAULT child 2740 both exit 0 under
+one Analysis lease. DEFAULT returns `PlanCheckedPendingGO`, candidate bound,
+with typed false values for native types, binary hashing, lease acquisition,
+files created and readiness. The real operational plan is 36,491 bytes /
+`f9a2e6f0e741ffe5c09212f5cc509cb317eb56394d1ddfdd3d4b3c51721a2b3f`;
+the generated capture packet is 2,068 bytes /
+`4b5978e34b49a716ce8784f07b1ccc6a939d2b391ee36793df48c30833d85700`.
+Neither artifact grants capture authorization. Preparation's original context
+closes, its lease releases and the true PTY exits 0 (chunk `b1973e`). Fresh
+`2026-10-14T12:44:38.8580316Z` inventory confirms all four original IDs absent,
+no heavy process and no lease. Main remains stopped with unknown cause and
+68 bank metadata entries unchanged; bank contents are not read or modified.
+
+## Actual fixed-window capture, 2026-10-14
+
+A separate reviewed capture GO consumes that exact operational plan once.
+The original parent 25860 is recorded before fresh NoProfile/NoExit host 11456;
+the existing runner validates physical `pwsh.exe`, actual managed `pwsh.dll`
+entry and all ten arguments. One Extract lease covers input rechecks, candidate
+alias creation, the bounded native capture and final input revalidation.
+Native 21508, created `2026-10-14T12:52:28.4250853Z`, exits naturally 0 after
+2,072.013 ms. It captures the three fixed windows above, totaling 16,896 code
+bytes, at the first DPI callback before component post-unpack. Total bounded
+reads equal returned bytes at 676,760, including PE metadata and 54,927 `.pdata`
+records.
+
+The original report is 38,323 bytes /
+`95d489a706885eec2723a4fcbeeb30c2686abc82cc0010151d02c0aa94a7e4e1`;
+run receipt 4,868 /
+`1554c017e2ce2d2a4bb637177890912850f2d69ded705b7924acfcee2b531e70`.
+The report records `capture_complete=true` and `captured_for_offline_review`;
+the receipt records `CaptureOutcome=CaptureComplete` and wrapper status
+`CaptureCompletePendingReview`. Original job closure is confirmed without
+forced termination or quarantine. Inputs are reverified under the original
+lease, original input metadata is unchanged and aliases are retained. No
+opaque content is read or rehashed after lease release.
+
+The same original host confirms its original Context, State and Guards
+references, original owner closed with exit 0, zero wrapper guards and no
+lease before exiting. Host postflight is 1,498 bytes /
+`4e462074af0638d38eb2a27cdd2e0dad2d03957e560397f48b3564ef0c9728ee`.
+True PTY 12108 exits 0, final chunk `b64cc1`; it is closed and must never be
+polled again. Fresh `2026-10-14T12:55:08.7021082Z` independent inventory finds
+parent 25860, host 11456 and native 21508 absent, with no heavy process or lease.
+The 1,942-byte independent witness is
+`fc451041fead6297457ad06709f4fb8e9f4d467ff2bb142e78bd76b9e0a30127`.
+Main/bank preservation remains confirmed by the original before/after and host
+postflight metadata checks; Main's stopped state still has unknown cause.
+
+A later closed-JSON summary command incorrectly used `Measure-Object` on
+OrderedDictionary rows and failed before publishing its summary card.
+Explicit scalar addition corrected only that summary; no native replay or
+new admission resulted. All original capture and closure artifacts remain
+unchanged, along with the null drafts, source-only plans and V2/E5 evidence.
+
+This result proves the requested bytes and metadata were captured. It does
+not establish Link/Find/IsDefault semantics, image-header validity, provider
+identity, ABI/runtime compatibility, boot, catalogue, textures or gameplay.
+The native ABI, runtime-compatibility and boot-authorization flags remain typed
+false, as do wrapper compatibility/readiness. Reports and machine-specific
+operator controls remain ignored; no dump, asset, binary or symbol is committed.
+
+Next: independent bounded review of the closed JSON and its source references.
+Any actual disassembly process or other heavy analysis needs a separate reviewed
+Analysis GO; no replay, new hook or downstream native operation is authorized
+by this capture result.
