@@ -52,7 +52,7 @@ for a new export by this diagnostic.
 
 Source verification on 2026-10-14: 79 Python checks passed using the actual
 pinned native source and E7 text journals; one historical C1 snapshot check
-was skipped. The new 66 PowerShell profile/binding controls and existing
+was skipped. The new 100 PowerShell profile/binding controls and existing
 526 profile / 132 binding controls passed. The real DEFAULT plan B had
 79 bindings (73 text, six binary metadata), 1083 inputs and no missing pins.
 It returned exit 0 with NativeTypesLoaded, BinaryInputsHashed, LeaseAcquired,
@@ -65,6 +65,9 @@ historical text payloads; the first real DEFAULT also caught an incorrect
 object-shaped assumption about string SourcePlan/Receipt paths. The corrected
 fresh plan passed. An earlier abbreviated `-Plan` invocation failed parameter
 binding; the exact parameter is `-PlanPath`.
+Qualification review then found that singleton arrays could satisfy PowerShell
+text comparisons. V2 now requires scalar strings before I/O; 34 added controls
+verify the exact type-boundary refusal for profile, marker, reuse and pin fields.
 
 Next: peer review, private PR/exact-head checks/merge, immutable source package
 and fresh DEFAULT qualification, then coordinator GO for one main/link build

@@ -51,6 +51,12 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
         }
     } elseif($reference) {
+        foreach($name in 'Name','Option','Report','ObservationSchema') {
+            if($profile.$name -isnot [string]){throw "Prepatch V2 text scalar required: profile.$name"}
+        }
+        foreach($name in 'SourcePlan','Receipt','SourcePlanSHA256','ReceiptSHA256') {
+            if($Plan.ReuseCompile.$name -isnot [string]){throw "Prepatch V2 text scalar required: reuse.$name"}
+        }
         if((@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'ArgumentCount,BaseBuildPlan,BaseBuildReceipt,BaseHelper,BaseWiring,Helper,Name,ObservationSchema,Option,PreparedMain,Report,Wiring' -or
            $profile.Option -cne '-t7-prepatch-reference-v2' -or $profile.ArgumentCount -ne 2 -or
            ($profile.ArgumentCount -isnot [int] -and $profile.ArgumentCount -isnot [long]) -or
@@ -62,6 +68,9 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             if($Plan.ReuseCompile.PSObject.Properties[$other]){throw 'Prepatch V2 cannot mix with CLI/catalogue/export markers.'}
         }
         $marker=$Plan.ReuseCompile.PrepatchReferenceV2
+        foreach($name in 'Schema','SourceProfile','BaseMainSHA256','MainSHA256','RetainedMainSHA256','HelperSHA256') {
+            if($marker.$name -isnot [string]){throw "Prepatch V2 text scalar required: marker.$name"}
+        }
         if((@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseMainBytes,BaseMainSHA256,HelperBytes,HelperSHA256,MainBytes,MainSHA256,RetainedMainBytes,RetainedMainSHA256,Schema,SourceProfile' -or
            $marker.Schema -cne 'iw7.t7-prepatch-reference-build/2' -or $marker.SourceProfile -cne 't7-prepatch-reference-v2' -or
            $marker.BaseMainBytes -ne 13160 -or $marker.BaseMainSHA256 -cne '55081db20863f291f4f1fea8c1c995995e5e548b56acf043201fbb2e361f3934' -or
@@ -92,6 +101,10 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
         if($Plan.ReuseCompile.SourcePlanSHA256 -cne $expected.BaseBuildPlan[1] -or
            $Plan.ReuseCompile.ReceiptSHA256 -cne $expected.BaseBuildReceipt[1]){throw 'Frozen C compilation evidence required for V2.'}
         foreach($name in $paths.Keys) {
+            foreach($field in 'Path','SHA256') {
+                if($profile.$name.$field -isnot [string]){throw "Prepatch V2 text scalar required: pin.$name.$field"}
+            }
+            if($profile.$name.Bytes -isnot [int] -and $profile.$name.Bytes -isnot [long]){throw 'Prepatch V2 integer pin length required.'}
             if((@($profile.$name.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
                $profile.$name.Bytes -ne $expected[$name][0] -or $profile.$name.SHA256 -cne $expected[$name][1]){throw 'Frozen prepatch V2 text pin differs.'}
         }

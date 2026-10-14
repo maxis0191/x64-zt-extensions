@@ -89,4 +89,37 @@ foreach($change in @(
         $checks++
     }
 }
+# Singleton arrays must fail at the type boundary, even when their content and
+# matching binding are otherwise unchanged. A later digest failure is insufficient.
+foreach($case in @(
+    @('profile.Name',{param($f) $f.BuildProfile.Name=@($f.BuildProfile.Name)}),
+    @('profile.Option',{param($f) $f.BuildProfile.Option=@($f.BuildProfile.Option)}),
+    @('profile.Report',{param($f) $f.BuildProfile.Report=@($f.BuildProfile.Report)}),
+    @('profile.ObservationSchema',{param($f) $f.BuildProfile.ObservationSchema=@($f.BuildProfile.ObservationSchema)}),
+    @('marker.Schema',{param($f) $f.ReuseCompile.PrepatchReferenceV2.Schema=@($f.ReuseCompile.PrepatchReferenceV2.Schema)}),
+    @('marker.SourceProfile',{param($f) $f.ReuseCompile.PrepatchReferenceV2.SourceProfile=@($f.ReuseCompile.PrepatchReferenceV2.SourceProfile)}),
+    @('marker.BaseMainSHA256',{param($f) $f.ReuseCompile.PrepatchReferenceV2.BaseMainSHA256=@($f.ReuseCompile.PrepatchReferenceV2.BaseMainSHA256)}),
+    @('marker.MainSHA256',{param($f) $f.ReuseCompile.PrepatchReferenceV2.MainSHA256=@($f.ReuseCompile.PrepatchReferenceV2.MainSHA256)}),
+    @('marker.RetainedMainSHA256',{param($f) $f.ReuseCompile.PrepatchReferenceV2.RetainedMainSHA256=@($f.ReuseCompile.PrepatchReferenceV2.RetainedMainSHA256)}),
+    @('marker.HelperSHA256',{param($f) $f.ReuseCompile.PrepatchReferenceV2.HelperSHA256=@($f.ReuseCompile.PrepatchReferenceV2.HelperSHA256)}),
+    @('reuse.SourcePlan',{param($f) $f.ReuseCompile.SourcePlan=@($f.ReuseCompile.SourcePlan)}),
+    @('reuse.Receipt',{param($f) $f.ReuseCompile.Receipt=@($f.ReuseCompile.Receipt)}),
+    @('reuse.SourcePlanSHA256',{param($f) $f.ReuseCompile.SourcePlanSHA256=@($f.ReuseCompile.SourcePlanSHA256)}),
+    @('reuse.ReceiptSHA256',{param($f) $f.ReuseCompile.ReceiptSHA256=@($f.ReuseCompile.ReceiptSHA256)}),
+    @('pin.Helper.Path',{param($f) $f.BuildProfile.Helper.Path=@($f.BuildProfile.Helper.Path);$f.Bindings[0].Path=@($f.Bindings[0].Path)}),
+    @('pin.Helper.SHA256',{param($f) $f.BuildProfile.Helper.SHA256=@($f.BuildProfile.Helper.SHA256);$f.Bindings[0].SHA256=@($f.Bindings[0].SHA256)}),
+    @('pin.BaseBuildPlan.SHA256',{param($f) $f.BuildProfile.BaseBuildPlan.SHA256=@($f.BuildProfile.BaseBuildPlan.SHA256);$f.Bindings[4].SHA256=@($f.Bindings[4].SHA256)})
+)) {
+    foreach($validator in 'profile','bindings') {
+        $fixture=New-ReferenceFixture
+        & $case[1] $fixture
+        $message=$null
+        try {
+            if($validator -ceq 'profile'){$null=Assert-T7BuildProfile $fixture $PSScriptRoot}
+            else {Assert-T7InputBindings $fixture}
+        } catch {$message=$_.Exception.Message}
+        if($message -cne "Prepatch V2 text scalar required: $($case[0])"){throw "Type boundary missed by $validator : $($case[0]) / $message"}
+        $checks++
+    }
+}
 [ordered]@{Schema='iw7.t7-prepatch-reference-source-tests/2';Checks=$checks;NativeExecuted=$false;Status='Passed'}|ConvertTo-Json -Compress
