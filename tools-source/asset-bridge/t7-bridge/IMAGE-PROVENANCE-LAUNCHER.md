@@ -116,3 +116,10 @@ plan reduction and actual runner finally AST. Actual factory/ordinary DEFAULT
 requires a separate Root GO Analysis; actual F2 requires a later Root GO Native.
 The image-body sibling remains gated until actual F2 review and another GO.
 No actual F2 or operational factory has run at this source checkpoint.
+
+Root review found the unpinned snapshot filenames needed lexical ADS/device
+refusal before opening. The two snapshot reads now call the existing
+`image_metadata_consumer.read_report` ordinary JSON reader at its default 32 KiB
+bound and strict JSON parser. Six adapter tests prove zero metadata/open for
+ADS, devices and non-JSON names, plus oversized and changed opened identities.
+The large pinned historical text reader and native capture route are unchanged.

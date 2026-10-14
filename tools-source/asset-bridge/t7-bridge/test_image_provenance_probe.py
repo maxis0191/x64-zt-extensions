@@ -3,6 +3,7 @@ import copy
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
+import tempfile
 from unittest.mock import patch
 import test_material_parts_probe as parts
 import prepare_image_provenance_probe as probe
@@ -71,6 +72,34 @@ class ProvenancePlanTests(unittest.TestCase):
         self.assertEqual(plan['PreservedMain']['PID'], 4321)
         snapshot['MainBaseline'] = 'Unknown'
         with self.assertRaises(ValueError): probe.apply_preservation(plan, snapshot)
+
+    def test_unpinned_snapshots_refuse_stream_device_and_non_json_before_access(self):
+        paths = (r'C:\authored\candidate.exe:metadata.json', r'candidate.exe:metadata.json',
+                 r'C:\authored\snapshot.json::$DATA', r'\\?\C:\authored\snapshot.json',
+                 r'\\.\C:\authored\snapshot.json', r'\??\C:\authored\snapshot.json',
+                 'NUL.json', r'C:\authored\candidate.exe')
+        for path in paths:
+            with self.subTest(path=path), patch.object(Path, 'lstat', side_effect=AssertionError('metadata queried')) as metadata, \
+                 patch.object(Path, 'open', side_effect=AssertionError('content opened')) as opened:
+                with self.assertRaises(ValueError): probe.read_snapshot(path)
+                metadata.assert_not_called(); opened.assert_not_called()
+
+    def test_snapshot_reuses_32k_identity_guard_and_strict_json(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp)/'snapshot.json'; path.write_text('{"PID":1234}', encoding='utf-8')
+            pin, data = probe.read_snapshot(path)
+            self.assertEqual(data, {'PID': 1234}); self.assertEqual(pin['Bytes'], 12)
+            identity = path.stat()
+            with patch('image_metadata_consumer.os.fstat', return_value=SimpleNamespace(st_mode=identity.st_mode,
+                       st_size=identity.st_size, st_dev=identity.st_dev, st_ino=identity.st_ino+1)):
+                with self.assertRaisesRegex(ValueError, 'identity/size'): probe.read_snapshot(path)
+            for raw in ('null', '{"PID":1,"PID":2}'):
+                path.write_text(raw, encoding='utf-8')
+                with self.assertRaises(ValueError): probe.read_snapshot(path)
+            path.write_bytes(b' '*32769)
+            with patch.object(Path, 'open', side_effect=AssertionError('content opened')) as opened:
+                with self.assertRaisesRegex(ValueError, 'bounded JSON'): probe.read_snapshot(path)
+                opened.assert_not_called()
 
 
 if __name__ == '__main__':

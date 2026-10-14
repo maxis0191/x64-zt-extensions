@@ -3,16 +3,7 @@
   "checks": [
     {
       "id": "iw7-player-template-source-support",
-      "command": [
-        "python",
-        "-B",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "tools-source/asset-bridge/weapon-export",
-        "-v"
-      ]
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-v"]
     },
     {
       "id": "tools-source-asset-bridge-model",
@@ -95,16 +86,9 @@
     {
       "id": "world-original-arena",
       "command": [
-        "python",
-        "-B",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "tools-source/asset-bridge/world/original-arena",
-        "-p",
-        "test_arena.py",
-        "-v"
+        "python", "-B", "-m", "unittest", "discover",
+        "-s", "tools-source/asset-bridge/world/original-arena",
+        "-p", "test_arena.py", "-v"
       ]
     },
     {
@@ -668,11 +652,7 @@
     {
       "id": "Test-MaterialPartsBuild",
       "command": [
-        "pwsh",
-        "-NoLogo",
-        "-NoProfile",
-        "-NonInteractive",
-        "-File",
+        "pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File",
         "tools-source/asset-bridge/t7-iw7/Test-MaterialPartsBuild.ps1"
       ]
     },

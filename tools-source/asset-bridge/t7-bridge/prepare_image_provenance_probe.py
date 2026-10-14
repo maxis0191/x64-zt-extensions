@@ -4,8 +4,11 @@ import copy
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path, PureWindowsPath
 from prepare_material_parts_probe import EXPORT_FIELDS, REFERENCE_PIN, key, require, read_text_pin
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"t7-iw7"))
+from image_metadata_consumer import read_report, strict_json
 
 CANDIDATE = (21998592, "552a9805ff3fc66748b76bec2f93dda11924c68d371d809b7f3f04bb3438bdbd")
 BUILD = (384208, "9e735ab7cf6d557ee2ff3e474f179967ecb4fb7f3dbda517c63c82784c766a21")
@@ -22,6 +25,17 @@ CONTROLLERS = (
     "tools-source/asset-bridge/t7-bridge/T7ImageProvenance.Profile.ps1",
 )
 FIXTURE = (129, "472f5784b87850a11d466ce8cbef3658e5bb7ba9a06436ad25c68201929010e5")
+
+
+def read_snapshot(path):
+    # Only the two unpinned factory snapshots use the existing ordinary JSON guard.
+    # Its lexical ADS/device/suffix check precedes metadata and content access.
+    raw = read_report(path)
+    path = Path(path)
+    require(path.is_absolute() and path == path.resolve(), "Canonical absolute snapshot required")
+    data = strict_json(raw)
+    require(type(data) is dict, "Snapshot JSON object required")
+    return dict(Path=str(path), Bytes=len(raw), SHA256=hashlib.sha256(raw).hexdigest()), data
 
 
 def read_source_text(path, expected=None):
@@ -133,8 +147,7 @@ def main(argv=None):
     build = json.loads(raw)
     receipt_pin, raw = read_text_pin(handoff["Proof"]["Receipt"]["Path"], RECEIPT)
     receipt = json.loads(raw)
-    metadata_pin, raw = read_text_pin(args.candidate_metadata)
-    metadata = json.loads(raw)  # Supplied by the admitted metadata-only factory, never stat/hash here.
+    metadata_pin, metadata = read_snapshot(args.candidate_metadata)  # Never stat/hash the candidate here.
     require(metadata["Path"] == handoff["LinkedArtifactsRecordedUnderLease"][0]["Path"] and
             type(metadata["Bytes"]) is int and metadata["Bytes"] == CANDIDATE[0],
             "Admitted candidate stat metadata required")
@@ -144,8 +157,7 @@ def main(argv=None):
         row = source_rows.get(name, {})
         require((row.get("bytes"), row.get("sha256")) == (pin["Bytes"], pin["SHA256"]),
                 "Receiver controller differs from its composed source manifest")
-    preservation_pin, raw = read_text_pin(args.preservation_metadata)
-    preservation = json.loads(raw)  # Fresh process/metadata-only snapshot from the admitted outer factory.
+    preservation_pin, preservation = read_snapshot(args.preservation_metadata)
     marker = {name: handoff["Proof"][name] for name in ("PreExit", "Closure")}
     marker = dict(SourceManifest=handoff["SourceManifest"], HostWitness=marker["PreExit"],
                   ClosureWitness=marker["Closure"], FixtureStdout=handoff["FixtureStdout"])
