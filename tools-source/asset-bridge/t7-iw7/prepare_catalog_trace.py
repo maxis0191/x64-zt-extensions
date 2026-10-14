@@ -54,11 +54,29 @@ SELECTED_STREAMED_WIRED_PINS = {
 }
 
 
-def multisurface_payload_delta(name, raw, pin, *, wired=False, selected_streamed=False):
+# Explicit render-only V2 source family; frozen E4/C base pins above remain exact.
+RENDER_ONLY_STREAMED_TRANSITIONS = {
+    'prepared/main.cpp': (MULTISURFACE_TRANSITIONS['prepared/main.cpp'][0],
+        (13160, '55081db20863f291f4f1fea8c1c995995e5e548b56acf043201fbb2e361f3934')),
+    'prepared/zonetool.cpp': (MULTISURFACE_TRANSITIONS['prepared/zonetool.cpp'][0],
+        (112323, '774c5e0a2716c27c381a1f353d02ba504488affe3350faf84ce1d802a2d98be8')),
+    SURFACE_COUNT_HEADER: MULTISURFACE_TRANSITIONS[SURFACE_COUNT_HEADER],
+}
+RENDER_ONLY_STREAMED_WIRED_PINS = {
+    'prepared/main.cpp': (43254, '5aef1fad310071f5e680a9f5b4dbd6a303af6ea8605fccb5dc5705cb386b761d'),
+    'prepared/zonetool.cpp': (112377, 'c63d9552464da674d3b03c35f7edc16385fb9370b113a3925fd7bc4835fb005a'),
+    SURFACE_COUNT_HEADER: RENDER_ONLY_STREAMED_TRANSITIONS[SURFACE_COUNT_HEADER][1],
+}
+
+
+def multisurface_payload_delta(name, raw, pin, *, wired=False, selected_streamed=False, render_only_streamed=False):
     """Only the three sealed transitions; no name-only or arbitrary TU bypass."""
-    if type(wired) is not bool or type(selected_streamed) is not bool: return False
-    transitions = SELECTED_STREAMED_TRANSITIONS if selected_streamed else MULTISURFACE_TRANSITIONS
-    wired_pins = SELECTED_STREAMED_WIRED_PINS if selected_streamed else MULTISURFACE_WIRED_PINS
+    if (type(wired) is not bool or type(selected_streamed) is not bool or
+            type(render_only_streamed) is not bool or (selected_streamed and render_only_streamed)): return False
+    transitions = (RENDER_ONLY_STREAMED_TRANSITIONS if render_only_streamed else
+                   SELECTED_STREAMED_TRANSITIONS if selected_streamed else MULTISURFACE_TRANSITIONS)
+    wired_pins = (RENDER_ONLY_STREAMED_WIRED_PINS if render_only_streamed else
+                  SELECTED_STREAMED_WIRED_PINS if selected_streamed else MULTISURFACE_WIRED_PINS)
     if name not in transitions: return False
     old, new = transitions[name]
     if wired: new = wired_pins[name]
@@ -644,7 +662,7 @@ def wire_message_main(source):
 
 
 def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *, surface_count_diagnostic=False,
-                resident_multisurface_v2=False, selected_streamed_static_v1=False):
+                resident_multisurface_v2=False, selected_streamed_static_v1=False, selected_streamed_render_only_v2=False):
     """Compare small text manifests only; never open retained binary inputs."""
     def require(ok, message):
         if not ok: raise ValueError(message)
@@ -654,7 +672,11 @@ def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *
             'Multisurface v2 and diagnostic transitions are exclusive boolean choices')
     require(type(selected_streamed_static_v1) is bool and
             (not selected_streamed_static_v1 or resident_multisurface_v2), 'Explicit streamed base transition required')
-    transitions = SELECTED_STREAMED_TRANSITIONS if selected_streamed_static_v1 else MULTISURFACE_TRANSITIONS
+    require(type(selected_streamed_render_only_v2) is bool and
+            not (selected_streamed_static_v1 and selected_streamed_render_only_v2) and
+            (not selected_streamed_render_only_v2 or resident_multisurface_v2), 'Explicit render-only base transition required')
+    transitions = (RENDER_ONLY_STREAMED_TRANSITIONS if selected_streamed_render_only_v2 else
+                   SELECTED_STREAMED_TRANSITIONS if selected_streamed_static_v1 else MULTISURFACE_TRANSITIONS)
     require(hashlib.sha256(plan_raw).hexdigest() == BASE_PLAN_SHA and
             hashlib.sha256(receipt_raw).hexdigest() == BASE_RECEIPT_SHA, 'Exact ordinary D2 proof required')
     base, receipt, prior, old_receipt = map(json.loads, (plan_raw, receipt_raw, prior_raw, prior_receipt_raw))
@@ -675,7 +697,7 @@ def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *
         root = PureWindowsPath(plan['PreparedRoot'])
         if resident_multisurface_v2:
             require(all(multisurface_payload_delta(name, payloads.get(name),
-                        bindings.get(key(root/name.removeprefix('prepared/'))), selected_streamed=selected_streamed_static_v1)
+                        bindings.get(key(root/name.removeprefix('prepared/'))), selected_streamed=selected_streamed_static_v1, render_only_streamed=selected_streamed_render_only_v2)
                         for name in transitions), 'Exact versioned multisurface transitions required')
         if surface_count_diagnostic:
             require(surface_count_header_delta(SURFACE_COUNT_HEADER, payloads.get(SURFACE_COUNT_HEADER),
@@ -685,7 +707,7 @@ def verify_base(plan_raw, receipt_raw, prior_raw, prior_receipt_raw, payloads, *
             if not name.startswith('prepared/'): continue
             pin = bindings.get(key(root/name.removeprefix('prepared/')))
             if resident_multisurface_v2 and multisurface_payload_delta(name, raw, pin,
-                    selected_streamed=selected_streamed_static_v1): continue
+                    selected_streamed=selected_streamed_static_v1, render_only_streamed=selected_streamed_render_only_v2): continue
             if surface_count_diagnostic and surface_count_header_delta(name, raw, pin): continue
             require(pin and pin['Bytes'] == len(raw) and pin['SHA256'] == hashlib.sha256(raw).hexdigest(),
                     'Ordinary D2/C native source differs: '+name)

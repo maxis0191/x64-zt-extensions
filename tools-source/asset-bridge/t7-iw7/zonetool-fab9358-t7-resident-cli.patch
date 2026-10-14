@@ -4,7 +4,7 @@
  
  int main()
  {
-+	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-catalog")) && !utils::io::file_exists(T7_BINARY))
++	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-model-streamed-v2") || utils::flags::has_flag("t7-iw7-catalog")) && !utils::io::file_exists(T7_BINARY))
 +	{
 +		std::fputs("T7 resident export requires the pinned unranked dedicated engine.\n", stderr);
 +		return EXIT_FAILURE;
@@ -16,7 +16,7 @@
  		MessageBoxA(nullptr, "no game binary found!\nmake sure your zonetool.exe is in the game directory!", "NO BINARY", MB_ICONERROR);
  	}
  
-+	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-catalog")) && game::get_mode() != game::t7)
++	if ((utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-model-streamed-v2") || utils::flags::has_flag("t7-iw7-catalog")) && game::get_mode() != game::t7)
 +	{
 +		std::fputs("T7 resident export refuses competing engine mode.\n", stderr);
 +		return EXIT_FAILURE;
@@ -26,7 +26,7 @@
  
 --- a/src/zonetool/zonetool/t7/zonetool.cpp
 +++ b/src/zonetool/zonetool/t7/zonetool.cpp
-@@ -6,6 +6,970 @@
+@@ -6,6 +6,1020 @@
  #include "converter/converter.hpp"
  
  #include "common/xpak.hpp"
@@ -187,6 +187,12 @@
 +    inline constexpr std::size_t output_limit = 32u * 1024u;
 +    inline constexpr std::size_t name_limit = 256;
 +
++    struct image_binding_selection
++    {
++        unsigned index;
++        std::uint32_t expected_name_hash;
++    };
++
 +    template <typename Readable> class reader
 +    {
 +        Readable& readable_;
@@ -277,14 +283,20 @@
 +            {"pixel_range_verified", false}, {"pixels_copied", false}};
 +    }
 +
-+    template <typename Readable> std::string observe(const XModel* source,
-+        const std::string& expected_model, unsigned lod, unsigned slot, Readable readable)
++    template <typename Readable> std::string observe_impl(const XModel* source,
++        const std::string& expected_model, unsigned lod, unsigned slot, Readable& readable,
++        const image_binding_selection* selection)
 +    {
 +        // Return one compact diagnostic. The caller logs it separately and still
 +        // performs its original geometry selection/refusal afterward.
-+        nlohmann::ordered_json result = {{"schema", "iw7.t7-selected-material-observation/1"},
++        const char* schema = selection ? "iw7.t7-selected-material-observation/2" :
++            "iw7.t7-selected-material-observation/1";
++        nlohmann::ordered_json result = {{"schema", schema},
 +            {"headers_rechecked", false}, {"allocation_retained", false},
 +            {"atomic_snapshot_proven", false}, {"pixels_copied", false}, {"ready", false}};
++        if (selection)
++            result["image_selection"] = {{"mode", "exact_binding"},
++                {"index", selection->index}, {"expected_nameHash", selection->expected_name_hash}};
 +        const char* stage = "model_header";
 +        std::size_t stage_index = 0;
 +        bool indexed_stage = false;
@@ -351,6 +363,19 @@
 +                    {"image", nullptr}};
 +                result["textures"].push_back(std::move(row));
 +            }
++            if (selection)
++            {
++                // A selection refusal is not an attempted image read. Validate
++                // the copied binding before requesting any image header/name.
++                stage = "texture_selection"; stage_index = selection->index; indexed_stage = true;
++                resident_image::require(selection->index < textures.size(),
++                    "Exact selected image binding index required");
++                const auto& texture = textures[selection->index];
++                resident_image::require(texture.nameHash == selection->expected_name_hash,
++                    "Exact selected image binding hash required");
++                resident_image::require(texture.image != nullptr,
++                    "Selected image binding has no image");
++            }
 +            std::vector<std::pair<const GfxImage*, GfxImage>> image_headers;
 +            std::vector<std::string> image_names;
 +            std::vector<std::size_t> image_texture_indices;
@@ -359,7 +384,7 @@
 +                stage_index = i; indexed_stage = true;
 +                const auto& texture = textures[i];
 +                auto& row = result["textures"][i];
-+                if (texture.image)
++                if (texture.image && (!selection || i == selection->index))
 +                {
 +                    stage = "image_header";
 +                    row["image_read_state"] = "reading_header";
@@ -474,11 +499,27 @@
 +                if (output.size() <= output_limit) return output;
 +            }
 +            catch (const std::exception&) {} // Invalid names must not escape as invalid JSON.
-+            return nlohmann::ordered_json({{"schema", "iw7.t7-selected-material-observation/1"},
++            return nlohmann::ordered_json({{"schema", schema},
 +                {"refused", true}, {"reason", "Observation could not be serialized within bounds"},
 +                {"failure_stage", "serialization"},
 +                {"pixels_copied", false}, {"ready", false}}).dump();
 +        }
++    }
++
++    // Preserve the original five-argument entry and schema/reads by default.
++    template <typename Readable> std::string observe(const XModel* source,
++        const std::string& expected_model, unsigned lod, unsigned slot, Readable readable)
++    {
++        return observe_impl(source, expected_model, lod, slot, readable, nullptr);
++    }
++
++    // Explicit diagnostic v2: one exact copied binding, never a hash search,
++    // image-pointer workaround or pixel read. Other scalar rows are rechecked.
++    template <typename Readable> std::string observe_binding(const XModel* source,
++        const std::string& expected_model, unsigned lod, unsigned slot, Readable readable,
++        image_binding_selection selection)
++    {
++        return observe_impl(source, expected_model, lod, slot, readable, &selection);
 +    }
 +}
 +
@@ -814,6 +855,7 @@
 +namespace zonetool::t7::streamed_iw7
 +{
 +    inline constexpr const char* profile = "t7-iw7-selected-streamed-static-v1";
++    inline constexpr const char* render_profile = "t7-iw7-selected-streamed-render-only-v2";
 +
 +    struct selection
 +    {
@@ -829,6 +871,7 @@
 +        std::uint64_t source_key{};
 +        std::array<std::uint64_t, 3> opaque_descriptor_words{};
 +        std::vector<std::uint16_t> source_surface_flags;
++        std::vector<bool> source_collision_tree_present;
 +    };
 +    static_assert(!std::is_copy_constructible_v<selection> && !std::is_copy_assignable_v<selection>);
 +    static_assert(std::is_move_constructible_v<selection> && std::is_move_assignable_v<selection>);
@@ -863,7 +906,8 @@
 +    inline selection select(const XModel* source, const char* exact_name,
 +        const unsigned lod, const std::uint64_t expected_key,
 +        const std::span<const selected_xpak::package> packages,
-+        const selected_xpak::lz4_decoder decompress, utils::memory::allocator& allocator)
++        const selected_xpak::lz4_decoder decompress, utils::memory::allocator& allocator,
++        const bool render_only = false)
 +    {
 +        try
 +        {
@@ -904,7 +948,8 @@
 +                rigid_lists.emplace_back(surface.vertList);
 +                const auto& rigid = rigid_lists.back().value;
 +                require(rigid.boneOffset == 0 && rigid.vertCount == surface.vertCount &&
-+                    rigid.triOffset == 0 && rigid.triCount == surface.triCount && !rigid.collisionTree,
++                    rigid.triOffset == 0 && rigid.triCount == surface.triCount &&
++                    (render_only || !rigid.collisionTree),
 +                    ("selected streamed rigid coverage differs; surface=" + std::to_string(i) +
 +                     " boneOffset=" + std::to_string(rigid.boneOffset) +
 +                     " vertices=" + std::to_string(rigid.vertCount) +
@@ -973,6 +1018,11 @@
 +                    static_cast<std::uint16_t>(cpu_surfaces[i].flags) & ~std::uint16_t(XSURFACE_FLAG_STREAMED));
 +                cpu_surfaces[i].shared = cpu_shared;
 +                cpu_rigid[i] = rigid_lists[i].value;
++                result.source_collision_tree_present.push_back(cpu_rigid[i].collisionTree != nullptr);
++                // Explicit V2 render-only derivation: omit the foreign tree
++                // only in this owned copy. Never dereference its payload.
++                // The captured source list is unchanged and rechecked below.
++                if (render_only) cpu_rigid[i].collisionTree = nullptr;
 +                cpu_surfaces[i].vertList = cpu_rigid + i;
 +            }
 +            cpu_mesh->shared = cpu_shared; cpu_mesh->surfs = cpu_surfaces;
@@ -988,7 +1038,7 @@
 +        {
 +            const std::string old_prefix = std::string(resident_iw7::profile) + ": ";
 +            const std::string reason = error.what();
-+            throw std::runtime_error(std::string(profile) + ": " +
++            throw std::runtime_error(std::string(render_only ? render_profile : profile) + ": " +
 +                (reason.starts_with(old_prefix) ? reason.substr(old_prefix.size()) : reason));
 +        }
 +    }
@@ -997,7 +1047,7 @@
  
  namespace zonetool::t7
  {
-@@ -348,6 +1312,37 @@
+@@ -348,6 +1362,37 @@
  		zonetool::taskbar::clear();
  	}
  
@@ -1035,7 +1085,7 @@
  	utils::hook::detour db_add_xasset_hook;
  	XAssetHeader db_add_xasset_stub(XAssetType type, XAssetHeader header)
  	{
-@@ -357,6 +1352,7 @@
+@@ -357,6 +1402,7 @@
  			header
  		};
  
@@ -1043,7 +1093,7 @@
  		dump_asset(&xasset);
  
  		if (type == ASSET_TYPE_IMAGE)
-@@ -736,10 +1732,573 @@
+@@ -736,10 +1782,593 @@
  		return args;
  	}
  
@@ -1226,8 +1276,11 @@
 +
 +	static void write_selected_model_iw7(XModel* selected, const std::string& zone,
 +	    const std::string& name, const std::string& lod_arg, const bool multisurface,
-+	    const nlohmann::ordered_json* streamed_payload = nullptr, const std::string& streamed_root_key = {})
++	    const nlohmann::ordered_json* streamed_payload = nullptr, const std::string& streamed_root_key = {},
++	    const nlohmann::ordered_json* render_collision_policy = nullptr)
 +	{
++	    if (render_collision_policy && !streamed_payload)
++	        throw std::runtime_error("Explicit streamed render-only source required");
 +	    const auto lod = static_cast<unsigned>(lod_arg[0] - '0');
 +	    if (streamed_payload && (!multisurface || streamed_root_key.size() != 80 ||
 +	        !streamed_root_key.starts_with("t7_iw7_streamed_")))
@@ -1308,12 +1361,14 @@
 +	        if (++files > 2 || total > 32u * 1024u * 1024u) throw std::runtime_error("Export file budget exceeded");
 +	    }
 +	    if (files != 2) throw std::runtime_error("Both model and mesh outputs required");
-+	    nlohmann::ordered_json report = {{"schema", streamed_payload ? "iw7.t7-iw7-selected-streamed-export/1" :
++	    nlohmann::ordered_json report = {{"schema", streamed_payload ?
++	        (render_collision_policy ? "iw7.t7-iw7-selected-streamed-export/2" : "iw7.t7-iw7-selected-streamed-export/1") :
 +	        (multisurface ? "iw7.t7-iw7-resident-export/2" : "iw7.t7-iw7-resident-export/1")},
 +	        {"requested_zone", zone}, {"source_model", name}, {"selected_source_lod", lod},
 +	        {"output_model_name", name}, {"output_mesh_name", mesh_name}, {"output_root_key", key},
-+	        {"target", "iw7"}, {"profile", streamed_payload ? "selected-streamed-rigid-one-lod" : "resident-rigid-one-lod"},
-+	        {"geometry_profile", streamed_payload ? streamed_iw7::profile :
++	        {"target", "iw7"}, {"profile", streamed_payload ?
++	            (render_collision_policy ? "selected-streamed-render-only-rigid-one-lod" : "selected-streamed-rigid-one-lod") : "resident-rigid-one-lod"},
++	        {"geometry_profile", streamed_payload ? (render_collision_policy ? streamed_iw7::render_profile : streamed_iw7::profile) :
 +	            (multisurface ? resident_iw7::multisurface_profile : resident_iw7::profile)},
 +	        {"root_bone_name", root_bone_name}, {"selected_counts", selected_counts},
 +	        {"material_dependencies", material_names},
@@ -1329,6 +1384,7 @@
 +	        report["geometry_work_bytes_upper_bound"] = geometry_work;
 +	    }
 +	    if (streamed_payload) report["selected_mesh_payload"] = *streamed_payload;
++	    if (render_collision_policy) report["selected_collision_policy"] = *render_collision_policy;
 +	    report["model"]["relative_path"] = model_path.generic_string();
 +	    report["mesh"]["relative_path"] = mesh_path.generic_string();
 +	    const auto bytes = report.dump() + "\n";
@@ -1432,7 +1488,7 @@
 +	}
 +
 +	static void export_selected_streamed_model_iw7(const std::string& zone_arg, const std::string& model_arg,
-+	    const std::string& lod_arg, const std::string& request_arg)
++	    const std::string& lod_arg, const std::string& request_arg, const bool render_only = false)
 +	{
 +	    const auto zone = resident_export_name(zone_arg.c_str(), true);
 +	    const auto name = resident_export_name(model_arg.c_str());
@@ -1440,9 +1496,13 @@
 +	        throw std::runtime_error("Canonical selected-streamed LOD 0..5 required");
 +	    const auto lod = static_cast<unsigned>(lod_arg[0] - '0');
 +	    const auto request = selected_streamed_request(request_arg);
-+	    selected_streamed_fields(request, {"schema", "target", "profile", "zone", "model", "lod", "xpak_key", "packages"});
-+	    if (request["schema"] != "iw7.t7-iw7-selected-streamed-request/1" || request["target"] != "iw7" ||
-+	        request["profile"] != "selected-streamed-rigid-one-lod" || request["zone"] != zone ||
++	    std::set<std::string> request_fields{"schema", "target", "profile", "zone", "model", "lod", "xpak_key", "packages"};
++	    if (render_only) request_fields.insert("collision_policy");
++	    selected_streamed_fields(request, request_fields);
++	    if (request["schema"] != (render_only ? "iw7.t7-iw7-selected-streamed-request/2" : "iw7.t7-iw7-selected-streamed-request/1") ||
++	        request["target"] != "iw7" ||
++	        request["profile"] != (render_only ? "selected-streamed-render-only-rigid-one-lod" : "selected-streamed-rigid-one-lod") ||
++	        (render_only && request["collision_policy"] != "omit-source-rigid-collision-trees") || request["zone"] != zone ||
 +	        request["model"] != name || !request["lod"].is_number_unsigned() || request["lod"].get<std::uint64_t>() != lod ||
 +	        !request["xpak_key"].is_string() || !request["packages"].is_array() ||
 +	        request["packages"].empty() || request["packages"].size() > selected_xpak::max_packages)
@@ -1451,7 +1511,8 @@
 +	    const auto expected_key = selected_streamed_hex64(key_text);
 +	    std::vector<selected_xpak::package> packages;
 +	    std::set<std::string> paths, identities;
-+	    std::string root_input = std::string(streamed_iw7::profile) + "\n" + zone + "\n" + name + "\n" + lod_arg + "\n" + key_text;
++	    std::string root_input = std::string(render_only ? streamed_iw7::render_profile : streamed_iw7::profile) +
++	        "\n" + zone + "\n" + name + "\n" + lod_arg + "\n" + key_text;
 +	    const auto cwd = std::filesystem::current_path();
 +	    for (const auto& package : request["packages"])
 +	    {
@@ -1484,7 +1545,7 @@
 +	    selected_export_observe_material(reinterpret_cast<const XModel*>(header.data), name, lod);
 +	    utils::memory::allocator allocator;
 +	    auto selected = streamed_iw7::select(reinterpret_cast<XModel*>(header.data), name.c_str(), lod,
-+	        expected_key, packages, LZ4_decompress_safe, allocator);
++	        expected_key, packages, LZ4_decompress_safe, allocator, render_only);
 +	    const auto& observed = selected.payload.observed;
 +	    std::string package_path;
 +	    for (const auto& package : request["packages"])
@@ -1508,7 +1569,16 @@
 +	        {"headers_rechecked", true}, {"atomic_snapshot_proven", false}, {"engine_object_writes", false}};
 +	    const auto root_key = "t7_iw7_streamed_" + utils::string::to_lower(utils::cryptography::sha256::compute(
 +	        reinterpret_cast<const std::uint8_t*>(root_input.data()), root_input.size(), true));
-+	    write_selected_model_iw7(selected.model, zone, name, lod_arg, true, &provenance, root_key);
++	    nlohmann::ordered_json collision_policy;
++	    if (render_only)
++	        collision_policy = {{"policy", "omit-source-rigid-collision-trees"}, {"scope", "render-only"},
++	            {"source_tree_present", selected.source_collision_tree_present},
++	            {"cpu_tree_present", std::vector<bool>(selected.source_collision_tree_present.size(), false)},
++	            {"collision_dropped", selected.source_collision_tree_present},
++	            {"collision_tree_payload_bytes_read", 0}, {"collision_conversion_attempted", false},
++	            {"collision_compatibility_verified", false}, {"ready", false}};
++	    write_selected_model_iw7(selected.model, zone, name, lod_arg, true, &provenance, root_key,
++	        render_only ? &collision_policy : nullptr);
 +	}
 +
 +	static void catalog_resident_models_iw7(const std::string& zone_arg)
@@ -1582,7 +1652,7 @@
  		// Execute command line commands
  		auto args = get_command_line_arguments();
 +		// Dedicated, exact target: never fall through to the old T7-only parser.
-+		if (utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-catalog"))
++		if (utils::flags::has_flag("t7-iw7-model") || utils::flags::has_flag("t7-iw7-model-v2") || utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-model-streamed-v2") || utils::flags::has_flag("t7-iw7-catalog"))
 +		{
 +			try
 +			{
@@ -1591,13 +1661,13 @@
 +				if (!wide_args) throw std::runtime_error("Could not inspect exact export arguments");
 +				const auto free_args = gsl::finally([&] { LocalFree(wide_args); });
 +				const bool catalog = args.size() == 3 && args[1] == "-t7-iw7-catalog";
-+				const bool streamed = args.size() == 6 && args[1] == "-t7-iw7-model-streamed-v1";
++				const bool streamed = args.size() == 6 && (args[1] == "-t7-iw7-model-streamed-v1" || args[1] == "-t7-iw7-model-streamed-v2");
 +				if (wide_count != (catalog ? 3 : streamed ? 6 : 5)) throw std::runtime_error("Exact catalogue/export argument count required");
 +				for (int a = 1; a < wide_count; ++a)
 +					for (const wchar_t* p = wide_args[a]; *p; ++p)
 +						if (*p < 0x20 || *p > 0x7e) throw std::runtime_error("ASCII export arguments required");
 +				if (catalog) catalog_resident_models_iw7(args[2]);
-+				else if (streamed) export_selected_streamed_model_iw7(args[2], args[3], args[4], args[5]);
++				else if (streamed) export_selected_streamed_model_iw7(args[2], args[3], args[4], args[5], args[1] == "-t7-iw7-model-streamed-v2");
 +				else if (args.size() != 5 || (args[1] != "-t7-iw7-model" && args[1] != "-t7-iw7-model-v2"))
 +					throw std::runtime_error("usage: -t7-iw7-model[-v2] <zone> <exact-model-name> <lod 0..5>");
 +				else export_resident_model_iw7(args[2], args[3], args[4], args[1] == "-t7-iw7-model-v2");
@@ -1606,7 +1676,7 @@
 +			}
 +			catch (const std::exception& error)
 +			{
-+				if (utils::flags::has_flag("t7-iw7-model-streamed-v1"))
++				if (utils::flags::has_flag("t7-iw7-model-streamed-v1") || utils::flags::has_flag("t7-iw7-model-streamed-v2"))
 +					ZONETOOL_ERROR("T7 selected streamed IW7 export refused: %s", error.what());
 +				else ZONETOOL_ERROR("T7 resident IW7 export refused: %s", error.what());
 +				std::fflush(nullptr);

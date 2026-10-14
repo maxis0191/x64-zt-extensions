@@ -248,6 +248,53 @@ and guarded closure; E4 stock, rigid conversion, textures and runtime remain ope
 
 ## Build preparation
 
+### Explicit render-only V2 source after the E4 refusal
+
+E4 established that surface0 has boneOffset0,208 of208 vertices, triOffset0 and
+200 of200 triangles; its nonnull collision-tree pointer alone triggered the
+strict V1 refusal. No tree header, nodes or leaves were read. The pinned T7→IW7
+converter copies that foreign pointer by reinterpretation, and the IW7 dumper
+dereferences it to serialize its arrays. A sizeof assertion does not qualify
+the live collision ABI or its contents.
+
+The new option `-t7-iw7-model-streamed-v2` requires request schema
+`iw7.t7-iw7-selected-streamed-request/2`, profile
+`selected-streamed-render-only-rigid-one-lod`, and the literal
+`collision_policy=omit-source-rigid-collision-trees`. The original V1 option,
+request and collision refusal remain available. This is MP prop geometry;
+neither Zombies content nor collision compatibility is implied.
+
+V2 retains every root-bone, full vertex/triangle coverage, zero triangle offset,
+model physics exclusion, stream-range and geometry guard. It captures and
+rechecks the original rigid headers. Only the separately allocated CPU rigid
+list copies have collisionTree set to null; the foreign pointer is never
+dereferenced and engine objects are never edited. Export schema2 and geometry
+profile `t7-iw7-selected-streamed-render-only-v2` preserve ordered source-tree
+presence, CPU absence and collisionDropped booleans, zero collision payload
+reads, no conversion attempt and compatibility/ready false. Independent XSB
+parsing continues to require null collision pointers.
+
+Readback and Model Lab recognize the separate origin with the same multisurface
+grammar and bounds. A later FF preparation must explicitly rebind every BO3
+material reference to a verified IW7 material; the five BO3 names are not a
+compatible appearance or texture payload. A neutral IW7 recipient presentation
+can be a distinct witness without claiming the original BO3 textures.
+
+`--selected-streamed-render-only-v2` selects its own exact build marker,
+transition table and source pins. The old E4/C table and C base107785/c480→917
+remain frozen: the new V2 CLI is deliberately refused by that C transition.
+Historical main guards reconstruct to their exact old hashes; the frozen C
+snapshot still passes its positive transition. Source tests and DEFAULT do not
+prove a new native build, exported retail model or visible pixels.
+
+The final future E5 cohort explicitly adopts PR33's MaterialG helper
+(18583 bytes/SHAa8848a92) and fixture (20260 bytes/SHAb3de6888), already qualified
+with109 actual synthetic native cases. The caller remains the original
+five-argument `observe` with schema1 and image0 behavior. The new targeted
+`observe_binding` API is not activated by this E5 geometry change. This is an
+explicit new source epoch before any E5 compilation; compiled E3/E4 and the
+frozen CatalogueC cohort retain MaterialE/0ea and their original receipts.
+
 `prepare_build.py --selected-streamed-static-v1` selects a separate transition
 table and marker. Legacy128 and E2/v2144 bindings remain unchanged. This epoch
 has149 bindings (143 text/six opaque), 1,146 inputs and the same66-header proof.

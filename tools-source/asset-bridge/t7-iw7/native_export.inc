@@ -177,8 +177,11 @@ static void selected_export_observe_material(const XModel* source, const std::st
 
 static void write_selected_model_iw7(XModel* selected, const std::string& zone,
     const std::string& name, const std::string& lod_arg, const bool multisurface,
-    const nlohmann::ordered_json* streamed_payload = nullptr, const std::string& streamed_root_key = {})
+    const nlohmann::ordered_json* streamed_payload = nullptr, const std::string& streamed_root_key = {},
+    const nlohmann::ordered_json* render_collision_policy = nullptr)
 {
+    if (render_collision_policy && !streamed_payload)
+        throw std::runtime_error("Explicit streamed render-only source required");
     const auto lod = static_cast<unsigned>(lod_arg[0] - '0');
     if (streamed_payload && (!multisurface || streamed_root_key.size() != 80 ||
         !streamed_root_key.starts_with("t7_iw7_streamed_")))
@@ -259,12 +262,14 @@ static void write_selected_model_iw7(XModel* selected, const std::string& zone,
         if (++files > 2 || total > 32u * 1024u * 1024u) throw std::runtime_error("Export file budget exceeded");
     }
     if (files != 2) throw std::runtime_error("Both model and mesh outputs required");
-    nlohmann::ordered_json report = {{"schema", streamed_payload ? "iw7.t7-iw7-selected-streamed-export/1" :
+    nlohmann::ordered_json report = {{"schema", streamed_payload ?
+        (render_collision_policy ? "iw7.t7-iw7-selected-streamed-export/2" : "iw7.t7-iw7-selected-streamed-export/1") :
         (multisurface ? "iw7.t7-iw7-resident-export/2" : "iw7.t7-iw7-resident-export/1")},
         {"requested_zone", zone}, {"source_model", name}, {"selected_source_lod", lod},
         {"output_model_name", name}, {"output_mesh_name", mesh_name}, {"output_root_key", key},
-        {"target", "iw7"}, {"profile", streamed_payload ? "selected-streamed-rigid-one-lod" : "resident-rigid-one-lod"},
-        {"geometry_profile", streamed_payload ? streamed_iw7::profile :
+        {"target", "iw7"}, {"profile", streamed_payload ?
+            (render_collision_policy ? "selected-streamed-render-only-rigid-one-lod" : "selected-streamed-rigid-one-lod") : "resident-rigid-one-lod"},
+        {"geometry_profile", streamed_payload ? (render_collision_policy ? streamed_iw7::render_profile : streamed_iw7::profile) :
             (multisurface ? resident_iw7::multisurface_profile : resident_iw7::profile)},
         {"root_bone_name", root_bone_name}, {"selected_counts", selected_counts},
         {"material_dependencies", material_names},
@@ -280,6 +285,7 @@ static void write_selected_model_iw7(XModel* selected, const std::string& zone,
         report["geometry_work_bytes_upper_bound"] = geometry_work;
     }
     if (streamed_payload) report["selected_mesh_payload"] = *streamed_payload;
+    if (render_collision_policy) report["selected_collision_policy"] = *render_collision_policy;
     report["model"]["relative_path"] = model_path.generic_string();
     report["mesh"]["relative_path"] = mesh_path.generic_string();
     const auto bytes = report.dump() + "\n";

@@ -50,8 +50,13 @@ class RealSourceTransitionTests(unittest.TestCase):
         outputs,_=publication.render(Path(os.environ['IW7_T7_SOURCE']))
         cls.base=outputs['zonetool.cpp']
 
-    def test_exact_transform_and_finite_proof_leave_original_unmodified(self):
+    def test_frozen_c_accepts_only_exact_base_and_refuses_new_factory(self):
         original=bytes(self.base)
+        if (len(self.base),hashlib.sha256(self.base).hexdigest()) != p.ZOMBIES_BASE_CLI_PIN:
+            # New render-only factory must never silently inherit frozen C.
+            with self.assertRaises(ValueError): p.zombies_observation_transition(self.base)
+            self.assertEqual(self.base,original)
+            return
         after,proof=p.zombies_observation_transition(self.base)
         self.assertEqual(self.base,original)
         self.assertEqual((len(self.base),hashlib.sha256(self.base).hexdigest()),p.ZOMBIES_BASE_CLI_PIN)
@@ -60,6 +65,14 @@ class RealSourceTransitionTests(unittest.TestCase):
         self.assertEqual(proof['Schema'],'iw7.t7-zm-observation-build/1')
         self.assertEqual(proof['SourceProfile'],'t7-zombies-catalogue-observation-c')
         self.assertNotIn('NativeExecuted',proof)
+
+    @unittest.skipUnless(os.environ.get('IW7_T7_FROZEN_CLI'), 'Frozen reviewed C base not supplied')
+    def test_frozen_c_snapshot_keeps_the_exact_positive_transition(self):
+        raw = Path(os.environ['IW7_T7_FROZEN_CLI']).read_bytes()
+        self.assertEqual((len(raw), hashlib.sha256(raw).hexdigest()), p.ZOMBIES_BASE_CLI_PIN)
+        after, proof = p.zombies_observation_transition(raw)
+        self.assertEqual((len(after), hashlib.sha256(after).hexdigest()), p.ZOMBIES_CLI_PIN)
+        self.assertEqual(proof['BaseCLISHA256'], p.ZOMBIES_BASE_CLI_PIN[1])
 
     def test_changed_base_changed_module_or_wrong_generated_cli_refuse(self):
         with self.assertRaises(ValueError):p.zombies_observation_transition(self.base+b' ')

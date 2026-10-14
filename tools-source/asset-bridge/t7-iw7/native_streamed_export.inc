@@ -66,7 +66,7 @@ static nlohmann::ordered_json selected_streamed_request(const std::string& argum
 }
 
 static void export_selected_streamed_model_iw7(const std::string& zone_arg, const std::string& model_arg,
-    const std::string& lod_arg, const std::string& request_arg)
+    const std::string& lod_arg, const std::string& request_arg, const bool render_only = false)
 {
     const auto zone = resident_export_name(zone_arg.c_str(), true);
     const auto name = resident_export_name(model_arg.c_str());
@@ -74,9 +74,13 @@ static void export_selected_streamed_model_iw7(const std::string& zone_arg, cons
         throw std::runtime_error("Canonical selected-streamed LOD 0..5 required");
     const auto lod = static_cast<unsigned>(lod_arg[0] - '0');
     const auto request = selected_streamed_request(request_arg);
-    selected_streamed_fields(request, {"schema", "target", "profile", "zone", "model", "lod", "xpak_key", "packages"});
-    if (request["schema"] != "iw7.t7-iw7-selected-streamed-request/1" || request["target"] != "iw7" ||
-        request["profile"] != "selected-streamed-rigid-one-lod" || request["zone"] != zone ||
+    std::set<std::string> request_fields{"schema", "target", "profile", "zone", "model", "lod", "xpak_key", "packages"};
+    if (render_only) request_fields.insert("collision_policy");
+    selected_streamed_fields(request, request_fields);
+    if (request["schema"] != (render_only ? "iw7.t7-iw7-selected-streamed-request/2" : "iw7.t7-iw7-selected-streamed-request/1") ||
+        request["target"] != "iw7" ||
+        request["profile"] != (render_only ? "selected-streamed-render-only-rigid-one-lod" : "selected-streamed-rigid-one-lod") ||
+        (render_only && request["collision_policy"] != "omit-source-rigid-collision-trees") || request["zone"] != zone ||
         request["model"] != name || !request["lod"].is_number_unsigned() || request["lod"].get<std::uint64_t>() != lod ||
         !request["xpak_key"].is_string() || !request["packages"].is_array() ||
         request["packages"].empty() || request["packages"].size() > selected_xpak::max_packages)
@@ -85,7 +89,8 @@ static void export_selected_streamed_model_iw7(const std::string& zone_arg, cons
     const auto expected_key = selected_streamed_hex64(key_text);
     std::vector<selected_xpak::package> packages;
     std::set<std::string> paths, identities;
-    std::string root_input = std::string(streamed_iw7::profile) + "\n" + zone + "\n" + name + "\n" + lod_arg + "\n" + key_text;
+    std::string root_input = std::string(render_only ? streamed_iw7::render_profile : streamed_iw7::profile) +
+        "\n" + zone + "\n" + name + "\n" + lod_arg + "\n" + key_text;
     const auto cwd = std::filesystem::current_path();
     for (const auto& package : request["packages"])
     {
@@ -118,7 +123,7 @@ static void export_selected_streamed_model_iw7(const std::string& zone_arg, cons
     selected_export_observe_material(reinterpret_cast<const XModel*>(header.data), name, lod);
     utils::memory::allocator allocator;
     auto selected = streamed_iw7::select(reinterpret_cast<XModel*>(header.data), name.c_str(), lod,
-        expected_key, packages, LZ4_decompress_safe, allocator);
+        expected_key, packages, LZ4_decompress_safe, allocator, render_only);
     const auto& observed = selected.payload.observed;
     std::string package_path;
     for (const auto& package : request["packages"])
@@ -142,5 +147,14 @@ static void export_selected_streamed_model_iw7(const std::string& zone_arg, cons
         {"headers_rechecked", true}, {"atomic_snapshot_proven", false}, {"engine_object_writes", false}};
     const auto root_key = "t7_iw7_streamed_" + utils::string::to_lower(utils::cryptography::sha256::compute(
         reinterpret_cast<const std::uint8_t*>(root_input.data()), root_input.size(), true));
-    write_selected_model_iw7(selected.model, zone, name, lod_arg, true, &provenance, root_key);
+    nlohmann::ordered_json collision_policy;
+    if (render_only)
+        collision_policy = {{"policy", "omit-source-rigid-collision-trees"}, {"scope", "render-only"},
+            {"source_tree_present", selected.source_collision_tree_present},
+            {"cpu_tree_present", std::vector<bool>(selected.source_collision_tree_present.size(), false)},
+            {"collision_dropped", selected.source_collision_tree_present},
+            {"collision_tree_payload_bytes_read", 0}, {"collision_conversion_attempted", false},
+            {"collision_compatibility_verified", false}, {"ready", false}};
+    write_selected_model_iw7(selected.model, zone, name, lod_arg, true, &provenance, root_key,
+        render_only ? &collision_policy : nullptr);
 }
