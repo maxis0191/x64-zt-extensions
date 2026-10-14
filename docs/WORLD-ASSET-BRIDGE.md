@@ -1571,3 +1571,42 @@ the failure and passed the corrected source without native/stock effects. This
 does not establish runtime/material/GPU/physics acceptance. Next: complete the
 corrected source review/private Git workflow, generate a new tuple and obtain
 a distinct coordinated GO. Consumed tupleB must not be replayed or edited.
+
+## 2026-10-14: corrected M7 D measured the nondefault CP reference
+
+One distinct GO used merged `1c1382bf`,39 source pins,104 stock inputs and106
+managed entries. Internal recipe:
+`2cff12d7958729172ac932e8f39d9ec470c0305a1d09681c106e9dad7ba32d15`;
+outer plan:
+`f4f21f6139deff0230c26c69295f8bf09bea76e5970a3b3b66dfbd0944f0c9f1`.
+The corrected original entry recorded host/parent identity before the unchanged
+reviewed capsule. All current stock identity/content checks passed under one
+admission; only the fixed existing33 assetfile providers were staged as aliases.
+This availability did not duplicate their4.7GB payload or prove a minimal subset.
+
+The original tool began14:14:03 UTC and exited0 in6,777 ms with root exited,
+active0 and job closed. Stdout2498B reported cp_zmb rows1/verified1/missing0/
+default0. The74-byte CSV marked material
+`mopw/character_park_clown_zombie_shoes` verified; SHA256:
+`b691b56baf8b9db5f887d9ce6d2005c9bc1c1bc0527c7756bc8b792b9bd6230c`.
+The existing verification reader exited0 in122 ms with root exited/active0/job
+closed. Its1385-byte reference evidence SHA256 is
+`a46fedcc0646b14a84fc80a6111142082c1edb8d09d478e0e7b2e59049fdead0`.
+Returned status was ReferenceCaptured and MaterialReferenceMeasured=true.
+No modal attempt triggered because the reference completed before45 seconds;
+NotTriggered is not a negative-window or captured-window result.
+
+Source hashes/stock content remained preserved and all106 managed entries
+restored, with all104 stock targets absent and lease released/token null. The
+same original live NoExit host matched PID/image/creation and verified reference
+quarantine null, closed original/reader jobs and full registry zero at14:17:21.
+Its original PTY actually exited0. Fresh14:18:51 UTC found original host/parent/
+target/reader absent, no scope process and zero leases. Derived CSV/dcache files
+remain local; old runtime proof/caches, Main27016, banks/configuration and owner
+clients were preserved. No automatic retry, writer/FF or client stage followed.
+
+The nondefault CP material reference snapshot is now measured and reader-checked.
+Runtime/GPU texture/shader appearance, original-arena FF, collision/physics and
+owner acceptance remain unqualified. Next: bind this immutable reference evidence
+into the existing original-arena writer proposal, inspect its encoding and normal
+source contract, then review a new operator/GO before any native build/readback.
