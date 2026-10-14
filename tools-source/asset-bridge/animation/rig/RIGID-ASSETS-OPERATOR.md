@@ -90,3 +90,25 @@ both readbacks pass and work/stock restoration and lease release are confirmed.
 operations belong to the next owner only after that true retained FF tuple;
 this operator does not launch a client/server or alter the original SDK49f,
 ea7/d25 or A/B observers. No runtime acceptance is established by source tests.
+
+## Actual Emit A failure and correction, 2026-10-14
+
+The first admitted Emit attempt stopped before launching either writer. The
+Python phase creates its fresh log leaf with `mkdir()` and its owned `logs`
+parent was missing. The hash-bound launch-error receipt reported
+`FileNotFoundError` for `logs/emit-first`; the original Python root exited 2
+with a fresh Active0 job snapshot. Native outputs remained empty and no FF ran.
+
+Source proof, empty work restoration and lease release were confirmed with no
+cleanup error. The original host then disposed its guards, cleared its context
+and actually exited 0. Fresh identities were absent and the registry was empty.
+The failed state remains unchanged (SHA256
+`8bb419c3f846174e95ed30bae6324fe11011e7bdb3faeefcc12ba920817442c4`);
+its launch-error receipt is
+`2c769de09a69363a3ef12ada4fed405b5cddec9adf5d8cda42f1c122a2f02eb8`.
+
+The correction creates only the owned common log parent before the child
+factory. The source mock now requires that directory at factory entry, including
+the failed-factory path. A fresh run root and plan pin are required for retry;
+the failed A capsule, source plan and receipts are preserved. This correction
+does not itself prove writer emission or FF acceptance.

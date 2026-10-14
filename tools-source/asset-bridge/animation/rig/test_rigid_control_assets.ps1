@@ -122,6 +122,7 @@ try{
     function Add-RigGuard($Path,$Expected,$Guards,$Baselines){$script:events.Add('guard')}
     function New-RigOwnedJob($Python,$Arguments,$Work){
         Check (!$mockContext.Closed) 'Closed=false before factory'
+        Check (Test-Path -LiteralPath (Join-Path $mockContext.Plan.RunRoot 'logs') -PathType Container) 'Fresh phase parent exists before any child factory'
         $script:events.Add('factory')
         if($script:factoryFailure){throw 'Synthetic factory failure'}
         $o=[pscustomobject]@{}
