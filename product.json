@@ -2,6 +2,9 @@
   "schema": "iw7.product/1",
   "id": "x64-zt-extensions",
   "exports": [
+    "tools-source/asset-bridge/weapon-export/Run-PlayerTemplateBuild.ps1",
+    "tools-source/asset-bridge/weapon-export/BUILD-COHORT.md",
+    "tools-source/asset-bridge/weapon-export/test_build_default.py",
     "tools-source/asset-bridge/weapon-export/native_player_templates.inc",
     "tools-source/asset-bridge/weapon-export/native_bounded_name.hpp",
     "tools-source/asset-bridge/weapon-export/test_bounded_name.cpp",
