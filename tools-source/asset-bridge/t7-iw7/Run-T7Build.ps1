@@ -602,7 +602,9 @@ try {
     Assert-T7InputBindings $plan
     foreach($pin in $plan.Bindings) {
         if($pin.IsText -isnot [bool]){throw 'Binding text/binary classification required.'}
-        if($pin.IsText){$null=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256}
+        if($pin.IsText){
+            if(!$Run -or ![string]::Equals([IO.Path]::GetExtension($pin.Path),'.tlog',[StringComparison]::OrdinalIgnoreCase)){$null=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256}
+        }
         elseif((Get-Item -LiteralPath $pin.Path).Length -ne $pin.Bytes){throw 'Binary metadata changed.'}
     }
     foreach($required in @($plan.Runner,$plan.Profile,$plan.Core,$plan.CompilerCore,$plan.ObserverSource,$plan.CompilerPolicySource,$plan.Scheduler)) {
@@ -662,6 +664,10 @@ try {
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     if(Test-Path -LiteralPath $plan.RunRoot){throw 'Output appeared during admission.'}
     [IO.Directory]::CreateDirectory($plan.RunRoot)|Out-Null;$created=$true
+    # Run defers retained tlog contents until this existing group is admitted.
+    foreach($pin in @($plan.Bindings|Where-Object {$_.IsText -and [string]::Equals([IO.Path]::GetExtension($_.Path),'.tlog',[StringComparison]::OrdinalIgnoreCase)})){
+        $null=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256
+    }
     . $plan.CompilerPolicySource
     . $plan.CompilerCore
     . $plan.Profile
