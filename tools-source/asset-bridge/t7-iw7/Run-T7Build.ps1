@@ -195,7 +195,8 @@ function Assert-T7ImageMetadataFixtureStages($Plan,[string]$SourceRoot) {
         if(([IO.File]::GetAttributes($part) -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Metadata fixture native source reparse refused.'}
     }
     $structs=Join-Path $native 'src/zonetool/zonetool/t7/structs.hpp'
-    if(@($Plan.Inputs|Where-Object Path -CEQ $structs).Count -ne 1){throw 'Metadata fixture native headers must be in sealed inputs.'}
+    # Retained Windows input identities use prepare_build.key()'s lowercase paths.
+    if(@($Plan.Inputs|Where-Object Path -IEQ $structs).Count -ne 1){throw 'Metadata fixture native headers must be in sealed inputs.'}
     $compile=@($Plan.Stages|Where-Object Name -CEQ 'metadata-fixture-compile')
     $probe=@($Plan.Stages|Where-Object Name -CEQ 'metadata-fixture-test')
     $root=Join-Path $Plan.RunRoot 'metadata-fixture-compile'

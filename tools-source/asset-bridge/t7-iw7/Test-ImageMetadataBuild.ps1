@@ -67,7 +67,16 @@ try{
         $plan.Bindings=@($plan.Bindings|Where-Object Path -CNE $pin.Path)+@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
     }
     if(!(Assert-T7BuildProfile $plan $PSScriptRoot)){throw 'Authored metadata source profile refused'};$checks++
-    foreach($case in 'missing-extension','wrong-base','wrong-new-output','wrong-option','wrong-native-root','wrong-check-count','missing-fixture-stage','altered-fixture-args'){
+    $normalized=$plan|ConvertTo-Json -Depth 25|ConvertFrom-Json
+    $normalized.Inputs[0].Path=$normalized.Inputs[0].Path.ToLowerInvariant()
+    if(!(Assert-T7BuildProfile $normalized $PSScriptRoot)){throw 'Windows normalized sealed header identity refused'};$checks++
+    # Reproduce the previous case-sensitive predicate in the actual guard body.
+    $before=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-T7ImageMetadataFixtureStages'},$true).Extent.Text
+    $before=$before.Replace('function Assert-T7ImageMetadataFixtureStages(', 'function Assert-T7ImageMetadataFixtureStagesBeforeCaseFix(').Replace('Where-Object Path -IEQ $structs', 'Where-Object Path -CEQ $structs')
+    . ([scriptblock]::Create($before))
+    $oldRefused=$false;try{Assert-T7ImageMetadataFixtureStagesBeforeCaseFix $normalized $PSScriptRoot}catch{$oldRefused=$_.Exception.Message -eq 'Metadata fixture native headers must be in sealed inputs.'}
+    if(!$oldRefused){throw 'Case-sensitive control did not reproduce PREP B refusal'};$checks++
+    foreach($case in 'missing-extension','wrong-base','wrong-new-output','wrong-option','wrong-native-root','duplicate-native-header','foreign-native-header','wrong-check-count','missing-fixture-stage','altered-fixture-args'){
         $bad=$plan|ConvertTo-Json -Depth 25|ConvertFrom-Json
         switch($case){
             missing-extension {$bad.ReuseCompile.PSObject.Properties.Remove('ImageMetadata')}
@@ -75,6 +84,8 @@ try{
             wrong-new-output {$bad.BuildProfile.PreparedCLI.SHA256='0'*64}
             wrong-option {$bad.BuildProfile.MetadataOption='-t7-iw7-image-provenance-v1'}
             wrong-native-root {$bad.Inputs=@()}
+            duplicate-native-header {$bad.Inputs+=@($bad.Inputs[0])}
+            foreign-native-header {$bad.Inputs[0].Path=$bad.Inputs[0].Path.Replace('zonetool\t7\structs.hpp','zonetool\iw7\structs.hpp')}
             wrong-check-count {$bad.BuildProfile.MetadataGuardChecks=12}
             missing-fixture-stage {$bad.Stages=@($bad.Stages|Where-Object Name -CNE 'metadata-fixture-test')}
             altered-fixture-args {$bad.Stages[0].Arguments=@('/unsupported')}
