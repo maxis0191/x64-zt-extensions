@@ -69,7 +69,55 @@ Qualification review then found that singleton arrays could satisfy PowerShell
 text comparisons. V2 now requires scalar strings before I/O; 34 added controls
 verify the exact type-boundary refusal for profile, marker, reuse and pin fields.
 
-Next: peer review, private PR/exact-head checks/merge, immutable source package
-and fresh DEFAULT qualification, then coordinator GO for one main/link build
-and one prepatch probe. Native compilation, mapped windows, ABI/reference
-interpretation and a working Zombies catalogue remain pending.
+Source merged in [PR 57](https://github.com/maxis0191/x64-zt-extensions/pull/57)
+as `2f74c9745f95d90455591591638d3c013e7a069b`, after peer source review and
+qualification approval of exact final head `be27a38b9b51b98dd57dbf90ea4309f7eef4112f`.
+All four exact-head hosted checks had direct billing/spending-limit refusal
+annotations, runner_id=0 and empty steps. The owner's existing conditional
+exception applied; hosted checks did not pass. Canonical main was synchronized
+and clean after the merge.
+
+## Actual main/link build, 2026-10-14
+
+The fresh merged source package contained 899 text files / 8721070 bytes.
+Its source-workspace.json was 316668 bytes /
+`49a3be5cd65302b0ee40b20bcc8d9f5090b5280b95595abef28a4c728f254653`.
+Fresh plan B was 303783 bytes /
+`0aca63cb09e8ecfc96dee34e1fdf94f8cb66e400f8a190ffdefd38bec3a2c549`.
+The actual DEFAULT returned exit 0 (tool chunk ef647c), with the same 79
+bindings / 1083 inputs and five false flags listed above. Initial preparation
+failed before output creation because the fresh runtime parent was absent;
+the exact parent was created and a new B path used, preserving the failed A.
+
+One separately authorized build ran in original bundled PowerShell host PID
+11832, created 04:56:21.0362886Z. The real tool session 1957 returned exit 0,
+chunk 0216e5. Receipt status Passed covered exactly main Compile and link Link,
+both exit 0, elapsed 18704.001299999654 ms, finishing 04:56:44.7255449Z.
+InputsReverified, TreeClosureConfirmed and LeaseReleased were true;
+Quarantined, CandidateExecuted and Ready remained false. Receipt: 16885 bytes /
+`77e7fecfbf47217cee2fb5f4e371e76350961b759007130d1d4980488168b9f8`.
+
+| Artifact | Bytes | SHA-256 from original leased receipt |
+| --- | ---: | --- |
+| EXE | 21777408 | f11c683b5379e08cca4e881a7a412a2a8a45b5f872acb690ac62218fce6717f5 |
+| PDB | 136998912 | e761bd9f6e54a5ee7d99b60aa00918e1c61d3d7d6cbaec8306b921226b5a9de6 |
+
+The original main compiler PID18912 and linker PID26400 each had one VCTIP
+child (32668 and 32948). Two observations established each child's original-job
+membership, image/creation identity and expected parent. After original-job
+termination, active counts were zero and member lists empty. The original host
+completion confirmed closed context, absent lease and zero guards. Fresh
+05:01:17.0561151Z postflight found all five recorded identities absent, with
+no heavy processes or leases. These are lifecycle observations at their dates.
+
+The six JSON closure pins are retained locally: entry 1198 bytes, original
+completion 669, tool return 320, inventory 1429, derived build completion 8528
+and closed bundle 2359. Their outer index is 1867 bytes /
+`cfb6f523336ad0fd163c2ffcdeaf4ff5b31b83fc5fa17321662bce89c61353d0`.
+The compiled EXE/PDB were not reread or rehashed after admission was released.
+The immutable build source remains merge 2f74; later documentation heads do
+not relabel its binary or receipts.
+
+Next: the separately owned V2 consumer and coordinator-qualified probe plan,
+then one explicit probe GO. Mapped windows, ABI/reference interpretation,
+dependency/cause identification and a working Zombies catalogue remain pending.

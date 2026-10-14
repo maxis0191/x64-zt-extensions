@@ -1193,3 +1193,15 @@ hash check is omitted for the original-owner World path; legacy/non-arena HUD
 qualification and diagnostics remain unchanged. The 28th source mock checks
 deferred writer pins and World metadata versus admitted candidate validation.
 All 28 World source tests pass; this still provides no native execution proof.
+
+## 2026-10-14: stock timestamp guard for the retained arena recipe
+
+The minimum source refresh found all 72 retained stock sizes, UTC timestamps and
+attributes unchanged. PowerShell's JSON reader returns timestamp strings as
+DateTime values; JSON serialization can also omit trailing fractional zeroes.
+The arena measurement's string comparison would reject those identical times.
+It now compares exact UTC ticks, matching the existing ModelFF guard. An authored
+source test accepts string/trimmed/typed dates and still refuses a one-tick,
+size or attribute change. No retail payload, native job, writer, FF or gameplay
+was run. The former a49a Plan stays immutable and is retired from execution;
+the corrected source requires a fresh reviewed Plan before any heavy slot.
