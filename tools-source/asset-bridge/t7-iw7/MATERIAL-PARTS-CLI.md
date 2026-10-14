@@ -132,8 +132,20 @@ retained opaque objects were not rehashed outside admission. The comparison
 receipt is 3,106 bytes/`ced32f4fd3539ec8ce116035cd6cad8177f0851a24568290289c9275a4d43bd4`.
 DEFAULT again reports no native types, binary hashing, build lease or run-root
 creation, with Ready false. A minimal 892-byte capsule (`92496c02`) calls only
-the existing D runner with the exact plan and main/CLI/link stages; its `-Run`
-has not been invoked. CPP remains separately gated. A/B/C stay unchanged.
+the existing D runner with the exact plan and main/CLI/link stages. A/B/C stay unchanged.
+
+The separately admitted native D attempt on 2026-10-14 at 07:37 UTC refused
+before compiler launch: Open-T7Pin reported `T7 input hash/length differs` while
+guarding the retained inputs. Native receipt is 5,420 bytes/SHA-256
+`55c96374d843403b3486a05b66e70dd19d74bf1a284d96f4017a2fb91f67b3a9`,
+Status Failed, no stages, zero artifact output, confirmed tree closure/lease
+release and no quarantine. The original NoExit host actually exited 1; fresh
+07:40:17 UTC observation found it, its parent and compiler/link/telemetry processes
+absent, with no leases. No EXE/PDB, candidate, probe, stock, FF or game was produced
+or executed. Successful DEFAULT D remains a preparation proof; native D remains
+Failed. Its generic error does not identify the offending pin. Diagnose that
+exact input under a separate admission before correcting provenance or retrying;
+never adopt a different opaque hash or rewrite the frozen D plan.
 
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
