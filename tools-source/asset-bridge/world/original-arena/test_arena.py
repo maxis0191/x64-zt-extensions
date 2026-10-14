@@ -226,6 +226,39 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock date source checks require pwsh')
+    def test_stock_metadata_accepts_typed_and_short_dates_but_refuses_changed_ticks(self):
+        # Evaluate the actual refusal predicate with authored metadata only.
+        # No retail file, native type, reservation or process owner is consulted.
+        script=r'''
+param($Helper)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Helper,[ref]$tokens,[ref]$errors)
+$node=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Retained stock metadata changed.'")},$true))[0]
+if(!$node){throw 'Exact stock metadata refusal predicate required'}
+$check=[scriptblock]::Create($node.Extent.Text)
+$time=[datetimeoffset]'2026-09-29T21:46:16.8069800Z'
+$file=[pscustomobject]@{Length=77L;LastWriteTimeUtc=$time.UtcDateTime;Attributes=[IO.FileAttributes]::Archive}
+$typed=(' {"ModifiedUtc":"2026-09-29T21:46:16.80698Z"}'|ConvertFrom-Json).ModifiedUtc
+foreach($date in @('2026-09-29T21:46:16.8069800Z','2026-09-29T21:46:16.80698Z',$typed)){
+    $entry=[pscustomobject]@{Bytes=77L;ModifiedUtc=$date;Attributes=32}
+    & $check
+}
+foreach($kind in 'ticks','bytes','attributes'){
+    $entry=[pscustomobject]@{Bytes=77L;ModifiedUtc=$time.AddTicks(1).ToString('o');Attributes=32}
+    if($kind -ceq 'bytes'){$entry.ModifiedUtc=$time.ToString('o');$entry.Bytes=78L}
+    if($kind -ceq 'attributes'){$entry.ModifiedUtc=$time.ToString('o');$entry.Attributes=33}
+    $caught=$false;try{& $check}catch{$caught=$true}
+    if(!$caught){throw 'Changed stock metadata was accepted'}
+}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'stock-date.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('Measure-StockReference.ps1'))],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell admission source checks require pwsh')
     def test_world_opaque_qualification_is_deferred_to_existing_admission(self):
         script=r'''
