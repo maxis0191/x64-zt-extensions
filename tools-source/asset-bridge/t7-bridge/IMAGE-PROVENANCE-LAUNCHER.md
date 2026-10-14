@@ -78,3 +78,48 @@ separately qualify the new full producer CLI. Only a later reviewed measured coh
 operational preparation/ordinary DEFAULT. Its actual packet review and native
 GO remain separate. The occupied owner client and Main27016 remain preserved;
 no runtime, alias, bank or stock operation is part of this source change.
+
+
+## CPP D operational successor, 2026-10-14
+
+The retained source proposal above still has seven NULL build/candidate fields
+and refuses DEFAULT/Run. The separate `iw7.t7-image-provenance-plan/1` route
+qualifies the closed CPP D recipe `9e735ab7...`, receipt `73cebdc2...` and original
+link EXE 21,998,592 bytes / `552a9805...`. Its compiled extension source is
+`1ad68ee74a9775b5eefb150c9316dfee6fad5df9`; native source is
+`fab935826c898806855376662a8a03317b3ad8f1`. All five stages, original compiler
+members, fresh original host context, actual PTY exit and independent absence
+proof are required. Recorded EXE identity comes from the original link receipt;
+source qualification does not reopen it.
+
+`prepare_image_provenance_probe.py` reduces the retained qualified E5 stock
+metadata to the existing 23-bootstrap collection, 88 bindings and 27 input
+metadata entries. It requires a fresh admitted candidate stat snapshot and
+preservation snapshot, replacing the historical Main generation. The existing
+outer factory audits fresh Main/bank metadata without reading bank contents.
+Source preparation reads bounded text only, creates fresh empty private roots
+and emits the existing Catalogue/H1 host contract and ordinary DEFAULT command.
+It never starts a process, acquires a lease, reads opaque bytes or makes aliases.
+
+F2 arguments are exactly `-t7-iw7-image-provenance-v1 mp_freerun_04
+p7_fre_platform_cap_02 0`. The sibling body/metadata command is refused.
+The existing runner selects and pins one bounded provenance stdout record only
+after original job closure while its original admission remains. The receipt
+uses `ProvenanceOutcome`; `ProvenanceRecordCapturedPendingReview` still leaves
+independent detailed interpretation pending. Refusal, missing/malformed record,
+nonzero exit, forced/unclosed job, changed Main, late publication or failed
+lease release cannot promote success. No lifetime, retained allocation, header,
+body, pixel, DDS, engine compatibility or Ready proof is asserted.
+
+Authored source checks cover the exact compiled route and closed CPP proof,
+plan reduction and actual runner finally AST. Actual factory/ordinary DEFAULT
+requires a separate Root GO Analysis; actual F2 requires a later Root GO Native.
+The image-body sibling remains gated until actual F2 review and another GO.
+No actual F2 or operational factory has run at this source checkpoint.
+
+Root review found the unpinned snapshot filenames needed lexical ADS/device
+refusal before opening. The two snapshot reads now call the existing
+`image_metadata_consumer.read_report` ordinary JSON reader at its default 32 KiB
+bound and strict JSON parser. Six adapter tests prove zero metadata/open for
+ADS, devices and non-JSON names, plus oversized and changed opened identities.
+The large pinned historical text reader and native capture route are unchanged.

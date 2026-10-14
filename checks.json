@@ -405,6 +405,31 @@
       ]
     },
     {
+      "id": "Test-T7ImageProvenanceCppD",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7ImageProvenanceCppD.ps1"
+      ]
+    },
+    {
+      "id": "tools-source-image-provenance-probe",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/t7-bridge",
+        "-p",
+        "test_image_provenance_probe.py"
+      ]
+    },
+    {
       "id": "Test-T7Catalogue",
       "command": [
         "pwsh",
