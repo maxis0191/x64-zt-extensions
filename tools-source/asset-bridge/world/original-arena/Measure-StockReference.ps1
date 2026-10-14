@@ -5,11 +5,17 @@ param([Parameter(Mandatory)][string]$PackageRoot,[Parameter(Mandatory)][string]$
     [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$ModalTextOnly,
     [string]$RequiredPak17Binding,[string]$RequiredPak17BindingSHA256,
     [string]$RequiredPak37Binding,[string]$RequiredPak37BindingSHA256,
+    [string]$AssetfileCoverageBinding,[string]$AssetfileCoverageBindingSHA256,[string]$ReviewedStockManifest,
+    [switch]$ReferenceModalOnce,
     [ValidateSet('global_mp','global_cp')][string]$DiagnosticZone='global_mp',[switch]$Run)
 # Default hashes only small source/receipt files. No native type, stock reads,
 # hardlinks, admission, candidate binary hash or process is created before -Run.
 $ErrorActionPreference='Stop'
 $DiagnosticZone=$DiagnosticZone.ToLowerInvariant()
+if([bool]$AssetfileCoverageBinding -ne [bool]$AssetfileCoverageBindingSHA256){throw 'Coverage needs its exact metadata receipt and digest.'}
+if([bool]$AssetfileCoverageBinding -ne [bool]$ReferenceModalOnce){throw 'Fixed coverage and reference modal-once mode require each other.'}
+if($ReferenceModalOnce -and (!$RequiredPak17Binding -or !$RequiredPak37Binding -or !$ReviewedStockManifest -or
+    $LoadDiagnostic -or $ModalTextOnly -or $DiagnosticZone -cne 'global_mp')){throw 'Coverage reference requires typed supplements, reviewed manifest and its distinct modal-once mode.'}
 if($ModalTextOnly -and !$LoadDiagnostic){throw 'Modal text requires the explicit load diagnostic opt-in.'}
 if([bool]$RequiredPak17Binding -ne [bool]$RequiredPak17BindingSHA256){throw 'Pack17 supplement needs its exact metadata receipt and digest.'}
 if([bool]$RequiredPak37Binding -ne [bool]$RequiredPak37BindingSHA256){throw 'Pack37 supplement needs its exact metadata receipt and digest.'}
@@ -51,6 +57,16 @@ if($RequiredPak37Binding){
     $pak37=Get-Content -LiteralPath $RequiredPak37Binding -Raw|ConvertFrom-Json
     $inputs+=Get-ArenaRequiredPak37Input $inputs $pak37 $bindingPin.SHA256 $supplementPin.SHA256
 }
+if($AssetfileCoverageBinding){
+    $coveragePin=SmallPin $AssetfileCoverageBinding;$reviewedPin=SmallPin $ReviewedStockManifest
+    if($coveragePin.SHA256 -cne $AssetfileCoverageBindingSHA256 -or $reviewedPin.SHA256 -cne '9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4'){throw 'Exact fixed coverage receipt and reviewed manifest required.'}
+    $pins+=@($coveragePin,$reviewedPin,(SmallPin "$PackageRoot/tools-source/asset-bridge/world/original-arena/AssetfileCoverage.Core.ps1"))
+    . "$PackageRoot/tools-source/asset-bridge/world/original-arena/AssetfileCoverage.Core.ps1"
+    $coverage=Get-Content -LiteralPath $AssetfileCoverageBinding -Raw|ConvertFrom-Json
+    $reviewed=Get-Content -LiteralPath $ReviewedStockManifest -Raw|ConvertFrom-Json
+    $inputs+=Get-ArenaAssetfileCoverageInputs $inputs $coverage $reviewed $bindingPin.SHA256 $supplementPin.SHA256 $pak37Pin.SHA256
+    if($inputs.Count -ne 104){throw 'Exact 104-input coverage profile required.'}
+}
 foreach($name in 'ops/Base-Client.Core.ps1','ops/Lab-Paths.ps1','ops/Resource-Scheduler.Core.ps1',
     'ops/Resource-Memory.ps1','ops/Resource-RecorderOwnedProcess.Core.ps1','ops/native/ResourceMemory.cs',
     'ops/hud-lab/HudFileIdentity.cs','ops/model-lab/ModelFF.Core.ps1','ops/model-lab/prepare_writer.py','ops/model-lab/geometry.py',
@@ -78,6 +94,15 @@ if($LoadDiagnostic){
         OutputThresholdBytes=256MB;OutputEnforcement='Sampled';DumpFlags=$(if(!$ModalTextOnly){'0x1820'});FullMemory=$false;
         MaterialProof=$false;NoCPOrMPSkip=$true}
     if($ModalTextOnly){$diagnostic.ModalTextOnly=$true;$diagnostic.ModalSource="$PackageRoot/tools-source/asset-bridge/world/original-arena/modal_window.py";$diagnostic.WindowRecordBytes=64KB;$diagnostic.WindowHelperSeconds=10}
+}
+if($ReferenceModalOnce){
+    foreach($name in 'tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1',
+        'tools-source/asset-bridge/world/original-arena/modal_window.py','tools-source/asset-bridge/recipient/recipient_dialog.py'){$pins+=SmallPin "$PackageRoot/$name"}
+    $diagnostic=[ordered]@{Mode='reference-with-one-modal';ReferenceModalOnce=$true;TriggerMs=45000;LatestTriggerMs=220000;
+        NoProgressMs=15000;PhaseSeconds=240;GlobalClosureReserveMs=10000;RequiredDiagnosticAndClosureBudgetMs=20000;
+        ModalTextOnly=$true;ModalSource="$PackageRoot/tools-source/asset-bridge/world/original-arena/modal_window.py";
+        WindowRecordBytes=64KB;WindowHelperSeconds=10;CPUSeconds=0;SnapshotSeconds=0;OfflineStackSeconds=0;Cdb=$null;
+        MaterialProof=$false;ReferenceProofRequiresCSV=$true;NoModalContinues=$true;CapturedModalFails=$true;NoCPOrMPSkip=$true}
 }
 # Keep the exact shared writer normal-encoding proof set, rather than a new list.
 # Actual names are supplied by the reviewed shared writer via its small source CLI.
@@ -115,6 +140,7 @@ $saved=$false;$created=$false;$failure=$null
 $state=[ordered]@{Schema='iw7.original-arena-reference-run/1';PlanSHA256=$actualPlanSHA;Status='Preparing';Restored=$false;
     StockPreserved=$false;SourceHashesUnchanged=$false;RetainedLeaseToken=$lease.Token;LeaseReleased=$false;RuntimeVerified=$false;MaterialPayloadVerified=$false}
 $loadEvidence=[ordered]@{Attempted=$false;LastBytes=-1L;LastProgressMs=0L;Outcome='NotTriggered';SymbolsVerified=$false}
+if($ReferenceModalOnce){$state.MaterialReferenceMeasured=$false}
 try{
     foreach($pin in $pins){$guards.Add([IO.File]::Open($pin.Path,'Open','Read','Read'));Assert-BeaconHash $pin.Path $pin.SHA256}
     $candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256
@@ -150,12 +176,13 @@ try{
     [IO.File]::WriteAllBytes((Join-Path $RunRoot 'reference-request.json'),$requestRaw)
     [IO.File]::WriteAllBytes((Join-Path $RunRoot 'reference-plan.json'),$planRaw)
     $poll=$null
-    if($LoadDiagnostic){
+    if($LoadDiagnostic -or $ReferenceModalOnce){
         . "$PackageRoot/tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1"
         $options=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$RunRoot;CaptureSource=$diagnostic.CaptureSource;DiagnosticZone=$DiagnosticZone;
             Python=$python;PythonSHA256=(Get-FileHash -LiteralPath $python).Hash;Cdb=$diagnostic.Cdb;CdbSHA256=$diagnostic.CdbSHA256;
             Symbols=(Join-Path $CandidateRoot 'bin');ToolSHA256=$toolSHA;Inputs=$inputs}
-        if($ModalTextOnly){$options|Add-Member NoteProperty ModalTextOnly $true;$options|Add-Member NoteProperty ModalSource $diagnostic.ModalSource}
+        if($ModalTextOnly -or $ReferenceModalOnce){$options|Add-Member NoteProperty ModalTextOnly $true;$options|Add-Member NoteProperty ModalSource $diagnostic.ModalSource}
+        if($ReferenceModalOnce){$options|Add-Member NoteProperty ReferenceModalOnce $true}
         $poll={param($target,$current,$logs);Invoke-ArenaLoadDiagnostic $target $current $logs $options $loadEvidence}
     }
     $state.Process=Invoke-OriginalArenaTool $context $plan.Image $toolSHA $arguments $work $RunRoot reference $inputs $plan.DeadlineSeconds $poll
@@ -175,6 +202,7 @@ try{
 }
 finally{
     if($LoadDiagnostic){$state.Diagnostic=$loadEvidence;$state.MaterialReferenceMeasured=$false}
+    elseif($ReferenceModalOnce){$state.Diagnostic=$loadEvidence}
     if($context.Closed){
         try{
             foreach($pin in $pins){Assert-BeaconHash $pin.Path $pin.SHA256}
@@ -205,6 +233,7 @@ finally{
                     '--source',$ToolSource,'--evidence',(Join-Path $RunRoot 'reference-evidence.json'),'--measurement-root',$RunRoot)
                 $state.ReferenceReader=Invoke-OriginalArenaTool $context $python (Get-FileHash -LiteralPath $python).Hash $checkArguments $PackageRoot $RunRoot reference-check @() 30
                 $state.Status='ReferenceCaptured'
+                if($ReferenceModalOnce){$state.MaterialReferenceMeasured=$true}
             }
             if($created){$state|ConvertTo-Json -Depth 20|Set-Content -LiteralPath (Join-Path $RunRoot 'state.local.json') -Encoding utf8}
             Exit-IW7ResourceLease -Token $lease.Token;$state.LeaseReleased=$true;$state.RetainedLeaseToken=$null
