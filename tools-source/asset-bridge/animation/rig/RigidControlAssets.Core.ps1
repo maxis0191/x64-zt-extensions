@@ -13,6 +13,10 @@ function Get-RCANativePairs {
         }
     }
 }
+function Get-RCAOwnedOutputs([string]$Group,[string]$Zone) {
+    if($Group -cnotin @('Emit','FF') -or $Zone -cne 'sdk_original_rig_rigid_control'){throw 'Exact finite rigid group and zone required.'}
+    if($Group -ceq 'FF'){@(('zone/'+$Zone+'.ff'),'__iw7_ship')}
+}
 function Assert-RCAPlan($Plan) {
     if($Plan.Schema -cne 'iw7.original-rig-rigid-assets-source-plan/1' -or $Plan.Variant -cne 'RigidControl' -or
        $Plan.Zone -cne 'sdk_original_rig_rigid_control' -or $Plan.RunRoot -cnotmatch '^C:\\IW7-Work\\rca-\d{8}-[a-z0-9]{1,16}$'){

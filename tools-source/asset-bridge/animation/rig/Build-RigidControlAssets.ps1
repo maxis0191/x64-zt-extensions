@@ -170,8 +170,7 @@ try {
     }
     $directories=@('tmp')
     if($Group -ceq 'FF'){$directories+=@('dump')+@($rcaContext.Inputs.Relative|Where-Object {$_ -match '/'}|ForEach-Object {($_ -split '/')[0]}|Sort-Object -Unique)}
-    $mutables=@($rcaContext.Inputs.Relative)
-    if($Group -ceq 'FF'){$mutables+=('zone/'+$plan.Zone+'.ff')}
+    $mutables=@($rcaContext.Inputs.Relative)+@(Get-RCAOwnedOutputs $Group $plan.Zone)
     $rcaContext.Transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$rcaContext.Work;MutableFiles=$mutables;ProfileDirectory='unused';ProfileDirectories=$directories}) (Join-Path $plan.RunRoot ('backup-'+$Group))
     $rcaContext.Saved=$true
     [IO.Directory]::CreateDirectory((Join-Path $rcaContext.Work 'tmp'))|Out-Null

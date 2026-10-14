@@ -112,3 +112,59 @@ factory. The source mock now requires that directory at factory entry, including
 the failed-factory path. A fresh run root and plan pin are required for retry;
 the failed A capsule, source plan and receipts are preserved. This correction
 does not itself prove writer emission or FF acceptance.
+
+## Actual Emit and FF B, 2026-10-14
+
+The corrected B operator from PR87 emitted both native pairs with exit 0 and
+complete original geometry readback. Its separately admitted FF group then
+completed build, exact six-asset verify, dump and both fixed writers'
+`--verify-existing` re-reads. All seven original Python jobs closed with fresh
+exit 0/Active0; all corresponding native phase receipts have exit 0.
+
+The retained rigid-control `mod.ff` is **888 bytes**, SHA256
+`b7b7c4a1147e7e6c5d19cd33ad3a9e9701cda1bc31123ff22caa239d0aa4014a`.
+It contains the existing material reference, two fixed models, their two meshes
+and the branding rawfile. It contains no xanim or netconststrings. Both rigid
+readbacks assert original packed geometry, root/binds/bounds/material/LOD data;
+they report 8 vertices, 6 triangles, one bone/surface/LOD and scale 1. Source
+and redump binary hashes differ. The fixed writer checks semantic source data;
+serialized pointer values are not a file identity requirement.
+
+| Profile | Native model / surface bytes and SHA256 |
+| --- | --- |
+| first | 1008 / `517ea61748ffb4419648d8e12b58b5a3d9255bd1f318c808414208c3b6666798e`; 698 / `346825507f1eb70dfcad91c492f740cd67e9bb9e745ecec0d1a270c116bd0cdc` |
+| second | 1010 / `8e0f76767aa471756edddef4b9e866c91cd4ed24edeeea81809e0da3cd5586a45`; 699 / `3fb4e5323c09eeb237f7c331117264dd4bcc4786042fe0d4be48944af7aae6f18` |
+
+The first restoration correctly refused to release the reservation because a
+single hidden four-byte `__iw7_ship` remained. Its bytes contained exactly the
+PID in the successful native dump receipt. The pinned native main source names
+its normal exit cleanup; the CLI left this marker. The incomplete state was
+preserved separately, SHA256
+`95681736e0db677ddef816dacc5958a7cb5a165d656ea2e9025cba12f1c5f09f`.
+
+Under the retained original reservation, recovery preserved all four marker
+bytes (`385bee07efeccd90cf2922a5d6ac44431510279ca8063becf59d51677b9962d3`),
+proved the sole output's path/identity/receipt ownership and added only that
+absent-before output to an additive in-memory transaction. The original backup
+receipt and failed-cleanup snapshot were unchanged. An initial snapshot guard
+attempt refused its inherited hidden attribute; only the owned evidence copy's
+visibility was normalized before guarded recovery, retaining the same bytes.
+No native phase was rerun and no stock/source path was deleted.
+
+Final source/stock identity/content proof, empty work restoration and registry
+release passed. Guards were disposed, the original context cleared, and the
+original persistent host actually exited 0. Fresh evidence found every owned
+host/child absent, no heavy/game process and zero leases. Final state is 14122
+bytes / `ffaa588a560282a6cfbbef6b93ccebb4047843b7297b67e5b0fb0b0e84f163f0`;
+the final handoff is 20037 bytes /
+`5185db612073658143bfa64ca786a09451177fcfb1e7ed3b099ee3414e2fd717`.
+Artifact hashes were qualified under admission and copied from those receipts.
+
+The persistent correction declares only `__iw7_ship` alongside the FF output
+before the existing transaction's snapshot. A source test generates a hidden
+four-byte marker in a tiny owned fixture and proves it is retained during unknown
+closure, then removed by confirmed restoration. The 72 stock / 78 staged-input
+profile is unchanged; no arbitrary output sweep is added. Shader interpretation,
+GPU draw, pixels and owner acceptance remain unverified. Consumer source may
+now bind a separate closed RigidControl variant to the actual tuple; Game remains
+separately gated and the original SDK/FF/observer profiles stay unchanged.
