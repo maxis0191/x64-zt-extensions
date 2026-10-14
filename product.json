@@ -736,6 +736,7 @@
     "tools-source/asset-bridge/world/observer_harness_driver.py",
     "tools-source/asset-bridge/world/original-arena/README.md",
     "tools-source/asset-bridge/world/original-arena/Build-ArenaWriter.ps1",
+    "tools-source/asset-bridge/world/original-arena/CP-MODAL-WITNESS.md",
     "tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1",
     "tools-source/asset-bridge/world/original-arena/LOAD-DIAGNOSTIC.md",
     "tools-source/asset-bridge/world/original-arena/MODAL-TEXT.md",
