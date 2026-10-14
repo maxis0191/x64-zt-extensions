@@ -789,6 +789,8 @@
     "tools-source/asset-bridge/t7-iw7/test_catalog_add_observation.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_add_build.py",
     "tools-source/asset-bridge/t7-iw7/CATALOGUE-ADD-OBSERVATION.md",
+    "tools-source/asset-bridge/t7-iw7/selected_image_header_metadata.hpp",
+    "tools-source/asset-bridge/t7-iw7/selected_image_header_metadata_fixture.cpp",
     "tools-source/asset-bridge/t7-iw7/selected_image_provenance.hpp",
     "tools-source/asset-bridge/t7-iw7/selected_image_provenance_fixture.cpp",
     "tools-source/asset-bridge/t7-iw7/native_image_provenance.inc",
@@ -802,7 +804,10 @@
     "tools-source/asset-bridge/animation/rig/raygun/README.md",
     "tools-source/asset-bridge/animation/rig/raygun/source-plan.json",
     "tools-source/asset-bridge/animation/rig/raygun/source_handoff.py",
-    "tools-source/asset-bridge/animation/rig/raygun/test_source_handoff.py"
+    "tools-source/asset-bridge/animation/rig/raygun/test_source_handoff.py",
+    "tools-source/asset-bridge/animation/rig/raygun/OWNED-SKIN-SEAM.md",
+    "tools-source/asset-bridge/animation/rig/raygun/owned_skin_mapping.py",
+    "tools-source/asset-bridge/animation/rig/raygun/test_owned_skin.py"
   ],
   "dependencies": [
     {
