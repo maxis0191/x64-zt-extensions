@@ -90,6 +90,10 @@ function Encode-Record {'T7_REGISTRATION_IMAGE_METADATA '+($r|ConvertTo-Json -Co
 Check ((ConvertFrom-T7RegistrationImageRecord (Encode-Record) 0) -ceq 'RegistrationRecordCaptured') 'Registration record lost.'
 Check ((ConvertFrom-T7RegistrationImageRecord (Encode-Record) 1) -ceq 'RegistrationRecordFromFailedProcess') 'Nonzero promoted.'
 Check ((ConvertFrom-T7RegistrationImageRecord '' 0) -ceq 'RegistrationNoReport') 'Missing record fabricated.'
+foreach($name in 'schema','source_profile','native_source_commit','zone','model','capture_phase','recheck_phase'){
+    $old=$r[$name];$r[$name]=@($old)
+    Refuses {ConvertFrom-T7RegistrationImageRecord (Encode-Record) 0};$r[$name]=$old
+}
 Refuses {ConvertFrom-T7RegistrationImageRecord ((Encode-Record)+"`n"+(Encode-Record)) 0}
 foreach($name in 'capture_phase','header_copies','payload_bytes_read','lifetime_proven','capture_ordinal'){
     $old=$r[$name];$r[$name]=switch($name){capture_phase{'after_zone_model_lookup'};header_copies{'2'};payload_bytes_read{1};lifetime_proven{$true};capture_ordinal{2}}

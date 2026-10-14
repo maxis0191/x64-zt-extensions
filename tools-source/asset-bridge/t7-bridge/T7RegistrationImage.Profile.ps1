@@ -113,6 +113,9 @@ function ConvertFrom-T7RegistrationImageRecord([string]$Text,[int]$ExitCode) {
     if(!$records.Count){return 'RegistrationNoReport'}
     if($records.Count -ne 1 -or [Text.Encoding]::UTF8.GetByteCount($records[0].Groups[1].Value) -gt 64KB){throw 'One bounded registration metadata record required.'}
     $r=$records[0].Groups[1].Value|ConvertFrom-Json -Depth 25
+    foreach($name in 'schema','source_profile','native_source_commit','zone','model','capture_phase','recheck_phase'){
+        if($r.$name -isnot [string]){throw 'Typed registration metadata text scalars required.'}
+    }
     Assert-T7CatalogueFields $r @('allocation_retained','association_rechecked_at_registration','atomic_snapshot_proven','binding_hash_u32','binding_index','capture_ordinal',
         'capture_phase','failure_stage','header_copies','header_rechecked_at_registration','image','image_header_bytes','lifetime_proven','lod','model','model_default',
         'name_rechecked_at_registration','native_source_commit','payload_bytes_read','pixels_copied','provenance','ready','reason','recheck_phase','refused',
