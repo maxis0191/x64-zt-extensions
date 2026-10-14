@@ -4,8 +4,9 @@ The existing `prepare_build.py` now has an explicit `--image-provenance-v1`
 selection. It requires the retained E5 publication recipe, selected render-only
 V2 family and both prior compile proofs. Other observations, material-parts,
 prepatch modes and explicit catalogue diagnostics are excluded before any
-preparation IO. The frozen f2 API, source contract, fixture and renderer are
-unchanged.
+preparation IO. It consumes the merged PR112 API and current H fixture source
+contract. The observer, native entry and generated operational source pair
+remain unchanged from the reviewed f2 correction.
 
 The producer applies the existing pinned image-provenance overlay after the
 E5 source transition. It records a separate `ImageProvenance` marker and binds
@@ -25,7 +26,7 @@ There is no candidate EXE/PDB hash in this change and the old E/cce8 candidate
 cannot be relabeled as provenance.
 
 Local source checks execute the real selector and renderer transition, reject
-conflicting profiles before preparation IO, compare the exact frozen f2 output
+conflicting profiles before preparation IO, compare the exact operational output
 pair, and test the source contract/transition guard. They also execute the real
 source-pending gate and confirm its ordering before imports/admission. The
 historical parts guard remains covered. The first authored PowerShell check
@@ -37,11 +38,24 @@ StrictMode Latest. The property guard now matches the neighboring profiles,
 and the actual function is tested with an older plan omitting both optional
 `BuildProfile` and `ReuseCompile` properties; its historical result stays false.
 
-The real F fixture's 53 C++ assertions are still unexecuted. PR112 stays open
-until they pass under its separate Root GO and original host/job closure is
-confirmed. This dependent producer branch must not merge or deploy that API
-implicitly. A later reviewed change must supply measured fixture provenance
-and enable the full-CLI recipe under a new CPP GO. That full build, its artifact
+The initial F and G compilations failed before running assertions; their
+immutable evidence remains failed. Fresh H compiled and executed all 53 checks
+from source commit `678bf7dde6a99207654256c1e53ebaaec286ffe1` under its separate
+Root GO. Both phases exited 0 with `/W4 /WX` retained, and original host/job,
+guard and lease closure was verified. The fixture source is 14892 bytes /
+`f123c92c219c6d133882cadda2c8f62967de9bb86f2de0f55d0b468384d5f574`.
+Its receipt is 11759 bytes /
+`7e612f958494f52f236dd8a48c3b5d69437eb25ca5fe73036e3b0974243762a6`;
+fresh closure is 369 bytes /
+`5203527eed2c6e92575845a57e65aa0d8b6b3f30759e751e64d8e5436b1e75b8`.
+PR112 merged at `7855ee8eed69a3b26a515604128cdb3f7beede0d`. That merged
+revision is distinct from the source actually compiled by H.
+
+This qualifies the synthetic API fixture only. This inactive producer may
+merge after its source review and exact-head CI audit while `SourceOnlyPending`
+and the hard `-Run` refusal remain mandatory. A later reviewed successor must
+consume measured H provenance and enable the full-CLI recipe under a new CPP
+GO. That full build, its artifact
 and closure receipts, then a fresh native plan/ordinary DEFAULT and separate
 native GO are distinct gates. Authentic textures, image body admission,
 runtime ABI, pointer lifetime and owner gameplay remain unqualified.

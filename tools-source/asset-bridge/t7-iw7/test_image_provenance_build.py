@@ -39,7 +39,7 @@ class ProvenanceBuildTests(unittest.TestCase):
                 build.prepare(self.args(material_parts_v1=True))
             io.assert_not_called()
 
-    def test_real_producer_transition_preserves_exact_f2_api(self):
+    def test_real_producer_transition_preserves_qualified_api_source_outputs(self):
         main, cli = material_tests.PartsRetainedTransitionTests().base()
         payloads = {'prepared/main.cpp': main.encode(), 'prepared/zonetool.cpp': cli.encode()}
         before = copy.deepcopy(payloads)
