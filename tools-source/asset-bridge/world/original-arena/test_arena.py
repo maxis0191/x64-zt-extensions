@@ -246,7 +246,7 @@ function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,$SHA,$Logs){
     if($script:Mode -cne 'pass'){throw 'Authored owner failure'}
     Test-H1Budget $Plan $State
     $State.Identity=[ordered]@{PID=1234;Image=$Start.FileName;CreatedUtc='2026-10-14T00:00:00Z'}
-    $State.TreeClosureConfirmed=$true;$State.ExitCode=0;$Context.Closed=$true
+    $State.TreeClosureConfirmed=$true;$State.ExitCode=0;$Context.Closed=$true;$Context.Owner.Closed=$true
 }
 foreach($mode in 'pass','failed','unknown'){
     $script:Mode=$mode;$work=Join-Path $Root $mode;[IO.Directory]::CreateDirectory($work)|Out-Null
@@ -261,6 +261,14 @@ foreach($mode in 'pass','failed','unknown'){
         if($mode -ceq 'unknown' -and ($context.Closed -or $context.Owner)){throw 'Unknown factory was treated as closed'}
     }
 }
+$work=Join-Path $Root 'reused';[IO.Directory]::CreateDirectory($work)|Out-Null
+$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token='authored'};Work=$work}
+$script:Mode='pass'
+$null=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work first @() 30
+$previous=$context.Owner
+$script:Mode='unknown';$caught=$false
+try{$null=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work second @() 30}catch{$caught=$true}
+if(!$caught -or $context.Closed -or $context.Owner -or $previous.StopCalls -ne 0){throw 'Previous closed owner falsely qualified a new unknown factory'}
 '''
         with tempfile.TemporaryDirectory() as temp:
             path=Path(temp)/'source-caller.ps1';path.write_text(script,encoding='utf-8')

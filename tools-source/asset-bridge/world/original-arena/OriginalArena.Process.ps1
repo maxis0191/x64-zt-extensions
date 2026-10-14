@@ -41,6 +41,9 @@ function Invoke-OriginalArenaTool($Context,[string]$Executable,[string]$SHA256,[
         $State.LastMemoryObservation=[ordered]@{Policy='TelemetryOnly';Snapshot=(Get-IW7ResourceSnapshot)}
     }
     try {
+        # As in Invoke-WorldStage, clear the closed previous owner BEFORE a new
+        # factory attempt. Its Closed flag cannot attest an unknown new object.
+        $Context.Owner=$null
         Invoke-H1OwnedStage $plan $current $Context $start $SHA256 $logs
         Test-H1Budget $plan $current
         # NativeJob.CloseConfirmed only returns after the original root exited

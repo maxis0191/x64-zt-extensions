@@ -1167,3 +1167,10 @@ three rigid masks, source caller mocks and unknown-owner retention. No stock
 payload, native build, FF, process fixture, game or GPU was executed for this
 source change. The read-only review used one GPT-6.1 Sol / medium agent under
 the then-visible policy; later policy requires Ultra for any new Sol review.
+
+Independent Ultra review found a reused-context factory gap: the previous closed
+Owner could survive a throwing next factory and falsely qualify cleanup. The
+World caller now clears Owner before invoking H1, matching Invoke-WorldStage.
+The authored source mock covers success followed by a failed unknown factory;
+the old owner is never stopped/reused and the new context stays unconfirmed.
+This correction does not qualify native execution.
