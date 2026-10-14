@@ -392,3 +392,64 @@ all earlier records. The targeted RE review also found implicit selection copy
 could leave the CPU pointer on the old buffer; copy is deleted, move explicit,
 and allocator/DB lifetime documented. The current CLI never copied selection;
 no corresponding crash was observed.
+
+### E5 stock attempt and original-host recovery on 2026-10-14
+
+PR40 qualified the distinct E5 tuple, request2 and ordered collision policy.
+Its scalar policy/scope/request checks were corrected to reject singleton
+arrays; 291 manifest checks and 398 shared checks passed. Read-only actual
+build qualification held 30 text inputs/1,582,126 bytes and refused nine mixed
+tuples/closure records, without reading opaque artifacts or acquiring a lease.
+The new request is 463 bytes/SHA256
+`66e9d49388dfe18bd5c088ef0c945ede544b4410c0dc31ae8e1b95efaf21db8d`.
+The old 377-byte request and E3/E4/C artifacts remain frozen.
+
+The first operational preflight stopped before native launch: the plan selected
+V2 but `New-T7CatalogueStart` still projected the V1 option. PR42 corrected that
+builder. A regression constructing the real ProcessStartInfo failed before the
+fix, then all 295 checks passed, including streamed V1/V2 and resident V1/V2
+argv. Fresh DEFAULT and preflight confirmed five actual V2 arguments, 114
+bindings, 29 original inputs and 23 bootstraps. Operator source `aecf52ea`
+(merged as `7fc52239`) remains distinct from compiled source `af41e768`.
+
+The single actual stock invocation of candidate `aa322cac` exited 1 after
+5,897.334 ms, with `Status=Failed`, `ExportOutcome=NoExport` and the native
+refusal `Both model and mesh outputs required`. Original job closure, input
+reverification, alias identities, engine-output validation, provider metadata
+reverification and reservation release passed. The default MaterialG schema1
+observation still captured seven texture records: image0 refused at
+`image_header`, six were not attempted, and no pixels were copied.
+
+Only metadata of the partial dump was inspected after release: one XMB of
+1,184 bytes, no XSB and no export manifest. The model path measured 257
+characters; the expected mesh path measured 272. Pinned upstream file opening
+uses `fopen_s`, and the model/mesh dumpers return silently when opening fails.
+Exceeding MAX_PATH is the probable cause; no CRT errno or independent opaque
+readback was observed, so the cause remains unproved. A future short root yields
+166/181-character model/mesh paths. Check both full paths including their NUL
+terminator before another separately authorized invocation; no CPP rebuild is
+needed for that path change.
+
+Original-host closure initially refused `Plan alias count differs`: its V1-only
+gate counted 27 links while the actual V2 receipt retained all 29 mappings.
+The first recovery refused an AST/runtime signature-rendering mismatch before
+mutation. The second replaced only the identity validator but original Complete
+still refused because its selector helper existed only in the runner's local
+scope. No guards were disposed and neither attempt changed the runtime outcome.
+The final correction uses the historical marker-presence gate for V1 or V2,
+without importing another function. Its fresh NoProfile fixture checks local
+selector scope, both 29-mapping cohorts, wrong provider IDs and ordinary
+closure: 210 host checks and 415 incident checks pass.
+
+The reviewed final recovery replaced only that validator, retained its two
+parameters and invoked the unchanged original Complete. All 91 original wrapper
+handles were observed closed, then the original PTY actually exited 1. A fresh
+post-host witness found both original processes absent, no heavy process and an
+empty registry; Main's stopped baseline and unknown cause were preserved.
+Package, plan and native receipt were not modified. No opaque output, game
+asset or binary was read/hashed after release. The completion text is 12,109
+bytes/SHA256
+`918d7460e8befec293f2c28ebbe3bcf819b86843267e12a06a099acc453f6cef`.
+There is no accepted converted mesh, collision compatibility, texture appearance,
+FF roundtrip, runtime or owner gameplay. Preserve this failed cohort and prepare
+a new short-root plan while awaiting its separate coordinator slot.
