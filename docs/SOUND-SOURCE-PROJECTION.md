@@ -1,5 +1,39 @@
 # StandardMod current-source projection
 
+## Future source contracts - 2026-10-14
+
+Current sound preparation uses `sab_ff_helpers-20261014.json` in Python,
+PowerShell and the native build-plan adapter. Both older manifests remain exact.
+Relative to the 2026-10-13 manifest, only Scheduler and ModelFF change: Scheduler
+now implements `TelemetryOnly`, and ModelFF gained the reviewed authored-arena
+and streamed geometry dispatch. The remaining 14 helper source pins are unchanged.
+LF/CRLF normalization still qualifies source only; execution guards still bind
+exact file bytes, size and metadata.
+
+RAM and commit values are positive typed int64 scenario estimates, without the
+former exact 8/11 GiB or 4/6 GiB admission requirement. New review/execution plans
+preserve their reviewed estimates and pass them to the one existing shared lease.
+The three sound phase/build/sealing observers validate fresh telemetry with the
+shared policy instead of stopping at 85 percent commit. Invalid telemetry,
+ownership conflicts, original jobs, deadlines, quarantine, restoration and exact
+output/log limits retain their existing gates. A source plan grants no native GO.
+
+The future StandardMod projection has 27 members. Its new dated manifest and
+`SoundBuildJob.cs` have null historical pins; the 25 existing historical members
+retain their complete F pins. The new manifest receives a current runtime pin.
+Frozen F/A/B plans, receipts, outputs and earlier source packages are not rewritten.
+
+Source validation: the fresh Sound package passed all 110 Python tests with no
+skips; native-checksum passed 23 Python tests. Mocked phase/deadline tests accept
+full commit and reject impossible telemetry in all three observers. Eight sealing
+cases passed 35 assertions, and 14 tiny-file transaction cases passed with reviewed
+1-byte physical / 512-MiB commit estimates transmitted to admission. These tests
+do not compile native code, seal retail/toolchain inputs, build SAB/FF, launch a
+game or establish playback. A future real plan still needs separate qualification.
+
+The sections below retain the 2026-10-13 projection qualification and its original
+26-member source set and scenario estimates.
+
 The StandardMod preparer can create a new plan with reviewed current helpers
 while keeping the completed F run as immutable evidence. It does not update or
 consume an F/A/B plan, restore historical timestamps, read payload bytes, request
