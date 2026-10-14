@@ -15,6 +15,7 @@
 #define assert_offsetof(T, M, N) static_assert(offsetof(T, M) == N)
 #endif
 #include "selected_image_header_metadata.hpp"
+#include <array>
 #include <cstdio>
 #include <utility>
 
@@ -50,8 +51,8 @@ namespace
         value.useFallback = 1; value.fallbackLevel = 3; value.fallbackSize = 2048;
         value.delayLoadPixels = true;
         value.name = reinterpret_cast<const char*>(std::uintptr_t{1});
-        value.pixels = reinterpret_cast<zonetool::t7::byte*>(std::uintptr_t{1});
-        value.fallbackPixels = reinterpret_cast<zonetool::t7::byte*>(std::uintptr_t{1});
+        value.pixels = reinterpret_cast<decltype(value.pixels)>(std::uintptr_t{1});
+        value.fallbackPixels = reinterpret_cast<decltype(value.fallbackPixels)>(std::uintptr_t{1});
         for (unsigned i = 0; i < 4; ++i)
         {
             value.streamedParts[i].width = static_cast<std::uint16_t>(16u << i);
@@ -82,6 +83,28 @@ int main()
         check(result.at("total_size") == 0xabcdeu && result.at("use_fallback") == 1);
         check(result.at("fallback_level") == 3 && result.at("fallback_size") == 2048);
         check(result.at("fallback_pointer_present") == true && result.at("delay_load_pixels") == true);
+        // Simulate an unaligned raw header, then memcpy into a real aligned owned
+        // object. Never assign or read an invalid typed bool in the fixture.
+        for (const unsigned char raw : std::array<unsigned char, 4>{0, 1, 2, 0xff})
+        {
+            alignas(zonetool::t7::GfxImage) std::array<unsigned char, image::header_bytes + 1> bytes{};
+            std::memcpy(bytes.data() + 1, &source, image::header_bytes);
+            bytes.at(1 + offsetof(zonetool::t7::GfxImage, delayLoadPixels)) = raw;
+            zonetool::t7::GfxImage owned{};
+            std::memcpy(&owned, bytes.data() + 1, image::header_bytes);
+            if (raw <= 1)
+                check(image::build(owned, admitted()).at("delay_load_pixels") == (raw == 1));
+            else
+            {
+                bool seen = false;
+                try { image::build(owned, admitted()); }
+                catch (const std::runtime_error& error)
+                {
+                    seen = std::string_view(error.what()) == "Invalid copied delayLoadPixels representation";
+                }
+                check(seen);
+            }
+        }
         check(result.at("parts").size() == 4);
         for (unsigned i = 0; i < 4; ++i)
         {

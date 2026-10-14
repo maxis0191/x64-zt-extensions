@@ -25,6 +25,8 @@ namespace zonetool::t7::selected_image_header_metadata
     static_assert(sizeof(GfxImage) == header_bytes && offsetof(GfxImage, name) == 248);
     static_assert(sizeof(GfxImageStreamLevelCountAndSize) == sizeof(std::uint32_t));
     static_assert(std::is_same_v<decltype(GfxImage{}.format), DXGI_FORMAT>);
+    static_assert(std::is_same_v<decltype(GfxImage{}.delayLoadPixels), bool>);
+    static_assert(sizeof(bool) == 1 && offsetof(GfxImage, delayLoadPixels) == 188);
     static_assert(std::endian::native == std::endian::little);
 
     struct admission
@@ -54,6 +56,7 @@ namespace zonetool::t7::selected_image_header_metadata
         return text;
     }
 
+    // copied must be an aligned caller-owned GfxImage object, not a cast byte span.
     inline nlohmann::ordered_json build(const GfxImage& copied, const admission& gate,
         const std::optional<std::string>& owned_name = std::nullopt)
     {
@@ -61,6 +64,13 @@ namespace zonetool::t7::selected_image_header_metadata
             "Attested exact image source layout required");
         require(gate.copied_header_bytes == header_bytes && gate.header_rechecked &&
             gate.association_rechecked, "Complete rechecked selected header copy required");
+        // Raw copies can contain invalid bool representations. Inspect the byte
+        // without loading the typed bool, and refuse before scalar publication.
+        std::uint8_t delay_load_pixels_raw{};
+        std::memcpy(&delay_load_pixels_raw,
+            reinterpret_cast<const unsigned char*>(&copied) + offsetof(GfxImage, delayLoadPixels),
+            sizeof(delay_load_pixels_raw));
+        require(delay_load_pixels_raw <= 1, "Invalid copied delayLoadPixels representation");
         require(copied.streamedPartCount <= 4, "Physical image part count exceeds four");
         require(gate.owned_name_rechecked == owned_name.has_value(),
             "Owned image name requires its separate checked/rechecked read");
@@ -101,7 +111,7 @@ namespace zonetool::t7::selected_image_header_metadata
             {"use_fallback", copied.useFallback}, {"fallback_level", copied.fallbackLevel},
             {"fallback_size", copied.fallbackSize},
             {"fallback_pointer_present", copied.fallbackPixels != nullptr},
-            {"delay_load_pixels", copied.delayLoadPixels},
+            {"delay_load_pixels", delay_load_pixels_raw == 1},
             {"source_semantic", static_cast<int>(copied.semantic)}, {"parts", std::move(parts)},
             {"pixel_payload_bytes_read", 0}, {"allocation_retained", false},
             {"atomic_snapshot_proven", false}, {"runtime_abi_proven", false},
