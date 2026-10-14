@@ -171,6 +171,43 @@ identity/signature and the remaining input suffix need qualification before
 any explicit environment refresh. Preserve the old seal and D failure; do not
 roll back a Windows DLL or silently repin a historical build.
 
+## Explicit dated OS context
+
+The admitted union qualification later measured version `10.0.26100.9711`,
+company Microsoft Corporation and a Valid Catalog signature from Microsoft
+Windows for the observed 12,288-byte TZRES hash above. The exact D/V3 suffix
+union of ten files passed unchanged under guards. Its 8,907-byte proof has
+SHA-256 `5a282c19995af210fd9d7c55a8692d87d4456526352fe21034a8f07d83a9fd9d`.
+The original host exited 0; fresh 08:09:56 UTC observation found owned absence
+and no leases. The observation records ContractAccepted/PinAdopted false;
+approval of a new environment is a separate source decision, not a rewritten D.
+
+The coordinator accepted one new, finite context for future parts/V3 plans:
+`--os-context-tzres-20261014 --os-context-proof <qualification-receipt>`.
+There is no SHA parameter or arbitrary override. The source pins that exact
+proof and validates its before/after, version, Microsoft Catalog identity,
+closed observation and unchanged suffix. It replaces only the exact old TZRES
+expected pin. Without the option the original context stays strict.
+
+The new top-level `OSResourceContext` is separate from geometry/prepatch
+markers. V3's 14 profile fields and ten marker fields remain unchanged.
+Only one guarded text binding is added for the proof: future parts therefore
+has 155 bindings, with its historical 154-member set checked unchanged; V3
+similarly retains its historical cardinality plus that one finite proof.
+The runner checks the same fixed transition and unique TZRES Input, holds the
+proof through the existing guard lifetime, and hashes the new resource only
+under the existing admitted execution. The 1,145 other parts Inputs, source
+CPP, retained objects, original seal and old plans remain unchanged. Source
+checks qualify this interface only; a fresh plan/DEFAULT and CPP still need
+their own coordinator groups.
+
+Source verification: 366 Python tests passed (nine optional source/environment
+skips); actual AST guards passed 23 OS-context, 132 binding, 24 parts, 48 V3
+and 100 V2 checks. Complete parts/V3 binding checks also accepted authored
+copies of the frozen plan metadata with only the qualified context added.
+These checks read text metadata only and do not qualify a new DEFAULT run,
+binary inputs, compilation or engine behavior.
+
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
 bytes, mismatched G2 metadata and any unqualified selected header/name/recheck.

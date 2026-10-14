@@ -5,7 +5,7 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7Build.ps1'),[ref]$tokens,[ref]$errors)
 if($errors.Count){throw 'Runner syntax differs.'}
-foreach($name in 'Assert-T7BuildProfile','Assert-T7InputBindings') {
+foreach($name in 'Assert-T7BuildProfile','Assert-T7OSResourceContext','Assert-T7InputBindings') {
     $function=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name},$true)
     if(!$function){throw 'Actual validator missing.'}
     . ([scriptblock]::Create($function.Extent.Text))
