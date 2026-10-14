@@ -115,6 +115,10 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
         $pin=$profile.$name
         $limit=if($name -ceq 'BaseBuildPlan'){2MB}elseif($name -ceq 'BaseBuildReceipt'){128KB}
                elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PublicationSource'){16KB}
+               elseif($name -ceq 'PreparedCLI' -and $Plan.ReuseCompile.PSObject.Properties.Name -contains 'SelectedStreamedRenderOnlyV2' -and
+                   $Plan.ReuseCompile.SelectedStreamedRenderOnlyV2.Schema -ceq 'iw7.t7-selected-streamed-render-only-build/2' -and
+                   $Plan.ReuseCompile.SelectedStreamedRenderOnlyV2.GeometryProfile -ceq 't7-iw7-selected-streamed-render-only-v2' -and
+                   $Plan.ReuseCompile.SelectedStreamedRenderOnlyV2.CollisionPolicy -ceq 'omit-source-rigid-collision-trees'){128KB}
                elseif($name -ceq 'PreparedCLI' -and $Plan.ReuseCompile.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1' -and
                    $Plan.ReuseCompile.SelectedStreamedStaticV1.Schema -ceq 'iw7.t7-selected-streamed-static-build/1' -and
                    $Plan.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile -ceq 't7-iw7-selected-streamed-static-v1'){128KB}else{64KB}
@@ -138,7 +142,10 @@ function Assert-T7InputBindings($Plan) {
         @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
     if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}
     $v2=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ResidentMultiSurfaceV2'
-    $streamed=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1'
+    $streamedV1=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1'
+    $renderOnly=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedRenderOnlyV2'
+    if($renderOnly -and ($streamedV1 -or $zombies)){throw 'Render-only and frozen V1/C markers are exclusive.'}
+    $streamed=$streamedV1 -or $renderOnly
     if(!$v2) {
         if($zombies){throw 'Zombies observation requires the current selected-streamed publication proof.'}
         if($streamed){throw 'Selected-streamed marker requires the exact common geometry proof.'}
@@ -175,16 +182,31 @@ function Assert-T7InputBindings($Plan) {
         }
     }
     if($streamed) {
-        $marker=$reuse.SelectedStreamedStaticV1
-        if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'GeometryProfile,Schema' -or
-            $marker.Schema -cne 'iw7.t7-selected-streamed-static-build/1' -or
-            $marker.GeometryProfile -cne 't7-iw7-selected-streamed-static-v1'){throw 'Exact selected-streamed source marker required.'}
-        foreach($source in @(
+        if($renderOnly) {
+            $marker=$reuse.SelectedStreamedRenderOnlyV2
+            if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'CollisionPolicy,GeometryProfile,Schema' -or
+                $marker.Schema -cne 'iw7.t7-selected-streamed-render-only-build/2' -or
+                $marker.GeometryProfile -cne 't7-iw7-selected-streamed-render-only-v2' -or
+                $marker.CollisionPolicy -cne 'omit-source-rigid-collision-trees'){throw 'Exact render-only source marker required.'}
+            $sourcePins=@(
+                @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+                @('t7_iw7_streamed_model.hpp',11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
+                @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
+                @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
+                @('test_streamed_contract.py',13768,'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c') )
+        } else {
+            $marker=$reuse.SelectedStreamedStaticV1
+            if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'GeometryProfile,Schema' -or
+                $marker.Schema -cne 'iw7.t7-selected-streamed-static-build/1' -or
+                $marker.GeometryProfile -cne 't7-iw7-selected-streamed-static-v1'){throw 'Exact selected-streamed source marker required.'}
+        $sourcePins=@(
             @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
             @('t7_iw7_streamed_model.hpp',11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
             @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
             @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
-            @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))) {
+            @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))
+        }
+        foreach($source in $sourcePins) {
             $path=Join-Path $observerRoot $source[0]
             if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and
                 $_.Bytes -eq $source[1] -and $_.SHA256 -ceq $source[2]}).Count -ne 1){throw 'Exact selected-streamed source binding required.'}
@@ -292,7 +314,7 @@ function Assert-T7InputBindings($Plan) {
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
     $transitionBytes=if($streamed){716}else{714}
-    $transitionSHA=if($streamed){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}else{
+    $transitionSHA=if($renderOnly){'a10f68d9c49957a2847c214bf9e880c741501c0ec204c2296f2fe87f1daadb32'}elseif($streamed){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}else{
         'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}
     if($bytes.Length -ne $transitionBytes -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
         $transitionSHA){throw 'Reviewed versioned source transitions differ.'}

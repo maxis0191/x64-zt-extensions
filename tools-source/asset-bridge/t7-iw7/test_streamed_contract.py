@@ -31,6 +31,74 @@ def fixture():
 
 
 class StreamedContractTests(unittest.TestCase):
+    @staticmethod
+    def render_fixture():
+        request, manifest = fixture()
+        request.update(schema=stream.REQUEST_SCHEMA_V2, profile=stream.PROFILE_V2,
+                       collision_policy=stream.COLLISION_POLICY)
+        manifest.update(schema=stream.EXPORT_SCHEMA_V2, profile=stream.PROFILE_V2,
+                        geometry_profile=stream.GEOMETRY_PROFILE_V2, output_root_key=stream.root_key(request))
+        manifest['selected_collision_policy'] = dict(policy=stream.COLLISION_POLICY, scope='render-only',
+            source_tree_present=[True, False], cpu_tree_present=[False, False], collision_dropped=[True, False],
+            collision_tree_payload_bytes_read=0, collision_conversion_attempted=False,
+            collision_compatibility_verified=False, ready=False)
+        return request, manifest
+
+    def test_render_only_request_has_distinct_option_root_and_required_policy(self):
+        request, manifest = self.render_fixture()
+        export.validate_export(manifest, request)
+        original, _ = fixture()
+        self.assertNotEqual(stream.root_key(request), stream.root_key(original))
+        self.assertEqual(boot.command_review(request, request_path='render_request.json')['proposed_arguments'][0], stream.OPTION_V2)
+        for change in ({'collision_policy': 'convert'}, {'collision_policy': False}, {'profile': stream.PROFILE}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                boot.validate_request({**request, **change})
+        del request['collision_policy']
+        with self.assertRaises(ValueError): boot.validate_request(request)
+
+    def test_v1_cannot_silently_gain_collision_omission(self):
+        request, manifest = fixture()
+        with self.assertRaises(ValueError): boot.validate_request({**request, 'collision_policy': stream.COLLISION_POLICY})
+        _, render_manifest = self.render_fixture()
+        with self.assertRaises(ValueError): export.validate_export(render_manifest, request)
+        manifest['selected_collision_policy'] = render_manifest['selected_collision_policy']
+        with self.assertRaises(ValueError): export.validate_export(manifest, request)
+
+    def test_render_only_trace_refuses_partial_drop_conversion_read_or_compatibility_claim(self):
+        request, manifest = self.render_fixture()
+        for change in ({'policy': 'preserve'}, {'scope': 'physics'}, {'source_tree_present': [True]},
+                       {'source_tree_present': [1, 0]}, {'cpu_tree_present': [True, False]},
+                       {'collision_dropped': [False, False]}, {'collision_tree_payload_bytes_read': 1},
+                       {'collision_tree_payload_bytes_read': False}, {'collision_conversion_attempted': True},
+                       {'collision_compatibility_verified': True}, {'ready': True}):
+            changed = copy.deepcopy(manifest); changed['selected_collision_policy'].update(change)
+            with self.subTest(change=change), self.assertRaises(ValueError): export.validate_export(changed, request)
+
+    def test_render_only_serialized_geometry_uses_the_same_strict_reader(self):
+        from test_readback import SyntheticMulti
+        synthetic = SyntheticMulti(materials=['original/clay', 'original/metal'])
+        request, template = self.render_fixture()
+        synthetic.request.update(schema=stream.REQUEST_SCHEMA_V2, profile=stream.PROFILE_V2,
+            collision_policy=stream.COLLISION_POLICY, xpak_key=request['xpak_key'], packages=request['packages'])
+        synthetic.manifest.update(schema=stream.EXPORT_SCHEMA_V2, profile=stream.PROFILE_V2,
+            geometry_profile=stream.GEOMETRY_PROFILE_V2, output_root_key=stream.root_key(synthetic.request),
+            selected_mesh_payload=template['selected_mesh_payload'], selected_collision_policy=template['selected_collision_policy'])
+        proof = synthetic.inspect()
+        self.assertTrue(proof['serialized_parse_verified'])
+        self.assertFalse(proof['native_provenance_verified'])
+        self.assertFalse(proof['runtime_verified'])
+        self.assertEqual(proof['mesh']['vertices'], 9)
+        path = Path(__file__).resolve().parents[3] / 'ops/model-lab/rigid_export.py'
+        spec = importlib.util.spec_from_file_location('_render_only_model_lab_test', path)
+        lab = importlib.util.module_from_spec(spec); spec.loader.exec_module(lab)
+        bindings = [dict(slot=i, source=name, target=lab.MATERIAL)
+                    for i, name in enumerate(synthetic.manifest['material_dependencies'])]
+        _, receipt = lab.derive(bytes(synthetic.outputs['model']), bytes(synthetic.outputs['mesh']),
+            synthetic.manifest, synthetic.request, lod_distance=1000000, rebinds=bindings)
+        self.assertEqual(receipt['geometry_profile'], stream.GEOMETRY_PROFILE_V2)
+        self.assertEqual([row['source'] for row in receipt['material_rebinds']], ['original/clay', 'original/metal'])
+        self.assertFalse(receipt['runtime_verified'])
+
     def test_streamed_receipt_uses_same_independent_serialized_geometry_reader(self):
         from test_readback import SyntheticMulti
         synthetic = SyntheticMulti(materials=['original/clay', 'original/metal'])

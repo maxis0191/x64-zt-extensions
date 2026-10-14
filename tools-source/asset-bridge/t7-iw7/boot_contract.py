@@ -31,7 +31,8 @@ def safe_name(value, *, zone=False):
 
 
 def validate_request(value):
-    if type(value) is dict and value.get('schema') == 'iw7.t7-iw7-selected-streamed-request/1':
+    if type(value) is dict and value.get('schema') in (
+            'iw7.t7-iw7-selected-streamed-request/1', 'iw7.t7-iw7-selected-streamed-request/2'):
         from streamed_contract import validate_request as validate_streamed_request
         return validate_streamed_request(value)
     require(type(value) is dict and set(value) == FIELDS, 'Exact request fields required')

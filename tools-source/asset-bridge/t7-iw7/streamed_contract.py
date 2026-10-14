@@ -8,6 +8,12 @@ EXPORT_SCHEMA = 'iw7.t7-iw7-selected-streamed-export/1'
 PROFILE = 'selected-streamed-rigid-one-lod'
 GEOMETRY_PROFILE = 't7-iw7-selected-streamed-static-v1'
 OPTION = '-t7-iw7-model-streamed-v1'
+REQUEST_SCHEMA_V2 = 'iw7.t7-iw7-selected-streamed-request/2'
+EXPORT_SCHEMA_V2 = 'iw7.t7-iw7-selected-streamed-export/2'
+PROFILE_V2 = 'selected-streamed-render-only-rigid-one-lod'
+GEOMETRY_PROFILE_V2 = 't7-iw7-selected-streamed-render-only-v2'
+OPTION_V2 = '-t7-iw7-model-streamed-v2'
+COLLISION_POLICY = 'omit-source-rigid-collision-trees'
 REQUEST_FIELDS = {'schema', 'target', 'profile', 'zone', 'model', 'lod', 'xpak_key', 'packages'}
 PACKAGE_FIELDS = {'path', 'identity', 'bytes'}
 PAYLOAD_FIELDS = {'key_hex', 'source_shared_flags', 'cpu_view_shared_flags', 'source_surface_flags',
@@ -25,9 +31,15 @@ def hex64(value):
 
 
 def validate_request(value):
-    require(type(value) is dict and set(value) == REQUEST_FIELDS, 'Exact selected-streamed request fields required')
-    require(value['schema'] == REQUEST_SCHEMA and value['target'] == 'iw7' and value['profile'] == PROFILE,
+    require(type(value) is dict, 'Selected-streamed request must be an object')
+    render_only = value.get('schema') == REQUEST_SCHEMA_V2
+    fields = REQUEST_FIELDS | {'collision_policy'} if render_only else REQUEST_FIELDS
+    require(set(value) == fields, 'Exact selected-streamed request fields required')
+    require(value['schema'] == (REQUEST_SCHEMA_V2 if render_only else REQUEST_SCHEMA) and value['target'] == 'iw7' and
+            value['profile'] == (PROFILE_V2 if render_only else PROFILE),
             'Explicit selected-streamed profile required')
+    if render_only:
+        require(value['collision_policy'] == COLLISION_POLICY, 'Explicit render-only collision omission policy required')
     safe_name(value['zone'], zone=True)
     safe_name(value['model'])
     require(type(value['lod']) is int and 0 <= value['lod'] <= 5, 'Canonical selected-streamed LOD required')
@@ -54,7 +66,8 @@ def validate_request(value):
 
 def root_key(value):
     value = validate_request(value)
-    rows = [GEOMETRY_PROFILE, value['zone'], value['model'], str(value['lod']), value['xpak_key']]
+    geometry = GEOMETRY_PROFILE_V2 if value['schema'] == REQUEST_SCHEMA_V2 else GEOMETRY_PROFILE
+    rows = [geometry, value['zone'], value['model'], str(value['lod']), value['xpak_key']]
     for package in value['packages']:
         rows += [package['path'], package['identity'], str(package['bytes'])]
     return 't7_iw7_streamed_' + hashlib.sha256('\n'.join(rows).encode('ascii')).hexdigest()
@@ -67,9 +80,10 @@ def command_review(value, request_path=None):
         require(re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_-]*\.json', request_path) is not None,
                 'One flat pinned request JSON in the private working directory required')
         safe_name(request_path[:-5], zone=True)
-    return {'schema': 'iw7.t7-iw7-selected-streamed-command-review/1',
+    render_only = value['schema'] == REQUEST_SCHEMA_V2
+    return {'schema': 'iw7.t7-iw7-selected-streamed-command-review/' + ('2' if render_only else '1'),
             'proposed_arguments': None if request_path is None else
-                [OPTION, value['zone'], value['model'], str(value['lod']), request_path],
+                [OPTION_V2 if render_only else OPTION, value['zone'], value['model'], str(value['lod']), request_path],
             'request_file_required': True, 'private_output_root_key': root_key(value),
             'source_engine': 'BlackOps3_UnrankedDedicatedServer.exe', 'expected_source_mode': 't7',
             'xpak_payload_files_allowed': [p['path'] for p in value['packages']],
@@ -121,4 +135,23 @@ def validate_payload(value, request, surface_count):
             all(type(v) is int and v in (0, 3) for v in opcodes), 'Only observed raw/LZ4 commands required')
     require(value['headers_rechecked'] is True and value['atomic_snapshot_proven'] is False and
             value['engine_object_writes'] is False, 'Rechecked headers do not prove atomic ownership or allow engine writes')
+    return value
+
+
+def validate_collision_policy(value, surface_count):
+    fields = {'policy', 'scope', 'source_tree_present', 'cpu_tree_present', 'collision_dropped',
+              'collision_tree_payload_bytes_read', 'collision_conversion_attempted',
+              'collision_compatibility_verified', 'ready'}
+    require(type(value) is dict and set(value) == fields, 'Exact render-only collision provenance required')
+    require(value['policy'] == COLLISION_POLICY and value['scope'] == 'render-only',
+            'Explicit render-only collision scope required')
+    for name in ('source_tree_present', 'cpu_tree_present', 'collision_dropped'):
+        require(type(value[name]) is list and len(value[name]) == surface_count and
+                all(type(v) is bool for v in value[name]), 'Exactly N ordered collision booleans required')
+    require(not any(value['cpu_tree_present']) and value['collision_dropped'] == value['source_tree_present'],
+            'Every foreign tree must be omitted only in the CPU view')
+    require(type(value['collision_tree_payload_bytes_read']) is int and value['collision_tree_payload_bytes_read'] == 0,
+            'Foreign collision payload must not be read')
+    for name in ('collision_conversion_attempted', 'collision_compatibility_verified', 'ready'):
+        require(value[name] is False, 'Collision conversion, compatibility and readiness remain unproved')
     return value

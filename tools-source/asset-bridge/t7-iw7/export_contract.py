@@ -41,13 +41,15 @@ def validate_export(value, request):
     request = validate_request(request)
     require(type(value) is dict, 'Export receipt must be an object')
     schema = value.get('schema')
-    require(type(schema) is str and schema in (SCHEMA_V1, SCHEMA_V2, streamed.EXPORT_SCHEMA), 'Explicit export schema required')
-    is_streamed = schema == streamed.EXPORT_SCHEMA
+    require(type(schema) is str and schema in (SCHEMA_V1, SCHEMA_V2, streamed.EXPORT_SCHEMA, streamed.EXPORT_SCHEMA_V2), 'Explicit export schema required')
+    is_streamed = schema in (streamed.EXPORT_SCHEMA, streamed.EXPORT_SCHEMA_V2)
+    render_only = schema == streamed.EXPORT_SCHEMA_V2
     v2 = schema == SCHEMA_V2 or is_streamed
     fields = FIELDS_V2 | {'selected_mesh_payload'} if is_streamed else (FIELDS_V2 if v2 else FIELDS)
+    if render_only: fields |= {'selected_collision_policy'}
     require(set(value) == fields, 'Exact versioned export receipt fields required')
-    expected_profile = streamed.PROFILE if is_streamed else PROFILE
-    expected_geometry = streamed.GEOMETRY_PROFILE if is_streamed else (
+    expected_profile = (streamed.PROFILE_V2 if render_only else streamed.PROFILE) if is_streamed else PROFILE
+    expected_geometry = (streamed.GEOMETRY_PROFILE_V2 if render_only else streamed.GEOMETRY_PROFILE) if is_streamed else (
         't7-iw7-resident-static-v2' if v2 else 't7-iw7-resident-static-v1')
     require(value['target'] == 'iw7' and value['profile'] == expected_profile and
             request['profile'] == expected_profile and value['geometry_profile'] == expected_geometry,
@@ -92,6 +94,8 @@ def validate_export(value, request):
                 'Logical geometry work bound differs')
     if is_streamed:
         streamed.validate_payload(value['selected_mesh_payload'], request, counts['surfaces'])
+    if render_only:
+        streamed.validate_collision_policy(value['selected_collision_policy'], counts['surfaces'])
     require(type(value['material_dependencies']) is list and
             len(value['material_dependencies']) == counts['surfaces'],
             'Exactly N unresolved material slots required')

@@ -31,7 +31,7 @@ class RecipeTests(unittest.TestCase):
             p.prepare_catalog_trace.SURFACE_COUNT_HEADER,current,{'Bytes':old[0],'SHA256':old[1]}))
 
     @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'), 'Retained source not supplied')
-    def test_selected_streamed_plain_and_wired_pins_match_the_native_source(self):
+    def test_render_only_streamed_plain_and_wired_pins_match_the_native_source(self):
         _,sources=p.prepare_cli.render(Path(os.environ['IW7_T7_SOURCE']))
         main,cli=(sources[p.prepare_cli.PATHS[i]] for i in (0,1))
         header=(p.HERE.parent/'t7-bridge/t7_iw7_resident_model.hpp').read_text(encoding='utf-8')
@@ -39,11 +39,11 @@ class RecipeTests(unittest.TestCase):
                        (main,cli,header)))
         main,cli=p.prepare_message_publication.overlay(p.prepare_catalog_trace.wire_message_main(main),cli)
         wired={**plain,'prepared/main.cpp':main,'prepared/zonetool.cpp':cli}
-        for name,(old,_) in p.prepare_catalog_trace.SELECTED_STREAMED_TRANSITIONS.items():
+        for name,(old,_) in p.prepare_catalog_trace.RENDER_ONLY_STREAMED_TRANSITIONS.items():
             pin={'Bytes':old[0],'SHA256':old[1]}
-            self.assertTrue(p.prepare_catalog_trace.multisurface_payload_delta(name,plain[name].encode(),pin,selected_streamed=True))
-            self.assertTrue(p.prepare_catalog_trace.multisurface_payload_delta(name,wired[name].encode(),pin,wired=True,selected_streamed=True))
-            self.assertFalse(p.prepare_catalog_trace.multisurface_payload_delta(name,wired[name].encode()+b' ',pin,wired=True,selected_streamed=True))
+            self.assertTrue(p.prepare_catalog_trace.multisurface_payload_delta(name,plain[name].encode(),pin,render_only_streamed=True))
+            self.assertTrue(p.prepare_catalog_trace.multisurface_payload_delta(name,wired[name].encode(),pin,wired=True,render_only_streamed=True))
+            self.assertFalse(p.prepare_catalog_trace.multisurface_payload_delta(name,wired[name].encode()+b' ',pin,wired=True,render_only_streamed=True))
             if name != p.prepare_catalog_trace.SURFACE_COUNT_HEADER:
                 self.assertFalse(p.prepare_catalog_trace.multisurface_payload_delta(name,plain[name].encode(),pin))
 

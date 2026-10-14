@@ -309,4 +309,45 @@ foreach($change in @(
 )) {
     $fixture=New-ZombiesBindingFixture;. $change;Must-RefuseBinding $fixture
 }
+
+function New-RenderOnlyBindingFixture {
+    $fixture=New-StreamedBindingFixture
+    $fixture.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedStaticV1')
+    $fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedRenderOnlyV2 ([pscustomobject]@{
+        Schema='iw7.t7-selected-streamed-render-only-build/2';GeometryProfile='t7-iw7-selected-streamed-render-only-v2';
+        CollisionPolicy='omit-source-rigid-collision-trees'})
+    foreach($row in @(
+        @('prepared/main.cpp',13160,'55081db20863f291f4f1fea8c1c995995e5e548b56acf043201fbb2e361f3934',43254,'5aef1fad310071f5e680a9f5b4dbd6a303af6ea8605fccb5dc5705cb386b761d'),
+        @('prepared/zonetool.cpp',110229,'81be2ff09aa9b433c3f1e63f6adc47800670bd040e3dad09753e2a67534d888e',110283,'f0436457967f13d3e4cbd429ad00624bd774dd7c64e9e649d3a77364cd528bef'))) {
+        $transition=@($fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions|Where-Object Path -CEQ $row[0])[0]
+        $transition.Bytes=$row[1];$transition.SHA256=$row[2];$transition.WiredBytes=$row[3];$transition.WiredSHA256=$row[4]
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\plan\'+$row[0].Replace('/','\')))[0]
+        $pin.Bytes=$row[3];$pin.SHA256=$row[4]
+    }
+    foreach($row in @(
+        @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+        @('t7_iw7_streamed_model.hpp',11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
+        @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
+        @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
+        @('test_streamed_contract.py',13768,'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'))) {
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
+        $pin.Bytes=$row[1];$pin.SHA256=$row[2]
+    }
+    return $fixture
+}
+Assert-T7InputBindings (New-RenderOnlyBindingFixture);$checks++
+foreach($change in @(
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.PSObject.Properties.Remove('CollisionPolicy')},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.CollisionPolicy='convert'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.Schema='iw7.t7-selected-streamed-static-build/1'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.GeometryProfile='t7-iw7-selected-streamed-static-v1'},
+    {$fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{})},
+    {$fixture.ReuseCompile|Add-Member NoteProperty ZombiesObservationC ([pscustomobject]@{})},
+    {$fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions[0].WiredBytes=43146},
+    {@($fixture.Bindings|Where-Object Path -CEQ 'C:\fixture\t7_iw7_streamed_model.hpp')[0].SHA256=('0'*64)},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}
+)) {
+    $fixture=New-RenderOnlyBindingFixture;. $change;Must-RefuseBinding $fixture
+}
+
 [ordered]@{Checks=$checks;ActualDefaultChecks=$entryChecks;Passed=$true;NativeInvoked=$false;OpaqueContentRead=$false}|ConvertTo-Json -Compress

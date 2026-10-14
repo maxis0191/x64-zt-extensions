@@ -318,6 +318,27 @@ foreach($change in @(
 )) {
     $fixture=New-ZombiesProfileFixture;. $change;Must-Refuse $fixture
 }
+
+function New-RenderOnlyProfileFixture {
+    $fixture=New-PublicationFixture
+    $fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedRenderOnlyV2 ([pscustomobject]@{
+        Schema='iw7.t7-selected-streamed-render-only-build/2';GeometryProfile='t7-iw7-selected-streamed-render-only-v2';
+        CollisionPolicy='omit-source-rigid-collision-trees'})
+    $fixture.BuildProfile.PreparedCLI.Bytes=110283
+    @($fixture.Bindings|Where-Object Path -CEQ $fixture.BuildProfile.PreparedCLI.Path)[0].Bytes=110283
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-RenderOnlyProfileFixture) $PSScriptRoot)){throw 'Explicit render-only CLI bound refused.'};$checks++
+foreach($change in @(
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedRenderOnlyV2')},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.Schema='wrong'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.GeometryProfile='t7-iw7-selected-streamed-static-v1'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.CollisionPolicy='convert'},
+    {$fixture.BuildProfile.PreparedCLI.Bytes=131073;@($fixture.Bindings|Where-Object Path -CEQ $fixture.BuildProfile.PreparedCLI.Path)[0].Bytes=131073}
+)) {
+    $fixture=New-RenderOnlyProfileFixture;. $change;Must-Refuse $fixture
+}
+
 $bindingResult=(& (Join-Path $PSScriptRoot 'Test-T7InputBindings.ps1'))|ConvertFrom-Json
 if(!$bindingResult.Passed -or $bindingResult.NativeInvoked -or $bindingResult.OpaqueContentRead){throw 'Early input binding tests failed.'}
 $checks+=$bindingResult.Checks

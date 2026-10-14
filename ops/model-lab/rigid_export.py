@@ -27,7 +27,7 @@ finally:
 
 PROFILE = 't7-iw7-resident-static-v1'
 PROFILE_V2 = 't7-iw7-resident-static-v2'
-MULTISURFACE_PROFILES = (PROFILE_V2, rb.STREAMED_PROFILE)
+MULTISURFACE_PROFILES = (PROFILE_V2, rb.STREAMED_PROFILE, rb.STREAMED_PROFILE_V2)
 MATERIAL = 'mopw/character_park_clown_zombie_shoes'
 SCENE_MIN_DISTANCE = 256
 FF_LIMIT = 32 * 1024**2

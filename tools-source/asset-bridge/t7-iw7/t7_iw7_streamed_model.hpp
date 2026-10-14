@@ -11,6 +11,7 @@
 namespace zonetool::t7::streamed_iw7
 {
     inline constexpr const char* profile = "t7-iw7-selected-streamed-static-v1";
+    inline constexpr const char* render_profile = "t7-iw7-selected-streamed-render-only-v2";
 
     struct selection
     {
@@ -26,6 +27,7 @@ namespace zonetool::t7::streamed_iw7
         std::uint64_t source_key{};
         std::array<std::uint64_t, 3> opaque_descriptor_words{};
         std::vector<std::uint16_t> source_surface_flags;
+        std::vector<bool> source_collision_tree_present;
     };
     static_assert(!std::is_copy_constructible_v<selection> && !std::is_copy_assignable_v<selection>);
     static_assert(std::is_move_constructible_v<selection> && std::is_move_assignable_v<selection>);
@@ -60,7 +62,8 @@ namespace zonetool::t7::streamed_iw7
     inline selection select(const XModel* source, const char* exact_name,
         const unsigned lod, const std::uint64_t expected_key,
         const std::span<const selected_xpak::package> packages,
-        const selected_xpak::lz4_decoder decompress, utils::memory::allocator& allocator)
+        const selected_xpak::lz4_decoder decompress, utils::memory::allocator& allocator,
+        const bool render_only = false)
     {
         try
         {
@@ -101,7 +104,8 @@ namespace zonetool::t7::streamed_iw7
                 rigid_lists.emplace_back(surface.vertList);
                 const auto& rigid = rigid_lists.back().value;
                 require(rigid.boneOffset == 0 && rigid.vertCount == surface.vertCount &&
-                    rigid.triOffset == 0 && rigid.triCount == surface.triCount && !rigid.collisionTree,
+                    rigid.triOffset == 0 && rigid.triCount == surface.triCount &&
+                    (render_only || !rigid.collisionTree),
                     ("selected streamed rigid coverage differs; surface=" + std::to_string(i) +
                      " boneOffset=" + std::to_string(rigid.boneOffset) +
                      " vertices=" + std::to_string(rigid.vertCount) +
@@ -170,6 +174,11 @@ namespace zonetool::t7::streamed_iw7
                     static_cast<std::uint16_t>(cpu_surfaces[i].flags) & ~std::uint16_t(XSURFACE_FLAG_STREAMED));
                 cpu_surfaces[i].shared = cpu_shared;
                 cpu_rigid[i] = rigid_lists[i].value;
+                result.source_collision_tree_present.push_back(cpu_rigid[i].collisionTree != nullptr);
+                // Explicit V2 render-only derivation: omit the foreign tree
+                // only in this owned copy. Never dereference its payload.
+                // The captured source list is unchanged and rechecked below.
+                if (render_only) cpu_rigid[i].collisionTree = nullptr;
                 cpu_surfaces[i].vertList = cpu_rigid + i;
             }
             cpu_mesh->shared = cpu_shared; cpu_mesh->surfs = cpu_surfaces;
@@ -185,7 +194,7 @@ namespace zonetool::t7::streamed_iw7
         {
             const std::string old_prefix = std::string(resident_iw7::profile) + ": ";
             const std::string reason = error.what();
-            throw std::runtime_error(std::string(profile) + ": " +
+            throw std::runtime_error(std::string(render_only ? render_profile : profile) + ": " +
                 (reason.starts_with(old_prefix) ? reason.substr(old_prefix.size()) : reason));
         }
     }
