@@ -138,3 +138,17 @@ Affected authored checks pass 39 closed-cohort controls and 91 existing V3
 source controls; the unchanged V2 consumer and causal publication controls
 pass 168 and 11. These checks use source/synthetic objects only, no native
 candidate, real admission or opaque input.
+
+Actual pre-merge source-only entry validation uses code
+`d6e5cbc472e6c001734e8bacdd4769b6135af5fc`, composed as local `plv3d`
+(959 text files / 9,365,169 bytes). The new active source plan is 36,485 bytes /
+`409d2852ac01f982a954de7156d12609ef90318327eebade58c31167617fcd56`,
+with 25 guarded text pins and 7 opaque tuples copied from original observations.
+Fresh NoProfile parent imports no helpers and directly invokes the entry with
+`-SourceOnly`. Original child 12604, created
+`2026-10-14T11:44:13.8933384Z`, naturally exits 0 and reports
+`SourceCohortCheckedPendingPreparationGO`, candidate bound, no native types,
+binary hashes, lease, files created or readiness. Subsequent independent CIM
+lookup confirms the child absent and the future runtime still absent. Bank and
+retail metadata are not refreshed; operational preparation/capture remain
+unauthorized. The earlier d904 null draft and frozen V2/E5 files are intact.
