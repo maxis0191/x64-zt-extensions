@@ -779,7 +779,14 @@
     "tools-source/asset-bridge/t7-iw7/prepare_catalog_add_observation.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_add_observation.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_add_build.py",
-    "tools-source/asset-bridge/t7-iw7/CATALOGUE-ADD-OBSERVATION.md"
+    "tools-source/asset-bridge/t7-iw7/CATALOGUE-ADD-OBSERVATION.md",
+    "tools-source/asset-bridge/t7-iw7/selected_image_provenance.hpp",
+    "tools-source/asset-bridge/t7-iw7/selected_image_provenance_fixture.cpp",
+    "tools-source/asset-bridge/t7-iw7/native_image_provenance.inc",
+    "tools-source/asset-bridge/t7-iw7/prepare_image_provenance.py",
+    "tools-source/asset-bridge/t7-iw7/test_image_provenance.py",
+    "tools-source/asset-bridge/t7-iw7/image-provenance-source-contract.json",
+    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE.md"
   ],
   "dependencies": [
     {

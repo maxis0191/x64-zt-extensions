@@ -1,0 +1,26 @@
+{
+  "schema": "iw7.t7-image-provenance-source/1",
+  "source_profile": "t7-image-provenance-v1",
+  "files": {
+    "selected_image_provenance.hpp": {
+      "lf_bytes": 14618,
+      "lf_sha256": "5ece0df748ad065bdbac7c459fc253750f59a7035c6ed26d913b83f4c4982ab2"
+    },
+    "native_image_provenance.inc": {
+      "lf_bytes": 1254,
+      "lf_sha256": "360bcf806e2d69f3ecba2d2422b99c8c86a775397438117607115ed0d8b5573e"
+    },
+    "selected_image_provenance_fixture.cpp": {
+      "lf_bytes": 8107,
+      "lf_sha256": "291717c8b36a76f18080dc7091d6ceca294251271bbf9924096aaf9b38fbdb7a"
+    }
+  },
+  "main": {
+    "bytes": 43370,
+    "sha256": "13052a66ba89d5e66253c6931b81cb120aaa5acac37d6a4b15ab57cac4c10900"
+  },
+  "cli": {
+    "bytes": 129795,
+    "sha256": "daadaf2345f348434190789c871cf48e8e67f24301b1720184b1c78bda084182"
+  }
+}
