@@ -236,9 +236,18 @@ $marker='[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_mp"...'
 $e=[ordered]@{Attempted=$false;LastBytes=10L;LastProgressMs=30000L}
 if(Test-ArenaLoadDiagnosticTrigger $e 44999 10 $marker){throw 'Early diagnostic'}
 if(!(Test-ArenaLoadDiagnosticTrigger $e 45000 10 $marker)){throw 'Exact timed stall not detected'}
+$late=[ordered]@{Attempted=$false;LastBytes=10L;LastProgressMs=90000L;Outcome='NotTriggered'}
+if(Test-ArenaLoadDiagnosticTrigger $late 105000 10 $marker){throw 'Late trigger can overrun original deadline'}
+if($late.Outcome -cne 'DeclinedLate'){throw 'Late refusal not recorded'}
 $e.Attempted=$true;if(Test-ArenaLoadDiagnosticTrigger $e 60000 10 $marker){throw 'Diagnostic repeated'}
 $e.Attempted=$false;if(Test-ArenaLoadDiagnosticTrigger $e 60000 11 $marker){throw 'Progress mistaken for stall'}
-function Get-H1Clock {60000L}
+$script:Clock=55000L
+function Get-H1Clock {$script:Clock}
+$budget=[pscustomobject]@{StartedMs=0L}
+if((Get-ArenaDiagnosticSeconds $budget 20) -ne 20){throw 'Nominal budget changed early'}
+$script:Clock=105000L;if((Get-ArenaDiagnosticSeconds $budget 20) -ne 5){throw 'Phase failed to inherit global remaining time'}
+$script:Clock=111000L;$caught=$false;try{$null=Get-ArenaDiagnosticSeconds $budget 20}catch{$caught=$true};if(!$caught){throw 'Exhausted global reserve accepted'}
+$script:Clock=55000L
 function Get-H1OriginalState($Owner){[pscustomobject]@{RootExited=$false;PID=$Owner.PID;Image=$Owner.Image;ActiveProcesses=1}}
 $script:Calls=@();$script:Registered=0
 function Register-H1Original { $script:Registered++ }

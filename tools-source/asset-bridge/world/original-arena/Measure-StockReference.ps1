@@ -39,7 +39,8 @@ if($LoadDiagnostic){
     foreach($name in 'tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1','ops/iw7_capture.py','ops/iw7_debugger.py'){$pins+=SmallPin "$PackageRoot/$name"}
     $debugger=Get-AppxPackage Microsoft.WinDbg
     if($debugger.Version -ne '1.2606.22001.0'){throw 'Existing reviewed offline debugger metadata required.'}
-    $diagnostic=[ordered]@{Mode='global-mp-load-witness';TriggerMs=45000;NoProgressMs=15000;PhaseSeconds=120;
+    $diagnostic=[ordered]@{Mode='global-mp-load-witness';TriggerMs=45000;LatestTriggerMs=60000;NoProgressMs=15000;PhaseSeconds=120;
+        GlobalClosureReserveMs=10000;RequiredDiagnosticAndClosureBudgetMs=60000;
         CaptureSource="$PackageRoot/ops/iw7_capture.py";Cdb=(Join-Path $debugger.InstallLocation 'amd64/cdb.exe');
         CdbSHA256='5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67';
         CPUSeconds=5;SnapshotSeconds=15;OfflineStackSeconds=20;DumpAcceptanceBytes=32MB;

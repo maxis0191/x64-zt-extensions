@@ -13,8 +13,11 @@ NativeJob owner and restoration; no new stock clone, process adopter or schedule
 
 One original-reference job runs for at most 120 seconds. If its exact final line
 is Loading global_mp, total elapsed is at least 45 seconds and the log length has
-not changed for 15 seconds, one diagnostic is armed. Progress or another zone
-does not trigger it. The callback verifies the current original job's live root
+not changed for 15 seconds, one diagnostic is armed only before 60 seconds.
+The full 60-second helper/closure budget must remain; a later trigger is refused.
+Every helper deadline is additionally clamped to the original remaining time
+minus a ten-second combined closure reserve. Progress or another zone does not
+trigger it. The callback verifies the current original job's live root
 and uses the identity captured from its creation handle, never an arbitrary PID.
 
 The existing iw7_capture.py records five seconds of thread CPU/I/O, then captures
