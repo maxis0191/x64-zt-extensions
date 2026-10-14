@@ -1039,6 +1039,18 @@
         "-File",
         "ops/Test-AssetSourcePins.ps1"
       ]
+    },
+    {
+      "id": "test_rigid_control_operator",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/animation/rig/test_rigid_control_operator.ps1",
+        "-SourcePackage",
+        "{workspace}"
+      ]
     }
   ]
 }
