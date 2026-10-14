@@ -22,13 +22,14 @@ function Get-T7CataloguePlanZoneSpec($Plan) {
 }
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -isnot [string] -or $Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
 function Assert-T7CatalogueZombiesObservationPlan($Plan) {
     $selected=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c'
     $present=[bool]$Plan.PSObject.Properties['ZombiesObservationC']
     if(!$selected -and !$present){return}
+    if($Plan.PSObject.Properties['ZombiesAddObservationC2']){throw 'C1 and C2 observation selectors cannot be mixed.'}
     if(!$selected -or !$present){throw 'Catalogue C profile and observation plan must be selected together.'}
     Assert-T7CatalogueFields $Plan.ZombiesObservationC @('Schema')
     if($Plan.ZombiesObservationC.Schema -cne 'iw7.t7-zm-observation-plan/1' -or
@@ -131,7 +132,7 @@ function Get-T7CatalogueBootstraps($Plan) {
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
             throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
         }
-        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){throw 'Qualified collection requires MSG profile.'}
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){throw 'Qualified collection requires MSG profile.'}
         $items=@($Plan.Bootstraps);$total=0L
         $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -201,7 +202,7 @@ function Get-T7CatalogueBootstraps($Plan) {
     for($index=0;$index -lt $items.Count;$index++){
         $bootstrap=$items[$index];$spec=$specs[$index]
         Assert-T7CatalogueFields $bootstrap @('Path','Bytes','SHA256','FileId','RelativePath','HashProvenance','QualificationReceipt','QualificationScript')
-        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -or
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2') -or
            !(Test-T7CatalogueInteger $bootstrap.Bytes $spec.Bytes) -or $bootstrap.Bytes -ne $spec.Bytes -or
            $bootstrap.Path -cne (Join-Path ([IO.Path]::GetDirectoryName($Plan.Zone.Path)) $spec.Name) -or
            $bootstrap.RelativePath -cne ('zone/'+$spec.Name) -or
@@ -371,6 +372,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     Assert-T7CatalogueZombiesObservationPlan $Plan
+    Assert-T7CatalogueZombiesAddPlan $Plan
     $null=Get-T7CatalogueMainBaseline $Plan
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
     $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -cne 'Legacy'
@@ -391,8 +393,9 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         $bindingCount=22+3*$bootstraps.Count
         if($shared){$bindingCount=24+2*$bootstraps.Count+@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count}
         # Five new profile text pins (link.rsp already exists), plus CLI dependencies.
-        if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$bindingCount+=6}
+        if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){$bindingCount+=6}
         if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingCount+=11} # Observer pair, shared qualifier and eight C closure/source pins.
+        if($candidateProfile -ceq 't7-zombies-catalogue-observation-c2'){$bindingCount+=12} # C2 also seals its six-pin index.
         if($export){$bindingCount+=9}
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
         if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
@@ -416,7 +419,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
     if($candidateProfile -cne 'ordinary-d2') {
-        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192};'t7-zombies-catalogue-observation-c'{16384}}
+        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192};'t7-zombies-catalogue-observation-c'{16384};'t7-zombies-catalogue-observation-c2'{16384}}
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
@@ -440,8 +443,9 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if(@([IO.Directory]::EnumerateFileSystemEntries($dir)).Count){throw 'Prepared work/evidence/temp must be empty.'}
     }
     $bindingLimit=if($qualified){22+3*$limits.ItemCount+$(if($shared){2}else{0})}else{32}
-    if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$bindingLimit+=6}
+    if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){$bindingLimit+=6}
     if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingLimit+=11}
+    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c2'){$bindingLimit+=12}
     if($export){$bindingLimit+=9}
     if($diagnostic){$bindingLimit++}
     if($streamed){$bindingLimit+=9}
@@ -458,7 +462,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($item.PSIsContainer -or $pin.IsText -isnot [bool] -or $pin.Bytes -le 0 -or $pin.Bytes -gt $pinLimit -or
            ($pin.IsText -and $pin.Bytes -gt 1MB) -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or $item.Length -ne $pin.Bytes){throw 'Bound pin metadata differs.'}
     }
-    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){
+    if($candidateProfile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){
         $sharedPath=Join-Path (Split-Path $Runner -Parent) 'T7ResidentExport.Profile.ps1'
         if(@($Plan.Bindings|Where-Object {$_.Path -ceq $sharedPath -and $_.IsText -is [bool] -and $_.IsText}).Count -ne 1){throw 'C shared build qualifier must be guarded text.'}
     }
@@ -487,6 +491,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
 }
 function Assert-T7CatalogueBuild($Plan,$Receipt) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
+    Assert-T7CatalogueZombiesAddPlan $Plan
     if($candidateProfile -ceq 't7-zombies-catalogue-observation-c' -or $Plan.PSObject.Properties['ZombiesObservationC']){
         Assert-T7CatalogueZombiesObservationPlan $Plan
     }
@@ -512,7 +517,7 @@ function Assert-T7CatalogueTextPin($Pin,$Bindings) {
 }
 function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
-    $publication=$candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
+    $publication=$candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')
     $buildPin=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.BuildPlan -and $_.IsText})
     if($buildPin.Count -ne 1 -or $buildPin[0].SHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or
        $buildPin[0].Bytes -gt 1MB -or $Plan.ExpectedBuildPlanSHA256 -ceq 'daa7097f872b83a5762b2cb56bf6dd5a235ed2beee8e0ff077276c61622d53fa'){throw 'Trace requires its own guarded build plan.'}
@@ -521,15 +526,15 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
        $build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1'){throw 'Trace build source/schema differs.'}
     $profile=$build.BuildProfile
     $fields=@('Name','Option','ArgumentCount','TraceSchema','Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
-    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$fields+=@('ContextSchema')}
-    if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$fields+=@('CallerSchema')}
-    if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$fields+=@('MessageSchema')}
+    if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){$fields+=@('ContextSchema')}
+    if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){$fields+=@('CallerSchema')}
+    if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){$fields+=@('MessageSchema')}
     $pinNames=@('Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt')
     if($publication){
         $extraPins=@('PublicationWiring','PublicationSource','PreparedCLI','MainResponse','CLIResponse','LinkResponse')
         $fields+=@('PublicationSchema')+$extraPins;$pinNames+=$extraPins
     }
-    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){
+    if($candidateProfile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){
         $fields+=@('ObservationSchema','ObserverSource','ObserverAdapter');$pinNames+=@('ObserverSource','ObserverAdapter')
     }
     foreach($p in @($profile,$Receipt.BuildProfile)) {
@@ -537,11 +542,12 @@ function Assert-T7CatalogueTraceBuild($Plan,$Receipt) {
         if($p.Name -cne $candidateProfile -or $p.Option -cne '-t7-iw7-catalog' -or
            ($p.ArgumentCount -isnot [long] -and $p.ArgumentCount -isnot [int]) -or $p.ArgumentCount -ne 3 -or
            $p.TraceSchema -cne 'iw7.t7-catalog-trace/1'){throw 'Exact catalogue trace profile required.'}
-        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
-        if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
-        if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c') -and $p.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
+        if($candidateProfile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2') -and $p.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit context schema required.'}
+        if($candidateProfile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2') -and $p.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
+        if($candidateProfile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2') -and $p.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
         if($publication -and $p.PublicationSchema -cne 'iw7.t7-message-publication-build/1'){throw 'Exact publication build schema required.'}
         if($candidateProfile -ceq 't7-zombies-catalogue-observation-c' -and $p.ObservationSchema -cne 'iw7.t7-zm-observation/1'){throw 'Exact C observation build schema required.'}
+        if($candidateProfile -ceq 't7-zombies-catalogue-observation-c2' -and ($p.ObservationSchema -isnot [string] -or $p.ObservationSchema -cne 'iw7.t7-zm-add-observation/1')){throw 'Exact C2 observation build schema required.'}
     }
     foreach($name in $pinNames) {
         $pin=$profile.$name;$other=$Receipt.BuildProfile.$name
@@ -647,7 +653,9 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
     # are receipt metadata; their actual verification remains under admission.
     $profile=$Build.BuildProfile;$reuse=$Build.ReuseCompile
     $zombies=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c'
+    $zombiesAdd=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c2'
     if($reuse.PSObject.Properties['ZombiesObservationC'] -and !$zombies){throw 'C reuse marker requires the C catalogue profile.'}
+    if($reuse.PSObject.Properties['ZombiesAddObservationC2'] -and !$zombiesAdd){throw 'C2 reuse marker requires the C2 catalogue profile.'}
     if(!$reuse.PSObject.Properties['RecompiledZonetool'] -or $reuse.RecompiledZonetool -isnot [bool] -or
        !$reuse.RecompiledZonetool){throw 'Publication requires a fresh CLI compilation.'}
     $retained=@($Base.ReuseCompile.StageRoots|Where-Object {[IO.Path]::GetFileName($_) -ceq 'xpak'})
@@ -663,8 +671,12 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
         $paths.ObserverSource=Join-Path $sourceRoot 'native_catalog_zombies_observation.inc'
         $paths.ObserverAdapter=Join-Path $sourceRoot 'prepare_catalog_zombies_observation.py'
     }
+    if($zombiesAdd){
+        $paths.ObserverSource=Join-Path $sourceRoot 'native_catalog_add_observation.inc'
+        $paths.ObserverAdapter=Join-Path $sourceRoot 'prepare_catalog_add_observation.py'
+    }
     foreach($name in $paths.Keys) {
-        $limit=if($name -cin @('PublicationSource','ObserverSource','ObserverAdapter')){16KB}elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PreparedCLI' -and ($zombies -or ((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1' -and (Get-T7SelectedStreamedExport $Plan)))){128KB}else{64KB}
+        $limit=if($name -cin @('PublicationSource','ObserverSource','ObserverAdapter')){16KB}elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PreparedCLI' -and ($zombies -or $zombiesAdd -or ((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1' -and (Get-T7SelectedStreamedExport $Plan)))){128KB}else{64KB}
         if($profile.$name.Path -cne $paths[$name] -or $profile.$name.Bytes -gt $limit){throw 'Publication source/response path or bound differs.'}
     }
     if($zombies -and ($profile.ObserverSource.Bytes -ne 9668 -or
@@ -674,6 +686,11 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
         throw 'Reviewed Catalogue C observer source pins differ.'
     }
     if($zombies){Assert-T7CatalogueZombiesSourceTransition $Build}
+    if($zombiesAdd){
+        if($profile.ObserverSource.Bytes -ne 6397 -or $profile.ObserverSource.SHA256 -cne 'fe37357ad1f3162f24ae79af51f325763b81e05851eb263f8681b5558835f11d' -or
+           $profile.ObserverAdapter.Bytes -ne 6156 -or $profile.ObserverAdapter.SHA256 -cne 'cf6551b918e21d0046136ea3e328494960b70a62334bc3f2727e0a52fee5ec6f'){throw 'Reviewed C2 observer source pins differ.'}
+        Assert-T7CatalogueZombiesAddSourceTransition $Build
+    }
     foreach($rows in @(@{Value=@($Build.Stages)},@{Value=@($Receipt.Stages)})) {
         if($rows.Value.Count -ne 3 -or ($rows.Value.Name -join '|') -cne 'main|zonetool11|link' -or
            ($rows.Value.Stage -join '|') -cne 'Compile|Compile|Link'){throw 'Publication requires two actual Compile stages then Link.'}
@@ -726,8 +743,9 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
         if($matches.Count -ne 1 -or $matches[0] -cne $expected){throw 'Publication link must consume both fresh objects and exact retained xpak.'}
     }
     if($Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe')){throw 'Publication candidate is not the new link output.'}
-    if($zombies){
+    if($zombies -or $zombiesAdd){
         Assert-T7CatalogueZombiesObservationPlan $Plan
+        Assert-T7CatalogueZombiesAddPlan $Plan
         Assert-T7ResidentMultiSurfaceBuild $Plan $Receipt $Build
         return
     }
@@ -1001,13 +1019,14 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     $profile=Get-T7CatalogueCandidateProfile $Plan
     if($profile -ceq 'ordinary-d2'){return}
     $State.TraceOutcome='NoTrace'
-    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
-    $hasCallers=$profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
-    $hasMessage=$profile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
+    $hasContext=$profile -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')
+    $hasCallers=$profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')
+    $hasMessage=$profile -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')
     if($hasContext){$State.ExitContextOutcome='Absent';$State.ExitContext=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
     if($hasCallers){$State.CallersOutcome='Absent';$State.Callers=[ordered]@{Captures=@();IncompleteTrailingLine=$false}}
     if($hasMessage){$State.MessageOutcome='Absent';$State.Message=[ordered]@{Captures=@();IncompleteTrailingLine=$false;ExitCorrelated=$false}}
     if($profile -ceq 't7-zombies-catalogue-observation-c'){$State.ZombiesObservations=@();$State.ZombiesObservationBytes=0}
+    if($profile -ceq 't7-zombies-catalogue-observation-c2'){$State.ZombiesAddObservations=@();$State.ZombiesAddObservationBytes=0}
     $path=Join-Path $Plan.StageRoot 'stderr.log'
     if(!(Test-Path -LiteralPath $path)){return}
     $State.TraceOutcome='TracePresentUnqualified'
@@ -1024,6 +1043,7 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
         't7-catalog-message'{ConvertFrom-T7CatalogueMessage $text}
         't7-catalog-message-publication'{ConvertFrom-T7CatalogueMessage $text}
         't7-zombies-catalogue-observation-c'{ConvertFrom-T7CatalogueZombiesObservation $text}
+        't7-zombies-catalogue-observation-c2'{ConvertFrom-T7CatalogueZombiesAddObservation $text}
         't7-catalog-callers'{ConvertFrom-T7CatalogueCallers $text}
         't7-catalog-exit-context'{ConvertFrom-T7CatalogueExitContext $text}
         default{ConvertFrom-T7CatalogueTrace $text}
@@ -1032,6 +1052,9 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
     if($profile -ceq 't7-zombies-catalogue-observation-c'){
         $State.ZombiesObservations=$result.ZombiesObservations;$State.ZombiesObservationBytes=$result.ZombiesObservationBytes
     }
+    if($profile -ceq 't7-zombies-catalogue-observation-c2'){
+        $State.ZombiesAddObservations=$result.ZombiesAddObservations;$State.ZombiesAddObservationBytes=$result.ZombiesAddObservationBytes
+    }
     if($hasContext){$State.ExitContextOutcome=$result.ContextOutcome;$State.ExitContext=$result.Context}
     if($hasCallers){$State.CallersOutcome=$result.CallersOutcome;$State.Callers=$result.Callers}
     if($hasMessage){$State.MessageOutcome=$result.MessageOutcome;$State.Message=$result.Message}
@@ -1039,7 +1062,7 @@ function Read-T7CatalogueTrace($Plan,$State,$Context) {
 function Assert-T7CatalogueTraceSize([string]$Profile,[long]$Bytes) {
     if(($Profile -ceq 't7-catalog-trace' -and $Bytes -ge 1536) -or
        ($Profile -ceq 't7-catalog-exit-context' -and $Bytes -gt 4096) -or
-       ($Profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $Bytes -gt 8192) -or ($Profile -ceq 't7-zombies-catalogue-observation-c' -and $Bytes -gt 16384)){throw 'Trace stderr cap exceeded.'}
+       ($Profile -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication') -and $Bytes -gt 8192) -or ($Profile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2') -and $Bytes -gt 16384)){throw 'Trace stderr cap exceeded.'}
 }
 function Get-T7CatalogueContextNumber($Match,[string]$Name,[ulong]$Maximum=[uint]::MaxValue) {
     $value=[ulong]::Parse($Match.Groups[$Name].Value,[Globalization.CultureInfo]::InvariantCulture)
@@ -1601,5 +1624,190 @@ function ConvertFrom-T7CatalogueZombiesObservation([string]$Text) {
     $result=ConvertFrom-T7CatalogueMessage $split.LegacyText
     $result|Add-Member -NotePropertyName ZombiesObservations -NotePropertyValue $split.Records
     $result|Add-Member -NotePropertyName ZombiesObservationBytes -NotePropertyValue $split.ObservationBytes
+    $result
+}
+
+function Assert-T7CatalogueZombiesAddPlan($Plan) {
+    $selected=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c2'
+    $present=[bool]$Plan.PSObject.Properties['ZombiesAddObservationC2']
+    if(!$selected -and !$present){return}
+    if(!$selected -or !$present -or $Plan.PSObject.Properties['ZombiesObservationC']){throw 'C2 profile and distinct plan marker must be selected together.'}
+    Assert-T7CatalogueFields $Plan.ZombiesAddObservationC2 @('Schema')
+    if($Plan.ZombiesAddObservationC2.Schema -isnot [string] -or $Plan.ZombiesAddObservationC2.Schema -cne 'iw7.t7-zm-add-observation-plan/1' -or
+       (Get-T7CatalogueOperation $Plan) -cne 'Catalogue' -or !$Plan.PSObject.Properties['Zone'] -or
+       (Get-T7CataloguePlanZoneSpec $Plan).Name -cne 'zm_common' -or
+       !(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes 16384) -or $Plan.TraceStderrLimitBytes -ne 16384){throw 'Exact C2 schema, Zombies zone and combined trace bound required.'}
+    foreach($name in 'ResidentSurfaceCountDiagnostic','ResidentMultiSurfaceV2','SelectedMeshMaterialObservation','SelectedStreamedStaticV1','SelectedStreamedRenderOnlyV2'){
+        if($Plan.PSObject.Properties[$name]){throw 'C2 cannot select an export experiment.'}
+    }
+}
+function Assert-T7CatalogueZombiesAddSourceTransition($Build) {
+    if(!$Build.ReuseCompile.PSObject.Properties['ZombiesAddObservationC2'] -or $Build.ReuseCompile.PSObject.Properties['ZombiesObservationC']){throw 'Explicit C2 source transition without C1 required.'}
+    $proof=$Build.ReuseCompile.ZombiesAddObservationC2
+    Assert-T7CatalogueFields $proof @('Schema','SourceProfile','BaseCLIBytes','BaseCLISHA256','CLIBytes','CLISHA256')
+    if($proof.Schema -isnot [string] -or $proof.Schema -cne 'iw7.t7-zm-add-observation-build/1' -or
+       $proof.SourceProfile -isnot [string] -or $proof.SourceProfile -cne 't7-zombies-catalogue-observation-c2' -or
+       !(Test-T7CatalogueInteger $proof.BaseCLIBytes 112377) -or $proof.BaseCLIBytes -ne 112377 -or
+       $proof.BaseCLISHA256 -cne 'c63d9552464da674d3b03c35f7edc16385fb9370b113a3925fd7bc4835fb005a' -or
+       !(Test-T7CatalogueInteger $proof.CLIBytes 119139) -or $proof.CLIBytes -ne 119139 -or
+       $proof.CLISHA256 -cne '19af683d0c609d43cefc7c93dd3d7fa6f7ae1a6f5b90d2945d37b1830bda1111' -or
+       $Build.BuildProfile.PreparedCLI.Bytes -ne $proof.CLIBytes -or $Build.BuildProfile.PreparedCLI.SHA256 -cne $proof.CLISHA256){throw 'Exact reviewed C2 base and final CLI required.'}
+    $marker=$Build.ReuseCompile.SelectedStreamedRenderOnlyV2
+    Assert-T7CatalogueFields $marker @('Schema','GeometryProfile','CollisionPolicy')
+    if($marker.Schema -isnot [string] -or $marker.GeometryProfile -isnot [string] -or $marker.CollisionPolicy -isnot [string] -or
+       $marker.Schema -cne 'iw7.t7-selected-streamed-render-only-build/2' -or $marker.GeometryProfile -cne 't7-iw7-selected-streamed-render-only-v2' -or
+       $marker.CollisionPolicy -cne 'omit-source-rigid-collision-trees'){throw 'Exact C2 compiled source epoch required.'}
+}
+function Get-T7CatalogueZombiesAddBuildPins($Plan) {
+    Assert-T7CatalogueZombiesAddPlan $Plan
+    if($Plan.ExpectedBuildPlanSHA256 -cne 'ac70f09550aebef38c2cd564be4685d7c5ae989fda7f4235049f3fb8af15459c' -or
+       $Plan.ExpectedBuildReceiptSHA256 -cne '533a2a5ac33198481bdde797d2f51898237ec7c59b98c855530d3cd16fc6298c' -or
+       $Plan.CandidateBytes -ne 21929984 -or $Plan.CandidateSHA256 -cne '02b26ad8d6dabe5e4e7e725022f6bb14d4f3be14ece554586fd8fe58af8bd820'){throw 'Exact actual C2 build and unexecuted candidate required.'}
+    $prepared=Join-Path (Split-Path $Plan.BuildPlan -Parent) 'prepared'
+    $source=Split-Path (Split-Path (Split-Path $Plan.BuildPlan -Parent) -Parent) -Parent
+    $hostRoot=Join-Path $source 'runtime/catalogue-c2-original-host-a';$pins=[ordered]@{}
+    foreach($row in @(
+        @('BuildPlan',$Plan.BuildPlan,370045,'ac70f09550aebef38c2cd564be4685d7c5ae989fda7f4235049f3fb8af15459c'),
+        @('BuildReceipt',$Plan.BuildReceipt,25016,'533a2a5ac33198481bdde797d2f51898237ec7c59b98c855530d3cd16fc6298c'),
+        @('Header',(Join-Path $prepared 't7_iw7_resident_model.hpp'),21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'),
+        @('SourceReceipt',(Join-Path $source 'source-workspace.json'),313411,'78f5a290cc1f3abb6f3dd24b68281f70eafb3f452de3ac700b06e20aca4c84dd'),
+        @('OriginalEntry',(Join-Path $hostRoot 'entry.json'),1161,'e5a101c10001df72bc0b13d59453d6c5ee72e35ea58e8749f3962b1182f0e650'),
+        @('OriginalHostCompletion',(Join-Path $hostRoot 'completion.json'),645,'beb99678957b48541c19de63a570e7d03b75b6bcb36b2fc6949edcdc8812151b'),
+        @('ActualToolReturn',(Join-Path $hostRoot 'tool-return.local.json'),414,'dede49ace727f02dca0f12bafcbc8895b0bf66eedd7e11ed55749e3e1ea96e31'),
+        @('Inventory',(Join-Path $hostRoot 'inventory.local.json'),2261,'457bd40bed53dc1f69fd9c0a1c9bc4449ce35bde7e3eb31492d7f78bcb2f6d26'),
+        @('BuildCompletion',(Join-Path $hostRoot 'build-completion.local.json'),4877,'d1a48564efee4a3c7d6f7478aad21fa0b8511ba8d51a1693a05acc7ab5f4b416'),
+        @('Bundle',(Join-Path $hostRoot 'closed-bundle.local.json'),2472,'5f6142cc127708886834d158d8247c86ca1185c80f6321cfa39578abce4725ee'),
+        @('Index',(Join-Path $source 'runtime/catalogue-c2-six-closed-pins.local.json'),2609,'a659b617c37645053a2056bcd2e193bb6aabbfff4b15354a02a0355f76d86293'))){
+        $pin=[pscustomobject]@{Path=$row[1];Bytes=$row[2];SHA256=$row[3]};Assert-T7CatalogueTextPin $pin $Plan.Bindings;$pins[$row[0]]=$pin
+    }
+    $pins
+}
+function Assert-T7CatalogueZombiesAddBuildClosure($Plan,$Receipt,$Build,$Pins) {
+    $source=Read-H1SmallJson $Pins.SourceReceipt.Path 512KB
+    if($source.schema -cne 'iw7.source-workspace/1' -or $source.revisions.'x64-zt-extensions' -cne '171431e27c6fc1a56419d78879c31db72589e1d4' -or
+       $source.revisions.'iw7-mod-components' -cne '2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1'){throw 'Exact C2 compilation source provenance required.'}
+    $entry=Read-H1SmallJson $Pins.OriginalEntry.Path 2KB;$hostProof=Read-H1SmallJson $Pins.OriginalHostCompletion.Path 2KB
+    $tool=Read-H1SmallJson $Pins.ActualToolReturn.Path 2KB;$inventory=Read-H1SmallJson $Pins.Inventory.Path 4KB
+    $completion=Read-H1SmallJson $Pins.BuildCompletion.Path 8KB;$bundle=Read-H1SmallJson $Pins.Bundle.Path 4KB;$index=Read-H1SmallJson $Pins.Index.Path 4KB
+    $schemas=@(@($entry,'iw7.t7-c2-build-own-host/1'),@($hostProof,'iw7.t7-c2-build-own-host-completion/1'),
+        @($tool,'iw7.t7-c2-build-tool-return/1'),@($inventory,'iw7.t7-c2-build-inventory/1'),
+        @($completion,'iw7.t7-c2-native-build-completion/1'),@($bundle,'iw7.t7-c2-build-closed-bundle/1'),@($index,'iw7.t7-c2-six-closed-pins/1'))
+    foreach($pair in $schemas){if($pair[0].Schema -isnot [string] -or $pair[0].Schema -cne $pair[1]){throw 'Exact original C2 closure schemas required.'}}
+    foreach($proof in @($entry,$hostProof,$completion,$bundle)){if($proof.PlanSHA256 -cne $Plan.ExpectedBuildPlanSHA256){throw 'C2 evidence plan differs.'}}
+    foreach($proof in @($entry,$completion,$bundle)){if($proof.SourceRevision -cne $source.revisions.'x64-zt-extensions'){throw 'C2 closure source differs.'}}
+    foreach($proof in @($entry,$hostProof,$tool)){
+        if($proof.HostPID -ne 18840 -or ([datetimeoffset]$proof.HostCreatedUtc).UtcTicks -ne ([datetimeoffset]'2026-10-14T01:38:19.6958128Z').UtcTicks){throw 'Exact original C2 host identity required.'}
+    }
+    if($entry.PlanPath -cne $Pins.BuildPlan.Path -or $entry.Runner -cne $Build.Runner -or
+       ($entry.Arguments -join '|') -cne (@('-PlanPath',$Pins.BuildPlan.Path,'-PlanSHA256',$Pins.BuildPlan.SHA256,'-Run') -join '|') -or
+       $hostProof.Status -cne 'Passed' -or $null -ne $hostProof.Failure -or $hostProof.GuardCount -ne 0 -or $hostProof.BuildReceipt -cne $Pins.BuildReceipt.Path -or
+       $tool.EvidenceOrigin -cne 'Actual original write_stdin tool completion' -or $tool.SessionId -ne 28190 -or $tool.ChunkId -cne '0252d3' -or $tool.ExitCode -ne 0 -or
+       $completion.Status -cne 'Passed' -or $completion.FinishedUtc -cne $Receipt.FinishedUtc -or $completion.ElapsedMs -ne $Receipt.ElapsedMs -or $completion.OriginalGuardCount -ne 0 -or
+       $inventory.EvidenceOrigin -cne 'Original postflight CIM/registry snapshot' -or $inventory.LeaseCount -ne 0 -or @($inventory.ObservedOriginalIdentities).Count -ne 0 -or
+       @($inventory.RelevantProcesses).Count -ne 0 -or @($inventory.Main27016Endpoints).Count -ne 0 -or
+       $bundle.OriginalHostPID -ne 18840 -or $bundle.ActualToolSessionId -ne 28190 -or $bundle.ActualToolExitCode -ne 0 -or $bundle.ActualToolChunk -cne '0252d3' -or
+       $bundle.PostflightCapturedUtc -cne $inventory.CapturedUtc -or $index.CodeSourceRevision -cne $source.revisions.'x64-zt-extensions' -or
+       $index.CompiledCLIBytes -ne 119139 -or $index.CompiledCLISHA256 -cne $Build.BuildProfile.PreparedCLI.SHA256){throw 'Exact C2 actual host/tool/build completion required.'}
+    foreach($spec in @(@{Object=$entry;Fields=@('EntryIsBeforeRunner')},@{Object=$hostProof;Fields=@('OriginalContextPresent','OriginalContextClosed','LeaseAbsent','CanExit')},
+        @{Object=$tool;Fields=@('OriginalToolClosed','HostCompletionIsNotActualToolExit')},@{Object=$completion;Fields=@('InputsReverified','TreeClosureConfirmed','LeaseReleased','OriginalHostContextClosed')},
+        @{Object=$bundle;Fields=@('TrueClosureConfirmed')})){
+        foreach($name in $spec.Fields){if($spec.Object.$name -isnot [bool] -or !$spec.Object.$name){throw 'C2 original closure incomplete.'}}
+    }
+    foreach($spec in @(@{Object=$entry;Fields=@('ActualNativeStarted','CandidateExecutionRequested')},@{Object=$hostProof;Fields=@('CandidateExecutionRequested')},
+        @{Object=$tool;Fields=@('CandidateExecuted')},@{Object=$inventory;Fields=@('OpaqueArtifactContentsReadAfterRelease')},
+        @{Object=$completion;Fields=@('CandidateExecuted','Quarantined','Ready')},@{Object=$bundle;Fields=@('NativeCandidateExecuted','Ready')},@{Object=$index;Fields=@('CandidateExecuted')})){
+        foreach($name in $spec.Fields){if($spec.Object.$name -isnot [bool] -or $spec.Object.$name){throw 'C2 build evidence overclaims its scope.'}}
+    }
+    $members=@($Pins.BuildReceipt,$Pins.OriginalEntry,$Pins.OriginalHostCompletion,$Pins.ActualToolReturn,$Pins.Inventory,$Pins.BuildCompletion)
+    if(@($bundle.Members).Count -ne 6 -or @($index.ClosedPins).Count -ne 6){throw 'Exact C2 six closed pins required.'}
+    foreach($pin in $members){if(@($bundle.Members|Where-Object {$_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256}).Count -ne 1){throw 'C2 closed bundle member differs.'}}
+    foreach($pin in @($Pins.OriginalEntry,$Pins.OriginalHostCompletion,$Pins.ActualToolReturn,$Pins.Inventory,$Pins.BuildCompletion,$Pins.Bundle)){
+        if(@($index.ClosedPins|Where-Object {$_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256}).Count -ne 1){throw 'C2 closed index member differs.'}
+    }
+    foreach($pin in @($completion.Receipt,$index.Receipt)){if($pin.Path -cne $Pins.BuildReceipt.Path -or $pin.Bytes -ne $Pins.BuildReceipt.Bytes -or $pin.SHA256 -cne $Pins.BuildReceipt.SHA256){throw 'C2 completion receipt differs.'}}
+    if(@($completion.Stages).Count -ne 3 -or @($completion.LinkArtifacts).Count -ne 4 -or @($inventory.ExpectedOriginalIdentities).Count -ne 7){throw 'Exact C2 stage/artifact/inventory counts required.'}
+    if(($inventory.ExpectedOriginalIdentities.PID -join '|') -cne '18840|22624|9624|16944|13192|15052|25940' -or
+       ($inventory.ExpectedOriginalIdentities.Role -join '|') -cne 'OriginalHost|main|main/VCTIP|zonetool11|zonetool11/VCTIP|link|link/VCTIP'){throw 'Exact C2 original identities required.'}
+    $hostIdentity=$inventory.ExpectedOriginalIdentities[0]
+    if($hostIdentity.Image -cne $entry.HostImage -or ([datetimeoffset]$hostIdentity.CreatedUtc).UtcTicks -ne ([datetimeoffset]$entry.HostCreatedUtc).UtcTicks){throw 'C2 inventory host generation differs.'}
+    for($i=0;$i -lt 3;$i++){
+        $stage=$Receipt.Stages[$i];$snapshot=$stage.LastOriginalSnapshot;$closed=$completion.Stages[$i];$expected=$inventory.ExpectedOriginalIdentities[1+2*$i]
+        if($stage.Identity.PID -ne @(22624,16944,15052)[$i] -or $snapshot.RootExited -isnot [bool] -or !$snapshot.RootExited -or $snapshot.RootExitCode -ne 0 -or $snapshot.ActiveProcesses -ne 0 -or
+           $snapshot.PID -ne $stage.Identity.PID -or $snapshot.Image -cne $stage.Identity.Image -or ([datetimeoffset]$snapshot.CreatedUtc).UtcTicks -ne ([datetimeoffset]$stage.Identity.CreatedUtc).UtcTicks -or
+           $closed.Name -cne $stage.Name -or $closed.ExitCode -ne 0 -or $closed.BeforeStopRootExitCode -ne 0 -or $closed.AfterStopActiveProcesses -ne 0 -or $closed.AfterStopMemberCount -ne 0){throw 'Exact closed original C2 compiler/link jobs required.'}
+        foreach($field in 'OriginalJobClosed','BeforeStopRootExited'){if($closed.$field -isnot [bool] -or !$closed.$field){throw 'C2 original job closure incomplete.'}}
+        foreach($identity in @($closed.Identity,$expected)){if($identity.PID -ne $stage.Identity.PID -or $identity.Image -cne $stage.Identity.Image -or ([datetimeoffset]$identity.CreatedUtc).UtcTicks -ne ([datetimeoffset]$stage.Identity.CreatedUtc).UtcTicks){throw 'C2 stage generation differs.'}}
+        $aux=$inventory.ExpectedOriginalIdentities[2+2*$i]
+        if(@($closed.OwnedVCTIP).Count -ne 1){throw 'One original owned C2 VCTIP required.'}
+        $captured=$closed.OwnedVCTIP[0]
+        if($captured.InOriginalJob -isnot [bool] -or !$captured.InOriginalJob -or $captured.ParentPID -ne $stage.Identity.PID -or $aux.ParentPID -ne $captured.ParentPID -or
+           $captured.PID -ne $aux.PID -or $captured.Image -ine $aux.Image -or $aux.Image -ine (Join-Path (Split-Path $stage.Identity.Image -Parent) 'vctip.exe') -or
+           ([datetimeoffset]$captured.CreatedUtc).UtcTicks -ne ([datetimeoffset]$aux.CreatedUtc).UtcTicks -or $null -ne $captured.Error -or $null -ne $captured.ParentError){throw 'C2 owned auxiliary generation differs.'}
+    }
+    foreach($artifact in $Receipt.Stages[2].Artifacts){if(@($completion.LinkArtifacts|Where-Object {$_.Path -ceq $artifact.Path -and $_.Bytes -eq $artifact.Bytes -and $_.SHA256 -ceq $artifact.SHA256}).Count -ne 1){throw 'C2 admitted artifact tuple differs.'}}
+    if(([datetimeoffset]$entry.CapturedUtc).UtcTicks -ge ([datetimeoffset]$Receipt.Stages[0].Identity.CreatedUtc).UtcTicks -or
+       ([datetimeoffset]$hostProof.CapturedUtc).UtcTicks -lt ([datetimeoffset]$Receipt.FinishedUtc).UtcTicks -or
+       ([datetimeoffset]$inventory.CapturedUtc).UtcTicks -lt ([datetimeoffset]$hostProof.CapturedUtc).UtcTicks -or
+       ([datetimeoffset]$tool.RecordedUtc).UtcTicks -lt ([datetimeoffset]$inventory.CapturedUtc).UtcTicks){throw 'C2 evidence capture/record ordering differs.'}
+}
+function Split-T7CatalogueZombiesAddObservation([string]$Text) {
+    if([Text.Encoding]::UTF8.GetByteCount($Text) -gt 16384 -or @($Text.ToCharArray()|Where-Object {[int]$_ -gt 127}).Count){throw 'Bounded ASCII combined C2 trace required.'}
+    $legacy=[Text.StringBuilder]::new();$records=[Collections.Generic.List[object]]::new();$sequences=[Collections.Generic.HashSet[ulong]]::new()
+    $entries=@{};$returns=[Collections.Generic.HashSet[int]]::new();$count=0;$enabled=$false;$refused=$false
+    $prefix='[T7_ZM_ADD] schema=iw7.t7-zm-add-observation/1 '
+    $pointer='[0-9A-Fa-f]{16}'
+    $context='ff_state=(?<ff_state>pointer_unreadable|null|name_unreadable|read|prefix) ff_nul=(?<ff_nul>[01]) ff_name_hex=(?<ff_name_hex>[0-9a-f]{0,128}) ff_atomic=0'
+    $target=[Convert]::ToHexString([Text.Encoding]::ASCII.GetBytes('ui/uieditor/widgets/attachmentnamesdisplay.lua')).ToLowerInvariant()
+    $patterns=@('kind=enabled','kind=selection_refused type=47 read_state=(?<read_state>getter_exception|prefix_unreadable|name_unreadable) target=unknown',
+        ('kind=add_enter call=(?<call>[0-3]) type=47 reference_prefix=(?<reference_prefix>[01]) name_hex=(?<name_hex>[0-9a-f]{92,94}) caller=(?<caller>'+ $pointer +') asset=(?<asset>'+ $pointer +') '+$context),
+        ('kind=add_return call=(?<call>[0-3]) reference_prefix=(?<reference_prefix>[01]) result=(?<result>'+ $pointer +') '+$context))
+    foreach($physical in [regex]::Matches($Text,'[^\n]*\n|[^\n]+$')){
+        $line=$physical.Value
+        if(!$line.StartsWith('[T7_ZM_ADD]',[StringComparison]::Ordinal)){$null=$legacy.Append($line);continue}
+        if(!$line.EndsWith("`n",[StringComparison]::Ordinal) -or $line.Length -gt 512){throw 'Complete bounded C2 line required.'}
+        $row=$line.Substring(0,$line.Length-1);if($row.EndsWith("`r",[StringComparison]::Ordinal)){$row=$row.Substring(0,$row.Length-1)}
+        $head=[regex]::Match($row,'^'+[regex]::Escape($prefix)+'seq=(\d+) tid=(\d+) (.+)$')
+        if(!$head.Success){throw 'Exact C2 schema required.'}
+        $sequence=0UL;$thread=0UL
+        if(![ulong]::TryParse($head.Groups[1].Value,[ref]$sequence) -or $sequence -gt 63 -or !$sequences.Add($sequence) -or
+           ![ulong]::TryParse($head.Groups[2].Value,[ref]$thread) -or $thread -eq 0 -or $thread -gt [uint]::MaxValue){throw 'C2 sequence/thread invalid or duplicated.'}
+        $body=$head.Groups[3].Value;$match=$null
+        foreach($pattern in $patterns){$matcher=[regex]::new('^'+$pattern+'$');$candidate=$matcher.Match($body);if($candidate.Success){$match=$candidate;$groupNames=$matcher.GetGroupNames();break}}
+        if(!$match){throw 'Unknown C2 record.'}
+        $kind=($body -split ' ',2)[0].Substring(5);$fields=[ordered]@{kind=$kind;sequence=$sequence;thread=$thread}
+        foreach($name in $groupNames){
+            if($name -match '^\d+$' -or !$match.Groups[$name].Success){continue}
+            $value=$match.Groups[$name].Value
+            $fields[$name]=if($name -cin @('call','reference_prefix','ff_nul')){[int]$value}else{$value}
+        }
+        if($kind -ceq 'enabled'){
+            if($enabled -or $records.Count){throw 'One initial C2 enabled record required.'};$enabled=$true
+        }elseif($kind -ceq 'selection_refused'){
+            if(!$enabled -or $refused){throw 'One C2 selection refusal after enabled required.'};$refused=$true
+        }else{
+            if(!$enabled){throw 'C2 call before enabled record.'}
+            $state=$fields.ff_state;$name=$fields.ff_name_hex;$nul=$fields.ff_nul
+            $hasNul=[regex]::IsMatch($name,'^(?:[0-9a-f]{2})*00')
+            if($name.Length%2 -or ($state -cin @('pointer_unreadable','null','name_unreadable') -and ($name.Length -or $nul)) -or
+               ($state -ceq 'read' -and (!$nul -or $name.Length -ge 128 -or $hasNul)) -or
+               ($state -ceq 'prefix' -and ($nul -or $name.Length -ne 128 -or $hasNul))){throw 'C2 fastfile state/name/termination differs.'}
+            $call=$fields.call;$correlation=([string]$thread+'|'+$fields.reference_prefix)
+            if($kind -ceq 'add_enter'){
+                $expected=$(if($fields.reference_prefix){'2c'}else{''})+$target
+                if($fields.name_hex -cne $expected){throw 'C2 selected name differs from exact target/prefix.'}
+                if($entries.ContainsKey($call)){throw 'Duplicate C2 call entry.'};$entries[$call]=$correlation
+            }elseif(!$entries.ContainsKey($call) -or $entries[$call] -cne $correlation -or !$returns.Add($call)){throw 'C2 return lacks matching unique entry.'}
+        }
+        $count+=$line.Length
+        if($count -gt 8192 -or $records.Count -ge 10){throw 'C2 observation cap exceeded.'}
+        $records.Add([pscustomobject]$fields)
+    }
+    [pscustomobject]@{LegacyText=$legacy.ToString();Records=@($records.ToArray());ObservationBytes=$count}
+}
+function ConvertFrom-T7CatalogueZombiesAddObservation([string]$Text) {
+    $split=Split-T7CatalogueZombiesAddObservation $Text
+    $result=ConvertFrom-T7CatalogueMessage $split.LegacyText
+    $result|Add-Member NoteProperty ZombiesAddObservations $split.Records
+    $result|Add-Member NoteProperty ZombiesAddObservationBytes $split.ObservationBytes
     $result
 }

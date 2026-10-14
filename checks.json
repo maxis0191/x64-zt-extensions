@@ -401,6 +401,17 @@
       ]
     },
     {
+      "id": "Test-T7CatalogueAddC2",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueAddC2.ps1"
+      ]
+    },
+    {
       "id": "Test-T7CataloguePublication",
       "command": [
         "pwsh",
