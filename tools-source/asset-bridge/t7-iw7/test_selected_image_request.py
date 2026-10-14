@@ -29,7 +29,7 @@ def body_report():
     result.update(schema=s.SCHEMA,source_profile="t7-image-metadata-v1",native_source_commit=s.PIN,
                   zone="mp_freerun_04",model="p7_fre_platform_cap_02",lod=0,slot=0,binding_index=4,
                   binding_hash_u32=2695565377,image_header_bytes=264,header_copies=2,payload_bytes_read=0,
-                  failure_stage="",reason="",image=image,provenance=f2_report())
+                  failure_stage=None,reason=None,image=image,provenance=f2_report())
     return result
 
 
@@ -100,7 +100,7 @@ class SelectedRequestTests(unittest.TestCase):
     def test_provenance_and_native_rechecks_cannot_be_replaced_by_claims(self):
         for field,value in (("association_rechecked",False),("header_rechecked",1),("name_rechecked",False),
                             ("header_copies",1),("binding_index",3),("payload_bytes_read",1),("ready",True),
-                            ("failure_stage","header")):
+                            ("failure_stage","header"),("failure_stage",""),("reason",""),("reason","refused")):
             report=body_report();report[field]=value
             with self.subTest(field=field), self.assertRaises(ValueError): select(report)
         report=body_report();report["provenance"]=None

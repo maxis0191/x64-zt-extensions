@@ -11,6 +11,8 @@ d468. This Python module performs no capture, engine lookup or extraction.
 qualified_object_mip_count=...)` requires the exact source/selector, nondefault
 model, two header copies, observed body, association/header/name rechecks,
 successful original exit and a complete same-pass F2 diagnostic. All retained,
+The producer's successful failure_stage/reason fields are null; non-null
+diagnostics, including empty strings, are refused by the request consumer.
 atomic, lifetime, runtime ABI, pixel and Ready claims stay false. The header
 DTO must attest the pinned source layout and DXGI member; a pending namespace
 refuses. Source-layout attestation does not prove the retail ABI or lifetime.
@@ -54,3 +56,5 @@ old/missing/refused body, pending namespace, native recheck/exit contradictions,
 typed part/key/size validation, no low4 inference, SRGB preservation, complete
 delta refusals, reader argv without IO and create-only DDS publication. No real
 image header, XPAK, pixel data, native process or game was read or run.
+Contract review corrected an initial empty-string success assumption to the
+actual producer's null diagnostics; the failed e47d4f6 review remains retained.

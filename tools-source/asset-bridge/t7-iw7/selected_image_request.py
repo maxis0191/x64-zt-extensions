@@ -111,7 +111,7 @@ def select_image(report, *, part_index, native_exit_code, qualified_object_mip_c
     for name, value in (("lod",0), ("slot",0), ("binding_index",4), ("binding_hash_u32",provenance.HASH),
                         ("image_header_bytes",264), ("header_copies",2), ("payload_bytes_read",0)):
         need(uint(report[name]) == value, "exact rechecked selector/header scope required")
-    need(report["failure_stage"] == "" and report["reason"] == "", "native refusal diagnostic cannot select an object")
+    need(report["failure_stage"] is None and report["reason"] is None, "native refusal diagnostic cannot select an object")
     observed = provenance.consume(report["provenance"])
     need(observed["observation_status"] == "complete", "same-pass F2 association incomplete")
     image = report["image"]
