@@ -10,10 +10,10 @@ d468. This Python module performs no capture, engine lookup or extraction.
 `select_image(report, part_index=..., native_exit_code=...,
 qualified_object_mip_count=...)` requires the exact source/selector, nondefault
 model, two header copies, observed body, association/header/name rechecks,
-successful original exit and a complete same-pass F2 diagnostic. All retained,
+successful original exit and a complete same-pass F2 diagnostic.
 The producer's successful failure_stage/reason fields are null; non-null
 diagnostics, including empty strings, are refused by the request consumer.
-atomic, lifetime, runtime ABI, pixel and Ready claims stay false. The header
+Retained, atomic, lifetime, runtime ABI, pixel and Ready claims stay false. The header
 DTO must attest the pinned source layout and DXGI member; a pending namespace
 refuses. Source-layout attestation does not prove the retail ABI or lifetime.
 
