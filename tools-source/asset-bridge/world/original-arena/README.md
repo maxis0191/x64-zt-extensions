@@ -336,3 +336,47 @@ pass the M7 cohort as a72-input plan or claim FF provenance from source tests.
 Any finite-cohort FF extension is a separate source follow-up after measured
 writer/readback and demonstrated need, with the existing managed transaction.
 No FF/Extract/Game authorization is included in this writer-only proposal.
+
+## 2026-10-14: writer B produced records; independent metadata check failed
+
+The unique approved B attempt compiled and linked with exit0, then its writer
+exited0 and self-read168 vertices/84 triangles with the named M7 reference.
+It produced a984-byte XMB and6274-byte XSB. The independent Python Check exited1
+at the seven-byte XModel metadata tuple, so the B native attempt remains Failed.
+No FF, stock staging, game or physics stage ran.
+
+The actual bytes8..14 were `(0,1,0,1,255,6,0)`. The old reader/synthetic fixture
+expected a final1. Pinned `iw7/structs.hpp` maps byte14 to
+`characterCollBoundsType`; the original writer zero-initializes that member.
+`hasLods=true` is already byte9. Correct the reader's final expected byte to0
+and the synthetic fixture accordingly, keeping the other metadata checks exact.
+The causal executes the prior predicate in the actual reader body against the
+observed header, then checks the corrected reader and corruptions of hasLods,
+collision sentinel, shadow cutoff and character bounds type.
+
+The corrected source reader also passes the complete preserved B XMB/XSB:
+positions/UVs/normal candidates/indices/rigid masks/bounds/material and full record
+consumption. This is a light source diagnostic over existing generated records,
+not a rerun/reclassification of B or a new compiled candidate. B's original
+failed receipt, packet, source package, stdout/stderr and artifacts stay intact.
+
+All four original jobs closed. The helper published/accounted934974 bytes and
+verified source hashes before confirming its sole lease release. The immutable
+run.json is a BEFORE-release snapshot; the same live original host's returned
+state reported FinalReceiptVerified=true/LeaseReleased=true/Confirmed/token null.
+Failure closure verified the actual original job/process handles closed, guards0,
+native quarantine null and fresh global leases empty before clearing the retained
+failed caller root. Native Check exit1 remains authoritative for the failure.
+
+The child NoExit shell was instructed `exit1`; the actual external PTY returned0
+because Launch did not propagate the child result. Earlier PTY1 claims are
+explicitly retracted in a preserved additive exit audit. Fresh observations found
+the original host/parent and native identities absent; one transient PID reuse
+was distinguished by image/creation and never touched. This is FailedKnownClosed,
+not readback/native acceptance. A future C launch must explicitly propagate the
+child result to the outer PTY and use a distinct source package/recipe/GO.
+
+Resource policy is now owned by `iw7-mod-components`: fetch/read its current
+RESOURCE-WORKFLOW before heavy work. STORAGE/INSTANCE remain server ownership.
+Next: source/private Git review and exact-head CI audit, then a new additive C
+capsule; no automatic CPP retry or change to the frozen B package is authorized.
