@@ -41,7 +41,9 @@ The planned native path keeps the existing H1 job/creation identity policies,
 compiler/linker VCTIP closure, input guards, bounded whole-output accounting and
 exact 8/10 fixture stdout. Measured artifact and closure receipts are verified
 before release. After ordinary release, the final closure/readback determines
-CanExit; the host's true terminal exit and fresh absence/registry remain external
+CanExit. A post-release publication failure reports ClosedFinalizationIncomplete
+and retains the NoExit host; it does not claim the released lease is retained.
+The host's true terminal exit and fresh absence/registry remain external
 postflight requirements. This source caller has not run natively and is not a
 CPP/export GO. Separate reviewed source plan and capsule hashes are required.
 

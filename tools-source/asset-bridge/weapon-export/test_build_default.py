@@ -28,8 +28,23 @@ class DefaultTests(unittest.TestCase):
                 'CompilerPolicySource','Scheduler','Profile')}, ParentBindings=[self.provider],
             RunnerBinding=dict(Path=str(RUNNER), Bytes=RUNNER.stat().st_size,
                 SHA256=hashlib.sha256(RUNNER.read_bytes()).hexdigest()),
-            Stages=[dict(Name=name, ExpectedChecks=8 if name=='name-test' else 10 if name=='argv-test' else None)
-                for name in ('name-compile','name-test','argv-compile','argv-test','iw7','link')])
+            GroupDeadlineSeconds=600, OutputLimitBytes=268435456, MetadataReserveBytes=1048576,
+            Compiler=str(self.root/'cl.exe'), PreparedRoot=str(self.root/'prepared'), Stages=[])
+        for fixture, count in (('name',8),('argv',10)):
+            self.plan['Stages'] += [dict(Name=fixture+'-compile', Stage='Compile',
+                DeadlineSeconds=120, Image=self.plan['Compiler'],
+                Arguments=['@'+str(self.root/'prepared'/(fixture+'.rsp'))],
+                Artifacts=[fixture+'.obj',fixture+'.exe',fixture+'.pdb','compile.pdb','dependencies.json']),
+                dict(Name=fixture+'-test', Stage='Probe', DeadlineSeconds=15,
+                Image=str(self.root/'not-created'/(fixture+'-compile')/(fixture+'.exe')),
+                Arguments=[], Artifacts=[], ExpectedChecks=count,
+                ExpectedStdout=f'IW7_PLAYER_TEMPLATE_{"NAME" if fixture=="name" else "ARGV"}_CHECKS={count}\n')]
+        self.plan['Stages'] += [dict(Name='iw7', Stage='Compile', DeadlineSeconds=120,
+            Image=self.plan['Compiler'], Arguments=['@'+str(self.root/'prepared'/'iw7.rsp')],
+            Artifacts=['iw7-player-cli.obj','compile.pdb','dependencies.json']),
+            dict(Name='link', Stage='Link', DeadlineSeconds=120, Image=str(self.root/'link.exe'),
+            Arguments=['@'+str(self.root/'prepared'/'link.rsp')],
+            Artifacts=['zonetool-iw7-player.exe','zonetool-iw7-player.pdb','zonetool-iw7-player.lib','zonetool-iw7-player.exp'])]
 
     def invoke(self, native=False):
         path=self.root/'plan.json';raw=(json.dumps(self.plan)+'\n').encode();path.write_bytes(raw)
@@ -60,6 +75,16 @@ class DefaultTests(unittest.TestCase):
         self.plan['OwnDirectIncludeCoverage'][0]['Pinned']=False
         result=self.invoke();self.assertNotEqual(result.returncode,0)
         self.assertIn('IW7 source coverage',result.stderr)
+
+    def test_output_limit_drift_refused_before_native(self):
+        self.plan['OutputLimitBytes'] += 1
+        result=self.invoke();self.assertNotEqual(result.returncode,0)
+        self.assertIn('deadline/output reserve',result.stderr)
+
+    def test_changed_probe_marker_refused_before_native(self):
+        self.plan['Stages'][1]['ExpectedStdout']='checks passed\n'
+        result=self.invoke();self.assertNotEqual(result.returncode,0)
+        self.assertIn('probe image/marker',result.stderr)
 
     def test_source_drift_refused_before_import(self):
         Path(self.provider['Path']).write_bytes(b'# changed\n')

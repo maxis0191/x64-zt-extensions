@@ -27,6 +27,24 @@ if($plan.Schema -cne 'iw7.player-template-cohort-source/1' -or $plan.Ready -or $
    $plan.RetainedObjects -ne 412 -or $plan.LinkedObjectCount -ne 413){throw 'Exact unqualified source cohort required.'}
 $names=@('name-compile','name-test','argv-compile','argv-test','iw7','link')
 if((@($plan.Stages.Name)-join '|') -cne ($names-join '|') -or $plan.Stages[1].ExpectedChecks -ne 8 -or $plan.Stages[3].ExpectedChecks -ne 10){throw 'Fixed six-stage/8+10 sequence required.'}
+if($plan.GroupDeadlineSeconds -ne 600 -or $plan.OutputLimitBytes -ne 268435456 -or $plan.MetadataReserveBytes -ne 1048576){throw 'Fixed cohort deadline/output reserve required.'}
+$kinds=@('Compile','Probe','Compile','Probe','Compile','Link')
+$artifacts=@('name.obj|name.exe|name.pdb|compile.pdb|dependencies.json','','argv.obj|argv.exe|argv.pdb|compile.pdb|dependencies.json','','iw7-player-cli.obj|compile.pdb|dependencies.json','zonetool-iw7-player.exe|zonetool-iw7-player.pdb|zonetool-iw7-player.lib|zonetool-iw7-player.exp')
+for($index=0;$index -lt 6;$index++){
+    $stage=$plan.Stages[$index];$probe=$kinds[$index] -ceq 'Probe'
+    if($stage.Stage -cne $kinds[$index] -or $stage.DeadlineSeconds -ne $(if($probe){15}else{120}) -or
+       (@($stage.Artifacts)-join '|') -cne $artifacts[$index]){throw 'Fixed cohort phase/artifacts required.'}
+    if($probe){
+        $fixture=if($index -eq 1){'name'}else{'argv'}
+        $expected=if($index -eq 1){"IW7_PLAYER_TEMPLATE_NAME_CHECKS=8`n"}else{"IW7_PLAYER_TEMPLATE_ARGV_CHECKS=10`n"}
+        if($stage.Image -cne (Join-Path (Join-Path $plan.RunRoot "$fixture-compile") "$fixture.exe") -or @($stage.Arguments).Count -ne 0 -or
+           $stage.ExpectedStdout -cne $expected){throw 'Fixed cohort probe image/marker required.'}
+    }else{
+        $rsp=if($index -eq 0){'name'}elseif($index -eq 2){'argv'}else{$stage.Name}
+        $image=if($index -eq 5){Join-Path (Split-Path $plan.Compiler -Parent) 'link.exe'}else{$plan.Compiler}
+        if($stage.Image -cne $image -or @($stage.Arguments).Count -ne 1 -or $stage.Arguments[0] -cne ('@'+(Join-Path $plan.PreparedRoot "$rsp.rsp"))){throw 'Fixed cohort compiler/link response required.'}
+    }
+}
 if(!$plan.PSObject.Properties['OwnDirectIncludeCoverage'] -or @($plan.OwnDirectIncludeCoverage).Count -lt 1 -or
    @($plan.OwnDirectIncludeCoverage|Where-Object {-not $_.Pinned}).Count -gt 0 -or !$plan.RequireActualDependenciesWithinGuardedSet){throw 'Own IW7 source coverage and future exact dependency guard required.'}
 foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)){$null=Read-PlayerSource $pin.Path $pin.SHA256 $pin.Bytes}
@@ -57,7 +75,7 @@ if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7.H1Diagnostics.JobMember
 $guards=[Collections.Generic.List[object]]::new()
 $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards}
 $state=[ordered]@{Schema='iw7.player-template-build/1';PlanSHA256=$PlanSHA256;Status='Pending';Stages=[Collections.Generic.List[object]]::new();
-    MaxObservedOutputBytes=0L;NativeInputsReverified=$false;MeasuredReadback=$false;FinalReadback=$false;CanExit=$false;Ready=$false;
+    MaxObservedOutputBytes=0L;NativeInputsReverified=$false;MeasuredReadback=$false;FinalReadback=$false;LeaseReleased=$false;GuardsDisposed=$false;CanExit=$false;Ready=$false;
     Host=[ordered]@{PID=$PID;Image=$physical.ExecutablePath;CreatedUtc=$physical.CreationDate.ToUniversalTime().ToString('o');NoExit=$true;Dot=$true}}
 $global:IW7PlayerTemplateBuild=[pscustomobject]@{Context=$context;State=$state;Plan=$plan;Guards=$guards}
 $failure=$null;$created=$false
@@ -133,21 +151,28 @@ finally{
             $beforeFile=Join-Path $plan.RunRoot 'closure-before-release.json'
             $beforeBytes=[Text.UTF8Encoding]::new($false).GetBytes(($before|ConvertTo-Json -Depth 10)+"`n")
             if((Measure-H1Output $plan.RunRoot)+$beforeBytes.Length -gt $plan.OutputLimitBytes){throw 'Closure output budget exceeded before release.'}
-            [IO.File]::WriteAllBytes($beforeFile,$beforeBytes)
+            $stream=[IO.File]::Open($beforeFile,'CreateNew','Write','Read')
+            try{$stream.Write($beforeBytes);$stream.Flush($true)}finally{$stream.Dispose()}
             $beforeHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($beforeBytes)).ToLowerInvariant()
             $null=Read-PlayerSource $beforeFile $beforeHash $beforeBytes.Length
-            Exit-IW7ResourceLease -Token $context.Lease.Token;$context.Lease=$null
-            foreach($guard in $guards){$guard.Dispose()};$guards.Clear()
+            Exit-IW7ResourceLease -Token $context.Lease.Token;$context.Lease=$null;$state.LeaseReleased=$true
+            foreach($guard in $guards){$guard.Dispose()};$guards.Clear();$state.GuardsDisposed=$true
             $state.Status=if($failure){'FailedClosed'}else{'Passed'}
             $closure=[ordered]@{Schema='iw7.player-template-build-closure/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$hash;
                 BeforeReleaseSHA256=$beforeHash;Host=$state.Host;Status=$state.Status;OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$true;CandidateExecuted=$false;Ready=$false}
             $final=Join-Path $plan.RunRoot 'final-closure.json';$bytes=[Text.UTF8Encoding]::new($false).GetBytes(($closure|ConvertTo-Json -Depth 10)+"`n")
-            [IO.File]::WriteAllBytes($final,$bytes)
+            if($raw.Length+$beforeBytes.Length+$bytes.Length -gt $plan.MetadataReserveBytes -or
+               (Measure-H1Output $plan.RunRoot)+$bytes.Length -gt $plan.OutputLimitBytes){throw 'Final closure exceeds reserved output.'}
+            $stream=[IO.File]::Open($final,'CreateNew','Write','Read')
+            try{$stream.Write($bytes);$stream.Flush($true)}finally{$stream.Dispose()}
             $finalHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
             $null=Read-PlayerSource $final $finalHash $bytes.Length;$state.FinalReadback=$true;$state.CanExit=$true
         }catch{$state.FinalizationError=$_.Exception.Message;if(!$failure){$failure=$_}}
     }
-    if(!$state.CanExit){$state.Status='UnknownRetained';$state.CanExit=$false}
+    if(!$state.CanExit){
+        $state.Status=if($context.Closed -and $state.LeaseReleased){'ClosedFinalizationIncomplete'}else{'UnknownRetained'}
+        $state.CanExit=$false
+    }
     $state|ConvertTo-Json -Depth 20
 }
 if($failure){throw $failure}
