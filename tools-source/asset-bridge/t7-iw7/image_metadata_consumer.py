@@ -36,8 +36,10 @@ def address(value):
     return int(value, 16)  # Arithmetic on recorded metadata only, never a pointer cast.
 
 
-def strict_json(raw):
-    need(type(raw) is bytes and 0 < len(raw) <= LIMIT, "bounded JSON report required")
+def strict_json(raw, *, limit=LIMIT):
+    """Shared text metadata parser; no producer schema or native admission implied."""
+    need(type(limit) is int and limit in (32768, 65536), "explicit 32 or 64 KiB metadata limit required")
+    need(type(raw) is bytes and 0 < len(raw) <= limit, "bounded JSON report required")
     def pairs(items):
         result = {}
         for key, value in items:
@@ -167,8 +169,9 @@ def classify(report, exit_code):
     return result
 
 
-def read_report(path):
-    """Read only a small regular JSON file after metadata checks, never opaque inputs."""
+def read_report(path, *, limit=LIMIT):
+    """Shared ordinary JSON guard; default producer bound stays 32 KiB."""
+    need(type(limit) is int and limit in (32768, 65536), "explicit 32 or 64 KiB metadata limit required")
     lexical = str(path).replace("\\", "/")
     need(not lexical.casefold().startswith(("//?/", "//./", "/??/", "//??/")), "ordinary report path required; device namespace refused")
     drive = re.match("[A-Za-z]:", lexical)
@@ -179,17 +182,17 @@ def read_report(path):
     need(path.suffix.lower() == ".json", "existing .json report required before open")
     declared = path.lstat()
     need(stat.S_ISREG(declared.st_mode), "regular JSON file required before open")
-    need(0 < declared.st_size <= LIMIT, "bounded JSON file required before open")
+    need(0 < declared.st_size <= limit, "bounded JSON file required before open")
     reparse = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
     for entry in (path, *path.parents):
         info = declared if entry == path else entry.lstat()
         need(not stat.S_ISLNK(info.st_mode) and not (getattr(info, "st_file_attributes", 0) & reparse), "reparse JSON path refused before open")
     with path.open("rb") as stream:
         opened = os.fstat(stream.fileno())
-        need(stat.S_ISREG(opened.st_mode) and 0 < opened.st_size <= LIMIT and opened.st_size == declared.st_size and
+        need(stat.S_ISREG(opened.st_mode) and 0 < opened.st_size <= limit and opened.st_size == declared.st_size and
              (opened.st_dev, opened.st_ino) == (declared.st_dev, declared.st_ino), "opened JSON file identity/size differs")
-        raw = stream.read(LIMIT + 1)
-        need(0 < len(raw) <= LIMIT and len(raw) == opened.st_size, "JSON file changed during bounded read")
+        raw = stream.read(limit + 1)
+        need(0 < len(raw) <= limit and len(raw) == opened.st_size, "JSON file changed during bounded read")
     return raw
 
 

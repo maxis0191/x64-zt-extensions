@@ -49,6 +49,15 @@ absolute JSON paths. It then checks
 the suffix, size and every path component for reparse metadata before opening,
 then rechecks the opened file's identity and size before a bounded read. The
 pure bytes/dict API remains the interface for a record selected from stdout.
+`read_report(path, *, limit=32768)` and `strict_json(raw, *, limit=32768)` expose
+the same guards/parser for other source metadata. Only explicit integer bounds of
+32768 or 65536 bytes are allowed. Callers own their metadata schema; these
+helpers imply no capture or runtime admission. Their defaults and the
+provenance CLI remain fixed at 32768 bytes. A separate source slot
+contract larger than 32 KiB can use 64 KiB without expanding the native report.
+The shared-bound extension passes 29 targeted source tests, including a
+36,853-byte authored metadata file accepted only with explicit 64 KiB, unchanged
+32 KiB defaults, invalid-limit zero-IO refusals and the same path/JSON guards.
 
 The existing Catalogue/H1 owner remains responsible for selecting exactly one
 stdout marker, guarding and pinning the closed log, bounds on stdout/stderr,
