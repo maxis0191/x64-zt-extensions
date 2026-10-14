@@ -109,3 +109,14 @@ collection fix it reached the E build qualifier and exposed a local `$host`
 assignment colliding with PowerShell's read-only `$Host`. The local is renamed
 `$partsBuildHost`; no host identity or qualification constraint changes. This
 fixture is source/metadata validation, not a factory retry or native invocation.
+
+With those corrections, actual DEFAULT on the separately authored empty-root
+copy exits zero with `PlanCheckedPendingGO`. NativeTypesLoaded,
+BinaryInputsHashed, ZoneHashObserved, LeaseAcquired, FilesCreated and Ready are
+all false. Its stdout is 207 bytes /
+`78219efce23c8f9daf9f1e4a4551d71cb32e2bbefe7e4029655f5430a5c2be7c`;
+stderr is empty. Changing only Operation to Catalogue exits one at the exact
+parts operation/profile/marker pairing guard. Frozen C was not retried and no
+maker, alias, native CLI or stock-content read/hash occurred in this fixture.
+The portable source suite also executes the real E build qualifier against
+authored text objects, preserving its parent/telemetry refusal checks.

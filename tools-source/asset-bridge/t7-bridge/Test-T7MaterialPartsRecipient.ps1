@@ -121,4 +121,34 @@ foreach($case in @('operation','profile','legacy-bootstrap','missing-bootstrap',
 }
 Refuses {Read-T7MaterialPartsReport $null $null ([pscustomobject]@{Closed=$false;Lease=$null})} 'Unclosed metadata read accepted'
 Refuses {Read-T7MaterialPartsReport $null $null ([pscustomobject]@{Closed=$true;Lease=$null})} 'Unadmitted metadata read accepted'
+# Execute the real build qualifier too: its local variables must not collide
+# with read-only PowerShell $Host, and closed evidence must retain its semantics.
+$p=Copy-Authored $plan
+$build=[pscustomobject]@{SourceCommit='fab935826c898806855376662a8a03317b3ad8f1';BuildProfile=[pscustomobject]@{Name='t7-material-parts-v1'}}
+foreach($name in 'Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt','LinkResponse'){
+    $pin=[pscustomobject]@{Path=('C:\authored\'+$name);Bytes=1;SHA256=('a'*64)}
+    $build.BuildProfile|Add-Member NoteProperty $name $pin
+    $p.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=1;SHA256=$pin.SHA256;IsText=$true})
+}
+$dep=[pscustomobject]@{Path='C:\authored\main\dependencies.json';Bytes=1;SHA256=('b'*64)}
+$p.Bindings+=@([pscustomobject]@{Path=$dep.Path;Bytes=1;SHA256=$dep.SHA256;IsText=$true})
+$receipt=[pscustomobject]@{Stages=@(foreach($name in 'main','zonetool11','link'){
+    [pscustomobject]@{Name=$name;ExitCode=0;TreeClosureConfirmed=$true;CompilerTelemetry=[pscustomobject]@{Completed=$true;AfterStop=[pscustomobject]@{ActiveProcesses=0}};Artifacts=@($dep)}
+})}
+$script:partsHostFixture=[pscustomobject]@{Host=[pscustomobject]@{PID=16544};Parent=[pscustomobject]@{PID=9964};WrapperRun=$false}
+$script:partsClosureFixture=[pscustomobject]@{OriginalSession=16448;TruePTYChunk='8dd283';TruePTYExitCode=0;OwnedProcesses=@();Leases=@()}
+function Read-H1SmallJson($Path,$Limit){
+    switch($Path){
+        'C:\authored\BuildPlan' {$build}
+        'C:\authored\SourceManifest' {[pscustomobject]@{revisions=[pscustomobject]@{'x64-zt-extensions'='a8ecff7cb61323cd0e6f75d10e596d55e63a7753'}}}
+        'C:\authored\HostWitness' {$script:partsHostFixture}
+        'C:\authored\ClosureWitness' {$script:partsClosureFixture}
+        default {throw 'Unexpected source fixture read'}
+    }
+}
+$null=Assert-T7MaterialPartsBuild $p $receipt;$checks++
+$script:partsHostFixture.Parent.PID=1
+Refuses {Assert-T7MaterialPartsBuild $p $receipt} 'Wrong original build parent accepted'
+$script:partsHostFixture.Parent.PID=9964;$receipt.Stages[1].CompilerTelemetry.Completed=$false
+Refuses {Assert-T7MaterialPartsBuild $p $receipt} 'Unclosed original telemetry accepted'
 [pscustomobject]@{Schema='iw7.t7-material-parts-recipient-source-tests/1';Checks=$checks;Passed=$true;NativeExecuted=$false;OpaqueRead=$false;LeaseAcquired=$false}|ConvertTo-Json -Compress
