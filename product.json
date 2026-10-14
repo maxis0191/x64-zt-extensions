@@ -3,6 +3,8 @@
   "id": "x64-zt-extensions",
   "exports": [
     "tools-source/asset-bridge/weapon-export/native_player_templates.inc",
+    "tools-source/asset-bridge/weapon-export/native_bounded_name.hpp",
+    "tools-source/asset-bridge/weapon-export/test_bounded_name.cpp",
     "tools-source/asset-bridge/weapon-export/prepare_module.py",
     "tools-source/asset-bridge/weapon-export/test_prepare_module.py",
     "tools-source/asset-bridge/weapon-export/README.md",

@@ -33,11 +33,12 @@ def wire_module(text, expected_sha256=BASE_LF_SHA256):
     require(text.count("namespace zonetool::iw7\n{") == 1 and text.count(ANCHOR) == 1 and
             FUNCTION not in text, "Exactly one fresh pinned IW7 insertion site required")
     module = read_source(HERE / "native_player_templates.inc")
+    name_header = read_source(HERE / "native_bounded_name.hpp").removeprefix("#pragma once\n")
     addition = "\n".join("\t" + line if line else "" for line in module.splitlines()) + "\n\n"
     result = text.replace(ANCHOR, addition + ANCHOR, 1)
     # Standard includes stay global, before the existing native namespace.
     result = result.replace("namespace zonetool::iw7\n{",
-        "#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n"
+        "#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n" + name_header + "\n"
         "namespace zonetool::iw7\n{", 1)
     require(len(result.encode("utf-8")) <= CAP, "Staged source cap exceeded")
     return result, module
@@ -54,6 +55,7 @@ def stage(source_root, output):
     report = {"schema": "iw7.player-template-export-support/1", "native_source_pin": SOURCE_PIN,
         "base_lf_sha256": BASE_LF_SHA256,
         "module_sha256": hashlib.sha256(module.encode("utf-8")).hexdigest(),
+        "bounded_name_sha256": hashlib.sha256(read_source(HERE / "native_bounded_name.hpp").encode("utf-8")).hexdigest(),
         "staged_lf_sha256": hashlib.sha256(patched.encode("utf-8")).hexdigest(),
         "support_function": FUNCTION, "allowlisted_weapon": "iw7_shredder_zm",
         "allowlisted_pap": "shredderpap1", "cli_wired": False, "compiled": False,

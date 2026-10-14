@@ -51,19 +51,27 @@ namespace player_weapon_templates
             throw std::runtime_error("Exactly the allowlisted Shredder player/PAP pair required");
     }
 
-    XAsset exact_asset(const XAssetType type, const char* name)
+    struct NamedAsset
+    {
+        XAsset asset{};
+        std::string identity;
+    };
+
+    template <size_t N>
+    NamedAsset exact_asset(const XAssetType type, const char (&name)[N])
     {
         const auto* entry = db_find_x_asset_entry(type, name);
         if (!entry || entry->type != static_cast<unsigned char>(type) || !entry->header.data ||
             DB_IsXAssetDefault(type, name))
-            throw std::runtime_error("Player-template asset missing or default: " + std::string(name));
-        XAsset asset{};
-        asset.type = type;
-        asset.header = entry->header;
-        const auto* registered_name = get_asset_name(&asset);
-        if (!registered_name || std::string(name) != registered_name)
+            throw std::runtime_error("Player-template asset missing or default: " + std::string(name, N - 1));
+        NamedAsset result;
+        result.asset.type = type;
+        result.asset.header = entry->header;
+        const auto* registered_name = get_asset_name(&result.asset);
+        if (!iw7_player_template_names::matches(registered_name, name))
             throw std::runtime_error("Player-template database name mismatch");
-        return asset;
+        result.identity.assign(name, N - 1); // Owned allowlisted identity after bounded validation.
+        return result;
     }
 
     void compatible_pair(WeaponCompleteDef* weapon, WeaponAttachment* pap)
@@ -93,8 +101,8 @@ namespace player_weapon_templates
             {
                 const auto* attachment = lists[slot][i];
                 if (attachment == pap) ++occurrences;
-                else if (attachment && attachment->szInternalName &&
-                    std::strncmp(attachment->szInternalName, "shredderpap1", 12) == 0)
+                else if (attachment &&
+                    iw7_player_template_names::matches(attachment->szInternalName, "shredderpap1"))
                     throw std::runtime_error("PAP list points to a different registration than the exact database asset");
             }
         }
@@ -129,7 +137,7 @@ void dump_iw7_player_weapon_templates(const std::string& donor_zone, const std::
     load_enemy_source_zones(donor_zone);
     auto weapon = player_weapon_templates::exact_asset(ASSET_TYPE_WEAPON, "iw7_shredder_zm");
     auto pap = player_weapon_templates::exact_asset(ASSET_TYPE_ATTACHMENT, "shredderpap1");
-    player_weapon_templates::compatible_pair(weapon.header.weapon, pap.header.attachment);
+    player_weapon_templates::compatible_pair(weapon.asset.header.weapon, pap.asset.header.attachment);
 
     std::filesystem::create_directories(output.parent_path());
     if (!std::filesystem::create_directory(output))
@@ -141,20 +149,20 @@ void dump_iw7_player_weapon_templates(const std::string& donor_zone, const std::
     asset_type_filter = {ASSET_TYPE_WEAPON, ASSET_TYPE_ATTACHMENT};
     ordered_json manifest = {{"schema", "iw7.player-weapon-templates/1"}, {"donor", donor_zone},
         {"native_source_pin", "fab935826c898806855376662a8a03317b3ad8f1"},
-        {"weapon", "iw7_shredder_zm"}, {"pap_attachment", "shredderpap1"},
+        {"weapon", weapon.identity}, {"pap_attachment", pap.identity},
         {"engine_weapon_type", "projectile"}, {"bo3_assets_authenticated", false},
         {"weapon_granted", false}, {"projectile_damage_verified", false},
         {"retail_pap_transaction_verified", false}, {"gameplay_accepted", false}, {"files", ordered_json::array()}};
-    const std::array<std::pair<XAsset*, const char*>, 2> assets = {{{&weapon, "weapons/iw7_shredder_zm.json"},
+    const std::array<std::pair<player_weapon_templates::NamedAsset*, const char*>, 2> assets = {{{&weapon, "weapons/iw7_shredder_zm.json"},
         {&pap, "attachments/shredderpap1.json"}}};
     for (const auto& item : assets)
     {
-        dump_asset(item.first); // Existing full native serializers; no sparse authoring.
+        dump_asset(&item.first->asset); // Existing full native serializers; no sparse authoring.
         const auto bytes = player_weapon_templates::bounded_file(output / item.second, player_weapon_templates::json_cap);
         if (bytes.empty()) throw std::runtime_error("Player-template serializer emitted an empty file");
         const auto data = ordered_json::parse(bytes);
         if (!data.is_object() || !data.contains("szInternalName") ||
-            data["szInternalName"] != get_asset_name(item.first))
+            data["szInternalName"] != item.first->identity)
             throw std::runtime_error("Player-template JSON identity differs from its native source");
         manifest["files"].push_back({{"path", item.second}, {"bytes", bytes.size()},
             {"sha256", utils::cryptography::sha256::compute(reinterpret_cast<const uint8_t*>(bytes.data()), bytes.size(), true)}});

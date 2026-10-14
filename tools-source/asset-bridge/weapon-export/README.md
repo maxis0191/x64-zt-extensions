@@ -56,6 +56,15 @@ Eight Python preparation tests cover drift, insertion cardinality, unchanged
 entry code, cap growth, newline handling, real source writes and path/overwrite
 refusals. They do not execute this C++ function or a native serializer.
 
+Independent review rejected `1b303eb` for an unbounded runtime-name comparison
+and a second unchecked name getter at JSON validation. The additive correction
+compares only the allowlisted length plus its terminating NUL, refuses null or
+nonterminated/mismatching values, and retains an owned validated identity for
+JSON comparison without a second getter. `test_bounded_name.cpp` authors eight
+native causal assertions for exact/null/mismatch/prefix/suffix/nonterminated
+names; it has **not been compiled or run**. The source helper embeds the small
+name header globally in the copied source. Its hash is separate in the receipt.
+
 The complete authoring consumer is private `iw7-mod-components` PR30, merge
 `a5f76a38e1fe9363b08700a7ff51b2a8417571a2`,
 `ops/raygun/prepare_weapon.py`. Authentic BO3 model/texture/animation/FX/audio

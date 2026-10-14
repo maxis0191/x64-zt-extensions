@@ -22,6 +22,8 @@ class PreparationTests(unittest.TestCase):
         addition = '\n'.join('\t' + line if line else '' for line in module.splitlines()) + '\n\n'
         without_module = result.replace(addition, '', 1).replace(
             '#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n', '', 1)
+        name_header = support.read_source(support.HERE / 'native_bounded_name.hpp').removeprefix('#pragma once\n')
+        without_module = without_module.replace(name_header + '\n', '', 1)
         self.assertEqual(without_module, FIXTURE)
         self.assertEqual(result.count('void ' + support.FUNCTION + '('), 1)
         self.assertEqual(result.count(support.FUNCTION), 1)  # no call-site introduced
