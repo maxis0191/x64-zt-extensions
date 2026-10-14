@@ -633,6 +633,42 @@ class ResidentRigidTests(unittest.TestCase):
         # not donor bytes, and with a mesh name unrelated to the model suffix.
         return self.fixture.Synthetic(names=('original/pilot', 'mesh/unrelated', 'root pivot', 'donor/clay'), lod=0)
 
+    def test_ff_dump_binds_runtime_surface_cache_without_widening_source_stage(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder)
+            _, _, staged, plan = self.staged(base, self.multi(), distance=1000000)
+            dump = base / 'roundtrip'
+            for role, name in (('model', plan['model_name']), ('mesh', plan['mesh_name'])):
+                relative = ('xmodel/' + name + '.xmb') if role == 'model' else ('xsurface/' + name + '.xsb')
+                target = dump / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((staged / relative).read_bytes())
+            model = dump / ('xmodel/' + plan['model_name'] + '.xmb')
+            mesh = dump / ('xsurface/' + plan['mesh_name'] + '.xsb')
+            pointer = 0x998877665544
+            model_bytes, mesh_bytes = bytearray(model.read_bytes()), bytearray(mesh.read_bytes())
+            struct.pack_into('<Q', model_bytes, 6+272, pointer)
+            struct.pack_into('<Q', mesh_bytes, 6+8, pointer)
+            model.write_bytes(model_bytes);mesh.write_bytes(mesh_bytes)
+            ff = base / 'mod.ff';ff.write_bytes(b'AUTHORED ROUNDTRIP FIXTURE ONLY')
+            result = rigid_export.verify_dump(staged, dump, ff)
+            self.assertTrue(result['geometry_roundtrip_verified'])
+            self.assertFalse(result['runtime_verified'])
+            struct.pack_into('<Q', model_bytes, 6+272, pointer+1)
+            model.write_bytes(model_bytes)
+            with self.assertRaisesRegex(ValueError, 'surface cache differs'):
+                rigid_export.verify_dump(staged, dump, ff)
+            # A valid FF cache must still fail the source-stage parser, even if
+            # its mutable file hash is updated to match the changed source.
+            struct.pack_into('<Q', model_bytes, 6+272, pointer)
+            source_model = staged / ('xmodel/' + plan['model_name'] + '.xmb')
+            source_model.write_bytes(model_bytes)
+            relative = source_model.relative_to(staged).as_posix()
+            plan['source_files'][relative] = rigid_export.digest(bytes(model_bytes))
+            (staged / 'model-ff-plan.json').write_bytes(rigid_export.json_bytes(plan))
+            with self.assertRaises(ValueError):
+                rigid_export.verify_stage(staged)
+
     def multi(self, **kwargs):
         return self.fixture.SyntheticMulti(names=('original/pilot', 'mesh/unrelated', 'root pivot', 'donor/clay'), **kwargs)
 

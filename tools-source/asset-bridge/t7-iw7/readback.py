@@ -172,7 +172,7 @@ def root_bits(data, offset):
     return bits
 
 
-def parse_model(data, manifest, *, with_material_records=False):
+def parse_model(data, manifest, *, with_material_records=False, runtime_mesh=None):
     records, _ = geometry_layout(manifest)
     n = len(records)
     r = Reader(data, MODEL_LIMIT)
@@ -193,9 +193,25 @@ def parse_model(data, manifest, *, with_material_records=False):
     for i in range(1, 6):
         check(values(h, 224 + 64 * i, "f")[0] == 1000000.0, "unused LOD distance")
     check(h[704] == h[720] == 255, "unused model index sentinel")
+    runtime_ranges = []
+    if runtime_mesh is not None:
+        # fab9358 IW7 XModelLodInfo::surfs is a runtime XSurface* cache at
+        # XModel.lodInfo[0] + 48 (224 + 48). dump_single retains it, but it
+        # has no independent record. FF readback alone can bind a nonzero
+        # cache to the separately validated XModelSurfs::surfs pointer at +8.
+        # Never follow that address or permit it in native/source exports.
+        mesh_reader = Reader(runtime_mesh, MESH_LIMIT)
+        mesh_header = mesh_reader.array('mesh', 56, 1)
+        pointers(mesh_header, (0, 8))
+        check(values(mesh_header, 16, 'H') == (n,), 'runtime mesh surface count')
+        mesh_reader.name('mesh_name', 6, manifest['output_mesh_name'])
+        cached, = values(h, 272, 'Q')
+        surfaces_pointer, = values(mesh_header, 8, 'Q')
+        check(cached in (0, surfaces_pointer), 'runtime LOD0 surface cache differs from mesh')
+        runtime_ranges = [(272, 8)]
     zero_except(h, [(o, 8) for o in required] +
                 [(8, 7), (20, 2), (26, 6), (36, 32), (224, 8), (240, 32), (704, 1), (720, 1)] +
-                [(224 + 64 * i, 4) for i in range(1, 6)])
+                [(224 + 64 * i, 4) for i in range(1, 6)] + runtime_ranges)
     model_name = r.name("model_name", 6, manifest["output_model_name"])
     root_name = r.name("root_bone", 6, manifest["root_bone_name"])
     for label, stride in (("parents", 1), ("angles", 8), ("positions", 12)):
