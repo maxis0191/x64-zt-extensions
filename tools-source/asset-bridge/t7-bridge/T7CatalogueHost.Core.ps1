@@ -2,12 +2,13 @@
 Set-StrictMode -Version Latest
 function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
     $export=[bool]($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ResidentExportV1')
-    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1'))){throw 'Unknown T7 host operation.'}
-    $prefix=if($export){'iw7.t7-resident-export-'}else{'iw7.t7-catalogue-'}
+    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1'))){throw 'Unknown T7 host operation.'}
+    $prefix=if($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}else{'iw7.t7-catalogue-'}
     $prefix+$Kind+'/1'
 }
 function Get-T7CatalogueHostOutcomeName($Plan) {
-    if((Get-T7CatalogueHostSchema $Plan 'run') -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}else{'CatalogueOutcome'}
+    $schema=Get-T7CatalogueHostSchema $Plan 'run'
+    if($schema -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}elseif($schema -ceq 'iw7.t7-material-parts-run/1'){'PartsOutcome'}else{'CatalogueOutcome'}
 }
 function Get-T7CatalogueHostIdentity {
     $process=[Diagnostics.Process]::GetCurrentProcess()

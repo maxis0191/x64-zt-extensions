@@ -368,6 +368,17 @@
       ]
     },
     {
+      "id": "Test-T7MaterialPartsRecipient",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7MaterialPartsRecipient.ps1"
+      ]
+    },
+    {
       "id": "Test-T7Catalogue",
       "command": [
         "pwsh",

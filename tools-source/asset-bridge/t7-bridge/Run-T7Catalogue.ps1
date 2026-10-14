@@ -8,7 +8,7 @@ $core=Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
 . $core
 $guards=[Collections.Generic.List[object]]::new()
 $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards}
-$state=$null;$failure=$null;$attempted=$false;$plan=$null;$zonePin=$null;$export=$false
+$state=$null;$failure=$null;$attempted=$false;$plan=$null;$zonePin=$null;$export=$false;$parts=$false
 try {
     $size=(Get-Item -LiteralPath $PlanPath).Length
     if($size -gt 128KB){throw 'Catalogue plan exceeds 128 KiB.'}
@@ -21,9 +21,14 @@ try {
     $required=@($PSCommandPath,$profile,$prepatchProfile,$core,$scheduler,$fileIdentity,
         (Join-Path $repo 'ops/Resource-Memory.ps1'),(Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'))
     $export=[bool]($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'ResidentExportV1')
+    $parts=[bool]($plan.PSObject.Properties['SelectedMaterialPartsV1'] -or
+        ($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'MaterialPartsV1') -or
+        ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-material-parts-v1'))
     $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2'))
     $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
     if($export -or $zombies){$required+=@($exportProfile)}
+    $partsProfile=Join-Path $PSScriptRoot 'T7MaterialParts.Profile.ps1'
+    if($parts){$required+=@($partsProfile)}
     foreach($path in $required) {
         $pin=@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true})
         if($pin.Count -ne 1 -or $pin[0].Bytes -gt 1MB){throw 'Bounded exact source binding missing.'}
@@ -32,6 +37,7 @@ try {
     . $prepatchProfile # Functions only; reuse environment/Main checks without changing the diagnostic.
     . $profile
     if($export -or $zombies){. $exportProfile} # C consumes only the shared build qualifier.
+    if($parts){. $partsProfile}
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
     if($export){Assert-T7ResidentExportCatalogue $plan}
@@ -59,6 +65,11 @@ try {
         LeaseReleased=$false;Quarantined=$false;TerminationRequested=$false;CatalogueOutcome='NoCatalogue';
         CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;EngineOutputsValidated=$false;Aliases=@();InputFileIds=@()}
     $attemptSchema='iw7.t7-catalogue-attempt/1';$leaseOwner='T7 single-zone catalogue'
+    if($parts){
+        $state.Schema='iw7.t7-material-parts-run/1';$state.Stage='MaterialParts';$state.Remove('CatalogueOutcome')
+        $state.PartsOutcome='NoPartsMetadata';$state.SelectedPartsMetadata=$null
+        $attemptSchema='iw7.t7-material-parts-attempt/1';$leaseOwner='T7 selected image-parts metadata only'
+    }
     if($export){
         $state.Schema='iw7.t7-resident-export-run/1';$state.Stage='ResidentExport';$state.Remove('CatalogueOutcome')
         $state.ExportOutcome='NoExport';$state.ExportRequest=$plan.ExportRequest
@@ -114,11 +125,12 @@ try {
     # while guards/admission remain; failure never becomes a successful catalogue.
     if($state -and $attempted -and $context.Owner -and $context.Closed -and $context.Lease) {
         try {
-            try{if(!$export){Read-T7CatalogueTrace $plan $state $context}}
+            try{if(!$export -and !$parts){Read-T7CatalogueTrace $plan $state $context}}
             catch{if(!$failure){$failure=$_};$state.TraceError=$_.Exception.Message;$state.Status='Failed'}
             Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context
             $state.EngineOutputsValidated=$true
-            if($export){$state.ExportOutcome=Read-T7ResidentExportReport $plan $state $context}
+            if($parts){$state.PartsOutcome=Read-T7MaterialPartsReport $plan $state $context}
+            elseif($export){$state.ExportOutcome=Read-T7ResidentExportReport $plan $state $context}
             else{$state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context}
             $hashAliases=@($state.Aliases|Where-Object {!$_.PSObject.Properties['GuardScope']})
             foreach($pin in @($plan.Bindings)+@($zonePin)+$hashAliases) {
@@ -134,8 +146,9 @@ try {
             $state.InputsReverified=$true;$state.OriginalInputMetadataUnchanged=$true;$state.AliasesRetained=$true
             Test-H1Budget $plan $state
             if(!$failure -and $export -and $state.ExportOutcome -cne 'ExportFilesObserved'){throw 'No qualified selective export was produced.'}
-            if(!$failure -and !$export -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
-            if(!$failure -and !$export -and (Get-T7CatalogueCandidateProfile $plan) -cne 'ordinary-d2' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
+            if(!$failure -and $parts -and $state.PartsOutcome -cne 'PartsMetadataObserved'){throw 'No qualified G3 metadata observation was produced.'}
+            if(!$failure -and !$export -and !$parts -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
+            if(!$failure -and !$export -and !$parts -and (Get-T7CatalogueCandidateProfile $plan) -cne 'ordinary-d2' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
     if($state){Complete-H1Stage $context $state}
@@ -143,12 +156,12 @@ try {
         try{$state.MainAfter=Assert-T7CatalogueMain $plan}
         catch{if(!$failure){$failure=$_};$state.MainAfterError=$_.Exception.Message;$state.Status='Failed'}
     }
-    if($state -and !$export -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
+    if($state -and !$export -and !$parts -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
         # After forced closure, inspect only bounded diagnostics, never hash payloads.
         try{Read-T7CatalogueTrace $plan $state $context}catch{$state.TraceError=$_.Exception.Message}
         try{$state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context}catch{$state.ReportError=$_.Exception.Message}
     }
-    if($state -and !$context.Closed){if($export){$state.ExportOutcome='NotInspectedWhileJobUnclosed'}else{$state.CatalogueOutcome='NotInspectedWhileJobUnclosed'}}
+    if($state -and !$context.Closed){if($parts){$state.PartsOutcome='NotInspectedWhileJobUnclosed'}elseif($export){$state.ExportOutcome='NotInspectedWhileJobUnclosed'}else{$state.CatalogueOutcome='NotInspectedWhileJobUnclosed'}}
     if($state -and $attempted) {
         if($context.Owner -and $context.Closed){$state.ClosureEvidence='Pinned NativeJob CloseConfirmed rechecks original RootExited and ActiveProcesses==0; original ExitCode retained.'}
         $state.FinishedUtc=[DateTime]::UtcNow.ToString('o')
@@ -156,13 +169,14 @@ try {
             if(!$state.Quarantined){Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
             if(!$failure -and $context.Closed -and !$context.Lease -and $state.LeaseReleased -and
                !$state.TerminationRequested -and $state.InputsReverified -and $state.EngineOutputsValidated){
-                if($export -and $state.ExportOutcome -ceq 'ExportFilesObserved'){$state.Status='ExportObservedPendingReadback'}
-                elseif(!$export -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
+                if($parts -and $state.PartsOutcome -ceq 'PartsMetadataObserved'){$state.Status='PartsMetadataObservedPendingReview'}
+                elseif($export -and $state.ExportOutcome -ceq 'ExportFilesObserved'){$state.Status='ExportObservedPendingReadback'}
+                elseif(!$export -and !$parts -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
             }
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message}
         try {
             Write-H1Receipt $plan $state $plan.StageRoot
-            if($state.Status -cin @('CatalogueObservedPendingDonorReview','ExportObservedPendingReadback')) {
+            if($state.Status -cin @('CatalogueObservedPendingDonorReview','ExportObservedPendingReadback','PartsMetadataObservedPendingReview')) {
                 try{Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
                 catch {
                     $failure=$_;$state.Status='Failed';$state.FinalizationError=$_.Exception.Message
@@ -179,7 +193,7 @@ if($state -and $state.Quarantined) {
     while($true){Start-Sleep -Seconds 1}
 }
 if($state){
-    $outcomeName=if($export){'ExportOutcome'}else{'CatalogueOutcome'}
+    $outcomeName=if($parts){'PartsOutcome'}elseif($export){'ExportOutcome'}else{'CatalogueOutcome'}
     [ordered]@{Status=$state.Status;($outcomeName)=$state[$outcomeName];Receipt=(Join-Path $plan.StageRoot 'receipt.json');Ready=$false}|ConvertTo-Json
 }
 if($failure){throw $failure}
