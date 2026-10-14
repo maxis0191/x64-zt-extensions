@@ -462,3 +462,12 @@ refuses; the completed long-root plan refuses while a short-root projection
 passes at 147/167/182 characters including NUL. These are string/source checks,
 not proof of CRT errno or an opaque output readback. Legacy selectors and the
 compiled af41/aa322 tuple are unchanged; retain the old failed root.
+
+The fixed mesh name comes from E2's retained `mesh-metadata.raw.local.json`:
+1,483 bytes/SHA256
+`be56661e12a192c346613fe5ab1ac5f4606621e7a230c33bef1ce55d8e53a021`,
+field `mesh_name=p7_fre_platform_cap_02_lod0ca80354f`. Its pinned stdout contains
+the same field. E2 was a failed metadata observation, not geometry acceptance.
+The pinned E5 producer takes `selected->meshes[0]->name` and writes
+`xsurface/<mesh_name>.xsb`; no new CRC is invented by the path guard. Recheck the
+name against the next real manifest before accepting its readback.
