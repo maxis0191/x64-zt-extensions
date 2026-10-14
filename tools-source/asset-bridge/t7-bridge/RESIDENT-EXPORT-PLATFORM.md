@@ -16,6 +16,98 @@ and [the v2 export C attempt](RESIDENT-EXPORT-C.md). C retained its reviewed v2
 request and build D candidate but returned the v1 single-surface refusal without
 an export. These later records do not change this original v1 contract.
 
+## Selected streamed E4 stock A, 2026-10-14 Paris
+
+The [separate E4 stock evidence](../t7-iw7/SELECTED-STREAMED-STATIC.md#e4-stock-a-refusal-observed-2026-10-14-paris)
+is now closed: Failed / NoExport, with exact surface-zero offsets/counts matching
+and `collisionTreePresent=1` triggering the existing guard before payload decode.
+Seven raw material bindings were retained, but image zero remained unreadable.
+The original host exited and fresh absence confirmed no lease or heavy process.
+Geometry, collision semantics, image pixels, runtime and owner acceptance remain
+unverified. E3 artifacts and its uncaptured rigid values remain unchanged.
+
+## Selected streamed E3 stock A, 2026-10-14 Paris
+
+The exact E3 runtime source was independently reviewed and merged in
+[asset PR21](https://github.com/maxis0191/x64-zt-extensions/pull/21), merge
+`7c47ee53c5e2e764ea81870cc520563be63d1c4c`. Its 1,208 targeted source checks,
+read-only qualification of the real closed build and actual default-plan
+validation passed. Hosted checks did not run: exact-head billing refusal had
+runner ID 0 and no steps, under the owner's existing conditional exception.
+
+The distinct E3 build remains compiled source
+`e3451959dba1dafe11095f1434a614c8ddff3fbe`, build-plan hash
+`6df0db3f13852df5b70e660de915e376f5339f44ad04327166f82304b71ce4e8`,
+and candidate 21,916,160 bytes /
+`2de24e4a715d92cebe767073f212241319c85bd7a5863201f1eaf9da39f9ff7d`.
+The operator package was frozen at reviewed source `63de890`. E2 and the later
+offline reader API were not substituted into this epoch.
+
+Metadata discovery had identified one provider, `zone/mp_initial.xpak`, for the
+exact selected key. The reviewed 112-binding / 29-input plan used the pinned
+377-byte request and one provider alias. Its 654,311,801 added logical alias
+bytes did not copy the package. After a fresh zero-group observation and a
+separate coordinator GO, the unique native command was:
+
+```text
+-t7-iw7-model-streamed-v1 mp_freerun_04 p7_fre_platform_cap_02 0 streamed-request.json
+```
+
+The native process exited naturally 1 after 5,879.807 ms, leaving
+**Failed / NoExport**. No manifest, XMB or XSB was produced. Stdout retains:
+
+```text
+t7-iw7-selected-streamed-static-v1: selected streamed rigid coverage differs
+```
+
+In the actually compiled `t7_iw7_streamed_model.hpp`, that require checks
+`boneOffset == 0`, exact vertex coverage, `triOffset == 0`, exact triangle
+coverage and a null collision-tree pointer at lines 103–105. The selected
+payload reader is called later at line 129. This identifies a refusal before
+payload lookup/decompression by compiled control flow; it is not an independent
+byte counter. Actual rigid-list values were not captured, so no specific
+condition, ABI defect or harmless collision-tree exception is established.
+The guard was not relaxed, and neither geometry nor readback passed.
+
+The new material diagnostic reached a selected header with texture count 7,
+sampler count 8 and constant count 0. Texture/sampler tables and technique-set
+pointers were present; the constant table was absent. It refused at
+`failure_stage=image_header`, `failure_index=0`, with
+`range is not committed readable memory`; the textures array was empty. These
+raw observations do not identify an image, prove the runtime layout or capture
+pixels. The five ordered material names remained unchanged.
+
+The original native job confirmed normal tree closure and lease release.
+All input identities/metadata and 29 aliases reverified; the selected provider's
+header/index revalidation passed, with `SelectedProviderWholeFileHashed=false`.
+The original host closed with zero guards and `CanExit=true`. PTY 72864 actually
+exited 1 (tool chunk `feb5c8`); the 22:27:50 UTC observation confirmed both owned
+identities absent and zero leases/heavy/game processes. Main's stopped baseline
+was preserved. No EXE/PDB/stock/PAK content was rehashed after release, and no
+second native invocation followed this GO. Engine-output validation does not
+stand in for geometry acceptance.
+
+Private bounded texts under `t7-e3-stock-platform-a-20261013/` retain the plan,
+host contract, original exit, absence and completion. Runtime logs/receipt remain
+in the frozen operator package's E3 stock A directory. The date suffix names
+the prepared epoch; the invocation occurred after midnight in Paris.
+
+| Evidence | Bytes | SHA256 |
+| --- | ---: | --- |
+| Runtime receipt | 36,702 | `668dea29182ab72e772893f498fd5fc242276d5b0a55026b07a6a7596f58becc` |
+| Stdout | 1,404 | `433ebb839a9b07408d58e965487c6c856e3782dbb96398728a45eaf8268e1082` |
+| Host postflight | 1,658 | `e64e46eca8af0eb0c78214c60357afd7301215b1d553fe0c41eee42f73238d2b` |
+| Original exit request | 919 | `adffc98ed225ff3ac7410e7dc3f3d038efb23ab04bad5a7f8497324b76a54fdd` |
+| Subsequent absence | 409 | `74a0edafc1cd9ba4ca99df07f549fe010d56a422c09f5a94ebd6caa5e4b81383` |
+| Completion | 4,777 | `0a1bc9f4d08cc1aa8e2d539d62ff49cebc16b99810591d092b5c9e9cca5a6d8d` |
+
+Next action: the native owner must capture the exact failed rigid-list fields
+and compare the runtime representation with primary source before changing
+coverage policy. An independently qualified offline packet decoder may establish
+the selected buffer separately. Any later diagnostic build/stock plan is a new
+epoch; this failed receipt, candidate and operator package stay immutable. No
+ModelFF or BO3 Zombies port acceptance follows this failed MP observation.
+
 ## Selected mesh/material observation E2 stock A, 2026-10-13
 
 The E2 build qualification was independently reviewed and merged in

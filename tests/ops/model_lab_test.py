@@ -755,6 +755,56 @@ if(!$refused){throw 'Changed retained readback accepted'}
             rigid_export.derive(bytes(legacy.outputs['model']), bytes(legacy.outputs['mesh']),
                                 legacy.manifest, legacy.request, rebinds=self.bindings(legacy))
 
+    def test_ff_consumer_large_metadata_uses_explicit_serialization_version(self):
+        f = self.multi(surfaces=[(self.fixture.PYRAMID, self.fixture.PYRAMID_FACES)] * 255,
+                       alias_geometry=True)
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
+            base = Path(folder)
+            _, _, staged, plan = self.staged(base, f, distance=1000000)
+            # Legal whitespace changes size without adding or weakening fields.
+            large = (json.dumps(plan, indent=16) + '\n').encode()
+            self.assertGreater(len(large), 65536)
+            self.assertLessEqual(len(large), 1024**2)
+            (staged / 'model-ff-plan.json').write_bytes(large)
+            rigid_export.verify_stage(staged, scene=True)
+            producer = (ROOT / 'ops/model-lab/Build-ModelFF.ps1').read_text()
+            start = producer.index('if((Get-Item -LiteralPath $planPath).Length -gt 1MB)')
+            stop = producer.index('$modelName=if($rigid -or $arena)', start)
+            gate = producer[start:stop]
+            script = base / 'metadata-bound.ps1'
+            script.write_text(r'''param($Repo,$Root,$PlanPath)
+$ErrorActionPreference='Stop'
+. "$Repo/ops/model-lab/ModelFF.Core.ps1"
+function Check-Document($planPath) {
+''' + gate + r'''
+}
+Check-Document $PlanPath
+$valid=Get-Content -LiteralPath $PlanPath -Raw|ConvertFrom-Json
+$valid.geometry_profile='t7-iw7-selected-streamed-static-v1'
+$streamed="$Root/streamed.json"
+ConvertTo-Json -InputObject $valid -Depth 20|Set-Content -LiteralPath $streamed
+[IO.File]::AppendAllText($streamed,(' '*65537))
+Assert-ModelFFRigidPlan $valid
+Check-Document $streamed
+foreach($profile in @($null,'iw7-original-arena-rigid-v1')) {
+    $legacy=[pscustomobject]@{geometry_profile=$profile}
+    $legacyPath="$Root/legacy.json"
+    ConvertTo-Json -InputObject $legacy|Set-Content -LiteralPath $legacyPath
+    [IO.File]::AppendAllText($legacyPath,(' '*65537))
+    # Stub only the unrelated source-name check: exercise actual size dispatch.
+    function Get-ModelFFSourceNames($Plan){@('unused')}
+    if($null -eq $profile){$legacy.PSObject.Properties.Remove('geometry_profile');ConvertTo-Json -InputObject $legacy|Set-Content $legacyPath;[IO.File]::AppendAllText($legacyPath,(' '*65537))}
+    $refused=$false;try{Check-Document $legacyPath}catch{$refused=$_.Exception.Message -eq 'Legacy model FF preparation exceeds bound.'}
+    if(!$refused){throw 'Legacy/arena metadata limit widened.'}
+}
+[IO.File]::AppendAllText($streamed,(' '*1MB))
+$refused=$false;try{Check-Document $streamed}catch{$refused=$_.Exception.Message -eq 'Bounded model FF preparation required.'}
+if(!$refused){throw 'One-MiB document limit widened.'}
+''')
+            result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), folder,
+                                     str(staged / 'model-ff-plan.json')], capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_multisurface_max_slots_stage_and_metadata_bounds(self):
         f = self.multi(surfaces=[(self.fixture.PYRAMID, self.fixture.PYRAMID_FACES)] * 255,
                        alias_geometry=True)

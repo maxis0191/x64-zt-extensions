@@ -28,7 +28,8 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
         $Plan.ReuseCompile.RecompiledMain -is [bool] -and $Plan.ReuseCompile.RecompiledMain
     $cliMarker=$Plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $Plan.ReuseCompile -and
         $Plan.ReuseCompile.PSObject.Properties.Name -contains 'RecompiledZonetool'
-    $publication=$null -ne $profile -and $profile.Name -ceq 't7-catalog-message-publication'
+    $zombies=$null -ne $profile -and $profile.Name -ceq 't7-zombies-catalogue-observation-c'
+    $publication=$null -ne $profile -and $profile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
     if($cliMarker -and !$publication){throw 'CLI rebuild marker requires the publication profile.'}
     if($publication -and (!$cliMarker -or $Plan.ReuseCompile.RecompiledZonetool -isnot [bool] -or
         !$Plan.ReuseCompile.RecompiledZonetool)){throw 'Publication requires both fresh translation units.'}
@@ -45,17 +46,17 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
             PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
         }
-    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')) {
+    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')) {
         $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring'
-        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')) {
+        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')) {
             if($profile.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit-context schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
-        if($profile.Name -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication')) {
+        if($profile.Name -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')) {
             if($profile.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
-        if($profile.Name -cin @('t7-catalog-message','t7-catalog-message-publication')) {
+        if($profile.Name -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c')) {
             if($profile.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,MessageSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
@@ -64,6 +65,11 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             $fields=(@($fields.Split(','))+@('PublicationSchema','PublicationWiring','PublicationSource','PreparedCLI',
                 'MainResponse','CLIResponse','LinkResponse')|Sort-Object)-join ','
             if((@($Plan.Stages.Name)-join ',') -cne 'main,zonetool11,link') {throw 'Publication requires main,zonetool11,link in order.'}
+        }
+        if($zombies) {
+            if($profile.ObservationSchema -cne 'iw7.t7-zm-observation/1' -or
+               !$Plan.ReuseCompile.PSObject.Properties['ZombiesObservationC']){throw 'Explicit Zombies observation source marker required.'}
+            $fields=(@($fields.Split(','))+@('ObservationSchema','ObserverSource','ObserverAdapter')|Sort-Object)-join ','
         }
         if($profile.Option -cne '-t7-iw7-catalog' -or $profile.ArgumentCount -ne 3 -or
            $profile.TraceSchema -cne 'iw7.t7-catalog-trace/1' -or
@@ -98,13 +104,24 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
                 if((@($stage.Artifacts)-join ',') -cne ($artifacts-join ',')) {throw 'Publication stage artifact guards differ.'}
             }
         }
+        if($zombies) {
+            $paths.ObserverSource=Join-Path $SourceRoot 'native_catalog_zombies_observation.inc'
+            $paths.ObserverAdapter=Join-Path $SourceRoot 'prepare_catalog_zombies_observation.py'
+        }
     } else {
         throw 'Unknown T7 build profile.'
     }
     foreach($name in $paths.Keys) {
         $pin=$profile.$name
         $limit=if($name -ceq 'BaseBuildPlan'){2MB}elseif($name -ceq 'BaseBuildReceipt'){128KB}
-               elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PublicationSource'){16KB}else{64KB}
+               elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PublicationSource'){16KB}
+               elseif($name -ceq 'PreparedCLI' -and $Plan.ReuseCompile.PSObject.Properties.Name -contains 'SelectedStreamedRenderOnlyV2' -and
+                   $Plan.ReuseCompile.SelectedStreamedRenderOnlyV2.Schema -ceq 'iw7.t7-selected-streamed-render-only-build/2' -and
+                   $Plan.ReuseCompile.SelectedStreamedRenderOnlyV2.GeometryProfile -ceq 't7-iw7-selected-streamed-render-only-v2' -and
+                   $Plan.ReuseCompile.SelectedStreamedRenderOnlyV2.CollisionPolicy -ceq 'omit-source-rigid-collision-trees'){128KB}
+               elseif($name -ceq 'PreparedCLI' -and $Plan.ReuseCompile.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1' -and
+                   $Plan.ReuseCompile.SelectedStreamedStaticV1.Schema -ceq 'iw7.t7-selected-streamed-static-build/1' -and
+                   $Plan.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile -ceq 't7-iw7-selected-streamed-static-v1'){128KB}else{64KB}
         if($pin.Path -cne $paths[$name] -or $pin.Bytes -le 0 -or $pin.Bytes -gt $limit -or
            $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Diagnostic source pin differs.'}
         $match=@($Plan.Bindings|Where-Object {$_.Path -ceq $pin.Path -and $_.IsText -is [bool] -and $_.IsText -and
@@ -115,31 +132,93 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
 }
 function Assert-T7InputBindings($Plan) {
     # This runs before any binding is opened, binary metadata is queried or
-    # provider is loaded. Legacy stays 128; v2 adds three sealed observer sources.
+    # provider is loaded. Legacy128 and sealed E2/v2144 remain unchanged;
+    # the explicit selected-streamed marker adds five exact source bindings.
     $bindings=@($Plan.Bindings);$inputs=@($Plan.Inputs)
-    if($bindings.Count -gt 144 -or $inputs.Count -gt 2048 -or
+    $reuse=if($Plan.PSObject.Properties.Name -contains 'ReuseCompile'){$Plan.ReuseCompile}else{$null}
+    $zombies=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ZombiesObservationC'
+    if($bindings.Count -gt $(if($zombies){151}else{149}) -or $inputs.Count -gt 2048 -or
         @($bindings.Path|Sort-Object -Unique).Count -ne $bindings.Count -or
         @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
     if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}
-    $reuse=if($Plan.PSObject.Properties.Name -contains 'ReuseCompile'){$Plan.ReuseCompile}else{$null}
     $v2=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ResidentMultiSurfaceV2'
+    $streamedV1=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedStaticV1'
+    $renderOnly=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'SelectedStreamedRenderOnlyV2'
+    if($renderOnly -and ($streamedV1 -or $zombies)){throw 'Render-only and frozen V1/C markers are exclusive.'}
+    $streamed=$streamedV1 -or $renderOnly
     if(!$v2) {
+        if($zombies){throw 'Zombies observation requires the current selected-streamed publication proof.'}
+        if($streamed){throw 'Selected-streamed marker requires the exact common geometry proof.'}
         if($bindings.Count -gt 128){throw 'Legacy input binding limit is 128.'}
         return
     }
     if($Plan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
-        $Plan.BuildProfile.Name -cne 't7-catalog-message-publication' -or
+        $Plan.BuildProfile.Name -cne $(if($zombies){'t7-zombies-catalogue-observation-c'}else{'t7-catalog-message-publication'}) -or
         $Plan.BuildProfile.PublicationSchema -cne 'iw7.t7-message-publication-build/1' -or
         $reuse.RecompiledMain -isnot [bool] -or !$reuse.RecompiledMain -or
         $reuse.RecompiledZonetool -isnot [bool] -or !$reuse.RecompiledZonetool -or
         $reuse.PSObject.Properties.Name -contains 'ResidentSurfaceCountDiagnostic' -or
-        $bindings.Count -ne 144 -or $inputs.Count -ne 1146 -or
-        @($bindings|Where-Object IsText).Count -ne 138){throw 'Exact multisurface publication input profile required.'}
+        $bindings.Count -ne $(if($zombies){151}elseif($streamed){149}else{144}) -or $inputs.Count -ne 1146 -or
+        @($bindings|Where-Object IsText).Count -ne $(if($zombies){145}elseif($streamed){143}else{138})){throw 'Exact multisurface publication input profile required.'}
     $observerRoot=[IO.Path]::GetDirectoryName($Plan.Runner)
+    if($zombies) {
+        $observation=$reuse.ZombiesObservationC
+        if(!$streamed -or $Plan.BuildProfile.ObservationSchema -cne 'iw7.t7-zm-observation/1' -or
+           (@($observation.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseCLIBytes,BaseCLISHA256,CLIBytes,CLISHA256,Schema,SourceProfile' -or
+           $observation.Schema -cne 'iw7.t7-zm-observation-build/1' -or
+           $observation.SourceProfile -cne 't7-zombies-catalogue-observation-c' -or
+           $observation.BaseCLIBytes -ne 107785 -or $observation.BaseCLISHA256 -cne 'c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50' -or
+           $observation.CLIBytes -ne 118485 -or $observation.CLISHA256 -cne '917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987'){
+            throw 'Exact reviewed Zombies observation transition required.'
+        }
+        foreach($source in @(
+            @('ObserverSource','native_catalog_zombies_observation.inc',9668,'50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181'),
+            @('ObserverAdapter','prepare_catalog_zombies_observation.py',7613,'1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445'))) {
+            $path=Join-Path $observerRoot $source[1];$pin=$Plan.BuildProfile.($source[0])
+            if((@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+               $pin.Path -cne $path -or $pin.Bytes -ne $source[2] -or $pin.SHA256 -cne $source[3] -or
+               @($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and
+                   $_.Bytes -eq $source[2] -and $_.SHA256 -ceq $source[3]}).Count -ne 1){throw 'Approved Zombies observation source binding required.'}
+        }
+    }
+    if($streamed) {
+        if($renderOnly) {
+            $marker=$reuse.SelectedStreamedRenderOnlyV2
+            if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'CollisionPolicy,GeometryProfile,Schema' -or
+                $marker.Schema -cne 'iw7.t7-selected-streamed-render-only-build/2' -or
+                $marker.GeometryProfile -cne 't7-iw7-selected-streamed-render-only-v2' -or
+                $marker.CollisionPolicy -cne 'omit-source-rigid-collision-trees'){throw 'Exact render-only source marker required.'}
+            $sourcePins=@(
+                @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+                @('t7_iw7_streamed_model.hpp',11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
+                @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
+                @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
+                @('test_streamed_contract.py',13768,'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c') )
+        } else {
+            $marker=$reuse.SelectedStreamedStaticV1
+            if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'GeometryProfile,Schema' -or
+                $marker.Schema -cne 'iw7.t7-selected-streamed-static-build/1' -or
+                $marker.GeometryProfile -cne 't7-iw7-selected-streamed-static-v1'){throw 'Exact selected-streamed source marker required.'}
+        $sourcePins=@(
+            @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+            @('t7_iw7_streamed_model.hpp',11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
+            @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
+            @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
+            @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))
+        }
+        foreach($source in $sourcePins) {
+            $path=Join-Path $observerRoot $source[0]
+            if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and
+                $_.Bytes -eq $source[1] -and $_.SHA256 -ceq $source[2]}).Count -ne 1){throw 'Exact selected-streamed source binding required.'}
+        }
+    }
+    $materialHeader=if($renderOnly){@('selected_material_observation.hpp',18583,'a8848a92b8d7918fbe91ec4b68df123b1eaab89edde9d8a7c24d5a0cfb576ffc')}elseif($streamed){@('selected_material_observation.hpp',16489,'0ea84735fca2502033cc48a4eede6a19e1bd1283ba1975829f763c16e5ef343a')}
+        else{@('selected_material_observation.hpp',12765,'a935803571f04b3a2cad7346824bf3194f5d44aeada15b224a3faa75ea292d7f')}
+    $materialFixture=if($renderOnly){@('selected_material_observation_fixture.cpp',20260,'b3de68880b6f8c717c2e70ed44497ae2f95f37db7e73bbf34ef014d8e5b6fc6f')}elseif($streamed){@('selected_material_observation_fixture.cpp',13721,'cb27d4df66f3a186de3e0f5faedf7bf713610a2da0fc599861e5a4838ea2dfed')}
+        else{@('selected_material_observation_fixture.cpp',8146,'f011131feeb5495b3bfb0a1e86ad34aad20fc7869ec775c861290df6e3e1a05b')}
     foreach($observer in @(
         @('resident_image_copy.hpp',6366,'96291c23f132e09285d4ea3171c9107ac525d8628403014eae85a895f99c324e'),
-        @('selected_material_observation.hpp',12765,'a935803571f04b3a2cad7346824bf3194f5d44aeada15b224a3faa75ea292d7f'),
-        @('selected_material_observation_fixture.cpp',8146,'f011131feeb5495b3bfb0a1e86ad34aad20fc7869ec775c861290df6e3e1a05b'))) {
+        $materialHeader,$materialFixture)) {
         $path=Join-Path $observerRoot $observer[0]
         if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and
             $_.Bytes -eq $observer[1] -and $_.SHA256 -ceq $observer[2]}).Count -ne 1){
@@ -225,12 +304,20 @@ function Assert-T7InputBindings($Plan) {
     foreach($row in $proof.SourceTransitions) {
         $rows.Add((@($row.Path,$row.PreviousBytes,$row.PreviousSHA256,$row.Bytes,$row.SHA256,$row.WiredBytes,$row.WiredSHA256)-join '|')+"`n")
         $path=Join-Path (Split-Path $Plan.PreparedRoot -Parent) $row.Path
-        if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and $_.Bytes -eq $row.WiredBytes -and
-            $_.SHA256 -ceq $row.WiredSHA256}).Count -ne 1){throw 'Wired v2 transition binding differs.'}
+        $wiredBytes=$row.WiredBytes;$wiredSHA=$row.WiredSHA256
+        if($zombies -and $row.Path -ceq 'prepared/zonetool.cpp') {
+            if($wiredBytes -ne $observation.BaseCLIBytes -or $wiredSHA -cne $observation.BaseCLISHA256){throw 'Zombies observation base transition differs.'}
+            $wiredBytes=$observation.CLIBytes;$wiredSHA=$observation.CLISHA256
+        }
+        if(@($bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -and $_.Bytes -eq $wiredBytes -and
+            $_.SHA256 -ceq $wiredSHA}).Count -ne 1){throw 'Wired v2 transition binding differs.'}
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
-    if($bytes.Length -ne 714 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
-        'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'){throw 'Reviewed v2 source transitions differ.'}
+    $transitionBytes=if($streamed){716}else{714}
+    $transitionSHA=if($renderOnly){'09f477a869eabe0794118dff29a8412773b30ab4602ea7c18190ea748768a395'}elseif($streamed){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}else{
+        'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}
+    if($bytes.Length -ne $transitionBytes -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
+        $transitionSHA){throw 'Reviewed versioned source transitions differ.'}
 }
 function Split-T7ResponseArguments([string]$Text) {
     # Deliberately bounded MSVC response syntax: space/tab separators and quoted
@@ -327,7 +414,7 @@ try {
     $reuse=$plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $plan.ReuseCompile
     $recompiled=Assert-T7BuildProfile $plan $PSScriptRoot
     $buildProfile=if($recompiled){$plan.BuildProfile}else{$null}
-    $publication=$null -ne $buildProfile -and $buildProfile.Name -ceq 't7-catalog-message-publication'
+    $publication=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')
     $names=@(if($publication){'main','zonetool11','link'}elseif($recompiled){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
     if(@($plan.Stages).Count -ne $names.Count -or (@($plan.Stages.Name)-join ',') -cne ($names-join ',')){throw 'Exact full, retained-link or diagnostic main/link stages required.'}
     Assert-T7InputBindings $plan

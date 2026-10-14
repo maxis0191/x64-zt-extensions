@@ -11,6 +11,145 @@ receipts and helper snapshots are not rewritten or requalified by this change.
 Prepare and review fresh helper bindings for future runs; no run is authorized
 or claimed by the source update itself.
 
+## Catalogue C stock A observed, 2026-10-14
+
+One separately authorized C stock sonde used operator source
+`0530ea12c3b62ca50c69dc587717ea9a6c9bffe0`, merged by
+[PR #36](https://github.com/maxis0191/x64-zt-extensions/pull/36) as
+`2af5c94878c8dec6affb5ed3b0b5c3de7a80c1da`. The actual compiled fa45/627f/5f817/
+88f214 tuple below remained unchanged. The fresh runtime plan was
+`5e8e50f3a12e0352677c63410e7cf276bcb1900ffb79b1adbb1b88dea0c740ba`,
+host contract `c72f32c3b654791fa1f7cefef56e1b7f8ee9d3d06b6744bf748f1e341ad32852`.
+It kept B's exact 24 bootstrap rows, 28 original/alias inputs and two arguments
+`-t7-iw7-catalog zm_common`; no historical helper was borrowed or retail stock
+copied. Its 102 source/input bindings and 16 KiB combined trace cap passed DEFAULT.
+
+The native process exited naturally 0 after 6,221.2944 ms, but the runner returned
+**Failed / NoCatalogue**. No model report, weapon/enemy selection or geometry was
+validated. Stdout contains initialization/branding only (370 bytes). Stderr is
+6,784 bytes: 17 valid C records / 1,728 bytes, plus 5,056 unchanged legacy bytes.
+Both streams passed their own validators; an observed trace is not a catalogue.
+
+The captured sequence contains install, initial database load, its return and an
+asynchronous finish callback, then start/handle-params/catalogue/wait boundaries.
+The two database load entries preserve these values:
+
+| Observation | Initial load | Donor load |
+| --- | --- | --- |
+| count | 5 | 1 |
+| sync / suppress | 0 / 0 | 1 / 0 |
+| caller pointer (unresolved) | `0000000140502CD0` | `00000001605C5A35` |
+| bounded observed zone names | `core_pre_gfx`, `core_gfx` | `zm_common` |
+| donor zone allocation flags | — | 65536 |
+
+The donor-entry phase 12 and `zm_common` zone row are observed. Phases 13
+(donor return), 10 (zone return) and 11 (report published) are absent. The same
+133-byte fatal DEV message names `ui/uieditor/widgets/attachmentnamesdisplay.lua`;
+the legacy capture and exit correlate on worker thread 7840. Main-thread C
+events use thread 26608. No C `raw_enter` or `raw_return` record was captured.
+Consequently the targeted lookup's originating caller remains unknown. The
+absence alone does not distinguish filtering/name/pointer/type checks, a
+different internal lookup route, or another cause. Concurrent printed sequence
+and callback phase order do not prove causality. No hook ABI defect or bypass
+fix is declared from these observations.
+
+Native tree closure, lease release, input revalidation, unchanged original
+metadata, retained aliases and engine-output guards passed. The original host
+reached Closed with CanExit and zero guards. Actual PTY 76184 exited 0 in chunk
+`3fdd44`; fresh absence at `2026-10-14T00:26:53.5113740Z` confirmed both original
+host/native processes absent, no heavy/game process and an empty lease registry.
+Main retained its stopped/absent baseline with cause unknown. No opaque artifact
+was opened/hashed after release, and no second stock run followed.
+
+Private text evidence stays outside Git: runtime receipt 46,593 bytes /
+`abb40f1c9de2ad693aaa3c1eb07e9817a9f1df0fc29a5bf67d8fb7aa4c814f08`,
+stdout 370 bytes / `88ab6d02f9f5712933df35eaeca8966f52b8c4243bf9791c668d9471da0abd04`,
+stderr 6,784 bytes / `58a61e954193004f9c643396736fc89ff8a5a39149d9d8a91e4beb2d19a6aac1`,
+completion 8,207 bytes / `8f0fcc9308411171f33df08cae029f08c144f0a3a7f6663f35ed10e3e2f8509f`.
+Next action: source-review the narrow lookup observation predicate and internal
+lookup paths using these actual phases. Preserve C's compiled artifacts and
+failed output; any correction, native rebuild or stock repeat needs a distinct
+reviewed epoch and coordinator slot. No empty/fabricated RawFile, extra zone,
+all-map load, Main deployment or accepted weapon/enemy catalogue is authorized
+by this result.
+
+## Catalogue C compiled qualification, 2026-10-14
+
+The separately admitted C build now exists from immutable asset source
+`fa45c395597697843053ffc23195320dca6ae73d`: plan 370,846 bytes /
+`627f3aacf6ef892af2a7bc94c00ad0f40e811649bbdf2aa49aecad6569930a15`, receipt
+25,317 bytes / `5f817f2f3f24c04868d022b41a3b68da492b75818816c37bb99eb1f6c8805051`,
+admitted EXE tuple 21,925,376 bytes /
+`88f2147de79e696d3342f4e838cf5b7b8b25da29cddea41def9395b6933342c8`.
+The candidate was not executed. The three actual compiler/link jobs exited zero;
+input revalidation, tree closure and lease release passed. The original host
+24984 reached Closed with zero guards, and actual PTY 73114 exited zero in chunk
+`2216da`. Six original/projection texts preserve entry, host completion, actual
+tool return, fresh seven-identity absence, build completion and their bundle.
+No E4 closure or invented exit request qualifies this C epoch.
+
+C loads the existing resident-export profile only for its shared build qualifier.
+It keeps operation Catalogue, the Zombies-only plan marker and two native
+arguments. All general publication checks, 413 direct link objects, 66 writer
+headers, 1,146 inputs and the 151-binding build split (145 text, six opaque) stay
+required. The common three source rows retain their 716-byte `76570ca3...` digest
+and pre-overlay CLI `107785/c480fbd3...`; only its guarded compiler input is
+projected through C's separate `118485/917c2f90...` marker. No source row, original
+receipt or binary is rewritten. The runtime adds nine text pins beyond C's
+observer pair: shared qualifier, resident header, source receipt and six C closure
+texts. Reusing B's 24 bootstraps gives exactly 102 bindings and 28 original inputs.
+
+Real read-only qualification passes on 24 guarded texts totaling 1,476,869 bytes;
+nine mixed candidate/receipt/source/closure refusals pass with their expected
+reasons. No opaque artifact, stock, lease or native process is consumed by those
+checks. An initial lifecycle check referenced `StartedUtc`, which minimal build
+receipts do not carry; ordering now uses the actual first compiler creation and
+recorded finish/host/tool/inventory times. The prior source-only pending gate
+below describes its original delivery, superseded only by this exact C tuple.
+One separately approved `zm_common` stock sonde remains required for engine
+observation. No catalogue, weapon/enemy name, geometry or owner acceptance follows
+from successful compilation or text qualification.
+
+## Catalogue C launcher source, 2026-10-14
+
+The distinct `t7-zombies-catalogue-observation-c` profile is opt-in and requires
+`ZombiesObservationC: {Schema: "iw7.t7-zm-observation-plan/1"}` on a Catalogue
+plan for `zm_common`, with `TraceStderrLimitBytes=16384`. Export experiment
+markers and a C marker on an older profile are refused. The publication build
+profile keeps every F field and adds only `ObservationSchema` plus the two
+guarded text pins `ObserverSource` and `ObserverAdapter`. The runtime binding
+formula adds two text bindings to F; binary/input/output budgets do not grow.
+
+The source module pin is 9,668 bytes,
+`50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181`;
+the adapter is 7,613 bytes,
+`1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445`.
+`ReuseCompile.ZombiesObservationC` has exactly six fields: `Schema`,
+`SourceProfile`, `BaseCLIBytes`, `BaseCLISHA256`, `CLIBytes`, `CLISHA256`.
+Its schema is `iw7.t7-zm-observation-build/1`, its source profile is the C name,
+and its reviewed source transition is 107,785 bytes / `c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50`
+to 118,485 bytes / `917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987`.
+These are text TU identities, not compiled artifact evidence. The prepared CLI
+cap becomes 128 KiB only for C and the existing selected-streamed export.
+
+The splitter removes only complete, finite `[T7_ZM_OBS]` records, retaining all
+other bytes and their LF/CRLF terminators. It enforces ASCII, 16 KiB combined,
+8 KiB observations, at most 38 records and 512 bytes per observation line.
+Unique sequences, one-shot phases, field widths, name lengths and termination
+are checked. The retained F parser still enforces its own 8 KiB/fourteen-line
+contract. Observations preserve uint64 values and never make a missing report
+or an engine exit zero a successful catalogue.
+
+This delivery is source/parser only. Operational build qualification ends with
+`Catalogue C native build and closure are not yet qualified.` A future reviewed
+change must bind the actual C artifact, exact compiler transition, common source
+closure and original-host completion before a launch can pass. F, E3 and E4
+receipts cannot be relabelled as C. No native build or stock run follows from
+these source tests. During implementation, tests caught a 63-digit copied module
+hash; it was replaced with the exact hash read from the source. Standalone F
+qualification also exposed an export-helper lookup on the Catalogue branch;
+that lookup now runs only for the export operation.
+
 ## Zombies locale qualification and catalogue B, 2026-10-13
 
 The separate locale qualification completed two guarded 148,160-byte passes of

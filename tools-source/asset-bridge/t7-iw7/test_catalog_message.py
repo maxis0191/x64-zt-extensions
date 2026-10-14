@@ -19,6 +19,9 @@ class MessageWiringTests(unittest.TestCase):
     def setUpClass(cls):
         _, source = prepare_cli.render(Path(os.environ['IW7_T7_SOURCE']))
         cls.original = source[prepare_cli.PATHS[0]]
+        # Reconstruct the historically compiled v1 guards, preserving its pins.
+        for option in ('t7-iw7-model-v2', 't7-iw7-model-streamed-v1', 't7-iw7-model-streamed-v2'):
+            cls.original = cls.original.replace(' || utils::flags::has_flag("'+option+'")', '')
         cls.before = p.wire_callers_main(cls.original)
         cls.after = p.wire_message_main(cls.original)
 

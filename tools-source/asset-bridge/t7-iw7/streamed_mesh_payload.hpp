@@ -48,6 +48,7 @@ namespace zonetool::t7::selected_xpak
     struct payload { std::vector<std::uint8_t> bytes; observation observed; };
 
     inline constexpr std::uint32_t expected_mesh_bytes = 18624;
+    inline constexpr std::uint32_t max_decoded_bytes = 256u * 1024u;
     inline constexpr std::uint64_t max_index_bytes = 8u * 1024u * 1024u;
     inline constexpr std::uint64_t max_compressed_bytes = 256u * 1024u;
     inline constexpr std::size_t max_packages = 8, max_groups = 128;
@@ -145,11 +146,12 @@ namespace zonetool::t7::selected_xpak
         }
     }
 
-    inline payload read_selected_key(std::span<const package> packages, std::uint64_t key,
+    // Explicit raw-payload API. It does not qualify a mesh, material or other asset ABI.
+    inline payload read_bounded_selected_key(std::span<const package> packages, std::uint64_t key,
         std::uint32_t expected, lz4_decoder decompress)
     {
         using namespace detail;
-        require(expected == expected_mesh_bytes, "XPAK selected mesh size profile differs");
+        require(expected > 0 && expected <= max_decoded_bytes, "XPAK decoded byte limit");
         require(!packages.empty() && packages.size() <= max_packages, "XPAK explicit package list bound");
         entry selected{}; std::size_t matches = 0;
         std::uint64_t index_budget = 0, index_read = 0;
@@ -202,6 +204,14 @@ namespace zonetool::t7::selected_xpak
         require(matches == 1, "XPAK selected key not found in admitted packages");
         // No payload is read until every admitted index passed and the key is unique.
         return decode(selected, key, index_read, expected, decompress);
+    }
+
+    // Preserve the original selected-mesh profile and its refusal before any input read.
+    inline payload read_selected_key(std::span<const package> packages, std::uint64_t key,
+        std::uint32_t expected, lz4_decoder decompress)
+    {
+        detail::require(expected == expected_mesh_bytes, "XPAK selected mesh size profile differs");
+        return read_bounded_selected_key(packages, key, expected, decompress);
     }
 
 #ifdef _WIN32

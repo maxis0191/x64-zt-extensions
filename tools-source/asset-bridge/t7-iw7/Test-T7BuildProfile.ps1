@@ -137,6 +137,22 @@ function New-PublicationFixture {
     return $fixture
 }
 if(!(Assert-T7BuildProfile (New-PublicationFixture) $PSScriptRoot)){throw 'Qualified two-TU publication fixture refused.'};$checks++
+$large=New-PublicationFixture
+$large.BuildProfile.PreparedCLI.Bytes=102665
+$pin=@($large.Bindings|Where-Object Path -CEQ $large.BuildProfile.PreparedCLI.Path)[0];$pin.Bytes=102665
+Must-Refuse $large
+$large.ReuseCompile|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{
+    Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'})
+if(!(Assert-T7BuildProfile $large $PSScriptRoot)){throw 'Explicit bounded streamed CLI source refused.'};$checks++
+foreach($mode in 'schema','profile','oversize') {
+    $changed=$large|ConvertTo-Json -Depth 15|ConvertFrom-Json -Depth 15
+    switch($mode) {
+        schema {$changed.ReuseCompile.SelectedStreamedStaticV1.Schema='wrong'}
+        profile {$changed.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile='t7-iw7-resident-static-v2'}
+        oversize {$changed.BuildProfile.PreparedCLI.Bytes=131073;@($changed.Bindings|Where-Object Path -CEQ $changed.BuildProfile.PreparedCLI.Path)[0].Bytes=131073}
+    }
+    Must-Refuse $changed
+}
 $fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool=$false;Must-Refuse $fixture
 $fixture=New-PublicationFixture;$fixture.ReuseCompile.RecompiledZonetool='true';Must-Refuse $fixture
 $fixture=New-PublicationFixture;$fixture.ReuseCompile.PSObject.Properties.Remove('RecompiledZonetool');Must-Refuse $fixture
@@ -270,6 +286,59 @@ $texts=New-Responses $fixture
 $texts[2]=$texts[2].Replace('C:\fresh\','C:\fresh space\').Replace('/INCREMENTAL:NO',
     '/INCREMENTAL:NO /MANIFESTUAC:"level=''asInvoker'' uiAccess=''false''"')
 Assert-T7PublicationResponses $fixture $texts[0] $texts[1] $texts[2];$checks++
+function New-ZombiesProfileFixture {
+    $fixture=New-PublicationFixture
+    $fixture.BuildProfile.Name='t7-zombies-catalogue-observation-c'
+    $fixture.BuildProfile|Add-Member NoteProperty ObservationSchema 'iw7.t7-zm-observation/1'
+    $fixture.ReuseCompile|Add-Member NoteProperty ZombiesObservationC ([pscustomobject]@{
+        Schema='iw7.t7-zm-observation-build/1';SourceProfile='t7-zombies-catalogue-observation-c';
+        BaseCLIBytes=107785;BaseCLISHA256='c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50';
+        CLIBytes=118485;CLISHA256='917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987'})
+    $fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{
+        Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'})
+    $fixture.BuildProfile.PreparedCLI.Bytes=118485
+    @($fixture.Bindings|Where-Object Path -CEQ $fixture.BuildProfile.PreparedCLI.Path)[0].Bytes=118485
+    foreach($row in @(@('ObserverSource','native_catalog_zombies_observation.inc'),@('ObserverAdapter','prepare_catalog_zombies_observation.py'))) {
+        $pin=[pscustomobject]@{Path=(Join-Path $PSScriptRoot $row[1]);Bytes=1024;SHA256=('a'*64)}
+        $fixture.BuildProfile|Add-Member NoteProperty $row[0] $pin
+        $fixture.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+    }
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-ZombiesProfileFixture) $PSScriptRoot)){throw 'Scoped Zombies publication profile refused.'};$checks++
+foreach($change in @(
+    {$fixture.BuildProfile.Name='t7-catalog-message-publication'},
+    {$fixture.BuildProfile.ObservationSchema='wrong'},
+    {$fixture.BuildProfile.PSObject.Properties.Remove('ObserverSource')},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('ZombiesObservationC')},
+    {$fixture.ReuseCompile.RecompiledZonetool=$false},
+    {$fixture.BuildProfile.ObserverAdapter.Path='C:\other.py'},
+    {$fixture.BuildProfile|Add-Member NoteProperty ObservationContract @{}},
+    {$fixture.BuildProfile.PreparedCLI.Bytes=131073;@($fixture.Bindings|Where-Object Path -CEQ $fixture.BuildProfile.PreparedCLI.Path)[0].Bytes=131073}
+)) {
+    $fixture=New-ZombiesProfileFixture;. $change;Must-Refuse $fixture
+}
+
+function New-RenderOnlyProfileFixture {
+    $fixture=New-PublicationFixture
+    $fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedRenderOnlyV2 ([pscustomobject]@{
+        Schema='iw7.t7-selected-streamed-render-only-build/2';GeometryProfile='t7-iw7-selected-streamed-render-only-v2';
+        CollisionPolicy='omit-source-rigid-collision-trees'})
+    $fixture.BuildProfile.PreparedCLI.Bytes=110283
+    @($fixture.Bindings|Where-Object Path -CEQ $fixture.BuildProfile.PreparedCLI.Path)[0].Bytes=110283
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-RenderOnlyProfileFixture) $PSScriptRoot)){throw 'Explicit render-only CLI bound refused.'};$checks++
+foreach($change in @(
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedRenderOnlyV2')},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.Schema='wrong'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.GeometryProfile='t7-iw7-selected-streamed-static-v1'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.CollisionPolicy='convert'},
+    {$fixture.BuildProfile.PreparedCLI.Bytes=131073;@($fixture.Bindings|Where-Object Path -CEQ $fixture.BuildProfile.PreparedCLI.Path)[0].Bytes=131073}
+)) {
+    $fixture=New-RenderOnlyProfileFixture;. $change;Must-Refuse $fixture
+}
+
 $bindingResult=(& (Join-Path $PSScriptRoot 'Test-T7InputBindings.ps1'))|ConvertFrom-Json
 if(!$bindingResult.Passed -or $bindingResult.NativeInvoked -or $bindingResult.OpaqueContentRead){throw 'Early input binding tests failed.'}
 $checks+=$bindingResult.Checks

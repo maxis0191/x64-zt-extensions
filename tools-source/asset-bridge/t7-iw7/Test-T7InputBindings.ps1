@@ -76,6 +76,63 @@ function Must-RefuseBinding($Fixture) {
     if(!$refused){throw 'Unqualified extended binding set accepted.'}
     $script:checks++
 }
+function New-StreamedBindingFixture {
+    $fixture=New-BindingFixture
+    foreach($row in @(
+        @('selected_material_observation.hpp',16489,'0ea84735fca2502033cc48a4eede6a19e1bd1283ba1975829f763c16e5ef343a'),
+        @('selected_material_observation_fixture.cpp',13721,'cb27d4df66f3a186de3e0f5faedf7bf713610a2da0fc599861e5a4838ea2dfed'))) {
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
+        $pin.Bytes=$row[1];$pin.SHA256=$row[2]
+    }
+    $fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{
+        Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'})
+    foreach($row in @(
+        @('prepared/main.cpp',13052,'ca8875cf36bdf9a8c8e6142969eab95194d214d09c90064e202d68ff9302fcb3',43146,'e599c3e6945e2192443b8a3a3e274d5d36b133b41beb38d6d9234c669defca01'),
+        @('prepared/zonetool.cpp',107731,'dc8211db172c1d6f470b518aa0884ff1be9e1a15faf6a739155a1cc60ca43ac5',107785,'c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50'))) {
+        $transition=@($fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions|Where-Object Path -CEQ $row[0])[0]
+        $transition.Bytes=$row[1];$transition.SHA256=$row[2];$transition.WiredBytes=$row[3];$transition.WiredSHA256=$row[4]
+        $path='C:\plan\'+$row[0].Replace('/','\')
+        $binding=@($fixture.Bindings|Where-Object Path -CEQ $path)[0]
+        $binding.Bytes=$row[3];$binding.SHA256=$row[4]
+    }
+    foreach($row in @(
+        @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+        @('t7_iw7_streamed_model.hpp',11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
+        @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
+        @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
+        @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16'))) {
+        $fixture.Bindings+=@([pscustomobject]@{Path=('C:\fixture\'+$row[0]);Bytes=$row[1];SHA256=$row[2];IsText=$true})
+    }
+    $fixture
+}
+Assert-T7InputBindings (New-StreamedBindingFixture);$checks++
+foreach($mode in 'missing-marker','null-marker','schema','profile','extra-marker','missing-common-proof','old-transition') {
+    $f=New-StreamedBindingFixture
+    switch($mode) {
+        missing-marker {$f.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedStaticV1')}
+        null-marker {$f.ReuseCompile.SelectedStreamedStaticV1=$null}
+        schema {$f.ReuseCompile.SelectedStreamedStaticV1.Schema='iw7.t7-selected-streamed-static-build/2'}
+        profile {$f.ReuseCompile.SelectedStreamedStaticV1.GeometryProfile='t7-iw7-resident-static-v2'}
+        extra-marker {$f.ReuseCompile.SelectedStreamedStaticV1|Add-Member NoteProperty Guess $true}
+        missing-common-proof {$f.ReuseCompile.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}
+        old-transition {$f.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions[0].WiredSHA256=('0'*64)}
+    }
+    Must-RefuseBinding $f
+}
+foreach($name in 'streamed_mesh_payload.hpp','t7_iw7_streamed_model.hpp','native_streamed_export.inc','streamed_contract.py','test_streamed_contract.py') {
+    foreach($mode in 'missing','sha','size','path','classification') {
+        $f=New-StreamedBindingFixture;$path='C:\fixture\'+$name
+        $pin=@($f.Bindings|Where-Object Path -CEQ $path)[0]
+        switch($mode) {
+            missing {$f.Bindings=@($f.Bindings|Where-Object Path -CNE $path)}
+            sha {$pin.SHA256=('0'*64)}
+            size {$pin.Bytes++}
+            path {$pin.Path='C:\unowned\'+$name}
+            classification {$pin.IsText=$false}
+        }
+        Must-RefuseBinding $f
+    }
+}
 Assert-T7InputBindings (New-BindingFixture);$checks++
 foreach($mode in 'missing-marker','null-marker','old-profile','mixed','false-main','string-cli','schema','source',
     'proof-missing','proof-count','proof-bytes','context','journal','pch','input-count','binding-count','classification',
@@ -207,4 +264,96 @@ if($MultisurfaceFixturePlanPath) {
     if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($MultisurfaceFixturePlanPath))).ToLowerInvariant() -cne
         '23b93e754c725b81b438e12498fac8c93257aa43368889fecc22e3ff1fefa3dc'){throw 'Frozen B changed during testing.'}
 }
+function New-ZombiesBindingFixture {
+    $fixture=New-StreamedBindingFixture
+    $fixture.BuildProfile.Name='t7-zombies-catalogue-observation-c'
+    $fixture.BuildProfile|Add-Member NoteProperty ObservationSchema 'iw7.t7-zm-observation/1'
+    $fixture.ReuseCompile|Add-Member NoteProperty ZombiesObservationC ([pscustomobject]@{
+        Schema='iw7.t7-zm-observation-build/1';SourceProfile='t7-zombies-catalogue-observation-c';
+        BaseCLIBytes=107785;BaseCLISHA256='c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50';
+        CLIBytes=118485;CLISHA256='917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987'})
+    foreach($row in @(
+        @('ObserverSource','native_catalog_zombies_observation.inc',9668,'50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181'),
+        @('ObserverAdapter','prepare_catalog_zombies_observation.py',7613,'1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445'))) {
+        $pin=[pscustomobject]@{Path=('C:\fixture\'+$row[1]);Bytes=$row[2];SHA256=$row[3]}
+        $fixture.BuildProfile|Add-Member NoteProperty $row[0] $pin
+        $fixture.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+    }
+    $cli=@($fixture.Bindings|Where-Object Path -CEQ 'C:\plan\prepared\zonetool.cpp')[0]
+    $cli.Bytes=118485;$cli.SHA256='917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987'
+    return $fixture
+}
+Assert-T7InputBindings (New-ZombiesBindingFixture);$checks++
+foreach($change in @(
+    {$fixture.BuildProfile.Name='t7-catalog-message-publication'},
+    {$fixture.BuildProfile.ObservationSchema='wrong'},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('ZombiesObservationC')},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedStaticV1')},
+    {$fixture.ReuseCompile.ZombiesObservationC.Schema='wrong'},
+    {$fixture.ReuseCompile.ZombiesObservationC.SourceProfile='t7-catalog-message-publication'},
+    {$fixture.ReuseCompile.ZombiesObservationC.BaseCLIBytes=107784},
+    {$fixture.ReuseCompile.ZombiesObservationC.BaseCLISHA256=('a'*64)},
+    {$fixture.ReuseCompile.ZombiesObservationC.CLIBytes=118484},
+    {$fixture.ReuseCompile.ZombiesObservationC.CLISHA256=('a'*64)},
+    {$fixture.ReuseCompile.ZombiesObservationC|Add-Member NoteProperty Unbounded $true},
+    {$fixture.BuildProfile.ObserverSource.Bytes=9667},
+    {$fixture.BuildProfile.ObserverSource.SHA256=('a'*64)},
+    {$fixture.BuildProfile.ObserverAdapter.Path='C:\other.py'},
+    {$fixture.BuildProfile.ObserverAdapter|Add-Member NoteProperty Optional $true},
+    {@($fixture.Bindings|Where-Object Path -CEQ 'C:\fixture\native_catalog_zombies_observation.inc')[0].IsText=$false},
+    {@($fixture.Bindings|Where-Object Path -CEQ 'C:\plan\prepared\zonetool.cpp')[0].Bytes=107785},
+    {$fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions[1].WiredSHA256=('a'*64)},
+    {$fixture.Bindings+=$fixture.Bindings[-1]},
+    {$fixture.Bindings=$fixture.Bindings[0..149]},
+    {$fixture.ReuseCompile.RecompiledZonetool=$false}
+)) {
+    $fixture=New-ZombiesBindingFixture;. $change;Must-RefuseBinding $fixture
+}
+
+function New-RenderOnlyBindingFixture {
+    $fixture=New-StreamedBindingFixture
+    $fixture.ReuseCompile.PSObject.Properties.Remove('SelectedStreamedStaticV1')
+    $fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedRenderOnlyV2 ([pscustomobject]@{
+        Schema='iw7.t7-selected-streamed-render-only-build/2';GeometryProfile='t7-iw7-selected-streamed-render-only-v2';
+        CollisionPolicy='omit-source-rigid-collision-trees'})
+    foreach($row in @(
+        @('prepared/main.cpp',13160,'55081db20863f291f4f1fea8c1c995995e5e548b56acf043201fbb2e361f3934',43254,'5aef1fad310071f5e680a9f5b4dbd6a303af6ea8605fccb5dc5705cb386b761d'),
+        @('prepared/zonetool.cpp',112323,'774c5e0a2716c27c381a1f353d02ba504488affe3350faf84ce1d802a2d98be8',112377,'c63d9552464da674d3b03c35f7edc16385fb9370b113a3925fd7bc4835fb005a'))) {
+        $transition=@($fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions|Where-Object Path -CEQ $row[0])[0]
+        $transition.Bytes=$row[1];$transition.SHA256=$row[2];$transition.WiredBytes=$row[3];$transition.WiredSHA256=$row[4]
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\plan\'+$row[0].Replace('/','\')))[0]
+        $pin.Bytes=$row[3];$pin.SHA256=$row[4]
+    }
+    foreach($row in @(
+        @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+        @('t7_iw7_streamed_model.hpp',11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
+        @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
+        @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
+        @('test_streamed_contract.py',13768,'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'))) {
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
+        $pin.Bytes=$row[1];$pin.SHA256=$row[2]
+    }
+    foreach($row in @(
+        @('selected_material_observation.hpp',18583,'a8848a92b8d7918fbe91ec4b68df123b1eaab89edde9d8a7c24d5a0cfb576ffc'),
+        @('selected_material_observation_fixture.cpp',20260,'b3de68880b6f8c717c2e70ed44497ae2f95f37db7e73bbf34ef014d8e5b6fc6f'))) {
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
+        $pin.Bytes=$row[1];$pin.SHA256=$row[2]
+    }
+    return $fixture
+}
+Assert-T7InputBindings (New-RenderOnlyBindingFixture);$checks++
+foreach($change in @(
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.PSObject.Properties.Remove('CollisionPolicy')},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.CollisionPolicy='convert'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.Schema='iw7.t7-selected-streamed-static-build/1'},
+    {$fixture.ReuseCompile.SelectedStreamedRenderOnlyV2.GeometryProfile='t7-iw7-selected-streamed-static-v1'},
+    {$fixture.ReuseCompile|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{})},
+    {$fixture.ReuseCompile|Add-Member NoteProperty ZombiesObservationC ([pscustomobject]@{})},
+    {$fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions[0].WiredBytes=43146},
+    {@($fixture.Bindings|Where-Object Path -CEQ 'C:\fixture\t7_iw7_streamed_model.hpp')[0].SHA256=('0'*64)},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('ResidentMultiSurfaceV2')}
+)) {
+    $fixture=New-RenderOnlyBindingFixture;. $change;Must-RefuseBinding $fixture
+}
+
 [ordered]@{Checks=$checks;ActualDefaultChecks=$entryChecks;Passed=$true;NativeInvoked=$false;OpaqueContentRead=$false}|ConvertTo-Json -Compress

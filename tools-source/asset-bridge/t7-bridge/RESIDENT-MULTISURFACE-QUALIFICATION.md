@@ -48,6 +48,43 @@ the streamed mesh; its bounded mesh and material JSON describe metadata only.
 Keep every uint64 key and opaque value exact with Python integers or PowerShell
 UInt64, preserving raw JSON; JavaScript Number cannot represent every such value.
 
+## Selected streamed E3 qualification and runtime seam
+
+The explicit `SelectedStreamedStaticV1` plan marker selects only schema
+`iw7.t7-selected-streamed-export-plan/1`. It cannot mix with the E2 observation
+or diagnostic markers. The common v2 geometry proof remains required, with E3's
+149 build bindings (143 text, six binary), 1,146 inputs, 66 headers and its exact
+716-byte transition inventory. D and E2 retain their original candidates/pins.
+
+E3 was actually compiled from assets `e3451959dba1dafe11095f1434a614c8ddff3fbe`
+and native dependency `2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1`. Plan 367,632
+bytes / `6df0db3f13852df5b70e660de915e376f5339f44ad04327166f82304b71ce4e8`
+and receipt 12,189 bytes /
+`bc44d8e228197c8ba8f0d70b1b7f4b239a0d4e5d556b5380349b549bd31a5b7d`
+bind candidate 21,916,160 bytes /
+`2de24e4a715d92cebe767073f212241319c85bd7a5863201f1eaf9da39f9ff7d`.
+All three actual stages exited zero and closed. Four original closure texts
+bind host guards/lease disposal, actual PTY 99797 exit zero (`0fe3ec`) and
+subsequent owned-process absence. They are retained producer observations,
+not fresh runtime admission. No candidate stock execution follows compilation.
+
+The 105,381-byte prepared CLI receives an E3-only 128 KiB publication bound;
+the unchanged contracts retain 64 KiB. A bounded read-only qualification held
+28 text files / 1,518,461 bytes and passed without binaries, native invocation
+or an operational plan.
+
+The separate runtime contract fixes the observed platform donor/key and the
+single discovered provider `zone/mp_initial.xpak`. Native paths resolve from
+the private working directory. The 377-byte flat request and the selected
+654,311,424-byte provider receive exact NTFS aliases; logical output accounting
+includes both without copying the package. Request bytes retain a whole-text
+hash. The package is excluded from ordinary whole-file H1 SHA bindings: retained
+read-sharing guards revalidate its identity, metadata, 120-byte header and
+31,152-byte index before and after the native job. The native reader independently
+rechecks the same selected identity/key and owns the decoded buffer. Source
+descriptor semantics, atomic snapshots, rendering and owner acceptance remain
+unproved. A separate exact-plan stock GO is required.
+
 ## Original build D contract
 
 ## Selection and guarded evidence

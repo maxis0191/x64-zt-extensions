@@ -21,8 +21,9 @@ try {
     $required=@($PSCommandPath,$profile,$prepatchProfile,$core,$scheduler,$fileIdentity,
         (Join-Path $repo 'ops/Resource-Memory.ps1'),(Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'))
     $export=[bool]($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'ResidentExportV1')
+    $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-zombies-catalogue-observation-c')
     $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
-    if($export){$required+=@($exportProfile)}
+    if($export -or $zombies){$required+=@($exportProfile)}
     foreach($path in $required) {
         $pin=@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true})
         if($pin.Count -ne 1 -or $pin[0].Bytes -gt 1MB){throw 'Bounded exact source binding missing.'}
@@ -30,7 +31,7 @@ try {
     }
     . $prepatchProfile # Functions only; reuse environment/Main checks without changing the diagnostic.
     . $profile
-    if($export){. $exportProfile}
+    if($export -or $zombies){. $exportProfile} # C consumes only the shared build qualifier.
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
     if($export){Assert-T7ResidentExportCatalogue $plan}
@@ -97,6 +98,7 @@ try {
     }
     if($plan.PSObject.Properties['Bootstraps']){$state.Bootstraps=$bootstrapEvidence}
     elseif($bootstrapEvidence.Count){$state.Bootstrap=$bootstrapEvidence[0]}
+    if($export -and (Get-T7SelectedStreamedExport $plan)){$state.Aliases+=@(New-T7SelectedStreamedAliases $plan $context)}
     foreach($name in 'profile','profile/roaming','profile/local'){[IO.Directory]::CreateDirectory((Join-Path (Join-Path $plan.RunRoot 'temp') $name))|Out-Null}
     $null=[Reflection.Assembly]::LoadFrom($plan.JobAssembly)
     Assert-H1Deadline $script:T7CatalogueGroupStarted 200
@@ -118,8 +120,14 @@ try {
             $state.EngineOutputsValidated=$true
             if($export){$state.ExportOutcome=Read-T7ResidentExportReport $plan $state $context}
             else{$state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context}
-            foreach($pin in @($plan.Bindings)+@($zonePin)+@($state.Aliases)) {
+            $hashAliases=@($state.Aliases|Where-Object {!$_.PSObject.Properties['GuardScope']})
+            foreach($pin in @($plan.Bindings)+@($zonePin)+$hashAliases) {
                 $guard=Open-H1Pin $pin;try{}finally{$guard.Dispose()};Assert-H1Deadline $script:T7CatalogueGroupStarted 200
+            }
+            if($export -and (Get-T7SelectedStreamedExport $plan)){
+                $null=Open-T7SelectedStreamedProvider $plan $plan.SelectedXpakProvider.Metadata.Path $context
+                $null=Open-T7SelectedStreamedProvider $plan (Join-Path $plan.WorkingDirectory $plan.SelectedXpakProvider.RelativePath) $context
+                $state.SelectedProviderMetadataReverified=$true;$state.SelectedProviderWholeFileHashed=$false
             }
             foreach($item in $plan.InputMetadata){Assert-T7CatalogueMetadata $item}
             foreach($item in @($state.InputFileIds)+@($state.Aliases)){if((Get-T7CatalogueFileId $item.Path) -cne $item.FileId){throw 'Original/alias file ID changed.'}}

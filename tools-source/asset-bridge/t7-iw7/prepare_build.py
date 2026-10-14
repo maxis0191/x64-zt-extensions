@@ -9,6 +9,7 @@ import prepare_cli
 import prepare_prepatch
 import prepare_catalog_trace
 import prepare_message_publication
+import prepare_catalog_zombies_observation as zombies_observer
 
 HERE = Path(__file__).resolve().parent
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
@@ -21,6 +22,40 @@ UNITS = tuple(zip(prepare_cli.PATHS[:3], ('main.obj', 'zonetool11.obj', 'xpak.ob
                   ('main.cpp', 'zonetool.cpp', 'common/xpak.cpp')))
 SDK_PINS = {'rc.exe': (55640, '43da1503c262c30894c851589bf0155f8365d77e63a5f7bc13982320e3a6b42d'),
             'rcdll.dll': (264536, '9a11e4759adc48abe1fa9e3082ad7db4b53f4d6d77701c13729f4ffd47ae934c')}
+
+# Source25 approved module; this finite C transition does not relax E4 reuse.
+ZOMBIES_SOURCE_PINS = {
+    'native_catalog_zombies_observation.inc': (9668, '50361fbd5deb38b7410e31b995b1dcd7cdf6e43f04dc81835ed213f74155d181'),
+    'prepare_catalog_zombies_observation.py': (7613, '1bf133356025893ff59c4d3de7e3614ac60f00a098f16b4b707e0eaa012da445'),
+}
+ZOMBIES_BASE_CLI_PIN = (107785, 'c480fbd39525df09bd5677026678743c73fa66eb3ca0752e78729eee2f4dcc50')
+ZOMBIES_CLI_PIN = (118485, '917c2f9025185d23a8b2b683157144c2da62fe747f17f11e0f8c1abcf66be987')
+
+
+def zombies_observation_selected(args):
+    selected = getattr(args, 'zombies_catalogue_observation', False)
+    require(type(selected) is bool, 'Explicit boolean Zombies observation selector required')
+    if selected:
+        require(getattr(args, 'catalog_message_publication', False) is True and
+                getattr(args, 'selected_streamed_static_v1', False) is True and
+                getattr(args, 'selected_streamed_render_only_v2', False) is False and
+                bool(getattr(args, 'reuse_plan', None)) and bool(getattr(args, 'reuse_compile_receipt', None)),
+                'Zombies observation requires explicit publication, selected-streamed and retained proofs')
+    return selected
+
+
+def zombies_observation_transition(raw):
+    require(type(raw) is bytes and (len(raw), hashlib.sha256(raw).hexdigest()) == ZOMBIES_BASE_CLI_PIN,
+            'Exact current publication CLI required before Zombies observation')
+    for name, pin in ZOMBIES_SOURCE_PINS.items():
+        source = (HERE/name).read_bytes()
+        require((len(source), hashlib.sha256(source).hexdigest()) == pin, 'Approved Zombies observation source differs')
+    rendered = zombies_observer.wire_cli(raw.decode('utf-8')).encode()
+    require((len(rendered), hashlib.sha256(rendered).hexdigest()) == ZOMBIES_CLI_PIN,
+            'Exact reviewed Zombies observation transition required')
+    return rendered, {'Schema':'iw7.t7-zm-observation-build/1', 'SourceProfile':zombies_observer.SOURCE_PROFILE,
+        'BaseCLIBytes':ZOMBIES_BASE_CLI_PIN[0], 'BaseCLISHA256':ZOMBIES_BASE_CLI_PIN[1],
+        'CLIBytes':ZOMBIES_CLI_PIN[0], 'CLISHA256':ZOMBIES_CLI_PIN[1]}
 
 
 # The explicit IW7 writer include pulls in this exact 66-header facade. These
@@ -313,7 +348,7 @@ def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals,
 
 def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False,
                       recompile_zonetool=False, surface_count_dependencies=None, e7_dependency_text=None,
-                      resident_multisurface_v2=False):
+                      resident_multisurface_v2=False, selected_streamed_static_v1=False, selected_streamed_render_only_v2=False):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -335,6 +370,17 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             (not recompile_zonetool or (recompile_main is True and catalog_trace is True)),
             'CLI rebuild requires the explicit two-TU catalogue path')
     require(type(resident_multisurface_v2) is bool, 'Multisurface selection must be boolean')
+    require(type(selected_streamed_static_v1) is bool and
+            (not selected_streamed_static_v1 or resident_multisurface_v2), 'Explicit selected-streamed reuse required')
+    require(type(selected_streamed_render_only_v2) is bool and
+            not (selected_streamed_static_v1 and selected_streamed_render_only_v2) and
+            (not selected_streamed_render_only_v2 or resident_multisurface_v2), 'Explicit render-only reuse required')
+    transitions = (prepare_catalog_trace.RENDER_ONLY_STREAMED_TRANSITIONS if selected_streamed_render_only_v2 else
+                   prepare_catalog_trace.SELECTED_STREAMED_TRANSITIONS if selected_streamed_static_v1 else
+                   prepare_catalog_trace.MULTISURFACE_TRANSITIONS)
+    wired_pins = (prepare_catalog_trace.RENDER_ONLY_STREAMED_WIRED_PINS if selected_streamed_render_only_v2 else
+                  prepare_catalog_trace.SELECTED_STREAMED_WIRED_PINS if selected_streamed_static_v1 else
+                  prepare_catalog_trace.MULTISURFACE_WIRED_PINS)
     header_evidence = surface_count_dependencies is not None
     diagnostic = header_evidence and not resident_multisurface_v2
     require((e7_dependency_text is not None) == header_evidence and
@@ -344,8 +390,8 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
     diagnostic_proof = None
     if resident_multisurface_v2:
         require(all(prepare_catalog_trace.multisurface_payload_delta(name, payloads.get(name),
-                    prior_bindings.get(key(prepared/name.removeprefix('prepared/'))), wired=True)
-                    for name in prepare_catalog_trace.MULTISURFACE_TRANSITIONS),
+                    prior_bindings.get(key(prepared/name.removeprefix('prepared/'))), wired=True,
+                    selected_streamed=selected_streamed_static_v1, render_only_streamed=selected_streamed_render_only_v2) for name in transitions),
                 'Exact wired multisurface v2 transitions required')
     elif diagnostic:
         name = prepare_catalog_trace.SURFACE_COUNT_HEADER
@@ -359,9 +405,8 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             diagnostic_proof.update(Schema='iw7.t7-resident-multi-surface-build/2',
                 SourceTransitions=[{'Path':name,'PreviousBytes':old[0],'PreviousSHA256':old[1],
                     'Bytes':new[0],'SHA256':new[1],
-                    'WiredBytes':prepare_catalog_trace.MULTISURFACE_WIRED_PINS[name][0],
-                    'WiredSHA256':prepare_catalog_trace.MULTISURFACE_WIRED_PINS[name][1]}
-                    for name,(old,new) in prepare_catalog_trace.MULTISURFACE_TRANSITIONS.items()])
+                    'WiredBytes':wired_pins[name][0], 'WiredSHA256':wired_pins[name][1]}
+                    for name,(old,new) in transitions.items()])
     if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
     require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
             'Exact native payload inventory required for reuse')
@@ -373,7 +418,8 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             continue
         path = prepared/name.removeprefix('prepared/')
         pin = prior_bindings.get(key(path))
-        if resident_multisurface_v2 and prepare_catalog_trace.multisurface_payload_delta(name, raw, pin, wired=True):
+        if resident_multisurface_v2 and prepare_catalog_trace.multisurface_payload_delta(name, raw, pin, wired=True,
+                selected_streamed=selected_streamed_static_v1, render_only_streamed=selected_streamed_render_only_v2):
             old_text.append(pin)
             continue
         if diagnostic and prepare_catalog_trace.surface_count_header_delta(name, raw, pin):
@@ -418,10 +464,16 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'RecompiledMain':recompile_main, **({'RecompiledZonetool':True} if recompile_zonetool else {}),
             **({'ResidentSurfaceCountDiagnostic':diagnostic_proof} if diagnostic else {}),
             **({'ResidentMultiSurfaceV2':diagnostic_proof} if resident_multisurface_v2 else {}),
+            **({'SelectedStreamedStaticV1':{'Schema':'iw7.t7-selected-streamed-static-build/1',
+                'GeometryProfile':'t7-iw7-selected-streamed-static-v1'}} if selected_streamed_static_v1 else {}),
+            **({'SelectedStreamedRenderOnlyV2':{'Schema':'iw7.t7-selected-streamed-render-only-build/2',
+                'GeometryProfile':'t7-iw7-selected-streamed-render-only-v2',
+                'CollisionPolicy':'omit-source-rigid-collision-trees'}} if selected_streamed_render_only_v2 else {}),
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
 def prepare(args):
+    zombies_observation = zombies_observation_selected(args)
     source, e7, output, run, adapter, providers, job = [path_checked(getattr(args, n)) for n in
         ('source', 'e7', 'output', 'run', 'adapter', 'providers', 'job')]
     runtime = HERE.parents[2]/'runtime'
@@ -438,7 +490,12 @@ def prepare(args):
     prepatch_helper = getattr(args, 'prepatch_helper', None)
     catalog_publication = bool(getattr(args, 'catalog_message_publication', False))
     surface_count_diagnostic = getattr(args, 'resident_surface_count_diagnostic', False)
-    resident_multisurface_v2 = getattr(args, 'resident_multisurface_v2', False)
+    selected_streamed_static_v1 = getattr(args, 'selected_streamed_static_v1', False)
+    selected_streamed_render_only_v2 = getattr(args, 'selected_streamed_render_only_v2', False)
+    resident_requested = getattr(args, 'resident_multisurface_v2', False)
+    require(type(selected_streamed_static_v1) is bool and type(selected_streamed_render_only_v2) is bool and
+            type(resident_requested) is bool and sum((selected_streamed_static_v1,selected_streamed_render_only_v2,resident_requested)) <= 1, 'One explicit resident or selected-streamed profile required')
+    resident_multisurface_v2 = resident_requested or selected_streamed_static_v1 or selected_streamed_render_only_v2
     require(type(resident_multisurface_v2) is bool and
             (not resident_multisurface_v2 or (catalog_publication and surface_count_diagnostic is False)),
             'Multisurface v2 requires exclusive two-TU publication selection')
@@ -479,6 +536,10 @@ def prepare(args):
     if catalog_publication:
         read(HERE/'prepare_message_publication.py',64*1024)
         read(HERE/'native_message_publication.inc',16*1024)
+    if zombies_observation:
+        for name, pin in ZOMBIES_SOURCE_PINS.items():
+            raw = read(HERE/name,16*1024,pin[1])
+            require(len(raw) == pin[0], 'Approved Zombies observation source length differs')
     read(HERE.parent/'recipient/script-names/prepare_observer.py')
     roles = {'Core': 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1',
              'CompilerCore': 'tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1',
@@ -579,7 +640,7 @@ def prepare(args):
                 read(args.ordinary_plan,2*1024**2,prepare_catalog_trace.BASE_PLAN_SHA),
                 read(args.ordinary_receipt,128*1024,prepare_catalog_trace.BASE_RECEIPT_SHA),
                 prior_raw, prior_receipt_raw, payloads, surface_count_diagnostic=surface_count_diagnostic,
-                resident_multisurface_v2=resident_multisurface_v2)
+                resident_multisurface_v2=resident_multisurface_v2, selected_streamed_static_v1=selected_streamed_static_v1, selected_streamed_render_only_v2=selected_streamed_render_only_v2)
             if surface_count_diagnostic or resident_multisurface_v2:
                 prior = json.loads(prior_raw); receipt = json.loads(prior_receipt_raw)
                 surface_count_dependencies = {}
@@ -602,7 +663,7 @@ def prepare(args):
             recompile_zonetool=catalog_publication, surface_count_dependencies=surface_count_dependencies,
             e7_dependency_text={'read':e7_dependency_text,'compile':cl_raw,'link':link_raw}
                 if surface_count_diagnostic or resident_multisurface_v2 else None,
-            resident_multisurface_v2=resident_multisurface_v2)
+            resident_multisurface_v2=resident_multisurface_v2, selected_streamed_static_v1=selected_streamed_static_v1, selected_streamed_render_only_v2=selected_streamed_render_only_v2)
         if resident_multisurface_v2:
             reuse['ResidentMultiSurfaceV2']['AdditionalHeaderInputs'] = multisurface_headers
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
@@ -614,6 +675,11 @@ def prepare(args):
         inputs += reused_inputs
         stages = [s for s in stages if s['Name'] in (('main','zonetool11','link') if catalog_publication
                                                    else ('main','link') if recompile_main else ('link',))]
+    if zombies_observation:
+        require(reuse is not None and catalog_publication and selected_streamed_static_v1,
+                'Zombies observation requires the verified current publication reuse closure')
+        payloads['prepared/zonetool.cpp'], reuse['ZombiesObservationC'] = zombies_observation_transition(
+            payloads['prepared/zonetool.cpp'])
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -656,6 +722,12 @@ def prepare(args):
                                ('MainResponse',output/'main.obj.rsp'),('CLIResponse',output/'zonetool11.obj.rsp'),
                                ('LinkResponse',output/'link.rsp')]:
                 profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+        if zombies_observation:
+            profile['Name'] = zombies_observer.SOURCE_PROFILE
+            profile['ObservationSchema'] = zombies_observer.SCHEMA
+            for name, path in [('ObserverSource',HERE/'native_catalog_zombies_observation.inc'),
+                               ('ObserverAdapter',HERE/'prepare_catalog_zombies_observation.py')]:
+                profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     plan = {'Schema':'iw7.t7-minimal-build-plan/1','SourceCommit':contract['native_source_commit'],
         'RunRoot':str(run),'PreparedRoot':str(output/'prepared'),'Runner':str(HERE/'Run-T7Build.ps1'),
         'Profile':str(HERE/'T7Build.Profile.ps1'), **{k:str(providers/v) for k,v in roles.items()},
@@ -692,6 +764,9 @@ if __name__ == '__main__':
     parser.add_argument('--catalog-message-publication',action='store_true')
     parser.add_argument('--resident-surface-count-diagnostic',action='store_true')
     parser.add_argument('--resident-multisurface-v2',action='store_true')
+    parser.add_argument('--selected-streamed-static-v1',action='store_true')
+    parser.add_argument('--selected-streamed-render-only-v2',action='store_true')
+    parser.add_argument('--zombies-catalogue-observation',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

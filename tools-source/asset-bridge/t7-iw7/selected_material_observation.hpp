@@ -16,6 +16,12 @@ namespace zonetool::t7::selected_material_observation
     inline constexpr std::size_t output_limit = 32u * 1024u;
     inline constexpr std::size_t name_limit = 256;
 
+    struct image_binding_selection
+    {
+        unsigned index;
+        std::uint32_t expected_name_hash;
+    };
+
     template <typename Readable> class reader
     {
         Readable& readable_;
@@ -106,14 +112,20 @@ namespace zonetool::t7::selected_material_observation
             {"pixel_range_verified", false}, {"pixels_copied", false}};
     }
 
-    template <typename Readable> std::string observe(const XModel* source,
-        const std::string& expected_model, unsigned lod, unsigned slot, Readable readable)
+    template <typename Readable> std::string observe_impl(const XModel* source,
+        const std::string& expected_model, unsigned lod, unsigned slot, Readable& readable,
+        const image_binding_selection* selection)
     {
         // Return one compact diagnostic. The caller logs it separately and still
         // performs its original geometry selection/refusal afterward.
-        nlohmann::ordered_json result = {{"schema", "iw7.t7-selected-material-observation/1"},
+        const char* schema = selection ? "iw7.t7-selected-material-observation/2" :
+            "iw7.t7-selected-material-observation/1";
+        nlohmann::ordered_json result = {{"schema", schema},
             {"headers_rechecked", false}, {"allocation_retained", false},
             {"atomic_snapshot_proven", false}, {"pixels_copied", false}, {"ready", false}};
+        if (selection)
+            result["image_selection"] = {{"mode", "exact_binding"},
+                {"index", selection->index}, {"expected_nameHash", selection->expected_name_hash}};
         const char* stage = "model_header";
         std::size_t stage_index = 0;
         bool indexed_stage = false;
@@ -160,12 +172,11 @@ namespace zonetool::t7::selected_material_observation
             stage = "texture_table";
             const auto textures = read.array(selected.textureTable, selected.textureCount, 16);
             result["textures"] = nlohmann::ordered_json::array();
-            std::vector<std::pair<const GfxImage*, GfxImage>> image_headers;
-            std::vector<std::string> image_names;
-            std::vector<std::size_t> image_texture_indices;
+            // These scalar bindings are already owned after the table copy.
+            // Publish them before any image read; later rows remain explicitly
+            // not attempted if an earlier image refuses. No pointer is exported.
             for (std::size_t i = 0; i < textures.size(); ++i)
             {
-                stage_index = i; indexed_stage = true;
                 const auto& texture = textures[i];
                 std::array<std::uint32_t, 2> uv_bits;
                 static_assert(sizeof(uv_bits) == sizeof(texture.uvScale));
@@ -174,23 +185,52 @@ namespace zonetool::t7::selected_material_observation
                     {"usage", texture.usage}, {"uvScaleBits", uv_bits},
                     {"texSizeShift", {texture.texSizeShift[0], texture.texSizeShift[1]}},
                     {"uvOffset", {texture.uvOffset[0], texture.uvOffset[1], texture.uvOffset[2]}},
-                    {"isMatureContent", texture.isMatureContent}};
-                if (texture.image)
+                    {"isMatureContent", texture.isMatureContent},
+                    {"image_pointer_present", texture.image != nullptr},
+                    {"image_header_read", false},
+                    {"image_read_state", texture.image ? "not_attempted" : "absent"},
+                    {"image", nullptr}};
+                result["textures"].push_back(std::move(row));
+            }
+            if (selection)
+            {
+                // A selection refusal is not an attempted image read. Validate
+                // the copied binding before requesting any image header/name.
+                stage = "texture_selection"; stage_index = selection->index; indexed_stage = true;
+                resident_image::require(selection->index < textures.size(),
+                    "Exact selected image binding index required");
+                const auto& texture = textures[selection->index];
+                resident_image::require(texture.nameHash == selection->expected_name_hash,
+                    "Exact selected image binding hash required");
+                resident_image::require(texture.image != nullptr,
+                    "Selected image binding has no image");
+            }
+            std::vector<std::pair<const GfxImage*, GfxImage>> image_headers;
+            std::vector<std::string> image_names;
+            std::vector<std::size_t> image_texture_indices;
+            for (std::size_t i = 0; i < textures.size(); ++i)
+            {
+                stage_index = i; indexed_stage = true;
+                const auto& texture = textures[i];
+                auto& row = result["textures"][i];
+                if (texture.image && (!selection || i == selection->index))
                 {
                     stage = "image_header";
+                    row["image_read_state"] = "reading_header";
                     const auto image = read.one(texture.image);
+                    row["image_header_read"] = true;
+                    row["image"] = image_metadata(image);
                     stage = "image_name";
+                    row["image_read_state"] = "reading_name";
                     const auto image_name = read.name(image.name);
                     row["image_name"] = image_name;
-                    row["image"] = image_metadata(image);
+                    row["image_read_state"] = "observed";
                     image_headers.emplace_back(texture.image, image);
                     image_names.push_back(image_name);
                     image_texture_indices.push_back(i);
                 }
-                else row["image"] = nullptr;
                 stage = "texture_recheck";
                 read.unchanged(selected.textureTable + i, texture);
-                result["textures"].push_back(std::move(row));
             }
             stage = "sampler_table"; indexed_stage = false;
             const auto samplers = read.array(selected.samplerTable, selected.samplerCount, 16);
@@ -275,6 +315,12 @@ namespace zonetool::t7::selected_material_observation
             result["headers_rechecked"] = false;
             result["failure_stage"] = stage;
             if (indexed_stage) result["failure_index"] = stage_index;
+            if (indexed_stage && std::strncmp(stage, "image_", 6) == 0 &&
+                result.contains("textures") && stage_index < result["textures"].size())
+            {
+                result["textures"][stage_index]["image_read_state"] = "refused";
+                result["textures"][stage_index]["image_read_failure_stage"] = stage;
+            }
             result["reason"] = std::string(error.what()).substr(0, 256);
             try
             {
@@ -282,10 +328,26 @@ namespace zonetool::t7::selected_material_observation
                 if (output.size() <= output_limit) return output;
             }
             catch (const std::exception&) {} // Invalid names must not escape as invalid JSON.
-            return nlohmann::ordered_json({{"schema", "iw7.t7-selected-material-observation/1"},
+            return nlohmann::ordered_json({{"schema", schema},
                 {"refused", true}, {"reason", "Observation could not be serialized within bounds"},
                 {"failure_stage", "serialization"},
                 {"pixels_copied", false}, {"ready", false}}).dump();
         }
+    }
+
+    // Preserve the original five-argument entry and schema/reads by default.
+    template <typename Readable> std::string observe(const XModel* source,
+        const std::string& expected_model, unsigned lod, unsigned slot, Readable readable)
+    {
+        return observe_impl(source, expected_model, lod, slot, readable, nullptr);
+    }
+
+    // Explicit diagnostic v2: one exact copied binding, never a hash search,
+    // image-pointer workaround or pixel read. Other scalar rows are rechecked.
+    template <typename Readable> std::string observe_binding(const XModel* source,
+        const std::string& expected_model, unsigned lod, unsigned slot, Readable readable,
+        image_binding_selection selection)
+    {
+        return observe_impl(source, expected_model, lod, slot, readable, &selection);
     }
 }
