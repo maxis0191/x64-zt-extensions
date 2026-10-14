@@ -2,8 +2,10 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
+import os
+from pathlib import Path, PureWindowsPath
 import re
+import stat
 
 LIMIT = 32768
 MAX64 = 2**64 - 1
@@ -165,13 +167,38 @@ def classify(report, exit_code):
     return result
 
 
+def read_report(path):
+    """Read only a small regular JSON file after metadata checks, never opaque inputs."""
+    lexical = str(path).replace("\\", "/")
+    need(not lexical.casefold().startswith(("//?/", "//./", "/??/", "//??/")), "ordinary report path required; device namespace refused")
+    drive = re.match("[A-Za-z]:", lexical)
+    remainder = lexical[2:] if drive else lexical
+    need(":" not in remainder and (not drive or remainder.startswith("/")), "ordinary report path required; stream or drive-relative path refused")
+    need(not PureWindowsPath(lexical).is_reserved(), "ordinary report path required; reserved device refused")
+    path = Path(path).absolute()
+    need(path.suffix.lower() == ".json", "existing .json report required before open")
+    declared = path.lstat()
+    need(stat.S_ISREG(declared.st_mode), "regular JSON file required before open")
+    need(0 < declared.st_size <= LIMIT, "bounded JSON file required before open")
+    reparse = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    for entry in (path, *path.parents):
+        info = declared if entry == path else entry.lstat()
+        need(not stat.S_ISLNK(info.st_mode) and not (getattr(info, "st_file_attributes", 0) & reparse), "reparse JSON path refused before open")
+    with path.open("rb") as stream:
+        opened = os.fstat(stream.fileno())
+        need(stat.S_ISREG(opened.st_mode) and 0 < opened.st_size <= LIMIT and opened.st_size == declared.st_size and
+             (opened.st_dev, opened.st_ino) == (declared.st_dev, declared.st_ino), "opened JSON file identity/size differs")
+        raw = stream.read(LIMIT + 1)
+        need(0 < len(raw) <= LIMIT and len(raw) == opened.st_size, "JSON file changed during bounded read")
+    return raw
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", type=Path, help="Existing producer JSON; missing report is an error, never fabricated")
     parser.add_argument("--native-exit-code", type=int, help="Original closed process exit; omitted means metadata validation only")
     args = parser.parse_args()
-    with args.report.open("rb") as stream:
-        raw = stream.read(LIMIT + 1)
+    raw = read_report(args.report)
     report = strict_json(raw)
     need(type(report) is dict, "existing producer record must be a JSON object")
     result = consume(report) if args.native_exit_code is None else classify(report, args.native_exit_code)
