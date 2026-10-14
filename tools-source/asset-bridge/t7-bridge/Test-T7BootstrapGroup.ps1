@@ -10,7 +10,7 @@ if([IO.Path]::GetFileName($ReviewedCorePath) -cne 'H1Native.Core.ps1' -or (Get-I
 foreach($spec in @(
     @('Test-T7CatalogueBootstrap.ps1',@('Check','Refuses','Copy-Value','Get-Item','New-Fixture')),
     @('Test-T7CatalogueBootstraps.ps1',@('New-Qualified','Set-QualifiedBytes','New-InputIds')),
-    @('Qualify-T7BootstrapGroup.ps1',@('Assert-QualificationPathSyntax','Open-T7QualificationText','Assert-T7QualificationGroupPlan','Save-QualificationText','Assert-QualificationPersistentHost',
+    @('Qualify-T7BootstrapGroup.ps1',@('Assert-QualificationPathSyntax','Open-T7QualificationText','Assert-T7QualificationHelperBinding','Assert-T7QualificationGroupPlan','Save-QualificationText','Assert-QualificationPersistentHost',
         'Complete-QualificationGuards','Publish-QualificationReceipt','Wait-QualificationRetention','Assert-T7QualificationMemory','Open-T7QualificationPass','Invoke-T7QualificationInputs','Publish-T7QualificationItems')))){
     $tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $spec[0]),[ref]$tokens,[ref]$errors)
     if($errors.Count){throw 'Source parse failed.'}
@@ -88,6 +88,25 @@ function New-GroupState {
     $state
 }
 try{
+    # One reviewed larger Catalogue source role; all other helpers remain 128 KiB.
+    $catalogueHelper=Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1';$otherHelper=Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1'
+    $helperPaths=@($catalogueHelper,$otherHelper)
+    foreach($row in @(@(150096,'57c9ef83b9eb9535d57f0d8d4fa1fffdff3e389849258892993715382922b6d6'),@(151909,'a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29'))){
+        $helper=[pscustomobject]@{Path=$catalogueHelper;Bytes=$row[0];SHA256=$row[1];IsText=$true}
+        Assert-T7QualificationHelperBinding $helper $helperPaths $catalogueHelper;$checks++
+        foreach($case in 'other-role','unknown-role','wrong-size','wrong-hash','array-size','array-hash','array-path','not-text'){
+            $bad=Copy-Value $helper
+            switch($case){
+                other-role {$bad.Path=$otherHelper};unknown-role {$bad.Path=Join-Path $root 'unknown.ps1'}
+                wrong-size {$bad.Bytes++};wrong-hash {$bad.SHA256='0'*64};array-size {$bad.Bytes=@($bad.Bytes)}
+                array-hash {$bad.SHA256=@($bad.SHA256)};array-path {$bad.Path=@($bad.Path)};not-text {$bad.IsText=$false}
+            }
+            Refuses {Assert-T7QualificationHelperBinding $bad $helperPaths $catalogueHelper} 'helper'
+        }
+    }
+    $helper=[pscustomobject]@{Path=$otherHelper;Bytes=128KB;SHA256=('a'*64);IsText=$true}
+    Assert-T7QualificationHelperBinding $helper $helperPaths $catalogueHelper;$checks++
+    $helper.Bytes++;Refuses {Assert-T7QualificationHelperBinding $helper $helperPaths $catalogueHelper} 'Oversized'
     foreach($shape in @(@(1,0),@(2,0),@(20,8),@(32,0))){
         $f=New-Shared $shape[0] $shape[1]
         Assert-T7CataloguePlan $f.Plan $f.Repo 'synthetic-runner';$checks++
@@ -300,7 +319,7 @@ try{
             [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination))|Out-Null
             $sourcePath=if($relative -ceq $paths[0]){$ReviewedCorePath}else{Join-Path $repo $relative}
             $sourceBytes=[IO.File]::ReadAllBytes($sourcePath)
-            if($relative -ceq $paths[0]){
+            if($relative -cin @($paths[0],$paths[1])){
                 $sourceText=[Text.UTF8Encoding]::new($false,$true).GetString($sourceBytes).Replace("`r`n","`n")
                 if($ending -ceq 'CRLF'){$sourceText=$sourceText.Replace("`n","`r`n")}
                 $sourceBytes=[Text.UTF8Encoding]::new($false).GetBytes($sourceText)
