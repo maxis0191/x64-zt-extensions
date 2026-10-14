@@ -625,6 +625,8 @@
     "tools-source/asset-bridge/t7-iw7/resident_image_validation-20261012.json",
     "tools-source/asset-bridge/t7-iw7/selected_material_observation.hpp",
     "tools-source/asset-bridge/t7-iw7/selected_material_observation_fixture.cpp",
+    "tools-source/asset-bridge/t7-iw7/selected_material_parts_observation.hpp",
+    "tools-source/asset-bridge/t7-iw7/selected_material_parts_observation_fixture.cpp",
     "tools-source/asset-bridge/t7-iw7/selected_xpak_cli.cpp",
     "tools-source/asset-bridge/t7-iw7/selected_xpak_cli_options.hpp",
     "tools-source/asset-bridge/t7-iw7/source-inventory.json",
