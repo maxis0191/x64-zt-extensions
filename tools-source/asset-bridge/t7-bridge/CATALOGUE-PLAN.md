@@ -1953,8 +1953,10 @@ execution nor a supplying fastfile. F retains enabled, before-entry,
 before-post-unpack, after-post-unpack and exit-hook phases. Its complete
 133-byte message, preceded by control byte 0x15, reports failure to load the
 empty default rawfile and names the target without the comma. Message and exit
-hook correlate on thread 21480; no initialization-complete or catalogue marker
-was observed.
+hook correlate on thread 21480; no `entry_point_return` F phase or qualified
+catalogue was observed. The separate stdout includes the ordinary INFO message
+`ZoneTool initialization complete!`; retain that startup message without treating
+it as catalogue validation.
 
 Original native 14800, created at `2026-10-14T03:34:37.8712676Z`, and original
 host 22772, created at `2026-10-14T03:33:52.5645210Z`, closed without recovery.
