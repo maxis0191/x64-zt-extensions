@@ -45,6 +45,19 @@ class SourceHandoffTests(unittest.TestCase):
         self.assertFalse(report['metadata_declarations_complete'])
         self.assertFalse(report['ready'])
 
+    def test_source_candidate_cannot_be_promoted_to_runtime_observation(self):
+        value = plan()
+        value['weapon_name_candidates'][0]['runtime_observed'] = True
+        with self.assertRaisesRegex(ValueError, 'runtime promotion'):
+            handoff.check(value, slots())
+
+    def test_unpinned_mod_branch_is_not_a_source_binding(self):
+        value = plan()
+        value['weapon_name_candidates'][0]['source_url'] = (
+            'https://github.com/Original/Fixture/blob/main/weapons.csv')
+        with self.assertRaisesRegex(ValueError, 'pinned source'):
+            handoff.check(value, slots())
+
     def test_complete_declarations_never_promote_provenance_or_weapon(self):
         report = handoff.check(complete(), slots())
         self.assertTrue(report['metadata_declarations_complete'])

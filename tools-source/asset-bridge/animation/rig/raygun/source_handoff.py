@@ -62,12 +62,27 @@ def names(values):
 
 
 def check(plan, slot_contract):
-    keys(plan, ('schema', 'source_pin', 'private_weapon_proposals', 'evidence',
+    keys(plan, ('schema', 'source_pin', 'private_weapon_proposals', 'weapon_name_candidates', 'evidence',
                 'models', 'clips', 'tags', 'recipient'), 'Plan')
     require(plan['schema'] == 'iw7.raygun-source-plan/1' and plan['source_pin'] == PIN,
             'Unreviewed source schema/pin')
     require(plan['private_weapon_proposals'] == ['sdk_raygun_zm', 'sdk_raygun_pap_zm'],
             'Private IDs are proposals; changed IDs require coordination')
+    candidates = plan['weapon_name_candidates']
+    require(isinstance(candidates, list) and len(candidates) <= 8,
+            'Invalid bounded weapon candidate list')
+    for candidate in candidates:
+        keys(candidate, ('weapon_name', 'upgraded_name', 'source_kind', 'source_url',
+                         'runtime_observed'), 'Weapon candidate')
+        name(candidate['weapon_name'])
+        name(candidate['upgraded_name'])
+        require(candidate['source_kind'] == 'third-party-bo3-mod-table' and
+                candidate['runtime_observed'] is False and
+                isinstance(candidate['source_url'], str) and
+                re.fullmatch(r'https://github\.com/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+/'
+                             r'blob/[0-9a-f]{40}/[A-Za-z0-9_./-]+(?:#L[0-9]+)?',
+                             candidate['source_url']) is not None,
+                'Candidate requires a pinned source; runtime promotion is refused')
     require(slot_contract['source_pin'] == PIN and len(slot_contract['iw7_slots']) == 260,
             'Recipient slot contract changed')
     recipient = plan['recipient']
@@ -143,6 +158,7 @@ def check(plan, slot_contract):
 
     return {'schema': 'iw7.raygun-source-handoff/1', 'source_pin': PIN,
             'private_weapon_ids_are_proposals': True, 'references': references,
+            'weapon_name_candidates': candidates,
             'unresolved_metadata': unresolved,
             'metadata_declarations_complete': not unresolved,
             'recipient_slots_checked': True, 'evidence_content_read': False,

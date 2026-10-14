@@ -35,6 +35,13 @@ name or timing is inferred from a matching word. `tag_flash` is the proposed
 IW7 muzzle-role expectation, not an observed BO3 tag or a validated attachment.
 Handedness, hands compatibility and third-person animation routing remain open.
 
+The exact weapon-name shortlist is `ray_gun` -> `ray_gun_upgraded`, from row8 of
+a [pinned third-party BO3 mod table](https://github.com/Kishkumen32/black-ops-3-mod-tools/blob/5d45cb9b36b2930456b5f05f25443e0e0c864fd2/mods/zm_classic/gamedata/weapons/zm/zm_levelcommon_weapons.csv#L8),
+commit `5d45cb9b36b2930456b5f05f25443e0e0c864fd2`. This is primary source for that
+mod, not official retail metadata or our runtime inventory. No `_zm` suffix,
+model, material, tag or clip identity is derived from it. Candidates are kept
+separate from observed asset declarations and cannot be marked runtime-observed.
+
 The visible `p7_fre_platform_cap_02` MP Freerun platform and the original
 `paris_doom_skin_two_bone_first_a` / `second_a` rig are comparison artifacts,
 not Ray Gun donors. The RE46614578/Link workstream is a requested pointer to
@@ -66,7 +73,7 @@ influences, clip cadence/notetracks, native payload, textures, rendering,
 weapon/PAP/projectile behavior or ready. Synthetic tests establish only these
 metadata refusal boundaries.
 
-The initial October 14 source check passes 12 new metadata tests and the 11
+The initial October 14 source check passes 14 new metadata tests and the 11
 unchanged weapon-reference tests. Reproducing the existing slot contract from
 the retained source matches all 260 IW7 entries. Product ownership and whitespace
 checks pass. The default report has no donor references and 15 explicit metadata
@@ -93,6 +100,13 @@ The [animated preflight](../../../t7-iw7/animated/README.md) documents unresolve
 weight ordering, bind/stride, clip counter, channel, notify and schedule losses;
 its original fixtures do not qualify a real Ray Gun. No complete donor copy,
 new zone load, extraction, CPP/FF or game is authorized by this source plan.
+
+There is also a concrete selected-export gap: the current
+`t7_iw7_streamed_model.hpp:76-77` requires one bone/root and no cosmetic bones;
+`:101-103` refuses `XSURFACE_FLAG_SKINNED`. Reusing that rigid profile for a
+weighted/animated weapon requires separate reviewed support and a real donor
+observation, not relaxed guards or an assumption that every weapon must have
+multiple bones. The general T7 converter's existence does not close this gap.
 
 Runtime acceptance belongs to a later protected session: correct FP/TP and
 muzzle placement, idle/fire/reload, ammo and reserves, actual projectile hit and

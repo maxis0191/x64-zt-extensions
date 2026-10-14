@@ -2,6 +2,15 @@
   "schema": "iw7.raygun-source-plan/1",
   "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
   "private_weapon_proposals": ["sdk_raygun_zm", "sdk_raygun_pap_zm"],
+  "weapon_name_candidates": [
+    {
+      "weapon_name": "ray_gun",
+      "upgraded_name": "ray_gun_upgraded",
+      "source_kind": "third-party-bo3-mod-table",
+      "source_url": "https://github.com/Kishkumen32/black-ops-3-mod-tools/blob/5d45cb9b36b2930456b5f05f25443e0e0c864fd2/mods/zm_classic/gamedata/weapons/zm/zm_levelcommon_weapons.csv#L8",
+      "runtime_observed": false
+    }
+  ],
   "evidence": {},
   "models": {
     "view": null,
