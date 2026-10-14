@@ -286,10 +286,11 @@ class ConsumerTests(unittest.TestCase):
             target = Path(temp)/"authored.json"
             target.write_text(json.dumps(report()), encoding="utf-8")
             identity = target.stat()
-            with patch.object(c.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG,
-                              st_size=c.LIMIT+1, st_dev=identity.st_dev, st_ino=identity.st_ino)):
-                with self.assertRaisesRegex(ValueError, "identity/size"):
-                    c.read_report(target)
+            for changed_size in (identity.st_size-1, identity.st_size+1, c.LIMIT+1):
+                with self.subTest(size=changed_size), patch.object(c.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG,
+                                  st_size=changed_size, st_dev=identity.st_dev, st_ino=identity.st_ino)):
+                    with self.assertRaisesRegex(ValueError, "identity/size"):
+                        c.read_report(target)
             with patch.object(c.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG,
                               st_size=identity.st_size, st_dev=identity.st_dev, st_ino=identity.st_ino+1)):
                 with self.assertRaisesRegex(ValueError, "identity/size"):

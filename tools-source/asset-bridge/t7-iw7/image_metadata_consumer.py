@@ -180,7 +180,7 @@ def read_report(path):
         need(not stat.S_ISLNK(info.st_mode) and not (getattr(info, "st_file_attributes", 0) & reparse), "reparse JSON path refused before open")
     with path.open("rb") as stream:
         opened = os.fstat(stream.fileno())
-        need(stat.S_ISREG(opened.st_mode) and 0 < opened.st_size <= LIMIT and
+        need(stat.S_ISREG(opened.st_mode) and 0 < opened.st_size <= LIMIT and opened.st_size == declared.st_size and
              (opened.st_dev, opened.st_ino) == (declared.st_dev, declared.st_ino), "opened JSON file identity/size differs")
         raw = stream.read(LIMIT + 1)
         need(0 < len(raw) <= LIMIT and len(raw) == opened.st_size, "JSON file changed during bounded read")
