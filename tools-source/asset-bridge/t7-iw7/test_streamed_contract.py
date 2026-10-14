@@ -123,7 +123,7 @@ class StreamedContractTests(unittest.TestCase):
             request_path.write_bytes(lab.json_bytes(synthetic.request))
             manifest_bytes = lab.json_bytes(synthetic.manifest) + b' ' * 4097
             self.assertGreater(len(manifest_bytes), 4096)
-            self.assertLessEqual(len(manifest_bytes), lab.DOCUMENT_LIMIT)
+            self.assertLessEqual(len(manifest_bytes), lab.rb.MANIFEST_LIMIT)
             manifest_path.write_bytes(manifest_bytes)
             sys.path.insert(0, str(path.parent))
             try:
@@ -137,7 +137,7 @@ class StreamedContractTests(unittest.TestCase):
                 self.assertEqual((output / synthetic.manifest['mesh']['relative_path']).read_bytes(),
                                  bytes(synthetic.outputs['mesh']))
                 self.assertFalse(plan['ready'])
-                manifest_path.write_bytes(manifest_bytes + b' ' * lab.DOCUMENT_LIMIT)
+                manifest_path.write_bytes(manifest_bytes + b' ' * (lab.rb.MANIFEST_LIMIT - len(manifest_bytes) + 1))
                 with self.assertRaisesRegex(ValueError, 'input file size/type'):
                     lab.stage(root, request_path, manifest_path, Path(folder) / 'oversized',
                               lod_distance=1000000, rebinds=bindings)

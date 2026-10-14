@@ -181,9 +181,10 @@ resource admission was performed. Next: coordinator source review/integration;
 native qualification and any real execution require their distinct approved step.
 
 On 2026-10-14, the render-only streamed export/2 schema was added to the
-existing large-manifest dispatch in `load_export`. Its independent one-MiB
-metadata cap now matches the reader; the legacy resident export/1 cap remains
-four KiB. A synthetic regression first reproduced the erroneous four-KiB
+existing large-manifest dispatch in `load_export`. Its export-manifest cap
+remains the reader's 256 KiB; derived receipts and FF plans retain their
+separate one-MiB cap. The legacy resident export/1 cap remains four KiB.
+A synthetic regression first reproduced the erroneous four-KiB
 refusal, then passed full staging and staged verification after the correction.
 It retains the exact source manifest and mesh, explicit ordered recipient
 bindings and only the declared LOD change. Oversized V2 and legacy V1 manifests
