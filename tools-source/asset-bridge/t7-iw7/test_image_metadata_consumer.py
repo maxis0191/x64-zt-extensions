@@ -2,9 +2,12 @@
 import json
 from pathlib import Path
 import subprocess
+import stat
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 import image_metadata_consumer as c
 
@@ -236,6 +239,79 @@ class ConsumerTests(unittest.TestCase):
                 c.strict_json(raw)
         self.assertEqual(c.strict_json(json.dumps(report()).encode())["model"], c.MODEL)
 
+    def test_cli_opaque_suffix_and_oversize_refuse_before_any_open(self):
+        with tempfile.TemporaryDirectory() as temp:
+            opaque = Path(temp)/"authored.exe"
+            opaque.write_text(json.dumps(report()), encoding="utf-8")
+            oversized = Path(temp)/"oversized.json"
+            oversized.write_bytes(b" "*(c.LIMIT+1))
+            for target, reason in ((opaque, "existing .json"), (oversized, "bounded JSON")):
+                with self.subTest(target=target.name), patch.object(sys, "argv", ["consumer", str(target)]), \
+                        patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                    with self.assertRaisesRegex(ValueError, reason):
+                        c.main()
+                    spy.assert_not_called()
+
+    def test_regular_file_and_reparse_metadata_refuse_before_open(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)/"directory.json"
+            directory.mkdir()
+            with patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                with self.assertRaisesRegex(ValueError, "regular JSON"):
+                    c.read_report(directory)
+                spy.assert_not_called()
+            target = Path(temp)/"authored.json"
+            target.write_text(json.dumps(report()), encoding="utf-8")
+            for mode in (stat.S_IFIFO, stat.S_IFCHR, stat.S_IFBLK, stat.S_IFSOCK, stat.S_IFLNK):
+                with self.subTest(mode=mode), patch.object(Path, "lstat", return_value=SimpleNamespace(st_mode=mode)), \
+                        patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                    with self.assertRaisesRegex(ValueError, "regular JSON"):
+                        c.read_report(target)
+                    spy.assert_not_called()
+            original = Path.lstat
+            for bad_path in (target, target.parent):
+                def metadata(path):
+                    if path == bad_path:
+                        return SimpleNamespace(st_mode=stat.S_IFREG if path == target else stat.S_IFDIR,
+                                               st_size=64, st_file_attributes=0x400)
+                    return original(path)
+                with self.subTest(path=bad_path.name), patch.object(Path, "lstat", metadata), \
+                        patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                    with self.assertRaisesRegex(ValueError, "reparse JSON"):
+                        c.read_report(target)
+                    spy.assert_not_called()
+
+    def test_windows_stream_and_device_paths_refuse_before_metadata_or_open(self):
+        paths = (r"C:\folder\authored.exe:report.json", r"authored.exe:report.json",
+                 r"C:\folder\authored.json::$DATA", r"C:report.json",
+                 r"\\?\C:\folder\report.json", r"\\.\C:\folder\report.json",
+                 r"\??\C:\folder\report.json", r"\\??\C:\folder\report.json",
+                 r"\\?\GLOBALROOT\Device\HarddiskVolume1\report.json",
+                 r"\\?\UNC\server\share\report.json", "//?/C:/folder/report.json", "NUL.json")
+        for target in paths:
+            with self.subTest(path=target), patch.object(Path, "lstat", side_effect=AssertionError("metadata queried")) as metadata, \
+                    patch.object(Path, "open", side_effect=AssertionError("content opened")) as opened:
+                with self.assertRaisesRegex(ValueError, "ordinary report path"):
+                    c.read_report(target)
+                metadata.assert_not_called()
+                opened.assert_not_called()
+
+    def test_growth_and_replacement_are_refused_before_returning_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp)/"authored.json"
+            target.write_text(json.dumps(report()), encoding="utf-8")
+            identity = target.stat()
+            for changed_size in (identity.st_size-1, identity.st_size+1, c.LIMIT+1):
+                with self.subTest(size=changed_size), patch.object(c.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG,
+                                  st_size=changed_size, st_dev=identity.st_dev, st_ino=identity.st_ino)):
+                    with self.assertRaisesRegex(ValueError, "identity/size"):
+                        c.read_report(target)
+            with patch.object(c.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG,
+                              st_size=identity.st_size, st_dev=identity.st_dev, st_ino=identity.st_ino+1)):
+                with self.assertRaisesRegex(ValueError, "identity/size"):
+                    c.read_report(target)
+            self.assertEqual(c.strict_json(c.read_report(target))["model"], c.MODEL)
+
     def test_cli_reads_only_existing_json_and_does_not_fabricate_missing_report(self):
         script = str(Path(c.__file__).resolve())
         with tempfile.TemporaryDirectory() as temp:
@@ -247,6 +323,10 @@ class ConsumerTests(unittest.TestCase):
             self.assertEqual(run.returncode, 0, run.stderr)
             self.assertEqual(json.loads(run.stdout)["outcome"], "ProvenanceMetadataObserved")
             self.assertEqual(target.read_bytes(), before)
+            relative = subprocess.run([sys.executable, "-B", script, target.name, "--native-exit-code", "0"],
+                                      cwd=temp, capture_output=True, text=True, timeout=10)
+            self.assertEqual(relative.returncode, 0, relative.stderr)
+            self.assertEqual(json.loads(relative.stdout), json.loads(run.stdout))
             missing = subprocess.run([sys.executable, "-B", script, str(Path(temp)/"missing.json")],
                                      capture_output=True, text=True, timeout=10)
             self.assertNotEqual(missing.returncode, 0)
