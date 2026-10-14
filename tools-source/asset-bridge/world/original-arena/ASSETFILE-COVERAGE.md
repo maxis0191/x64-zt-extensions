@@ -53,3 +53,30 @@ run publishes no valid material reference. Runtime/GPU/physics stay unqualified.
 Source metadata binding has read no payload, created no link and run no native.
 The next action is source tests/review/private Git completion and a fresh merged
 plan/NoExit capsule, followed by a distinct coordinated GO for one scenario.
+
+## Actual M7 prelaunch failure, 2026-10-14
+
+One GO used merged ffcbb7ad and the reviewed tupleB. The existing admission
+qualified104 stock identities/content and staged the33 PAK hardlinks plus other
+managed inputs/tool/request. Before any original tool invocation, shared runtime
+options construction failed under imported strict mode because combined-mode
+diagnostic metadata lacked CaptureSource. No zonetool, modal helper or reference
+reader started; this is an initializer-contract bug, not a new CP cause.
+
+All106 managed entries restored; source/stock proofs passed and no managed target
+remains. The savedfalse/token snapshot preceded release. The original live host
+matched its pre-run PID/image/creation, reference quarantine was null and the
+full registry empty at13:43:58 UTC. OriginalPTY exited with real code1. Fresh
+13:44:51 UTC postflight found host/parent absent, no scope process and zero leases.
+Old M6 caches/evidence, Main27016 and owner clients were preserved. GO is consumed;
+no automatic replay followed.
+
+Correction: the combined diagnostic specification explicitly declares the unused
+CaptureSource and CdbSHA256 as null, alongside its null Cdb. Legacy diagnostic
+paths retain their existing source/hash values. A causal strict-mode fixture
+evaluates the actual source planner/serialization/options initializer and proves
+the old missing-field shape fails while the complete combined contract passes.
+A local source-only probe also reproduced the exact failure using the frozen
+actual tupleB plan/source, then passed the corrected source with no native type,
+stock payload read, mutation or lease. All45 source tests pass. The fixed source
+needs private review/merge and a new tuple/operator/GO before another attempt.
