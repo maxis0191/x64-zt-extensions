@@ -167,3 +167,50 @@ packet binds the actual plan and original-host contract; NativeProbeAuthorized
 and NativeProbeExecuted are false. Next: independently review that packet and
 obtain a separate admitted G3 metadata-request GO. No native G3 observation,
 pixel payload, provider, FF, rendering or gameplay result is claimed.
+
+## Actual G3 native refusal, 2026-10-14
+
+A separate coordinator GO consumed the exact F packet above in one Extract
+group. The original bundled NoProfile/NoExit host used the packet's unchanged
+command line. A metadata-only launcher recorded parent 20996 and its creation
+time before invoking it; host 26996 then verified its physical executable and
+arguments before admission. The existing H1 lifecycle owned the native process,
+input guards, aliases and reservation throughout the request.
+
+Native PID 16852 returned one. The receipt is `Failed` with
+`PartsOutcome=PartsMetadataRefused`; this is a genuine G3 refusal, not a
+successful parts observation. The single schema-3 stdout record reaches the
+requested model, LOD zero, slot zero and binding four / nameHash32 2695565377.
+The selected material has seven texture entries. Its selected image pointer is
+present, but the image-header read is refused with `failure_stage=image_header`
+and reason `t7-iw7-resident-static-v1: range is not committed readable memory`.
+The record reports zero owned header copies and false header rechecks. No image
+header, four-part metadata, stream key or pixel payload was obtained. The
+binding name hash remains a selector, not a recovered stream key. The refusal
+does not identify why that image-header address is unreadable.
+
+| Closed native text record | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Receipt | 34811 | d576f1c5370752854953c2777ca8a0d31cedc2d7913c67be57699281493c25a2 |
+| Stdout | 3312 | 186529485881821a5221fe90684641729c54fbb2be4b62f53a7bc8629b7eec01 |
+| Original-host postflight | 1651 | 5fecb10c3da6c75ed199368f8af0533d15e1b6ace1c3a0d4c57f46a98c7ccfca |
+| Independent closure | 939 | 2b676de9a506513ddba38f9d8d8ae25bf9b2885ccc20e9eedc7eb29c18eaff2f |
+
+Receipt/stdout are under source F's `runtime/t7-material-parts-a/evidence`;
+stderr is empty. Host postflight is the adjacent `.host-postflight.json`.
+The worker retains `runtime/g3-native-f-closure-witness.local.json`.
+TreeClosureConfirmed, LeaseReleased, InputsReverified,
+OriginalInputMetadataUnchanged and AliasesRetained are true. Quarantined,
+CompatibilityProven and Ready are false. Main's stopped baseline, absent
+original identity/image and absent UDP27016 were rechecked; its cause remains
+unknown. The runner performed no Main deployment, restart or configuration/bank
+action; Main was already stopped, cause unknown.
+
+The original in-memory host confirmed Closed, CanExit true and zero wrapper
+guards before exit. Actual PTY 42243 completed with exit one, chunk `089a1e`.
+Fresh 11:53:49 UTC inventory found parent 20996, host 26996 and native 16852
+absent, with no heavy/game processes or leases. No opaque input was reread or
+hashed after release. The F attempt is immutable and will not be retried.
+Next: source review of this bounded header refusal and a separately reviewed
+diagnostic candidate if needed, followed by a new explicit native GO. No CPP
+rebuild, other image/model request, XPAK payload, FF or game operation ran here.
