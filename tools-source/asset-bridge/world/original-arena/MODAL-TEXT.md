@@ -36,9 +36,25 @@ and combined closure reserve remain authoritative. Saturation, timeout and
 missing text remain explicit. No observed modal in the bounded selection is a
 negative result, not successful body recovery, and does not trigger another run.
 
-Authored source fixtures cover identity/parent/FILETIME, reassignment, nonfatal
+At source approval, authored fixtures covered identity/parent/FILETIME, reassignment, nonfatal
 captions, negative scans, timeout/truncation and one-helper dispatch. They load
-no Win32 DLL, stock, native owner or actual window. Real enumeration/text,
-cleanup and any dependency diagnosis are unrun until a fresh reviewed package,
-plan, NoExit capsule and coordinated GO. CP material proof and writer/FF remain
-gated; no zone skip or gameplay is part of this proposal.
+no Win32 DLL, stock, native owner or actual window. Real enumeration/text and
+cleanup were unrun until a fresh reviewed package, plan, NoExit capsule and GO.
+CP material proof and writer/FF remain gated; no zone skip or gameplay is part
+of this proposal.
+
+## Actual M3 outcome, 2026-10-14
+
+One approved attempt used merged source51754 and the plan3d986/outerb421 tuple.
+At 45,078 ms the original-owned helper recovered the title Fatal Error and
+Static body `Could not find asset file assetfile17.pak`, with exact process/
+window/control checks confirmed, no click/error/truncation and a 1,510-byte
+record. The helper and target closed, all borrowed entries were restored and
+source/stock proofs passed. Original-AppDomain, registry and real PTY/postflight
+checks independently established release and exit zero; the pre-release state
+snapshot remains immutable. No new CPU, dump, CDB or material proof occurred.
+
+The immutable baseline staged pack1 only. Pack17 is present in the retained
+dedicated and base client, with equal size/time but distinct file identities;
+content equality was not checked outside admission. The next action is a
+reviewed minimal pack17 binding, not another run of this consumed M3 operator.

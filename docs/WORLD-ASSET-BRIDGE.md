@@ -1364,3 +1364,51 @@ GPU or collision result was produced. Next: inspect the preserved modal-error
 evidence and pinned error/console source. Any further native/offline analysis
 needs its coordinated slot. Do not repeat M/M2 or skip global_mp to manufacture
 the missing nondefault CP material proof.
+
+## 2026-10-14: M3 recovered the missing pack filename
+
+Root approved one modal-text-only attempt using merged source `51754ce8`.
+Its internal plan digest was
+`3d986271bd459e446a8a06cc54bac967784267cfda9aa9f4c3c994188e9e1f9b`;
+the distinct outer digest was
+`b4210deb2a086793d5b9bf590f897b305ba156abc71ad3d538010ab09c7d5043`.
+The 3,652-byte reviewed NoExit capsule bound the same 34 source pins and 72
+stock inputs. No new CPU sample, minidump, CDB or gameplay was requested.
+
+The original target began at 09:27:42 UTC and again stopped at global_mp.
+At 45,078 ms one original-owned helper read the target's #32770 window titled
+`Fatal Error`. Its Static control body was exactly:
+`Could not find asset file assetfile17.pak`.
+Process PID/image/hash/exact creation FILETIME and target/helper caller-parent
+checks passed; HWND/control ownership was verified around the reads. The
+record reports identity_verified_after=true, no interaction, no errors and no
+text/caption saturation. It contains 76 UTF-8 text bytes; the 1,510-byte record
+digest is `149940f4fb70b4dfa1b32178b25df66271eec71c0306d07880fa9e1d042630c5`.
+This qualifies the reported fatal dependency filename. It does not assign a
+database-thread role or prove that adding the file completes the CP load.
+
+The helper exited zero in about 281 ms with zero active processes and its
+original job closed. The target's original owner closed it, and source/stock
+proof and the 74-entry restoration completed. The returned result reports
+DiagnosticCaptured, restoration/preservation/release=true and
+MaterialReferenceMeasured=false. The original live AppDomain then showed no
+quarantine object, the historical token absent and zero leases. Only its own
+PTY was exited with real code zero. Fresh 09:32:47 UTC postflight found original
+target/helper/host/parent and heavy candidates absent, with zero leases.
+The saved pre-release false/token snapshot remains unchanged. Main27016,
+banks/configuration and owner clients were preserved.
+
+The selected 72-input recipe contains only `zone/assetfile1.pak`; pack17 was
+not staged. Metadata-only inspection found assetfile17.pak in both the retained
+Doom dedicated and base client: 104,595,492 bytes, attributes 32 and identical
+UTC modification time, but distinct NTFS file IDs. Equal size/time does not
+prove equal content; neither payload was read or hashed by this inspection.
+The retained dedicated is the provider already used by the baseline, so the
+next source recipe should qualify and borrow only its required pack17 under
+the existing admission. Preserve the original 72-input plan, compare/prove the
+additional donor under guards, and review its exact alias/closure before GO.
+No new hardlink, game clone or stock deletion has been performed by this lookup.
+
+M3 approval is consumed. Material reference, writer, FF, GPU and physics remain
+unqualified. Next: prepare the minimal additional-pack binding and its fresh
+source/plan/operator; no identical replay or automatic runtime follows.
