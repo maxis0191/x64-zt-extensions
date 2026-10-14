@@ -18,6 +18,10 @@ from the separately versioned G3 helper, then exits. It selects no geometry,
 opens no package, copies no pixels, emits no model/FF and does not guess a
 provider. Refusals preserve the diagnostic and exit nonzero. A successful
 metadata result must preserve false pixels/Ready and true header rechecks.
+G3 omits `refused` on success. The caller accepts its absence or boolean false,
+requires a boolean when present, and prints a boolean true refusal before
+exiting nonzero. The first caller incorrectly required the field on success;
+peer review caught this before native compilation or observation.
 
 `prepare_material_parts.py` applies one finite transition after the existing E5
 publication factory; the G3 module is inlined after the unchanged G2 observer.
@@ -37,10 +41,22 @@ actual CPP/probe require the coordinator's separate group admission.
 
 The fixed old E5 main is 43,254 bytes/`5aef1fad`; CLI 112,377/`c63d9552`.
 The declared G3 source transition produces main 43,366 bytes/`031464d8` and
-CLI 124,187/`5fb998fd`, below the existing 128-KiB cap. Full source hashes are
+CLI 124,224/`0dd4b3be`, below the existing 128-KiB cap. Full source hashes are
 in `material-parts-source-contract.json`; the runner binds its finite marker,
 source pins and exact prepared outputs before any opaque input is opened.
 The old G2 header remains 18,583 bytes/`a8848a92`.
+
+The first actual source preparation (source `51f906b0`, capsule
+`t7-material-parts-cli-source-a`, 2026-10-14 06:07 UTC) refused at the existing
+256-KiB aggregate output cap. Python exited 1; its owned child closed and the
+Analysis lease was released. No plan, DEFAULT, CPP, candidate or stock operation
+ran. Its capsule, wrapper and refusal receipt remain unchanged. The corrected
+caller plus the retained E5 response/header sizes total 263,522 bytes, which
+exceeds 262,144. Only the explicitly selected, pinned parts transition now gets
+a 288-KiB aggregate authored-source cap. Other profiles retain 256 KiB; the
+2-MiB plan cap, individual source/header/read/geometry limits and resource
+admission policy are unchanged. Source regression proves both caps and the
+real generated transition. A fresh actual plan/DEFAULT is still pending.
 
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
@@ -58,7 +74,10 @@ G2 drift, missing proof and arbitrary output/source pins refuse. The initial
 authored guard fixture refused because PowerShell culturally sorts the fixture
 filename before the header filename; the expected inventory was corrected.
 This did not execute a native child or read an asset. G3's separate native
-fixture inventory is still pending actual compiler/probe qualification.
+fixture passed 32 actual native checks in the separately admitted H32 group
+on 2026-10-14. The caller's native compilation and stock metadata observation
+remain pending. The success/refusal predicate regression evaluates the actual
+caller source with authored JSON; it does not claim C++ execution.
 
 The accepted geometry FF B (`50ca9124`, 9,904 bytes), plan `750d25d7`, corrected
 readback `7f8b628f` and first static-display cohort remain immutable. Next:

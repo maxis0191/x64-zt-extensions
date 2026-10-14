@@ -526,6 +526,15 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
+def require_preparation_bounds(raw, payloads, *, parts_profile=False):
+    require(type(parts_profile) is bool, 'Explicit parts preparation profile required')
+    # Only the closed, explicitly selected G3 source transition gets this cap.
+    # This bounds authored output bytes, not RAM/commit admission or asset reads.
+    payload_limit = (288 if parts_profile else 256) * 1024
+    require(len(raw) <= 2*1024**2 and sum(map(len,payloads.values())) <= payload_limit,
+            'Preparation bound exceeded')
+
+
 def prepare(args):
     parts_observation = material_parts.selected(args)
     zombies_observation = zombies_observation_selected(args)
@@ -854,7 +863,7 @@ def prepare(args):
         'ReusedObjects':410,'ReusedProjectLibraries':18,'ReusedResources':1,'NativeExecuted':False,
         'ToolchainFullyHermetic':False,'Ready':False}
     raw = (json.dumps(plan,indent=2)+'\n').encode()
-    require(len(raw) <= 2*1024**2 and sum(map(len,payloads.values())) <= 256*1024, 'Preparation bound exceeded')
+    require_preparation_bounds(raw, payloads, parts_profile=parts_observation)
     payloads['build-plan.local.json'] = raw
     output.mkdir()
     for name, data in payloads.items():

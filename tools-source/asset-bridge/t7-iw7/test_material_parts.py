@@ -1,5 +1,6 @@
 """Parts CLI source selection and finite-transition regression tests."""
 import os
+import re
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -46,7 +47,66 @@ class PartsSelectionTests(unittest.TestCase):
                           'LZ4_decompress', 'CreateFile', 'copy_resident('):
             self.assertNotIn(forbidden,source)
         self.assertIn('T7_SELECTED_MATERIAL_PARTS_METADATA',source)
-        self.assertIn('parsed["refused"].get<bool>()',source)
+        self.assertIn('const bool refused = parsed.value("refused", false);',source)
+
+
+class NativeMetadataContractTests(unittest.TestCase):
+    def source_guard(self, document):
+        # Evaluate the actual source predicate with authored JSON, preserving
+        # short-circuiting. This catches contract drift; it is not CPP evidence.
+        source=(parts.HERE/parts.ENTRY).read_text()
+        predicate=source.split('if (!parsed.is_object()',1)[1].split(
+            'throw std::runtime_error("Exact metadata-only material-parts schema required");',1)[0]
+        predicate='!parsed.is_object()'+predicate.strip()[:-1]
+        predicate=predicate.replace('parsed.is_object()', 'is_object()')
+        predicate=predicate.replace('parsed.value("schema", std::string{})', 'parsed.get("schema", "")')
+        predicate=re.sub(r'parsed.contains\("(\w+)"\)', r'contains("\1")', predicate)
+        predicate=re.sub(r'parsed\["(\w+)"\].is_boolean\(\)', r'is_boolean("\1")', predicate)
+        predicate=re.sub(r'parsed\["(\w+)"\].get<bool>\(\)', r'parsed["\1"]', predicate)
+        predicate=predicate.replace('&&',' and ').replace('||',' or ')
+        predicate=re.sub(r'!(?!=)', ' not ', predicate)
+        return eval(' '.join(predicate.split()), {'__builtins__':{}}, {
+            'parsed':document, 'is_object':lambda:type(document) is dict,
+            'contains':lambda key:key in document,
+            'is_boolean':lambda key:type(document[key]) is bool})
+
+    def document(self):
+        return {'schema':parts.SCHEMA,'pixels_copied':False,'ready':False,
+            'headers_rechecked':True,'stream_parts_headers_rechecked':True}
+
+    def test_actual_success_contract_accepts_absent_or_boolean_false_refused(self):
+        for present in (False,True):
+            document=self.document()
+            if present:document['refused']=False
+            self.assertFalse(self.source_guard(document))
+            self.assertFalse(document.get('refused',False))
+
+    def test_actual_guard_refuses_mistyped_refused_and_false_metadata_flags(self):
+        for key,value in [('refused',1),('refused','false'),('refused',None),
+                          ('pixels_copied',True),('ready',True),('ready',0)]:
+            document=self.document();document[key]=value
+            with self.subTest(key=key,value=value):self.assertTrue(self.source_guard(document))
+
+    def test_boolean_refusal_is_logged_before_the_native_failure(self):
+        document=self.document();document['refused']=True
+        self.assertFalse(self.source_guard(document))
+        self.assertTrue(document.get('refused',False))
+        source=(parts.HERE/parts.ENTRY).read_text()
+        self.assertLess(source.index('ZONETOOL_INFO('),source.index('if (refused)'))
+
+
+class PreparationBoundTests(unittest.TestCase):
+    def test_only_explicit_parts_profile_gets_288_kib_and_plan_cap_stays_exact(self):
+        build.require_preparation_bounds(b'',{'authored':b'0'*(256*1024)})
+        with self.assertRaises(ValueError):
+            build.require_preparation_bounds(b'',{'authored':b'0'*(256*1024+1)})
+        build.require_preparation_bounds(b'0'*(2*1024**2),{'authored':b'0'*(288*1024)},parts_profile=True)
+        for raw,payload in [(b'',b'0'*(288*1024+1)),(b'0'*(2*1024**2+1),b'')]:
+            with self.assertRaises(ValueError):
+                build.require_preparation_bounds(raw,{'authored':payload},parts_profile=True)
+        for value in (1,'true',None):
+            with self.assertRaises(ValueError):
+                build.require_preparation_bounds(b'',{},parts_profile=value)
 
 
 @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'),'Retained native source not supplied')
@@ -100,6 +160,15 @@ class PartsRetainedTransitionTests(unittest.TestCase):
         self.assertEqual(wired_cli.count('namespace zonetool::t7::selected_material_observation'),1)
         self.assertNotIn('#include "selected_material_observation.hpp"',wired_cli)
         self.assertLessEqual(len(wired_cli.encode()),128*1024)
+        # Existing E5 plan metadata has 95,932 bytes outside its main/CLI.
+        # Authored padding represents those sealed response/header sizes; no
+        # tlog, binary or game bytes are opened by this source-only regression.
+        payloads={'prepared/main.cpp':wired_main.encode(),
+                  'prepared/zonetool.cpp':wired_cli.encode(),
+                  'retained-response-and-header-sizes':b'0'*95932}
+        self.assertGreater(sum(map(len,payloads.values())),256*1024)
+        with self.assertRaises(ValueError):build.require_preparation_bounds(b'{}',payloads)
+        build.require_preparation_bounds(b'{}',payloads,parts_profile=True)
         # Source changes cannot be hidden by keeping the same declared output.
         def changed(path,limit,expected=None):
             raw=read(path,limit,expected)

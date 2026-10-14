@@ -11,8 +11,8 @@
       "lf_sha256": "fed5af1e0744f8321c028e18e5c7428091d8a66303e5303b06511cbfd0e77366"
     },
     "native_material_parts.inc": {
-      "lf_bytes": 2553,
-      "lf_sha256": "9ca297876807b1ce9e62ee3ad18224cff1ef7036935ab214351ee75e3655607b"
+      "lf_bytes": 2589,
+      "lf_sha256": "dd1ed27601e23ba3eace1115b84cfa7c85404497451b8a41eb194e6df9764f4c"
     }
   },
   "main": {
@@ -20,7 +20,7 @@
     "sha256": "031464d8b41c6ae56c94b33f5d65e228b1ab1f4899c40e3688597c4cf7e526d5"
   },
   "cli": {
-    "bytes": 124187,
-    "sha256": "5fb998fdf25364ecf0a820e89dfd103133a7a0415178f59672dbab53ea784f69"
+    "bytes": 124224,
+    "sha256": "0dd4b3bef7c28be797243f8bdc771c65c54d06e28cbf0a300893eaf645cc379d"
   }
 }

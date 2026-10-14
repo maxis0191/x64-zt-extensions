@@ -24,10 +24,11 @@ static void observe_selected_material_parts_iw7(const std::string& zone_arg,
         !parsed.contains("pixels_copied") || !parsed["pixels_copied"].is_boolean() ||
         parsed["pixels_copied"].get<bool>() || !parsed.contains("ready") ||
         !parsed["ready"].is_boolean() || parsed["ready"].get<bool>() ||
-        !parsed.contains("refused") || !parsed["refused"].is_boolean())
+        (parsed.contains("refused") && !parsed["refused"].is_boolean()))
         throw std::runtime_error("Exact metadata-only material-parts schema required");
+    const bool refused = parsed.value("refused", false);
     ZONETOOL_INFO("T7_SELECTED_MATERIAL_PARTS_METADATA %s", observed.c_str());
-    if (parsed["refused"].get<bool>())
+    if (refused)
         throw std::runtime_error("Selected material-parts observation refused; diagnostic retained");
     if (!parsed.contains("headers_rechecked") || !parsed["headers_rechecked"].is_boolean() ||
         !parsed["headers_rechecked"].get<bool>() || !parsed.contains("stream_parts_headers_rechecked") ||
