@@ -3,12 +3,17 @@ param([Parameter(Mandatory)][string]$PackageRoot,[Parameter(Mandatory)][string]$
     [Parameter(Mandatory)][string]$ToolSource,[Parameter(Mandatory)][string]$CandidateRoot,
     [Parameter(Mandatory)][string]$CandidateArtifactSHA256,[Parameter(Mandatory)][string]$NativeJobAssembly,
     [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$ModalTextOnly,
-    [string]$RequiredPak17Binding,[string]$RequiredPak17BindingSHA256,[switch]$Run)
+    [string]$RequiredPak17Binding,[string]$RequiredPak17BindingSHA256,
+    [ValidateSet('global_mp','global_cp')][string]$DiagnosticZone='global_mp',[switch]$Run)
 # Default hashes only small source/receipt files. No native type, stock reads,
 # hardlinks, admission, candidate binary hash or process is created before -Run.
 $ErrorActionPreference='Stop'
+$DiagnosticZone=$DiagnosticZone.ToLowerInvariant()
 if($ModalTextOnly -and !$LoadDiagnostic){throw 'Modal text requires the explicit load diagnostic opt-in.'}
 if([bool]$RequiredPak17Binding -ne [bool]$RequiredPak17BindingSHA256){throw 'Pack17 supplement needs its exact metadata receipt and digest.'}
+if($DiagnosticZone -ceq 'global_cp' -and (!$LoadDiagnostic -or !$ModalTextOnly -or !$RequiredPak17Binding)){
+    throw 'The global_cp witness requires modal text-only diagnostic and the reviewed pack17 supplement.'
+}
 $PackageRoot=[IO.Path]::GetFullPath($PackageRoot);$RunRoot=[IO.Path]::GetFullPath($RunRoot)
 $work=Join-Path $RunRoot 'work';$material='mopw/character_park_clown_zombie_shoes'
 $native='2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1';$creator='f4e5e45df043f65811098063307d8065b3a33d30'
@@ -54,7 +59,7 @@ if($LoadDiagnostic){
         $debugger=Get-AppxPackage Microsoft.WinDbg
         if($debugger.Version -ne '1.2606.22001.0'){throw 'Existing reviewed offline debugger metadata required.'}
     }
-    $diagnostic=[ordered]@{Mode=$(if($ModalTextOnly){'global-mp-modal-text'}else{'global-mp-load-witness'});TriggerMs=45000;LatestTriggerMs=60000;NoProgressMs=15000;PhaseSeconds=120;
+    $diagnostic=[ordered]@{Mode=$(if($ModalTextOnly){$DiagnosticZone.Replace('_','-')+'-modal-text'}else{'global-mp-load-witness'});DiagnosticZone=$DiagnosticZone;TriggerMs=45000;LatestTriggerMs=60000;NoProgressMs=15000;PhaseSeconds=120;
         GlobalClosureReserveMs=10000;RequiredDiagnosticAndClosureBudgetMs=60000;
         CaptureSource="$PackageRoot/ops/iw7_capture.py";Cdb=$(if(!$ModalTextOnly){Join-Path $debugger.InstallLocation 'amd64/cdb.exe'});
         CdbSHA256=$(if(!$ModalTextOnly){'5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67'});
@@ -136,7 +141,7 @@ try{
     $poll=$null
     if($LoadDiagnostic){
         . "$PackageRoot/tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1"
-        $options=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$RunRoot;CaptureSource=$diagnostic.CaptureSource;
+        $options=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$RunRoot;CaptureSource=$diagnostic.CaptureSource;DiagnosticZone=$DiagnosticZone;
             Python=$python;PythonSHA256=(Get-FileHash -LiteralPath $python).Hash;Cdb=$diagnostic.Cdb;CdbSHA256=$diagnostic.CdbSHA256;
             Symbols=(Join-Path $CandidateRoot 'bin');ToolSHA256=$toolSHA;Inputs=$inputs}
         if($ModalTextOnly){$options|Add-Member NoteProperty ModalTextOnly $true;$options|Add-Member NoteProperty ModalSource $diagnostic.ModalSource}

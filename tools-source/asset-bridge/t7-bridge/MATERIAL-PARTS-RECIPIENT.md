@@ -120,3 +120,50 @@ parts operation/profile/marker pairing guard. Frozen C was not retried and no
 maker, alias, native CLI or stock-content read/hash occurred in this fixture.
 The portable source suite also executes the real E build qualifier against
 authored text objects, preserving its parent/telemetry refusal checks.
+
+## F preparation and actual DEFAULT, 2026-10-14
+
+After the qualified-profile and reserved-variable corrections merged, one
+separately authorized Analysis group used a fresh source F composed from
+`492f1a0dd54586cb93d449e675b435870bae9c87`. Its source manifest is 338,045 bytes /
+`db2dfbc74e5394719bd029fa3bf7c83ab2c237530ddf93bd11aaf9c50262cf3a`.
+The frozen source C, its failed receipt and its plan were not changed or retried.
+The reviewed F wrapper changed only four source-identity literals from C;
+its original-owner cleanup and quarantine behavior remained unchanged.
+
+The actual maker (PID 2484) and actual DEFAULT (PID 10092) both exited zero.
+The admission receipt reports `PreparedAndDefaultVerified`, finished at
+11:36:34 UTC. DEFAULT reports `PlanCheckedPendingGO`; NativeTypesLoaded,
+BinaryInputsHashed, ZoneHashObserved, LeaseAcquired, FilesCreated and Ready
+are all false. The plan retains 89 bindings (61 text / 28 opaque), 27 input
+metadata rows and the 23-entry qualified bootstrap collection. The selected
+CLI remains the previously closed E build, not a rebuilt executable.
+
+| Actual F text record | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Plan | 59894 | 1ef0b20a1b83896ce1c5d3bd08351a7c2140d2d0df4170d0691474a0ad7f0775 |
+| Original-host contract | 1418 | 621a7fcf9353b0108249698e3610cdd9a33f4fe22e0f2484920176445481b634 |
+| Admission receipt | 5246 | c912bd5ed3bb7e294d96213c0a3de9bb602f1ba51a7ba2f62b329cec7fb7965b |
+| Native operation packet | 2910 | ffb25e28d0de5019f3a935e0d06f736f95f585297b568191bef140b93b73705c |
+| Independent closure | 715 | 6e59d043ed84cba21f264cf4e1e2680e91618c1a59cd69e28ae8a3e8630780df |
+
+Plan, contract, receipt and packet are under the retained local
+`t7-material-parts-recipient-source-f/runtime` roots. The closure witness is
+`runtime/g3-factory-f-closure-witness.local.json` in the original worker.
+DEFAULT stdout is 207 bytes /
+`78219efce23c8f9daf9f1e4a4551d71cb32e2bbefe7e4029655f5430a5c2be7c`;
+both maker and DEFAULT stderr are empty.
+
+The original NoExit host 1496 (parent 24796) confirmed cleanup true, zero
+original owners, no last owner and lease released before exit. Its actual PTY
+session 76963 completed with exit zero, chunk `6e6017`. Fresh independent
+11:40:48 UTC inventory found both originals and both children absent, with no
+heavy/game processes and no leases. The wrapper's reservation was Analysis
+only; DEFAULT itself did not acquire one. NativeProbeExecuted,
+CandidateExecuted, StockRead, CPPExecuted and Ready remain false.
+
+This checkpoint qualifies preparation and DEFAULT only. The concrete native
+packet binds the actual plan and original-host contract; NativeProbeAuthorized
+and NativeProbeExecuted are false. Next: independently review that packet and
+obtain a separate admitted G3 metadata-request GO. No native G3 observation,
+pixel payload, provider, FF, rendering or gameplay result is claimed.

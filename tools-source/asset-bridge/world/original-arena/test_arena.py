@@ -294,6 +294,12 @@ $marker='[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_mp"...'
 $e=[ordered]@{Attempted=$false;LastBytes=10L;LastProgressMs=30000L}
 if(Test-ArenaLoadDiagnosticTrigger $e 44999 10 $marker){throw 'Early diagnostic'}
 if(!(Test-ArenaLoadDiagnosticTrigger $e 45000 10 $marker)){throw 'Exact timed stall not detected'}
+$cpMarker='[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_cp"...'
+$cp=[ordered]@{Attempted=$false;LastBytes=10L;LastProgressMs=30000L}
+if(Test-ArenaLoadDiagnosticTrigger $cp 45000 10 $marker 'global_cp'){throw 'MP triggered the CP-only witness'}
+if(Test-ArenaLoadDiagnosticTrigger $cp 45000 10 $cpMarker){throw 'CP triggered the default MP witness'}
+if(!(Test-ArenaLoadDiagnosticTrigger $cp 45000 10 $cpMarker 'global_cp')){throw 'Exact CP stall not detected'}
+$cp.Attempted=$true;if(Test-ArenaLoadDiagnosticTrigger $cp 50000 10 $cpMarker 'global_cp'){throw 'CP witness repeated'}
 $late=[ordered]@{Attempted=$false;LastBytes=10L;LastProgressMs=90000L;Outcome='NotTriggered'}
 if(Test-ArenaLoadDiagnosticTrigger $late 105000 10 $marker){throw 'Late trigger can overrun original deadline'}
 if($late.Outcome -cne 'DeclinedLate'){throw 'Late refusal not recorded'}
@@ -373,9 +379,20 @@ if(!$caught -or $script:Calls -ne 1 -or $e.Outcome -cne 'Captured' -or !$e.Modal
 $script:Calls=0;$script:Found=$false;$e.Attempted=$false;$e.Outcome='NotTriggered';$options.RunRoot=Join-Path $Root 'negative'
 $caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$_.Exception.Message -ceq 'No owned modal window observed in the bounded scan.'}
 if(!$caught -or $script:Calls -ne 1 -or $e.Outcome -cne 'NoModalWindowObserved' -or $e.ModalWindowObserved -or !$target.DiagnosticContext.Closed){throw 'Negative modal outcome was fabricated or closure lost'}
+$options|Add-Member NoteProperty DiagnosticZone 'global_cp'
+$options.RunRoot=Join-Path $Root 'cp';$script:Calls=0;$script:Found=$true;$e.Attempted=$false;$e.Outcome='NotTriggered'
+Invoke-ArenaLoadDiagnostic $target $state $logs $options $e
+if($script:Calls -ne 0 -or $e.Attempted){throw 'MP log invoked the CP-only modal helper'}
+$cpMarker='[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_cp"...'
+[IO.File]::WriteAllText((Join-Path $logs 'stdout.log'),$cpMarker+"`n")
+$e.LastBytes=(Get-Item -LiteralPath (Join-Path $logs 'stdout.log')).Length;$e.LastProgressMs=0L
+$caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$_.Exception.Message -ceq 'Load diagnostic captured; material reference not measured.'}
+if(!$caught -or $script:Calls -ne 1 -or $e.Outcome -cne 'Captured' -or !$target.DiagnosticContext.Closed){throw 'CP-only modal dispatch differs'}
 $dummy=@{PackageRoot=$Root;RunRoot=$Root;StockBindingPlan='absent';StockBindingPlanSHA256=('1'*64);ToolSource=$Root;CandidateRoot=$Root;CandidateArtifactSHA256=('2'*64);NativeJobAssembly='absent.dll'}
 $caught=$false;try{& $Measure @dummy -ModalTextOnly}catch{$caught=$_.Exception.Message -ceq 'Modal text requires the explicit load diagnostic opt-in.'}
 if(!$caught){throw 'Modal path without diagnostic opt-in was not refused before file access'}
+$caught=$false;try{& $Measure @dummy -LoadDiagnostic -ModalTextOnly -DiagnosticZone global_cp}catch{$caught=$_.Exception.Message -ceq 'The global_cp witness requires modal text-only diagnostic and the reviewed pack17 supplement.'}
+if(!$caught){throw 'CP witness without required pack17 was not refused before file access'}
 '''
         with tempfile.TemporaryDirectory() as temp:
             path=Path(temp)/'modal-source.ps1';path.write_text(script,encoding='utf-8')

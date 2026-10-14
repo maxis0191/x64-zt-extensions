@@ -1,12 +1,13 @@
-# One opt-in global_mp load witness. Pure import; existing owners/admission only.
-function Test-ArenaLoadDiagnosticTrigger($Evidence,[long]$ElapsedMs,[long]$Bytes,[string]$LastLine) {
+# One opt-in MP/CP load witness. Pure import; existing owners/admission only.
+function Test-ArenaLoadDiagnosticTrigger($Evidence,[long]$ElapsedMs,[long]$Bytes,[string]$LastLine,
+    [ValidateSet('global_mp','global_cp')][string]$Zone='global_mp') {
     if($Evidence.Attempted){return $false}
     if($Evidence.LastBytes -ne $Bytes){$Evidence.LastBytes=$Bytes;$Evidence.LastProgressMs=$ElapsedMs}
     # 10+15+20 seconds of helpers, two 5-second closures and 5-second margin.
     # The original 120-second deadline is never extended by a late callback.
     if($ElapsedMs -gt 60000){$Evidence.Outcome='DeclinedLate';return $false}
     $ElapsedMs -ge 45000 -and ($ElapsedMs-$Evidence.LastProgressMs) -ge 15000 -and
-        $LastLine -ceq '[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_mp"...'
+        $LastLine -ceq ('[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "'+$Zone.ToLowerInvariant()+'"...')
 }
 function Get-ArenaDiagnosticSeconds($Options,[int]$Nominal) {
     $remaining=[math]::Floor(($Options.StartedMs+120000-(Get-H1Clock)-10000)/1000)
@@ -20,7 +21,8 @@ function Invoke-ArenaLoadDiagnostic($Target,$State,[string]$Logs,$Options,$Evide
     if($file.Length -gt 2MB){throw 'Bounded original loader log required.'}
     $elapsed=[long]((Get-H1Clock)-$Options.StartedMs)
     $last=@(Get-Content -LiteralPath $stdout -Tail 1)
-    if(!($last.Count -eq 1 -and (Test-ArenaLoadDiagnosticTrigger $Evidence $elapsed $file.Length $last[0]))){return}
+    $zone=if($Options.PSObject.Properties['DiagnosticZone']){$Options.DiagnosticZone}else{'global_mp'}
+    if(!($last.Count -eq 1 -and (Test-ArenaLoadDiagnosticTrigger $Evidence $elapsed $file.Length $last[0] $zone))){return}
     $Evidence.Attempted=$true;$Evidence.TriggerElapsedMs=$elapsed
     $sample=Get-H1OriginalState $Target.Owner
     if($sample.RootExited -or $sample.PID -ne $State.Identity.PID -or $sample.Image -ine $State.Identity.Image -or

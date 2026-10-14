@@ -120,3 +120,43 @@ invoked. Next: review this concrete wrapper/capsule, obtain a separate main/link
 CPP slot, then qualify its measured closed outputs before a separate V3 capture
 GO. No executable/PDB tuple, capture, provider, failure cause, catalogue or game
 acceptance is claimed at this checkpoint.
+
+## Closed main/link compilation, 2026-10-14
+
+The coordinator separately authorized one CPP group against the actual
+`e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530`
+recipe and its reviewed original-host wrapper. The unchanged source packet is
+still `a8ecff7cb61323cd0e6f75d10e596d55e63a7753`, not a later documentation head.
+Only main Compile and link Link ran. Both original compiler roots returned zero;
+the group passed in 17,335.8599 ms and finished at 11:23:21 UTC.
+
+Each stage captured its sole VCTIP descendant twice in the original job, with
+the expected original compiler as parent. Its scoped stop was followed by
+original-root exit zero, ActiveProcesses zero and an empty job member list.
+Inputs were reverified under the original reservation. The original host
+retained the runner's context/guards/state, then confirmed context closed,
+no lease and zero guards. The actual PTY completed with exit zero. A fresh
+11:27:16 UTC inventory found the launch parent, original host, two compiler
+roots and two VCTIP descendants absent, with no heavy processes or leases.
+
+| Original leased output / closed text | Bytes | SHA-256 |
+| --- | ---: | --- |
+| EXE | 21777408 | d89c4cf326f21038d9fbcc6a18c18db2c17c17f448400a8567ee2e5fdca6a8bb |
+| PDB | 136982528 | d45781dc051dd5ed2fc57c86b093296207c7623b8810df9ecd04f08851a648c3 |
+| Build receipt | 17200 | 0cc0c8b6b46fd75d09c53b3e3c3dc9af40aa4211a786629fcf2f791c52111328 |
+| Independent closure | 1207 | 6066a2d8ca8f999e23eb1ce7b26167a5a4a8efd43be8915388ba019bf6be439c |
+| Six closed text pins index | 2189 | b13107f072b164640a4344d8281df79b5b2f3fc1ee229813764ce7e55159e4c2 |
+
+Artifact tuples above come exclusively from the original leased receipt; no
+EXE/PDB or other opaque input was reread or hashed after release. The six-row
+index binds Entry, Completion, actual ToolExit, Inventory, Build and Bundle
+under `iw7.t7-prepatch-link-v3-closed-pins/3`. It preserves original raw records
+and distinguishes observed PTY completion from the host's earlier CanExit.
+TreeClosureConfirmed, LeaseReleased and InputsReverified are true;
+Quarantined, CandidateExecuted and Ready are false.
+
+This qualifies a closed instrumented build only. No native candidate, FF,
+stock or game operation ran. Next: bind the new recipe, OS proof, measured
+executable and closed witnesses in a reviewed V3 consumer cohort, then obtain
+a separate capture GO. ABI, provider, failure cause, catalogue and gameplay
+remain unqualified; old V2 outputs and recipes remain immutable.
