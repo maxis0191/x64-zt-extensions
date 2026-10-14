@@ -239,18 +239,22 @@ try {
         Reset-Case
         $argsExact=@($script:state.Contract.HostImage,'-NoLogo','-NoProfile','-NoExit','-File',$script:state.EntryPath,'-PlanPath',$script:state.PlanPath,
             '-PlanSHA256',$script:state.PlanSHA256,'-RunRoot',$script:state.RunRoot,'-HostContractPath',$script:state.ContractPath,'-HostContractSHA256',$script:state.ContractSHA256,'-Run')
-        Assert-T7CatalogueHostArguments $script:state $argsExact $script:currentHost;Check $true 'Exact arguments refused.'
+        Assert-T7CatalogueHostArguments $script:state $argsExact $script:currentHost 'C:\synthetic\pwsh.dll';Check $true 'Exact arguments refused.'
         $argsManaged=$argsExact.Clone();$argsManaged[0]='C:\synthetic\pwsh.dll'
-        Assert-T7CatalogueHostArguments $script:state $argsManaged $script:currentHost;Check $true 'Managed argv[0] refused.'
+        Assert-T7CatalogueHostArguments $script:state $argsManaged $script:currentHost 'C:\synthetic\pwsh.dll';Check $true 'Managed argv[0] refused.'
+        $argsWrongModule=$argsManaged.Clone();$argsWrongModule[0]='C:\other\pwsh.dll'
+        Refuses {Assert-T7CatalogueHostArguments $script:state $argsWrongModule $script:currentHost 'C:\synthetic\pwsh.dll'} 'NoProfile/NoExit'
+        Refuses {Assert-T7CatalogueHostArguments $script:state $argsManaged $script:currentHost 'C:\other\pwsh.dll'} 'NoProfile/NoExit'
+        Refuses {Assert-T7CatalogueHostArguments $script:state $argsManaged $script:currentHost $null} 'NoProfile/NoExit'
         $wrongImage=[pscustomobject]@{PID=$script:currentHost.PID;CreatedUtc=$script:currentHost.CreatedUtc;Image='C:\other\pwsh.exe'}
-        Refuses {Assert-T7CatalogueHostArguments $script:state $argsManaged $wrongImage} 'NoProfile/NoExit'
-        Refuses {Assert-T7CatalogueHostArguments $script:state ($argsManaged+@('extra')) $script:currentHost} 'NoProfile/NoExit'
+        Refuses {Assert-T7CatalogueHostArguments $script:state $argsManaged $wrongImage 'C:\synthetic\pwsh.dll'} 'NoProfile/NoExit'
+        Refuses {Assert-T7CatalogueHostArguments $script:state ($argsManaged+@('extra')) $script:currentHost 'C:\synthetic\pwsh.dll'} 'NoProfile/NoExit'
         for($index=1;$index -lt $argsManaged.Count;$index++){
             $changed=$argsManaged.Clone();$changed[$index]='wrong'
-            Refuses {Assert-T7CatalogueHostArguments $script:state $changed $script:currentHost} 'NoProfile/NoExit'
+            Refuses {Assert-T7CatalogueHostArguments $script:state $changed $script:currentHost 'C:\synthetic\pwsh.dll'} 'NoProfile/NoExit'
         }
-        $argsBad=$argsExact.Clone();$argsBad[3]='-NonInteractive';Refuses {Assert-T7CatalogueHostArguments $script:state $argsBad $script:currentHost} 'NoProfile/NoExit'
-        $argsBad=$argsExact.Clone();$argsBad[7]='C:\other-plan.json';Refuses {Assert-T7CatalogueHostArguments $script:state $argsBad $script:currentHost} 'NoProfile/NoExit'
+        $argsBad=$argsExact.Clone();$argsBad[3]='-NonInteractive';Refuses {Assert-T7CatalogueHostArguments $script:state $argsBad $script:currentHost 'C:\synthetic\pwsh.dll'} 'NoProfile/NoExit'
+        $argsBad=$argsExact.Clone();$argsBad[7]='C:\other-plan.json';Refuses {Assert-T7CatalogueHostArguments $script:state $argsBad $script:currentHost 'C:\synthetic\pwsh.dll'} 'NoProfile/NoExit'
         Close-T7CatalogueHostGuards $script:state;[AppDomain]::CurrentDomain.SetData('IW7.T7CatalogueHost',$null)
     }
     # Run the default entry end-to-end against small synthetic source fixtures.

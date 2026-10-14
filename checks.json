@@ -390,6 +390,17 @@
       ]
     },
     {
+      "id": "Test-T7ImageProvenanceLauncher",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7ImageProvenanceLauncher.ps1"
+      ]
+    },
+    {
       "id": "Test-T7Catalogue",
       "command": [
         "pwsh",
