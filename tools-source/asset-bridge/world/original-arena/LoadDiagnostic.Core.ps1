@@ -23,7 +23,8 @@ function Invoke-ArenaLoadDiagnostic($Target,$State,[string]$Logs,$Options,$Evide
     if(!($last.Count -eq 1 -and (Test-ArenaLoadDiagnosticTrigger $Evidence $elapsed $file.Length $last[0]))){return}
     $Evidence.Attempted=$true;$Evidence.TriggerElapsedMs=$elapsed
     $sample=Get-H1OriginalState $Target.Owner
-    if($sample.RootExited -or $sample.PID -ne $State.Identity.PID -or $sample.Image -ine $State.Identity.Image){throw 'Original live load identity required.'}
+    if($sample.RootExited -or $sample.PID -ne $State.Identity.PID -or $sample.Image -ine $State.Identity.Image -or
+       $sample.CreatedUtc -cne $State.Identity.CreatedUtc){throw 'Original live load identity required.'}
     $Evidence.Target=$State.Identity;$Evidence.OriginalSnapshot=$sample
     $diag=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$Target.Lease;Work=$Target.Work}
     $Target|Add-Member NoteProperty DiagnosticContext $diag -Force

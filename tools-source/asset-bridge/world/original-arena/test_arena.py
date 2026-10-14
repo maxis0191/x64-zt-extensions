@@ -248,7 +248,7 @@ if((Get-ArenaDiagnosticSeconds $budget 20) -ne 20){throw 'Nominal budget changed
 $script:Clock=105000L;if((Get-ArenaDiagnosticSeconds $budget 20) -ne 5){throw 'Phase failed to inherit global remaining time'}
 $script:Clock=111000L;$caught=$false;try{$null=Get-ArenaDiagnosticSeconds $budget 20}catch{$caught=$true};if(!$caught){throw 'Exhausted global reserve accepted'}
 $script:Clock=55000L
-function Get-H1OriginalState($Owner){[pscustomobject]@{RootExited=$false;PID=$Owner.PID;Image=$Owner.Image;ActiveProcesses=1}}
+function Get-H1OriginalState($Owner){[pscustomobject]@{RootExited=$false;PID=$Owner.PID;Image=$Owner.Image;CreatedUtc='2026-10-14T00:00:00Z';ActiveProcesses=1}}
 $script:Calls=@();$script:Registered=0
 function Register-H1Original { $script:Registered++ }
 function Invoke-OriginalArenaTool($Context,$Exe,$SHA,$Arguments,$Work,$RunRoot,$Phase,$Inputs,$Seconds){
@@ -272,6 +272,9 @@ if(!$caught -or $e.Outcome -cne 'Captured' -or $script:Calls.Count -ne 3 -or $sc
 $script:Calls=@();$e.Attempted=$false;$state.Identity.PID=124
 $caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$true}
 if(!$caught -or $script:Calls.Count){throw 'Nonoriginal target allowed diagnostics'}
+$e.Attempted=$false;$state.Identity.PID=123;$state.Identity.CreatedUtc='2026-10-14T00:00:01Z'
+$caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$true}
+if(!$caught -or $script:Calls.Count){throw 'Different root generation allowed diagnostics'}
 '''
         with tempfile.TemporaryDirectory() as temp:
             path=Path(temp)/'diagnostic-source.ps1';path.write_text(script,encoding='utf-8')
