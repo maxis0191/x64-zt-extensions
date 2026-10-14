@@ -168,6 +168,7 @@
     "tools-source/asset-bridge/animation/rig/runner-validation-2026-10-12.json",
     "tools-source/asset-bridge/animation/rig/skin_native_abi.hpp",
     "tools-source/asset-bridge/animation/rig/skin_oracle.py",
+    "tools-source/asset-bridge/animation/rig/source-lineage.json",
     "tools-source/asset-bridge/animation/rig/test_clip_rig.py",
     "tools-source/asset-bridge/animation/rig/test_prepare_skin_writer.py",
     "tools-source/asset-bridge/animation/rig/test_rig_chain.py",
