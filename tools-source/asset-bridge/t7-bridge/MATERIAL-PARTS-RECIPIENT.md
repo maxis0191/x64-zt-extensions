@@ -270,3 +270,65 @@ Its interpretation must be reconciled with the source declarations before a
 new diagnostic contract. No pointer masking, automatic callee following,
 alternative image lookup or G4 patch follows from these prefixes. G3 remains
 an image-header refusal with no authentic texture or stream-part result.
+
+## Full lookup interpretation and G3 consequences, 2026-10-14
+
+A separately authorized, closed Analysis B decoded only the three fixed V3
+intervals already captured. This review consumes its retained text outputs;
+it does not rerun the decoder, capture or native caller. Instructions are
+55,736 bytes / `8b40772f129721a3fb7e63177e0e194aa03dfa60edd1f24307b0c016f720cf53`,
+analysis JSON is 35,381 bytes /
+`b1c78bca37f62109069ee9561feb7322616e5ae8987bb00714e98169be3ead61`,
+and the admission receipt is 2,462 bytes /
+`aee7b9e0f408e99029fadd56e30a16d09b6d7ae2d323961ce485c9404e4cdd55`.
+They are retained under `IW7-Runtime/t7-link-v3-one-analysis-20261014/run-a`.
+The receipt preserves false live-memory/opaque-input/ABI/pool-data/boot/runtime
+qualification flags. D468 owns the separate primary Link interpretation.
+
+The decoder's 743 records cover 2,753 bytes without gaps; that is a linear
+decode inventory, not 743 proven executable instructions. Find returns at
+`0x1D64D2`, followed by padding at `0x1D64D3`. Code at `0x1D63F0` and
+`0x1D63F8` explicitly reads the inline selector and RVA tables below. The
+linear decoder's apparent instructions there must be treated as data:
+
+| Inline data range, end exclusive | Bytes | Use in captured code |
+| --- | ---: | --- |
+| `0x1D64D4..0x1D64DC` | 8 | Two branch RVAs |
+| `0x1D64DC..0x1D6529` | 77 | Type-to-branch selector bytes |
+
+Find's two chain walks use 32-byte entries, compare the requested type and
+the getter/comparator's name result, skip entries whose raw byte `+0x13` is
+nonzero, and follow the next index at `+0x14`. Its found path stores one to
+entry byte `+0x11` at `0x1D6471`, then returns the header word at entry `+8`
+through RAX at `0x1D64B2`. This supports a returned asset header rather than
+a returned entry pointer. It does not copy or validate a nested GfxImage.
+
+Find can wait/repeat its lookup and has a miss path. The switch at `0x1D63E5`
+covers types `0x16..0x62`; XMODEL 4 and IMAGE 9 take the generic path at
+`0x1D6404`. That path calls `0x1D5EE0` and, conditionally, `0x1D4E20`, then
+extracts the returned entry's header at `+8`. Those callees were not read or
+qualified here. The bool argument controls an error-report branch; it is not
+a general guarantee that a missing lookup has no registration/default effects.
+This observation does not authorize adding an image lookup fallback to G3.
+
+IsDefault uses the same 32-byte chain/type/name selection. On a match it loads
+the raw entry byte at `+0x12` at `0x1D738D`; on a miss it sets BL to one at
+`0x1D7393`. After its bookkeeping it returns the zero-extended BL in EAX at
+`0x1D7408`. It checks neither the header's memory protection nor nested image
+ranges. In the pinned BOIII entry declaration, `+0x12/+0x13` are padding, not
+named semantic fields. The executable uses them; their complete lifecycle and
+meaning across asset types remain unqualified. No live pool data was observed.
+
+G3 calls these functions for XMODEL 4 and rejects a null/default model before
+its guarded model/material/table reads. It does not apply the same lookup to
+the selected image. A nondefault model and a nonzero nested image field are
+therefore insufficient to admit the 264-byte image range. The source IMAGE
+early return also bypasses the original add/link path, but the captured lookup
+code does not establish what storage the incoming image points to or how long
+it lives. No pointer repair or registration-path change is justified yet.
+
+The next useful operation should observe the exact selected field's provenance
+and memory-range state across explicitly named registration/load epochs, while
+leaving the original add/lookup behavior and G3 refusal intact. It needs a
+separate source contract and GO. It must not substitute a binding hash, mask a
+pointer, request another image, follow a callee, copy pixels or claim retention.
