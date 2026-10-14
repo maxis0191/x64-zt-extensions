@@ -85,6 +85,7 @@ foreach($row in @(@('BuildPlan',372668,'cfeb5610dd5322d9137eaa9804590cf023a86523
     $bindings+=@([ordered]@{Path=('C:\authored\'+$row[0]);Bytes=$row[1];SHA256=$row[2];IsText=$true})
 }
 $plan=[ordered]@{Operation='MaterialPartsV1';CandidateProfile='t7-material-parts-v1';SelectedMaterialPartsV1=$marker;
+    BootstrapPolicy='QualifiedCollectionV3';Bootstraps=@(1..23);SharedQualification=@{};
     Arguments=@('-t7-iw7-material-parts-v1','mp_freerun_04','p7_fre_platform_cap_02','0');OutputKey='t7_iw7_material_parts_v1';ReportLimitBytes=65536;
     TraceStderrLimitBytes=16384;CandidateBytes=21963264;CandidateSHA256='cce8bbb8f068b4897a391880db316bd1d7586f26f7ec0c1cee2316d76c8644b3';
     ExpectedBuildPlanSHA256='cfeb5610dd5322d9137eaa9804590cf023a865236a1132e95e354919ef23084e';ExpectedBuildReceiptSHA256='e81604ea36272540d2a62df7aaa236dcdd92bb0d04821ab9b2f887636a074a25';
@@ -92,11 +93,13 @@ $plan=[ordered]@{Operation='MaterialPartsV1';CandidateProfile='t7-material-parts
 $p=Copy-Authored $plan;$null=Assert-T7MaterialPartsPlan $p;$checks++
 Check ((Get-T7CatalogueHostSchema $p 'run') -ceq 'iw7.t7-material-parts-run/1') 'Parts host schema lost'
 Check ((Get-T7CatalogueHostOutcomeName $p) -ceq 'PartsOutcome') 'Parts host outcome lost'
-foreach($case in @('operation','profile','markerextra','mixedexport','extraargument','lodarray','name','candidate','planhash','receipthash','bindingpath','bindingsha','bindingbytes','pinpath','pinsha','duplicatebinding','missingbinding','metadataarray')){
+foreach($case in @('operation','profile','legacy-bootstrap','missing-bootstrap','markerextra','mixedexport','extraargument','lodarray','name','candidate','planhash','receipthash','bindingpath','bindingsha','bindingbytes','pinpath','pinsha','duplicatebinding','missingbinding','metadataarray')){
     $p=Copy-Authored $plan
     switch($case){
         operation {$p.Operation='Catalogue'}
         profile {$p.CandidateProfile=@('t7-material-parts-v1')}
+        legacy-bootstrap {$p.BootstrapPolicy='Legacy'}
+        missing-bootstrap {$p.Bootstraps=@(1..22)}
         markerextra {$p.SelectedMaterialPartsV1|Add-Member NoteProperty Extra 1}
         mixedexport {$p|Add-Member NoteProperty ExportRequest @{} }
         extraargument {$p.Arguments+=@('streamed-request.json')}

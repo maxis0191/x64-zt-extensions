@@ -75,3 +75,30 @@ The source qualifier adds only the new Catalogue profile's exact raw LF/CRLF
 tuples, retaining its prior tuples and ordinary bounds for all other helpers.
 The preparer's source/JSON reader rejects opaque suffixes and oversize metadata
 before opening; bounded reads detect growth/length changes before decode/hash.
+
+## C factory refusal and qualified-profile correction
+
+One authorized Analysis group used merged source `3195ba5e` on 2026-10-14.
+The maker exited zero and produced a 59,894-byte plan
+(`dee1c66ef84e6e303c3d71527978062965eeb3df148c2caeea030add5850e9d7`)
+with 89 bindings / 27 input metadata rows. Actual DEFAULT exited one before
+native execution: `Get-T7CatalogueBootstraps` still limited qualified
+collections to MSG profiles. No native operation packet was published.
+This is a failed DEFAULT, not a stock/G3 result. Source C and its plan remain
+unchanged; the correction requires a fresh source/plan and separate GO.
+
+The admitted helper confirmed both children closed, owner list empty and lease
+released. Original host 26516 / parent 20268 genuinely exited one via PTY
+35516 / chunk `ed8b65`. Fresh 11:14:56 UTC observation found all four originals
+absent, no heavy/game processes and no leases. The admission receipt is
+5,011 bytes / `10c2a5194edabaa0354d37a7289b9bd9f3560176029dcd62f8eb4b6342743ebd`;
+DEFAULT stderr is 371 bytes /
+`c13ad37068fb12fa4205923dd234b55ff2a23c44e039d3c9788fff5637faf18a`.
+
+The qualified collection gate now admits the already explicit parts profile.
+The parts contract itself requires `QualifiedCollectionV3`, exactly 23 entries
+and the shared qualification. Legacy/two-item routes remain unavailable to
+parts; MSG, catalogue and E5 contracts are unchanged. Synthetic stock-gate
+coverage directly exercises the G3 profile with 23 qualified entries and rejects
+ordinary D2 there. The source helper exception adds only the new exact Catalogue
+LF/CRLF tuples; all previous tuples and other helper limits remain intact.

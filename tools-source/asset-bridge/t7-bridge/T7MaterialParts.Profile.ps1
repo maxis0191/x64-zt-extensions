@@ -10,6 +10,10 @@ function Assert-T7MaterialPartsPlan($Plan) {
        $Plan.CandidateProfile -isnot [string] -or $Plan.CandidateProfile -cne 't7-material-parts-v1'){
         throw 'Parts operation/profile/marker must be paired.'
     }
+    if($Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cne 'QualifiedCollectionV3' -or
+       $Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -ne 23 -or !$Plan.PSObject.Properties['SharedQualification']){
+        throw 'Parts requires the explicit 23-member qualified V3 collection.'
+    }
     $marker=$Plan.SelectedMaterialPartsV1
     Assert-T7CatalogueFields $marker @('Schema','SourceManifest','HostWitness','ClosureWitness','PartsHeader','PartsEntry','PartsContract')
     if($marker.Schema -isnot [string] -or $marker.Schema -cne 'iw7.t7-material-parts-probe/1'){
