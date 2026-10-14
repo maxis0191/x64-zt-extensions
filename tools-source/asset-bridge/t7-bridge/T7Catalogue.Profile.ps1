@@ -391,7 +391,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($shared){$bindingCount=24+2*$bootstraps.Count+@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count}
         # Five new profile text pins (link.rsp already exists), plus CLI dependencies.
         if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$bindingCount+=6}
-        if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingCount+=2}
+        if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingCount+=11} # Observer pair, shared qualifier and eight C closure/source pins.
         if($export){$bindingCount+=9}
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
         if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
@@ -440,7 +440,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     }
     $bindingLimit=if($qualified){22+3*$limits.ItemCount+$(if($shared){2}else{0})}else{32}
     if($candidateProfile -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c')){$bindingLimit+=6}
-    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingLimit+=2}
+    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){$bindingLimit+=11}
     if($export){$bindingLimit+=9}
     if($diagnostic){$bindingLimit++}
     if($streamed){$bindingLimit+=9}
@@ -456,6 +456,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         $item=Get-Item -LiteralPath $pin.Path
         if($item.PSIsContainer -or $pin.IsText -isnot [bool] -or $pin.Bytes -le 0 -or $pin.Bytes -gt $pinLimit -or
            ($pin.IsText -and $pin.Bytes -gt 1MB) -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or $item.Length -ne $pin.Bytes){throw 'Bound pin metadata differs.'}
+    }
+    if($candidateProfile -ceq 't7-zombies-catalogue-observation-c'){
+        $sharedPath=Join-Path (Split-Path $Runner -Parent) 'T7ResidentExport.Profile.ps1'
+        if(@($Plan.Bindings|Where-Object {$_.Path -ceq $sharedPath -and $_.IsText -is [bool] -and $_.IsText}).Count -ne 1){throw 'C shared build qualifier must be guarded text.'}
     }
     $expected=@(
         @($Plan.CandidateSource,$Plan.CandidateBytes,$Plan.CandidateSHA256),
@@ -722,10 +726,9 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
     }
     if($Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe')){throw 'Publication candidate is not the new link output.'}
     if($zombies){
-        # Source/parser delivery only. A future C build must bring its own exact
-        # CPP transition, compiled artifact and closed original-host evidence.
-        # Neither F nor an export receipt qualifies that currently absent epoch.
-        throw 'Catalogue C native build and closure are not yet qualified.'
+        Assert-T7CatalogueZombiesObservationPlan $Plan
+        Assert-T7ResidentMultiSurfaceBuild $Plan $Receipt $Build
+        return
     }
     if($Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic'] -or $reuse.PSObject.Properties['ResidentSurfaceCountDiagnostic']){
         Assert-T7ResidentExportDiagnosticBuild $Plan $Receipt $Build
@@ -733,6 +736,112 @@ function Assert-T7CataloguePublicationBuild($Plan,$Receipt,$Build,$Base) {
     if($Plan.PSObject.Properties['ResidentMultiSurfaceV2'] -or $reuse.PSObject.Properties['ResidentMultiSurfaceV2']){
         Assert-T7ResidentMultiSurfaceBuild $Plan $Receipt $Build
     }
+}
+function Get-T7CatalogueZombiesBuildPins($Plan) {
+    Assert-T7CatalogueZombiesObservationPlan $Plan
+    if($Plan.ExpectedBuildPlanSHA256 -cne '627f3aacf6ef892af2a7bc94c00ad0f40e811649bbdf2aa49aecad6569930a15' -or
+       $Plan.ExpectedBuildReceiptSHA256 -cne '5f817f2f3f24c04868d022b41a3b68da492b75818816c37bb99eb1f6c8805051' -or
+       $Plan.CandidateBytes -ne 21925376 -or
+       $Plan.CandidateSHA256 -cne '88f2147de79e696d3342f4e838cf5b7b8b25da29cddea41def9395b6933342c8'){
+        throw 'Exact actual Catalogue C build and candidate required.'
+    }
+    $prepared=Join-Path (Split-Path $Plan.BuildPlan -Parent) 'prepared'
+    $source=Split-Path (Split-Path (Split-Path $Plan.BuildPlan -Parent) -Parent) -Parent
+    $hostRoot=Join-Path $source 'runtime/catalogue-c-original-host-a';$pins=[ordered]@{}
+    foreach($row in @(
+        @('BuildPlan',$Plan.BuildPlan,370846,'627f3aacf6ef892af2a7bc94c00ad0f40e811649bbdf2aa49aecad6569930a15'),
+        @('BuildReceipt',$Plan.BuildReceipt,25317,'5f817f2f3f24c04868d022b41a3b68da492b75818816c37bb99eb1f6c8805051'),
+        @('Header',(Join-Path $prepared 't7_iw7_resident_model.hpp'),21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'),
+        @('SourceReceipt',(Join-Path $source 'source-workspace.json'),311606,'63b4d81d83bd5121272ca477290c43d7d6f0f24c7c25401bde030c8f7ec86f3d'),
+        @('OriginalEntry',(Join-Path $hostRoot 'entry.json'),1161,'c6a66476f87c799e2d1d7e420e5fd72db2d41a80da8e109b23b093a2c189b741'),
+        @('OriginalHostCompletion',(Join-Path $hostRoot 'completion.json'),449,'58d0b704033d7f5c6b958c588587f7e80d6ffd3d75f1d78a00a153ed24e759a0'),
+        @('ActualToolReturn',(Join-Path $hostRoot 'tool-return.local.json'),546,'7271b7f5de9193069ca660dc7910a1d2caee68367836a945e51fc9a361512849'),
+        @('Inventory',(Join-Path $hostRoot 'inventory.local.json'),2800,'9a39f98a8be8ea2c6b66f1afc97e095b22b9562e52197f89337eff43b55a703f'),
+        @('BuildCompletion',(Join-Path $hostRoot 'build-completion.local.json'),2433,'5fbaec983b62f206c8b568384e0770f79db4d8ef0f54e1027c556f09740f7c9e'),
+        @('Bundle',(Join-Path $hostRoot 'closed-bundle.local.json'),2613,'d51071803aa7f95948439ffde769c0918c0509734935aedc653b47759613c496'))){
+        $pin=[pscustomobject]@{Path=$row[1];Bytes=$row[2];SHA256=$row[3]}
+        Assert-T7CatalogueTextPin $pin $Plan.Bindings;$pins[$row[0]]=$pin
+    }
+    $pins
+}
+function Assert-T7CatalogueZombiesBuildClosure($Plan,$Receipt,$Build,$Pins) {
+    $source=Read-H1SmallJson $Pins.SourceReceipt.Path 512KB
+    if($source.schema -cne 'iw7.source-workspace/1' -or
+       $source.revisions.'x64-zt-extensions' -cne 'fa45c395597697843053ffc23195320dca6ae73d' -or
+       $source.revisions.'iw7-mod-components' -cne '2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1'){throw 'Exact C compilation source provenance required.'}
+    $entry=Read-H1SmallJson $Pins.OriginalEntry.Path 2KB;$hostProof=Read-H1SmallJson $Pins.OriginalHostCompletion.Path 2KB
+    $tool=Read-H1SmallJson $Pins.ActualToolReturn.Path 2KB;$inventory=Read-H1SmallJson $Pins.Inventory.Path 4KB
+    $completion=Read-H1SmallJson $Pins.BuildCompletion.Path 4KB;$bundle=Read-H1SmallJson $Pins.Bundle.Path 4KB
+    if($entry.Schema -cne 'iw7.t7-c-build-own-host/1' -or $hostProof.Schema -cne 'iw7.t7-c-build-own-host-completion/1' -or
+       $tool.Schema -cne 'iw7.t7-c-build-tool-return/1' -or $inventory.Schema -cne 'iw7.t7-c-build-inventory/1' -or
+       $completion.Schema -cne 'iw7.t7-c-native-build-completion/1' -or $bundle.Schema -cne 'iw7.t7-c-build-closed-bundle/1'){
+        throw 'Exact original C closure schemas required.'
+    }
+    foreach($proof in @($entry,$hostProof,$tool,$inventory,$completion,$bundle)){
+        if($proof.PlanSHA256 -cne $Plan.ExpectedBuildPlanSHA256){throw 'C original evidence plan differs.'}
+    }
+    foreach($proof in @($entry,$inventory,$completion,$bundle)){
+        if($proof.SourceRevision -cne $source.revisions.'x64-zt-extensions'){throw 'C closure source revision differs.'}
+    }
+    foreach($proof in @($entry,$hostProof,$tool)){
+        if($proof.HostPID -ne 24984 -or ([datetimeoffset]$proof.HostCreatedUtc).UtcTicks -ne
+           ([datetimeoffset]'2026-10-14T00:02:39.0260276Z').UtcTicks){throw 'Exact original C host identity required.'}
+    }
+    if($entry.PlanPath -cne $Pins.BuildPlan.Path -or $entry.Runner -cne $Build.Runner -or $entry.HostImage -cne $tool.HostImage -or
+       (@($entry.Arguments) -join '|') -cne (@('-PlanPath',$Pins.BuildPlan.Path,'-PlanSHA256',$Pins.BuildPlan.SHA256,'-Run') -join '|') -or
+       $hostProof.Status -cne 'Passed' -or $null -ne $hostProof.Failure -or $hostProof.GuardCount -ne 0 -or
+       $tool.Source -cne 'observed_tool_result' -or $tool.SessionId -ne 73114 -or $tool.ChunkId -cne '2216da' -or $tool.ExitCode -ne 0 -or
+       $completion.Status -cne 'Passed' -or $completion.FinishedUtc -cne $Receipt.FinishedUtc -or
+       $inventory.ObservedRegistryLeaseCount -ne 0 -or @($inventory.ObservedRegistryScopePaths).Count -ne 0 -or
+       $bundle.MemberCount -ne 6 -or @($bundle.Members).Count -ne 6){throw 'Exact C actual host/tool/build completion required.'}
+    foreach($proof in @(@{Object=$hostProof;Fields=@('OriginalContextClosed','LeaseAbsent','CanExit')},
+        @{Object=$tool;Fields=@('Completed')},@{Object=$completion;Fields=@('InputsReverified','TreeClosureConfirmed','LeaseReleased')},
+        @{Object=$inventory;Fields=@('OriginalIdentitiesAbsent','OwnBuildLeaseAbsent')})){
+        foreach($name in $proof.Fields){if($proof.Object.$name -isnot [bool] -or !$proof.Object.$name){throw 'C original closure incomplete.'}}
+    }
+    foreach($proof in @(@{Object=$entry;Fields=@('ActualNativeStarted','CandidateExecutionRequested')},
+        @{Object=$hostProof;Fields=@('CandidateExecutionRequested')},@{Object=$tool;Fields=@('CandidateExecuted')},
+        @{Object=$inventory;Fields=@('OpaqueContentRead')},@{Object=$completion;Fields=@('CandidateExecuted','Quarantined','OpaqueContentReadAfterRelease')},
+        @{Object=$bundle;Fields=@('CandidateExecuted','OpaqueContentReadAfterRelease')})){
+        foreach($name in $proof.Fields){if($proof.Object.$name -isnot [bool] -or $proof.Object.$name){throw 'C build evidence overclaims its scope.'}}
+    }
+    $members=[ordered]@{ActualBuildReceipt=$Pins.BuildReceipt;OriginalEntry=$Pins.OriginalEntry;
+        OriginalHostCompletion=$Pins.OriginalHostCompletion;ActualToolReturn=$Pins.ActualToolReturn;Inventory=$Pins.Inventory;BuildCompletion=$Pins.BuildCompletion}
+    foreach($role in $members.Keys){$pin=$members[$role]
+        if(@($bundle.Members|Where-Object {$_.Role -ceq $role -and $_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256}).Count -ne 1){throw 'C bundle member differs.'}
+    }
+    if(@($completion.StageClosure).Count -ne 3 -or @($completion.LinkArtifacts).Count -ne 4 -or @($inventory.Identities).Count -ne 7){throw 'Exact C stage/artifact/identity counts required.'}
+    for($i=0;$i -lt 3;$i++){
+        $stage=$Receipt.Stages[$i];$snapshot=$stage.LastOriginalSnapshot;$closed=$completion.StageClosure[$i]
+        if($stage.Identity.PID -ne @(25568,22536,4424)[$i] -or $snapshot.RootExited -isnot [bool] -or !$snapshot.RootExited -or
+           $snapshot.RootExitCode -ne 0 -or $snapshot.ActiveProcesses -ne 0 -or $snapshot.PID -ne $stage.Identity.PID -or
+           $snapshot.Image -cne $stage.Identity.Image -or ([datetimeoffset]$snapshot.CreatedUtc).UtcTicks -ne ([datetimeoffset]$stage.Identity.CreatedUtc).UtcTicks -or
+           $closed.Name -cne $stage.Name -or $closed.ExitCode -ne 0 -or $closed.TreeClosureConfirmed -isnot [bool] -or !$closed.TreeClosureConfirmed -or
+           $closed.OriginalJobActiveAfterStop -ne 0 -or $closed.OriginalJobMembersAfterStop -ne 0){throw 'Exact closed original C compiler/link jobs required.'}
+    }
+    foreach($artifact in $Receipt.Stages[2].Artifacts){
+        if(@($completion.LinkArtifacts|Where-Object {$_.Path -ceq $artifact.Path -and $_.Bytes -eq $artifact.Bytes -and $_.SHA256 -ceq $artifact.SHA256}).Count -ne 1){throw 'C admitted artifact tuple differs.'}
+    }
+    if((@($inventory.Identities.PID) -join '|') -cne '24984|25568|24656|22536|2724|4424|17400' -or
+       (@($inventory.Identities.Role) -join '|') -cne 'OriginalHost|main|main_VCTIP|zonetool11|zonetool11_VCTIP|link|link_VCTIP'){throw 'Exact C original PID inventory required.'}
+    $expected=@(@{Image=$entry.HostImage;Created=$entry.HostCreatedUtc})
+    for($i=0;$i -lt 3;$i++){
+        $identity=$Receipt.Stages[$i].Identity;$expected+=@(@{Image=$identity.Image;Created=$identity.CreatedUtc})
+        $expected+=@(@{Image=(Join-Path (Split-Path $identity.Image -Parent) 'vctip.exe');
+            Created=@('2026-10-14T00:02:52.0758494Z','2026-10-14T00:02:57.7539086Z','2026-10-14T00:03:03.2204821Z')[$i]})
+    }
+    for($i=0;$i -lt 7;$i++){
+        if($inventory.Identities[$i].Image -ine $expected[$i].Image -or
+           ([datetimeoffset]$inventory.Identities[$i].CreatedUtc).UtcTicks -ne ([datetimeoffset]$expected[$i].Created).UtcTicks){throw 'C inventory original creation identity differs.'}
+    }
+    foreach($identity in $inventory.Identities){
+        foreach($name in 'PIDCurrentlyPresent','OriginalIdentityPresent'){if($identity.$name -isnot [bool] -or $identity.$name){throw 'C original inventory is not absent.'}}
+    }
+    if(([datetimeoffset]$entry.CapturedUtc).UtcTicks -ge ([datetimeoffset]$Receipt.Stages[0].Identity.CreatedUtc).UtcTicks -or
+       ([datetimeoffset]$hostProof.CapturedUtc).UtcTicks -lt ([datetimeoffset]$Receipt.FinishedUtc).UtcTicks -or
+       ([datetimeoffset]$tool.RecordedUtc).UtcTicks -lt ([datetimeoffset]$hostProof.CapturedUtc).UtcTicks -or
+       ([datetimeoffset]$inventory.CapturedUtc).UtcTicks -lt ([datetimeoffset]$tool.RecordedUtc).UtcTicks -or
+       ([datetimeoffset]$bundle.RecordedUtc).UtcTicks -lt ([datetimeoffset]$inventory.CapturedUtc).UtcTicks){throw 'C original lifecycle ordering differs.'}
 }
 function Get-T7CatalogueFileId([string]$Path) { [IW7HudFileIdentity]::Read($Path) }
 function Open-T7CatalogueV3Pin($Plan,$Pin,[scriptblock]$DefaultReader) {

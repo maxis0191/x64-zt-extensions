@@ -3,6 +3,7 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 . (Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1')
 . (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
+. (Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1')
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Test-T7CatalogueTrace.ps1'),[ref]$tokens,[ref]$errors)
 if($errors.Count){throw 'Historical fixture syntax differs.'}
@@ -87,7 +88,7 @@ try {
     $f=New-ZombiesObservationFixture
     Assert-T7CatalogueZombiesObservationPlan $f.Plan;$checks++
     Assert-T7CatalogueZombiesSourceTransition $f.Build;$checks++
-    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'native build and closure are not yet qualified'
+    Refuses {Assert-T7CatalogueBuild $f.Plan $f.Receipt} 'Exact actual Catalogue C build and candidate'
     foreach($change in 'profile','marker','schema','extra','zone','operation','bound','export'){
         $f=New-ZombiesObservationFixture
         switch($change){

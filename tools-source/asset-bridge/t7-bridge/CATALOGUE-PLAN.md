@@ -11,6 +11,43 @@ receipts and helper snapshots are not rewritten or requalified by this change.
 Prepare and review fresh helper bindings for future runs; no run is authorized
 or claimed by the source update itself.
 
+## Catalogue C compiled qualification, 2026-10-14
+
+The separately admitted C build now exists from immutable asset source
+`fa45c395597697843053ffc23195320dca6ae73d`: plan 370,846 bytes /
+`627f3aacf6ef892af2a7bc94c00ad0f40e811649bbdf2aa49aecad6569930a15`, receipt
+25,317 bytes / `5f817f2f3f24c04868d022b41a3b68da492b75818816c37bb99eb1f6c8805051`,
+admitted EXE tuple 21,925,376 bytes /
+`88f2147de79e696d3342f4e838cf5b7b8b25da29cddea41def9395b6933342c8`.
+The candidate was not executed. The three actual compiler/link jobs exited zero;
+input revalidation, tree closure and lease release passed. The original host
+24984 reached Closed with zero guards, and actual PTY 73114 exited zero in chunk
+`2216da`. Six original/projection texts preserve entry, host completion, actual
+tool return, fresh seven-identity absence, build completion and their bundle.
+No E4 closure or invented exit request qualifies this C epoch.
+
+C loads the existing resident-export profile only for its shared build qualifier.
+It keeps operation Catalogue, the Zombies-only plan marker and two native
+arguments. All general publication checks, 413 direct link objects, 66 writer
+headers, 1,146 inputs and the 151-binding build split (145 text, six opaque) stay
+required. The common three source rows retain their 716-byte `76570ca3...` digest
+and pre-overlay CLI `107785/c480fbd3...`; only its guarded compiler input is
+projected through C's separate `118485/917c2f90...` marker. No source row, original
+receipt or binary is rewritten. The runtime adds nine text pins beyond C's
+observer pair: shared qualifier, resident header, source receipt and six C closure
+texts. Reusing B's 24 bootstraps gives exactly 102 bindings and 28 original inputs.
+
+Real read-only qualification passes on 24 guarded texts totaling 1,476,869 bytes;
+nine mixed candidate/receipt/source/closure refusals pass with their expected
+reasons. No opaque artifact, stock, lease or native process is consumed by those
+checks. An initial lifecycle check referenced `StartedUtc`, which minimal build
+receipts do not carry; ordering now uses the actual first compiler creation and
+recorded finish/host/tool/inventory times. The prior source-only pending gate
+below describes its original delivery, superseded only by this exact C tuple.
+One separately approved `zm_common` stock sonde remains required for engine
+observation. No catalogue, weapon/enemy name, geometry or owner acceptance follows
+from successful compilation or text qualification.
+
 ## Catalogue C launcher source, 2026-10-14
 
 The distinct `t7-zombies-catalogue-observation-c` profile is opt-in and requires

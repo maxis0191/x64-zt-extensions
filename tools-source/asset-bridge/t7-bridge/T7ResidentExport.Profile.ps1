@@ -149,6 +149,7 @@ function Assert-T7ResidentExportDiagnosticBuild($Plan,$Receipt,$Build) {
     if($matches.Count -ne 1 -or $matches[0] -ine $header.Path){throw 'CLI dependencies must include the exact diagnostic header once.'}
 }
 function Get-T7ResidentMultiSurfaceBuildPins($Plan) {
+    if((Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c'){return (Get-T7CatalogueZombiesBuildPins $Plan)}
     if(Get-T7SelectedStreamedExport $Plan){return (Get-T7SelectedStreamedBuildPins $Plan)}
     if(Get-T7SelectedObservationProbe $Plan){return (Get-T7SelectedObservationBuildPins $Plan)}
     # These are the reviewed D texts, not a caller-supplied qualification flag.
@@ -183,8 +184,9 @@ function Assert-T7ResidentMultiSurfaceBuild($Plan,$Receipt,$Build) {
     $pins=Get-T7ResidentMultiSurfaceBuildPins $Plan
     $observation=[bool](Get-T7SelectedObservationProbe $Plan)
     $streamed=[bool](Get-T7SelectedStreamedExport $Plan)
-    $bindingCount=if($streamed){149}elseif($observation){144}else{141}
-    $transitionSHA=if($streamed -and (Test-T7SelectedStreamedE4Build $Plan)){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}elseif($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}elseif($observation){'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}else{'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'}
+    $zombies=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c'
+    $bindingCount=if($zombies){151}elseif($streamed){149}elseif($observation){144}else{141}
+    $transitionSHA=if($zombies -or ($streamed -and (Test-T7SelectedStreamedE4Build $Plan))){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}elseif($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}elseif($observation){'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}else{'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'}
     if(!$Build.ReuseCompile.PSObject.Properties['ResidentMultiSurfaceV2'] -or
        $Build.ReuseCompile.PSObject.Properties['ResidentSurfaceCountDiagnostic']){throw 'Exact resident v2 reuse marker required.'}
     $proof=$Build.ReuseCompile.ResidentMultiSurfaceV2
@@ -228,10 +230,19 @@ function Assert-T7ResidentMultiSurfaceBuild($Plan,$Receipt,$Build) {
     foreach($row in $proof.SourceTransitions){
         Assert-T7CatalogueFields $row @('Path','PreviousBytes','PreviousSHA256','Bytes','SHA256','WiredBytes','WiredSHA256')
         $rows.Add((@($row.Path,$row.PreviousBytes,$row.PreviousSHA256,$row.Bytes,$row.SHA256,$row.WiredBytes,$row.WiredSHA256)-join '|')+"`n")
-        Assert-T7CatalogueTextPin ([pscustomobject]@{Path=(Join-Path (Split-Path $Build.PreparedRoot -Parent) $row.Path);Bytes=$row.WiredBytes;SHA256=$row.WiredSHA256}) $Build.Bindings
+        $wired=[pscustomobject]@{Path=(Join-Path (Split-Path $Build.PreparedRoot -Parent) $row.Path);Bytes=$row.WiredBytes;SHA256=$row.WiredSHA256}
+        if($zombies -and $row.Path -ceq 'prepared/zonetool.cpp'){
+            # The common three-row proof seals the reviewed pre-overlay TU.
+            # C's independent finite marker seals its final compiler input.
+            Assert-T7CatalogueZombiesSourceTransition $Build
+            $cProof=$Build.ReuseCompile.ZombiesObservationC
+            if($row.WiredBytes -ne $cProof.BaseCLIBytes -or $row.WiredSHA256 -cne $cProof.BaseCLISHA256){throw 'C base CLI differs from the common source transition.'}
+            $wired.Bytes=$cProof.CLIBytes;$wired.SHA256=$cProof.CLISHA256
+        }
+        Assert-T7CatalogueTextPin $wired $Build.Bindings
     }
     $rows.Sort([StringComparer]::Ordinal);$bytes=[Text.Encoding]::UTF8.GetBytes(($rows -join ''))
-    if($bytes.Length -ne $(if($streamed){716}else{714}) -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
+    if($bytes.Length -ne $(if($streamed -or $zombies){716}else{714}) -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() -cne
        $transitionSHA){throw 'Reviewed resident v2 source transitions differ.'}
     $specs=@(@('helper',16296,'6897d27e8fe0754509e52258082d6178c8cb74fe21a8ef4b006006e97ab9dd12'),
         @('zonetool11',76744,'cfe62be9ce9bf87abd8e6713f1e1f334d76f69472500d2cb260696de26ee8273'),
@@ -253,7 +264,8 @@ function Assert-T7ResidentMultiSurfaceBuild($Plan,$Receipt,$Build) {
         throw 'Resident v2 CLI must include the exact adapter once without the excluded PCH.'
     }
     foreach($pin in $headers.Inputs){if(@($includes|Where-Object {$_ -ieq $pin.Path}).Count -ne 1){throw 'Resident v2 CLI must include each reviewed header exactly once.'}}
-    if($streamed){Assert-T7SelectedStreamedClosure $Plan $Receipt $Build $pins}
+    if($zombies){Assert-T7CatalogueZombiesBuildClosure $Plan $Receipt $Build $pins}
+    elseif($streamed){Assert-T7SelectedStreamedClosure $Plan $Receipt $Build $pins}
     elseif($observation){Assert-T7SelectedObservationClosure $Plan $Receipt $pins}
     else{Assert-T7ResidentMultiSurfaceClosure $Plan $Receipt $pins}
 }

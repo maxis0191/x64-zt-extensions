@@ -72,7 +72,8 @@ function Open-T7CatalogueHostInputs([string]$PlanPath,[string]$PlanSHA256,[strin
             (Join-Path (Split-Path $EntryPath -Parent) 'T7Catalogue.Profile.ps1'))){
             if(@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true}).Count -ne 1){throw 'Required pinned host dependency missing.'}
         }
-        if((Get-T7CatalogueHostOutcomeName $plan) -ceq 'ExportOutcome'){
+        if((Get-T7CatalogueHostOutcomeName $plan) -ceq 'ExportOutcome' -or
+           ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-zombies-catalogue-observation-c')){
             $exportProfile=Join-Path (Split-Path $EntryPath -Parent) 'T7ResidentExport.Profile.ps1'
             if(@($plan.Bindings|Where-Object {$_.Path -ceq $exportProfile -and $_.IsText -eq $true}).Count -ne 1){throw 'Required pinned export dependency missing.'}
         }
