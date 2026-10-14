@@ -29,6 +29,10 @@ foreach($name in 'ops/Base-Client.Core.ps1','ops/Lab-Paths.ps1','ops/Resource-Sc
     'ops/hud-lab/HudFileIdentity.cs','ops/model-lab/ModelFF.Core.ps1','ops/model-lab/prepare_writer.py','ops/model-lab/geometry.py',
     'sdk/modding/BeaconFF.Core.ps1','tools-source/asset-bridge/common/StockBinding.Core.ps1',
     'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1','tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1',
+    'tools-source/asset-bridge/world/original-arena/model_lab.py','tools-source/asset-bridge/world/original-arena/readback.py',
+    'tools-source/asset-bridge/h1-fixture/inspect_fixture.py','ops/model-lab/rigid_export.py',
+    'tools-source/asset-bridge/t7-iw7/readback.py','tools-source/asset-bridge/t7-iw7/boot_contract.py',
+    'tools-source/asset-bridge/t7-iw7/export_contract.py','tools-source/asset-bridge/t7-iw7/streamed_contract.py',
     'tools-source/asset-bridge/world/original-arena/OriginalArena.Process.ps1'){$pins+=SmallPin "$PackageRoot/$name"}
 # Keep the exact shared writer normal-encoding proof set, rather than a new list.
 # Actual names are supplied by the reviewed shared writer via its small source CLI.

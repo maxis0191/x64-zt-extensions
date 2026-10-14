@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
 import struct
 import shutil
@@ -225,6 +226,44 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell LIGHT plan checks require pwsh')
+    def test_light_measurement_plan_binds_checker_and_local_imports(self):
+        helper=Path(model_lab.__file__).with_name('Measure-StockReference.ps1')
+        # Authored source/receipt placeholders only; default planning must never
+        # inspect the nonexistent native candidate, stock or assembly below.
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);package=root/'package';tool=root/'tool'
+            names=set(re.findall(r"'((?:ops|sdk|tools-source)/[^']+\.(?:ps1|py|cs))'",helper.read_text()))
+            for name in names:
+                path=package/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('Authored source '+name)
+            (package/'ops/model-lab/prepare_writer.py').write_text("INTERFACES=['normal-a','normal-b','normal-c']\n")
+            for name in ('normal-a','normal-b','normal-c'):
+                path=tool/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('Authored normal proof')
+            (package/'source-workspace.json').write_text(json.dumps({'revisions':{'iw7-mod-components':'2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1'}}))
+            inputs=[{'Relative':f'main/source-{i}.ff','Source':str(root/f'absent-stock-{i}'),'Mode':'HardLink'} for i in range(71)]
+            inputs.append({'Relative':'main/fileSysCheck.cfg','Source':str(root/'absent-sentinel'),'Mode':'Copy'})
+            binding=root/'stock.json';binding.write_text(json.dumps({'stock_binding':{'inputs':inputs}}))
+            args=[shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(helper),'-PackageRoot',str(package),
+                  '-RunRoot',str(package/'runtime/reference'),'-StockBindingPlan',str(binding),
+                  '-StockBindingPlanSHA256',model_lab.digest(binding.read_bytes()),'-ToolSource',str(tool),
+                  '-CandidateRoot',str(root/'absent-candidate'),'-CandidateArtifactSHA256','1'*64,
+                  '-NativeJobAssembly',str(root/'absent-owner.dll')]
+            def planned():
+                result=subprocess.run(args,capture_output=True,text=True,timeout=20)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                value=json.loads(result.stdout)
+                self.assertFalse(value['StockBytesRead']);self.assertFalse(value['NativeTypesLoaded']);self.assertFalse(value['LeaseAcquired'])
+                return value
+            baseline=planned();prior=baseline['PlanSHA256']
+            for name in ('tools-source/asset-bridge/world/original-arena/model_lab.py',
+                         'tools-source/asset-bridge/world/original-arena/readback.py',
+                         'tools-source/asset-bridge/h1-fixture/inspect_fixture.py'):
+                path=package/name
+                self.assertIn(str(path),[pin['Path'] for pin in baseline['Plan']['SourcePins']])
+                path.write_text(path.read_text()+'\nAuthored checker mutation')
+                current=planned()['PlanSHA256'];self.assertNotEqual(current,prior);prior=current
+            self.assertFalse((package/'runtime/reference').exists())
+
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell source caller checks require pwsh')
     def test_original_job_caller_keeps_unknown_owner_and_accepts_telemetry_only(self):
         # Authored PowerShell mocks only: no native type/job, tool/game process,

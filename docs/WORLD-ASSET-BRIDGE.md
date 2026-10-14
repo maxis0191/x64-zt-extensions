@@ -1174,3 +1174,12 @@ World caller now clears Owner before invoking H1, matching Invoke-WorldStage.
 The authored source mock covers success followed by a failed unknown factory;
 the old owner is never stopped/reused and the new context stays unconfirmed.
 This correction does not qualify native execution.
+
+The same review also found that the reference checker was executed without its
+own source/import hashes in the measurement Plan. ModelLab, the arena reader,
+the shared record cursor and eager ModelLab/T7 contract imports are now in the
+existing SmallPin/guard set. Checker changes after LIGHT change the Plan digest
+or fail its source guard check; they cannot leave SourceHashesUnchanged true.
+The 27th authored source test generates LIGHT Plans with nonexistent stock/tool/
+owner inputs, mutates each checker/cursor source and verifies that the digest
+changes without native types, stock reads, admission or output-root creation.
