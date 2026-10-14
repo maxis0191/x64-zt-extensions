@@ -29,7 +29,7 @@ namespace
         t7::Material material{};
         t7::Material* slots[2] = {&material, &material};
         t7::MaterialTextureDef texture{};
-        t7::MaterialTextureDef extra_textures[2]{};
+        t7::MaterialTextureDef extra_textures[7]{};
         t7::GfxImage image{};
         t7::MaterialTechniqueSet technique{};
         std::string model_name = "original_fixture_model";
@@ -44,6 +44,7 @@ namespace
         bool change_technique_pointer = false;
         bool deny_image = false;
         bool deny_image_name = false;
+        bool change_unselected_texture = false, change_selected_texture = false;
         std::size_t total_read = 0;
 
         fixture()
@@ -73,12 +74,16 @@ namespace
         {
             if (deny_image && pointer == &image) throw std::runtime_error("Synthetic image unreadable");
             if (deny_image_name && pointer == image_name.c_str()) throw std::runtime_error("Synthetic image name unreadable");
+            if (change_unselected_texture && pointer == &extra_textures[0] && bytes == sizeof(extra_textures[0]))
+                extra_textures[0].nameHash ^= 1;
             if (pointer == &material && bytes == sizeof(material) && ++material_reads == 4 && change_header)
                 material.cameraRegion = static_cast<t7::GfxCameraRegion>(1);
             if (pointer == &model && bytes == sizeof(model) && ++model_reads == 2 && change_model_name)
                 model_name[0] = 'x';
             if (pointer == &image && bytes == sizeof(image) && ++image_reads == 2 && change_image_name)
                 image_name[0] = 'x';
+            if (change_selected_texture && pointer == &image && bytes == sizeof(image) && image_reads == 1)
+                extra_textures[4].nameHash ^= 1;
             if (pointer == &technique.name && bytes == sizeof(technique.name) && ++technique_reads == 2)
             {
                 if (change_technique_name) technique_name[0] = 'x';
@@ -118,6 +123,32 @@ namespace
             check(text.size() <= observation::output_limit);
             return nlohmann::ordered_json::parse(text);
         }
+
+        void seven_bindings()
+        {
+            material.textureCount = 7;
+            material.textureTable = extra_textures;
+            for (auto& binding : extra_textures)
+            {
+                binding = texture;
+                binding.image = reinterpret_cast<t7::GfxImage*>(std::uintptr_t{1}); // NEVER readable.
+            }
+            extra_textures[4].image = &image;
+            extra_textures[4].nameHash = 0xA0AB1041u;
+        }
+
+        nlohmann::ordered_json observe_binding(unsigned index = 4,
+            std::uint32_t expected_hash = 0xA0AB1041u)
+        {
+            model.name = model_name.c_str();
+            material.name = material_name.c_str();
+            image.name = image_name.c_str();
+            technique.name = technique_name.c_str();
+            const auto text = observation::observe_binding(&model, model_name, 0, 0,
+                [this](const void* p, std::size_t n) { readable(p, n); }, {index, expected_hash});
+            check(text.size() <= observation::output_limit);
+            return nlohmann::ordered_json::parse(text);
+        }
     };
 }
 
@@ -140,6 +171,8 @@ int main()
         check(result.at("selected_header").size() == 7 && !result.contains("failure_stage"));
         check(result.at("textures")[0].at("image_read_state") == "observed" &&
             result.at("textures")[0].at("image_header_read") == true);
+        check(result.at("schema") == "iw7.t7-selected-material-observation/1" &&
+            !result.contains("image_selection"));
 
         fixture streamed;
         streamed.image.streaming = 1;
@@ -253,6 +286,83 @@ int main()
         fixture long_name;
         long_name.model_name.assign(257, 'a');
         check(long_name.observe().at("refused") == true);
+
+        fixture default_seven;
+        default_seven.seven_bindings();
+        const auto default_refusal = default_seven.observe();
+        check(default_refusal.at("schema") == "iw7.t7-selected-material-observation/1" &&
+            !default_refusal.contains("image_selection") &&
+            default_refusal.at("failure_stage") == "image_header" && default_refusal.at("failure_index") == 0);
+        check(default_refusal.at("textures")[4].at("image_read_state") == "not_attempted" &&
+            default_refusal.at("textures")[4].at("image_header_read") == false);
+
+        fixture exact_binding;
+        exact_binding.seven_bindings();
+        const auto exact = exact_binding.observe_binding();
+        check(exact.at("schema") == "iw7.t7-selected-material-observation/2" &&
+            exact.at("image_selection").at("mode") == "exact_binding" &&
+            exact.at("image_selection").at("index") == 4 &&
+            exact.at("image_selection").at("expected_nameHash") == 0xA0AB1041u);
+        check(exact.at("textures").size() == 7 && !exact.contains("refused"));
+        check(exact.at("textures")[4].at("image_read_state") == "observed" &&
+            exact.at("textures")[4].at("image_header_read") == true &&
+            exact.at("textures")[4].at("image_name") == exact_binding.image_name);
+        for (unsigned i = 0; i < 7; ++i)
+            if (i != 4)
+                check(exact.at("textures")[i].at("image_read_state") == "not_attempted" &&
+                    exact.at("textures")[i].at("image_header_read") == false &&
+                    exact.at("textures")[i].at("image").is_null());
+        check(exact_binding.image_reads == 2 && exact_binding.total_read <= observation::read_limit);
+        check(exact.at("headers_rechecked") == true && exact.at("pixels_copied") == false &&
+            exact.at("allocation_retained") == false && exact.at("atomic_snapshot_proven") == false &&
+            exact.at("ready") == false);
+
+        for (unsigned selection_case = 0; selection_case < 3; ++selection_case)
+        {
+            fixture invalid_selection;
+            invalid_selection.seven_bindings();
+            if (selection_case == 2) invalid_selection.extra_textures[4].image = nullptr;
+            const auto invalid = invalid_selection.observe_binding(selection_case == 0 ? 7u : 4u,
+                selection_case == 1 ? 0xA0AB1040u : 0xA0AB1041u);
+            check(invalid.at("refused") == true && invalid.at("failure_stage") == "texture_selection" &&
+                invalid.at("failure_index") == (selection_case == 0 ? 7 : 4));
+            check(invalid_selection.image_reads == 0 && invalid.at("headers_rechecked") == false &&
+                invalid.at("pixels_copied") == false && invalid.at("ready") == false);
+            check(invalid.at("textures")[4].at("image_header_read") == false &&
+                invalid.at("textures")[4].at("image_read_state") ==
+                    (selection_case == 2 ? "absent" : "not_attempted"));
+        }
+
+        for (unsigned refusal_case = 0; refusal_case < 3; ++refusal_case)
+        {
+            fixture selected_refusal;
+            selected_refusal.seven_bindings();
+            selected_refusal.deny_image = refusal_case == 0;
+            selected_refusal.deny_image_name = refusal_case == 1;
+            selected_refusal.change_image_name = refusal_case == 2;
+            const auto refused = selected_refusal.observe_binding();
+            check(refused.at("refused") == true && refused.at("failure_index") == 4 &&
+                refused.at("failure_stage") == (refusal_case == 0 ? "image_header" :
+                    refusal_case == 1 ? "image_name" : "image_name_recheck"));
+            check(refused.at("textures")[4].at("image_read_state") == "refused" &&
+                refused.at("textures")[4].at("image_header_read") == (refusal_case != 0) &&
+                refused.at("textures")[0].at("image_read_state") == "not_attempted");
+            check(refused.at("headers_rechecked") == false && refused.at("pixels_copied") == false &&
+                refused.at("allocation_retained") == false && refused.at("ready") == false);
+        }
+
+        for (unsigned mutation_case = 0; mutation_case < 2; ++mutation_case)
+        {
+            fixture changed_binding;
+            changed_binding.seven_bindings();
+            changed_binding.change_unselected_texture = mutation_case == 0;
+            changed_binding.change_selected_texture = mutation_case == 1;
+            const auto refused = changed_binding.observe_binding();
+            check(refused.at("refused") == true && refused.at("failure_stage") == "texture_recheck" &&
+                refused.at("failure_index") == (mutation_case == 0 ? 0 : 4));
+            check(refused.at("headers_rechecked") == false && refused.at("pixels_copied") == false &&
+                refused.at("ready") == false && changed_binding.image_reads == mutation_case);
+        }
         std::printf("PASS selected material metadata fixture: %u checks; no pixels or engine calls.\n", checks);
         return 0;
     }

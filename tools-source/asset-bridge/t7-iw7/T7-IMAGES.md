@@ -337,6 +337,109 @@ The same primary reader classifies binding `SemanticHash` (native `nameHash` at
 separate T7 `GfxImage::semantic`. These labels can guide a future exact binding
 selection; they supply no filename, pixel encoding, texture lifetime or IW7 mapping.
 
+### E4 stock binding observations
+
+The separate E4 sonde on 2026-10-14 (Europe/Paris) observed selected material 0
+of `p7_fre_platform_cap_02`, LOD 0, and retained all seven copied binding rows.
+Its header reported seven textures, eight samplers and zero constants; texture,
+sampler and technique-set pointers were present, while the constant-table pointer
+was absent. Every binding reported an image pointer present, but binding 0 refused
+at `image_header` before copying a header. Bindings 1 through 6 were explicitly
+`not_attempted`, not proven unreadable. All seven `image_header_read` values were
+false, and every `image` was null. No image name, format or pixels were captured.
+
+| Binding index | Raw `nameHash` | Raw `usage` | Image read state | Greyhound hash classification only |
+| --- | --- | --- | --- | --- |
+| 0 | `0x07176BF2` | 16 | `refused` at `image_header` | Unknown |
+| 1 | `0x389DD40F` | 0 | `not_attempted` | Unknown |
+| 2 | `0x59D30D0F` | 2 | `not_attempted` | NormalMap |
+| 3 | `0x6D0A6C98` | 8 | `not_attempted` | Unknown |
+| 4 | `0xA0AB1041` | 1 | `not_attempted` | DiffuseMap |
+| 5 | `0xEB529B4D` | 0 | `not_attempted` | Unknown |
+| 6 | `0xEC443804` | 4 | `not_attempted` | SpecularMap |
+
+The last column is an inference from the pinned primary reader cited above, not
+an additional runtime observation or an interpretation of `usage`. Binding 4 is
+therefore a precise diffuse-header diagnostic lead; it does not provide a name,
+encoding, retained allocation, converted IW7 material or rendered texture. All
+rows had `uvScaleBits=[1065353216,1065353216]`, `texSizeShift=[0,0]`,
+`uvOffset=[0,0,0]` and `isMatureContent=0`. The copied scalars were not rechecked
+after the image refusal; `headers_rechecked`, `allocation_retained`,
+`atomic_snapshot_proven`, `pixels_copied` and `ready` remained false.
+
+The completed stdout was 3,282 bytes with SHA-256
+`1ffe68788acf748ff9e1a51d48d8f852504aaf31be2c8779a8bd3ed2418b46d4`.
+The separate export still failed before the mesh reader: its surface-0 refusal
+reported bone/triangle offsets 0, vertices 208 versus expected 208, triangles 200
+versus expected 200, and `collisionTreePresent=1`. This is not a successful model
+export. The 36,743-byte receipt SHA-256 is
+`5c7454181c2e266c81d86ac44814a8ba539f0f2aeb142e95e82355709523c302`,
+under plan SHA-256
+`59178a77882aa6d69bee474405e78ceff64d91ea621585e1e05ef9a3c2fb9f0f`.
+It records status Failed, natural native exit 1, original tree closure confirmed,
+lease released, no termination request and Ready false. These qualified binding
+diagnostics do not change the frozen D/E3 results or establish image lifetime,
+pixel acquisition, geometry conversion or owner gameplay acceptance.
+
+### Explicit single-binding observation API and synthetic G qualification
+
+`observe(model, expected_model, lod, slot, readable)` retains its original five
+arguments, schema `/1`, ordered output and default reads. An explicit new entry
+`observe_binding(model, expected_model, lod, slot, readable,
+image_binding_selection{index, expected_name_hash})` shares the same reader and
+budgets, and announces diagnostic schema `iw7.t7-selected-material-observation/2`
+with `image_selection={mode:"exact_binding",index,expected_nameHash}`. A future
+caller can request binding 4 with expected hash `0xA0AB1041`; no caller or native
+CLI/request is activated by this source change. No native profile, payload schema
+or existing renderer/input contract is changed.
+
+The new path copies the bounded texture table and publishes the same raw rows,
+then requires the requested index to exist, its copied hash to match and its image
+pointer to be present before any image header/name read. A refusal here is
+`texture_selection`, with no image row falsely labeled as read/refused. Only the
+selected image can be attempted; all nonselected image rows remain `not_attempted`
+or `absent`. Every copied scalar binding is still rechecked, including those whose
+images are not selected. The existing selected-image header/name and all other
+model/material/table/name rechecks remain. `headers_rechecked` means the copied
+headers/rows were rechecked within this explicitly selected scope; it does not
+mean nonselected image headers were read. Allocation retention, atomic snapshot,
+pixels and Ready claims remain false.
+
+The fixture source adds ten scenarios: unchanged default refusal at image 0;
+exact image 4 behind unreadable nonselected image pointers; index/hash/null-image
+selection refusals before image reads; selected image-header/name/name-recheck
+refusals; and mutations of selected or nonselected scalar bindings. Pixel data
+remain an unreadable sentinel. Attempt G on 2026-10-14 (Europe/Paris), source
+`ee985f1f99486a8bf824cfb32aa7b7a6f9a9966f`, compiled and actually passed all
+109 checks (the qualified E63 inventory plus 46 added checks, including
+per-observation output bounds). The runner required this exact executed inventory:
+
+```text
+PASS selected material metadata fixture: 109 checks; no pixels or engine calls.
+```
+
+MSVC C++20 `/W4 /WX` compile/link and the separate fixture both exited 0 through
+their original owned jobs. The sole pinned `vctip` child was captured twice with
+the same creation identity, original compiler parent and original-job membership.
+Only that compiler job was stopped after successful compilation and pinned
+artifacts; fresh root0/active0/members0 preceded normal closure and fixture launch.
+The invoking tool exited 0, and the exact original PowerShell host was absent in
+a fresh PID/image/creation-filetime check. Lease release followed job closure;
+fresh postflight showed an empty global registry and zero heavy/game/compiler
+processes. RAM/commit remained telemetry without a numeric admission floor.
+
+Retained scope outputs including the receipt total 4,817,828 bytes under 6 MiB.
+The 193,536-byte executable SHA-256 is
+`d2b240483e6eb6a2d27e1f1f7127a0253433ad66915fd87d568d2fe8a03103ee`;
+the 9,085-byte receipt SHA-256 is
+`13626dc4bc101e4dd60be71265de42f18770528223b10d81b1dfbc66b98a94a0`.
+This qualifies the new synthetic API cases. It does not qualify an engine image
+pointer, image lifetime, filename, format, pixels or an authentic rendered texture.
+The E63/E4 results and E5 geometry's frozen `0ea84735` helper remain independent;
+only a future explicit native CLI epoch may adopt and activate the new entry.
+No T7 engine, game, stock extraction, image/pixel IO or native caller activation
+occurred in G.
+
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
 contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`
