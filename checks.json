@@ -2,6 +2,10 @@
   "product": "x64-zt-extensions",
   "checks": [
     {
+      "id": "iw7-player-template-source-support",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-v"]
+    },
+    {
       "id": "tools-source-asset-bridge-model",
       "command": [
         "python",
