@@ -114,7 +114,16 @@ def select_image(report, *, part_index, native_exit_code, qualified_object_mip_c
     need(report["failure_stage"] is None and report["reason"] is None, "native refusal diagnostic cannot select an object")
     observed = provenance.consume(report["provenance"])
     need(observed["observation_status"] == "complete", "same-pass F2 association incomplete")
-    image = report["image"]
+    return select_copied_image(report["image"], part_index=part_index,
+                               qualified_object_mip_count=qualified_object_mip_count)
+
+
+def select_copied_image(image, *, part_index, qualified_object_mip_count):
+    """Validate an owned scalar DTO and select a whole object, with no phase/IO claim.
+
+    The caller validates its distinct native capture envelope before this shared
+    selection. Neither packed low4 nor byte equality qualifies the mip count.
+    """
     need(type(image) is dict and set(image) == IMAGE, "exact copied-header DTO required")
     need(image["schema"] == "iw7.t7-selected-image-header-metadata/1" and image["source_profile"] == PROFILE and
          uint(image["header_bytes"]) == 264 and image["format_namespace"] == "DXGI_FORMAT" and
