@@ -136,7 +136,7 @@ $runRoot=Join-Path $Directory ('finalization-'+$FailAt)
 $plan=[pscustomobject]@{RunRoot=$runRoot;GroupDeadlineSeconds=600;MetadataReserveBytes=1048576;OutputLimitBytes=268435456}
 $PlanSHA256='0'*64;$script:T7GroupStarted=0;$script:ClockChecks=0;$script:Releases=0
 function Assert-H1Deadline($Started,$Seconds){$script:ClockChecks++;if($FailAt -gt 0 -and $script:ClockChecks -eq $FailAt){throw 'Synthetic original-clock deadline'}}
-function Measure-H1Output($Path){$sum=(Get-ChildItem -LiteralPath $Path -File | Measure-Object -Property Length -Sum).Sum;if($null -eq $sum){0}else{$sum}}
+function Measure-H1Output($Path){[long]$sum=0;foreach($item in Get-ChildItem -LiteralPath $Path -File){$sum+=$item.Length};$sum}
 function Exit-IW7ResourceLease($Token){$script:Releases++}
 $guards=[Collections.Generic.List[object]]::new();$guards.Add([IO.MemoryStream]::new())
 $context=[pscustomobject]@{Closed=$true;Owner=$null;Lease=[pscustomobject]@{Token='synthetic-source-only'};Guards=$guards}
@@ -145,16 +145,16 @@ $created=$true;$failure=$null
 $try=$ast.Find({param($n) $n -is [Management.Automation.Language.TryStatementAst] -and $null -ne $n.Finally -and $n.Finally.Extent.Text.Contains('$state.FinalReadback')},$true)
 $text=$try.Finally.Extent.Text
 $null=. ([scriptblock]::Create($text.Substring(1,$text.Length-2)))
-[ordered]@{Status=$state.Status;CanExit=$state.CanExit;Releases=$script:Releases;Guards=$guards.Count;LeaseHeld=($null -ne $context.Lease);FinalReadback=$state.FinalReadback}|ConvertTo-Json -Compress
+[ordered]@{Status=$state.Status;CanExit=$state.CanExit;Releases=$script:Releases;Guards=$guards.Count;LeaseHeld=($null -ne $context.Lease);FinalReadback=$state.FinalReadback;Error=$(if($state.Contains('FinalizationError')){$state.FinalizationError}else{''})}|ConvertTo-Json -Compress
 ''',fail_at)
                 self.assertEqual(result.returncode,0,result.stderr)
                 report=json.loads(result.stdout)
                 if fail_at==0:
-                    self.assertEqual((report['Status'],report['CanExit'],report['Releases']),('Passed',True,1))
+                    self.assertEqual((report['Status'],report['CanExit'],report['Releases']),('Passed',True,1),report)
                 elif fail_at==4:
                     self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld']),('UnknownRetained',False,0,1,True))
                 else:
-                    self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld'],report['FinalReadback']),('ClosedFinalizationIncomplete',False,1,0,False,False))
+                    self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld'],report['FinalReadback']),('ClosedFinalizationIncomplete',False,1,0,False,False),report)
 
 
 if __name__=='__main__': unittest.main()
