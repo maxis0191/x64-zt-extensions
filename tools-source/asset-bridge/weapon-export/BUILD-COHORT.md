@@ -58,3 +58,20 @@ No Tool/game/export entry is in this build caller. A successful future compile
 still needs its actual artifact tuple and a separately admitted one-pair export
 from valid current stock. The deleted Doom binding cannot be relabelled. Real
 weapon grant/reload/projectile damage/physics/PAP transaction remain false.
+
+2026-10-15 actual F result: the native name/argv fixtures compiled and passed
+their exact 8/10 markers. The fresh IW7 TU compiled with exit zero, but its
+dependency guard refused a transitive converter header before the linker ran.
+All original compiler/VCTIP jobs closed; the retained physical NoExit host was
+verified against its original context and closed through its true terminal.
+Fresh observations found all nine captured identities absent and zero leases.
+The managed shell's exit zero is teardown evidence; the cohort remains FailedClosed.
+
+The measured dependency JSON names 722 includes, of which 38 were outside the
+guarded set: eight own converter/mapents headers and 30 public gsc-tool headers
+at submodule pin `3300e430d1efef00e54c66a8bd416e18a2a9882a`. All are bounded
+ordinary text headers, totalling 98557 bytes, largest 29027 bytes. A separate
+unexecuted Source plan adds exactly those pins; no SDK/opaque scan or failed
+object reuse occurs. Source fixture bytes are unchanged. Actual content of the
+previously unguarded consumed headers cannot be qualified retrospectively.
+Recompilation/link requires a new exact plan/capsule review and distinct CPP GO.
