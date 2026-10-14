@@ -61,9 +61,14 @@ and a second unchecked name getter at JSON validation. The additive correction
 compares only the allowlisted length plus its terminating NUL, refuses null or
 nonterminated/mismatching values, and retains an owned validated identity for
 JSON comparison without a second getter. `test_bounded_name.cpp` authors eight
-native causal assertions for exact/null/mismatch/prefix/suffix/nonterminated
+native causal checks for exact/null/mismatch/prefix/suffix/nonterminated
 names; it has **not been compiled or run**. The source helper embeds the small
 name header globally in the copied source. Its hash is separate in the receipt.
+
+2026-10-15: the original fixture used `assert`, which `NDEBUG` could remove in a
+Release build. Its eight checks now use an explicit counted throw/nonzero path
+and print `IW7_PLAYER_TEMPLATE_NAME_CHECKS=8` only after all checks succeed.
+This corrects source liveness; no native compilation/execution is claimed.
 
 The complete authoring consumer is private `iw7-mod-components` PR30, merge
 `a5f76a38e1fe9363b08700a7ff51b2a8417571a2`,
