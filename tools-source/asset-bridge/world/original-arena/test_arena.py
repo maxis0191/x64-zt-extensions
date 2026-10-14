@@ -258,6 +258,25 @@ foreach($kind in 'relative','source','mode','bytes','sha','id','attrs','baseline
     $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
     if(!$caught){throw "Invalid supplemental $kind accepted"}
 }
+foreach($field in 'Schema','BaselineBindingSHA256','ReviewedManifestSHA256'){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.$field=@($bad.$field)
+    $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
+    if(!$caught){throw "Singleton receipt $field accepted"}
+}
+foreach($field in 'Relative','Mode','Source','ExpectedSHA256','ExpectedSourceId','Bytes','ModifiedUtc','Attributes'){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.Input.$field=@($bad.Input.$field)
+    $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
+    if(!$caught){throw "Singleton input $field accepted"}
+}
+foreach($badSize in @('104595492',104595492.0,$true)){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.Input.Bytes=$badSize
+    $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
+    if(!$caught){throw 'Coerced non-integer size accepted'}
+}
+foreach($time in @($record.Input.ModifiedUtc,[datetime]'2026-09-29T21:45:47.6718742Z',[datetimeoffset]'2026-09-29T21:45:47.6718742Z')){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.Input.ModifiedUtc=$time
+    $null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)
+}
 '''
         with tempfile.TemporaryDirectory() as temp:
             path=Path(temp)/'pack17.ps1';path.write_text(script,encoding='utf-8')
