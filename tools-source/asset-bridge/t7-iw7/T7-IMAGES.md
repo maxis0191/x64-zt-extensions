@@ -381,6 +381,42 @@ lease released, no termination request and Ready false. These qualified binding
 diagnostics do not change the frozen D/E3 results or establish image lifetime,
 pixel acquisition, geometry conversion or owner gameplay acceptance.
 
+### Explicit single-binding observation API (source candidate)
+
+`observe(model, expected_model, lod, slot, readable)` retains its original five
+arguments, schema `/1`, ordered output and default reads. An explicit new entry
+`observe_binding(model, expected_model, lod, slot, readable,
+image_binding_selection{index, expected_name_hash})` shares the same reader and
+budgets, and announces diagnostic schema `iw7.t7-selected-material-observation/2`
+with `image_selection={mode:"exact_binding",index,expected_nameHash}`. A future
+caller can request binding 4 with expected hash `0xA0AB1041`; no caller or native
+CLI/request is activated by this source change. No native profile, payload schema
+or existing renderer/input contract is changed.
+
+The new path copies the bounded texture table and publishes the same raw rows,
+then requires the requested index to exist, its copied hash to match and its image
+pointer to be present before any image header/name read. A refusal here is
+`texture_selection`, with no image row falsely labeled as read/refused. Only the
+selected image can be attempted; all nonselected image rows remain `not_attempted`
+or `absent`. Every copied scalar binding is still rechecked, including those whose
+images are not selected. The existing selected-image header/name and all other
+model/material/table/name rechecks remain. `headers_rechecked` means the copied
+headers/rows were rechecked within this explicitly selected scope; it does not
+mean nonselected image headers were read. Allocation retention, atomic snapshot,
+pixels and Ready claims remain false.
+
+The fixture source adds ten scenarios: unchanged default refusal at image 0;
+exact image 4 behind unreadable nonselected image pointers; index/hash/null-image
+selection refusals before image reads; selected image-header/name/name-recheck
+refusals; and mutations of selected or nonselected scalar bindings. Pixel data
+remain an unreadable sentinel. The expected future inventory is 109 checks
+(the qualified E63 inventory plus 46 added checks, including per-observation
+output bounds). This changed C++ fixture has **not been compiled or executed**;
+its source is a future qualification candidate, not a replacement for E63 or E4.
+E5 geometry retains its frozen helper pin until a distinct C++ fixture and CLI
+epoch explicitly qualify and adopt this API. No extra image/pixel/stock IO or
+heavy native work is authorized by this source-only stage.
+
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
 contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`
