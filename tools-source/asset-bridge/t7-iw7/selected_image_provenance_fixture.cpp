@@ -103,6 +103,16 @@ int main()
         check(different.at("capture_complete") == true && different.at("header_changed") == true);
         check(different.at("same_numeric_image_field") == false &&
             different.at("same_object_proven") == false);
+        unsigned epochs = 0;
+        provenance::observer state_change(guard,[&](const void* p) {return memory(p,++epochs==1);});
+        state_change.begin();
+        state_change.after_model_add(t7::ASSET_TYPE_XMODEL,incoming,header(f));
+        const auto transitioned = state_change.finish(&f.model);
+        check(transitioned.at("capture_complete") == true &&
+            transitioned.at("registration").at("range_readable_at_query") == true &&
+            transitioned.at("lookup").at("range_readable_at_query") == false);
+        check(transitioned.at("same_numeric_image_field") == true &&
+            transitioned.at("lifetime_proven") == false);
 
         provenance::observer missing(guard,query);
         missing.begin();
@@ -152,6 +162,27 @@ int main()
         extra.begin();
         extra.after_model_add(t7::ASSET_TYPE_XMODEL,incoming,header(f));
         check(extra.finish(&f.model).at("refused") == true);
+
+        f.model_name = "other";
+        f.model.name = f.model_name.c_str();
+        provenance::observer count_budget(guard,query);
+        count_budget.begin();
+        for (unsigned i=0;i<=provenance::search_limit;++i)
+            count_budget.after_model_add(t7::ASSET_TYPE_XMODEL,incoming,header(f));
+        f.model_name=provenance::model_name;f.model.name=f.model_name.c_str();
+        const auto counted=count_budget.finish(&f.model);
+        check(counted.at("registration_search_refused") == true &&
+            counted.at("model_callbacks") == provenance::search_limit+1);
+        f.model_name.assign(250,'x');f.model.name=f.model_name.c_str();
+        provenance::observer name_budget(guard,query);
+        name_budget.begin();
+        for (unsigned i=0;i<512;++i)
+            name_budget.after_model_add(t7::ASSET_TYPE_XMODEL,incoming,header(f));
+        f.model_name=provenance::model_name;f.model.name=f.model_name.c_str();
+        const auto searched=name_budget.finish(&f.model);
+        check(searched.at("registration_search_refused") == true &&
+            searched.at("model_callbacks").get<unsigned>() < provenance::search_limit);
+        check(searched.at("refused") == true && searched.at("registration").at("image_field_hex").is_null());
 
         std::printf("PASS selected image provenance fixture: %u checks; no engine/image bodies.\n",checks);
         return 0;

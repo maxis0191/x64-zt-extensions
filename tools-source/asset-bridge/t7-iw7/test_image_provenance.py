@@ -61,7 +61,8 @@ class ProvenanceSourceTests(unittest.TestCase):
                      'inactive_return.data==&f.model', 'active_return.data==&f.model',
                      'incoming.data = reinterpret_cast<void*>', 'Original");',
                      'different.at("header_changed") == true', 'absent.at("header_changed").is_null()',
-                     'twice.at("duplicate_registration")', 'v.rows[0].extent=1', 'v.count=3'):
+                     'twice.at("duplicate_registration")', 'v.rows[0].extent=1', 'v.count=3',
+                     'state_change.finish(', 'count_budget.finish(', 'name_budget.finish('):
             self.assertIn(case,text)
 
 

@@ -50,7 +50,8 @@ The native fixture is authored to execute the real original-return forwarder
 and observer with synthetic ranges/query records. It contrasts the old image
 read refusal with a provenance observation that never reads the body, and covers
 different incoming/returned/lookup headers, missing/duplicate registration,
-original errors, search refusal, wrong binding and malformed query coverage.
+original errors, search refusal, wrong binding, malformed query coverage,
+same-address memory-state transitions and both callback-count/name-read budgets.
 It has NOT been compiled or executed: CPP requires a separate coordinator GO.
 Source checks execute the renderer and actual fixed/exclusive predicates, reject
 wrong source epochs/pins and verify the old G3 output pair remains exact.
