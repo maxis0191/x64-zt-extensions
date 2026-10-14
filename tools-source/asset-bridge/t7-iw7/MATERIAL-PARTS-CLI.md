@@ -101,6 +101,19 @@ at 07:00:48 UTC found the owned host/children absent and no leases. The future
 their historical files and claims are unchanged. No CPP, candidate, stock, FF
 or game ran in C.
 
+Native launch review found that the historical bootstrap also opened retained
+`.tlog` bindings before its internal Build reservation. `Run-T7Build` now
+defers only those reads in `-Run`, using ordinal case-insensitive extension
+comparison after the existing strict boolean IsText check. After the unchanged
+admission, group clock and output creation, it opens the same pinned tlogs with
+the same Open-T7Bootstrap guards. DEFAULT keeps its previous read sequence;
+source PS/CPP/RSP verification, opaque input admission, owner handles and
+original finally/recovery remain unchanged. Authored execution of the actual
+bootstrap/admission/read ASTs covers DEFAULT, both tlog cases, refusal before
+admission, a deferred hash failure and invalid IsText. It invokes no scheduler,
+compiler or real tlog/binary read. C stays frozen; native execution requires a
+fresh reviewed plan bound to the corrected runner.
+
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
 bytes, mismatched G2 metadata and any unqualified selected header/name/recheck.
@@ -124,7 +137,7 @@ caller source with authored JSON; it does not claim C++ execution.
 
 The accepted geometry FF B (`50ca9124`, 9,904 bytes), plan `750d25d7`, corrected
 readback `7f8b628f` and first static-display cohort remain immutable. Next:
-qualify the one separately admitted incremental CPP group using C's frozen
-plan, then perform one separately admitted metadata observation. Only a
+qualify the one separately admitted incremental CPP group using a fresh plan
+bound to the corrected runner, then perform one separately admitted metadata observation. Only a
 real 64-bit part key, exact decoded size and provider identity can select a
 future bounded image read; `nameHash`32 and the geometry key are not substitutes.
