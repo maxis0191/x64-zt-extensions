@@ -116,3 +116,42 @@ absent, with CandidateBound true and all five runtime flags false. The new
 the 1337-byte witness SHA256 is
 `0c353409a7e7cfc56c5d15c92aec256e1aca9e09d496dc0615cb39033f8e8b8f`.
 This source qualification leaves native capture and interpretation pending.
+
+## Actual V2 capture, 2026-10-14
+
+The renewed coordinator GO consumed one real V2 capture with operator merge
+`c70342ff`, frozen plan `7e0b7153` and unchanged producer `2f74c974` /
+executable `f11c683b`. Fresh preflight found no heavy process or lease and
+preserved the stopped Main, its executable metadata and 68 bank entries.
+No bank contents were read, no game bytes were copied and no zone was loaded.
+
+Native 2968, created at `2026-10-14T06:47:21.6594255Z`, naturally exited 0
+after 1620.7073 ms. The outcome is `CaptureCompletePendingReview`, separately
+from compatibility or catalogue acceptance. The 8504-byte report SHA256 is
+`dd0d10a895ec9c42c1d4e7c87e812fab527e8ca4650e1aa67154530c64ee47d7`.
+Its phase is first DPI before component post_unpack. Source and mapped base
+both equal 0x140000000; 662164 requested bytes were returned completely,
+including the bounded .pdata observation of 54927 records and two fixed windows:
+
+| Window | RVA / captured bytes | Observed runtime-function range | Unwind RVA / header |
+| --- | --- | --- | --- |
+| DB_AddXAsset | 0x1D4600 / 2048 | 0x1D4600–0x1D46F6 | 0xFB5038 / 11180600 |
+| Load_SimpleAsset | 0x1DB2B0 / 256 | 0x1DB2B0–0x1DB2CE | 0xFA5904 / 01060200 |
+
+The local report retains all raw hex. These ranges and headers are observations;
+unwind-format, ABI, provider ownership, boot and runtime compatibility remain
+unproven. The original native result/inputs, aliases and metadata were reverified
+under admission. Source/opaque input bytes were not rehashed after release.
+
+Original host 11420, created at `2026-10-14T06:47:18.5186933Z`, completed
+same-host postflight with tree closure, lease release and zero wrapper guards.
+PTY 86499 actually exited 0 (chunk `ff1969`). Fresh absence at
+`2026-10-14T06:49:27.3382826Z` confirmed both original identities absent,
+no heavy process or lease and preserved stopped Main/bank metadata, cause Unknown.
+The native receipt is 4880 bytes/SHA256
+`97546ab8f47bc8daa342eefb95b1e933f31b20bcecb99536be79b09df17de1b3`;
+the independent completion proof is 7357 bytes/SHA256
+`883f357812068c0ebb6c7eba37ca64fe68abf92f58be4359ea63cb728f499d77`.
+The preceding managed-host refusal remains separate and preserved. This consumes
+the single native GO; the next action is bounded interpretation of the retained
+two windows, not another probe, compiler run or dependency-zone guess.
