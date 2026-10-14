@@ -453,3 +453,12 @@ bytes/SHA256
 There is no accepted converted mesh, collision compatibility, texture appearance,
 FF roundtrip, runtime or owner gameplay. Preserve this failed cohort and prepare
 a new short-root plan while awaiting its separate coordinator slot.
+
+The next E5 operator's DEFAULT now computes the fixed donor's complete manifest,
+model and observed mesh output paths. Each must be shorter than 260 characters
+including its terminating NUL, before native types, retail input hashing or
+admission. A synthetic 259-character NUL-inclusive boundary passes and 260
+refuses; the completed long-root plan refuses while a short-root projection
+passes at 147/167/182 characters including NUL. These are string/source checks,
+not proof of CRT errno or an opaque output readback. Legacy selectors and the
+compiled af41/aa322 tuple are unchanged; retain the old failed root.
