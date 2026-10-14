@@ -74,8 +74,11 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
     require(sha(raw) == prior_stock_plan_sha.lower(), "historical stock plan changed")
     previous = strict_json(raw, 131072)
     require(previous.get("Schema") == "iw7.material-v2-execution-plan/1", "known existing stock plan required")
-    for field, amount in (("FFPhysicalBytes", 8 * 1024**3), ("FFCommitBytes", 11 * 1024**3)):
-        require(type(previous.get(field)) is int and previous[field] == amount, "native budget differs")
+    # Preserve the reviewed scenario estimates, without a numeric RAM/commit
+    # floor. Positive int64 values are required by the shared lease API.
+    for field in ("FFPhysicalBytes", "FFCommitBytes"):
+        require(type(previous.get(field)) is int and 0 < previous[field] <= 2**63 - 1,
+                "positive typed native estimate required")
     candidate_root, exe, candidate_pins = read_candidate(candidate_receipt)
     # Source-only: do not stage/hash retail files or claim fresh stock identity.
     for name in ("read_sab.py", "read_flac.py", "sound_ff_phase.py", "prepare_sab_ff.py"):
@@ -102,7 +105,7 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
             "candidate_binary_hash_recheck_pending": True,
             "historical_stock_plan": str(Path(prior_stock_plan).absolute()), "historical_stock_plan_sha256": prior_stock_plan_sha.lower(),
             "stock_root": previous["StockRoot"], "fresh_stock_identity_and_content_pending": True,
-            "stock_staged": False, "physical_bytes": 8 * 1024**3, "commit_bytes": 11 * 1024**3,
+            "stock_staged": False, "physical_bytes": previous["FFPhysicalBytes"], "commit_bytes": previous["FFCommitBytes"],
             "source_output_budget_bytes": 10 * 1024**2 - 1, "future_new_output_stop_bytes": 64 * 1024**2,
             "source_stage_relatives": sorted(SOURCES - {"original/source.wav"}),
             "owned_future_outputs": ["zone/" + ZONE + ending for ending in (".ff", ".sabl", ".sabs")],
@@ -112,7 +115,7 @@ def prepare(source, run_root, shared_repo, prior_stock_plan, prior_stock_plan_sh
             "outer_functions": ["Start-MaterialV2OwnedPhase", "Wait-MaterialV2OwnedPhase", "Stop-MaterialV2OwnedPhase", "Restore-IW7BaseTransaction"],
             "pending_execution_work": ["Independent review of original-sound reader, complete transaction and pins",
                 "Prepare a fresh checkout-bound execution plan for the four specs and FF/SABL/SABS restoration",
-                "Fresh complete 8/11 admission, stock identities and candidate binary hash under guards",
+                "Fresh complete scenario admission, stock identities and candidate binary hash under guards",
                 "Unique central native GO; no retries"],
             "input_pins": [{"path": str(path), "bytes": size, "sha256": digest}
                            for path, (size, digest) in {**inputs.observed, **candidate_pins}.items()],

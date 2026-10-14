@@ -1,6 +1,28 @@
 $ErrorActionPreference='Stop'
 . "$PSScriptRoot/SoundFF.Core.ps1"
 . "$PSScriptRoot/../MaterialV2.Core.ps1"
+# Import only the pure policy function from the composed dependency. No native
+# type, scheduler registry, lease or process is created by this source test.
+$scheduler=Join-Path $PSScriptRoot '../../../../ops/Resource-Scheduler.Core.ps1'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($scheduler,[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'Scheduler source parse failed.'}
+$budget=@($ast.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Test-IW7ResourceBudget'},$true))
+if($budget.Count -ne 1){throw 'One shared telemetry policy function required.'}
+. ([scriptblock]::Create($budget[0].Extent.Text))
+foreach($estimates in @(@(1,1),@(512MB,1GB),@(12GB,16GB))){Assert-SoundFFEstimates $estimates[0] $estimates[1]}
+foreach($field in 'PhysicalBytes','CommitBytes'){
+    foreach($invalid in @($null,0,-1,$true,1.0,'1',[bigint]::Parse('9223372036854775808'))){
+        $values=@{PhysicalBytes=1;CommitBytes=1};$values[$field]=$invalid
+        $refused=$false;try{Assert-SoundFFEstimates @values}catch{$refused=$true}
+        if(!$refused){throw "Invalid typed estimate accepted: $field"}
+    }
+}
+$mismatch=[pscustomobject]@{PhysicalBytes=1;CommitBytes=1;Review=@{physical_bytes=1;commit_bytes=2}}
+$refused=$false;try{Assert-SoundFFExecutionPlan $mismatch $PSScriptRoot}catch{
+    if($_.Exception.Message -cne 'Reviewed scenario estimates differ.'){throw};$refused=$true
+}
+if(!$refused){throw 'Changed reviewed estimates accepted.'}
 $script:mockMs=0
 function Get-MaterialV2MonotonicMs {$script:mockMs}
 function Get-MaterialV2UtcNow {[datetime]'2026-10-12T00:00:00Z'}
@@ -38,7 +60,7 @@ foreach($case in 'PromptCleanup','SlowStopCall','SlowCleanupExit'){
 $temp=[IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('iw7-sound-deadline-'+[guid]::NewGuid().ToString('N'))))
 [IO.Directory]::CreateDirectory($temp)|Out-Null
 try {
-    foreach($case in 'PromptReceipt','SlowReceipt','SlowFinalSave','SlowDispose'){
+    foreach($case in 'PromptReceipt','HighCommitReceipt','InvalidTelemetryReceipt','SlowReceipt','SlowFinalSave','SlowDispose'){
         $script:mockMs=0
         $run=Join-Path $temp $case;[IO.Directory]::CreateDirectory($run)|Out-Null
         $c=[pscustomobject]@{Plan=[pscustomobject]@{RunRoot=$run;Work=$run;Python='C:\mock\python.exe';SharedRepo=$run;Review=@{phase_adapter='C:\mock\phase.py'}};
@@ -49,7 +71,14 @@ try {
         }
         function Get-BeaconJobIdentity {param($Owner,$Expected,$Phase);[ordered]@{Phase=$Phase}}
         function Start-MaterialV2OwnedPhase {param($Owner,$Token);[pscustomobject]@{StartedMonotonicMs=0;StartedUtc='mock';SchedulerAttached=$false}}
-        function Wait-MaterialV2OwnedPhase {param($Owner,$Identity,$Start,$Timeout,$Callback);$Identity.ExitCode=0}
+        function Wait-MaterialV2OwnedPhase {param($Owner,$Identity,$Start,$Timeout,$Callback)
+            if($case -in 'HighCommitReceipt','InvalidTelemetryReceipt'){& $Callback $null $false}
+            $Identity.ExitCode=0
+        }
+        function Measure-SoundFFOutputs {}
+        function Get-IW7ResourceSnapshot {
+            @{PhysicalTotal=1GB;PhysicalAvailable=0;CommitLimit=1GB;Committed=$(if($case -eq 'InvalidTelemetryReceipt'){2GB}else{1GB})}
+        }
         function Assert-MaterialV2PhaseResult {}
         function Read-BeaconJson {param($Path,$Limit)
             if($case -eq 'SlowReceipt'){$script:mockMs=35001}
@@ -64,11 +93,11 @@ try {
         $failed=$false
         try{Invoke-SoundFFPhase $c $spec}catch{$failed=$true}
         finally{foreach($guard in $c.Guards){$guard.Dispose()}}
-        if($failed -ne ($case -ne 'PromptReceipt')){throw "Wrong post-receipt deadline decision: $case"}
-        if($case -ne 'PromptReceipt' -and $c.State.Phases[0].PostReceiptDecisionElapsedMs -lt 35000){throw 'Missing fresh post-save time.'}
+        if($failed -ne ($case -notin 'PromptReceipt','HighCommitReceipt')){throw "Wrong phase decision: $case"}
+        if($case -in 'SlowReceipt','SlowFinalSave','SlowDispose' -and $c.State.Phases[0].PostReceiptDecisionElapsedMs -lt 35000){throw 'Missing fresh post-save time.'}
     }
     if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Native class unexpectedly loaded.'}
-    '11 monotonic deadline cases passed with mocks, including slow ExitCode, stop, dispose, save, drain callback and receipt; no native process.'
+    '13 phase/deadline cases and typed-estimate guards passed with mocks; high commit accepted, impossible telemetry refused; no native process.'
 }finally{
     $resolved=[IO.Path]::GetFullPath($temp)
     if(!$resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -or

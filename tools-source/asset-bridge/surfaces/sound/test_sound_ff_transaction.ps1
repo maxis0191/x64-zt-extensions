@@ -24,6 +24,7 @@ try {
         $fixturePlanPath=Join-Path $caseRoot 'plan.json';[IO.File]::WriteAllText($fixturePlanPath,'{}')
         $events=[Collections.Generic.List[string]]::new();$statePath=Join-Path $fixtureRun 'state.local.json'
         $plan=[pscustomobject]@{RunRoot=$fixtureRun;Work=$fixtureWork;SharedRepo=$repo;Python=$fixtureExe;CandidateRoot=$caseRoot;CandidateReceiptSHA256='mock';
+            PhysicalBytes=1;CommitBytes=512MB;
             StockInputs=@();HashInputs=@((Get-SoundFFPin $fixtureData));MutableOutputs=@('zone/sdk_original_sound_v1.ff','zone/sdk_original_sound_v1.sabl','zone/sdk_original_sound_v1.sabs');
             Review=[pscustomobject]@{source=$fixtureSource;source_stage_relatives=@('original.txt');phase_adapter=(Join-Path $PSScriptRoot 'sound_ff_phase.py');phase_specs=@('build','verify','dump','read'|ForEach-Object {[pscustomobject]@{phase=$_}})}}
         $dataPin=$plan.HashInputs[0];$firstPhase=if($DumpOnly){'dump'}else{'build'}
@@ -48,7 +49,7 @@ try {
         function Import-SoundFFHelpers {}
         function Initialize-SoundFFNativeTypes {param($Repo);$events.Add('TypesMock')}
         function Enter-IW7ResourceLease {param($Scope,$Kind,$PhysicalBytes,$CommitBytes,$Owner)
-            if($Scope -ne $fixtureWork -or $Kind -ne 'Extract' -or $PhysicalBytes -ne 8GB -or $CommitBytes -ne 11GB){throw 'Admission changed.'}
+            if($Scope -ne $fixtureWork -or $Kind -ne 'Extract' -or $PhysicalBytes -ne $plan.PhysicalBytes -or $CommitBytes -ne $plan.CommitBytes){throw 'Reviewed admission estimates changed.'}
             $events.Add('Admit');[pscustomobject]@{Token='mock-token'}
         }
         function Exit-IW7ResourceLease {param($Token)

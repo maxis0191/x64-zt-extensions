@@ -81,7 +81,7 @@ if($DumpOnly -or $StandardMod){
     $plan=[pscustomobject][ordered]@{Schema='iw7.original-sound-ff-execution/1';Profile=$profile;Review=$review;RunRoot=$RunRoot;Work=$work;
         SharedRepo=$f.Plan.SharedRepo;Python=$f.Plan.Python;CandidateRoot=$CandidateRoot;CandidateReceiptSHA256=$receiptSHA;CandidateStateSHA256=$stateSHA;
         ImmutableFF=$evidence;StockInputs=$f.Plan.StockInputs;HashInputs=@($pins|Sort-Object Path);PayloadInputs=$payload;
-        PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=$outputs;
+        PhysicalBytes=$review.physical_bytes;CommitBytes=$review.commit_bytes;OutputStopBytes=64MB;LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=$outputs;
         HeavyExecutionAuthorizedByPlan=$false;Ready=$false}
     if($StandardMod){$plan|Add-Member NoteProperty SourceProjection $projection}
     Assert-SoundFFExecutionPlan $plan $PSScriptRoot
@@ -98,8 +98,9 @@ Assert-SoundFFPin ([pscustomobject]@{Path=$ReviewPlanPath;SHA256=$ReviewPlanSHA2
 Assert-SoundFFPin ([pscustomobject]@{Path=$StockParametersPath;SHA256=$StockParametersSHA256})
 $review=Get-Content -LiteralPath $ReviewPlanPath -Raw|ConvertFrom-Json
 $parameters=Get-Content -LiteralPath $StockParametersPath -Raw|ConvertFrom-Json
-if($review.schema -cne 'iw7.original-sound-ff-review-plan/1' -or $review.physical_bytes -ne 8GB -or $review.commit_bytes -ne 11GB -or
-    $review.native_authorized -isnot [bool] -or $review.native_authorized){throw 'Source-reviewed 8/11 sound plan required.'}
+Assert-SoundFFEstimates $review.physical_bytes $review.commit_bytes
+if($review.schema -cne 'iw7.original-sound-ff-review-plan/1' -or
+    $review.native_authorized -isnot [bool] -or $review.native_authorized){throw 'Source-reviewed sound plan required.'}
 $repo=$review.shared_repo
 $pins=[Collections.Generic.List[object]]::new()
 foreach($entry in $review.input_pins){Assert-SoundFFPin $entry;$pins.Add($entry)}
@@ -130,7 +131,7 @@ $unique=@{};foreach($pin in $pins){$key=[IO.Path]::GetFullPath($pin.Path);if($un
 $plan=[ordered]@{Schema='iw7.original-sound-ff-execution/1';Review=$review;RunRoot=$review.run_root;Work=(Join-Path $review.run_root 'work');
     SharedRepo=$repo;Python=$review.phase_specs[-1].exe;CandidateRoot=$candidateRoot;CandidateReceiptSHA256=(Get-FileHash -LiteralPath $candidateReceipt).Hash;
     CandidateStateSHA256=$review.candidate_state_sha256;
-    StockInputs=$stock;HashInputs=@($unique.Values|Sort-Object Path);PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;
+    StockInputs=$stock;HashInputs=@($unique.Values|Sort-Object Path);PhysicalBytes=$review.physical_bytes;CommitBytes=$review.commit_bytes;OutputStopBytes=64MB;
     LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=@($review.owned_future_outputs);HeavyExecutionAuthorizedByPlan=$false;Ready=$false}
 Assert-SoundFFExecutionPlan $plan $PSScriptRoot
 $json=$plan|ConvertTo-Json -Depth 25

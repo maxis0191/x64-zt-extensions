@@ -140,10 +140,23 @@ class PlanTests(unittest.TestCase):
         self.run.mkdir()
         with self.assertRaisesRegex(ValueError, "fresh absent"): self.prepare()
 
-    def test_lowered_native_or_noninteger_budget_refused(self):
-        for amount in (512 * 1024**2, 8.0 * 1024**3, True):
-            self.previous["FFPhysicalBytes"] = amount; self.prior.write_text(json.dumps(self.previous))
-            with self.subTest(amount=amount), self.assertRaisesRegex(ValueError, "native budget"): self.prepare()
+    def test_positive_reviewed_estimates_are_preserved_without_a_floor(self):
+        for physical, commit in ((1, 1), (512 * 1024**2, 1024**3), (12 * 1024**3, 16 * 1024**3)):
+            self.previous.update(FFPhysicalBytes=physical, FFCommitBytes=commit)
+            self.prior.write_text(json.dumps(self.previous))
+            with self.subTest(physical=physical, commit=commit):
+                value = self.prepare()
+                self.assertEqual((value["physical_bytes"], value["commit_bytes"]), (physical, commit))
+                self.assertFalse(value["native_authorized"])
+                self.assertFalse(self.run.exists())
+
+    def test_invalid_native_estimates_refused(self):
+        for field in ("FFPhysicalBytes", "FFCommitBytes"):
+            for amount in (0, -1, 8.0 * 1024**3, True, "8589934592", None, 2**63):
+                previous = dict(self.previous); previous[field] = amount
+                self.prior.write_text(json.dumps(previous))
+                with self.subTest(field=field, amount=amount), self.assertRaisesRegex(ValueError, "typed native estimate"):
+                    self.prepare()
 
     def test_plan_digest_mismatch_refused(self):
         with self.assertRaisesRegex(ValueError, "historical stock plan"):
