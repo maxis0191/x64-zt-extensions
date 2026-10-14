@@ -107,6 +107,7 @@
     "tools-source/asset-bridge/animation/rig/Build-RigidControlAssets.ps1",
     "tools-source/asset-bridge/animation/rig/Build-RigidControlWriter.ps1",
     "tools-source/asset-bridge/animation/rig/CHAIN-PLAN.md",
+    "tools-source/asset-bridge/animation/rig/NEXT-ORIGINAL-ANIMATION.md",
     "tools-source/asset-bridge/animation/rig/README.md",
     "tools-source/asset-bridge/animation/rig/RIGID-ASSETS-OPERATOR.md",
     "tools-source/asset-bridge/animation/rig/RIGID-CONTROL.md",
