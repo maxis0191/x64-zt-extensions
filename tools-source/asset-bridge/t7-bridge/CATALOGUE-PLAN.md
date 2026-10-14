@@ -1920,3 +1920,55 @@ Ready flags were false. Its 2,004-byte receipt SHA256 is
 `645ca3f6fd5edc9f723082a0fcad5f3d37e78a89677d4e819facec2f2085b17c`.
 The exact Process object and subsequent CIM observation confirmed closure.
 The old refused invocation remains separate; no C2 stock run is implied.
+
+## C2 stock retry: targeted entry observed, no catalogue
+
+The coordinator assigned one Stock retry to corrected operator source
+`221cb4dd`, merged through PR #51 as `5fc34c36`. The frozen runtime plan SHA256
+`1c68180497fe4e64c621c5a4f2be88d44d53ae95af0feefc85926bf5afcf1b90`
+and host-contract SHA256
+`284c051f5c92eed8e8d08e56f09bb35ae861d2426dee7ad05a1860a91598ac38`
+kept 103 bindings, 28 original inputs, 24 bootstraps and the exact two native
+arguments above. Compiled source `171431e2` and executable `02b26ad8` remained
+unchanged. Fresh preflight at 03:33:43 UTC found no heavy process or lease;
+the Main stopped/UDP-absent baseline remained unchanged, with cause unknown.
+
+The real invocation returned `Failed / NoCatalogue`, with natural native exit
+0 and 5,763.8614 ms reported elapsed. Exit zero does not qualify a catalogue.
+The completed stderr is 5,469 bytes: two C2 records occupy 405 bytes, and the
+existing F reader receives the other 5,064 bytes without a parser change.
+The finite C2 records are:
+
+- `enabled`, sequence 0, thread 30536.
+- `add_enter`, sequence 1, thread 21480, call 0, type 47 and reference prefix 1.
+  The exact decoded name is
+  `,ui/uieditor/widgets/attachmentnamesdisplay.lua`, retaining its leading comma.
+  Caller is `00000001401DB2C5`, asset address `0000000055430000`.
+  Fastfile state is `read`, NUL 1, decoded name `zm_common`, atomic 0.
+
+No `add_return` or `selection_refused` record was captured. This observes the
+instrumented target entry and its non-atomic fastfile context; call 0 remains
+incomplete. It proves neither lookup absence, successful registration, Lua
+execution nor a supplying fastfile. F retains enabled, before-entry,
+before-post-unpack, after-post-unpack and exit-hook phases. Its complete
+133-byte message, preceded by control byte 0x15, reports failure to load the
+empty default rawfile and names the target without the comma. Message and exit
+hook correlate on thread 21480; no initialization-complete or catalogue marker
+was observed.
+
+Original native 14800, created at `2026-10-14T03:34:37.8712676Z`, and original
+host 22772, created at `2026-10-14T03:33:52.5645210Z`, closed without recovery.
+Same-host postflight passed at 03:35:03 UTC with wrapper guards zero, tree
+closure, input revalidation, original metadata, aliases, engine-output checks
+and lease release confirmed. PTY 57542 actually exited 0 (chunk `8beb50`).
+Fresh absence at `2026-10-14T03:35:40.6932565Z` confirmed both original processes
+absent, no heavy process or lease and the preserved Main baseline.
+
+The original runtime receipt is 42,819 bytes/SHA256
+`aedb6628e591459e23177056dea0f584ee0ef60a860526a7a63704ed6d287a90`;
+the bounded completion proof is 13,182 bytes/SHA256
+`5e83fca7073266e5ded3ddbec5367a5ffa8e9de4fae772dc75888b919ae5fb50`.
+No opaque artifact was read or hashed after lease release. This consumes the
+single retry and supplies no export or gameplay acceptance. Interpret the
+retained callback/entry evidence before proposing a separately reviewed next
+change; no second Stock invocation follows this checkpoint.
