@@ -123,3 +123,61 @@ refusal before opening. The two snapshot reads now call the existing
 bound and strict JSON parser. Six adapter tests prove zero metadata/open for
 ADS, devices and non-JSON names, plus oversized and changed opened identities.
 The large pinned historical text reader and native capture route are unchanged.
+
+
+## Actual preparation and ordinary DEFAULT, 2026-10-14 UTC
+
+The first reviewed C preparation ran its factory and ordinary DEFAULT to exit
+zero, but its overall attempt exited one. The packet writer retained its actual
+ReadWrite/FileShare.Read stream; reopening that same packet through Get-FileHash
+caused our own sharing violation. The failed receipt, packet, plan and original
+host closure remain preserved. Factory/DEFAULT exit zero was never reported as
+overall preparation success.
+
+D corrected one caller assignment to use the SAME verified publication object's
+Pin, then used fresh targets. The factory and ordinary DEFAULT both exited zero;
+DEFAULT reported its six runtime/opaque/lease/output/Ready flags false. The original
+NoExit host exited zero after verified pre-release receipt publication, separate
+honest actual-release proof, original context checks and confirmed guard closure.
+A fresh independent observation found all four original processes absent and no
+heavy process or lease. Main's stopped original generation and 68 bank metadata
+entries were unchanged; bank contents were not opened. Inherited Python variables
+were cleared/restored, and the source factory used -B -S.
+
+Actual D plan: 58,966 bytes /
+`f473283f202d8445dfddde46e5ab3753ea1e9893b591810ec903ed65d8b2b747`.
+Capture packet: 3,508 bytes /
+`24af180cb660e5c9e3cfaeed130092a03c66f212f0fe349ba2217c4f9a2b8254`.
+The preserved pre-release receipt says release pending; the separate preexit
+proof and actual original-host exit confirm release. This qualifies preparation
+and DEFAULT only. F2 native execution needs its separately reviewed packet/GO;
+image-body metadata and any image extraction remain separate later gates.
+
+
+## Actual F2 provenance capture, 2026-10-14 UTC
+
+The separately authorized F2 ran the exact CPP D candidate and four provenance
+arguments through the existing H1 host. Native exit was zero; the runner recorded
+`ProvenanceRecordCapturedPendingReview`. Original H1 closure and same-AppDomain
+NoExit preexit publication completed, including the held publisher source handle.
+The actual terminal exited zero; a fresh observation found the original parent,
+host and native process absent with no heavy process or lease. No body metadata,
+pixel, DDS, game, lifetime or Ready proof is claimed.
+
+Closed stdout: 2,797 bytes /
+`fad905b80ef71d97ccd7c3a7a73161b5bc26829381a9fa610eccc1c4f22801ad`.
+Receipt: 34,635 bytes /
+`5750d5e5525ed43b5c8b57a28c786cc7cc18441f51c58ac2afc8b8d4c920918e`.
+The selected closed schema-1 record is 2,333 bytes /
+`0a3d155ea93c26c572ca1aa63a05236a16588b44c6c5ccd6dee31acd59b8fe17`.
+
+One registration was observed and its association was rechecked at both epochs.
+The numeric image field and selected model-header address stayed equal. The queried
+264-byte span was readable MEM_COMMIT at registration, then unreadable MEM_RESERVE
+at the later lookup. Numeric equality therefore does not qualify object lifetime
+or a later header/body read. Header, body and payload bytes remained unread.
+The independent consumer interprets the closed record as complete provenance
+metadata; this does not qualify lifetime or the unreadable lookup body. Source
+work now targets an owned registration-time copy with explicit capture/recheck
+phases and name/readability guards. No lookup body read or image extraction is
+authorized; any later body/schema-2 execution requires another explicit GO.
