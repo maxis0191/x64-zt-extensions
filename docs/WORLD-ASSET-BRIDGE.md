@@ -1351,6 +1351,14 @@ exited with real code 0. Fresh 08:21:21 UTC postflight found original host/paren
 tool and native heavy candidates absent, with zero leases. Main27016, banks,
 configuration and owner clients were untouched.
 
+The separate `actual-observation-1.json` monitoring record used a raw
+forward-slash scope to filter the scheduler's canonical backslash scope. Its
+empty ScopedLeases list while the target was alive did not prove absence of an
+active lease. That original record remains unchanged; the distinct
+`actual-observation-1-correction.json` records the filtering error. Only the
+final authoritative registry, original AppDomain and real PTY/postflight checks
+above establish closure and release.
+
 The reference material was not measured and no CP reference proof, writer, FF,
 GPU or collision result was produced. Next: inspect the preserved modal-error
 evidence and pinned error/console source. Any further native/offline analysis
