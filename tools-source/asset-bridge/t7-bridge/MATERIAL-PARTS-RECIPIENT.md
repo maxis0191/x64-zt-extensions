@@ -214,3 +214,59 @@ hashed after release. The F attempt is immutable and will not be retried.
 Next: source review of this bounded header refusal and a separately reviewed
 diagnostic candidate if needed, followed by a new explicit native GO. No CPP
 rebuild, other image/model request, XPAK payload, FF or game operation ran here.
+
+## V3 lookup windows and image-contract limits, 2026-10-14
+
+The separate closed V3 capture uses consumer source
+`3f3cb55283f591f1976f1c4c7caf37a474e00eaa`. Its text report is 38,323 bytes /
+`95d489a706885eec2723a4fcbeeb30c2686abc82cc0010151d02c0aa94a7e4e1`;
+the closed review card is 6,162 bytes /
+`a0db6155569d57b3b3ce791bdd61a2091806a9fd9d8960acf0a2722c7d7a2e70`.
+Their actual text pins and the 4,868-byte receipt were checked for this review.
+The capture phase is `first_dpi_before_component_post_unpack`; native exit is
+zero and capture/closure/reverification flags are positive. ABI, runtime
+compatibility and readiness flags remain false. No capture was repeated,
+disassembly tool invoked or opaque input reread for this source/text review.
+
+Only the two existing 256-byte lookup windows were interpreted here. Their
+captured `.pdata` spans make the limits explicit:
+
+| Site RVA | Function end RVA | Captured prefix | Recorded function span |
+| --- | --- | ---: | ---: |
+| Find `0x1D5FB0` | `0x1D6529` | 256 | 1401 |
+| IsDefault `0x1D7260` | `0x1D742B` | 256 | 459 |
+
+Both prefixes preserve type from ECX and name from RDX for a type-seeded
+character hash. They call the same character helper, replace backslash with
+slash after it, multiply by `0x1003F`, and use the same `0x26400` bucket count
+and hash-table displacement `0x6904070`. Find also saves R8B and R9D, consistent
+with the two additional parameters in the pinned source signature. This is
+manual interpretation of the captured bytes, not an executed call trace.
+The Find window ends inside a LEA instruction; IsDefault ends with padding
+before its chain walk. Neither small window establishes the return paths,
+default policy, complete calling convention or allocation lifetime. Their
+reported unwind formats were not decoded or qualified here.
+
+The pinned [BOIII lookup symbols](https://github.com/Ezz-lol/boiii-free/blob/5aa7fac39c51438d9c1e312b99534b7fef3bff44/src/client/game/symbols/db/xasset/core.hpp)
+declare Find as a by-value XAssetHeader result with type/name/bool/wait-time
+parameters and IsDefault as a bool result with type/name. The pinned
+[asset declarations](https://github.com/Ezz-lol/boiii-free/blob/5aa7fac39c51438d9c1e312b99534b7fef3bff44/src/client/game/structs/db/xasset/core.hpp)
+assert a pointer-sized XAssetHeader union and a 32-byte XAssetEntry containing
+the 16-byte XAsset. This agrees with the native source declarations; a named
+union pointer is not a proof that its target remains a readable GfxImage.
+
+The actual G3 caller uses Find and IsDefault for the selected XMODEL only.
+It then reads that model's material and the copied texture table, selecting
+MaterialTextureDef.image at binding four. That field is not a separate image
+lookup result validated by IsDefault. Its nameHash32 describes the binding;
+it supplies neither an image asset name nor an XPAK object key. The pinned
+loader routes images through Load_SimpleAsset, and its DB_AddXAsset hook returns
+incoming IMAGE headers without invoking the original add path. Those source
+facts support a registration/representation/lifetime hypothesis, but do not
+establish the cause of F's rejected 264-byte range.
+
+The full fixed V3 band remains the separately owned primary Link review.
+Its interpretation must be reconciled with the source declarations before a
+new diagnostic contract. No pointer masking, automatic callee following,
+alternative image lookup or G4 patch follows from these prefixes. G3 remains
+an image-header refusal with no authentic texture or stream-part result.
