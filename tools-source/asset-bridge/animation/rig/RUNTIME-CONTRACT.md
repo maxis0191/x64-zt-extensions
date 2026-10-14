@@ -1,7 +1,11 @@
 # Two-bone playback: source contract and next bounded recipe
 
-No GSC has been deployed or compiled for this rig. This document binds a future
-experiment to real retail references. Hashes are retained in
+The original 2026-10-12 source tranche below did not deploy or compile a GSC.
+The later frozen SDK core49f now supplies the explicit DISPLAY/ANIMATE request
+route; its source calls do not qualify playback. See the current
+[minimum animation source plan](NEXT-ORIGINAL-ANIMATION.md) for the one-bone
+RigidControl B versus existing two-bone clip distinction. This contract binds
+the original experiment to real retail references. Hashes are retained in
 [validation-2026-10-12.json](validation-2026-10-12.json). A native-table name is
 not proof of its argument types, event semantics or custom preload behavior.
 
@@ -78,10 +82,12 @@ invent a netconststrings asset.
    verified prop event consumer, record visual playback separately and bind a
    real animtree/ASM route before note acceptance. No AI/damage callback yet.
 
-The future client + dedicated proposal remains 12 + 4 GiB physical, with
-independent commit headroom and current scheduler estimates rechecked before
-admission. This is not a reservation or authorization. Source/FF and game work
-remain sequential. No lease was created for this source tranche.
+The earlier client + dedicated estimate was 12 + 4 GiB physical. The 2026-10-13
+owner policy supersedes numeric RAM/commit/headroom minima: estimates are
+telemetry, not capacity refusal gates. Current original ownership, atomic shared
+reservation and fresh telemetry still apply. This is not a reservation or
+authorization. Source/FF and Game remain separately admitted; no lease was
+created for this source tranche.
 
 ## Acceptance boundaries
 
