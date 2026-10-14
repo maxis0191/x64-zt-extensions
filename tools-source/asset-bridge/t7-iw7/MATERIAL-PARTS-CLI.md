@@ -56,7 +56,7 @@ exceeds 262,144. Only the explicitly selected, pinned parts transition now gets
 a 288-KiB aggregate authored-source cap. Other profiles retain 256 KiB; the
 2-MiB plan cap, individual source/header/read/geometry limits and resource
 admission policy are unchanged. Source regression proves both caps and the
-real generated transition. A fresh successful plan/DEFAULT is still pending.
+real generated transition. The later C qualification is recorded below.
 
 The admitted B preparation (source merge `4e33b9c4`, 2026-10-14 06:30 UTC)
 produced the 371,363-byte plan `e5048079` with 12 output files, 1,146 complete
@@ -77,6 +77,29 @@ directory/schema `plan-bdmission` through a broad suffix replacement; that
 metadata spelling did not cause the source-pin refusal and remains preserved.
 The next wrapper must change exact quoted paths without replacing the schema.
 No CPP, candidate, stock, FF or game ran in either preparation group.
+
+The separately admitted C preparation succeeded on 2026-10-14 at 06:59 UTC.
+Its sealed source capsule is `t7-material-parts-cli-source-c`, product revision
+`3b5af46ddb0ee94dffea99074e6ef24ad6466284`; the existing source verifier checked
+916 text files/8,902,880 bytes. The corrected wrapper preserved the admission
+schema and changed only exact quoted output paths. Python and actual DEFAULT
+both exited 0. The 371,363-byte plan has SHA-256
+`b9358e1e500046030650b48d489d63cfc6c76401b2a64be39a9a3b7fb28f2288`:
+154 bindings (148 text/six opaque), 1,146 complete inputs and exactly
+`main`, `zonetool11`, `link` stages. Prepared main/CLI and G2/G3 pins above remain
+unchanged. DEFAULT reported false NativeTypesLoaded, BinaryInputsHashed,
+LeaseAcquired, RunRootCreated and Ready; this qualifies the preparation contract,
+not a native binary or image.
+
+The C admission receipt is 8,383 bytes/SHA-256
+`a4c6dd755529d0e6496c312b30d93fea678be8ebcb59e66ab77c8e10ba8df80e`;
+actual DEFAULT stdout is 5,184 bytes/`3326a1e06437ed8ef0b36b9e2cce318e7fe4c5b57aefcc20c3a919fb06fe619a`,
+with empty stderr. Both owned children closed, the Analysis lease released and
+the original NoExit host actually exited 0. Fresh identity/registry observation
+at 07:00:48 UTC found the owned host/children absent and no leases. The future
+`material-parts-native-WAIT-ROOT-c` root remains absent. A and B stay Refused;
+their historical files and claims are unchanged. No CPP, candidate, stock, FF
+or game ran in C.
 
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
@@ -101,7 +124,7 @@ caller source with authored JSON; it does not claim C++ execution.
 
 The accepted geometry FF B (`50ca9124`, 9,904 bytes), plan `750d25d7`, corrected
 readback `7f8b628f` and first static-display cohort remain immutable. Next:
-review/merge source, qualify the one admitted incremental CPP group and G3
-fixture, then perform one separately admitted metadata observation. Only a
+qualify the one separately admitted incremental CPP group using C's frozen
+plan, then perform one separately admitted metadata observation. Only a
 real 64-bit part key, exact decoded size and provider identity can select a
 future bounded image read; `nameHash`32 and the geometry key are not substitutes.
