@@ -142,7 +142,7 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $partsMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['MaterialParts']
     if($parts -ne $partsMarker){throw 'Parts profile and finite transition must be paired.'}
     $provenance=$null -ne $profile -and $profile.Name -ceq 't7-image-provenance-v1'
-    $provenanceMarker=$null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['ImageProvenance']
+    $provenanceMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['ImageProvenance']
     if($provenance -ne $provenanceMarker -or ($provenance -and $partsMarker)){throw 'Exclusive provenance profile and finite transition must be paired.'}
     if($provenance){
         foreach($name in 'ZombiesObservationC','ZombiesAddObservationC2','PrepatchReferenceV2','PrepatchLinkV3','ResidentSurfaceCountDiagnostic','SelectedStreamedStaticV1'){

@@ -38,6 +38,10 @@ foreach($case in 'old-profile','old-output','array-hash','extra-field','wrong-he
 }
 $node=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-T7BuildProfile'},$true)
 . ([scriptblock]::Create($node.Extent.Text))
+# Older plans may omit both optional properties. The actual function must keep
+# its historical false result under the real StrictMode Latest set above.
+$legacyPlan=[pscustomobject]@{Schema='authored-legacy-no-profile'}
+if((Assert-T7BuildProfile $legacyPlan $root) -ne $false){throw 'Legacy plan without ReuseCompile changed behavior'};$checks++
 $prepared=Join-Path $root 'authored-metadata/prepared';$response=Split-Path $prepared -Parent
 $profile=[ordered]@{Name='t7-image-provenance-v1';Option='-t7-iw7-image-provenance-v1';ArgumentCount=5;
     TraceSchema='iw7.t7-catalog-trace/1';ContextSchema='iw7.t7-catalog-exit-context/1';CallerSchema='iw7.t7-catalog-callers/1';

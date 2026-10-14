@@ -32,6 +32,10 @@ historical parts guard remains covered. The first authored PowerShell check
 found an incorrect contract field sort order; it was corrected. A legacy
 extracted-AST test then found a new variable dependency in the streamed-pin
 block; the block now derives the marker from its existing reuse object.
+Independent review also found an unguarded optional `ReuseCompile` access under
+StrictMode Latest. The property guard now matches the neighboring profiles,
+and the actual function is tested with an older plan omitting both optional
+`BuildProfile` and `ReuseCompile` properties; its historical result stays false.
 
 The real F fixture's 53 C++ assertions are still unexecuted. PR112 stays open
 until they pass under its separate Root GO and original host/job closure is
