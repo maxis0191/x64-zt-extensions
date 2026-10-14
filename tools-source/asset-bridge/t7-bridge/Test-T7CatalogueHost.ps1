@@ -3,6 +3,8 @@
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 . (Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1')
+. (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
+. (Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1')
 . (Join-Path $PSScriptRoot 'T7CatalogueHost.Core.ps1')
 $script:checks=0
 function Check([bool]$Value,[string]$Why){if(!$Value){throw $Why};$script:checks++}
@@ -137,6 +139,40 @@ try {
         $exportResult=Complete-T7CatalogueHost $script:state|ConvertFrom-Json
         Check ($exportResult.CanExit -and $exportResult.ExportOutcome -ceq 'NoExport' -and !$exportResult.PSObject.Properties['CatalogueOutcome']) 'Export host closure mislabeled or upgraded failure.'
         Check ($script:state.Guards.Count -eq 0) 'Export host retained closed guards.'
+        foreach($version in @(1,2)){
+            Reset-Case
+            $script:state.Plan|Add-Member NoteProperty Operation 'ResidentExportV1'
+            $script:state.Plan|Add-Member NoteProperty ResidentMultiSurfaceV2 ([pscustomobject]@{Schema='iw7.t7-resident-multi-surface/2'})
+            $selector=if($version -eq 2){'SelectedStreamedRenderOnlyV2'}else{'SelectedStreamedStaticV1'}
+            $schema=if($version -eq 2){'iw7.t7-selected-streamed-render-only-plan/2'}else{'iw7.t7-selected-streamed-export-plan/1'}
+            $script:state.Plan|Add-Member NoteProperty $selector ([pscustomobject]@{Schema=$schema})
+            $requestPath=Join-Path $temporary 'selected-request.json';$providerPath=Join-Path $temporary 'selected-provider.xpak'
+            $script:state.Plan|Add-Member NoteProperty ExportRequestFile ([pscustomobject]@{Path=$requestPath})
+            $script:state.Plan|Add-Member NoteProperty SelectedXpakProvider ([pscustomobject]@{Metadata=[pscustomobject]@{Path=$providerPath};RelativePath='zone/mp_initial.xpak'})
+            $extraLinks=@(for($index=0;$index -lt 23;$index++){
+                $path=Join-Path $temporary ('stream-bootstrap-'+$index+'.ff');$relative='zone/stream-bootstrap-'+$index+'.ff'
+                $script:state.Plan.Bootstraps+=,[pscustomobject]@{Path=$path;RelativePath=$relative}
+                ,@($path,$relative)
+            })
+            $extraLinks+=,@($requestPath,'streamed-request.json');$extraLinks+=,@($providerPath,'zone/mp_initial.xpak')
+            for($index=0;$index -lt $extraLinks.Count;$index++){
+                $path=$extraLinks[$index][0];$aliasPath=Join-Path $script:state.Plan.WorkingDirectory $extraLinks[$index][1];$id='stream-id-'+$index
+                $script:state.Plan.InputMetadata+=,[pscustomobject]@{Path=$path;Bytes=1}
+                $script:receipt.InputFileIds+=,[pscustomobject]@{Path=$path;FileId=$id}
+                $script:receipt.Aliases+=,[pscustomobject]@{Path=$aliasPath;FileId=$id}
+                $script:fileIds[$path]=$id;$script:fileIds[$aliasPath]=$id
+            }
+            $script:receipt.Schema='iw7.t7-resident-export-run/1';$script:receipt.PSObject.Properties.Remove('CatalogueOutcome')
+            $script:receipt|Add-Member NoteProperty ExportOutcome 'NoExport';$script:attempt.Schema='iw7.t7-resident-export-attempt/1'
+            Check ($script:state.Plan.InputMetadata.Count -eq 29) 'Streamed fixture must include 23 bootstrap and two selected aliases.'
+            Assert-T7CatalogueHostReceiptIdentity $script:state $script:receipt;$checks++
+            $savedId=$script:receipt.Aliases[-1].FileId;$script:receipt.Aliases[-1].FileId='wrong-provider-id'
+            Refuses {Assert-T7CatalogueHostReceiptIdentity $script:state $script:receipt} 'alias identity'
+            Retained 'Wrong selected provider identity released wrapper guards.'
+            $script:receipt.Aliases[-1].FileId=$savedId
+            $streamResult=Complete-T7CatalogueHost $script:state|ConvertFrom-Json
+            Check ($streamResult.CanExit -and $streamResult.ExportOutcome -ceq 'NoExport' -and $script:state.Guards.Count -eq 0) 'Exact streamed aliases must permit closure without upgrading NoExport.'
+        }
         foreach($extraCount in @(1,8,20)){
             Reset-Case
             for($index=0;$index -lt $extraCount;$index++){
