@@ -1084,6 +1084,16 @@
         "-SourcePackage",
         "{workspace}"
       ]
+    },
+    {
+      "id": "tools-source-asset-bridge-t7-os-resource",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-T7OSResourceContext.ps1"
+      ]
     }
   ]
 }

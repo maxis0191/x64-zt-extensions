@@ -3,7 +3,7 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7Build.ps1'),[ref]$tokens,[ref]$errors)
 if($errors.Count){throw 'Runner parse failed.'}
-foreach($name in 'Assert-T7BuildProfile','Assert-T7InputBindings'){
+foreach($name in 'Assert-T7BuildProfile','Assert-T7OSResourceContext','Assert-T7InputBindings'){
     $fn=$ast.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true)
     . ([scriptblock]::Create($fn.Extent.Text))
 }
