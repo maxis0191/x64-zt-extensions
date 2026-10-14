@@ -203,7 +203,8 @@ TreeClosureConfirmed, LeaseReleased, InputsReverified,
 OriginalInputMetadataUnchanged and AliasesRetained are true. Quarantined,
 CompatibilityProven and Ready are false. Main's stopped baseline, absent
 original identity/image and absent UDP27016 were rechecked; its cause remains
-unknown. No Main state was changed.
+unknown. The runner performed no Main deployment, restart or configuration/bank
+action; Main was already stopped, cause unknown.
 
 The original in-memory host confirmed Closed, CanExit true and zero wrapper
 guards before exit. Actual PTY 42243 completed with exit one, chunk `089a1e`.
