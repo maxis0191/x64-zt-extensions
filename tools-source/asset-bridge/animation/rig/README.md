@@ -49,6 +49,16 @@ preparers and 69 existing tests. No historical file was edited and no native
 process wrapper was imported. Source comments describing the initial unbuilt
 checkpoint are preserved as part of that history.
 
+The recovery receipt is an immutable October 12 snapshot, not a promise that
+every active source file will keep those bytes forever. The October 13 CPU-only
+FF reader change in PR4 advanced only `read_skin_native.py` among its twelve
+files, from 11,783 to 12,239 bytes. [source-lineage.json](source-lineage.json)
+records the exact before/after SHA256, Git blobs and reviewed source commit.
+Current source checks preserve the original receipt, verify the eleven
+unchanged files and require that one exact reviewed reader revision. Corruption,
+rehashed forged lineage or another unrecorded change still fails. No historical
+receipt, native/FF capsule or runtime result is rewritten by this source fix.
+
 Names remain `paris_doom_skin_two_bone_first_a` and
 `paris_doom_skin_two_bone_second_a`, each with `_lod0` surfaces. These are original
 procedural geometry, not a Doom asset or the one-bone Beacon. Keeping their exact
