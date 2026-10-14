@@ -34,6 +34,11 @@ $planCtor=@($prepareAst.FindAll({param($node) $node -is [Management.Automation.L
 $estimateGuard=@($prepareAst.FindAll({param($node) $node -is [Management.Automation.Language.CommandAst] -and
     $node.Extent.Text -ceq 'Assert-SoundFFEstimates $f.Plan.PhysicalBytes $f.Plan.CommitBytes'},$true))
 if($reviewCtor.Count -ne 1 -or $planCtor.Count -ne 1 -or $estimateGuard.Count -ne 1){throw 'One real constructor and retained-estimate guard required.'}
+# Keep the preparer's real file context for its automatic PSScriptRoot. An
+# anonymous ScriptBlock would erase that context before evaluating Join-Path.
+$reviewBlock=[Management.Automation.Language.Parser]::ParseInput($reviewCtor[0].Extent.Text,$reviewCtor[0].Extent.File,[ref]$tokens,[ref]$errors).GetScriptBlock()
+$planBlock=[Management.Automation.Language.Parser]::ParseInput($planCtor[0].Extent.Text,$planCtor[0].Extent.File,[ref]$tokens,[ref]$errors).GetScriptBlock()
+$guardBlock=[scriptblock]::Create($estimateGuard[0].Extent.Text)
 $CandidateRoot='C:\mock\candidate';$RunRoot='C:\mock\absent';$work=Join-Path $RunRoot 'work'
 $candidate=@{Path='C:\mock\candidate\tool.exe';Bytes=1;SHA256=('b'*64)}
 $evidence=@{};$payload=@();$phases=@();$pins=[Collections.Generic.List[object]]::new();$receiptSHA='a'*64;$stateSHA='a'*64
@@ -42,9 +47,9 @@ foreach($profile in 'DumpOnly','StandardMod'){
     foreach($estimates in @(@(1,512MB),@(8GB,11GB),@(12GB,16GB))){
         $f=@{Plan=@{PhysicalBytes=$estimates[0];CommitBytes=$estimates[1];SharedRepo='C:\mock\source';Python='C:\mock\python.exe';
             StockInputs=@();Review=@{source='C:\mock\sound';stock_root='C:\mock\stock'}}}
-        . ([scriptblock]::Create($estimateGuard[0].Extent.Text))
-        . ([scriptblock]::Create($reviewCtor[0].Extent.Text))
-        . ([scriptblock]::Create($planCtor[0].Extent.Text))
+        . $guardBlock
+        . $reviewBlock
+        . $planBlock
         Assert-SoundFFEstimates $plan.PhysicalBytes $plan.CommitBytes
         if($plan.PhysicalBytes -ne $estimates[0] -or $plan.CommitBytes -ne $estimates[1] -or
             $plan.Review.physical_bytes -ne $estimates[0] -or $plan.Review.commit_bytes -ne $estimates[1]){throw "Preparation lost reviewed estimates: $profile"}
@@ -53,7 +58,7 @@ foreach($profile in 'DumpOnly','StandardMod'){
 foreach($field in 'PhysicalBytes','CommitBytes'){
     foreach($invalid in @($null,0,-1,$true,1.0,'1',[bigint]::Parse('9223372036854775808'))){
         $f=@{Plan=@{PhysicalBytes=1;CommitBytes=1}};$f.Plan[$field]=$invalid
-        $refused=$false;try{. ([scriptblock]::Create($estimateGuard[0].Extent.Text))}catch{$refused=$true}
+        $refused=$false;try{. $guardBlock}catch{$refused=$true}
         if(!$refused){throw 'Preparation accepted invalid retained estimates.'}
     }
 }
