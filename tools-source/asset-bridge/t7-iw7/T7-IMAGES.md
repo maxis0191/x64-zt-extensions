@@ -466,10 +466,36 @@ count above four is flagged outside bounds; it never controls a memory walk.
 Native raw 32-bit format and its first byte are both retained because the primary
 layout descriptions differ in format field width. No masking, format conversion,
 package guess, pointer address, pixel copy or allocation-retention claim is added.
-The separate [fixture](selected_material_parts_observation_fixture.cpp) has an
-expected 32 focused checks for raw field widths/high-bit keys, negative ranges,
-exact selection, count bounds, preserved G2 refusal, third capture and budget.
-These changed C++ cases remain **uncompiled/unexecuted** at this source stage.
+The separate [fixture](selected_material_parts_observation_fixture.cpp) covers
+raw field widths/high-bit keys, negative ranges, exact selection, count bounds,
+preserved G2 refusal, third capture and budget. H32 on 2026-10-14 (Europe/Paris),
+source `816839a4e46b88e173e518296d1031090f6f3bcc`, compiled and actually passed
+its exact 32-check inventory:
+
+```text
+PASS selected image stream parts fixture: 32 checks; no pixels or engine calls.
+```
+
+The G3 header `f2dbec9a` and fixture `fed5af1e`, frozen G2 `a8848a92`/`b3de6888`
+and resident helper `96291c23` matched the approved source pins. MSVC C++20
+`/W4 /WX` compiler/link and the separate fixture exited 0 through their original
+owned jobs. The sole pinned `vctip` child was captured twice with identical
+creation identity, original compiler parent and original-job membership, then
+only that original job was stopped. Fresh root0/active0/members0 preceded test.
+The original `-NoExit` PowerShell host exited explicitly only after confirmed
+job closure and lease release; the real PTY exit was 0. A fresh exact PID/image/
+creation-filetime check found the original host absent, no leases and no heavy
+or compiler processes. The host PE pin was read after admission, before DLL
+read/load or compilation. Numeric RAM/commit minima were not used.
+
+Outputs including receipt total 6,087,991 bytes under 6 MiB. The 225,792-byte
+executable SHA-256 is
+`e8f03bfcf188ffb997c0c08d28ddbb34495a42aa9d64bc767210dc4b59c62512`;
+the 9,063-byte receipt SHA-256 is
+`7c9e5b8daf3d3ffa9da9184bb0f99183690aae0018ca5915ceb63062d8896fe2`.
+This qualifies the synthetic adapter, not a T7 engine image, native caller or
+real texture. No stock, image key, pixels, DDS, FF or game was read/produced by
+H32; the explicit CLI/probe still needs its separate reviewed qualification.
 
 The coordinated future CLI mode is explicit:
 `-t7-iw7-material-parts-v1 mp_freerun_04 p7_fre_platform_cap_02 0`.
