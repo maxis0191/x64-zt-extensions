@@ -347,6 +347,34 @@ five-argument `observe` with schema1 and image0 behavior. The new targeted
 explicit new source epoch before any E5 compilation; compiled E3/E4 and the
 frozen CatalogueC cohort retain MaterialE/0ea and their original receipts.
 
+### Actual E5 render-only native compilation on 2026-10-14
+
+PR35's reviewed source `af41e768`, later merged as `3ec3a07`, produced 885 source
+files/8,419,976 bytes. Its separate render-only V2 plan is SHA256
+`b702de6b61403a2abd3be6a01a2504058d58bdfb082dc67d9b07e6cd6a911063`.
+Preparation and DEFAULT passed 149 bindings (143 text/six opaque), 1,146 inputs
+and 66 headers/87,204 bytes. CatalogueC was not overlaid, and targeted image
+observation was not activated.
+
+The one admitted incremental build compiled main and CLI and linked the retained
+objects. All three original roots exited 0 with closed original jobs, input
+revalidation and reservation release. Three owned VCTIP members were captured
+twice and stopped only through their original jobs. The live original host
+confirmed closed/no lease/no guards, then actually exited 0. A fresh post-host
+inventory found no owned or heavy process and an empty global registry.
+The build passed in 25.98 seconds; `CandidateExecuted=false` and no quarantine.
+
+The receipt is 24,288 bytes, SHA256
+`942c4963e40ee18e10a9bcafdd8fc38b8140582e6fcea479f6c95ebce68b61b8`.
+The admitted artifact records contain executable 21,924,864 bytes, SHA256
+`aa322cac65d61d2ed8fa544f79a117201a3fcde8408b6b6cb59ea745f20f5d2f`,
+and PDB 138,637,312 bytes, SHA256
+`fc14eaa7f8076f6cb6eb12ef330967d93d4c6411480c0ea6328283dbbdd10a50`.
+These hashes were copied from the receipt; no opaque artifact was rehashed
+after release. This qualifies compilation and closure. It does not yet prove
+retail V2 export, omitted-tree provenance on all five surfaces, collision
+compatibility, BO3 texture appearance, FF roundtrip or runtime pixels.
+
 `prepare_build.py --selected-streamed-static-v1` selects a separate transition
 table and marker. Legacy128 and E2/v2144 bindings remain unchanged. This epoch
 has149 bindings (143 text/six opaque), 1,146 inputs and the same66-header proof.
