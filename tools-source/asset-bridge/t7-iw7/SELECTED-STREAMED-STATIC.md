@@ -471,3 +471,49 @@ the same field. E2 was a failed metadata observation, not geometry acceptance.
 The pinned E5 producer takes `selected->meshes[0]->name` and writes
 `xsurface/<mesh_name>.xsb`; no new CRC is invented by the path guard. Recheck the
 name against the next real manifest before accepting its readback.
+
+### Actual short-root E5 export on 2026-10-14
+
+PR45's operator source `3273ab67`, merged as `66861158`, prepared a distinct
+890-text source package/8,521,681 bytes. It reuses the exact compiled af41
+candidate aa322, build-plan b702, build-receipt 942c and 463-byte request66e9;
+there was no new CPP compilation or relabeling of the failed first cohort.
+The output root is inside its source package's runtime directory and retains
+the required `t7-export-` prefix. Two earlier short preparations correctly
+refused external-root ownership and an invalid root prefix before native launch;
+their plans and empty roots are retained.
+
+Fresh DEFAULT passed 114 bindings, 29 original inputs, 23 bootstraps and five
+actual V2 argv. Its complete manifest/model/mesh paths measured 167/187/202
+characters including NUL. No DEFAULT native type, opaque hash or reservation
+was used. After the separate coordinator GO and fresh zero-heavy/zero-lease
+preflight, one actual stock invocation exited 0 in 5,936.974 ms and produced
+`ExportFilesObserved`, with status `ExportObservedPendingReadback`.
+
+The retained admitted artifact metadata records XMB 1,184 bytes/SHA256
+`be385274fc48a3fbb1ec016705061d71d9fa42f5fd2c9ca15e74a8b67fcb0ffc`
+and XSB 22,456 bytes/SHA256
+`290aa9f4f7132ebecd766de707779b45f27fc17941cdeb542876b14b3fd1a32c`.
+The real mesh name matches the historical E2 observation. The qualified report
+records one bone, one root, five surfaces, 560 vertices and 490 triangles.
+Both files and the schema2 report were validated under the retained native
+reservation; these hashes were copied from the receipt after release.
+
+Original job/tree closure, input and provider-metadata reverification, alias
+identities, engine-output validation and reservation release passed. Original
+Complete closed all wrapper guards without recovery; the original PTY actually
+exited 0. A fresh post-host witness found both identities absent, zero heavy
+processes and no leases, preserving Main's stopped baseline and unknown cause.
+MaterialG's default schema1 still refused image0 at `image_header`, left six
+other images unattempted and copied no pixels.
+
+The completion text is 12,854 bytes/SHA256
+`9189137a8e830a2f67d8b5a5e3248eb8ae811e5c0aa59a6a269f8a265986a37f`.
+The shorter path resolved the missing-output behavior with the same binary,
+asset and request; the earlier CRT errno remains unobserved. No opaque artifact
+or export manifest was read/hashed after release, and independent readback,
+FF preparation and gameplay were not part of this GO. The next action is a
+separately admitted independent readback of these exact model/mesh/report
+tuples, followed by explicit IW7 material rebinding before any FF/runtime test.
+Collision compatibility, source-geometry correspondence, texture appearance,
+FF roundtrip, runtime verification, owner acceptance and Ready remain false.
