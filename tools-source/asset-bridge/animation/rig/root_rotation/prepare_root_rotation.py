@@ -51,7 +51,8 @@ def unlinked(path):
 def bounded_text(path, limit=262144):
     unlinked(path)
     require(path.is_file() and 0 < path.stat().st_size <= limit, "Bounded source text required")
-    data = path.read_bytes()
+    with path.open("rb") as stream:
+        data = stream.read(limit + 1)
     require(0 < len(data) <= limit and b"\0" not in data, "Source text grew or contains NUL")
     data.decode("utf-8")
     return data

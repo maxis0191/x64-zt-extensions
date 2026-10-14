@@ -63,11 +63,15 @@ truncation, trailing bytes and changed fields fail. Its CLI is a future bounded
 asset-read entrypoint and must run under the existing admitted parent recipe;
 the current source tests use independent synthetic bytes, not retained assets.
 
-Ten source/fixture tests pass, including every truncation of the tiny synthetic
+Twelve source/fixture tests pass, including every truncation of the tiny synthetic
 stream, incompatible counts/channels, forbidden delta/optional fields, typed
 authoring, FF-note scope, old-profile preservation and a synthetic source-provider
 preparation transaction. The real source-only preparation also passed against
 the pinned text sources. Neither is a native emission or rendering result.
+Two causal growth fixtures return a small stat followed by larger source data:
+reads stay capped at limit+1 and oversized input is refused before UTF-8 decoding,
+hashing or code compilation. The initial review's read-all version fails those
+fixtures; source capsule C remains its unchanged pre-correction snapshot.
 
 Next stages remain the [separate minimum plan](../NEXT-ORIGINAL-ANIMATION.md):
 review source/pins, positive B DISPLAY, then distinct Root CPP/native-clip GO,

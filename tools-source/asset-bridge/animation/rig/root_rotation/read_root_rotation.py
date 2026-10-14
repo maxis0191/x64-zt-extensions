@@ -24,8 +24,10 @@ def primitives():
     for part in (path, *path.parents):
         require(not part.is_symlink() and not part.is_junction(), "Linked reader source refused")
     require(path.is_file() and 0 < path.stat().st_size < 65536, "Bounded reader source required")
-    payload = path.read_bytes()
-    require(len(payload) < 65536 and hashlib.sha256(payload).hexdigest() == LEGACY_READER_SHA256,
+    with path.open("rb") as stream:
+        payload = stream.read(65536)  # 65535-byte source cap plus one growth witness.
+    require(0 < len(payload) < 65536, "Reader source grew beyond bound")
+    require(hashlib.sha256(payload).hexdigest() == LEGACY_READER_SHA256,
             "Pinned independent reader primitives changed")
     module = types.ModuleType("_root_clip_reader_primitives")
     module.__file__ = str(path)

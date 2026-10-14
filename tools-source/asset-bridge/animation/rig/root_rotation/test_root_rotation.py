@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import prepare_root_rotation as prepare
+import read_root_rotation as reader_module
 from read_root_rotation import read_root_rotation, primitives
 
 
@@ -38,7 +39,77 @@ def fixture(note_id=3):
             array(struct.pack("<If", note_id, .5), 1) + string("probe_contact"))
 
 
+class SmallStat:
+    # Preserve Windows-only attributes/reparse metadata while simulating size.
+    def __init__(self, actual, size):
+        self.actual, self.st_size = actual, size
+
+    def __getattr__(self, name):
+        return getattr(self.actual, name)
+
+
 class RootRotationTests(unittest.TestCase):
+    def test_source_growth_is_bounded_before_decode(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "growing.cpp"
+            path.write_bytes(b"\xff" * 1024)
+            original_stat, original_open = Path.stat, Path.open
+            reads = []
+            def small_stat(p, *args, **kwargs):
+                result = original_stat(p, *args, **kwargs)
+                if p == path:
+                    return SmallStat(result, 8)
+                return result
+            class ObservedStream:
+                def __enter__(self):
+                    self.stream = original_open(path, "rb")
+                    return self
+                def read(self, count=-1):
+                    reads.append(count)
+                    return self.stream.read(count)
+                def __exit__(self, *args):
+                    self.stream.close()
+            def open_source(p, *args, **kwargs):
+                return ObservedStream() if p == path else original_open(p, *args, **kwargs)
+            # Invalid UTF-8 would fail if decoded. ValueError is the size gate.
+            with patch.object(Path, "stat", small_stat), patch.object(Path, "open", open_source):
+                with self.assertRaisesRegex(ValueError, "grew"):
+                    prepare.bounded_text(path, 16)
+            self.assertEqual(reads, [17])
+
+    def test_reader_source_growth_never_hashes_or_executes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            path = base / "read_probe.py"
+            path.write_bytes(b"\xff" * 100000)
+            original_stat, original_open = Path.stat, Path.open
+            reads = []
+            def small_stat(p, *args, **kwargs):
+                result = original_stat(p, *args, **kwargs)
+                if p == path:
+                    return SmallStat(result, 5428)
+                return result
+            class ObservedStream:
+                def __enter__(self):
+                    self.stream = original_open(path, "rb")
+                    return self
+                def read(self, count=-1):
+                    reads.append(count)
+                    return self.stream.read(count)
+                def __exit__(self, *args):
+                    self.stream.close()
+            def open_source(p, *args, **kwargs):
+                return ObservedStream() if p == path else original_open(p, *args, **kwargs)
+            with patch.object(reader_module, "BASE", base), patch.object(Path, "stat", small_stat), \
+                    patch.object(Path, "open", open_source), \
+                    patch.object(reader_module.hashlib, "sha256") as hashed, \
+                    patch("builtins.compile") as compiled:
+                with self.assertRaisesRegex(ValueError, "grew"):
+                    reader_module.primitives()
+                hashed.assert_not_called()
+                compiled.assert_not_called()
+            self.assertEqual(reads, [65536])
+
     def test_exact_authoring_and_source_counts(self):
         clip = json.loads((prepare.HERE / "clip.source.json").read_text())
         encoded = prepare.compile_root(clip)
