@@ -1141,3 +1141,55 @@ No material-bound native writer, FF, game or collision test was run for this
 source change. The queued null-material World Plan remains byte-exact and does
 not qualify this separate source variant. Rendering can be validated before
 collision; visible geometry still cannot be called a solid or navigable arena.
+
+## 2026-10-14: fresh nondefault reference and original-arena FF execution source
+
+The legacy recipient snapshot's three files were not recovered; a Rig inventory
+name cannot replace them. The World route now measures exactly one nondefault
+stock reference with the retained e7 candidate and binds CSV, complete success
+marker, request, actual recipe digest and original native image/identity. It
+refuses incomplete job closure/restoration and preserves material payload,
+runtime and GPU claims as false. Review corrections for the receipt bindings
+are separate from the initial stock-reference commit.
+
+The specialized measurement caller and fresh material-bound writer recipe reuse
+the existing selected 72-input stock profile and World/T7/H1 lifecycle. ModelFF
+accepts that explicit stock mapping and the existing qualified community
+candidate. Its original-arena candidate path runs strict build/verify/dump and
+the independent P2 reader in separate original H1 jobs; root0/Active0 precedes
+restoration/release. Native2f9462 TelemetryOnly remains the runtime provider;
+SDKf4e5 is the creator source contract, not a replacement native runtime.
+The immutable null-material Plan3057 remains NOT GO. See the original-arena
+README for the concrete three-admission sequence and deferred evidence.
+
+Twenty-six authored source tests pass, including receipt substitutions, all
+three rigid masks, source caller mocks and unknown-owner retention. No stock
+payload, native build, FF, process fixture, game or GPU was executed for this
+source change. The read-only review used one GPT-6.1 Sol / medium agent under
+the then-visible policy; later policy requires Ultra for any new Sol review.
+
+Independent Ultra review found a reused-context factory gap: the previous closed
+Owner could survive a throwing next factory and falsely qualify cleanup. The
+World caller now clears Owner before invoking H1, matching Invoke-WorldStage.
+The authored source mock covers success followed by a failed unknown factory;
+the old owner is never stopped/reused and the new context stays unconfirmed.
+This correction does not qualify native execution.
+
+The same review also found that the reference checker was executed without its
+own source/import hashes in the measurement Plan. ModelLab, the arena reader,
+the shared record cursor and eager ModelLab/T7 contract imports are now in the
+existing SmallPin/guard set. Checker changes after LIGHT change the Plan digest
+or fail its source guard check; they cannot leave SourceHashesUnchanged true.
+The 27th authored source test generates LIGHT Plans with nonexistent stock/tool/
+owner inputs, mutates each checker/cursor source and verifies that the digest
+changes without native types, stock reads, admission or output-root creation.
+
+Architecture review found two additional opaque-read ordering gaps. The World
+writer previously validated known executable hashes before Build admission;
+the World FF candidate qualified its EXE/tlog before Extract admission. Their
+actual validation now occurs under the existing reservation before any owner
+load/start, with small source/producer metadata left in LIGHT. The unused CDB
+hash check is omitted for the original-owner World path; legacy/non-arena HUD
+qualification and diagnostics remain unchanged. The 28th source mock checks
+deferred writer pins and World metadata versus admitted candidate validation.
+All 28 World source tests pass; this still provides no native execution proof.

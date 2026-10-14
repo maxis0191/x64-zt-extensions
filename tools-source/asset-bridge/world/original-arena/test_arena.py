@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
 import struct
 import shutil
@@ -225,6 +226,219 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell admission source checks require pwsh')
+    def test_world_opaque_qualification_is_deferred_to_existing_admission(self):
+        script=r'''
+param($Writer,$FF,$Root)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$writerAst=[Management.Automation.Language.Parser]::ParseFile($Writer,[ref]$tokens,[ref]$errors)
+$pin=@($writerAst.FindAll({param($node);$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Pin'},$true))[0]
+. ([scriptblock]::Create($pin.Extent.Text))
+$guards=[Collections.Generic.List[IDisposable]]::new();$entries=[Collections.Generic.List[object]]::new();$Run=$true
+$fake=Join-Path $Root 'authored.exe';[IO.File]::WriteAllText($fake,'Authored changed binary')
+try{$result=Pin $fake ('1'*64);if($result.SHA256 -cne ('1'*64)){throw 'Opaque bytes were hashed before admission'}}finally{foreach($guard in $guards){$guard.Dispose()}}
+$commands=@($writerAst.FindAll({param($node);$node -is [Management.Automation.Language.CommandAst]},$true))
+$lease=@($commands|Where-Object {$_.GetCommandName() -ceq 'Enter-IW7ResourceLease'})[0]
+$hash=@($commands|Where-Object {$_.GetCommandName() -ceq 'Assert-BeaconHash'})[0]
+if(!$lease -or !$hash -or $hash.Extent.StartOffset -le $lease.Extent.EndOffset){throw 'Writer opaque validation must follow existing admission'}
+$ast=[Management.Automation.Language.Parser]::ParseFile($FF,[ref]$tokens,[ref]$errors)
+$block=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.IfStatementAst] -and $node.Clauses[0].Item1.Extent.Text.Trim() -ceq '$CandidateRoot'},$true))[0]
+$arena=$true;$ToolProvenance='';$CandidateArtifactSHA256='1'*64;$NativeJobAssembly='absent-owner.dll'
+$CandidateRoot=Join-Path $Root 'candidate';$repo=Join-Path $Root 'package'
+[IO.Directory]::CreateDirectory((Join-Path $repo 'sdk/modding'))|Out-Null;[IO.Directory]::CreateDirectory($CandidateRoot)|Out-Null
+[IO.File]::WriteAllText((Join-Path $repo 'sdk/modding/BeaconFF.Core.ps1'),'# Authored pure import')
+$toolPath=Join-Path $CandidateRoot 'bin/zonetool-community.exe';$sha='e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04'
+@{schema='iw7.zonetool-community-candidate/1';executable=@{path=$toolPath;sha256=$sha}}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $CandidateRoot 'build-artifact.local.json')
+$script:Admitted=$false;$script:QualificationCalls=0
+function Resolve-IW7BasePath($Root,$Relative){Join-Path $Root $Relative}
+function Assert-BeaconHash($Path,$SHA){if(!(Split-Path $Path -Leaf).Equals('build-artifact.local.json')){throw 'Opaque pre-admission hash'}}
+function Read-BeaconJson($Path,$Limit){Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}
+function Assert-BeaconCandidate($Root,$Artifact){if(!$script:Admitted){throw 'Opaque candidate qualified without admission'};$script:QualificationCalls++;[pscustomobject]@{Path=$toolPath;SHA256=$sha}}
+. ([scriptblock]::Create($block.Extent.Text))
+if($script:QualificationCalls -ne 0 -or $tool -ine $toolPath){throw 'LIGHT metadata must not qualify candidate binary'}
+$calls=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'Assert-BeaconCandidate'},$true))
+$lease=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'Enter-IW7ResourceLease'},$true))[0]
+$admittedCall=@($calls|Where-Object {$_.Extent.StartOffset -gt $lease.Extent.EndOffset})[0]
+if(!$admittedCall){throw 'World FF qualifier must follow existing admission'}
+$underLease=$admittedCall;while($underLease -and $underLease -isnot [Management.Automation.Language.IfStatementAst]){$underLease=$underLease.Parent}
+$script:Admitted=$true;$state=@{}
+. ([scriptblock]::Create($underLease.Extent.Text))
+if($script:QualificationCalls -ne 1 -or !$state.CandidateQualifiedUnderLease){throw 'Admitted actual candidate validation missing'}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'admission-source.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('Build-ArenaWriter.ps1')),
+                str(arena.REPO/'ops/model-lab/Build-ModelFF.ps1'),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell LIGHT plan checks require pwsh')
+    def test_light_measurement_plan_binds_checker_and_local_imports(self):
+        helper=Path(model_lab.__file__).with_name('Measure-StockReference.ps1')
+        # Authored source/receipt placeholders only; default planning must never
+        # inspect the nonexistent native candidate, stock or assembly below.
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);package=root/'package';tool=root/'tool'
+            names=set(re.findall(r"'((?:ops|sdk|tools-source)/[^']+\.(?:ps1|py|cs))'",helper.read_text()))
+            for name in names:
+                path=package/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('Authored source '+name)
+            (package/'ops/model-lab/prepare_writer.py').write_text("INTERFACES=['normal-a','normal-b','normal-c']\n")
+            for name in ('normal-a','normal-b','normal-c'):
+                path=tool/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('Authored normal proof')
+            (package/'source-workspace.json').write_text(json.dumps({'revisions':{'iw7-mod-components':'2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1'}}))
+            inputs=[{'Relative':f'main/source-{i}.ff','Source':str(root/f'absent-stock-{i}'),'Mode':'HardLink'} for i in range(71)]
+            inputs.append({'Relative':'main/fileSysCheck.cfg','Source':str(root/'absent-sentinel'),'Mode':'Copy'})
+            binding=root/'stock.json';binding.write_text(json.dumps({'stock_binding':{'inputs':inputs}}))
+            args=[shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(helper),'-PackageRoot',str(package),
+                  '-RunRoot',str(package/'runtime/reference'),'-StockBindingPlan',str(binding),
+                  '-StockBindingPlanSHA256',model_lab.digest(binding.read_bytes()),'-ToolSource',str(tool),
+                  '-CandidateRoot',str(root/'absent-candidate'),'-CandidateArtifactSHA256','1'*64,
+                  '-NativeJobAssembly',str(root/'absent-owner.dll')]
+            def planned():
+                result=subprocess.run(args,capture_output=True,text=True,timeout=20)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                value=json.loads(result.stdout)
+                self.assertFalse(value['StockBytesRead']);self.assertFalse(value['NativeTypesLoaded']);self.assertFalse(value['LeaseAcquired'])
+                return value
+            baseline=planned();prior=baseline['PlanSHA256']
+            for name in ('tools-source/asset-bridge/world/original-arena/model_lab.py',
+                         'tools-source/asset-bridge/world/original-arena/readback.py',
+                         'tools-source/asset-bridge/h1-fixture/inspect_fixture.py'):
+                path=package/name
+                self.assertIn(str(path),[pin['Path'] for pin in baseline['Plan']['SourcePins']])
+                path.write_text(path.read_text()+'\nAuthored checker mutation')
+                current=planned()['PlanSHA256'];self.assertNotEqual(current,prior);prior=current
+            self.assertFalse((package/'runtime/reference').exists())
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell source caller checks require pwsh')
+    def test_original_job_caller_keeps_unknown_owner_and_accepts_telemetry_only(self):
+        # Authored PowerShell mocks only: no native type/job, tool/game process,
+        # retail content or resource reservation is used by this source check.
+        script = r'''
+param($Helper,$Root)
+$ErrorActionPreference='Stop'
+. $Helper
+$script:Mode='pass';$script:Bytes=0L
+function Measure-BeaconOutputFiles {return $script:Bytes}
+function Get-IW7ResourceSnapshot {return [pscustomobject]@{Committed=99;CommitLimit=100}}
+function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,$SHA,$Logs){
+    if($Start.WorkingDirectory -cne $Context.Work -or $Start.ArgumentList[0] -cne '-strict-content-sources'){throw 'Literal direct original tool start differs'}
+    $Context.Closed=$false
+    if($script:Mode -cne 'unknown'){
+        $Context.Owner=[pscustomobject]@{Closed=$false;StopCalls=0}
+        $Context.Owner|Add-Member ScriptMethod StopAndConfirm {param($Ms);if($Ms -ne 5000){throw 'Wrong original stop deadline'};$this.StopCalls++;$this.Closed=$true}
+    }
+    if($script:Mode -cne 'pass'){throw 'Authored owner failure'}
+    Test-H1Budget $Plan $State
+    $State.Identity=[ordered]@{PID=1234;Image=$Start.FileName;CreatedUtc='2026-10-14T00:00:00Z'}
+    $State.TreeClosureConfirmed=$true;$State.ExitCode=0;$Context.Closed=$true;$Context.Owner.Closed=$true
+}
+foreach($mode in 'pass','failed','unknown'){
+    $script:Mode=$mode;$work=Join-Path $Root $mode;[IO.Directory]::CreateDirectory($work)|Out-Null
+    $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token='authored'};Work=$work}
+    if($mode -ceq 'pass'){
+        $result=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work probe @() 30
+        if(!$result.JobClosed -or !$result.RootExited -or $result.ActiveProcesses -ne 0 -or !$context.Closed){throw 'Closed source witness differs'}
+    }else{
+        $caught=$false;try{$null=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work probe @() 30}catch{$caught=$true}
+        if(!$caught){throw 'Failure was accepted'}
+        if($mode -ceq 'failed' -and (!$context.Closed -or $context.Owner.StopCalls -ne 1)){throw 'Original owner cleanup differs'}
+        if($mode -ceq 'unknown' -and ($context.Closed -or $context.Owner)){throw 'Unknown factory was treated as closed'}
+    }
+}
+$work=Join-Path $Root 'reused';[IO.Directory]::CreateDirectory($work)|Out-Null
+$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token='authored'};Work=$work}
+$script:Mode='pass'
+$null=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work first @() 30
+$previous=$context.Owner
+$script:Mode='unknown';$caught=$false
+try{$null=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work second @() 30}catch{$caught=$true}
+if(!$caught -or $context.Closed -or $context.Owner -or $previous.StopCalls -ne 0){throw 'Previous closed owner falsely qualified a new unknown factory'}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'source-caller.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('OriginalArena.Process.ps1')),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    def reference_fixture(self,root):
+        tool,_,_,legacy=self.binding_fixture(root)
+        measurement=root/'measurement';measurement.mkdir()
+        request={'schema':'iw7.original-arena-reference-request/1','recipient':'cp_zmb',
+                 'material':readback.MATERIAL,'input_csv':'requested.csv','output_csv':'world_material'}
+        request_raw=model_lab.json_bytes(request)
+        (measurement/'reference-request.json').write_bytes(request_raw)
+        (measurement/'requested.csv').write_bytes(('material,'+readback.MATERIAL+'\n').encode())
+        closure={'Schema':'iw7.original-arena-reference-process/1','ExitCode':0,'RootExited':True,
+                 'ActiveProcesses':0,'JobClosed':True,'Restored':True,'StockPreserved':True,
+                 'ImageSHA256':model_lab.REFERENCE_TOOL_SHA256,
+                 'Identity':{'PID':1234,'Image':str(root/'fixture-tool.exe'),'CreatedUtc':'2026-10-14T00:00:00Z'},
+                 'Arguments':['-headless','-unbuffered-io','-strict-content-sources','-enemy-reference-check',
+                              'cp_zmb','requested.csv','world_material'],'RequestSHA256':model_lab.digest(request_raw)}
+        plan={'Schema':'iw7.original-arena-reference-plan/1','Image':closure['Identity']['Image'],
+              'ImageSHA256':model_lab.REFERENCE_TOOL_SHA256,'Arguments':closure['Arguments'],
+              'RequestSHA256':closure['RequestSHA256'],'OriginalOwnerAssemblySHA256':model_lab.REFERENCE_OWNER_SHA256}
+        plan_raw=model_lab.json_bytes(plan);(measurement/'reference-plan.json').write_bytes(plan_raw)
+        closure['PlanSHA256']=model_lab.digest(plan_raw)
+        outputs={'csv':('type,name,status\nmaterial,'+readback.MATERIAL+',verified\n').encode(),
+                 'stdout':b'ENEMY_REFERENCE_CHECK map=cp_zmb rows=1 verified=1 missing=0 default=0 output=enemy-catalog/world_material.csv\n',
+                 'closure':model_lab.json_bytes(closure)}
+        snapshots={}
+        for key,data in outputs.items():
+            name='enemy-catalog/world_material.csv' if key=='csv' else key+('.json' if key=='closure' else '.txt')
+            (measurement/name).parent.mkdir(exist_ok=True);(measurement/name).write_bytes(data)
+            snapshots[key]={'path':name,'bytes':len(data),'sha256':model_lab.digest(data)}
+        evidence={'schema':'iw7.original-arena-recipient-reference/1','source_pin':prepare_writer.PIN,
+                  'recipient':'cp_zmb','material':readback.MATERIAL,'snapshot_only':True,
+                  'runtime_verified':False,'material_payload_verified':False,
+                  'reference_snapshot':snapshots,'normal_encoding_source':legacy['normal_encoding_source']}
+        path=root/'reference.json';path.write_bytes(model_lab.json_bytes(evidence))
+        return tool,measurement,path,evidence,closure
+
+    def test_current_reference_binding_requires_nondefault_row_closed_job_and_exact_request(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);tool,measurement,path,evidence,closure=self.reference_fixture(root)
+            self.assertEqual(model_lab.validate_reference_evidence(tool,path,measurement)[0],readback.MATERIAL)
+            for kind in ('default','missing','extra','open','wrong-tool','wrong-request','identity',
+                         'plan-digest','root-image','unrestored','stock-changed','marker-path','extra-marker'):
+                altered=copy.deepcopy(evidence);changed=copy.deepcopy(closure)
+                csv_path=measurement/evidence['reference_snapshot']['csv']['path']
+                csv_original=csv_path.read_bytes()
+                log_path=measurement/evidence['reference_snapshot']['stdout']['path'];log_original=log_path.read_bytes()
+                if kind in ('default','missing','extra'):
+                    data=(('type,name,status\nmaterial,'+readback.MATERIAL+','+kind+'\n') if kind!='extra'
+                          else csv_original.decode()+'material,other,verified\n').encode()
+                    csv_path.write_bytes(data)
+                    altered['reference_snapshot']['csv'].update(bytes=len(data),sha256=model_lab.digest(data))
+                elif kind in ('marker-path','extra-marker'):
+                    data=(log_original.replace(b'world_material.csv',b'other.csv') if kind=='marker-path' else
+                          log_original+b'ENEMY_REFERENCE_CHECK map=cp_rave rows=1 verified=1 missing=0 default=0 output=other.csv\n')
+                    log_path.write_bytes(data)
+                    altered['reference_snapshot']['stdout'].update(bytes=len(data),sha256=model_lab.digest(data))
+                else:
+                    if kind=='open':changed['ActiveProcesses']=1
+                    if kind=='wrong-tool':changed['ImageSHA256']='0'*64
+                    if kind=='wrong-request':changed['Arguments'][4]='cp_rave'
+                    if kind=='identity':changed['Identity']['PID']=0
+                    if kind=='plan-digest':changed['PlanSHA256']='1'*64
+                    if kind=='root-image':changed['Identity']['Image']=str(root/'other.exe')
+                    if kind=='unrestored':changed['Restored']=False
+                    if kind=='stock-changed':changed['StockPreserved']=False
+                    data=model_lab.json_bytes(changed);(measurement/'closure.json').write_bytes(data)
+                    altered['reference_snapshot']['closure'].update(bytes=len(data),sha256=model_lab.digest(data))
+                path.write_bytes(model_lab.json_bytes(altered))
+                with self.subTest(kind=kind),self.assertRaises(ValueError):
+                    model_lab.validate_reference_evidence(tool,path,measurement)
+                csv_path.write_bytes(csv_original)
+                log_path.write_bytes(log_original)
+                (measurement/'closure.json').write_bytes(model_lab.json_bytes(closure))
+            path.write_bytes(model_lab.json_bytes(evidence))
+            hashes=prepare_writer.source_hashes(tool,check_pin=False)
+            with patch.object(prepare,'source_hashes',return_value=hashes):
+                prepare.prepare(root/'new-bound',tool_source=tool,recipient_evidence=path,stock_root=measurement)
+            self.assertIn(readback.MATERIAL,(root/'new-bound/probe_geometry.hpp').read_text())
+
     def binding_fixture(self,root):
         tool,stock=root/'tool',root/'stock'
         for name in prepare_writer.INTERFACES:

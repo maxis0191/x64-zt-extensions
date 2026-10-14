@@ -99,7 +99,17 @@ def prepare(output, scene_path=None, *, tool_source=None, recipient_evidence=Non
         if any(value is None for value in (tool_source, recipient_evidence, stock_root)):
             raise ValueError('Material binding requires source, recipient evidence and stock snapshot together')
         tool_hashes = source_hashes(tool_source)
-        material, evidence_hash = validate_recipient_evidence(tool_source, recipient_evidence, stock_root)
+        with safe_path(recipient_evidence).open('rb') as stream:
+            evidence_data = stream.read(1024**2+1)
+        if not 0 < len(evidence_data) <= 1024**2:
+            raise ValueError('Bounded recipient evidence required')
+        evidence_header = json.loads(evidence_data)
+        if evidence_header.get('schema') == 'iw7.original-arena-recipient-reference/1':
+            ref_spec=importlib.util.spec_from_file_location('_arena_reference_binding',Path(__file__).with_name('model_lab.py'))
+            ref_module=importlib.util.module_from_spec(ref_spec);ref_spec.loader.exec_module(ref_module)
+            material,evidence_hash=ref_module.validate_reference_evidence(tool_source,recipient_evidence,stock_root)
+        else:
+            material, evidence_hash = validate_recipient_evidence(tool_source, recipient_evidence, stock_root)
     if scene_path is None:
         source = original_scene()
     else:

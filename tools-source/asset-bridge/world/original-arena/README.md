@@ -49,7 +49,7 @@ After a coordinated build, the independent check is:
 python -B tools-source/asset-bridge/world/original-arena/readback.py --artifacts <owned-writer-artifacts> --geometry-source <prepared-geometry.source.json>
 ```
 
-Current source result: 24 targeted tests pass. Default source preparation produces seven
+Current source result: 28 targeted tests pass. Default source preparation produces seven
 files, including a 55,918-byte geometry document and about 14 KiB of adapted C++.
 No native compile, fastfile, material binding or game result is implied. The
 previous World 24-case native receipt is preserved at its original paths and
@@ -64,7 +64,8 @@ boxes (168 vertices, 84 triangles), with the existing `paris_model_probe` zone,
 NetConstStrings and rawfile names. These names require an exclusive ModelLab
 scenario; the XModel/mesh names remain `paris_original_arena` / `_lod0`.
 
-The default unbound writer and its queued native Plan remain unchanged. A future
+The historical unbound writer Plan remains byte-exact but is retired from execution.
+A separate material-bound source variant may still use the retained legacy
 fresh material-bound source variant uses the cube's extracted source/recipient
 validator, rechecking its three snapshot files and three normal-source hashes:
 
@@ -129,3 +130,87 @@ Next steps: qualify this small model serialization/readback under a short heavy
 slot; bind a verified recipient material and reuse FF build/dump; coordinate the
 static-box primitive with the engine worker, then prove collision and protected
 private navigation. No full stock/game copy or large asset extraction is needed.
+
+## 2026-10-14: measured stock reference and current FF recipe
+
+The previous three-file recipient material snapshot was not recovered. It must
+not be reconstructed from a name in an old FF inventory. `Measure-StockReference.ps1`
+uses the existing e7 community candidate's `-enemy-reference-check` for exactly
+one named material on cp_zmb. Its CSV distinguishes verified, missing and default
+assets. This proves a nondefault registered stock reference, not the material
+payload, a shader/alias, GPU output or a live client binding. The temporary zeroed
+Material in the writer only serializes its named reference; it does not establish
+the cause of the Rig display issue.
+
+Run all operations from a freshly composed, verified source package containing
+these World exports and native provider `2f9462`. Its resource and memory policy
+is TelemetryOnly. SDK `f4e5` is the creator source contract; do not substitute its
+older native providers for this runtime package. The immutable legacy Plan3057
+contains the old null-material/P2/headroom contract and is NOT GO.
+
+The concrete sequence is below. `$package`, `$toolSource`, `$candidate`, `$jobDll`,
+`$stockBinding` and `$stockBindingSHA` are the reviewed local bindings. The latter
+is the existing 72-input Rig stock mapping, with only the sentinel copied and the
+other selected inputs hardlinked from the suitable existing dedicated. Before
+stock preparation, fetch/read the current server RESOURCE, STORAGE and INSTANCE
+workflows. Every output below is fresh under `$package/runtime`; source packages,
+retired plans, stock, Main27016 and occupied clients remain preserved.
+
+```powershell
+$world = Join-Path $package 'tools-source/asset-bridge/world/original-arena'
+$reference = Join-Path $package 'runtime/original-arena-reference-c'
+$prepared = Join-Path $package 'runtime/original-arena-bound-c'
+$native = Join-Path $package 'runtime/original-arena-writer-c'
+$staged = Join-Path $package 'runtime/original-arena-ff-source-c'
+$ff = Join-Path $package 'runtime/original-arena-ff-c'
+$measureArgs = @{
+    PackageRoot=$package; RunRoot=$reference; StockBindingPlan=$stockBinding
+    StockBindingPlanSHA256=$stockBindingSHA; ToolSource=$toolSource
+    CandidateRoot=$candidate; NativeJobAssembly=$jobDll
+    CandidateArtifactSHA256='f0d4d7db132d51c789a999e33ab0ce905b2df749db453029f91356b9aa2e2165'
+}
+& "$world/Measure-StockReference.ps1" @measureArgs
+# After source review and the coordinator's Extract slot only:
+& "$world/Measure-StockReference.ps1" @measureArgs -PlanSHA256 $measurementPlanSHA -Run
+python -I -S -B "$world/prepare.py" --output $prepared --source $toolSource --recipient-evidence "$reference/reference-evidence.json" --stock-root $reference
+$writerArgs = @{PackageRoot=$package;PreparedRoot=$prepared;ToolSource=$toolSource;RunRoot=$native;NativeJobAssembly=$jobDll}
+& "$world/Build-ArenaWriter.ps1" @writerArgs
+# Review its new Plan after actual measurement, then use a separate Build slot:
+& "$world/Build-ArenaWriter.ps1" @writerArgs -PlanSHA256 $writerPlanSHA -Run
+python -I -S -B "$world/model_lab.py" stage --artifacts "$native/artifacts" --prepared-source $prepared --output $staged
+python -I -S -B "$world/model_lab.py" verify-stage --source $staged
+# After confirmed native closure/release, a separate Extract slot:
+& "$package/ops/model-lab/Build-ModelFF.ps1" -RunRoot $ff -StockToolRoot $stockRoot -SourceRoot $staged -CandidateRoot $candidate -CandidateArtifactSHA256 $measureArgs.CandidateArtifactSHA256 -NativeJobAssembly $jobDll -StockBindingPlan $stockBinding -StockBindingPlanSHA256 $stockBindingSHA
+```
+
+Default measurement and writer Plan modes read small sources/receipts and defer
+known executable hashes until the Run reservation is held. The original-arena
+ModelFF candidate path reads bounded metadata first and qualifies the actual e7
+EXE/tlog under its existing Extract reservation. Other ModelFF paths retain
+their existing qualification behavior; general DryRun is not a replacement for
+the World LIGHT recipe. The measured reference plan/request/native image/identity/full log output
+are bound together; an open job, wrong recipe digest, replaced root image, extra
+CSV row, wrong output marker or unrestored stock is refused. The reader is also
+run before publishing successful reference status.
+
+The writer retains the existing direct World/T7/H1 Compile, Link, writer and
+independent Check jobs: shared 90-second Compile/Link allowance, 10-second writer,
+5-second check and 120-second group; 2 GiB physical / 3 GiB commit estimates.
+It checks all three rigid masks, named material and authored packed streams.
+Its compiler environment is explicitly not fully hermetic.
+
+Measurement and FF each request one 8 GiB physical / 11 GiB commit Extract
+admission. FF consumes the selected mapping directly, so no intermediate full
+game copy or extra stock view is needed. Strict-source build, verify, dump and
+the independent 30-second reader use the retained H1 NativeJob owner, separately,
+with original root0/Active0 before advancing. The small World caller reuses that
+owner, registration, exact-handle cleanup and output accounting; it creates no
+new generic supervisor or second reservation. Stream thresholds are sampled
+at 2 MiB; generated output has one 256 MiB allowance across the FF phases.
+Source proof precedes guard disposal, restoration and release. Unknown creation,
+closure or source proof retains the original context/guards/lease in quarantine.
+
+These are source-reviewed routes, not native run receipts. Source mocks test the
+delegation, telemetry-only pressure and failure/unknown-owner handling; they do
+not qualify a native job. Actual measured reference, writer/FF/readback receipts,
+pixels, collision, navigation and owner gameplay remain pending coordinated GO.
