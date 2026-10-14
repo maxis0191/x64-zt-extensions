@@ -23,7 +23,8 @@ def capture(api, handle, expected, digest, clock=time.monotonic):
               'helper': helper, 'modal_window_observed': False,
               'identity_verified_after': False, 'hwnd': None, 'title': None,
               'class': None, 'controls': [], 'text_bytes': 0, 'errors': [],
-              'text_truncated': False, 'window_limit': 8, 'control_limit': 8,
+              'text_truncated': False, 'caption_buffer_saturated': False,
+              'top_level_callback_limit': 256, 'window_limit': 8, 'control_limit': 8,
               'text_limit': 16 * 1024, 'message_timeout_ms': 200,
               'whole_capture_deadline_guaranteed': False,
               'interaction_performed': False, 'material_reference_measured': False,
@@ -55,6 +56,8 @@ def capture(api, handle, expected, digest, clock=time.monotonic):
                 continue
             caption = api.caption(hwnd)
             verify(hwnd)
+            record['caption_buffer_saturated'] = len(caption.encode('utf-16-le', 'surrogatepass')) // 2 >= 511
+            record['text_truncated'] |= record['caption_buffer_saturated']
             record.update(modal_window_observed=True, hwnd=hwnd,
                           title=take(caption), **{'class': take(kind)})
             deadline = clock() + 2.0

@@ -803,6 +803,12 @@ class ModalWindowTests(unittest.TestCase):
         self.assertEqual(record['controls'][0]['text'], '')
         self.assertIn('timeout', record['controls'][0]['error'])
 
+    def test_caption_buffer_saturation_marks_truncation(self):
+        self.api.title = 'x' * 511
+        record = self.snapshot()
+        self.assertTrue(record['identity_verified_after'])
+        self.assertTrue(record['caption_buffer_saturated']); self.assertTrue(record['text_truncated'])
+
     def test_control_and_utf8_bounds_and_soft_deadline(self):
         self.api.controls = list(range(20,50))
         for hwnd in self.api.controls:
