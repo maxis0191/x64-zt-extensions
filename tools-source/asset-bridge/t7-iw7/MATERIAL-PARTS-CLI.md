@@ -266,6 +266,47 @@ limits and the same 410 objects / 18 libraries / one resource. A separate CPP
 GO and fresh original-host evidence remain required. Old D, the original seal,
 V3 add721 and the accepted FF/readback/display cohorts remain immutable.
 
+## E native build passed; metadata observation remains separate
+
+The subsequently authorized E CPP group used the unchanged 892-byte wrapper
+(`2b7860f1`) and actual `cfeb5610` plan. Main Compile, zonetool11 Compile and
+Link each exited 0. Each stage's original compiler/telemetry job reports
+Completed true, ActiveProcesses zero after closure, and TreeClosureConfirmed
+true. The group receipt reports Passed, InputsReverified/TreeClosureConfirmed/
+LeaseReleased true and Quarantined false. This validates the finite OS Input
+transition in native execution; no other expected Input was repinned.
+
+The receipt is 25,651 bytes / SHA-256
+`e81604ea36272540d2a62df7aaa236dcdd92bb0d04821ab9b2f887636a074a25`.
+Artifact tuples were measured by the runner while admission and guards were
+held, then read only from that text receipt after closure:
+
+- `link/zonetool-t7.exe`: 21,963,264 bytes /
+  `cce8bbb8f068b4897a391880db316bd1d7586f26f7ec0c1cee2316d76c8644b3`.
+- `link/zonetool-t7.pdb`: 139,145,216 bytes /
+  `62b0125ae8567a1325ef5ffb3fadc89188d955aa1f12ad3c68f493d172e8335a`.
+
+No post-admission EXE/PDB read or hash was used to obtain these tuples. The
+original fresh NoExit host was 16544 (parent 9964), recorded before manually
+invoking the wrapper. It genuinely exited 0 via PTY 16448 / chunk `8dd283`.
+Fresh 09:56:37 UTC observation found both originals, all three compilers and
+their three VCTIP children absent, no heavy/game processes and no leases.
+The closure witness is 1,264 bytes /
+`9018cc01cf90db101b291f56affa99c376a22e9adccdde7d8651bb61762c623c`.
+CandidateExecuted and Ready remain false. The successful build did not invoke
+the new CLI, read a retail zone, observe image descriptors, copy pixels,
+build an FF or launch a game.
+
+The next separately reviewed/admitted operation is one exact metadata-only
+request: `-t7-iw7-material-parts-v1 mp_freerun_04 p7_fre_platform_cap_02 0`.
+Its fixed selection is material slot zero / binding four / nameHash32
+`0xA0AB1041`, which is not an XPAK key. Prepare that operation through the
+qualified recipient and existing lifecycle; the older catalogue/export
+profiles do not automatically authorize a new parts candidate or report.
+The G3 helper reads two bounded owned 264-byte headers and describes four
+physical stream parts. A future real report must qualify those descriptors
+and rechecks; no part key or pixel provider is inferred from CPP success.
+
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
 bytes, mismatched G2 metadata and any unqualified selected header/name/recheck.
@@ -283,13 +324,13 @@ authored guard fixture refused because PowerShell culturally sorts the fixture
 filename before the header filename; the expected inventory was corrected.
 This did not execute a native child or read an asset. G3's separate native
 fixture passed 32 actual native checks in the separately admitted H32 group
-on 2026-10-14. The caller's native compilation and stock metadata observation
-remain pending. The success/refusal predicate regression evaluates the actual
+on 2026-10-14. The caller's E native compilation subsequently passed as recorded
+above; stock metadata observation remains pending. The success/refusal predicate regression evaluates the actual
 caller source with authored JSON; it does not claim C++ execution.
 
 The accepted geometry FF B (`50ca9124`, 9,904 bytes), plan `750d25d7`, corrected
 readback `7f8b628f` and first static-display cohort remain immutable. Next:
-qualify the one separately admitted incremental CPP group using a fresh plan
-bound to the corrected runner, then perform one separately admitted metadata observation. Only a
+perform one separately reviewed and admitted metadata observation using the
+closed E build. Only a
 real 64-bit part key, exact decoded size and provider identity can select a
 future bounded image read; `nameHash`32 and the geometry key are not substitutes.
