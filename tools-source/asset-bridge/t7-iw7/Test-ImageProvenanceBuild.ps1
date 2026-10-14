@@ -92,7 +92,7 @@ $gate=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStateme
     $n.Extent.Text.Contains("Image-provenance producer is source-pending:")},$true))
 if($gate.Count -ne 1){throw 'Unique source-only execution gate required'}
 $body=[scriptblock]::Create($gate[0].Extent.Text)
-$buildProfile=[pscustomobject]@{Name='t7-image-provenance-v1'};$Run=$true
+$buildProfile=[pscustomobject]@{Name='t7-image-provenance-v1';SourceOnlyPending=$true};$Run=$true
 $refused=$false;try{. $body}catch{$refused=$_.Exception.Message -like 'Image-provenance producer is source-pending:*'}
 if(!$refused){throw 'Unqualified provenance -Run admitted'};$checks++
 $Run=$false;$result=. $body|ConvertFrom-Json
@@ -103,4 +103,45 @@ if($null -ne $result.CandidateBytes -or $null -ne $result.CandidateSHA256){throw
 $import=$ast.Find({param($n) $n -is [Management.Automation.Language.CommandAst] -and $n.Extent.Text -ceq '. $plan.Core'},$true)
 $admission=$ast.Find({param($n) $n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.Extent.Text -ceq '$context.Lease' -and $n.Right.Extent.Text.StartsWith('Enter-IW7ResourceLease ')},$true)
 if(!$import -or !$admission -or $gate[0].Extent.StartOffset -ge $import.Extent.StartOffset -or $gate[0].Extent.StartOffset -ge $admission.Extent.StartOffset){throw 'Source-only gate occurs after imports/admission'};$checks++
+if($env:IW7_T7_IMAGE_FIXTURE_PROOF){
+    foreach($function in 'Open-T7Bootstrap','Assert-T7ImageFixtureProof'){
+        $node=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $function},$true)
+        if(!$node){throw 'Actual H proof guard missing'}
+        . ([scriptblock]::Create($node.Extent.Text))
+    }
+    $guards=[Collections.Generic.List[object]]::new()
+    try{
+        $qualified=$full|ConvertTo-Json -Depth 20|ConvertFrom-Json
+        $proof=[ordered]@{Schema='iw7.t7-image-fixture-proof/1';SourceCommit='678bf7dde6a99207654256c1e53ebaaec286ffe1';ExpectedChecks=53}
+        foreach($row in @(@('Receipt','image-provenance-fixture-h/receipt.local.json'),@('PreExit','image-provenance-fixture-h.preexit.local.json'),
+                         @('Closure','image-provenance-fixture-h.closure.local.json'),@('Stdout','image-provenance-fixture-h/test.stdout.log'))){
+            $path=Join-Path $env:IW7_T7_IMAGE_FIXTURE_PROOF $row[1];$item=Get-Item -LiteralPath $path
+            if($item.Length -gt 16KB){throw 'Real H source proof bound exceeded'}
+            $pin=[pscustomobject]@{Path=$path;Bytes=$item.Length;SHA256=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()}
+            $proof[$row[0]]=$pin
+            $qualified.Bindings+=@([pscustomobject]@{Path=$path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+        }
+        $qualified.BuildProfile.SourceOnlyPending=$false
+        $qualified.BuildProfile|Add-Member NoteProperty FixtureProof ([pscustomobject]$proof)
+        if(!(Assert-T7BuildProfile $qualified $root)){throw 'Actual measured H proof refused'};$checks++
+        foreach($case in 'wrong-api','wrong-closure-pin','missing-binding','duplicate-binding','bool-size','wrong-check-count'){
+            $bad=$qualified|ConvertTo-Json -Depth 20|ConvertFrom-Json
+            switch($case){
+                wrong-api {$bad.BuildProfile.ProvenanceSource.SHA256='0'*64}
+                wrong-closure-pin {$bad.BuildProfile.FixtureProof.Closure.SHA256='0'*64}
+                missing-binding {$bad.Bindings=@($bad.Bindings|Where-Object Path -CNE $proof.PreExit.Path)}
+                duplicate-binding {$bad.Bindings+=@($bad.Bindings|Where-Object Path -CEQ $proof.Receipt.Path)}
+                bool-size {$bad.BuildProfile.FixtureProof.Receipt.Bytes=$true}
+                wrong-check-count {$bad.BuildProfile.FixtureProof.ExpectedChecks=52}
+            }
+            $refused=$false;try{$null=Assert-T7BuildProfile $bad $root}catch{$refused=$true}
+            if(!$refused){throw "Invalid measured H qualification accepted: $case"};$checks++
+        }
+        $buildProfile=$qualified.BuildProfile;$Run=$false;$result=. $body|ConvertFrom-Json
+        if($result.SourceOnlyPending -or !$result.CPPEnabled -or $result.Ready -or $null -ne $result.CandidateSHA256){throw 'Proof DEFAULT claims a candidate'};$checks++
+        foreach($flag in 'NativeTypesLoaded','BinaryInputsHashed','ZoneHashObserved','LeaseAcquired','FilesCreated'){
+            if($result.$flag -isnot [bool] -or $result.$flag){throw 'Proof DEFAULT executed a workload'}
+        };$checks++
+    }finally{foreach($guard in $guards){$guard.Dispose()}}
+}
 [ordered]@{SourceOnly=$true;Checks=$checks;CPPExecuted=$false;SDKOrToolBytesRead=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json -Compress

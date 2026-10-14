@@ -1,6 +1,8 @@
 """Actual producer source predicates/transition; no prepare(), tlog, SDK or compiler IO."""
 import copy
 import json
+import os
+from pathlib import Path
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -39,6 +41,7 @@ class ProvenanceBuildTests(unittest.TestCase):
                 build.prepare(self.args(material_parts_v1=True))
             io.assert_not_called()
 
+    @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'), 'Exact retained native SOURCE not supplied')
     def test_real_producer_transition_preserves_qualified_api_source_outputs(self):
         main, cli = material_tests.PartsRetainedTransitionTests().base()
         payloads = {'prepared/main.cpp': main.encode(), 'prepared/zonetool.cpp': cli.encode()}
@@ -83,6 +86,33 @@ class ProvenanceBuildTests(unittest.TestCase):
                                                              os_context_proof='fixed-proof.json')))
         with self.assertRaises(ValueError):
             build.os_resource_selected(self.args(os_context_tzres_20261014=True))
+
+    def test_h_proof_requires_the_explicit_provenance_profile_before_io(self):
+        self.assertIsNone(build.image_fixture_proof_requested(SimpleNamespace()))
+        for value in (False, 1, 'true'):
+            with self.assertRaises(ValueError):
+                build.image_fixture_proof_requested(SimpleNamespace(
+                    image_provenance_v1=value, image_provenance_fixture_proof_root='retained-h'))
+
+    @unittest.skipUnless(os.environ.get('IW7_T7_IMAGE_FIXTURE_PROOF'), 'Real retained H text proofs not supplied')
+    def test_actual_h_text_proofs_and_changed_receipt_refusal(self):
+        root = Path(os.environ['IW7_T7_IMAGE_FIXTURE_PROOF'])
+        reads = []
+        def read(path, limit, expected):
+            raw, _ = build.text_pin(path, limit, expected)
+            reads.append(path)
+            return raw
+        proof = build.image_fixture_proof(root, read)
+        self.assertEqual(proof['SourceCommit'], build.IMAGE_FIXTURE_SOURCE)
+        self.assertEqual(proof['ExpectedChecks'], 53)
+        self.assertEqual(len(reads), 4)
+        self.assertEqual(sum(proof[role]['Bytes'] for role in build.IMAGE_FIXTURE_PROOFS), 16683)
+        # Alter real receipt bytes; do not fabricate a synthetic passing H receipt.
+        def changed(path, limit, expected):
+            raw = read(path, limit, expected)
+            return raw.replace(b'"Passed": true', b'"Passed":false', 1) if path.name == 'receipt.local.json' else raw
+        with self.assertRaisesRegex(ValueError, 'Exact H text proof'):
+            build.image_fixture_proof(root, changed)
 
 
 if __name__ == '__main__':

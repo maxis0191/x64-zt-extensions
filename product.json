@@ -816,7 +816,16 @@
     "tools-source/asset-bridge/animation/rig/raygun/test_source_handoff.py",
     "tools-source/asset-bridge/animation/rig/raygun/OWNED-SKIN-SEAM.md",
     "tools-source/asset-bridge/animation/rig/raygun/owned_skin_mapping.py",
-    "tools-source/asset-bridge/animation/rig/raygun/test_owned_skin.py"
+    "tools-source/asset-bridge/animation/rig/raygun/test_owned_skin.py",
+    "tools-source/asset-bridge/t7-iw7/IMAGE-METADATA-PRODUCER.md",
+    "tools-source/asset-bridge/t7-iw7/Test-ImageMetadataBuild.ps1",
+    "tools-source/asset-bridge/t7-iw7/image-metadata-source-contract.json",
+    "tools-source/asset-bridge/t7-iw7/native_image_metadata.inc",
+    "tools-source/asset-bridge/t7-iw7/prepare_image_metadata.py",
+    "tools-source/asset-bridge/t7-iw7/selected_image_metadata.hpp",
+    "tools-source/asset-bridge/t7-iw7/selected_image_metadata_guard_fixture.cpp",
+    "tools-source/asset-bridge/t7-iw7/selected_image_metadata_read_guard.hpp",
+    "tools-source/asset-bridge/t7-iw7/test_image_metadata.py"
   ],
   "dependencies": [
     {

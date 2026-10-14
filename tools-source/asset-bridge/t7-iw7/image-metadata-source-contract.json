@@ -1,0 +1,46 @@
+{
+  "schema": "iw7.t7-image-metadata-source/1",
+  "source_profile": "t7-image-metadata-v1",
+  "files": {
+    "selected_material_parts_observation.hpp": {
+      "lf_bytes": 8380,
+      "lf_sha256": "f2dbec9ad952978ef5d88dafd608a0aef6417fd649b0f04fa7088732c822fbb5"
+    },
+    "selected_image_header_metadata.hpp": {
+      "lf_bytes": 6085,
+      "lf_sha256": "b1b0fbd5f8a07479c5bc24bca7504b07d0424e1d33f31dee2c25c25bdd5af9a1"
+    },
+    "selected_image_header_metadata_fixture.cpp": {
+      "lf_bytes": 7216,
+      "lf_sha256": "e675647bbca3b83118d88a3ec8dd198e16f31abbeedc450cad170b7c0f86a663"
+    },
+    "selected_image_metadata.hpp": {
+      "lf_bytes": 6123,
+      "lf_sha256": "0571ca016c5720ce12ed7699ca5363b287904a5e4db51463208689828594334d"
+    },
+    "native_image_metadata.inc": {
+      "lf_bytes": 1375,
+      "lf_sha256": "ac5c98d4f9cf41a3d358f3f7a59d7ce48d2577fba8424bab693d62bb9777c14f"
+    },
+    "selected_image_metadata_read_guard.hpp": {
+      "lf_bytes": 1075,
+      "lf_sha256": "8430bcbe19ba85697d907fcb91a138d8c59e1e4d5661417571c77385f021be9b"
+    },
+    "selected_image_metadata_guard_fixture.cpp": {
+      "lf_bytes": 3751,
+      "lf_sha256": "3135b1e128ae9c46a8e6312de904de5f7fb76b6d2c9eb32c37d3403edfee76d2"
+    }
+  },
+  "main": {
+    "bytes": 43482,
+    "sha256": "b786f2db40e4c70346846bccb336c86c957efbd76f1c9365994138119a4e4363"
+  },
+  "cli": {
+    "bytes": 154459,
+    "sha256": "d9d3296d79ec5c33e969b773ad124c7e4cf977226e12de7593af278353d29d6e"
+  },
+  "guarded_observer": {
+    "bytes": 18839,
+    "sha256": "a316ba20aaeab5c4bb6d852bfa0f2ce491326686f0af119f09bf9252b4b6dbb2"
+  }
+}
