@@ -9,7 +9,7 @@ function Assert-T7ImageProvenanceSourceContract($Contract) {
     $sourcePins=@(
         @('selected_image_provenance.hpp',15069,'d8b3f07f787f03dbda7c0305e2aad685c131130fbe43a839145e869858925c16'),
         @('native_image_provenance.inc',1254,'360bcf806e2d69f3ecba2d2422b99c8c86a775397438117607115ed0d8b5573e'),
-        @('selected_image_provenance_fixture.cpp',14626,'10d8c7508ceb49038f2432f6ed9ee2758deee2062f81643257c35ab77dd3f589'))
+        @('selected_image_provenance_fixture.cpp',14892,'f123c92c219c6d133882cadda2c8f62967de9bb86f2de0f55d0b468384d5f574'))
     foreach($row in $sourcePins){
         $item=$Contract.files.($row[0]);Assert-T7CatalogueFields $item @('lf_bytes','lf_sha256')
         if(!(Test-T7CatalogueInteger $item.lf_bytes 16KB) -or $item.lf_bytes -ne $row[1] -or
@@ -32,7 +32,7 @@ function Assert-T7ImageProvenanceSourcePlan($Plan) {
     $marker=$Plan.SelectedImageProvenanceV1
     Assert-T7CatalogueFields $marker @('Schema','SourceRevision','Contract','NativeSchema')
     if($marker.Schema -isnot [string] -or $marker.Schema -cne 'iw7.t7-image-provenance-proposal/1' -or
-       $marker.SourceRevision -isnot [string] -or $marker.SourceRevision -cne 'f2ee0df49352e8414c4998ea0e50657ad23cab82' -or
+       $marker.SourceRevision -isnot [string] -or $marker.SourceRevision -cne '678bf7dde6a99207654256c1e53ebaaec286ffe1' -or
        $marker.NativeSchema -isnot [string] -or $marker.NativeSchema -cne 'iw7.t7-selected-image-provenance/1'){
         throw 'Exact pending image provenance source basis required.'
     }
