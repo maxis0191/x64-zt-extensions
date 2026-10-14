@@ -366,6 +366,8 @@ function New-AddBindingFixture {
         CLIBytes=119139;CLISHA256='19af683d0c609d43cefc7c93dd3d7fa6f7ae1a6f5b90d2945d37b1830bda1111'})
     $pin=@($fixture.Bindings|Where-Object Path -CEQ 'C:\plan\prepared\zonetool.cpp')[0]
     $pin.Bytes=119139;$pin.SHA256='19af683d0c609d43cefc7c93dd3d7fa6f7ae1a6f5b90d2945d37b1830bda1111'
+    $test=@($fixture.Bindings|Where-Object Path -CEQ 'C:\fixture\test_streamed_contract.py')[0]
+    $test.Bytes=17443;$test.SHA256='9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30'
     foreach($row in @(
         @('ObserverSource','native_catalog_add_observation.inc',6397,'fe37357ad1f3162f24ae79af51f325763b81e05851eb263f8681b5558835f11d'),
         @('ObserverAdapter','prepare_catalog_add_observation.py',6156,'cf6551b918e21d0046136ea3e328494960b70a62334bc3f2727e0a52fee5ec6f'))) {
@@ -391,7 +393,8 @@ foreach($change in @(
     {$fixture.BuildProfile.ObserverSource.SHA256=('0'*64)},
     {@($fixture.Bindings|Where-Object Path -CEQ 'C:\fixture\prepare_catalog_add_observation.py')[0].IsText=$false},
     {@($fixture.Bindings|Where-Object Path -CEQ 'C:\plan\prepared\zonetool.cpp')[0].Bytes=112377},
-    {$fixture.Bindings=$fixture.Bindings[0..149]}
+    {$fixture.Bindings=$fixture.Bindings[0..149]},
+    {@($fixture.Bindings|Where-Object Path -CEQ 'C:\fixture\test_streamed_contract.py')[0].SHA256='86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'}
 )) {
     $fixture=New-AddBindingFixture;. $change;Must-RefuseBinding $fixture
 }

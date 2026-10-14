@@ -99,8 +99,8 @@
       "lf_sha256": "cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4"
     },
     "test_streamed_contract.py": {
-      "lf_bytes": 13768,
-      "lf_sha256": "86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c"
+      "lf_bytes": 17443,
+      "lf_sha256": "9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30"
     }
   },
   "external_adapter": {

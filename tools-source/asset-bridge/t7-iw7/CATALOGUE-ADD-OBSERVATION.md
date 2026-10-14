@@ -69,14 +69,22 @@ The C2 CLI is **119139 bytes / 19af683d0c609d43cefc7c93dd3d7fa6f7ae1a6f5b90d2945
 Only the known CLI binding maps through this finite transition. The original
 three-transition digest, V2/material pins, 66-header dependency facade, 151
 bindings (145 text, six binary), 1146 inputs and three fresh stages remain
-strict. The module and adapter have separate exact source bindings. No arbitrary
+strict. C2 additionally pins the PR39 streamed-contract tests at 17443 bytes /
+`9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30`;
+the frozen C and V2 binding branches keep their prior test pins. The module and
+adapter have separate exact source bindings. No arbitrary
 changed-TU reuse is admitted and the older C transition is not relaxed.
 
 This is source preparation. Native compilation, actual observation and a
 catalogue are unverified; they require separately reviewed plans and admission.
 The local checkpoint passes 36 Python tests (including actual pinned-source
 wiring/inversion, matching/refused/interrupted records and the frozen C positive
-transition) and 525 PowerShell profile/input checks. These are source/contract
+transition) and 526 PowerShell profile/input checks. These are source/contract
 checks, not MSVC compilation or engine execution.
+The first source-only preparation from commit `5fb23f9` refused the stale CLI
+contract's pre-PR39 test pin before any binary content, lease or run directory.
+That source package remains unchanged. The correction updates only the exact
+streamed-test snapshot and its C2 binding; it does not rewrite the test or
+relax the older profiles.
 Next: review the C2 source and coordinate its distinct ops projection before
 any build or stock execution.
