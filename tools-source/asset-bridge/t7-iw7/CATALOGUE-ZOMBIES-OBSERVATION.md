@@ -1,5 +1,37 @@
 # Zombies catalogue C: identify the first failed lookup
 
+## Actual C native build, 2026-10-14
+
+The separately authorized build used the frozen merged source
+`fa45c395597697843053ffc23195320dca6ae73d` and exact plan SHA256
+`627f3aacf6ef892af2a7bc94c00ad0f40e811649bbdf2aa49aecad6569930a15`.
+Fresh main and zonetool11 compilation, then linking, all returned 0. The build
+receipt reports Passed, 25,920.0061 ms, input reverification and completion at
+2026-10-14 00:03:10.848 UTC. The candidate was not executed.
+
+| Artifact | Bytes | SHA256 captured during the original lease |
+| --- | ---: | --- |
+| zonetool-t7.exe | 21,925,376 | `88f2147de79e696d3342f4e838cf5b7b8b25da29cddea41def9395b6933342c8` |
+| zonetool-t7.pdb | 138,514,432 | `03d23285b0b478c6190c967d59c805d366961c3957861ac2e501b04d769839e6` |
+
+The three original compiler/link jobs each captured the owned VCTIP member
+twice, then verified zero active processes and an empty original job after
+guarded closure. TreeClosureConfirmed and LeaseReleased are true; quarantine
+is false. The original host returned 0, with its context closed and zero input
+guards. Fresh metadata confirmed all seven original identities absent and an
+empty resource registry. No opaque artifact was read or hashed after release.
+
+The bounded actual build receipt is 25,317 bytes / SHA256
+`5f817f2f3f24c04868d022b41a3b68da492b75818816c37bb99eb1f6c8805051`.
+Private local evidence retains the original entry/completion and a six-pin
+closure bundle linking the actual tool return, inventory, build completion and
+receipt. Symbols, objects, logs and the original candidate remain preserved.
+This establishes native compilation and lifecycle closure, not execution of
+the observer or a successful Zombies catalogue. Catalogue B remains
+Failed/NoCatalogue with an unresolved RawFile cause; a new stock invocation
+requires separate qualification and coordinator authorization. The earlier
+source-only checkpoints below remain historical evidence.
+
 Catalogue B ended with **Failed / NoCatalogue**, although its native process
 returned 0. It reported the exact RawFile
 `ui/uieditor/widgets/attachmentnamesdisplay.lua` and an empty default asset.
