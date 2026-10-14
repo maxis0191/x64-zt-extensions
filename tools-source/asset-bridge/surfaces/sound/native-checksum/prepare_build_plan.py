@@ -76,10 +76,10 @@ def prepare(repo, python, output, response_revision=None):
            "LIB": ";".join([str(vc / "lib/x64"), str(sdk / "Lib/10.0.26100.0/ucrt/x64"), str(sdk / "Lib/10.0.26100.0/um/x64")]),
            "CL": "", "_CL_": "", "LINK": "", "_LINK_": "", "LIBPATH": "", "PYTHONPATH": "", "PYTHONHOME": "",
            "VSLANG": "1033", "NUMBER_OF_PROCESSORS": "1", "TEMP": tmp, "TMP": tmp}
-    helpers = json_bytes(small(source.parent / "sab_ff_helpers.json"))
+    helpers = json_bytes(small(source.parent / "sab_ff_helpers-20261014.json"))
     sources = [source / name for name in ("Build-ChecksumCandidate.ps1", "BuildCandidate.Core.ps1", "BuildReceipt.Core.ps1",
                                         "build_contract.py", "build_worker.py", "prepare_build_plan.py", "response_revision.py")]
-    sources += [source.parent / name for name in ("sound_ff_phase.py", "sab_ff_helpers.json", "read_sab.py", "read_flac.py")]
+    sources += [source.parent / name for name in ("sound_ff_phase.py", "sab_ff_helpers-20261014.json", "read_sab.py", "read_flac.py")]
     sources += [repo / relative for relative in helpers["files"]]
     if response_revision:
         sources += [response_revision, *[Path(p["path"]) for p in response_pins]]

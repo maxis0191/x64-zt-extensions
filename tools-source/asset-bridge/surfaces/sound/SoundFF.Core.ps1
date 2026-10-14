@@ -18,7 +18,7 @@ function Assert-SoundFFPin($Pin) {
     if($Pin.PSObject.Properties['Attributes'] -and ([int]$f.Attributes -ne $Pin.Attributes -or $f.LastWriteTimeUtc.Ticks -ne ([datetimeoffset]$Pin.ModifiedUtc).UtcDateTime.Ticks)){throw 'Sound input metadata differs.'}
 }
 function Assert-SoundFFHelperSources([string]$SoundRoot,[string]$Repo,$HashInputs) {
-    $helpers=Get-Content -LiteralPath (Join-Path $SoundRoot 'sab_ff_helpers.json') -Raw|ConvertFrom-Json
+    $helpers=Get-Content -LiteralPath (Join-Path $SoundRoot 'sab_ff_helpers-20261014.json') -Raw|ConvertFrom-Json
     if($helpers.schema -cne 'iw7.original-sound-helper-sources/1' -or $helpers.normalization -cne 'utf8-crlf-to-lf-only/1' -or
         @($helpers.files.PSObject.Properties).Count -ne 16){throw 'Explicit helper source identity required.'}
     foreach($entry in $helpers.files.PSObject.Properties){
@@ -163,7 +163,7 @@ function Get-SoundFFCurrentSourceRelatives {
         'tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1','tools-source/asset-bridge/surfaces/prepare_beacon.py',
         'tools-source/asset-bridge/surfaces/prepare_material_v2.py')
     foreach($name in 'Build-SoundFF.ps1','Prepare-SoundFF.ps1','prepare_sab_ff.py','read_flac.py','read_sab.py',
-        'sab_contract.json','sab_ff_helpers.json','sound_ff_phase.py','SoundFF.Core.ps1','SoundBuildJob.cs'){
+        'sab_contract.json','sab_ff_helpers.json','sound_ff_phase.py','SoundFF.Core.ps1','SoundBuildJob.cs','sab_ff_helpers-20261014.json'){
         'tools-source/asset-bridge/surfaces/sound/'+$name
     }
 }
@@ -174,7 +174,8 @@ function New-SoundFFSourceProjection($HistoricalPlan,[string]$PlanSHA256) {
         $path=Join-Path $HistoricalPlan.SharedRepo $relative;Assert-SoundFFPath $path
         if((Get-Item -LiteralPath $path).Length -gt 128KB){throw 'Bounded current helper source required.'}
         $old=@($HistoricalPlan.HashInputs|Where-Object Path -IEQ $path)
-        $new=$relative -ceq 'tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs'
+        $new=$relative -cin @('tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs',
+            'tools-source/asset-bridge/surfaces/sound/sab_ff_helpers-20261014.json')
         if($old.Count -ne $(if($new){0}else{1})){throw 'Exact F helper membership required.'}
         [pscustomobject]@{Relative=$relative;HistoricalPin=$(if($new){$null}else{$old[0]});CurrentPin=(Get-SoundFFPin $path)}
     })
@@ -190,7 +191,8 @@ function Assert-SoundFFSourceProjection($Plan,$HistoricalPlan) {
         $path=Join-Path $HistoricalPlan.SharedRepo $relative
         $rows=@($projection.Entries|Where-Object Relative -CEQ $relative)
         $old=@($HistoricalPlan.HashInputs|Where-Object Path -IEQ $path)
-        $new=$relative -ceq 'tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs'
+        $new=$relative -cin @('tools-source/asset-bridge/surfaces/sound/SoundBuildJob.cs',
+            'tools-source/asset-bridge/surfaces/sound/sab_ff_helpers-20261014.json')
         if($rows.Count -ne 1 -or $old.Count -ne $(if($new){0}else{1})){throw 'Closed current-source membership differs.'}
         $historical=if($new){$null}else{$old[0]}
         $row=$rows[0];$bound=@($Plan.HashInputs|Where-Object Path -IEQ $path)
@@ -247,12 +249,20 @@ function Assert-SoundFFJobSource($HashInputs,[string]$SoundRoot) {
     if($pin.Count -ne 1){throw 'Exact sound-local job source pin required.'}
     Assert-SoundFFPin $pin[0]
 }
+function Assert-SoundFFEstimates($PhysicalBytes,$CommitBytes) {
+    foreach($value in $PhysicalBytes,$CommitBytes){
+        if(($value -isnot [long] -and $value -isnot [int]) -or $value -le 0){throw 'Positive typed native estimate required.'}
+    }
+}
 function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     $dumpOnly=$Plan.Profile -ceq 'DumpOnly'
     $standard=$Plan.Profile -ceq 'StandardMod';$qualifiedC=$dumpOnly -or $standard
     if($Plan.Profile -and !$qualifiedC){throw 'Unknown sound execution profile.'}
-    foreach($entry in @(@('PhysicalBytes',8GB),@('CommitBytes',11GB),@('OutputStopBytes',64MB),@('LogBytesPerStream',2MB),@('CleanupMs',15000))){
-        $value=$Plan.($entry[0]);if(($value -isnot [long] -and $value -isnot [int]) -or $value -ne $entry[1]){throw 'Exact typed native 8/11 budget and limits required.'}
+    Assert-SoundFFEstimates $Plan.PhysicalBytes $Plan.CommitBytes
+    Assert-SoundFFEstimates $Plan.Review.physical_bytes $Plan.Review.commit_bytes
+    if($Plan.PhysicalBytes -ne $Plan.Review.physical_bytes -or $Plan.CommitBytes -ne $Plan.Review.commit_bytes){throw 'Reviewed scenario estimates differ.'}
+    foreach($entry in @(@('OutputStopBytes',64MB),@('LogBytesPerStream',2MB),@('CleanupMs',15000))){
+        $value=$Plan.($entry[0]);if(($value -isnot [long] -and $value -isnot [int]) -or $value -ne $entry[1]){throw 'Exact typed output, log and cleanup limits required.'}
     }
     if($Plan.Schema -cne 'iw7.original-sound-ff-execution/1' -or $Plan.HeavyExecutionAuthorizedByPlan -isnot [bool] -or $Plan.HeavyExecutionAuthorizedByPlan){throw 'Sound execution schema differs.'}
     foreach($path in @($Plan.RunRoot,$Plan.Work,$Plan.SharedRepo,$Plan.Python,$Plan.CandidateRoot,$Plan.Review.source)){Assert-SoundFFPath $path}
@@ -300,7 +310,7 @@ function Assert-SoundFFExecutionPlan($Plan,[string]$SoundRoot) {
     }
     if(@($Plan.StockInputs).Count -ne 72 -or @($Plan.StockInputs|Where-Object Mode -CEQ HardLink).Count -ne 71 -or @($Plan.StockInputs|Where-Object Mode -CEQ Copy).Count -ne 1 -or
         @($Plan.StockInputs|Where-Object {$_.Mode -ceq 'Copy' -and $_.Relative -ceq 'main/fileSysCheck.cfg' -and $_.Bytes -eq 77}).Count -ne 1){throw 'Exact reused 71-link/77-byte sentinel profile required.'}
-    $required=@('read_sab.py','read_flac.py','sound_ff_phase.py','sab_contract.json','sab_ff_helpers.json','SoundFF.Core.ps1','Build-SoundFF.ps1')|ForEach-Object {Join-Path $SoundRoot $_}
+    $required=@('read_sab.py','read_flac.py','sound_ff_phase.py','sab_contract.json','sab_ff_helpers.json','sab_ff_helpers-20261014.json','SoundFF.Core.ps1','Build-SoundFF.ps1')|ForEach-Object {Join-Path $SoundRoot $_}
     Assert-SoundFFHelperSources $SoundRoot $Plan.SharedRepo $Plan.HashInputs
     foreach($path in $required){if(@($Plan.HashInputs|Where-Object Path -IEQ $path).Count -ne 1){throw 'Required sound source pin missing.'}}
     Assert-SoundFFJobSource $Plan.HashInputs $SoundRoot
@@ -450,7 +460,8 @@ function Invoke-SoundFFPhase($Context,$Spec) {
         if($changed){Save-SoundFFState $Context}
         if(Test-Path -LiteralPath (Join-Path $plan.RunRoot 'stop.request')){throw 'Central original-job stop requested.'}
         Measure-SoundFFOutputs $Context
-        $memory=Get-IW7ResourceSnapshot;if($memory.Committed -gt $memory.CommitLimit*.85){throw 'Commit pressure stop.'}
+        $memory=Get-IW7ResourceSnapshot
+        $null=Test-IW7ResourceBudget $memory 0 0
     }
     $Context.Closed=$true
     Record-SoundFFJobCommitPeak $Context
@@ -543,7 +554,7 @@ function Invoke-SoundFFTransaction($Plan,[string]$PlanPath,[string]$PlanSHA256) 
             $c.Guards.Add([IO.File]::Open($pin.Path,'Open','Read','Read'));Assert-SoundFFPin $pin
         }
         . Import-SoundFFHelpers $Plan.SharedRepo
-        $c.Lease=Enter-IW7ResourceLease -Scope $Plan.Work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Original sound SAB and FF build verify dump read'
+        $c.Lease=Enter-IW7ResourceLease -Scope $Plan.Work -Kind Extract -PhysicalBytes $Plan.PhysicalBytes -CommitBytes $Plan.CommitBytes -Owner 'Original sound SAB and FF build verify dump read'
         $state.RetainedLeaseToken=$c.Lease.Token
         [IO.Directory]::CreateDirectory($Plan.RunRoot)|Out-Null;Save-SoundFFState $c
         if($qualifiedC){

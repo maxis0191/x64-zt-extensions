@@ -4,7 +4,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_contract import COMMON_MEMBERS, CORRUPT, EXPECTED, archive_members, compare_archive, include_report, json_bytes, probe_result
+from build_contract import COMMON_MEMBERS, CORRUPT, EXPECTED, archive_members, compare_archive, include_report, json_bytes, probe_result, validate_resource_estimates
 
 
 def archive(objects):
@@ -22,6 +22,15 @@ def archive(objects):
 
 
 class BuildContracts(unittest.TestCase):
+    def test_positive_int64_resource_estimates_without_a_floor(self):
+        for physical, commit in ((1, 1), (512 * 1024**2, 1024**3), (8 * 1024**3, 12 * 1024**3)):
+            validate_resource_estimates(dict(physical_bytes=physical, commit_bytes=commit))
+        for field in ("physical_bytes", "commit_bytes"):
+            for value in (0, -1, True, 1.0, "1", None, 2**63):
+                plan = dict(physical_bytes=1, commit_bytes=1); plan[field] = value
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, "typed build resource estimate"):
+                    validate_resource_estimates(plan)
+
     def test_real_probe_requires_correct_original_and_patched_modes(self):
         for original in (True, False):
             data = {"source_checksum": CORRUPT if original else EXPECTED,

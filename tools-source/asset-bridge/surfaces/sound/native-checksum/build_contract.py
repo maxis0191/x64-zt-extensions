@@ -182,6 +182,12 @@ def reviewed_sdk_tools(plan, sealed_inputs):
     return pins
 
 
+def validate_resource_estimates(plan):
+    for field in ("physical_bytes", "commit_bytes"):
+        require(type(plan.get(field)) is int and 0 < plan[field] <= 2**63 - 1,
+                "positive typed build resource estimate required")
+
+
 def validate_plan(plan, sealed=False):
     require(type(plan) is dict and plan.get("schema") in (SCHEMA, FLAC_SCHEMA), "sound build plan schema differs")
     if is_flac(plan):
@@ -191,8 +197,7 @@ def validate_plan(plan, sealed=False):
         require("flac" not in plan, "FLAC extension cannot use historical checksum schema")
     require(plan.get("source_pin") == "fab935826c898806855376662a8a03317b3ad8f1", "native source pin differs")
     require(plan.get("gsc_provider_revision") == "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a", "v6 source revision differs")
-    require(plan.get("physical_bytes") == 4 * 1024**3 and plan.get("commit_bytes") == 6 * 1024**3,
-            "complete build resource budget differs")
+    validate_resource_estimates(plan)
     require(plan.get("stop_bytes") == 512 * 1024**2 and plan.get("planning_ceiling_bytes") == 768 * 1024**2,
             "build output bound differs")
     require(tuple(c.get("phase") for c in plan.get("commands", [])) == build_order(plan), "closed native command order required")
