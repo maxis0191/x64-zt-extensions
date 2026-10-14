@@ -843,7 +843,12 @@
     "tools-source/asset-bridge/t7-iw7/registration_image_header_fixture.cpp",
     "tools-source/asset-bridge/t7-iw7/registration-image-metadata-source-contract.json",
     "tools-source/asset-bridge/t7-iw7/test_image_registration_metadata.py",
-    "tools-source/asset-bridge/t7-iw7/Test-ImageRegistrationBuild.ps1"
+    "tools-source/asset-bridge/t7-iw7/Test-ImageRegistrationBuild.ps1",
+    "tools-source/asset-bridge/t7-bridge/T7RegistrationImage.Profile.ps1",
+    "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationImage.ps1",
+    "tools-source/asset-bridge/t7-bridge/prepare_registration_image_probe.py",
+    "tools-source/asset-bridge/t7-bridge/test_registration_image_probe.py",
+    "tools-source/asset-bridge/t7-bridge/REGISTRATION-IMAGE-LAUNCHER.md"
   ],
   "dependencies": [
     {

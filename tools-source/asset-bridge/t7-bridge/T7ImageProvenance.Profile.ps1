@@ -222,7 +222,7 @@ function ConvertFrom-T7ImageProvenanceRecord([string]$Text,[int]$ExitCode) {
     }
     [pscustomobject]@{Outcome=$(if($ExitCode -eq 0){'ProvenanceRecordCaptured'}else{'ProvenanceRecordFromFailedProcess'});Record=$record}
 }
-function Read-T7ImageProvenanceRecord($Plan,$State,$Context) {
+function Read-T7ImageMetadataStdout($Plan,$State,$Context) {
     if(!$Context.Closed -or !$Context.Lease){throw 'Original F2 job must be closed with admission retained.'}
     $path=Join-Path $Plan.StageRoot 'stdout.log'
     $stream=[IO.FileStream]::new($path,'Open','Read','Read')
@@ -234,6 +234,10 @@ function Read-T7ImageProvenanceRecord($Plan,$State,$Context) {
         try{$text=$reader.ReadToEnd()}finally{$reader.Dispose()}
         $Context.Guards.Add($stream);$stream=$null;$State.Report=$pin
     }finally{if($stream){$stream.Dispose()}}
+    return $text
+}
+function Read-T7ImageProvenanceRecord($Plan,$State,$Context) {
+    $text=Read-T7ImageMetadataStdout $Plan $State $Context
     $result=ConvertFrom-T7ImageProvenanceRecord $text $State.ExitCode
     # Source consumer owns detailed epoch/MBI interpretation after closed-JSON handoff.
     $State.SelectedProvenance=[ordered]@{Schema='iw7.t7-selected-image-provenance/1';RecordPresent=($null -ne $result.Record);
