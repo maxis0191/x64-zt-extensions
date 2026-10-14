@@ -40,3 +40,21 @@ Source checks cover the exact CPP39 and record gates, finite plan reduction and
 the actual runner finally AST. At this source checkpoint no consumer factory,
 ordinary DEFAULT or registration native candidate has run. Next: reviewed private
 source PR/exact-head CI/merge, then separately reviewed actual preparation and GO.
+
+
+## Actual preparation C, 2026-10-14 UTC
+
+The separately authorized factory and ordinary DEFAULT both exited zero using
+merged source bdaf86d and the measured CPP39 cohort. DEFAULT retained all six
+runtime/opaque/lease/output/Ready fields false. The actual plan is 63,257 bytes /
+`3e95879553323ed14970eee17b161966f08f6040134098779e44992a411a02ae`;
+the packet is 3,746 bytes /
+`92c615f9df6f17d8c3423f366f54dd58cee4ee9daf9d0c425d31d014269e1d61`.
+
+Original NoExit context, owner and publication references remained intact. The
+receipt was flushed and read back under the reservation before release; the
+separate preexit confirmed actual release. Source/publication handles closed
+before the original terminal exited zero. A fresh independent observation found
+all four original processes absent, with no heavy process or lease. Main's stopped
+original generation and 68 bank metadata entries were unchanged; no bank contents
+were opened. This is preparation/DEFAULT evidence, not native image capture.
