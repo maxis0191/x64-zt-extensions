@@ -1166,6 +1166,16 @@
       ]
     },
     {
+      "id": "tools-source-image-metadata-build-profile",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-ImageMetadataBuild.ps1"
+      ]
+    },
+    {
       "id": "raygun-source-handoff",
       "command": [
         "python",

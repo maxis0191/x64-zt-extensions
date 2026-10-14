@@ -15,6 +15,79 @@ import prepare_catalog_zombies_observation as zombies_observer
 import prepare_catalog_add_observation as add_observer
 import prepare_material_parts as material_parts
 import prepare_image_provenance as image_provenance
+import prepare_image_metadata as image_metadata
+
+IMAGE_FIXTURE_SOURCE = '678bf7dde6a99207654256c1e53ebaaec286ffe1'
+IMAGE_FIXTURE_API_PINS = {
+    'ProvenanceSource': (15069, 'd8b3f07f787f03dbda7c0305e2aad685c131130fbe43a839145e869858925c16'),
+    'ProvenanceEntry': (1254, '360bcf806e2d69f3ecba2d2422b99c8c86a775397438117607115ed0d8b5573e'),
+    'ProvenanceFixture': (14892, 'f123c92c219c6d133882cadda2c8f62967de9bb86f2de0f55d0b468384d5f574'),
+}
+IMAGE_FIXTURE_PROOFS = {
+    'Receipt': ('image-provenance-fixture-h/receipt.local.json', 11759,
+                '7e612f958494f52f236dd8a48c3b5d69437eb25ca5fe73036e3b0974243762a6'),
+    'PreExit': ('image-provenance-fixture-h.preexit.local.json', 4479,
+                'c8eebce6a47af7c35f572f8ec4457a8e32d035fb9f577c26467a9ad5e1305e7e'),
+    'Closure': ('image-provenance-fixture-h.closure.local.json', 369,
+                '5203527eed2c6e92575845a57e65aa0d8b6b3f30759e751e64d8e5436b1e75b8'),
+    'Stdout': ('image-provenance-fixture-h/test.stdout.log', 76,
+               '6a704c3d42c843b585a02f93dc12dd82156dce6c7b441cf9374e94bb4e926f8f'),
+}
+
+
+def image_fixture_proof_requested(args):
+    root = getattr(args, 'image_provenance_fixture_proof_root', None)
+    require(root is None or getattr(args, 'image_provenance_v1', False) is True,
+            'H fixture proof requires the explicit image provenance profile')
+    return root
+
+
+def image_fixture_proof(root, read):
+    """Consume only the four reviewed H text files; never opens their artifact paths."""
+    root = path_checked(root)
+    proof = {'Schema': 'iw7.t7-image-fixture-proof/1',
+             'SourceCommit': IMAGE_FIXTURE_SOURCE, 'ExpectedChecks': 53}
+    documents = {}
+    for role, (relative, count, digest) in IMAGE_FIXTURE_PROOFS.items():
+        path = root / relative
+        raw = read(path, count, digest)
+        require(type(raw) is bytes and len(raw) == count and
+                hashlib.sha256(raw).hexdigest() == digest, 'Exact H text proof required')
+        proof[role] = dict(Path=str(path), Bytes=count, SHA256=digest)
+        if role != 'Stdout':
+            documents[role] = json.loads(raw)
+    receipt, preexit, closure = (documents[role] for role in ('Receipt', 'PreExit', 'Closure'))
+    require(receipt['SourceCommit'] == IMAGE_FIXTURE_SOURCE and
+            receipt['FixtureSynthetic'] is True and receipt['EngineInvoked'] is False and
+            receipt['Quarantined'] is False and type(receipt['ExpectedChecks']) is int and
+            receipt['ExpectedChecks'] == 53 and receipt['FixtureSHA256'] ==
+            'c0c60d905c9afcbe70f6dfbab062a3b08a9f49b70aeb37336966ef8a666746cb',
+            'Actual synthetic H source qualification required')
+    for document in (receipt, preexit):
+        require(all(document[name] is True for name in
+                    ('Passed', 'TreeClosureConfirmed', 'InputsReverified', 'LeaseReleased',
+                     'CompletionPublished')), 'Closed and published H proof required')
+    require(preexit['SameOriginalAppDomain'] is True and preexit['OwnerClosed'] is True and
+            preexit['CanExit'] is True and type(preexit['Guards']) is int and preexit['Guards'] == 0,
+            'Original H context exit qualification required')
+    require([phase['Phase'] for phase in receipt['Phases']] == ['compile', 'test'] and
+            all(type(phase['ExitCode']) is int and phase['ExitCode'] == 0 and
+                phase['TreeClosureConfirmed'] is True for phase in receipt['Phases']),
+            'Real H compile/test completion required')
+    host = receipt['Host']
+    require(preexit['Host']['PID'] == host['PID'] and
+            preexit['Host']['CreationFileTime'] == host['CreationFileTime'] and
+            host['ActualHostProof']['NoExitVerified'] is True and
+            host['ActualHostProof']['VerifiedBeforeImportsAndAdmission'] is True,
+            'Same original H NoExit host required')
+    require(closure['Passed'] is True and closure['FixtureExecuted'] is True and
+            closure['ExpectedChecks'] == 53 and closure['PhaseExits'] == [0, 0] and
+            closure['ActualPTYSession'] == 96124 and closure['ActualPTYExit'] == 0 and
+            closure['RemainingOwn'] == [] and closure['HeavyProcesses'] == [] and
+            closure['Leases'] == [] and host['PID'] in closure['ExpectedIDs'] and
+            host['Parent']['PID'] in closure['ExpectedIDs'],
+            'Actual terminal exit and fresh empty H closure required')
+    return proof
 
 HERE = Path(__file__).resolve().parent
 
@@ -568,13 +641,15 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
-def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False):
+def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False, metadata_profile=False):
     require(type(parts_profile) is bool, 'Explicit parts preparation profile required')
     require(type(provenance_profile) is bool and not (parts_profile and provenance_profile),
             'Exclusive explicit provenance preparation profile required')
+    require(type(metadata_profile) is bool and (not metadata_profile or provenance_profile),
+            'Finite metadata extension requires provenance preparation')
     # Only the closed, explicitly selected G3 source transition gets this cap.
     # This bounds authored output bytes, not RAM/commit admission or asset reads.
-    payload_limit = (288 if parts_profile or provenance_profile else 256) * 1024
+    payload_limit = (320 if metadata_profile else 288 if parts_profile or provenance_profile else 256) * 1024
     require(len(raw) <= 2*1024**2 and sum(map(len,payloads.values())) <= payload_limit,
             'Preparation bound exceeded')
 
@@ -631,6 +706,8 @@ def os_resource_context(path, read, expected):
 
 def prepare(args):
     image_observation = image_provenance_selected(args)
+    image_metadata_enabled = image_metadata.selected(args)
+    fixture_proof_root = image_fixture_proof_requested(args)
     os_context_enabled = os_resource_selected(args)
     parts_observation = material_parts.selected(args)
     zombies_observation = zombies_observation_selected(args)
@@ -643,6 +720,7 @@ def prepare(args):
     text_inputs = []
     def read(path, limit=1024*1024, expected=None):
         raw, pin = text_pin(path, limit, expected); text_inputs.append(pin); return raw
+    fixture_proof = image_fixture_proof(fixture_proof_root, read) if fixture_proof_root is not None else None
     cl_raw = read(e7/'obj/tlog/CL.command.1.tlog', 4*1024**2, CL_LOG_SHA)
     link_raw = read(e7/'obj/tlog/link.command.1.tlog', 256*1024, LINK_LOG_SHA)
     cl, link = cl_raw.decode('utf-16'), link_raw.decode('utf-16')
@@ -897,6 +975,30 @@ def prepare(args):
                 'Image provenance requires the verified E5 publication reuse closure')
         payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'], reuse['ImageProvenance'] = \
             image_provenance_transition(payloads, read)
+        if image_metadata_enabled:
+            read(HERE/'prepare_image_metadata.py', 16*1024)
+            main, cli, reuse['ImageMetadata'] = image_metadata.overlay(
+                payloads['prepared/main.cpp'].decode(), payloads['prepared/zonetool.cpp'].decode(), read)
+            payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'] = main.encode(), cli.encode()
+            observer = read(HERE/'selected_material_observation.hpp', 32*1024,
+                            material_parts.BASE_OBSERVER[1]).replace(b'\r\n', b'\n')
+            payloads['prepared/'+image_metadata.GUARDED_OBSERVER] = image_metadata.guarded_observer_source(observer).encode()
+            read(HERE/'selected_image_metadata_guard_fixture.cpp', 16*1024)
+            fixture_root = run/'metadata-fixture-compile'
+            fixture_args = ['/nologo', '/std:c++20', '/EHsc', '/W4', '/WX', '/MT', '/Od', '/Z7', '/external:W0',
+                '/external:I'+str(source/'src/zonetool'),
+                '/external:I'+str(source/'deps/json/single_include/nlohmann'),
+                '/I'+str(HERE), '/I'+str(output/'prepared'),
+                '/sourceDependencies', str(fixture_root/'dependencies.json'),
+                '/Fo'+str(fixture_root/'metadata-fixture.obj'), '/Fe'+str(fixture_root/'metadata-fixture.exe'),
+                str(HERE/'selected_image_metadata_guard_fixture.cpp'), '/link', '/INCREMENTAL:NO',
+                '/DEBUG', '/PDB:'+str(fixture_root/'metadata-fixture.pdb')]
+            payloads['metadata-fixture.rsp'] = ' '.join(map(quote, fixture_args)).encode()
+            stages = [dict(Name='metadata-fixture-compile', Stage='Compile', Image=str(compiler_dir/'cl.exe'),
+                           Arguments=['@'+str(output/'metadata-fixture.rsp')], DeadlineSeconds=120,
+                           Artifacts=['metadata-fixture.obj','metadata-fixture.exe','metadata-fixture.pdb','dependencies.json']),
+                      dict(Name='metadata-fixture-test', Stage='Probe', Image=str(fixture_root/'metadata-fixture.exe'),
+                           Arguments=[], DeadlineSeconds=15, Artifacts=[])] + stages
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -958,7 +1060,10 @@ def prepare(args):
                 profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
         if image_observation:
             profile.update(Name=image_provenance.NAME, Option=image_provenance.OPTION,
-                           ArgumentCount=5, ObservationSchema=image_provenance.SCHEMA, SourceOnlyPending=True)
+                           ArgumentCount=5, ObservationSchema=image_provenance.SCHEMA,
+                           SourceOnlyPending=fixture_proof is None)
+            if fixture_proof is not None:
+                profile['FixtureProof'] = fixture_proof
             for name, path in [('ProvenanceBaseWiring',HERE/'prepare_material_parts.py'),
                                ('ProvenanceWiring',HERE/'prepare_image_provenance.py'),
                                ('ProvenanceSource',HERE/image_provenance.HELPER),
@@ -966,6 +1071,25 @@ def prepare(args):
                                ('ProvenanceContract',HERE/image_provenance.CONTRACT),
                                ('ProvenanceFixture',HERE/image_provenance.FIXTURE)]:
                 profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+            if fixture_proof is not None:
+                for role, expected_pin in IMAGE_FIXTURE_API_PINS.items():
+                    require((profile[role]['Bytes'], profile[role]['SHA256']) == expected_pin,
+                            'H proof cannot qualify another provenance API source')
+            if image_metadata_enabled:
+                profile.update(MetadataSchema=image_metadata.SCHEMA, MetadataOption=image_metadata.OPTION,
+                               MetadataFixtureNativeRoot=str(source), MetadataMapperChecks=54, MetadataGuardChecks=13)
+                for name, path in [('MetadataWiring', HERE/'prepare_image_metadata.py'),
+                                   ('MetadataContract', HERE/image_metadata.CONTRACT),
+                                   ('MetadataPartsSource', HERE/'selected_material_parts_observation.hpp'),
+                                   ('MetadataBuilder', HERE/'selected_image_header_metadata.hpp'),
+                                   ('MetadataBuilderFixture', HERE/'selected_image_header_metadata_fixture.cpp'),
+                                   ('MetadataSource', HERE/'selected_image_metadata.hpp'),
+                                   ('MetadataReadGuard', HERE/'selected_image_metadata_read_guard.hpp'),
+                                   ('MetadataGuardFixture', HERE/'selected_image_metadata_guard_fixture.cpp'),
+                                   ('MetadataGuardedObserver', output/'prepared'/image_metadata.GUARDED_OBSERVER),
+                                   ('MetadataFixtureResponse', output/'metadata-fixture.rsp'),
+                                   ('MetadataEntry', HERE/'native_image_metadata.inc')]:
+                    profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
         if zombies_observation:
             profile['Name'] = zombies_observer.SOURCE_PROFILE
             profile['ObservationSchema'] = zombies_observer.SCHEMA
@@ -999,7 +1123,8 @@ def prepare(args):
         'ToolchainFullyHermetic':False,'Ready':False}
     if os_context is not None: plan['OSResourceContext'] = os_context
     raw = (json.dumps(plan,indent=2)+'\n').encode()
-    require_preparation_bounds(raw, payloads, parts_profile=parts_observation, provenance_profile=image_observation)
+    require_preparation_bounds(raw, payloads, parts_profile=parts_observation, provenance_profile=image_observation,
+                               metadata_profile=image_metadata_enabled)
     payloads['build-plan.local.json'] = raw
     output.mkdir()
     for name, data in payloads.items():
@@ -1033,6 +1158,8 @@ if __name__ == '__main__':
     parser.add_argument('--zombies-add-observation-c2',action='store_true')
     parser.add_argument('--material-parts-v1',action='store_true')
     parser.add_argument('--image-provenance-v1',action='store_true')
+    parser.add_argument('--image-metadata-v1',action='store_true')
+    parser.add_argument('--image-provenance-fixture-proof-root',type=Path)
     parser.add_argument('--os-context-tzres-20261014',action='store_true')
     parser.add_argument('--os-context-proof',type=Path)
     parser.add_argument('--ordinary-plan',type=Path)

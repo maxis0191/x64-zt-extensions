@@ -203,10 +203,15 @@ foreach($count in 128,129) {
 $entry=$ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]}|Select-Object -First 1
 $entryText=$entry.Extent.Text
 $gate=$entryText.IndexOf('Assert-T7InputBindings $plan',[StringComparison]::Ordinal)
-foreach($next in 'foreach($pin in $plan.Bindings)','Binary metadata changed.','. $plan.Core','if(!$Run)','Enter-IW7ResourceLease','Open-T7Pin $pin $context') {
+foreach($next in 'foreach($pin in $plan.Bindings)','Binary metadata changed.','. $plan.Core','Enter-IW7ResourceLease','Open-T7Pin $pin $context') {
     if($gate -lt 0 -or $entryText.IndexOf($next,[StringComparison]::Ordinal) -le $gate){throw 'Early binding gate order changed.'}
     $checks++
 }
+# The provenance DEFAULT deliberately returns before this region without any
+# input/tool read. Select the historical full-plan DEFAULT by its actual output.
+$fullDefault=$ast.Find({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and
+    $n.Extent.Text.StartsWith('if(!$Run)') -and $n.Extent.Text.Contains("Schema='iw7.t7-minimal-build-check/1'")},$true)
+if(!$fullDefault -or $fullDefault.Extent.StartOffset -le ($entry.Extent.StartOffset+$gate)){throw 'Full-plan DEFAULT moved before input bindings.'};$checks++
 if($MultisurfaceFixturePlanPath) {
     $baseRaw=[IO.File]::ReadAllBytes($MultisurfaceFixturePlanPath)
     if($baseRaw.Length -ne 365638 -or [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($baseRaw)).ToLowerInvariant() -cne
