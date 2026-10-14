@@ -833,7 +833,13 @@
     "tools-source/asset-bridge/weapon-export/test_player_cli.cpp",
     "tools-source/asset-bridge/t7-bridge/prepare_image_provenance_probe.py",
     "tools-source/asset-bridge/t7-bridge/Test-T7ImageProvenanceCppD.ps1",
-    "tools-source/asset-bridge/t7-bridge/test_image_provenance_probe.py"
+    "tools-source/asset-bridge/t7-bridge/test_image_provenance_probe.py",
+    "tools-source/asset-bridge/t7-iw7/native_image_registration_metadata.inc",
+    "tools-source/asset-bridge/t7-iw7/prepare_image_registration_metadata.py",
+    "tools-source/asset-bridge/t7-iw7/registration_image_header_capture.hpp",
+    "tools-source/asset-bridge/t7-iw7/registration_image_header_fixture.cpp",
+    "tools-source/asset-bridge/t7-iw7/registration-image-metadata-source-contract.json",
+    "tools-source/asset-bridge/t7-iw7/test_image_registration_metadata.py"
   ],
   "dependencies": [
     {
