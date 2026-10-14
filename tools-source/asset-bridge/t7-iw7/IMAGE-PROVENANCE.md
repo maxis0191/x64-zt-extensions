@@ -61,6 +61,16 @@ dumping. Its rule now targets namespace asset dump calls. Source review also
 bounded serialization of an invalid region count; its native refusal case is
 retained in the unexecuted fixture. Neither correction came from a native run.
 
+Independent architecture review then found a refusal-publication race in the
+first committed callback: its outer catch published only after releasing the
+mutex. The corrected inner catch publishes while the same mutex is still held;
+only failed lock acquisition reaches the outer catch. The authored causal
+fixture pauses publication with a condition_variable. Its old-placement control
+uses the real observer/finish to reproduce a positive result during the gap;
+the corrected path owns the finish mutex through publication and then refuses.
+There are no sleeps. Test access and its pause seam are preprocessor-only and
+absent from the operational build. This fix still needs actual admitted CPP.
+
 This module currently provides a source overlay API, pinned source/output
 contract, standalone fixture and typed native entry. It is not integrated into
 the admitted build producer, operational recipient or owner launcher. Those

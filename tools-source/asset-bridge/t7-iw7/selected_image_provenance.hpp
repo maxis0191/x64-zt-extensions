@@ -122,6 +122,9 @@ namespace zonetool::t7::selected_image_provenance
 
     template <typename Readable, typename Query> class observer
     {
+#ifdef IW7_PROVENANCE_FIXTURE
+    protected: // Test-only legacy control; absent from the operational build.
+#endif
         Readable readable_;
         Query query_;
         base::reader<Readable> search_;
@@ -219,15 +222,25 @@ namespace zonetool::t7::selected_image_provenance
             try
             {
                 const std::lock_guard lock(mutex_);
-                if (!active_.load() || search_refused_.load()) return;
-                if (++callbacks_ > search_limit) { search_refused_ = true; return; }
-                const auto pointer = reinterpret_cast<const XModel*>(returned.data);
-                const auto name_pointer = search_.one(reinterpret_cast<const char* const*>(pointer));
-                if (search_.name(name_pointer) != model_name) return;
-                if (++matches_ != 1) { duplicate_ = true; return; }
-                registration_ = capture(pointer, reinterpret_cast<std::uintptr_t>(incoming.data));
+                try
+                {
+                    if (!active_.load() || search_refused_.load()) return;
+                    if (++callbacks_ > search_limit) { search_refused_ = true; return; }
+                    const auto pointer = reinterpret_cast<const XModel*>(returned.data);
+                    const auto name_pointer = search_.one(reinterpret_cast<const char* const*>(pointer));
+                    if (search_.name(name_pointer) != model_name) return;
+                    if (++matches_ != 1) { duplicate_ = true; return; }
+                    registration_ = capture(pointer, reinterpret_cast<std::uintptr_t>(incoming.data));
+                }
+                catch (...)
+                {
+#ifdef IW7_PROVENANCE_FIXTURE
+                    IW7_PROVENANCE_BEFORE_REFUSAL(mutex_);
+#endif
+                    search_refused_ = true; // Publish before the same lock is released.
+                }
             }
-            catch (...) { search_refused_ = true; } // Do not use an unknown match as positive evidence.
+            catch (...) { search_refused_ = true; } // Only lock acquisition failed; no metadata was read.
         }
         template <typename OriginalAdd> XAssetHeader original_add_and_observe(
             XAssetType type, XAssetHeader incoming, OriginalAdd&& original)

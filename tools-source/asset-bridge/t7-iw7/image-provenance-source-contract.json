@@ -3,16 +3,16 @@
   "source_profile": "t7-image-provenance-v1",
   "files": {
     "selected_image_provenance.hpp": {
-      "lf_bytes": 14618,
-      "lf_sha256": "5ece0df748ad065bdbac7c459fc253750f59a7035c6ed26d913b83f4c4982ab2"
+      "lf_bytes": 15069,
+      "lf_sha256": "d8b3f07f787f03dbda7c0305e2aad685c131130fbe43a839145e869858925c16"
     },
     "native_image_provenance.inc": {
       "lf_bytes": 1254,
       "lf_sha256": "360bcf806e2d69f3ecba2d2422b99c8c86a775397438117607115ed0d8b5573e"
     },
     "selected_image_provenance_fixture.cpp": {
-      "lf_bytes": 10028,
-      "lf_sha256": "41feec2f75652cdd718460cd68b74f028f14d79dd4c4f74fbf079408d02fbe57"
+      "lf_bytes": 14626,
+      "lf_sha256": "10d8c7508ceb49038f2432f6ed9ee2758deee2062f81643257c35ab77dd3f589"
     }
   },
   "main": {
@@ -20,7 +20,7 @@
     "sha256": "13052a66ba89d5e66253c6931b81cb120aaa5acac37d6a4b15ab57cac4c10900"
   },
   "cli": {
-    "bytes": 129795,
-    "sha256": "daadaf2345f348434190789c871cf48e8e67f24301b1720184b1c78bda084182"
+    "bytes": 130246,
+    "sha256": "15d03375dcd65f428ed10522ed238fe24c8ab407716780188ce341b87e1cbcf1"
   }
 }

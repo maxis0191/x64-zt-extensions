@@ -2,11 +2,79 @@
 #define main legacy_material_fixture_main
 #include "selected_material_observation_fixture.cpp"
 #undef main
+#include <condition_variable>
+#include <future>
+#include <mutex>
+#include <thread>
+void provenance_fixture_pause_failure(std::mutex&) noexcept;
+#define IW7_PROVENANCE_FIXTURE
+#define IW7_PROVENANCE_BEFORE_REFUSAL(mutex) provenance_fixture_pause_failure(mutex)
 #include "selected_image_provenance.hpp"
 
 namespace provenance = t7::selected_image_provenance;
 namespace
 {
+    struct publication_gate
+    {
+        std::mutex sync;
+        std::condition_variable cv;
+        bool enabled{}, paused{}, released{};
+        std::mutex* observed_mutex{};
+        void arm()
+        {
+            const std::lock_guard lock(sync);
+            enabled=true;paused=released=false;observed_mutex=nullptr;
+        }
+        void stop(std::mutex& publication)
+        {
+            std::unique_lock lock(sync);
+            if (!enabled) return;
+            observed_mutex=&publication;paused=true;cv.notify_all();
+            cv.wait(lock,[&]{return released;});
+            enabled=false;
+        }
+        std::mutex* wait()
+        {
+            std::unique_lock lock(sync);
+            cv.wait(lock,[&]{return paused;});
+            return observed_mutex;
+        }
+        void release()
+        {
+            const std::lock_guard lock(sync);
+            released=true;cv.notify_all();
+        }
+    } publication;
+
+    // Authored control of the published 2f92525 catch placement. It uses the
+    // actual observer state/capture/finish, changing only refusal publication.
+    template <typename Readable, typename Query> class old_publication_control :
+        public provenance::observer<Readable,Query>
+    {
+        using base=provenance::observer<Readable,Query>;
+    public:
+        using base::base;
+        void old_after_model_add(t7::XAssetHeader incoming,t7::XAssetHeader returned) noexcept
+        {
+            try
+            {
+                const std::lock_guard lock(this->mutex_);
+                if (!this->active_.load() || this->search_refused_.load()) return;
+                ++this->callbacks_;
+                const auto pointer=reinterpret_cast<const t7::XModel*>(returned.data);
+                const auto name=this->search_.one(reinterpret_cast<const char* const*>(pointer));
+                if (this->search_.name(name)!=provenance::model_name) return;
+                if (++this->matches_!=1) {this->duplicate_=true;return;}
+                this->registration_=this->capture(pointer,
+                    reinterpret_cast<std::uintptr_t>(incoming.data));
+            }
+            catch (...)
+            {
+                provenance_fixture_pause_failure(this->mutex_); // Old gap AFTER unlocking.
+                this->search_refused_=true;
+            }
+        }
+    };
     void prepare(fixture& f)
     {
         f.seven_bindings();
@@ -36,6 +104,8 @@ namespace
         return result;
     }
 }
+
+void provenance_fixture_pause_failure(std::mutex& mutex) noexcept {publication.stop(mutex);}
 
 int main()
 {
@@ -183,6 +253,42 @@ int main()
         check(searched.at("registration_search_refused") == true &&
             searched.at("model_callbacks").get<unsigned>() < provenance::search_limit);
         check(searched.at("refused") == true && searched.at("registration").at("image_field_hex").is_null());
+
+        std::atomic<bool> fail_next{false};
+        auto coordinated_guard=[&](const void* p,std::size_t n)
+        {
+            if (fail_next.exchange(false)) throw std::runtime_error("Paused matching refusal");
+            guard(p,n);
+        };
+        old_publication_control<decltype(coordinated_guard),decltype(query)> old_gap(coordinated_guard,query);
+        old_gap.begin();
+        old_gap.old_after_model_add(incoming,header(f));
+        publication.arm();fail_next=true;
+        std::thread old_callback([&]{old_gap.old_after_model_add(incoming,header(f));});
+        publication.wait();
+        const auto false_positive=old_gap.finish(&f.model); // Deterministically enters the old gap.
+        publication.release();old_callback.join();
+        check(false_positive.at("capture_complete") == true &&
+            false_positive.at("registration_search_refused") == false);
+
+        provenance::observer corrected(coordinated_guard,query);
+        corrected.begin();
+        corrected.after_model_add(t7::ASSET_TYPE_XMODEL,incoming,header(f));
+        publication.arm();fail_next=true;
+        std::thread failed_callback([&]{
+            corrected.after_model_add(t7::ASSET_TYPE_XMODEL,incoming,header(f));});
+        auto* held=publication.wait();
+        const bool acquired=held->try_lock();
+        if (acquired) held->unlock();
+        std::promise<void> attempting;
+        auto requested=attempting.get_future();
+        nlohmann::ordered_json corrected_result;
+        std::thread finisher([&]{attempting.set_value();corrected_result=corrected.finish(&f.model);});
+        requested.wait();
+        publication.release();failed_callback.join();finisher.join();
+        check(!acquired); // The real finish mutex remains owned until refusal publication.
+        check(corrected_result.at("capture_complete") == false &&
+            corrected_result.at("registration_search_refused") == true);
 
         std::printf("PASS selected image provenance fixture: %u checks; no engine/image bodies.\n",checks);
         return 0;

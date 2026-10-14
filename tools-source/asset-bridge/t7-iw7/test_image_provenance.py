@@ -54,6 +54,13 @@ class ProvenanceSourceTests(unittest.TestCase):
                            "pixels_copied","registration_path_changed","ready"):
             self.assertIn('{"'+false_flag+'", false}',text)
         self.assertIn('nlohmann::ordered_json(nullptr)',text)
+        callback=text.split('void after_model_add(',1)[1].split(
+            'template <typename OriginalAdd>',1)[0]
+        self.assertLess(callback.index('const std::lock_guard lock(mutex_)'),
+            callback.index('try\n                {'))
+        self.assertIn('IW7_PROVENANCE_BEFORE_REFUSAL(mutex_);',callback)
+        self.assertIn('search_refused_ = true; // Publish before the same lock is released.',callback)
+        self.assertIn('#ifdef IW7_PROVENANCE_FIXTURE',callback)
 
     def test_native_fixture_contains_causal_return_and_missing_association_cases(self):
         text=(provenance.HERE/provenance.FIXTURE).read_text()
@@ -62,8 +69,12 @@ class ProvenanceSourceTests(unittest.TestCase):
                      'incoming.data = reinterpret_cast<void*>', 'Original");',
                      'different.at("header_changed") == true', 'absent.at("header_changed").is_null()',
                      'twice.at("duplicate_registration")', 'v.rows[0].extent=1', 'v.count=3',
-                     'state_change.finish(', 'count_budget.finish(', 'name_budget.finish('):
+                     'state_change.finish(', 'count_budget.finish(', 'name_budget.finish(',
+                     'false_positive=old_gap.finish(', 'held->try_lock()', 'requested.wait()',
+                     'corrected_result.at("capture_complete") == false'):
             self.assertIn(case,text)
+        self.assertNotIn('sleep_for(',text)
+        self.assertNotIn('Sleep(',text)
 
 
 @unittest.skipUnless(os.environ.get("IW7_T7_SOURCE"),"Pinned native SOURCE not supplied")
