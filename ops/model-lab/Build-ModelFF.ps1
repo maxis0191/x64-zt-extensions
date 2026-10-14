@@ -1,6 +1,7 @@
 param([ValidateSet('Build','Restore')][string]$Action='Build',[Parameter(Mandatory)][string]$RunRoot,
     [string]$StockToolRoot,[string]$SourceRoot,[string]$ToolProvenance,[string]$ReaderRun,[string]$Python='python',
-    [string]$CandidateRoot,[string]$CandidateArtifactSHA256,[switch]$DryRun)
+    [string]$CandidateRoot,[string]$CandidateArtifactSHA256,[string]$NativeJobAssembly,
+    [string]$StockBindingPlan,[string]$StockBindingPlanSHA256,[switch]$DryRun)
 $ErrorActionPreference='Stop'
 $ops=Split-Path $PSScriptRoot -Parent;$repo=Split-Path $ops -Parent
 . "$ops/Base-Client.Core.ps1"
@@ -59,6 +60,9 @@ if($CandidateRoot){
     $provenance=[pscustomobject]@{BinarySHA256=$candidate.SHA256}
     $symbols=Join-Path $CandidateRoot 'bin'
     $buildArguments=@('-headless','-unbuffered-io','-strict-content-sources','-buildzone','paris_model_probe')
+    $offlineArguments=@('-headless','-unbuffered-io','-strict-content-sources','-verifyzone','paris_model_probe')
+    $dumpArguments=@('-headless','-unbuffered-io','-strict-content-sources','-dumpzone','paris_model_probe')
+    if($arena -and !$NativeJobAssembly){throw 'Original arena candidate requires the retained original NativeJob assembly.'}
 }else{
     if(!$ToolProvenance -or $CandidateArtifactSHA256){throw 'Existing tool provenance or explicit community candidate required.'}
     $provenance=Get-Content -LiteralPath $ToolProvenance -Raw | ConvertFrom-Json
@@ -69,17 +73,35 @@ if($CandidateRoot){
         @($provenance.Tests.Name | Select-Object -Unique).Count -ne 2 -or (Get-FileHash -LiteralPath $tool).Hash -ine $provenance.BinarySHA256){throw 'Pinned experimental tool source/tests/hash required.'}
     $symbols=Split-Path $ToolProvenance -Parent
     $buildArguments=@('-headless','-unbuffered-io','-buildzone','paris_model_probe')
+    $offlineArguments=@('-headless','-unbuffered-io','-verifyzone','paris_model_probe')
+    $dumpArguments=@('-headless','-unbuffered-io','-dumpzone','paris_model_probe')
 }
 $zones=@('code_pre_gfx','code_post_gfx','common','common_mp','common_cp','common_core_mp','global','global_mp','global_cp','global_core_mp','cp_zmb')
 $names=@($zones | ForEach-Object {"$_.ff";"patch_$_.ff";"techsets_$_.ff"})
 $inputs=@()
+if($StockBindingPlan){
+    if(!$arena -or !$CandidateRoot -or $StockBindingPlanSHA256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
+        (Get-Item -LiteralPath $StockBindingPlan).Length -gt 1MB -or (Get-FileHash -LiteralPath $StockBindingPlan).Hash -ine $StockBindingPlanSHA256){throw 'Explicit bounded original-arena stock binding required.'}
+    $boundStock=Get-Content -LiteralPath $StockBindingPlan -Raw|ConvertFrom-Json
+    $inputs=@($boundStock.stock_binding.inputs)
+    if($inputs.Count -ne 72 -or @($inputs|Where-Object {$_.Relative -eq 'main/fileSysCheck.cfg' -and $_.Mode -ceq 'Copy'}).Count -ne 1){throw 'Existing 72-input aliases and independent copied sentinel required.'}
+    . "$repo/tools-source/asset-bridge/common/StockBinding.Core.ps1"
+}else{
+if($StockBindingPlanSHA256){throw 'Stock binding digest requires its explicit plan.'}
 foreach($folder in @('main','zone')){foreach($f in @(Get-ChildItem -LiteralPath (Resolve-IW7BasePath $stock $folder) -File -Filter '*.ff')){if($f.Name -in $names){$inputs+=[pscustomobject]@{Relative=$folder+'/'+$f.Name;Source=$f.FullName;Mode='HardLink'}}}}
 $inputs+=[pscustomobject]@{Relative='zone/assetfile1.pak';Source=(Resolve-IW7BasePath $stock 'zone/assetfile1.pak');Mode='HardLink'}
 foreach($name in @('iw7_ship.exe','amd_ags_x64.dll','bink2w64.dll','d3dcompiler_46.dll','steam_api.dll','steam_api64.dll','Steam.dll','tlsdll.dll','main/fileSysCheck.cfg')){
     $p=Resolve-IW7BasePath $stock $name
     if(Test-Path -LiteralPath $p){$inputs+=[pscustomobject]@{Relative=$name;Source=$p;Mode='Copy'}}elseif($name -in @('iw7_ship.exe','bink2w64.dll','steam_api64.dll','main/fileSysCheck.cfg')){throw 'Required bootstrap engine/sentinel missing.'}
 }
+}
 foreach($entry in $inputs){$f=Get-Item -LiteralPath $entry.Source;$null=Resolve-IW7BasePath $stock $entry.Relative
+    if($StockBindingPlan){
+        if($f.Length -ne $entry.Bytes -or $f.LastWriteTimeUtc.ToString('o') -cne $entry.ModifiedUtc -or [int]$f.Attributes -ne $entry.Attributes -or $entry.Mode -cnotin @('Copy','HardLink')){throw 'Observed stock metadata/mode changed.'}
+        $id=[IW7HudFileIdentity]::Read($entry.Source);Assert-FFStockIdentity $entry $id
+        $entry|Add-Member NoteProperty SourceId $id -Force
+        continue
+    }
     if($entry.Mode -eq 'HardLink' -and ($f.Attributes -band [IO.FileAttributes]::ReadOnly)){throw 'Read-only stock links refused.'}
     $entry | Add-Member NoteProperty Bytes $f.Length;$entry | Add-Member NoteProperty ModifiedUtc $f.LastWriteTimeUtc.ToString('o');$entry | Add-Member NoteProperty Attributes ([int]$f.Attributes)
     $entry | Add-Member NoteProperty SourceId ([IW7HudFileIdentity]::Read($entry.Source))
@@ -101,7 +123,35 @@ $lease=Enter-IW7ResourceLease -Scope $work -Kind Extract -PhysicalBytes 8GB -Com
 $state=[ordered]@{Schema='iw7.model-ff-build/1';Work=$work;Inputs=$inputs;RetainedLeaseToken=$lease.Token;Restored=$false;StockPreserved=$false;RestorationStatus='Pending';CleanupError=$null;Status='Preparing';SourcePlan=$plan;ToolSHA256=$provenance.BinarySHA256;InventoryVerified=$false;GeometryRoundtripVerified=$false;RecipientReferenceResolved=$false;SymbolsVerified=$false;Ready=$false}
 if($rigid -or $arena){$state.SourcePlanSHA256=(Get-FileHash -LiteralPath (Join-Path $source 'model-ff-plan.json')).Hash}
 $cleanup=[pscustomobject]@{Confirmed=$true};$transactionSaved=$false
+$originalContext=$null
+$stockGuards=[Collections.Generic.List[IDisposable]]::new()
+function Invoke-ModelFFTool([string]$Phase,[string[]]$Arguments) {
+    if($originalContext){
+        try{return Invoke-OriginalArenaTool $originalContext (Join-Path $work 'zonetool.exe') $provenance.BinarySHA256 $Arguments $work $RunRoot $Phase $inputs}
+        finally{$cleanup.Confirmed=$originalContext.Closed}
+    }
+    Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase $Phase -ToolArguments $Arguments
+}
 try{
+    if($StockBindingPlan){
+        foreach($entry in $inputs){$stockGuards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'))}
+        Assert-FFStockContent $inputs
+        $state.StockBindingPlanSHA256=$StockBindingPlanSHA256
+    }
+    if($CandidateRoot -and $arena){
+        $package=Get-Content -LiteralPath (Join-Path $repo 'source-workspace.json') -Raw|ConvertFrom-Json
+        if($package.revisions.'iw7-mod-components' -cne '2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1'){throw 'Current TelemetryOnly native provider required.'}
+        if('IW7.AnimationProbe.NativeJob' -as [type]){throw 'Fresh PowerShell host required for the original arena owner.'}
+        $assembly=Assert-IW7LabPath ((Resolve-Path -LiteralPath $NativeJobAssembly).Path) ([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($NativeJobAssembly)))
+        $ownerSHA='5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8'
+        if((Get-FileHash -LiteralPath $assembly).Hash -ine $ownerSHA){throw 'Retained original NativeJob assembly differs.'}
+        . "$repo/tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1"
+        . "$repo/tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1"
+        . "$repo/tools-source/asset-bridge/world/original-arena/OriginalArena.Process.ps1"
+        [Reflection.Assembly]::LoadFrom($assembly)|Out-Null
+        $originalContext=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$lease;Work=$work}
+        $state.OriginalOwner=[ordered]@{AssemblySHA256=$ownerSHA;SourceWorkspaceSHA256=(Get-FileHash -LiteralPath (Join-Path $repo 'source-workspace.json')).Hash;NativePolicyRevision=$package.revisions.'iw7-mod-components';Policy='H1 original root/job, TelemetryOnly'}
+    }
     [IO.Directory]::CreateDirectory($work)|Out-Null
     $mutable=@($inputs.Relative)+$sourceNames+@('zonetool.exe','zone/paris_model_probe.ff')
     $state.Transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$work;MutableFiles=$mutable;ProfileDirectory='model-unused-profile';ProfileDirectories=@()}) (Join-Path $RunRoot 'backup');$transactionSaved=$true
@@ -114,22 +164,26 @@ try{
     Copy-Item -LiteralPath $tool -Destination (Join-Path $work 'zonetool.exe');if((Get-FileHash -LiteralPath (Join-Path $work 'zonetool.exe')).Hash -ine $provenance.BinarySHA256){throw 'Tool copy hash differs.'}
     Assert-ModelFFInputs $inputs $work
     $state.Status='Building';Write-ModelFFState $state $statePath
-    $state.Build=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase hud-build -ToolArguments $buildArguments
+    $state.Build=Invoke-ModelFFTool hud-build $buildArguments
     if($state.Build.ExitCode){throw 'Model FF build failed.'}
     $ff=Resolve-IW7BasePath $work 'zone/paris_model_probe.ff';Copy-Item -LiteralPath $ff -Destination (Join-Path $RunRoot 'mod.ff')
     $state.FF=[ordered]@{Path='mod.ff';Bytes=(Get-Item -LiteralPath $ff).Length;SHA256=(Get-FileHash -LiteralPath $ff).Hash};$state.Status='CompiledRetained';Write-ModelFFState $state $statePath
-    $state.Offline=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase hud-offline -ToolArguments @('-headless','-unbuffered-io','-verifyzone','paris_model_probe')
+    $state.Offline=Invoke-ModelFFTool hud-offline $offlineArguments
     if($state.Offline.ExitCode){$state.Status='OfflineUnresolved';throw 'Bootstrap reference/inventory load failed; retained FF is not recipient-linked.'}
     $materials=if($rigid -or $arena){@(Get-ModelFFMaterials $plan)}else{@('mopw/character_park_clown_zombie_shoes')}
     $rows=@(Get-ModelFFInventory ([IO.File]::ReadAllText($state.Offline.Stdout)) $modelName $meshName $materials);[IO.File]::WriteAllLines((Join-Path $RunRoot 'assets.csv'),[string[]]$rows)
     $state.InventoryVerified=$true;$state.Status='BootstrapInventoryVerified';Write-ModelFFState $state $statePath
-    $state.Dump=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase hud-roundtrip -ToolArguments @('-headless','-unbuffered-io','-dumpzone','paris_model_probe')
+    $state.Dump=Invoke-ModelFFTool hud-roundtrip $dumpArguments
     if($state.Dump.ExitCode){throw 'Bootstrap model re-dump failed.'}
     $dump=Join-Path $work 'dump/paris_model_probe'
     foreach($name in $artifactNames){$p=Resolve-IW7BasePath $dump $name;$target=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $target))|Out-Null;Copy-Item -LiteralPath $p -Destination $target}
     if($rigid -or $arena){
         $geometryReader=if($arena){$arenaReader}else{"$PSScriptRoot/rigid_export.py"}
-        $state.GeometryReader=Invoke-IW7LabAssetProcess -Executable $Python -ToolArguments @('-B','-S',$geometryReader,'verify-dump','--source',$source,'--dump',(Join-Path $RunRoot 'roundtrip'),'--ff',(Join-Path $RunRoot 'mod.ff')) -WorkingDirectory $repo -LogDirectory $RunRoot -Phase model-rigid-geometry -LeaseToken $lease.Token -CleanupState $cleanup -TimeoutSeconds 30
+        $readerArguments=@('-B','-S',$geometryReader,'verify-dump','--source',$source,'--dump',(Join-Path $RunRoot 'roundtrip'),'--ff',(Join-Path $RunRoot 'mod.ff'))
+        if($originalContext){
+            try{$state.GeometryReader=Invoke-OriginalArenaTool $originalContext $Python (Get-FileHash -LiteralPath $Python).Hash $readerArguments $repo $RunRoot model-rigid-geometry $inputs 30}
+            finally{$cleanup.Confirmed=$originalContext.Closed}
+        }else{$state.GeometryReader=Invoke-IW7LabAssetProcess -Executable $Python -ToolArguments $readerArguments -WorkingDirectory $repo -LogDirectory $RunRoot -Phase model-rigid-geometry -LeaseToken $lease.Token -CleanupState $cleanup -TimeoutSeconds 30}
         $version=if($arena){1}else{Get-ModelFFRigidVersion $plan};$metadataLimit=if($version -eq 2){1MB}else{64KB}
         if($state.GeometryReader.ExitCode -ne 0 -or (Get-Item -LiteralPath $state.GeometryReader.Stdout).Length -gt $metadataLimit){throw 'Resident rigid FF readback failed.'}
         $verified=[IO.File]::ReadAllText($state.GeometryReader.Stdout)|ConvertFrom-Json
@@ -155,8 +209,14 @@ try{
     throw
 }
 finally{
+    if($StockBindingPlan -and $cleanup.Confirmed){
+        try{Assert-ModelFFInputs $inputs $work -SourceOnly;Assert-FFStockContent $inputs}
+        catch{$cleanup.Confirmed=$false;$state.CleanupError='Stock source proof incomplete; guards and reservation retained.'}
+    }
+    if($cleanup.Confirmed){foreach($guard in $stockGuards){$guard.Dispose()}}
     if($transactionSaved){Write-ModelFFState $state $statePath
-        if(!$cleanup.Confirmed){$state.CleanupError='Owned tool/diagnostic termination unconfirmed; lease retained.';Write-ModelFFState $state $statePath}
+        if(!$cleanup.Confirmed){$state.CleanupError='Owned tool/diagnostic termination unconfirmed; lease retained.';Write-ModelFFState $state $statePath
+            if($originalContext){[AppDomain]::CurrentDomain.SetData('IW7.OriginalArena.FF.Quarantine.'+$lease.Token,[pscustomobject]@{Context=$originalContext;Guards=$stockGuards})}}
         else{Complete-ModelFFRestore $state $statePath $lease.Token}}
     # A pre-transaction failure has no borrowed files or child; release normally.
     elseif($cleanup.Confirmed){Exit-IW7ResourceLease -Token $lease.Token}

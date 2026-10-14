@@ -1141,3 +1141,29 @@ No material-bound native writer, FF, game or collision test was run for this
 source change. The queued null-material World Plan remains byte-exact and does
 not qualify this separate source variant. Rendering can be validated before
 collision; visible geometry still cannot be called a solid or navigable arena.
+
+## 2026-10-14: fresh nondefault reference and original-arena FF execution source
+
+The legacy recipient snapshot's three files were not recovered; a Rig inventory
+name cannot replace them. The World route now measures exactly one nondefault
+stock reference with the retained e7 candidate and binds CSV, complete success
+marker, request, actual recipe digest and original native image/identity. It
+refuses incomplete job closure/restoration and preserves material payload,
+runtime and GPU claims as false. Review corrections for the receipt bindings
+are separate from the initial stock-reference commit.
+
+The specialized measurement caller and fresh material-bound writer recipe reuse
+the existing selected 72-input stock profile and World/T7/H1 lifecycle. ModelFF
+accepts that explicit stock mapping and the existing qualified community
+candidate. Its original-arena candidate path runs strict build/verify/dump and
+the independent P2 reader in separate original H1 jobs; root0/Active0 precedes
+restoration/release. Native2f9462 TelemetryOnly remains the runtime provider;
+SDKf4e5 is the creator source contract, not a replacement native runtime.
+The immutable null-material Plan3057 remains NOT GO. See the original-arena
+README for the concrete three-admission sequence and deferred evidence.
+
+Twenty-six authored source tests pass, including receipt substitutions, all
+three rigid masks, source caller mocks and unknown-owner retention. No stock
+payload, native build, FF, process fixture, game or GPU was executed for this
+source change. The read-only review used one GPT-6.1 Sol / medium agent under
+the then-visible policy; later policy requires Ultra for any new Sol review.

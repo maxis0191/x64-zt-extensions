@@ -225,6 +225,49 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell source caller checks require pwsh')
+    def test_original_job_caller_keeps_unknown_owner_and_accepts_telemetry_only(self):
+        # Authored PowerShell mocks only: no native type/job, tool/game process,
+        # retail content or resource reservation is used by this source check.
+        script = r'''
+param($Helper,$Root)
+$ErrorActionPreference='Stop'
+. $Helper
+$script:Mode='pass';$script:Bytes=0L
+function Measure-BeaconOutputFiles {return $script:Bytes}
+function Get-IW7ResourceSnapshot {return [pscustomobject]@{Committed=99;CommitLimit=100}}
+function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,$SHA,$Logs){
+    if($Start.WorkingDirectory -cne $Context.Work -or $Start.ArgumentList[0] -cne '-strict-content-sources'){throw 'Literal direct original tool start differs'}
+    $Context.Closed=$false
+    if($script:Mode -cne 'unknown'){
+        $Context.Owner=[pscustomobject]@{Closed=$false;StopCalls=0}
+        $Context.Owner|Add-Member ScriptMethod StopAndConfirm {param($Ms);if($Ms -ne 5000){throw 'Wrong original stop deadline'};$this.StopCalls++;$this.Closed=$true}
+    }
+    if($script:Mode -cne 'pass'){throw 'Authored owner failure'}
+    Test-H1Budget $Plan $State
+    $State.Identity=[ordered]@{PID=1234;Image=$Start.FileName;CreatedUtc='2026-10-14T00:00:00Z'}
+    $State.TreeClosureConfirmed=$true;$State.ExitCode=0;$Context.Closed=$true
+}
+foreach($mode in 'pass','failed','unknown'){
+    $script:Mode=$mode;$work=Join-Path $Root $mode;[IO.Directory]::CreateDirectory($work)|Out-Null
+    $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token='authored'};Work=$work}
+    if($mode -ceq 'pass'){
+        $result=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work probe @() 30
+        if(!$result.JobClosed -or !$result.RootExited -or $result.ActiveProcesses -ne 0 -or !$context.Closed){throw 'Closed source witness differs'}
+    }else{
+        $caught=$false;try{$null=Invoke-OriginalArenaTool $context (Join-Path $work 'authored.exe') ('1'*64) @('-strict-content-sources') $work $work probe @() 30}catch{$caught=$true}
+        if(!$caught){throw 'Failure was accepted'}
+        if($mode -ceq 'failed' -and (!$context.Closed -or $context.Owner.StopCalls -ne 1)){throw 'Original owner cleanup differs'}
+        if($mode -ceq 'unknown' -and ($context.Closed -or $context.Owner)){throw 'Unknown factory was treated as closed'}
+    }
+}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'source-caller.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('OriginalArena.Process.ps1')),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
     def reference_fixture(self,root):
         tool,_,_,legacy=self.binding_fixture(root)
         measurement=root/'measurement';measurement.mkdir()
@@ -234,11 +277,16 @@ class ModelLabTests(unittest.TestCase):
         (measurement/'reference-request.json').write_bytes(request_raw)
         (measurement/'requested.csv').write_bytes(('material,'+readback.MATERIAL+'\n').encode())
         closure={'Schema':'iw7.original-arena-reference-process/1','ExitCode':0,'RootExited':True,
-                 'ActiveProcesses':0,'JobClosed':True,'PlanSHA256':'1'*64,
-                 'ImageSHA256':'e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04',
+                 'ActiveProcesses':0,'JobClosed':True,'Restored':True,'StockPreserved':True,
+                 'ImageSHA256':model_lab.REFERENCE_TOOL_SHA256,
                  'Identity':{'PID':1234,'Image':str(root/'fixture-tool.exe'),'CreatedUtc':'2026-10-14T00:00:00Z'},
                  'Arguments':['-headless','-unbuffered-io','-strict-content-sources','-enemy-reference-check',
                               'cp_zmb','requested.csv','world_material'],'RequestSHA256':model_lab.digest(request_raw)}
+        plan={'Schema':'iw7.original-arena-reference-plan/1','Image':closure['Identity']['Image'],
+              'ImageSHA256':model_lab.REFERENCE_TOOL_SHA256,'Arguments':closure['Arguments'],
+              'RequestSHA256':closure['RequestSHA256'],'OriginalOwnerAssemblySHA256':model_lab.REFERENCE_OWNER_SHA256}
+        plan_raw=model_lab.json_bytes(plan);(measurement/'reference-plan.json').write_bytes(plan_raw)
+        closure['PlanSHA256']=model_lab.digest(plan_raw)
         outputs={'csv':('type,name,status\nmaterial,'+readback.MATERIAL+',verified\n').encode(),
                  'stdout':b'ENEMY_REFERENCE_CHECK map=cp_zmb rows=1 verified=1 missing=0 default=0 output=enemy-catalog/world_material.csv\n',
                  'closure':model_lab.json_bytes(closure)}
@@ -258,26 +306,38 @@ class ModelLabTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);tool,measurement,path,evidence,closure=self.reference_fixture(root)
             self.assertEqual(model_lab.validate_reference_evidence(tool,path,measurement)[0],readback.MATERIAL)
-            for kind in ('default','missing','extra','open','wrong-tool','wrong-request','identity'):
+            for kind in ('default','missing','extra','open','wrong-tool','wrong-request','identity',
+                         'plan-digest','root-image','unrestored','stock-changed','marker-path','extra-marker'):
                 altered=copy.deepcopy(evidence);changed=copy.deepcopy(closure)
                 csv_path=measurement/evidence['reference_snapshot']['csv']['path']
                 csv_original=csv_path.read_bytes()
+                log_path=measurement/evidence['reference_snapshot']['stdout']['path'];log_original=log_path.read_bytes()
                 if kind in ('default','missing','extra'):
                     data=(('type,name,status\nmaterial,'+readback.MATERIAL+','+kind+'\n') if kind!='extra'
                           else csv_original.decode()+'material,other,verified\n').encode()
                     csv_path.write_bytes(data)
                     altered['reference_snapshot']['csv'].update(bytes=len(data),sha256=model_lab.digest(data))
+                elif kind in ('marker-path','extra-marker'):
+                    data=(log_original.replace(b'world_material.csv',b'other.csv') if kind=='marker-path' else
+                          log_original+b'ENEMY_REFERENCE_CHECK map=cp_rave rows=1 verified=1 missing=0 default=0 output=other.csv\n')
+                    log_path.write_bytes(data)
+                    altered['reference_snapshot']['stdout'].update(bytes=len(data),sha256=model_lab.digest(data))
                 else:
                     if kind=='open':changed['ActiveProcesses']=1
                     if kind=='wrong-tool':changed['ImageSHA256']='0'*64
                     if kind=='wrong-request':changed['Arguments'][4]='cp_rave'
                     if kind=='identity':changed['Identity']['PID']=0
+                    if kind=='plan-digest':changed['PlanSHA256']='1'*64
+                    if kind=='root-image':changed['Identity']['Image']=str(root/'other.exe')
+                    if kind=='unrestored':changed['Restored']=False
+                    if kind=='stock-changed':changed['StockPreserved']=False
                     data=model_lab.json_bytes(changed);(measurement/'closure.json').write_bytes(data)
                     altered['reference_snapshot']['closure'].update(bytes=len(data),sha256=model_lab.digest(data))
                 path.write_bytes(model_lab.json_bytes(altered))
                 with self.subTest(kind=kind),self.assertRaises(ValueError):
                     model_lab.validate_reference_evidence(tool,path,measurement)
                 csv_path.write_bytes(csv_original)
+                log_path.write_bytes(log_original)
                 (measurement/'closure.json').write_bytes(model_lab.json_bytes(closure))
             path.write_bytes(model_lab.json_bytes(evidence))
             hashes=prepare_writer.source_hashes(tool,check_pin=False)
