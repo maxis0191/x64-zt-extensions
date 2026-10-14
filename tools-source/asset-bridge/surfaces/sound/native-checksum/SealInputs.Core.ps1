@@ -24,7 +24,7 @@ function Test-ChecksumSealPressure($Context) {
     if($now-$Context.LastPoll -lt 1000){return}
     if(Test-Path -LiteralPath (Join-Path $Context.OutputRoot 'stop.request')){throw 'Read-only sealing stop requested.'}
     $memory=Get-IW7ResourceSnapshot
-    if($memory.CommitLimit -le 0 -or $memory.Committed -gt $memory.CommitLimit*.85){throw 'Sealing commit pressure stop.'}
+    $null=Test-IW7ResourceBudget $memory 0 0
     $Context.LastPoll=Get-ChecksumSealClock
     Assert-ChecksumSealDeadline $Context
 }

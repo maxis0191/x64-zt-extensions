@@ -23,6 +23,24 @@ $refused=$false;try{Assert-SoundFFExecutionPlan $mismatch $PSScriptRoot}catch{
     if($_.Exception.Message -cne 'Reviewed scenario estimates differ.'){throw};$refused=$true
 }
 if(!$refused){throw 'Changed reviewed estimates accepted.'}
+. "$PSScriptRoot/native-checksum/BuildCandidate.Core.ps1"
+. "$PSScriptRoot/native-checksum/SealInputs.Core.ps1"
+function Get-ChecksumBuildClock {2000L}
+function Get-ChecksumSealClock {2000L}
+function Measure-ChecksumBuildOutput {0L}
+function Get-IW7ResourceSnapshot {$script:policySnapshot}
+foreach($invalid in $false,$true){
+    $script:policySnapshot=@{PhysicalTotal=1GB;PhysicalAvailable=0;CommitLimit=1GB;Committed=$(if($invalid){2GB}else{1GB})}
+    foreach($operation in 'Build','Seal'){
+        $context=[pscustomobject]@{Started=0L;LastPressurePoll=0L;LastPoll=0L;OutputRoot='C:\mock\absent';
+            Plan=@{candidate='C:\mock\absent'};Record=@{PeakObservedOutputBytes=0L};State=@{}}
+        $refused=$false
+        try{if($operation -ceq 'Build'){Assert-ChecksumBuildBudget $context}else{Test-ChecksumSealPressure $context}}catch{
+            if($_.Exception.Message -cne 'Invalid resource snapshot or reservation.'){throw};$refused=$true
+        }
+        if($refused -ne $invalid){throw "Wrong $operation telemetry decision."}
+    }
+}
 $script:mockMs=0
 function Get-MaterialV2MonotonicMs {$script:mockMs}
 function Get-MaterialV2UtcNow {[datetime]'2026-10-12T00:00:00Z'}

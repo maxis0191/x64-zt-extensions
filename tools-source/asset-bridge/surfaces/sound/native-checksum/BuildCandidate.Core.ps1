@@ -46,8 +46,11 @@ function Assert-ChecksumBuildSdkTools($Plan,$SealedPaths) {
 }
 function Assert-ChecksumBuildPlan($Plan,$Seal,$SealState) {
     $flac=$Plan.schema -ceq 'iw7.sound-flac-dump-build-plan/1'
+    foreach($value in $Plan.physical_bytes,$Plan.commit_bytes){
+        if(($value -isnot [int] -and $value -isnot [long]) -or $value -le 0){throw 'Positive typed build resource estimate required.'}
+    }
     if($Plan.schema -cnotin @('iw7.sound-checksum-build-plan/1','iw7.sound-flac-dump-build-plan/1') -or $Plan.sealed -isnot [bool] -or !$Plan.sealed -or
-        $Plan.physical_bytes -ne 4GB -or $Plan.commit_bytes -ne 6GB -or $Plan.stop_bytes -ne 512MB -or $Plan.planning_ceiling_bytes -ne 768MB -or
+        $Plan.stop_bytes -ne 512MB -or $Plan.planning_ceiling_bytes -ne 768MB -or
         $Plan.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
         $Plan.gsc_provider_revision -cne 'eabe74ab65d8ce2a943b54d24b15a60749a0cf2a' -or
         $Plan.sab_ff_authorized -isnot [bool] -or $Plan.sab_ff_authorized -or $Plan.ready -isnot [bool] -or $Plan.ready){throw 'Exact sound build-only contract required.'}
@@ -124,7 +127,7 @@ function Assert-ChecksumBuildBudget($Context) {
     if($now-$Context.LastPressurePoll -ge 1000){
         if(Test-Path -LiteralPath (Join-Path $Context.Plan.candidate 'stop.request')){throw 'Sound build stop requested.'}
         $memory=Get-IW7ResourceSnapshot
-        if($memory.CommitLimit -le 0 -or $memory.Committed -gt .85*$memory.CommitLimit){throw 'Sound build commit pressure stop.'}
+        $null=Test-IW7ResourceBudget $memory 0 0
         $Context.LastPressurePoll=Get-ChecksumBuildClock
         if($Context.LastPressurePoll-$Context.Started -ge 3600000){throw 'Late pressure callback exceeded observed deadline.'}
     }
@@ -212,7 +215,7 @@ function Invoke-ChecksumBuild($Plan,$Seal,[string]$PlanPath,[string]$PlanSHA256,
     $measure={Measure-ChecksumBuildOutput $Plan.candidate};$boundedMeasure={Assert-ChecksumBuildBudget $c}
     try {
         if(Test-Path -LiteralPath $Plan.candidate){throw 'Candidate already exists; no retry.'}
-        $lease=Enter-IW7ResourceLease -Scope $Plan.candidate -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'Sound checksum incremental native build'
+        $lease=Enter-IW7ResourceLease -Scope $Plan.candidate -Kind Build -PhysicalBytes $Plan.physical_bytes -CommitBytes $Plan.commit_bytes -Owner 'Sound checksum incremental native build'
         $record.RetainedLeaseToken=$lease.Token
         [IO.Directory]::CreateDirectory($Plan.candidate)|Out-Null
         Open-ChecksumBuildInputs $c $Seal

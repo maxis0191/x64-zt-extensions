@@ -1,5 +1,6 @@
 $ErrorActionPreference='Stop'
 . "$PSScriptRoot/SealInputs.Core.ps1"
+. "$PSScriptRoot/../../../../../ops/Resource-Scheduler.Core.ps1"
 function Add-Type {throw 'Native type load forbidden by source test.'}
 $root=Join-Path ([IO.Path]::GetTempPath()) ('sound-seal-source-test-'+[guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($root)|Out-Null
@@ -13,7 +14,7 @@ function Exit-IW7ResourceLease {param($Token)
     Check ($Token -ceq 'mock-seal-lease') 'Only original mock lease released'
     $script:exits++;if($script:releaseFailure){throw 'mock release refused'}
 }
-function Get-IW7ResourceSnapshot {[pscustomobject]@{CommitLimit=50GB;Committed=10GB}}
+function Get-IW7ResourceSnapshot {[pscustomobject]@{PhysicalTotal=1GB;PhysicalAvailable=0;CommitLimit=1GB;Committed=1GB}}
 function Get-ChecksumSealClock {$script:clock}
 function Fixture([string]$Name){
     $dir=Join-Path $root $Name;[IO.Directory]::CreateDirectory($dir)|Out-Null
