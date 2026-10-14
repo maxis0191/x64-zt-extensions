@@ -64,3 +64,14 @@ Next: independent source review, private merge, fresh source composition, a
 separately authorized preparation/DEFAULT and exact operational packet review,
 then one separately admitted metadata request. Pixels, decoded dimensions,
 provider payloads, FF output, rendering and gameplay remain unqualified.
+
+Independent review of the initial source found its final success/summary and
+post-publication deadline list still used the legacy catalogue outcome. The
+corrected route has `PartsOutcome` and `PartsMetadataObservedPendingReview`.
+Nine cases now execute the actual runner finally AST: normal, missing, nonzero,
+forced, unclosed, release failure, late release, late publication and Main drift.
+All 251 catalogue/lifecycle assertions pass; unknown closure keeps ownership.
+The source qualifier adds only the new Catalogue profile's exact raw LF/CRLF
+tuples, retaining its prior tuples and ordinary bounds for all other helpers.
+The preparer's source/JSON reader rejects opaque suffixes and oversize metadata
+before opening; bounded reads detect growth/length changes before decode/hash.

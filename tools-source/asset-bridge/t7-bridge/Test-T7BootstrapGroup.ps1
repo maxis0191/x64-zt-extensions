@@ -91,7 +91,8 @@ try{
     # One reviewed larger Catalogue source role; all other helpers remain 128 KiB.
     $catalogueHelper=Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1';$otherHelper=Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1'
     $helperPaths=@($catalogueHelper,$otherHelper)
-    foreach($row in @(@(150096,'57c9ef83b9eb9535d57f0d8d4fa1fffdff3e389849258892993715382922b6d6'),@(151909,'a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29'))){
+    foreach($row in @(@(150096,'57c9ef83b9eb9535d57f0d8d4fa1fffdff3e389849258892993715382922b6d6'),@(151909,'a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29'),
+        @(151018,'ecf2c14c9b4b063c4e90c0465fcc72f58f58049d3e3b401a5d8cc01ab23cd42d'),@(152840,'5dcf897e3926697055498844b930eeabe69ea2482fd1bcdaacb019bd4a2ced15'))){
         $helper=[pscustomobject]@{Path=$catalogueHelper;Bytes=$row[0];SHA256=$row[1];IsText=$true}
         Assert-T7QualificationHelperBinding $helper $helperPaths $catalogueHelper;$checks++
         foreach($case in 'other-role','unknown-role','wrong-size','wrong-hash','array-size','array-hash','array-path','not-text'){

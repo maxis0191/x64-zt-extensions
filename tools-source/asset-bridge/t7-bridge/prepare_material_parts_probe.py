@@ -44,7 +44,9 @@ def read_text_pin(path,expected=None):
     require(path.suffix.lower() in ('.json','.ps1','.py','.cs','.hpp','.inc','.cpp','.rsp'),'Declared source/JSON extension required')
     for parent in (path,*path.parents):
         require(not parent.is_symlink() and not parent.is_junction(),'Reparse text path refused')
-    require(0<path.stat().st_size<=1024*1024,'Bounded source/JSON text required')
+    declared_size=path.stat().st_size
+    require(0<declared_size<=1024*1024,'Bounded source/JSON text required')
+    if expected:require(declared_size==expected[0],'Exact retained text length differs before open')
     with path.open('rb') as stream:
         size=os.fstat(stream.fileno()).st_size
         require(0<size<=1024*1024,'Opened source/JSON size differs')

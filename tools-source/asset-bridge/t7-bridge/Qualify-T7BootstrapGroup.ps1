@@ -43,7 +43,9 @@ function Assert-T7QualificationHelperBinding($Pin,[string[]]$Required,[string]$C
     # These are separate RAW LF/CRLF tuples; no production normalization occurs.
     if($Pin.Path -ceq $CatalogueProfile -and (
         ($Pin.Bytes -eq 150096 -and $Pin.SHA256 -ceq '57c9ef83b9eb9535d57f0d8d4fa1fffdff3e389849258892993715382922b6d6') -or
-        ($Pin.Bytes -eq 151909 -and $Pin.SHA256 -ceq 'a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29'))){return}
+        ($Pin.Bytes -eq 151909 -and $Pin.SHA256 -ceq 'a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29') -or
+        ($Pin.Bytes -eq 151018 -and $Pin.SHA256 -ceq 'ecf2c14c9b4b063c4e90c0465fcc72f58f58049d3e3b401a5d8cc01ab23cd42d') -or
+        ($Pin.Bytes -eq 152840 -and $Pin.SHA256 -ceq '5dcf897e3926697055498844b930eeabe69ea2482fd1bcdaacb019bd4a2ced15'))){return}
     throw 'Oversized helper requires the exact reviewed Catalogue source tuple.'
 }
 function Assert-T7QualificationGroupPlan($Plan,[string]$Repo,[string]$Runner,[string]$Hash){

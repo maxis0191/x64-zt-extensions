@@ -3,6 +3,7 @@ import copy
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 import prepare_material_parts_probe as probe
 
 def pin(path):return dict(Path=path,Bytes=1,SHA256='a'*64)
@@ -13,6 +14,14 @@ class PartsPlanTests(unittest.TestCase):
             target=Path.cwd()/('authored-never-created'+suffix)
             with self.subTest(suffix=suffix),patch.object(Path,'open',side_effect=AssertionError('content opened')):
                 with self.assertRaisesRegex(ValueError,'extension'):probe.read_text_pin(target)
+
+    def test_oversize_and_wrong_expected_stat_refuse_before_open(self):
+        target=Path.cwd()/'authored-never-created.json'
+        for size,expected in ((1024*1024+1,None),(17,(18,'a'*64))):
+            with self.subTest(size=size),patch.object(Path,'is_symlink',return_value=False),patch.object(Path,'is_junction',return_value=False),\
+                    patch.object(Path,'stat',return_value=SimpleNamespace(st_size=size)),\
+                    patch.object(Path,'open',side_effect=AssertionError('content opened')):
+                with self.assertRaises(ValueError):probe.read_text_pin(target,expected)
 
     def fixture(self):
         base='C:\\authored\\'

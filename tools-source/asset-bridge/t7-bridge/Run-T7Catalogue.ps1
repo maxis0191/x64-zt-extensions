@@ -169,13 +169,14 @@ try {
             if(!$state.Quarantined){Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
             if(!$failure -and $context.Closed -and !$context.Lease -and $state.LeaseReleased -and
                !$state.TerminationRequested -and $state.InputsReverified -and $state.EngineOutputsValidated){
-                if($export -and $state.ExportOutcome -ceq 'ExportFilesObserved'){$state.Status='ExportObservedPendingReadback'}
-                elseif(!$export -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
+                if($parts -and $state.PartsOutcome -ceq 'PartsMetadataObserved'){$state.Status='PartsMetadataObservedPendingReview'}
+                elseif($export -and $state.ExportOutcome -ceq 'ExportFilesObserved'){$state.Status='ExportObservedPendingReadback'}
+                elseif(!$export -and !$parts -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
             }
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message}
         try {
             Write-H1Receipt $plan $state $plan.StageRoot
-            if($state.Status -cin @('CatalogueObservedPendingDonorReview','ExportObservedPendingReadback')) {
+            if($state.Status -cin @('CatalogueObservedPendingDonorReview','ExportObservedPendingReadback','PartsMetadataObservedPendingReview')) {
                 try{Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
                 catch {
                     $failure=$_;$state.Status='Failed';$state.FinalizationError=$_.Exception.Message
@@ -192,7 +193,7 @@ if($state -and $state.Quarantined) {
     while($true){Start-Sleep -Seconds 1}
 }
 if($state){
-    $outcomeName=if($export){'ExportOutcome'}else{'CatalogueOutcome'}
+    $outcomeName=if($parts){'PartsOutcome'}elseif($export){'ExportOutcome'}else{'CatalogueOutcome'}
     [ordered]@{Status=$state.Status;($outcomeName)=$state[$outcomeName];Receipt=(Join-Path $plan.StageRoot 'receipt.json');Ready=$false}|ConvertTo-Json
 }
 if($failure){throw $failure}

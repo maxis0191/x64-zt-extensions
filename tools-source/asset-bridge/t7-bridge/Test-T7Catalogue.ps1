@@ -286,7 +286,7 @@ try {
         if($mode.StartsWith('message-')){$State.ExitContextOutcome='Observed';$State.CallersOutcome='Observed';$State.MessageOutcome=switch($mode){'message-prefix'{'Prefix'};'message-partial'{'Partial'};default{'Observed'}}}
         if($mode -ceq 'trace-malformed'){$State.TraceOutcome='TracePresentUnqualified';throw 'injected malformed trace'}
     }
-    function Assert-T7PrepatchMain($Expected){$script:mainChecks++;if($mode -ceq 'main-changed'){throw 'injected Main state change'};[pscustomobject]@{GenerationAndUDP27016OwnerUnchanged=$true}}
+    function Assert-T7PrepatchMain($Expected){$script:mainChecks++;if($mode -cin @('main-changed','parts-main-changed')){throw 'injected Main state change'};[pscustomobject]@{GenerationAndUDP27016OwnerUnchanged=$true}}
     function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
     foreach($mode in 'normal','release-late','publication-late','release-failed','forced','unclosed','trace-valid','trace-only','trace-missing','trace-malformed','trace-forced','main-changed','context-only','context-partial','context-forced','callers-only','callers-partial','callers-forced','message-only','message-prefix','message-partial','message-forced') {
         Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
@@ -350,6 +350,44 @@ try {
         else{Check ($saved.Status -ceq 'Failed' -and $state.LeaseReleased -and $exportReads -eq 1) 'Missing/nonzero export upgraded.'}
         [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
         Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
+        . $core
+        function Get-H1Clock {$script:clock}
+        function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
+    }
+    # Exercise the REAL finally AST for the distinct G3 route; no CatalogueOutcome
+    # exists, so a legacy nonexport fall-through must fail this causal fixture.
+    function Read-T7MaterialPartsReport($Plan,$State,$Context){
+        if(!$Context.Closed -or !$Context.Lease){throw 'Parts read escaped original admission.'}
+        $script:partsReads++
+        switch($mode){'parts-missing'{'NoPartsMetadata'};'parts-nonzero'{'PartsMetadataRefused'};default{'PartsMetadataObserved'}}
+    }
+    $parts=$true;$export=$false
+    foreach($mode in @('parts-normal','parts-missing','parts-nonzero','parts-forced','parts-unclosed','parts-release-failed','parts-release-late','parts-publication-late','parts-main-changed')){
+        Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
+        $guards=$context.Guards;$attempted=$true;$failure=$null;$zonePin=[pscustomobject]@{Path='synthetic'}
+        $state.InputsReverified=$false;$state.PartsOutcome='NoPartsMetadata';$state.Identity=$identity;$state.ExitCode=0
+        $state.EngineOutputsValidated=$false;$script:partsReads=0;$script:traceReads=0;$script:reportReads=0;$script:pinReads=0;$script:mainChecks=0
+        Enable-T7CatalogueRuntimeProfile $plan
+        $plan|Add-Member NoteProperty CandidateProfile 't7-material-parts-v1' -Force
+        if($mode -ceq 'parts-nonzero'){$state.ExitCode=1;$failure='original nonzero exit';$state.Status='Failed'}
+        if($mode -ceq 'parts-release-failed'){$script:releaseFails=$true}
+        if($mode -ceq 'parts-release-late'){$script:clock=199999;$script:releaseDelay=2}
+        if($mode -ceq 'parts-publication-late'){$script:clock=199999;$script:publicationLate=$true}
+        function Write-H1Receipt($Plan,$State,$StageRoot){if($script:publicationLate){$script:clock+=2;$script:publicationLate=$false};[IO.File]::WriteAllText((Join-Path $StageRoot 'receipt.json'),($State|ConvertTo-Json -Depth 8))}
+        if($mode -cin @('parts-forced','parts-unclosed')){
+            $context.Closed=$false;$failure='injected runtime failure';$state.Status='Failed';$fakeOwner.StopFails=$mode -ceq 'parts-unclosed'
+        }
+        . $finalizer
+        $saved=Get-Content -Raw -LiteralPath (Join-Path $evidence 'receipt.json')|ConvertFrom-Json
+        Check ($traceReads -eq 0 -and $reportReads -eq 0) 'Parts route inspected a legacy trace/catalogue.'
+        if($mode -ceq 'parts-normal'){Check ($saved.Status -ceq 'PartsMetadataObservedPendingReview' -and $state.LeaseReleased -and $partsReads -eq 1) 'Parts success was not promoted through its own outcome.'}
+        elseif($mode -ceq 'parts-forced'){Check ($state.TerminationRequested -and $state.LeaseReleased -and $partsReads -eq 0 -and $pinReads -eq 0 -and $saved.Status -ceq 'Failed') 'Forced parts route inspected after release.'}
+        elseif($mode -ceq 'parts-unclosed'){Check ($state.Quarantined -and $context.Lease -and $partsReads -eq 0 -and $pinReads -eq 0) 'Unclosed parts route lost ownership.'}
+        elseif($mode -ceq 'parts-release-failed'){Check ($state.Quarantined -and $context.Lease -and $partsReads -eq 1 -and $saved.Status -cne 'PartsMetadataObservedPendingReview') 'Failed lease release accepted parts.'}
+        else{Check ($saved.Status -ceq 'Failed' -and $state.LeaseReleased -and $partsReads -eq 1) ('Missing/nonzero/late parts metadata upgraded: '+$mode+'/'+$saved.Status+'/'+$partsReads)}
+        [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
+        Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
+        if(Test-Path -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')){Remove-Item -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')}
         . $core
         function Get-H1Clock {$script:clock}
         function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
