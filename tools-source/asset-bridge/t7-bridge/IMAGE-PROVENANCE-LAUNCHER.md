@@ -152,3 +152,30 @@ The preserved pre-release receipt says release pending; the separate preexit
 proof and actual original-host exit confirm release. This qualifies preparation
 and DEFAULT only. F2 native execution needs its separately reviewed packet/GO;
 image-body metadata and any image extraction remain separate later gates.
+
+
+## Actual F2 provenance capture, 2026-10-14 UTC
+
+The separately authorized F2 ran the exact CPP D candidate and four provenance
+arguments through the existing H1 host. Native exit was zero; the runner recorded
+`ProvenanceRecordCapturedPendingReview`. Original H1 closure and same-AppDomain
+NoExit preexit publication completed, including the held publisher source handle.
+The actual terminal exited zero; a fresh observation found the original parent,
+host and native process absent with no heavy process or lease. No body metadata,
+pixel, DDS, game, lifetime or Ready proof is claimed.
+
+Closed stdout: 2,797 bytes /
+`fad905b80ef71d97ccd7c3a7a73161b5bc26829381a9fa610eccc1c4f22801ad`.
+Receipt: 34,635 bytes /
+`5750d5e5525ed43b5c8b57a28c786cc7cc18441f51c58ac2afc8b8d4c920918e`.
+The selected closed schema-1 record is 2,333 bytes /
+`0a3d155ea93c26c572ca1aa63a05236a16588b44c6c5ccd6dee31acd59b8fe17`.
+
+One registration was observed and its association was rechecked at both epochs.
+The numeric image field and selected model header stayed equal. The queried
+264-byte span was readable MEM_COMMIT at registration, then unreadable MEM_RESERVE
+at the later lookup. Numeric equality therefore does not qualify object lifetime
+or a later header/body read. Header, body and payload bytes remained unread.
+Independent result interpretation is pending. Next: interpret the closed record
+and review the producer's capture timing and name/readability guards; body/schema-2
+execution requires another explicit GO.
