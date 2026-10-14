@@ -1257,7 +1257,7 @@ not current reservation evidence. The original live host subsequently showed
 no AppDomain quarantine object, and the authoritative registry had no token or
 lease. After that proof, only its own PTY was resumed and exited with actual code
 1. Fresh 05:32:44 UTC observations found the owned tool/host/parent and all native
-heavy candidates absent, with zero leases. Main27016, banks/configuration and
+heavy candidates absent, with zero leases. Main 27016, banks/configuration and
 owner clients were untouched. The before-release snapshot remains immutable;
 the separate original-host and final postflight records explain the correction.
 
@@ -1348,7 +1348,7 @@ The saved state preceded release and still shows the historical token/false;
 it is not current lease evidence. The original live AppDomain had no quarantine
 object and the authoritative registry contained zero leases. Its own PTY then
 exited with real code 0. Fresh 08:21:21 UTC postflight found original host/parent,
-tool and native heavy candidates absent, with zero leases. Main27016, banks,
+tool and native heavy candidates absent, with zero leases. Main 27016, banks,
 configuration and owner clients were untouched.
 
 The separate `actual-observation-1.json` monitoring record used a raw
@@ -1395,7 +1395,7 @@ MaterialReferenceMeasured=false. The original live AppDomain then showed no
 quarantine object, the historical token absent and zero leases. Only its own
 PTY was exited with real code zero. Fresh 09:32:47 UTC postflight found original
 target/helper/host/parent and heavy candidates absent, with zero leases.
-The saved pre-release false/token snapshot remains unchanged. Main27016,
+The saved pre-release false/token snapshot remains unchanged. Main 27016,
 banks/configuration and owner clients were preserved.
 
 The selected 72-input recipe contains only `zone/assetfile1.pak`; pack17 was
@@ -1412,3 +1412,45 @@ No new hardlink, game clone or stock deletion has been performed by this lookup.
 M3 approval is consumed. Material reference, writer, FF, GPU and physics remain
 unqualified. Next: prepare the minimal additional-pack binding and its fresh
 source/plan/operator; no identical replay or automatic runtime follows.
+
+## 2026-10-14: M4 passed global_mp, then timed out at global_cp
+
+Root approved one normal reference attempt with merged source `8fe0c371` and
+the strict pack17 supplement. Internal plan digest:
+`2720c7b7e6815c6be468193245444546035c7c03be5dbd360637b266523992a1`;
+distinct outer digest:
+`deb99bb6884baa5be9f1e526096dba941f87f31d317883e0a51d705c8a10655e`.
+The unchanged approved 3,568-byte NoExit capsule owned the reference operation.
+A thin local prelude recorded the fresh host and parent images/creation times
+before invoking that capsule, without another lease or native supervisor.
+
+The retained donor's pack17 identity and historical expected SHA prefix 6f5c0d19 passed
+the ordinary current content checks under the one Extract admission and read
+guards before the original target started at 10:46:33 UTC. The original 72 stayed
+unchanged; only zone/assetfile17.pak was borrowed. Source and staged file-ID
+queries matched. The new 73-input plan retained the ordinary 75-entry rollback.
+No whole-game copy, other pack, loader bypass, Main mutation or client occurred.
+
+Stdout advanced beyond the previous global_mp stall to global_cp, then remained
+at 1,665 bytes with empty stderr. After the 240-second original target deadline,
+the helper reported Stage deadline exceeded and stopped/closed its exact owner.
+No reference CSV/evidence or reader success was produced. The added dependency
+allowed the previous load stage to finish; it does not prove complete CP load or
+material validity. The global_cp timeout cause is unknown: no new CPU sample,
+dump, CDB, window text or alternative dependency was inspected during this GO.
+
+All 75 managed entries were restored, including removal of the temporary pack17
+alias. Source hashes and stock content remained unchanged. The saved state was
+published before release, so its historical token/false still is not current
+reservation evidence. After inspecting actual restoration and the authoritative
+zero-lease registry, only the original NoExit catch loop was interrupted. Its
+own live AppDomain showed no quarantine object and no retained token, then the
+original PTY exited with real code1. Fresh 10:52:46 UTC postflight found original
+host/parent/target and native heavy candidates absent, with zero leases.
+Main 27016, banks/configuration and owner clients were untouched.
+
+M4 approval is consumed; no automatic repeat followed. CP reference, material,
+writer/FF, GPU and physics acceptance remain false. Next: prepare one minimal
+diagnostic of the observed global_cp wait using the reviewed original-owner
+path, only after a new plan/operator and coordinated GO. Do not infer another
+missing pack from the earlier M3 message or expand unrelated FF/rig profiles.
