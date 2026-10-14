@@ -4,6 +4,7 @@ param([Parameter(Mandatory)][string]$PackageRoot,[Parameter(Mandatory)][string]$
     [Parameter(Mandatory)][string]$CandidateArtifactSHA256,[Parameter(Mandatory)][string]$NativeJobAssembly,
     [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$ModalTextOnly,
     [string]$RequiredPak17Binding,[string]$RequiredPak17BindingSHA256,
+    [string]$RequiredPak37Binding,[string]$RequiredPak37BindingSHA256,
     [ValidateSet('global_mp','global_cp')][string]$DiagnosticZone='global_mp',[switch]$Run)
 # Default hashes only small source/receipt files. No native type, stock reads,
 # hardlinks, admission, candidate binary hash or process is created before -Run.
@@ -11,6 +12,8 @@ $ErrorActionPreference='Stop'
 $DiagnosticZone=$DiagnosticZone.ToLowerInvariant()
 if($ModalTextOnly -and !$LoadDiagnostic){throw 'Modal text requires the explicit load diagnostic opt-in.'}
 if([bool]$RequiredPak17Binding -ne [bool]$RequiredPak17BindingSHA256){throw 'Pack17 supplement needs its exact metadata receipt and digest.'}
+if([bool]$RequiredPak37Binding -ne [bool]$RequiredPak37BindingSHA256){throw 'Pack37 supplement needs its exact metadata receipt and digest.'}
+if($RequiredPak37Binding -and !$RequiredPak17Binding){throw 'Pack37 requires the preceding reviewed pack17 supplement.'}
 if($DiagnosticZone -ceq 'global_cp' -and (!$LoadDiagnostic -or !$ModalTextOnly -or !$RequiredPak17Binding)){
     throw 'The global_cp witness requires modal text-only diagnostic and the reviewed pack17 supplement.'
 }
@@ -39,6 +42,14 @@ if($RequiredPak17Binding){
     . "$PackageRoot/tools-source/asset-bridge/world/original-arena/Pak17Binding.Core.ps1"
     $supplement=Get-Content -LiteralPath $RequiredPak17Binding -Raw|ConvertFrom-Json
     $inputs+=Get-ArenaRequiredPak17Input $inputs $supplement $bindingPin.SHA256
+}
+if($RequiredPak37Binding){
+    $pak37Pin=SmallPin $RequiredPak37Binding
+    if($pak37Pin.SHA256 -cne $RequiredPak37BindingSHA256){throw 'Required pack37 metadata receipt changed.'}
+    $pins+=@($pak37Pin,(SmallPin "$PackageRoot/tools-source/asset-bridge/world/original-arena/Pak37Binding.Core.ps1"))
+    . "$PackageRoot/tools-source/asset-bridge/world/original-arena/Pak37Binding.Core.ps1"
+    $pak37=Get-Content -LiteralPath $RequiredPak37Binding -Raw|ConvertFrom-Json
+    $inputs+=Get-ArenaRequiredPak37Input $inputs $pak37 $bindingPin.SHA256 $supplementPin.SHA256
 }
 foreach($name in 'ops/Base-Client.Core.ps1','ops/Lab-Paths.ps1','ops/Resource-Scheduler.Core.ps1',
     'ops/Resource-Memory.ps1','ops/Resource-RecorderOwnedProcess.Core.ps1','ops/native/ResourceMemory.cs',

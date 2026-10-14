@@ -228,6 +228,82 @@ class IndependentReaderTests(unittest.TestCase):
 
 class ModelLabTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell pack binding source checks require pwsh')
+    def test_required_pack37_is_unique_after_pack17_and_refuses_coercions(self):
+        script=r'''
+param($Helper17,$Helper37,$Measure,$Root)
+$ErrorActionPreference='Stop'
+. $Helper17
+. $Helper37
+$baseline=@(foreach($i in 1..71){[pscustomobject]@{Relative="main/authored-$i.ff";Source=(Join-Path $Root "absent-$i.ff");Mode='HardLink'}})
+$baseline+=[pscustomobject]@{Relative='main/fileSysCheck.cfg';Source=(Join-Path $Root 'sentinel');Mode='Copy'}
+$baseline[0]=[pscustomobject]@{Relative='zone/assetfile1.pak';Source=(Join-Path $Root 'assetfile1.pak');Mode='HardLink';ExpectedSourceId='11111111:0000000000000001'}
+$record17=[pscustomobject]@{Schema='iw7.world-required-pak17/1';BaselineBindingSHA256=('a'*64);ReviewedManifestSHA256='9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4';Input=[pscustomobject]@{Relative='zone/assetfile17.pak';Source=(Join-Path $Root 'assetfile17.pak');Mode='HardLink';Bytes=104595492L;ModifiedUtc='2026-09-29T21:45:47.6718742Z';Attributes=32;ExpectedSourceId='11111111:0000000000000017';ExpectedSHA256='6f5c0d1937b5a707d4e1fb3009f68a827714d9e4a72ff2d6570b57dbf6b0f058'}}
+$existing=@($baseline)+@(Get-ArenaRequiredPak17Input $baseline $record17 ('a'*64))
+$record=[pscustomobject]@{Schema='iw7.world-required-pak37/1';BaselineBindingSHA256=('a'*64);RequiredPak17BindingSHA256=('b'*64);ReviewedManifestSHA256='9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4';CauseModalRecordSHA256='fb2ec614bc6ed8bce15dd8067aea4eed69b7da288e0c96fac3d8a8835350a9c6';Input=[pscustomobject]@{Relative='zone/assetfile37.pak';Source=(Join-Path $Root 'assetfile37.pak');Mode='HardLink';Bytes=53477412L;ModifiedUtc='2026-09-29T21:46:01.4996203Z';Attributes=32;ExpectedSourceId='11111111:0000000000000037';ExpectedSHA256='839c1da30e43b9c5c78cc457d3fa3ef61bd85ae818c81a2d2d0b30ff187fb349'}}
+$prior=$existing|ConvertTo-Json -Depth 6 -Compress
+$one=Get-ArenaRequiredPak37Input $existing $record ('a'*64) ('b'*64)
+if($one.Relative -cne 'zone/assetfile37.pak' -or $one.ExpectedSourceId -cne $record.Input.ExpectedSourceId -or $one.ExpectedSHA256 -cne $record.Input.ExpectedSHA256 -or (@($existing)+@($one)).Count -ne 74){throw 'Wrong unique pack37 binding'}
+if(($existing|ConvertTo-Json -Depth 6 -Compress) -cne $prior -or $baseline.Count -ne 72){throw 'Preceding profile mutated'}
+foreach($kind in 'relative','source','mode','bytes','sha','id','attrs','baseline','pack17','manifest','cause','date'){
+    $bad=$record|ConvertTo-Json -Depth 6|ConvertFrom-Json
+    switch($kind){
+        relative {$bad.Input.Relative='zone/assetfile38.pak'}
+        source {$bad.Input.Source=Join-Path $Root 'other-provider/assetfile37.pak'}
+        mode {$bad.Input.Mode='Copy'}
+        bytes {$bad.Input.Bytes=1}
+        sha {$bad.Input.ExpectedSHA256='0'*64}
+        id {$bad.Input.ExpectedSourceId='22222222:0000000000000037'}
+        attrs {$bad.Input.Attributes=1056}
+        baseline {$bad.BaselineBindingSHA256='0'*64}
+        pack17 {$bad.RequiredPak17BindingSHA256='0'*64}
+        manifest {$bad.ReviewedManifestSHA256='0'*64}
+        cause {$bad.CauseModalRecordSHA256='0'*64}
+        date {$bad.Input.ModifiedUtc='not-a-date'}
+    }
+    $caught=$false;try{$null=Get-ArenaRequiredPak37Input $existing $bad ('a'*64) ('b'*64)}catch{$caught=$true}
+    if(!$caught){throw "Invalid supplemental $kind accepted"}
+}
+foreach($field in 'Schema','BaselineBindingSHA256','RequiredPak17BindingSHA256','ReviewedManifestSHA256','CauseModalRecordSHA256'){
+    $bad=$record|ConvertTo-Json -Depth 6|ConvertFrom-Json;$bad.$field=@($bad.$field)
+    $caught=$false;try{$null=Get-ArenaRequiredPak37Input $existing $bad ('a'*64) ('b'*64)}catch{$caught=$true};if(!$caught){throw "Singleton contract $field accepted"}
+}
+foreach($field in 'Relative','Mode','Source','ExpectedSHA256','ExpectedSourceId','Bytes','ModifiedUtc','Attributes'){
+    $bad=$record|ConvertTo-Json -Depth 6|ConvertFrom-Json;$bad.Input.$field=@($bad.Input.$field)
+    $caught=$false;try{$null=Get-ArenaRequiredPak37Input $existing $bad ('a'*64) ('b'*64)}catch{$caught=$true};if(!$caught){throw "Singleton input $field accepted"}
+}
+foreach($badNumber in @('53477412',53477412.0,$true)){
+    $bad=$record|ConvertTo-Json -Depth 6|ConvertFrom-Json;$bad.Input.Bytes=$badNumber
+    $caught=$false;try{$null=Get-ArenaRequiredPak37Input $existing $bad ('a'*64) ('b'*64)}catch{$caught=$true};if(!$caught){throw 'Coerced size accepted'}
+}
+foreach($time in @($record.Input.ModifiedUtc,[datetime]'2026-09-29T21:46:01.4996203Z',[datetimeoffset]'2026-09-29T21:46:01.4996203Z')){
+    $bad=$record|ConvertTo-Json -Depth 6|ConvertFrom-Json;$bad.Input.ModifiedUtc=$time;$null=Get-ArenaRequiredPak37Input $existing $bad ('a'*64) ('b'*64)
+}
+foreach($kind in 'missing17','otherpak','repeat37','arrayidentifier','arrayreceipt','arrayinput'){
+    $badExisting=$existing|ConvertTo-Json -Depth 6|ConvertFrom-Json;$bad=$record|ConvertTo-Json -Depth 6|ConvertFrom-Json
+    switch($kind){
+        missing17 {$badExisting=$baseline}
+        otherpak {$badExisting[2].Relative='zone/assetfile38.pak'}
+        repeat37 {$badExisting=@($badExisting)+@($one)}
+        arrayidentifier {$badExisting[2].Relative=@($badExisting[2].Relative)}
+        arrayreceipt {$bad=@($bad)}
+        arrayinput {$bad.Input=@($bad.Input)}
+    }
+    $caught=$false;try{$null=Get-ArenaRequiredPak37Input $badExisting $bad ('a'*64) ('b'*64)}catch{$caught=$true};if(!$caught){throw "Invalid profile $kind accepted"}
+}
+$dummy=@{PackageRoot=$Root;RunRoot=$Root;StockBindingPlan='absent';StockBindingPlanSHA256=('a'*64);ToolSource=$Root;CandidateRoot=$Root;CandidateArtifactSHA256=('b'*64);NativeJobAssembly='absent.dll'}
+$caught=$false;try{& $Measure @dummy -RequiredPak37Binding absent -RequiredPak37BindingSHA256 ('c'*64)}catch{$caught=$_.Exception.Message -ceq 'Pack37 requires the preceding reviewed pack17 supplement.'};if(!$caught){throw 'Missing pack17 not refused before file/native access'}
+$caught=$false;try{& $Measure @dummy -RequiredPak37Binding absent}catch{$caught=$_.Exception.Message -ceq 'Pack37 supplement needs its exact metadata receipt and digest.'};if(!$caught){throw 'Unpaired pack37 receipt not refused before file/native access'}
+if('IW7.AnimationProbe.NativeJob' -as [type]){throw 'Pure checks loaded a native job'}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'pack37.ps1';path.write_text(script,encoding='utf-8')
+            here=Path(model_lab.__file__).parent
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(here/'Pak17Binding.Core.ps1'),str(here/'Pak37Binding.Core.ps1'),
+                str(here/'Measure-StockReference.ps1'),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell pack binding source checks require pwsh')
     def test_required_pack17_is_opt_in_same_provider_and_preserves_baseline(self):
         script=r'''
 param($Helper,$Root)
