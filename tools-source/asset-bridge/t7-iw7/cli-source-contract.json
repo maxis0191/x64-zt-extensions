@@ -193,5 +193,27 @@
         "lf_sha256": "89f3f26699f1240400c4bd96f2987963374658e55a8501cab7dc2543a84ceace"
       }
     }
+  },
+  "prepatch_link_v3": {
+    "schema": "iw7.t7-prepatch-link-build/3",
+    "source_profile": "t7-prepatch-link-v3",
+    "files": {
+      "native_prepatch_reference_v2.inc": {
+        "lf_bytes": 15785,
+        "lf_sha256": "0309b81376d3708cc8de43d297b43fbdfbdd535120e0ad054c157735c2c7457a"
+      },
+      "prepare_prepatch_reference.py": {
+        "lf_bytes": 3665,
+        "lf_sha256": "89f3f26699f1240400c4bd96f2987963374658e55a8501cab7dc2543a84ceace"
+      },
+      "native_prepatch_link_v3.inc": {
+        "lf_bytes": 15827,
+        "lf_sha256": "cf839e18a68adb4ed3aae82d683ef110ab595fa8c172584e47ca4d11bb8db48d"
+      },
+      "prepare_prepatch_link_v3.py": {
+        "lf_bytes": 2236,
+        "lf_sha256": "66f70ca5a979745288232d76496a339e08d639ddf34560aada6e6b63c5bcffa1"
+      }
+    }
   }
 }
