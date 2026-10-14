@@ -302,6 +302,17 @@
       ]
     },
     {
+      "id": "Test-T7PrepatchReferenceV2Consumer",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7PrepatchReferenceV2Consumer.ps1"
+      ]
+    },
+    {
       "id": "Test-T7Prepatch",
       "command": [
         "pwsh",
