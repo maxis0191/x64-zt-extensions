@@ -3,8 +3,6 @@
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 . (Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1')
-. (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
-. (Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1')
 . (Join-Path $PSScriptRoot 'T7CatalogueHost.Core.ps1')
 $script:checks=0
 function Check([bool]$Value,[string]$Why){if(!$Value){throw $Why};$script:checks++}
