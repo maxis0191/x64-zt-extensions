@@ -825,7 +825,10 @@
     "tools-source/asset-bridge/t7-iw7/selected_image_metadata.hpp",
     "tools-source/asset-bridge/t7-iw7/selected_image_metadata_guard_fixture.cpp",
     "tools-source/asset-bridge/t7-iw7/selected_image_metadata_read_guard.hpp",
-    "tools-source/asset-bridge/t7-iw7/test_image_metadata.py"
+    "tools-source/asset-bridge/t7-iw7/test_image_metadata.py",
+    "tools-source/asset-bridge/weapon-export/native_player_cli.hpp",
+    "tools-source/asset-bridge/weapon-export/native_player_cli.inc",
+    "tools-source/asset-bridge/weapon-export/test_player_cli.cpp"
   ],
   "dependencies": [
     {

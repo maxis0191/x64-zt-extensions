@@ -84,3 +84,18 @@ Retail `getrawbaseweaponname` does not strip `sdk_`; the private
 registration. `pap_used` occurs before pickup. Measure payment, pickup/grant,
 ammunition, the player's tier increment and `weapon_level_changed`; a direct
 upgraded grant cannot qualify the transaction. No EE/fuse/DC bypass is supplied.
+
+Owner51's optional `--player-template-cli` source stage adds support127 on pristine
+pinned IW7 source, then one pre-loop dispatch. Inactive default output stays
+unchanged. The new entry admits exactly six owned argv tokens including argv0,
+fixed `-headless`, export flag and `cp_zmb`, finite byte caps and control/NUL
+refusal before the exporter or legacy loop. Mixed/trailing operations refuse.
+Ten native argv assertions are authored and unexecuted; the eight bounded-name
+assertions remain separate. Eleven pure source checks pass, including old trailing
+effect versus pre-loop refusal and preservation of the inactive source output.
+
+The source receipt declares module/entry/header/fixture inputs and the IW7
+translation unit that must replace its retained object in a fresh reviewed
+compilation. It does not guess an object label from old logs, edit the T7/texture
+recipe, or read SDK/tlogs. Later compatible overlays need an explicit order review.
+No compiled CLI, template JSON, stock binding, export or Ready is qualified here.

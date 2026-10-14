@@ -44,13 +44,28 @@ def wire_module(text, expected_sha256=BASE_LF_SHA256):
     return result, module
 
 
-def stage(source_root, output):
+def wire_cli(text):
+    """Apply support first on pristine source, then the finite pre-loop callsite."""
+    result, module = wire_module(text)
+    anchor = '\t\tauto args = get_command_line_arguments();\n'
+    require(result.count(anchor) == 1, 'One exact IW7 argument entry required')
+    header = read_source(HERE/'native_player_cli.hpp').removeprefix('#pragma once\n')
+    entry = read_source(HERE/'native_player_cli.inc')
+    result = result.replace('namespace zonetool::iw7\n{', header+'\nnamespace zonetool::iw7\n{', 1)
+    addition = '\n'.join('\t\t'+line if line else '' for line in entry.splitlines())+'\n'
+    result = result.replace(anchor, anchor+addition, 1)
+    require(len(result.encode()) <= CAP, 'Wired IW7 source cap exceeded')
+    return result, module
+
+
+def stage(source_root, output, *, player_cli=False):
+    require(type(player_cli) is bool, 'Explicit source CLI boolean required')
     output = Path(output)
     require(output.is_absolute() and not output.exists() and
             not any(p.is_symlink() or p.is_junction() for p in (output, *output.parents)),
             "Fresh ordinary absolute output required")
     original = read_source(Path(source_root) / NATIVE_PATH)
-    patched, module = wire_module(original)
+    patched, module = wire_cli(original) if player_cli else wire_module(original)
     target = output / NATIVE_PATH
     report = {"schema": "iw7.player-template-export-support/1", "native_source_pin": SOURCE_PIN,
         "base_lf_sha256": BASE_LF_SHA256,
@@ -58,8 +73,17 @@ def stage(source_root, output):
         "bounded_name_sha256": hashlib.sha256(read_source(HERE / "native_bounded_name.hpp").encode("utf-8")).hexdigest(),
         "staged_lf_sha256": hashlib.sha256(patched.encode("utf-8")).hexdigest(),
         "support_function": FUNCTION, "allowlisted_weapon": "iw7_shredder_zm",
-        "allowlisted_pap": "shredderpap1", "cli_wired": False, "compiled": False,
+        "allowlisted_pap": "shredderpap1", "cli_wired": player_cli, "compiled": False,
         "native_export_executed": False, "full_templates_observed": False, "ready": False}
+    if player_cli:
+        names = ('prepare_module.py','native_player_templates.inc','native_bounded_name.hpp',
+                 'native_player_cli.hpp','native_player_cli.inc','test_bounded_name.cpp','test_player_cli.cpp')
+        report['build_extension'] = dict(translation_unit=NATIVE_PATH, replace_retained_translation_unit=True,
+            source_only=True, requires_fresh_native_compile=True, argv_count_including_executable=6,
+            option='-iw7-player-weapon-templates', other_overlays_preserved=False,
+            ordering='pristine pinned IW7 -> reviewed support127 -> exact CLI -> separately reviewed compatible overlays',
+            inputs={name: hashlib.sha256(read_source(HERE/name).encode()).hexdigest() for name in names},
+            name_fixture_checks_authored=8, argv_fixture_checks_authored=10, cpp_executed=False, ready=False)
     target.parent.mkdir(parents=True, exist_ok=False)
     with target.open("x", encoding="utf-8", newline="\n") as stream:
         stream.write(patched)
@@ -72,5 +96,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--native-source-root", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--player-template-cli", action='store_true')
     args = parser.parse_args()
-    print(json.dumps(stage(args.native_source_root, args.output)))
+    print(json.dumps(stage(args.native_source_root, args.output, player_cli=args.player_template_cli)))
