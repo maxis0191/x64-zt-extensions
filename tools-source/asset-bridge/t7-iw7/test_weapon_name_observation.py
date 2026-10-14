@@ -90,6 +90,7 @@ class ParserTests(unittest.TestCase):
     def test_late_entry_or_return_never_proves_scope_complete(self):
         self.assertEqual(self.parse(enabled()+finished(1,0,0)+enter(2)+returned(3))['outcome'],'Incomplete')
         self.assertEqual(self.parse(enabled()+enter()+finished(2,1,0)+returned(3))['outcome'],'Incomplete')
+        self.assertEqual(self.parse(enabled()+enter()+finished(2,1,1)+returned(3))['outcome'],'Incomplete')
 
     def test_orphan_duplicate_and_mismatched_return_refuse(self):
         for body in (returned(),enter()+returned(tid=18),enter()+returned(kind=24),

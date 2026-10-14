@@ -80,3 +80,7 @@ refusal failure or native result; the fixture must use its actual name length.
 The correction derives that length and changes it by one; it does not relax
 the reader. The resulting 18 source/parser tests pass. C++ compilation and
 real registration remain untested and unactivated.
+Independent review found a return published after finish could be labelled
+NamesObserved when the declared counts matched. Returns now set the same late
+flag as entries, and the negative case uses matching counts so the boundary
+rule itself is tested. No runtime producer or activation behavior changed.

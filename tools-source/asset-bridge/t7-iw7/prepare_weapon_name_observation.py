@@ -97,6 +97,7 @@ def split_observation(text):
                 raise ValueError('Reference prefix differs')
             entries[fields['call']] = dict(fields, tid=tid)
         elif kind == 'return':
+            late |= finished is not None
             entry = entries.get(fields['call'])
             if entry is None or fields['call'] in returned or (entry['tid'], entry['type']) != (tid, fields['type']):
                 raise ValueError('Orphan/duplicate/mismatched return')
