@@ -212,7 +212,7 @@ Successful 528 bytes means two complete header copies. The nested F2 schema is
 its unchanged query-only diagnostic. Lifetime, allocation retention, atomicity,
 same object, runtime ABI, pixels and Ready stay false.
 
-The pending source contract pins the derived observer/main/CLI. Four targeted
+The pending source contract pins the derived observer/main/CLI. Six targeted
 Python source checks pass, including exact consumer shape and actual renderer
 guard syntax/exclusivity. The authored native fixture has 39 expected checks and
 uses the same leaves on owned synthetic pages, including protection withdrawal
@@ -234,6 +234,8 @@ output creation. It reports the new API source-pending/CPP-unqualified with no
 candidate, independently of the historical base H proof. The existing base proof
 only enables the recipe; the new 39-check fixture and complete five-stage closed
 receipt must qualify the changed API. Source guard tests exercise altered plans,
-order/arguments/artifacts, old markers and false DEFAULT claims. Fresh admitted
+order/arguments/artifacts, old markers and false DEFAULT claims. With the actual
+historical H text proofs, 28 PowerShell gates and 16 targeted Python source checks
+pass; the new API still reports pending after the base proof is accepted. Fresh admitted
 PREP, exact actual-plan review, CPP qualification and separate Native GO remain;
 the new launcher is still inactive and no native execution is claimed here.

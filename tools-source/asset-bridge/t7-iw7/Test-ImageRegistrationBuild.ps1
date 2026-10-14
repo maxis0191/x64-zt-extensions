@@ -93,6 +93,20 @@ try{
     };$checks++
     $Run=$true;$refused=$false;try{. $body}catch{$refused=$_.Exception.Message -like 'Image-provenance producer is source-pending:*'}
     if(!$refused){throw 'Base-unqualified Run admitted'};$checks++
+    if($env:IW7_T7_IMAGE_FIXTURE_PROOF){
+        # Reuse only the real historical proof validated by the existing test.
+        $baseQualified=$p|ConvertTo-Json -Depth 25|ConvertFrom-Json
+        $baseQualified.BuildProfile.SourceOnlyPending=$false
+        $baseQualified.BuildProfile|Add-Member NoteProperty FixtureProof $qualified.BuildProfile.FixtureProof
+        foreach($role in 'Receipt','PreExit','Closure','Stdout'){
+            $pin=$qualified.BuildProfile.FixtureProof.$role
+            $baseQualified.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+        }
+        if(!(Assert-T7BuildProfile $baseQualified $PSScriptRoot)){throw 'Real base H proof refused'};$checks++
+        $buildProfile=$baseQualified.BuildProfile;$Run=$false;$result=. $body|ConvertFrom-Json
+        if(!$result.CPPEnabled -or $result.BaseProvenanceSourceOnlyPending -or !$result.SourceOnlyPending -or
+           $result.RegistrationCPPQualified -or $null -ne $result.CandidateSHA256){throw 'Historical H proof falsely qualified new API'};$checks++
+    }
     $probeRoot=Join-Path $tempRoot 'authored-probe';[IO.Directory]::CreateDirectory($probeRoot)|Out-Null
     $stdout=Join-Path $probeRoot 'stdout.log';$stderr=Join-Path $probeRoot 'stderr.log'
     foreach($newline in "`n","`r`n"){
