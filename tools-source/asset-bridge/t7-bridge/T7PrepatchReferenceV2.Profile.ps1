@@ -47,6 +47,13 @@ function Get-T7ReferenceProtocol($CandidateProfile) {
     }
     throw 'Unknown fixed reference consumer profile.'
 }
+function Get-T7ReferenceBuildCohort($CandidateProfile) {
+    $protocol=Get-T7ReferenceProtocol $CandidateProfile
+    if($protocol.Name -ceq 't7-prepatch-reference-v2'){
+        return [pscustomobject]@{PlanBytes=303783;PlanSHA256='0aca63cb09e8ecfc96dee34e1fdf94f8cb66e400f8a190ffdefd38bec3a2c549';ReceiptBytes=16885;ReceiptSHA256='77e7fecfbf47217cee2fb5f4e371e76350961b759007130d1d4980488168b9f8';CandidateBytes=21777408;CandidateSHA256='f11c683b5379e08cca4e881a7a412a2a8a45b5f872acb690ac62218fce6717f5';IndexBytes=1867;IndexSHA256='cfb6f523336ad0fd163c2ffcdeaf4ff5b31b83fc5fa17321662bce89c61353d0'}
+    }
+    [pscustomobject]@{PlanBytes=305621;PlanSHA256='e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530';ReceiptBytes=17200;ReceiptSHA256='0cc0c8b6b46fd75d09c53b3e3c3dc9af40aa4211a786629fcf2f791c52111328';CandidateBytes=21777408;CandidateSHA256='d89c4cf326f21038d9fbcc6a18c18db2c17c17f448400a8567ee2e5fdca6a8bb';IndexBytes=2189;IndexSHA256='b13107f072b164640a4344d8281df79b5b2f3fc1ee229813764ce7e55159e4c2'}
+}
 function Assert-T7RefV2Marker($Marker) {
     Assert-T7RefV2Fields $Marker @('Schema','SourceProfile','RetainedMainBytes','RetainedMainSHA256','BaseMainBytes','BaseMainSHA256','MainBytes','MainSHA256','HelperBytes','HelperSHA256') 'build marker'
     foreach($name in 'Schema','SourceProfile','RetainedMainSHA256','BaseMainSHA256','MainSHA256','HelperSHA256'){Assert-T7RefV2String $Marker.$name ('marker.'+$name)}
@@ -112,7 +119,11 @@ function Assert-T7RefV2Build($Plan,$BuildPlan,$Receipt=$null,$CandidateProfile='
         Assert-T7LinkV3BuildProfile $BuildPlan.BuildProfile $Plan.Bindings
         Assert-T7LinkV3Marker $BuildPlan.ReuseCompile.PrepatchLinkV3
         if($BuildPlan.ReuseCompile.PSObject.Properties['PrepatchReferenceV2']){throw 'V3 cannot mix the V2 marker.'}
-        if($null -ne $Receipt){throw 'V3 actual CPP receipt/closure cohort is not qualified yet.'}
+        if($null -ne $Receipt){
+            $cohort=Get-T7ReferenceBuildCohort $protocol.Name
+            if($Plan.ExpectedBuildPlanSHA256 -cne $cohort.PlanSHA256){throw 'V3 exact actual CPP recipe required.'}
+            Assert-T7RefV2TextPin $BuildPlan.OSResourceContext.Evidence $Plan.Bindings 8907 '5a282c19995af210fd9d7c55a8692d87d4456526352fe21034a8f07d83a9fd9d'
+        }
     }
     if($BuildPlan.ReuseCompile.RecompiledMain -isnot [bool] -or !$BuildPlan.ReuseCompile.RecompiledMain){throw 'V2 fresh main required.'}
     foreach($name in 'RecompiledZonetool','ResidentMultiSurfaceV2','SelectedStreamedStaticV1','SelectedStreamedRenderOnlyV2','ZombiesObservationC','ZombiesAddObservationC2','ResidentSurfaceCountDiagnostic','MaterialParts'){
@@ -125,7 +136,8 @@ function Assert-T7RefV2Build($Plan,$BuildPlan,$Receipt=$null,$CandidateProfile='
     }
     if($Receipt.Schema -cne 'iw7.t7-minimal-build/1' -or $Receipt.Status -cne 'Passed' -or $Receipt.PlanSHA256 -cne $Plan.ExpectedBuildPlanSHA256 -or
        !$Receipt.InputsReverified -or !$Receipt.TreeClosureConfirmed -or !$Receipt.LeaseReleased -or $Receipt.Quarantined -or $Receipt.CandidateExecuted -or $Receipt.Ready){throw 'V2 successful closed unexecuted build required.'}
-    Assert-T7RefV2BuildProfile $Receipt.BuildProfile $Plan.Bindings
+    if($protocol.Name -ceq 't7-prepatch-reference-v2'){Assert-T7RefV2BuildProfile $Receipt.BuildProfile $Plan.Bindings}
+    else{Assert-T7LinkV3BuildProfile $Receipt.BuildProfile $Plan.Bindings}
     if(($Receipt.BuildProfile|ConvertTo-Json -Depth 6 -Compress) -cne ($BuildPlan.BuildProfile|ConvertTo-Json -Depth 6 -Compress)){throw 'V2 receipt profile differs from original recipe.'}
     if(@($Receipt.Stages).Count -ne 2 -or (@($Receipt.Stages.Name)-join ',') -cne 'main,link'){throw 'V2 original main/link stages required.'}
     foreach($stage in $Receipt.Stages){
@@ -156,6 +168,30 @@ function Assert-T7RefV2ClosedBuildPins($Plan,$Index) {
         $pin=$Index.Pins[$i];Assert-T7RefV2TextPin $pin $Plan.Bindings $rows[$i][1] $rows[$i][2]
         if([IO.Path]::GetFileName($pin.Path) -cne $rows[$i][0]){throw 'V2 closure role differs.'}
     }
+}
+function Assert-T7LinkV3ClosedBuildPins($Plan,$Index) {
+    Assert-T7RefV2Fields $Index @('Schema','SourceRevision','PlanSHA256','Rows','ArtifactPinsAreOriginalLeaseObservations','ActualPTYCompleted','IndependentAbsenceObserved','OpaqueInputsReadAfterRelease','CandidateExecuted','Ready') 'V3 closed index'
+    foreach($name in 'Schema','SourceRevision','PlanSHA256'){Assert-T7RefV2String $Index.$name ('index.'+$name)}
+    if($Index.Schema -cne 'iw7.t7-prepatch-link-v3-closed-pins/3' -or $Index.SourceRevision -cne 'a8ecff7cb61323cd0e6f75d10e596d55e63a7753' -or
+       $Index.PlanSHA256 -cne 'e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530'){throw 'V3 original closed cohort differs.'}
+    foreach($name in 'ArtifactPinsAreOriginalLeaseObservations','ActualPTYCompleted','IndependentAbsenceObserved'){
+        if($Index.$name -isnot [bool] -or !$Index.$name){throw 'V3 original closure evidence required.'}
+    }
+    foreach($name in 'OpaqueInputsReadAfterRelease','CandidateExecuted','Ready'){
+        if($Index.$name -isnot [bool] -or $Index.$name){throw 'V3 closed index overclaims execution.'}
+    }
+    Assert-T7RefV2Fields $Index.Rows @('Entry','Completion','ToolExit','Inventory','Build','Bundle') 'V3 six closure roles'
+    foreach($row in @(
+        @('Entry','entry.json',1149,'b67d612051d16866afeae8c895f0b19b7a17d4ea7e9a3cd7672718c96d851900'),
+        @('Completion','completion.json',649,'5c8f6232d026284337d3b13f253e2fc743c63b0dbd2c3cf61721ef5d235c8c0e'),
+        @('ToolExit','actual-pty-exit.local.json',215,'d7b07a7378c933ea87f66f5077cf9b6a272c166b17ab51cd4c51afa7a6b8a711'),
+        @('Inventory','cpp-independent-closure.local.json',1207,'6066a2d8ca8f999e23eb1ce7b26167a5a4a8efd43be8915388ba019bf6be439c'),
+        @('Build','receipt.json',17200,'0cc0c8b6b46fd75d09c53b3e3c3dc9af40aa4211a786629fcf2f791c52111328'),
+        @('Bundle','closed-output-bundle.local.json',1987,'b692b0dc59462003ad046849ce91b764b02ed82be3e4c25cc043bb44cada69bc'))){
+        $pin=$Index.Rows.($row[0]);Assert-T7RefV2TextPin $pin $Plan.Bindings $row[2] $row[3]
+        if([IO.Path]::GetFileName($pin.Path) -cne $row[1]){throw 'V3 closure role path differs.'}
+    }
+    if($Index.Rows.Build.Path -cne $Plan.BuildReceipt){throw 'V3 closure build must be the actual CPP receipt.'}
 }
 function Get-T7RefV2Metadata([string]$Path) {
     Assert-H1Path $Path
@@ -222,16 +258,20 @@ function Assert-T7RefV2Main($Plan) {
     if(($bank|ConvertTo-Json -Depth 6 -Compress) -cne ($Plan.BankSnapshot|ConvertTo-Json -Depth 6 -Compress)){throw 'V2 preserved bank metadata changed.'}
     [ordered]@{CapturedUtc=[datetime]::UtcNow.ToString('o');Baseline='Stopped';OriginalPID=$expected.PID;OriginalCreatedUtc=$expected.CreatedUtc;ExpectedImage=$expected.Image;OriginalPIDAbsent=$true;ExpectedImageAbsent=$true;UDP27016Absent=$true;MainFileCount=$Plan.MainFiles.Count;BankEntryCount=$bank.Entries.Count;BankMetadataUnchanged=$true;BankContentsRead=$false;Cause='Unknown'}
 }
-function Assert-T7RefV2Plan($Plan,[string]$Repo,[string]$Runner) {
+function Assert-T7RefV2Plan($Plan,[string]$Repo,[string]$Runner,[switch]$SourceOnly) {
     foreach($name in 'Schema','CandidateProfile','ObservationSchema','ReportName','Runner','RunRoot','WorkingDirectory','StageRoot','Image','EngineSource','SteamSource','JobAssembly','HostImage','BuildPlan','ExpectedBuildPlanSHA256'){
         Assert-T7RefV2String $Plan.$name ('plan.'+$name)
     }
     $protocol=Get-T7ReferenceProtocol $Plan.CandidateProfile
+    $cohort=Get-T7ReferenceBuildCohort $protocol.Name
+    $candidateBound=$Plan.PSObject.Properties['CandidateSource'] -and $null -ne $Plan.CandidateSource
+    if($SourceOnly -and $protocol.Name -cne 't7-prepatch-link-v3'){throw 'Source-only closure review is restricted to V3.'}
     if($protocol.Name -ceq 't7-prepatch-reference-v2'){
         Assert-T7RefV2String $Plan.BuildClosedPins 'plan.BuildClosedPins'
         if($Plan.ExpectedBuildPlanSHA256 -cne '0aca63cb09e8ecfc96dee34e1fdf94f8cb66e400f8a190ffdefd38bec3a2c549'){throw 'V2 exact original recipe required.'}
     }else{
-        Assert-T7LinkV3PendingCandidate $Plan
+        if($candidateBound){Assert-T7ReferenceCandidate $Plan $protocol.Name}
+        else{Assert-T7LinkV3PendingCandidate $Plan}
         if($Plan.ExpectedBuildPlanSHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'V3 reviewed source recipe pin required.'}
     }
     foreach($name in 'PhysicalBytes','CommitBytes','GroupDeadlineSeconds','DeadlineSeconds','MutableOutputLimitBytes','MetadataReserveBytes','CleanupSeconds','ReportLimitBytes','LogLimitBytes','CandidateBytes','OutputLimitBytes'){Assert-T7RefV2Integer $Plan.$name ('plan.'+$name)}
@@ -250,15 +290,18 @@ function Assert-T7RefV2Plan($Plan,[string]$Repo,[string]$Runner) {
     foreach($pin in $Plan.Bindings){Assert-T7RefV2Pin $pin}
     if(@($Plan.Bindings.Path|Sort-Object -Unique).Count -ne $Plan.Bindings.Count){throw 'V2 duplicate binding refused.'}
     foreach($path in @($Plan.RunRoot,$Plan.WorkingDirectory,$Plan.StageRoot,$Plan.Image,$Plan.EngineSource,$Plan.SteamSource,$Plan.JobAssembly,$Plan.HostImage,$Plan.BuildPlan)){Assert-H1Path $path}
-    if($protocol.Name -ceq 't7-prepatch-reference-v2'){Assert-H1Path $Plan.BuildClosedPins}
+    if($protocol.Name -ceq 't7-prepatch-reference-v2' -or $candidateBound){Assert-H1Path $Plan.BuildClosedPins}
     if([IO.Path]::GetDirectoryName($Plan.RunRoot) -cne (Join-Path $Repo 'runtime') -or [IO.Path]::GetFileName($Plan.RunRoot) -cnotmatch ('^'+$protocol.RunPrefix+'-[a-z][a-z0-9-]*$') -or
        $Plan.WorkingDirectory -cne (Join-Path $Plan.RunRoot 'work') -or $Plan.StageRoot -cne (Join-Path $Plan.RunRoot 'evidence') -or
        $Plan.Image -cne (Join-Path $Plan.WorkingDirectory $protocol.Image)){throw 'V2 exact private paths required.'}
+    if($SourceOnly){if(Test-Path -LiteralPath $Plan.RunRoot){throw 'V3 source-only review requires the unprepared runtime to remain absent.'}}
+    else{
     foreach($dir in @($Plan.WorkingDirectory,$Plan.StageRoot,(Join-Path $Plan.RunRoot 'temp'))){if(![IO.Directory]::Exists($dir)){throw 'V2 prepared private directories required.'}}
     foreach($path in @($Plan.Image,(Join-Path $Plan.RunRoot 'attempt.json'),(Join-Path $Plan.RunRoot 'stop.request'),(Join-Path $Plan.WorkingDirectory $Plan.ReportName),($Plan.RunRoot+'.host-start.json'),($Plan.RunRoot+'.host-postflight.json'),(Join-Path $Plan.RunRoot 'zone'))){if(Test-Path -LiteralPath $path){throw 'V2 create-only attempt/output/host required.'}}
     $names=@([IO.Directory]::EnumerateFileSystemEntries($Plan.WorkingDirectory)|ForEach-Object {[IO.Path]::GetFileName($_)}|Sort-Object)
     if(($names -join '|') -cne 'BlackOps3_UnrankedDedicatedServer.exe|steam_api64.dll' -or @([IO.Directory]::EnumerateFileSystemEntries($Plan.StageRoot)).Count -or @([IO.Directory]::EnumerateFileSystemEntries((Join-Path $Plan.RunRoot 'temp'))).Count){throw 'V2 only two prepared aliases and empty evidence/temp allowed.'}
-    foreach($pin in $Plan.Bindings){if((Get-Item -LiteralPath $pin.Path).Length -ne $pin.Bytes){throw 'V2 binding metadata length differs.'}}
+    }
+    foreach($pin in $Plan.Bindings){if((!$SourceOnly -or $pin.IsText) -and (Get-Item -LiteralPath $pin.Path).Length -ne $pin.Bytes){throw 'V2 binding metadata length differs.'}}
     foreach($pair in @(@('BlackOps3_UnrankedDedicatedServer.exe',21737352,'3df511d71e3690b14517379783bbfb713f6fe2ed2f2e73b445b4878216686156',$Plan.EngineSource),@('steam_api64.dll',235600,'71af8666392acad2080a816b9f1196fe9ccb950e1db8a549f8312c4d231f55a8',$Plan.SteamSource))){
         foreach($path in @($pair[3],(Join-Path $Plan.WorkingDirectory $pair[0]))){$pin=@($Plan.Bindings|Where-Object Path -CEQ $path);if($pin.Count -ne 1 -or $pin[0].Bytes -ne $pair[1] -or $pin[0].SHA256 -cne $pair[2] -or $pin[0].IsText){throw 'V2 exact engine/Steam metadata pins required.'}}
     }
@@ -266,6 +309,8 @@ function Assert-T7RefV2Plan($Plan,[string]$Repo,[string]$Runner) {
     $sourceRows=@(,@($Plan.JobAssembly,$null,'5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8',$false))
     if($protocol.Name -ceq 't7-prepatch-reference-v2'){
         $sourceRows+=@(@($Plan.BuildPlan,303783,$Plan.ExpectedBuildPlanSHA256,$true),@($Plan.BuildClosedPins,1867,'cfb6f523336ad0fd163c2ffcdeaf4ff5b31b83fc5fa17321662bce89c61353d0',$true))
+    }elseif($candidateBound){
+        $sourceRows+=@(@($Plan.BuildPlan,$cohort.PlanBytes,$cohort.PlanSHA256,$true),@($Plan.BuildClosedPins,$cohort.IndexBytes,$cohort.IndexSHA256,$true))
     }else{$sourceRows+=,@($Plan.BuildPlan,$null,$Plan.ExpectedBuildPlanSHA256,$true)}
     foreach($row in $sourceRows){
         $pins=@($Plan.Bindings|Where-Object {$_.Path -ceq $row[0] -and $_.SHA256 -ceq $row[2]});if($pins.Count -ne 1 -or $pins[0].IsText -ne $row[3] -or ($null -ne $row[1] -and $pins[0].Bytes -ne $row[1])){throw 'V2 recipe/closure/provider binding differs.'}
@@ -276,6 +321,19 @@ function Assert-T7LinkV3PendingCandidate($Plan) {
         if(!$Plan.PSObject.Properties[$name] -or $null -ne $Plan.$name){throw 'V3 pending CPP fields must be explicit null placeholders.'}
     }
     Assert-T7RefV2Integer $Plan.CandidateBytes 'V3 candidate bytes' 0
+}
+function Assert-T7ReferenceCandidate($Plan,$CandidateProfile) {
+    $cohort=Get-T7ReferenceBuildCohort $CandidateProfile
+    foreach($name in 'CandidateSource','CandidateSHA256','BuildReceipt','ExpectedBuildReceiptSHA256','BuildClosedPins'){
+        Assert-T7RefV2String $Plan.$name ('candidate.'+$name)
+    }
+    Assert-T7RefV2Integer $Plan.CandidateBytes 'candidate.Bytes' 64MB
+    if($Plan.CandidateBytes -ne $cohort.CandidateBytes -or $Plan.CandidateSHA256 -cne $cohort.CandidateSHA256 -or
+       $Plan.ExpectedBuildPlanSHA256 -cne $cohort.PlanSHA256 -or $Plan.ExpectedBuildReceiptSHA256 -cne $cohort.ReceiptSHA256){throw 'Exact original candidate/recipe/receipt cohort required.'}
+    Assert-H1Path $Plan.CandidateSource;Assert-H1Path $Plan.BuildReceipt;Assert-H1Path $Plan.BuildClosedPins
+    $pins=@($Plan.Bindings|Where-Object {$_.Path -ceq $Plan.CandidateSource -and $_.IsText -is [bool] -and !$_.IsText})
+    if($pins.Count -ne 1 -or $pins[0].Bytes -ne $cohort.CandidateBytes -or $pins[0].SHA256 -cne $cohort.CandidateSHA256){throw 'Actual candidate binding differs.'}
+    Assert-T7RefV2TextPin ([pscustomobject]@{Path=$Plan.BuildReceipt;Bytes=$cohort.ReceiptBytes;SHA256=$cohort.ReceiptSHA256}) $Plan.Bindings $cohort.ReceiptBytes $cohort.ReceiptSHA256
 }
 function Assert-T7RefV2HostArguments($Plan,[string]$PlanPath,[string]$PlanSHA256,$Actual,$ActualHostImage,$EntryAssemblyPath) {
     Assert-T7RefV2String $ActualHostImage 'physical host image'
