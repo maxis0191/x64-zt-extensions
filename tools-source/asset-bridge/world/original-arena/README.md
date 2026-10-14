@@ -380,3 +380,32 @@ Resource policy is now owned by `iw7-mod-components`: fetch/read its current
 RESOURCE-WORKFLOW before heavy work. STORAGE/INSTANCE remain server ownership.
 Next: source/private Git review and exact-head CI audit, then a new additive C
 capsule; no automatic CPP retry or change to the frozen B package is authorized.
+
+## 2026-10-14: C readback process passed; post-read canonical path failed
+
+The distinct approved C used the corrected reader. Compile/link/writer/Check all
+exited0 (approximately2.23/3.10/0.23/0.25 seconds). Check's633-byte stdout fully
+verified168/84, model984 bytes/mesh6274 bytes and named M7 material; stderr was
+empty. The overall native harness still failed after Check: the call site passed
+`"$dir/stdout.log"` into Read-H1SmallJson, whose existing Assert-H1Path requires
+exact canonical Windows separators. The forward-slash string differs from
+Path.GetFullPath, even though Python and ordinary Get-Item accept it.
+
+Only that producer call now uses `(Join-Path $dir 'stdout.log')`. Generic H1 path
+and size guards remain unchanged. The causal runs the actual strict JSON reader
+and the actual writer assignment against an authored stdout: old slash refused,
+new canonical path accepted, relative and oversized inputs still refused. A
+light source diagnostic over C's saved Check report confirms the corrected
+assignment, without a new process fixture/CPP/lease or reclassification of C.
+
+Original jobs all closed. The helper's source-final and934571-byte publication
+were verified before its confirmed lease release. Failed caller recovery used
+the same original references, actual closed job/process handles, guards0/null
+quarantine and empty fresh registry before FailedKnownClosed/CanExit. C's child
+exit1 was separately captured by Launch; actual outer PTY also returned1. Fresh
+host/parent/native identities were absent. C remains overall Failed while its
+individual Check exit0/readback is separately recorded. B and C inputs/receipts
+remain immutable. No stock, FF, Game, renderer, collision or movement claim.
+
+Next: source/private PR/exact-head checks/review and a distinct additive D tuple.
+No repeat of C or automatic native build is authorized by this correction.

@@ -1705,3 +1705,28 @@ are explicitly retracted by additive evidence; failure/closure remain distinct.
 The next source C capsule must propagate the actual child status through the
 outer launch, preserve B and obtain a new reviewed heavy GO. No stock, FF, Game,
 Main/bank/config mutation, renderer, collision, prediction or movement acceptance.
+
+## 2026-10-14: C native Check passed; canonical report path rejected afterward
+
+One distinct C attempt used corrected reader source after PR125. Compile/link/
+writer/Check all exited0, with approximately2.23/3.10/0.23/0.25 seconds. The633-byte
+independent Check report verified168 vertices/84 triangles, named M7 material,
+XMB984/XSB6274, packed stream identities and full consumption; stderr was empty.
+The native harness then failed reading that report through strict H1 JSON.
+
+Build-ArenaWriter supplied `"$dir/stdout.log"`, while Assert-H1Path requires the
+input string equal Path.GetFullPath's canonical Windows path. Change only that
+call site to Join-Path; keep the H1 guards strict. The causal exercises the real
+reader/actual assignment: old refusal/new acceptance, relative and oversized
+input refusal. Corrected-source ingestion of C's preserved stdout also passes
+as a light diagnostic, not a new CPP/native scenario or a rewritten C outcome.
+
+All original jobs closed, source-final integrity and934571-byte final publication
+were verified before confirmed release. Same-context failed-host recovery found
+actual original handles closed, guards0, null native quarantine and registry[].
+Caller CanExit then permitted child1; Launch independently captured child1 and
+the real outer PTY returned1. Fresh exact original host/parent/native identities
+were absent. Overall C remains Failed; its successful independent Check is a
+separate fact. B/C packages, tuples, logs, proof and outcomes are preserved.
+Next: reviewed private source/Git completion, then additive D source tuple with
+a distinct heavy GO. No stock/FF/Game/Main or runtime/physics/render acceptance.
