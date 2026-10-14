@@ -11,6 +11,68 @@ receipts and helper snapshots are not rewritten or requalified by this change.
 Prepare and review fresh helper bindings for future runs; no run is authorized
 or claimed by the source update itself.
 
+## Catalogue C stock A observed, 2026-10-14
+
+One separately authorized C stock sonde used operator source
+`0530ea12c3b62ca50c69dc587717ea9a6c9bffe0`, merged by
+[PR #36](https://github.com/maxis0191/x64-zt-extensions/pull/36) as
+`2af5c94878c8dec6affb5ed3b0b5c3de7a80c1da`. The actual compiled fa45/627f/5f817/
+88f214 tuple below remained unchanged. The fresh runtime plan was
+`5e8e50f3a12e0352677c63410e7cf276bcb1900ffb79b1adbb1b88dea0c740ba`,
+host contract `c72f32c3b654791fa1f7cefef56e1b7f8ee9d3d06b6744bf748f1e341ad32852`.
+It kept B's exact 24 bootstrap rows, 28 original/alias inputs and two arguments
+`-t7-iw7-catalog zm_common`; no historical helper was borrowed or retail stock
+copied. Its 102 source/input bindings and 16 KiB combined trace cap passed DEFAULT.
+
+The native process exited naturally 0 after 6,221.2944 ms, but the runner returned
+**Failed / NoCatalogue**. No model report, weapon/enemy selection or geometry was
+validated. Stdout contains initialization/branding only (370 bytes). Stderr is
+6,784 bytes: 17 valid C records / 1,728 bytes, plus 5,056 unchanged legacy bytes.
+Both streams passed their own validators; an observed trace is not a catalogue.
+
+The captured sequence contains install, initial database load, its return and an
+asynchronous finish callback, then start/handle-params/catalogue/wait boundaries.
+The two database load entries preserve these values:
+
+| Observation | Initial load | Donor load |
+| --- | --- | --- |
+| count | 5 | 1 |
+| sync / suppress | 0 / 0 | 1 / 0 |
+| caller pointer (unresolved) | `0000000140502CD0` | `00000001605C5A35` |
+| bounded observed zone names | `core_pre_gfx`, `core_gfx` | `zm_common` |
+| donor zone allocation flags | — | 65536 |
+
+The donor-entry phase 12 and `zm_common` zone row are observed. Phases 13
+(donor return), 10 (zone return) and 11 (report published) are absent. The same
+133-byte fatal DEV message names `ui/uieditor/widgets/attachmentnamesdisplay.lua`;
+the legacy capture and exit correlate on worker thread 7840. Main-thread C
+events use thread 26608. No C `raw_enter` or `raw_return` record was captured.
+Consequently the targeted lookup's originating caller remains unknown. The
+absence alone does not distinguish filtering/name/pointer/type checks, a
+different internal lookup route, or another cause. Concurrent printed sequence
+and callback phase order do not prove causality. No hook ABI defect or bypass
+fix is declared from these observations.
+
+Native tree closure, lease release, input revalidation, unchanged original
+metadata, retained aliases and engine-output guards passed. The original host
+reached Closed with CanExit and zero guards. Actual PTY 76184 exited 0 in chunk
+`3fdd44`; fresh absence at `2026-10-14T00:26:53.5113740Z` confirmed both original
+host/native processes absent, no heavy/game process and an empty lease registry.
+Main retained its stopped/absent baseline with cause unknown. No opaque artifact
+was opened/hashed after release, and no second stock run followed.
+
+Private text evidence stays outside Git: runtime receipt 46,593 bytes /
+`abb40f1c9de2ad693aaa3c1eb07e9817a9f1df0fc29a5bf67d8fb7aa4c814f08`,
+stdout 370 bytes / `88ab6d02f9f5712933df35eaeca8966f52b8c4243bf9791c668d9471da0abd04`,
+stderr 6,784 bytes / `58a61e954193004f9c643396736fc89ff8a5a39149d9d8a91e4beb2d19a6aac1`,
+completion 8,207 bytes / `8f0fcc9308411171f33df08cae029f08c144f0a3a7f6663f35ed10e3e2f8509f`.
+Next action: source-review the narrow lookup observation predicate and internal
+lookup paths using these actual phases. Preserve C's compiled artifacts and
+failed output; any correction, native rebuild or stock repeat needs a distinct
+reviewed epoch and coordinator slot. No empty/fabricated RawFile, extra zone,
+all-map load, Main deployment or accepted weapon/enemy catalogue is authorized
+by this result.
+
 ## Catalogue C compiled qualification, 2026-10-14
 
 The separately admitted C build now exists from immutable asset source
