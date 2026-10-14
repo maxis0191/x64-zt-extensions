@@ -604,6 +604,41 @@ foreach($kind in 'ticks','bytes','attributes'){
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell admission source checks require pwsh')
+    def test_writer_readback_stdout_path_is_canonical_before_strict_json_read(self):
+        script=r'''
+param($Writer,$Core,$Root)
+$ErrorActionPreference='Stop'
+. $Core
+$dir=[IO.Path]::GetFullPath((Join-Path $Root 'check with space'))
+[IO.Directory]::CreateDirectory($dir)|Out-Null
+$file=Join-Path $dir 'stdout.log'
+[IO.File]::WriteAllText($file,'{"schema":"iw7.original-arena-independent-readback/1","vertices":168,"triangles":84}',[Text.UTF8Encoding]::new($false))
+$legacy='$checked=Read-H1SmallJson "$dir/stdout.log" 4KB'
+$caught=$false;try{. ([scriptblock]::Create($legacy))}catch{$caught=$_.Exception.Message -ceq 'Canonical absolute path required.'}
+if(!$caught){throw 'Old slash path was not refused by the real strict reader'}
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Writer,[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'Writer source parse failed'}
+$read=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$checked'},$true))
+if($read.Count -ne 1){throw 'One actual readback assignment required'}
+. ([scriptblock]::Create($read[0].Extent.Text))
+if($checked.schema -cne 'iw7.original-arena-independent-readback/1' -or $checked.vertices -ne 168 -or $checked.triangles -ne 84){throw 'Canonical assignment did not read the original JSON'}
+# Keep path and size guards strict; do not normalize inside the generic reader.
+$caught=$false;try{Read-H1SmallJson 'relative/stdout.log' 4KB}catch{$caught=$_.Exception.Message -ceq 'Canonical absolute path required.'}
+if(!$caught){throw 'Relative path became accepted'}
+[IO.File]::WriteAllText($file,('x'*4097),[Text.UTF8Encoding]::new($false))
+$caught=$false;try{. ([scriptblock]::Create($read[0].Extent.Text))}catch{$caught=$_.Exception.Message -ceq 'JSON input exceeds bound.'}
+if(!$caught){throw 'Bounded reader accepted oversized stdout'}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'canonical-check-path.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('Build-ArenaWriter.ps1')),
+                str(arena.REPO/'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'),temp],
+                capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell admission source checks require pwsh')
     def test_world_opaque_qualification_is_deferred_to_existing_admission(self):
         script=r'''
 param($Writer,$FF,$Root)

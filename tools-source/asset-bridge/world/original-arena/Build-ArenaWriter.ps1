@@ -111,7 +111,7 @@ try {
         }
         if($stage.Stage -ceq 'Check'){
             if((Get-Item -LiteralPath "$dir/stderr.log").Length){throw 'Independent reader stderr must be empty'}
-            $checked=Read-H1SmallJson "$dir/stdout.log" 4KB
+            $checked=Read-H1SmallJson (Join-Path $dir 'stdout.log') 4KB
             if($checked.schema -cne 'iw7.original-arena-independent-readback/1' -or !$checked.geometry_roundtrip_verified -or
                 $checked.vertices -ne 168 -or $checked.triangles -ne 84 -or !$checked.material_bound -or $checked.physics_serialized -or $checked.runtime_verified){throw 'Original material-bound geometry readback did not qualify'}
             $state.Checked=$checked
