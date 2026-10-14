@@ -209,7 +209,7 @@ def synthetic_records(mesh, material=None):
     midpoint, half = mesh['bounds']['midpoint'], mesh['bounds']['half_size']
     radius = max(sum(v*v for v in item['position']) for item in surface['vertices'])
     h = bytearray(736);h[20:23]=bytes((1,1,0))
-    h[8:15] = bytes((0,1,0,1,255,6,1))
+    h[8:15] = bytes((0,1,0,1,255,6,0))
     radius_f32, = struct.unpack('<f',struct.pack('<f',radius))
     struct.pack_into('<HHf',h,24,0,1,1);struct.pack_into('<f',h,40,math.sqrt(radius_f32))
     struct.pack_into('<6f',h,44,*(midpoint+half));struct.pack_into('<fHH',h,224,1000000,1,0)
@@ -233,6 +233,27 @@ def synthetic_records(mesh, material=None):
 
 
 class IndependentReaderTests(unittest.TestCase):
+    def test_character_bounds_byte_matches_native_header_and_old_reader_refuses_it(self):
+        source=arena.geometry(arena.original_scene())
+        model,mesh=synthetic_records(source,readback.MATERIAL)
+        # Closed writerB's observed seven bytes, independently grounded in
+        # pinned XModel's layout and the writer's zero-initialized member.
+        observed=bytes((0,1,0,1,255,6,0))
+        self.assertEqual(model[6+8:6+15], observed)
+        text=Path(readback.__file__).read_text()
+        corrected='tuple(header[8:15]) == (0,1,0,1,255,6,0)'
+        self.assertEqual(text.count(corrected),1)
+        prior=text.replace(corrected,'tuple(header[8:15]) == (0,1,0,1,255,6,1)',1)
+        namespace={'__name__':'_prior_arena_reader','__file__':readback.__file__}
+        exec(compile(prior,readback.__file__,'exec'),namespace)
+        with self.assertRaisesRegex(ValueError,'LOD/shadow/collision metadata'):
+            namespace['inspect'](model,mesh,source,expected_material=readback.MATERIAL)
+        self.assertTrue(readback.inspect(model,mesh,source,expected_material=readback.MATERIAL)['geometry_roundtrip_verified'])
+        for offset,value in ((9,0),(12,0),(13,0),(14,1)):
+            bad=bytearray(model);bad[6+offset]=value
+            with self.subTest(offset=offset),self.assertRaisesRegex(ValueError,'LOD/shadow/collision metadata'):
+                readback.inspect(bytes(bad),mesh,source,expected_material=readback.MATERIAL)
+
     def test_all_three_rigid_masks_refuse_lod_group_and_surface_corruption(self):
         source=arena.geometry(arena.original_scene());model,mesh=synthetic_records(source)
         surface_offset=6+56+2+len('paris_original_arena_lod0')+1+6
