@@ -2,6 +2,7 @@
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $repo=Split-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) -Parent
 . (Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1')
+. (Join-Path $PSScriptRoot 'T7Prepatch.Profile.ps1')
 . (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
 . (Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1')
 $script:checks=0
@@ -196,6 +197,19 @@ $v2Request=[pscustomobject]@{schema='iw7.t7-iw7-selected-streamed-request/2';tar
 $streamPlan=Copy-Value $plan;$streamPlan|Add-Member NoteProperty SelectedStreamedRenderOnlyV2 ([pscustomobject]@{Schema='iw7.t7-selected-streamed-render-only-plan/2'})
 $streamPlan|Add-Member NoteProperty SelectedXpakProvider ([pscustomobject]@{RelativePath='zone/mp_initial.xpak';FileId='D088B64A:000C0000001EB2FD';
     Metadata=[pscustomobject]@{Bytes=654311424};IndexOffset=653787136;IndexBytes=31152;EntryOffset=653815768;PayloadOffset=146723456;PayloadBytes=7680})
+# Construct the real launcher argv without starting a process or reading stock.
+$legacyStreamPlan=Copy-Value $streamPlan;$legacyStreamPlan.PSObject.Properties.Remove('SelectedStreamedRenderOnlyV2')
+$legacyStreamPlan|Add-Member NoteProperty SelectedStreamedStaticV1 ([pscustomobject]@{Schema='iw7.t7-selected-streamed-export-plan/1'})
+foreach($spec in @(@($streamPlan,'-t7-iw7-model-streamed-v2',5),@($legacyStreamPlan,'-t7-iw7-model-streamed-v1',5),
+                  @($plan,'-t7-iw7-model-v2',4),@($v1Plan,'-t7-iw7-model',4))){
+    $commandPlan=Copy-Value $spec[0]
+    foreach($pair in @(@('Image','C:\synthetic\candidate.exe'),@('WorkingDirectory','C:\synthetic\work'),@('RunRoot','C:\synthetic'))){
+        $commandPlan|Add-Member NoteProperty $pair[0] $pair[1]
+    }
+    $start=New-T7CatalogueStart $commandPlan
+    $expected=@($spec[1],'mp_freerun_04','p7_fre_platform_cap_02','0');if($spec[2] -eq 5){$expected+=@('streamed-request.json')}
+    Check (($start.ArgumentList -join '|') -ceq ($expected -join '|')) 'Actual native launcher argv differs from the selected export version.'
+}
 $savedReader=(Get-Item Function:Read-T7SelectedStreamedRequestFile).ScriptBlock
 function Read-T7SelectedStreamedRequestFile($Plan){$v2Request}
 try{

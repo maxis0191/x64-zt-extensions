@@ -908,7 +908,7 @@ function New-T7CatalogueStart($Plan) {
     if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'){
         Assert-T7ResidentExportRequest $Plan.ExportRequest
         $streamed=[bool](Get-T7SelectedStreamedExport $Plan)
-        $command=if($streamed){'-t7-iw7-model-streamed-v1'}elseif((Get-T7ResidentExportVersion $Plan) -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
+        $command=if(Get-T7SelectedStreamedRenderOnly $Plan){'-t7-iw7-model-streamed-v2'}elseif($streamed){'-t7-iw7-model-streamed-v1'}elseif((Get-T7ResidentExportVersion $Plan) -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
         $start.ArgumentList.Clear()
         foreach($argument in @($command,$Plan.ExportRequest.zone,$Plan.ExportRequest.model,'0')){$start.ArgumentList.Add($argument)}
         if($streamed){$start.ArgumentList.Add('streamed-request.json')}
