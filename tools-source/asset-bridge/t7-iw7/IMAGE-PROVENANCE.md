@@ -81,6 +81,14 @@ compile receipt, stdout, original-host exit 1 and fresh empty process/lease
 closure are retained. This correction needs a fresh immutable source cohort,
 reviewed additive capsule and separate CPP GO; it is not a 53-check pass.
 
+The next admitted G compilation also exited 2 before any assertion: C4702
+diagnosed the always-throwing authored original callback's template instance
+as unreachable after the call. The fixture now takes that error branch through
+a runtime atomic boolean and retains a reachable return branch. The error is
+still deterministically exercised; the real forwarder, observer and /W4 /WX
+remain unchanged. G's failed receipt and known original-host/job/lease closure
+are retained. A fresh fixture source pin and reviewed capsule are required.
+
 This module currently provides a source overlay API, pinned source/output
 contract, standalone fixture and typed native entry. It is not integrated into
 the admitted build producer, operational recipient or owner launcher. Those
