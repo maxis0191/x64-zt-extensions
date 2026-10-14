@@ -1,0 +1,27 @@
+{
+  "schema": "iw7.animation-rig-source-lineage/1",
+  "recovery_manifest_sha256": "8b29a5aebc7e96014bb4d9938cb8f6fa68a32b0b411a0d0d3a4bd083797717b4",
+  "recovery_commit": "567f0dc90e35cddacddcbcd34d15d6dff4c1802c",
+  "changed_files": {
+    "read_skin_native.py": {
+      "source_commit": "aae3fbf3b080f82511eb7321020872fc23e591f3",
+      "pull_request": "https://github.com/maxis0191/x64-zt-extensions/pull/4",
+      "before": {
+        "bytes": 11783,
+        "sha256": "ba6806c74820271ecd37e79701fd8edd7e3cc7d713251f6a9fc3ae8f4dcbf258",
+        "git_blob": "d5cc5e848f05e63eeb7de85c4581b2878eab32fa"
+      },
+      "after": {
+        "bytes": 12239,
+        "sha256": "fb801e69fb45d40fa8f33cb53ae9aa8e120891937176f14a0212839d4bab865e",
+        "git_blob": "ffce1b27eb2463b0d6f6f099861ae0d9c6a64608"
+      },
+      "reason": "Reviewed explicit CPU-only FF read scope permits only the opaque model LOD link at 272 and surface buffer slot at 88. Strict authored-native scope and all other checks remain enforced."
+    }
+  },
+  "historical_recovery_modified": false,
+  "native_compilation": false,
+  "native_execution": false,
+  "game_execution": false,
+  "rendering_qualified": false
+}
