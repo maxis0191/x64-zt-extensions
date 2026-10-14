@@ -13,6 +13,8 @@ def wire_unused_module(text):
     """Append support after unchanged C2 helpers. Add no call-site or activation."""
     if type(text) is not str or '\r' in text or 'weapon_names_' in text:
         raise ValueError('Fresh LF-only CLI required')
+    if text.count('namespace zonetool::t7\n{') != 1:
+        raise ValueError('Exact single T7 namespace required')
     c2 = (HERE / 'native_catalog_add_observation.inc').read_text(encoding='utf-8')
     anchor = '\n'.join('\t' + line if line else '' for line in c2.splitlines())
     module = (HERE / 'native_weapon_name_observation.inc').read_text(encoding='utf-8')

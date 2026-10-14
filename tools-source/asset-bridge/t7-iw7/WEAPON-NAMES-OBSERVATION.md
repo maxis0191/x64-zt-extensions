@@ -27,7 +27,7 @@ casts a WeaponDef, invents an offset, performs a default lookup, loads a zone,
 reads geometry/pixels or installs a hook.
 
 `wire_unused_module(final_c2_cli)` only appends support after the exact unchanged
-C2 module. Missing/changed/multiple anchors, CRLF or a repeated addition fail.
+C2 module. Missing/changed/multiple anchors or T7 namespace, CRLF or a repeated addition fail.
 It does not call any weapon function or enable C2. This is not a new build profile.
 The shared V3 main, producer, source pins and current CLI remain unchanged.
 
@@ -77,3 +77,6 @@ Initial source-test attempt: 18 tests ran with one failed negative fixture.
 Its literal length replacement did not match the authored name, so the input
 was unchanged. This is retained as a test-construction failure, not a reader
 refusal failure or native result; the fixture must use its actual name length.
+The correction derives that length and changes it by one; it does not relax
+the reader. The resulting 18 source/parser tests pass. C++ compilation and
+real registration remain untested and unactivated.

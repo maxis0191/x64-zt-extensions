@@ -111,7 +111,8 @@ class ParserTests(unittest.TestCase):
 
     def test_name_width_nul_reference_and_hex_refuse(self):
         good=enabled()+enter()+returned()+finished()
-        for change in (('length=22','length=23'),('nul=1','nul=0'),('reference=0','reference=1'),
+        length=len(b'authored_fixture_weapon')
+        for change in ((f'length={length}',f'length={length+1}'),('nul=1','nul=0'),('reference=0','reference=1'),
                        ('name_hex='+b'authored_fixture_weapon'.hex(),'name_hex=00'),
                        ('header_present=1','header_present=2')):
             with self.subTest(change=change), self.assertRaises(ValueError): self.parse(good.replace(*change))
@@ -148,6 +149,8 @@ class UnusedSourceTests(unittest.TestCase):
 
     def test_changed_missing_duplicate_crlf_and_repeated_input_refuse(self):
         for text in ('namespace zonetool::t7\n{}',self.tu.replace('c2_add_get_name','changed_getter'),
+                     self.tu.replace('namespace zonetool::t7','namespace unrelated'),
+                     self.tu+'namespace zonetool::t7\n{\n}\n',
                      self.tu+self.c2,self.tu.replace('\n','\r\n'),p.wire_unused_module(self.tu)):
             with self.subTest(text=text[:80]), self.assertRaises((ValueError,RuntimeError)): p.wire_unused_module(text)
 
