@@ -172,10 +172,12 @@ The selected closed schema-1 record is 2,333 bytes /
 `0a3d155ea93c26c572ca1aa63a05236a16588b44c6c5ccd6dee31acd59b8fe17`.
 
 One registration was observed and its association was rechecked at both epochs.
-The numeric image field and selected model header stayed equal. The queried
+The numeric image field and selected model-header address stayed equal. The queried
 264-byte span was readable MEM_COMMIT at registration, then unreadable MEM_RESERVE
 at the later lookup. Numeric equality therefore does not qualify object lifetime
 or a later header/body read. Header, body and payload bytes remained unread.
-Independent result interpretation is pending. Next: interpret the closed record
-and review the producer's capture timing and name/readability guards; body/schema-2
-execution requires another explicit GO.
+The independent consumer interprets the closed record as complete provenance
+metadata; this does not qualify lifetime or the unreadable lookup body. Source
+work now targets an owned registration-time copy with explicit capture/recheck
+phases and name/readability guards. No lookup body read or image extraction is
+authorized; any later body/schema-2 execution requires another explicit GO.
