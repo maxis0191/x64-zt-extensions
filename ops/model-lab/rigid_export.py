@@ -278,9 +278,14 @@ def verify_dump(source, dump, ff):
     context['material_dependencies'] = plan['material_references'] if v2 else [MATERIAL]
     dumped = {role: rb.read_bounded(dump / manifest[role]['relative_path'], limit)
               for role, limit in (('model', rb.MODEL_LIMIT), ('mesh', rb.MESH_LIMIT))}
+    # Validate the complete mesh before allowing its typed raw surface pointer
+    # to bind the FF-loaded model's LOD0 cache. Native/source parsing stays strict.
     # V2 parse_mesh compares each ordered packed vertex/face/rigid digest too.
-    rb.check(rb.parse_model(dumped['model'], context) == rb.parse_model(model, context) and
-             rb.parse_mesh(dumped['mesh'], context) == rb.parse_mesh(mesh, context) and
+    source_model = rb.parse_model(model, context)
+    source_mesh = rb.parse_mesh(mesh, context, model_bounds=source_model['bounds'])
+    dumped_mesh = rb.parse_mesh(dumped['mesh'], context, model_bounds=source_model['bounds'])
+    rb.check(rb.parse_model(dumped['model'], context, runtime_mesh=dumped['mesh']) == source_model and
+             dumped_mesh == source_mesh and
              (v2 or packed_geometry(dumped['mesh'], context) == packed_geometry(mesh, context)),
              'FF dump differs from derived geometry, packed attributes, rig or LOD/material metadata')
     ff_bytes = rb.read_bounded(ff, FF_LIMIT)

@@ -590,3 +590,56 @@ content qualification. The original NoExit host subsequently exited 1; a fresh
 leases. Next: review/merge the corrected source, compose a fresh operator and
 pin its retry plan before the coordinator grants another FF slot. FF and Ready
 remain false.
+
+### Actual FF build and refused independent readback on 2026-10-14
+
+PR52's UTC-tick correction qualified all 72 unchanged metadata rows. A fresh
+source package at `cd1fcca5` reused the eleven already-adopted files unchanged
+under Analysis admission solely to satisfy SourceRoot containment. The actual
+FF Extract invocation then qualified candidate E7 and the 72 selected inputs.
+Build, offline load/inventory and dump all exited zero. The retained FF is
+9,904 bytes/SHA256
+`50ca9124d35f4ea5e9f017adafcf012df01b9991d1fcde2597c8f0f58aabcd0c`,
+copied from the admitted state; it was not rehashed after release.
+
+The independent Python reader exited 1: `parse_model` rejected an unexpected
+pointer/optional/reserved field. Inventory is verified, but geometry roundtrip
+and Ready remain false. Restoration is Confirmed, stock preserved, CleanupError
+null and the reservation released. Original NoExit host 25668/session 63754
+actually exited 1 (chunk `c3ea0e`); the 03:51:47 UTC witness found the host,
+outer shell and all recorded children absent with no leases. Preserve this
+failed FF/readback cohort; it is not a game-ready tuple.
+
+A separate bounded Analysis observed only six existing source/dump files.
+The first diagnostic helper refused before Python because its Memory-Budget
+import was missing; the unchanged failure is retained. The corrected helper
+imported that existing TelemetryOnly dependency and exited zero. Source hashes
+matched the original plan `750d25d7`, manifest `d44e799f`, XMB `25634aa9` and
+XSB `290aa9f4`. The redumped XMB is 1,089 bytes/SHA256
+`af4cb78463b466fe9cb92f1d24b1dfb706664d255d3aa1d939af0e1e6a68b583`;
+redumped XSB is 22,456 bytes/SHA256
+`5c93d1769b4fcf500729fbba49474e97dff471962797741a4bceae50a755fd4d`.
+Only XModel header bytes 272..279 violated the zero-field gate. Strict mesh
+parsing compared equal, including all packed geometry records, despite changed
+raw pointer bytes. No pointer was dereferenced or byte normalized.
+
+The pinned `fab935826c898806855376662a8a03317b3ad8f1` primary structs declare
+XModel.lodInfo at 224 and the 64-byte XModelLodInfo::surfs pointer at 48, hence
+offset 272. XModelSurfs::surfs is at 8. The unchanged IW7 xmodel dumper writes
+the entire raw model header with `dump_single(asset)` and emits the modelSurfs
+asset name, without a separate LOD surface-cache payload. The reader correction
+permits this cache only through explicit FF `runtime_mesh` input: zero or the
+exact surface pointer of the separately validated, correctly named/count-matched
+mesh. All other optional fields and unused LOD caches remain zero, and native
+exports/source-stage parsing still refuses a nonzero cache. No CPP change is
+needed for this source-reader distinction.
+
+Authored tests cover matching/mismatched caches, missing/truncated/untyped mesh,
+wrong counts, unused LOD/reserved/physics fields, and the complete FF verification
+call while preserving strict source-stage rejection. Actual cross-file cache
+binding and complete model readback still require a separately admitted retry
+of the unchanged retained outputs with the reviewed reader. The diagnostic's
+six guards/input hashes and child closure passed, then its reservation released;
+original host 30416/session 24765 actually exited zero (chunk `6c49aa`). A fresh
+03:56:46 UTC witness found host/outer/child absent and no leases. Keep the failed
+FF and both diagnostic receipts intact; no new FF build or gameplay is implied.

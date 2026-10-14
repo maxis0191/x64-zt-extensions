@@ -133,6 +133,37 @@ class Synthetic:
 
 
 class ReadbackGeometryTests(unittest.TestCase):
+    def test_runtime_lod_cache_requires_explicit_matching_typed_mesh(self):
+        for factory in (Synthetic, SyntheticMulti):
+            f = factory()
+            source = bytes(f.outputs['model'])
+            mesh = bytes(f.outputs['mesh'])
+            expected = rb.parse_model(source, f.manifest)
+            surface_pointer, = struct.unpack_from('<Q', mesh, 6+8)
+            cached = bytearray(source)
+            struct.pack_into('<Q', cached, 6+272, surface_pointer)
+            rb.parse_mesh(mesh, f.manifest, model_bounds=expected['bounds'])
+            self.assertEqual(rb.parse_model(bytes(cached), f.manifest, runtime_mesh=mesh), expected)
+            self.assertEqual(rb.parse_model(source, f.manifest, runtime_mesh=mesh), expected)
+            with self.assertRaisesRegex(ValueError, 'unexpected pointer'):
+                rb.parse_model(bytes(cached), f.manifest)
+            wrong = bytearray(cached)
+            struct.pack_into('<Q', wrong, 6+272, surface_pointer+1)
+            with self.assertRaisesRegex(ValueError, 'surface cache differs'):
+                rb.parse_model(bytes(wrong), f.manifest, runtime_mesh=mesh)
+            for offset in (272+64, 280, 632):
+                wrong = bytearray(cached)
+                wrong[6+offset] = 1
+                with self.assertRaisesRegex(ValueError, 'unexpected pointer'):
+                    rb.parse_model(bytes(wrong), f.manifest, runtime_mesh=mesh)
+            for invalid in (b'', b'\x09'+bytes(8), mesh[:20], False):
+                with self.assertRaises(ValueError):
+                    rb.parse_model(bytes(cached), f.manifest, runtime_mesh=invalid)
+            wrong_mesh = bytearray(mesh)
+            struct.pack_into('<H', wrong_mesh, 6+16, 0)
+            with self.assertRaisesRegex(ValueError, 'surface count'):
+                rb.parse_model(bytes(cached), f.manifest, runtime_mesh=bytes(wrong_mesh))
+
     def test_original_translated_pyramid_matches_independent_geometry(self):
         f = Synthetic()
         result = f.inspect()
