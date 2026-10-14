@@ -53,7 +53,7 @@ try {
         return
     }
     if(!$candidateReady){throw 'Instrumented candidate required before Run.'}
-    Assert-T7RefV2HostArguments $plan $PlanPath $PlanSHA256 ([Environment]::GetCommandLineArgs())
+    Assert-T7RefV2HostArguments $plan $PlanPath $PlanSHA256 ([Environment]::GetCommandLineArgs()) $shell ([Reflection.Assembly]::GetEntryAssembly().Location)
     if([AppDomain]::CurrentDomain.GetData('IW7.T7PrepatchReferenceV2')){throw 'Original V2 host already consumed; no re-entry.'}
     if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Fresh PowerShell host required.'}
     . $scheduler

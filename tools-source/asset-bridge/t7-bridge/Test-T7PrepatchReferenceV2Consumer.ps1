@@ -88,12 +88,13 @@ try {
     $script:mockPorts=@([pscustomobject]@{LocalPort=27016;OwningProcess=456});Refuses {Assert-T7RefV2Main $main} 'ownership';$script:mockPorts=@()
     $main.MainBaseline='Running';Refuses {Assert-T7RefV2Main $main} 'stopped';$main=New-MainFixture
     [IO.Directory]::CreateDirectory($main.BankSnapshot.Root)|Out-Null;Refuses {Assert-T7RefV2Main $main} 'bank metadata'
-    $plan=[pscustomobject]@{Image=(Join-Path $root 'candidate.exe');WorkingDirectory=$root;RunRoot=$root;HostImage='pwsh.exe';Runner='runner.ps1'}
+    $plan=[pscustomobject]@{Image=(Join-Path $root 'candidate.exe');WorkingDirectory=$root;RunRoot=$root;HostImage=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName;Runner='runner.ps1'}
     $start=New-T7RefV2Start $plan
     Check ($start.ArgumentList.Count -eq 1 -and $start.ArgumentList[0] -ceq '-t7-prepatch-reference-v2' -and !$start.UseShellExecute -and $start.Environment.Count -eq 9) 'Actual native ProcessStartInfo differs.'
-    $command=@('pwsh.exe','-NoLogo','-NoProfile','-NoExit','-File','runner.ps1','-PlanPath','plan.json','-PlanSHA256',('a'*64),'-Run')
-    Assert-T7RefV2HostArguments $plan 'plan.json' ('a'*64) $command;$script:checks++
-    $bad=@($command);$bad[3]='-NonInteractive';Refuses {Assert-T7RefV2HostArguments $plan 'plan.json' ('a'*64) $bad} 'NoProfile/NoExit'
+    $command=@($plan.HostImage,'-NoLogo','-NoProfile','-NoExit','-File','runner.ps1','-PlanPath','plan.json','-PlanSHA256',('a'*64),'-Run')
+    $entryAssembly=[Reflection.Assembly]::GetEntryAssembly().Location
+    Assert-T7RefV2HostArguments $plan 'plan.json' ('a'*64) $command $plan.HostImage $entryAssembly;$script:checks++
+    $bad=@($command);$bad[3]='-NonInteractive';Refuses {Assert-T7RefV2HostArguments $plan 'plan.json' ('a'*64) $bad $plan.HostImage $entryAssembly} 'NoProfile/NoExit'
     $reportPlan=[pscustomobject]@{WorkingDirectory=$root};$reportState=[ordered]@{Identity=$identity;ExitCode=0;CaptureOutcome='NoCapture'};$reportContext=[pscustomobject]@{Guards=[Collections.Generic.List[object]]::new()}
     $capturePath=Join-Path $root 't7-prepatch-reference-v2.local.json';[IO.File]::WriteAllText($capturePath,((New-Report)|ConvertTo-Json -Depth 12))
     Check ((Read-T7RefV2Report $reportPlan $reportState $reportContext) -ceq 'CaptureComplete' -and $reportContext.Guards.Count -eq 1) 'Guarded V2 report was not retained.'

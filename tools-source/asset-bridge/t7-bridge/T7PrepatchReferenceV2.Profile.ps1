@@ -212,10 +212,18 @@ function Assert-T7RefV2Plan($Plan,[string]$Repo,[string]$Runner) {
         $pins=@($Plan.Bindings|Where-Object {$_.Path -ceq $row[0] -and $_.SHA256 -ceq $row[2]});if($pins.Count -ne 1 -or $pins[0].IsText -ne $row[3] -or ($null -ne $row[1] -and $pins[0].Bytes -ne $row[1])){throw 'V2 recipe/closure/provider binding differs.'}
     }
 }
-function Assert-T7RefV2HostArguments($Plan,[string]$PlanPath,[string]$PlanSHA256,$Actual) {
+function Assert-T7RefV2HostArguments($Plan,[string]$PlanPath,[string]$PlanSHA256,$Actual,$ActualHostImage,$EntryAssemblyPath) {
+    Assert-T7RefV2String $ActualHostImage 'physical host image'
+    Assert-T7RefV2String $EntryAssemblyPath 'entry assembly path'
+    if($ActualHostImage -cne $Plan.HostImage){throw 'V2 physical PowerShell host image differs.'}
+    $managedPath=Join-Path ([IO.Path]::GetDirectoryName($ActualHostImage)) 'pwsh.dll'
+    if($EntryAssemblyPath -cne $managedPath){throw 'V2 actual PowerShell entry assembly differs.'}
     $expected=@($Plan.HostImage,'-NoLogo','-NoProfile','-NoExit','-File',$Plan.Runner,'-PlanPath',$PlanPath,'-PlanSHA256',$PlanSHA256,'-Run')
     if($Actual -isnot [array] -or $Actual.Count -ne $expected.Count){throw 'V2 exact fresh NoProfile/NoExit host required.'}
-    for($i=0;$i -lt $expected.Count;$i++){Assert-T7RefV2String $Actual[$i] 'host argv';if($Actual[$i] -cne $expected[$i]){throw 'V2 exact fresh NoProfile/NoExit host required.'}}
+    Assert-T7RefV2String $Actual[0] 'managed host argv[0]'
+    # .NET's apphost reports pwsh.dll at argv[0]; the physical EXE is checked above.
+    if($Actual[0] -cne $Plan.HostImage -and $Actual[0] -cne $EntryAssemblyPath){throw 'V2 managed PowerShell entry module differs.'}
+    for($i=1;$i -lt $expected.Count;$i++){Assert-T7RefV2String $Actual[$i] 'host argv';if($Actual[$i] -cne $expected[$i]){throw 'V2 exact fresh NoProfile/NoExit host required.'}}
 }
 function Complete-T7RefV2Host {
     $taskHostState=[AppDomain]::CurrentDomain.GetData('IW7.T7PrepatchReferenceV2')
