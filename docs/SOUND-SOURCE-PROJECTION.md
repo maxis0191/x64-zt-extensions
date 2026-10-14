@@ -31,6 +31,14 @@ cases passed 35 assertions, and 14 tiny-file transaction cases passed with revie
 do not compile native code, seal retail/toolchain inputs, build SAB/FF, launch a
 game or establish playback. A future real plan still needs separate qualification.
 
+Peer review refused source candidate `74478c4`: the new DumpOnly/StandardMod
+Review constructor omitted the estimates that its execution constructor now
+required. The correction validates the retained F estimates before further
+preparation and copies them into that Review. The source test executes the real
+Review and execution constructors for both profiles with authored metadata,
+checks exact estimate propagation and rejects invalid retained values. This
+constructor test does not qualify real historical runtime metadata or playback.
+
 The sections below retain the 2026-10-13 projection qualification and its original
 26-member source set and scenario estimates.
 

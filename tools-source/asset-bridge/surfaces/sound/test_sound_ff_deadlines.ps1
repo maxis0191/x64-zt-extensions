@@ -23,6 +23,40 @@ $refused=$false;try{Assert-SoundFFExecutionPlan $mismatch $PSScriptRoot}catch{
     if($_.Exception.Message -cne 'Reviewed scenario estimates differ.'){throw};$refused=$true
 }
 if(!$refused){throw 'Changed reviewed estimates accepted.'}
+# Execute the real preparation constructors with authored metadata. Transaction
+# mocks alone cannot catch omitted fields in the new DumpOnly/StandardMod Review.
+$prepareAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Prepare-SoundFF.ps1'),[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'Sound preparer source parse failed.'}
+$reviewCtor=@($prepareAst.FindAll({param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+    $node.Left.Extent.Text -ceq '$review' -and $node.Right.Extent.Text.StartsWith('[pscustomobject]@{')},$true))
+$planCtor=@($prepareAst.FindAll({param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+    $node.Left.Extent.Text -ceq '$plan' -and $node.Right.Extent.Text.StartsWith('[pscustomobject][ordered]@{')},$true))
+$estimateGuard=@($prepareAst.FindAll({param($node) $node -is [Management.Automation.Language.CommandAst] -and
+    $node.Extent.Text -ceq 'Assert-SoundFFEstimates $f.Plan.PhysicalBytes $f.Plan.CommitBytes'},$true))
+if($reviewCtor.Count -ne 1 -or $planCtor.Count -ne 1 -or $estimateGuard.Count -ne 1){throw 'One real constructor and retained-estimate guard required.'}
+$CandidateRoot='C:\mock\candidate';$RunRoot='C:\mock\absent';$work=Join-Path $RunRoot 'work'
+$candidate=@{Path='C:\mock\candidate\tool.exe';Bytes=1;SHA256=('b'*64)}
+$evidence=@{};$payload=@();$phases=@();$pins=[Collections.Generic.List[object]]::new();$receiptSHA='a'*64;$stateSHA='a'*64
+foreach($profile in 'DumpOnly','StandardMod'){
+    $outputs=@()
+    foreach($estimates in @(@(1,512MB),@(8GB,11GB),@(12GB,16GB))){
+        $f=@{Plan=@{PhysicalBytes=$estimates[0];CommitBytes=$estimates[1];SharedRepo='C:\mock\source';Python='C:\mock\python.exe';
+            StockInputs=@();Review=@{source='C:\mock\sound';stock_root='C:\mock\stock'}}}
+        . ([scriptblock]::Create($estimateGuard[0].Extent.Text))
+        . ([scriptblock]::Create($reviewCtor[0].Extent.Text))
+        . ([scriptblock]::Create($planCtor[0].Extent.Text))
+        Assert-SoundFFEstimates $plan.PhysicalBytes $plan.CommitBytes
+        if($plan.PhysicalBytes -ne $estimates[0] -or $plan.CommitBytes -ne $estimates[1] -or
+            $plan.Review.physical_bytes -ne $estimates[0] -or $plan.Review.commit_bytes -ne $estimates[1]){throw "Preparation lost reviewed estimates: $profile"}
+    }
+}
+foreach($field in 'PhysicalBytes','CommitBytes'){
+    foreach($invalid in @($null,0,-1,$true,1.0,'1',[bigint]::Parse('9223372036854775808'))){
+        $f=@{Plan=@{PhysicalBytes=1;CommitBytes=1}};$f.Plan[$field]=$invalid
+        $refused=$false;try{. ([scriptblock]::Create($estimateGuard[0].Extent.Text))}catch{$refused=$true}
+        if(!$refused){throw 'Preparation accepted invalid retained estimates.'}
+    }
+}
 . "$PSScriptRoot/native-checksum/BuildCandidate.Core.ps1"
 . "$PSScriptRoot/native-checksum/SealInputs.Core.ps1"
 function Get-ChecksumBuildClock {2000L}
@@ -115,7 +149,7 @@ try {
         if($case -in 'SlowReceipt','SlowFinalSave','SlowDispose' -and $c.State.Phases[0].PostReceiptDecisionElapsedMs -lt 35000){throw 'Missing fresh post-save time.'}
     }
     if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Native class unexpectedly loaded.'}
-    '13 phase/deadline cases and typed-estimate guards passed with mocks; high commit accepted, impossible telemetry refused; no native process.'
+    '13 phase/deadline cases, real DumpOnly/StandardMod constructors and typed-estimate guards passed with mocks; high commit accepted, impossible telemetry refused; no native process.'
 }finally{
     $resolved=[IO.Path]::GetFullPath($temp)
     if(!$resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -or

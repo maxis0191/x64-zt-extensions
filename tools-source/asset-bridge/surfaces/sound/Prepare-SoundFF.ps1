@@ -22,6 +22,7 @@ if($DumpOnly -or $StandardMod){
     $evidence=[pscustomobject]@{PlanPath=$ImmutablePlanPath;PlanSHA256='3d90a5746a8ee698fb08715e270f2855f261b318393257f91a9e7f59e3ad39d5';
         StatePath=$ImmutableStatePath;StateSHA256='d0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9'}
     $f=Read-SoundFFImmutableF $evidence
+    Assert-SoundFFEstimates $f.Plan.PhysicalBytes $f.Plan.CommitBytes
     Assert-SoundFFPath $OutputPath;Assert-SoundFFPath $RunRoot
     if(Test-Path -LiteralPath $OutputPath){throw 'Fresh dump Plan required.'}
     $payload=@($f.Plan.HashInputs|Where-Object {[IO.Path]::GetExtension($_.Path) -iin @('.exe','.wav','.flac')})
@@ -59,6 +60,7 @@ if($DumpOnly -or $StandardMod){
                 '--contract',(Join-Path $PSScriptRoot 'sab_contract.json'),'--dump',(Join-Path $work ('dump/'+$zone)),
                 '--inventory',$inventory,'--dump-profile','DumpOnlyC');cwd=$work;logs=(Join-Path $RunRoot 'logs/read');timeout=30})
     $review=[pscustomobject]@{source=$f.Plan.Review.source;stock_root=$f.Plan.Review.stock_root;candidate_root=$CandidateRoot;
+        physical_bytes=$f.Plan.PhysicalBytes;commit_bytes=$f.Plan.CommitBytes;
         existing_candidate=[pscustomobject]@{path=$candidate.Path;bytes=$candidate.Bytes;sha256=$candidate.SHA256};
         phase_adapter=(Join-Path $PSScriptRoot 'sound_ff_phase.py');source_stage_relatives=@();phase_specs=$phases}
     $profile='DumpOnly';$outputs=@()
