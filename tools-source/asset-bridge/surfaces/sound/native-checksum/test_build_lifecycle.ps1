@@ -1,12 +1,16 @@
 param([Parameter(Mandatory)][string]$ProviderRoot,[switch]$Flac)
 $ErrorActionPreference='Stop'
 . "$PSScriptRoot/BuildCandidate.Core.ps1"
+. "$PSScriptRoot/../../../../../ops/Resource-Scheduler.Core.ps1"
 if((Get-FileHash -LiteralPath (Join-Path $ProviderRoot 'supervision.ps1')).Hash -ine 'b6125dfaa4c6b16e4ebc6f54f160369788cfe5290f4c734edb925101af4f3471'){throw 'Exact v6 supervision required.'}
 . (Join-Path $ProviderRoot 'supervision.ps1')
 $script:checks=0
 function Check($Value,[string]$Message){$script:checks++;if(!$Value){throw $Message}}
-function Get-IW7ResourceSnapshot { @{CommitLimit=16GB;Committed=2GB} }
-function Enter-IW7ResourceLease { $script:admissions++;@{Token=$script:fixtureToken} }
+function Get-IW7ResourceSnapshot { @{PhysicalTotal=1GB;PhysicalAvailable=0;CommitLimit=1GB;Committed=1GB} }
+function Enter-IW7ResourceLease {param($Scope,$Kind,$PhysicalBytes,$CommitBytes,$Owner)
+    if($PhysicalBytes -ne $plan.physical_bytes -or $CommitBytes -ne $plan.commit_bytes){throw 'Reviewed build estimates changed.'}
+    $script:admissions++;@{Token=$script:fixtureToken}
+}
 function Exit-IW7ResourceLease { $script:releases++;if($script:mode -ceq 'release-failure'){throw 'fixture refused release'} }
 function Add-IW7ResourceProcess { $script:registrations++ }
 function Initialize-ChecksumBuildTypes { $script:typeMocks++;if($script:mode -ceq 'late-helper'){$script:clock+=3600001} }
@@ -95,7 +99,7 @@ try {
         $script:flacFinalChecked=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         $script:fixtureToken='fixture-sound-'+[guid]::NewGuid().ToString('N')
         $candidate=Join-Path $temp $case
-        $plan=@{candidate=$candidate;python=(Join-Path $temp 'python.exe');worker=(Join-Path $temp 'worker.py');seal_sha256=('a'*64);
+        $plan=@{candidate=$candidate;physical_bytes=1;commit_bytes=512MB;python=(Join-Path $temp 'python.exe');worker=(Join-Path $temp 'worker.py');seal_sha256=('a'*64);
             environment=@{SystemRoot=$env:SystemRoot;TEMP=$env:TEMP;TMP=$env:TMP}}
         if($Flac){$plan.schema='iw7.sound-flac-dump-build-plan/1';$plan.flac=@{sources=@()}}
         $bootstrap=@{Retain=$false}

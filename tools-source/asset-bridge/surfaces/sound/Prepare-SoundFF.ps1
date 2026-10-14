@@ -22,6 +22,7 @@ if($DumpOnly -or $StandardMod){
     $evidence=[pscustomobject]@{PlanPath=$ImmutablePlanPath;PlanSHA256='3d90a5746a8ee698fb08715e270f2855f261b318393257f91a9e7f59e3ad39d5';
         StatePath=$ImmutableStatePath;StateSHA256='d0a57123f7940eee29ef42da7440dd353e63eeffbfc025d37b162f4feda9e1a9'}
     $f=Read-SoundFFImmutableF $evidence
+    Assert-SoundFFEstimates $f.Plan.PhysicalBytes $f.Plan.CommitBytes
     Assert-SoundFFPath $OutputPath;Assert-SoundFFPath $RunRoot
     if(Test-Path -LiteralPath $OutputPath){throw 'Fresh dump Plan required.'}
     $payload=@($f.Plan.HashInputs|Where-Object {[IO.Path]::GetExtension($_.Path) -iin @('.exe','.wav','.flac')})
@@ -59,6 +60,7 @@ if($DumpOnly -or $StandardMod){
                 '--contract',(Join-Path $PSScriptRoot 'sab_contract.json'),'--dump',(Join-Path $work ('dump/'+$zone)),
                 '--inventory',$inventory,'--dump-profile','DumpOnlyC');cwd=$work;logs=(Join-Path $RunRoot 'logs/read');timeout=30})
     $review=[pscustomobject]@{source=$f.Plan.Review.source;stock_root=$f.Plan.Review.stock_root;candidate_root=$CandidateRoot;
+        physical_bytes=$f.Plan.PhysicalBytes;commit_bytes=$f.Plan.CommitBytes;
         existing_candidate=[pscustomobject]@{path=$candidate.Path;bytes=$candidate.Bytes;sha256=$candidate.SHA256};
         phase_adapter=(Join-Path $PSScriptRoot 'sound_ff_phase.py');source_stage_relatives=@();phase_specs=$phases}
     $profile='DumpOnly';$outputs=@()
@@ -81,7 +83,7 @@ if($DumpOnly -or $StandardMod){
     $plan=[pscustomobject][ordered]@{Schema='iw7.original-sound-ff-execution/1';Profile=$profile;Review=$review;RunRoot=$RunRoot;Work=$work;
         SharedRepo=$f.Plan.SharedRepo;Python=$f.Plan.Python;CandidateRoot=$CandidateRoot;CandidateReceiptSHA256=$receiptSHA;CandidateStateSHA256=$stateSHA;
         ImmutableFF=$evidence;StockInputs=$f.Plan.StockInputs;HashInputs=@($pins|Sort-Object Path);PayloadInputs=$payload;
-        PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=$outputs;
+        PhysicalBytes=$review.physical_bytes;CommitBytes=$review.commit_bytes;OutputStopBytes=64MB;LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=$outputs;
         HeavyExecutionAuthorizedByPlan=$false;Ready=$false}
     if($StandardMod){$plan|Add-Member NoteProperty SourceProjection $projection}
     Assert-SoundFFExecutionPlan $plan $PSScriptRoot
@@ -98,8 +100,9 @@ Assert-SoundFFPin ([pscustomobject]@{Path=$ReviewPlanPath;SHA256=$ReviewPlanSHA2
 Assert-SoundFFPin ([pscustomobject]@{Path=$StockParametersPath;SHA256=$StockParametersSHA256})
 $review=Get-Content -LiteralPath $ReviewPlanPath -Raw|ConvertFrom-Json
 $parameters=Get-Content -LiteralPath $StockParametersPath -Raw|ConvertFrom-Json
-if($review.schema -cne 'iw7.original-sound-ff-review-plan/1' -or $review.physical_bytes -ne 8GB -or $review.commit_bytes -ne 11GB -or
-    $review.native_authorized -isnot [bool] -or $review.native_authorized){throw 'Source-reviewed 8/11 sound plan required.'}
+Assert-SoundFFEstimates $review.physical_bytes $review.commit_bytes
+if($review.schema -cne 'iw7.original-sound-ff-review-plan/1' -or
+    $review.native_authorized -isnot [bool] -or $review.native_authorized){throw 'Source-reviewed sound plan required.'}
 $repo=$review.shared_repo
 $pins=[Collections.Generic.List[object]]::new()
 foreach($entry in $review.input_pins){Assert-SoundFFPin $entry;$pins.Add($entry)}
@@ -130,7 +133,7 @@ $unique=@{};foreach($pin in $pins){$key=[IO.Path]::GetFullPath($pin.Path);if($un
 $plan=[ordered]@{Schema='iw7.original-sound-ff-execution/1';Review=$review;RunRoot=$review.run_root;Work=(Join-Path $review.run_root 'work');
     SharedRepo=$repo;Python=$review.phase_specs[-1].exe;CandidateRoot=$candidateRoot;CandidateReceiptSHA256=(Get-FileHash -LiteralPath $candidateReceipt).Hash;
     CandidateStateSHA256=$review.candidate_state_sha256;
-    StockInputs=$stock;HashInputs=@($unique.Values|Sort-Object Path);PhysicalBytes=8GB;CommitBytes=11GB;OutputStopBytes=64MB;
+    StockInputs=$stock;HashInputs=@($unique.Values|Sort-Object Path);PhysicalBytes=$review.physical_bytes;CommitBytes=$review.commit_bytes;OutputStopBytes=64MB;
     LogBytesPerStream=2MB;CleanupMs=15000;MutableOutputs=@($review.owned_future_outputs);HeavyExecutionAuthorizedByPlan=$false;Ready=$false}
 Assert-SoundFFExecutionPlan $plan $PSScriptRoot
 $json=$plan|ConvertTo-Json -Depth 25

@@ -23,10 +23,15 @@ class HelperSourceTests(unittest.TestCase):
     def test_legacy_helper_pin_is_preserved_and_not_current_qualification(self):
         legacy = json.loads(Path(__file__).with_name("sab_ff_helpers.json").read_bytes())["files"]
         changed = [p for p in FILES if FILES[p] != legacy[p]]
-        self.assertEqual(changed, ["ops/model-lab/ModelFF.Core.ps1"])
-        self.assertEqual(legacy[changed[0]], "4dc68627b6a0b14cf41a5f77859ce7c84b2f674035fcb87cf6fb48253f21ea8e")
-        self.assertEqual(phase.source_digest((REPO / changed[0]).read_bytes()), FILES[changed[0]])
-        self.assertNotEqual(FILES[changed[0]], legacy[changed[0]])
+        self.assertEqual(changed, ["ops/Resource-Scheduler.Core.ps1", "ops/model-lab/ModelFF.Core.ps1"])
+        self.assertEqual(legacy[changed[1]], "4dc68627b6a0b14cf41a5f77859ce7c84b2f674035fcb87cf6fb48253f21ea8e")
+        prior = json.loads(Path(__file__).with_name("sab_ff_helpers-20261013.json").read_bytes())["files"]
+        self.assertEqual([p for p in FILES if FILES[p] != prior[p]], changed)
+        self.assertEqual(prior[changed[0]], legacy[changed[0]])
+        self.assertEqual(prior[changed[1]], "63f91ad11dfb5e04e8bddfb802d0d1279c28688ed1c4aab87ef641e1cbd34abb")
+        for relative in changed:
+            self.assertEqual(phase.source_digest((REPO / relative).read_bytes()), FILES[relative])
+            self.assertNotEqual(FILES[relative], prior[relative])
 
     def test_sound_job_is_only_namespace_and_counter_delta_from_shared_base(self):
         base = (REPO / "tools-source/asset-bridge/model/BuildJob.cs").read_bytes().replace(b"\r\n", b"\n")

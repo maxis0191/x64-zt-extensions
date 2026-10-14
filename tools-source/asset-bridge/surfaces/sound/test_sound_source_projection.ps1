@@ -17,8 +17,8 @@ try {
     $result=& "$PSScriptRoot/Prepare-SoundFF.ps1" -StandardMod -CandidateRoot $CandidateRoot -ImmutablePlanPath $ImmutablePlanPath -ImmutableStatePath $ImmutableStatePath -RunRoot $run -OutputPath $out|ConvertFrom-Json
     $base=Get-Content -LiteralPath $out -Raw|ConvertFrom-Json
     $null=& "$PSScriptRoot/Build-SoundFF.ps1" -PlanPath $out -PlanSHA256 $result.SHA256
-    Check (@($base.SourceProjection.Entries).Count -eq 26) 'Closed source projection must contain exactly 26 helpers.'
-    $helpers=Get-Content -LiteralPath "$PSScriptRoot/sab_ff_helpers.json" -Raw|ConvertFrom-Json
+    Check (@($base.SourceProjection.Entries).Count -eq 27) 'Closed source projection must contain exactly 27 helpers.'
+    $helpers=Get-Content -LiteralPath "$PSScriptRoot/sab_ff_helpers-20261014.json" -Raw|ConvertFrom-Json
     foreach($relative in $helpers.files.PSObject.Properties.Name){
         Check ($relative -cin $base.SourceProjection.Entries.Relative) 'Shared manifest helper missing from the closed projection.'
     }
@@ -29,6 +29,8 @@ try {
     Check (([datetimeoffset]$sharedRow.CurrentPin.ModifiedUtc).UtcTicks -eq ([datetimeoffset](Get-SoundFFPin $sharedRow.CurrentPin.Path).ModifiedUtc).UtcTicks) 'Current metadata was not independently observed.'
     $newRow=@($base.SourceProjection.Entries|Where-Object Relative -CLike '*/SoundBuildJob.cs')[0]
     Check ($null -eq $newRow.HistoricalPin) 'New local helper invented historical evidence.'
+    $manifestRow=@($base.SourceProjection.Entries|Where-Object Relative -CLike '*/sab_ff_helpers-20261014.json')[0]
+    Check ($null -eq $manifestRow.HistoricalPin) 'Current helper manifest invented historical evidence.'
     $outside=@($base.HashInputs|Where-Object Path -Like '*codec-checkpoint-2026-10-12.json')[0].Path
     $cases=@('MissingProjection','WrongSchema','WrongBasis','ExtraRow','MissingRow','DuplicateRow','HistoricalHash','HistoricalMetadata',
         'NewHelperHistory','PathToPayload','MissingCurrentPin','DuplicateCurrentPin','CurrentHash','CurrentMetadata','HistoricalEvidenceMetadata',
@@ -67,7 +69,7 @@ try {
     foreach($name in 'IW7.SoundFFTelemetryV1.BuildJob','IW7.CommunityBuild.BuildJob','IW7HudFileIdentity','IW7ResourceMemoryV1'){
         Check (!($name -as [type])) 'Source-only projection loaded a native type.'
     }
-    [ordered]@{MutationRefusals=$cases.Count;DefaultPlanPassed=$true;ProjectedSources=26;HistoricalEvidenceUnchanged=$true;
+    [ordered]@{MutationRefusals=$cases.Count;DefaultPlanPassed=$true;ProjectedSources=27;HistoricalEvidenceUnchanged=$true;
         PayloadHashes=0;NativeInvocations=0;Reservations=0;Ready=$false}|ConvertTo-Json
 }finally{
     $resolved=[IO.Path]::GetFullPath($temp);$parent=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
