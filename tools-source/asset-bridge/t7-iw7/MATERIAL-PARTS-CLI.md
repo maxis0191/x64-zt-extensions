@@ -56,7 +56,27 @@ exceeds 262,144. Only the explicitly selected, pinned parts transition now gets
 a 288-KiB aggregate authored-source cap. Other profiles retain 256 KiB; the
 2-MiB plan cap, individual source/header/read/geometry limits and resource
 admission policy are unchanged. Source regression proves both caps and the
-real generated transition. A fresh actual plan/DEFAULT is still pending.
+real generated transition. A fresh successful plan/DEFAULT is still pending.
+
+The admitted B preparation (source merge `4e33b9c4`, 2026-10-14 06:30 UTC)
+produced the 371,363-byte plan `e5048079` with 12 output files, 1,146 complete
+input pins and no missing pins. Python exited 0, but actual DEFAULT exited 1
+at the selected-streamed source binding guard before opaque qualification.
+Its old render-only branch expected the 13,768-byte `test_streamed_contract.py`
+fixture; the current shared source contains the approved C2 extension,
+17,443 bytes/`9146f69c`. The parts profile now requires that exact extended
+fixture pin. Frozen render-only/V1 pins remain unchanged; all four streamed
+implementation pins and G2/G3 header pins remain unchanged. The corrected actual
+input guard accepts B's immutable metadata; authored source-pin regression
+covers parts, C2, old render-only and V1, plus old/new mismatches and drift.
+This source check does not rerun DEFAULT or qualify opaque inputs.
+
+B's owned children closed, its lease released and its original NoExit host
+exited 1. B remains Refused. Its wrapper accidentally named the admission
+directory/schema `plan-bdmission` through a broad suffix replacement; that
+metadata spelling did not cause the source-pin refusal and remains preserved.
+The next wrapper must change exact quoted paths without replacing the schema.
+No CPP, candidate, stock, FF or game ran in either preparation group.
 
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or

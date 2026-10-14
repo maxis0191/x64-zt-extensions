@@ -48,6 +48,50 @@ try{
         $refused=$false;try{Assert-T7MaterialPartsTransition $p $root}catch{$refused=$true}
         if(!$refused){throw "Invalid actual guard case accepted: $case"};$checks++
     }
+    # Exercise the actual selected-streamed source-pin block. This is metadata
+    # selection only: no tlog, prepared payload or opaque input is opened.
+    $pinBlock=@($ast.FindAll({param($node)
+        $node -is [Management.Automation.Language.IfStatementAst] -and
+        $node.Extent.Text.StartsWith('if($streamed) {') -and
+        $node.Extent.Text.Contains('Exact selected-streamed source binding required.')},$true))
+    if($pinBlock.Count -ne 1){throw 'Unique actual selected-streamed pin guard required'}
+    $sourcePinGuard=[scriptblock]::Create($pinBlock[0].Extent.Text)
+    function New-StreamedPins([bool]$RenderOnly,[bool]$ExtendedTest) {
+        $rows=if($RenderOnly){@(
+            @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+            @('t7_iw7_streamed_model.hpp',11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
+            @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
+            @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
+            @('test_streamed_contract.py',$(if($ExtendedTest){17443}else{13768}),
+                $(if($ExtendedTest){'9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30'}else{'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'}))
+        )}else{@(
+            @('streamed_mesh_payload.hpp',18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+            @('t7_iw7_streamed_model.hpp',11289,'5eeaa89565bcfb2c5a1d899f78a47787584a1472caae9e84f04af1b8c886e5a0'),
+            @('native_streamed_export.inc',9823,'60916d49cb4490f0cc508b699d9adaa02a780229fa5e69e3c66297f50c3b0123'),
+            @('streamed_contract.py',7996,'b7d68593b93975832cfa6362c2f782187772c2255cd59c78ab5aae66d759518f'),
+            @('test_streamed_contract.py',8796,'fe25379d80cc1ec328836a0e75652046c01b9ddadba3dba73c8e7a550bed1d16')
+        )}
+        foreach($row in $rows){[pscustomobject]@{Path=(Join-Path $observerRoot $row[0]);Bytes=$row[1];SHA256=$row[2];IsText=$true}}
+    }
+    $streamed=$true;$observerRoot='C:\authored'
+    $reuse=[pscustomobject]@{
+        SelectedStreamedRenderOnlyV2=[pscustomobject]@{Schema='iw7.t7-selected-streamed-render-only-build/2';
+            GeometryProfile='t7-iw7-selected-streamed-render-only-v2';CollisionPolicy='omit-source-rigid-collision-trees'}
+        SelectedStreamedStaticV1=[pscustomobject]@{Schema='iw7.t7-selected-streamed-static-build/1';GeometryProfile='t7-iw7-selected-streamed-static-v1'}
+    }
+    foreach($family in 'render-only','parts','c2','v1'){
+        $renderOnly=$family -cne 'v1';$parts=$family -ceq 'parts';$add=$family -ceq 'c2'
+        $bindings=@(New-StreamedPins $renderOnly ($parts -or $add))
+        . $sourcePinGuard;$checks++
+    }
+    foreach($case in 'old-parts-test','new-legacy-test','duplicate','header-drift'){
+        $renderOnly=$true;$parts=$case -cne 'new-legacy-test';$add=$false
+        $bindings=@(New-StreamedPins $true ($case -cne 'old-parts-test'))
+        if($case -ceq 'duplicate'){$bindings+=@($bindings[-1])}
+        if($case -ceq 'header-drift'){$bindings[0].SHA256='f'*64}
+        $refused=$false;try{. $sourcePinGuard}catch{$refused=$true}
+        if(!$refused){throw "Invalid selected-streamed pin case accepted: $case"};$checks++
+    }
     "PASS actual material-parts finite guard: $checks checks; authored JSON only, no binaries or engine."
 }finally{
     $full=[IO.Path]::GetFullPath($root);$temporary=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())

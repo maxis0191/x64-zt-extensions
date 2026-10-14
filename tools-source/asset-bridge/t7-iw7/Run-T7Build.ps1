@@ -368,8 +368,8 @@ function Assert-T7InputBindings($Plan) {
                 @('t7_iw7_streamed_model.hpp',11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
                 @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
                 @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
-                @('test_streamed_contract.py',$(if($add){17443}else{13768}),
-                    $(if($add){'9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30'}else{'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'})) )
+                @('test_streamed_contract.py',$(if($add -or $parts){17443}else{13768}),
+                    $(if($add -or $parts){'9146f69c84c4178341010f7b6d7c10c4226ce4c7ec524b5fcdf4da742a95ac30'}else{'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'})) )
         } else {
             $marker=$reuse.SelectedStreamedStaticV1
             if(!$marker -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'GeometryProfile,Schema' -or
