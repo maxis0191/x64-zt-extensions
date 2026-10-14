@@ -16,6 +16,7 @@ import prepare_catalog_add_observation as add_observer
 import prepare_material_parts as material_parts
 import prepare_image_provenance as image_provenance
 import prepare_image_metadata as image_metadata
+import prepare_image_registration_metadata as registration_metadata
 
 IMAGE_FIXTURE_SOURCE = '678bf7dde6a99207654256c1e53ebaaec286ffe1'
 IMAGE_FIXTURE_API_PINS = {
@@ -641,7 +642,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
-def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False, metadata_profile=False):
+def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False, metadata_profile=False, registration_profile=False):
     require(type(parts_profile) is bool, 'Explicit parts preparation profile required')
     require(type(provenance_profile) is bool and not (parts_profile and provenance_profile),
             'Exclusive explicit provenance preparation profile required')
@@ -649,7 +650,9 @@ def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance
             'Finite metadata extension requires provenance preparation')
     # Only the closed, explicitly selected G3 source transition gets this cap.
     # This bounds authored output bytes, not RAM/commit admission or asset reads.
-    payload_limit = (320 if metadata_profile else 288 if parts_profile or provenance_profile else 256) * 1024
+    require(type(registration_profile) is bool and (not registration_profile or metadata_profile),
+            'Registration payload requires its exact metadata base')
+    payload_limit = (384 if registration_profile else 320 if metadata_profile else 288 if parts_profile or provenance_profile else 256) * 1024
     require(len(raw) <= 2*1024**2 and sum(map(len,payloads.values())) <= payload_limit,
             'Preparation bound exceeded')
 
@@ -707,6 +710,7 @@ def os_resource_context(path, read, expected):
 def prepare(args):
     image_observation = image_provenance_selected(args)
     image_metadata_enabled = image_metadata.selected(args)
+    registration_enabled = registration_metadata.selected(args)
     fixture_proof_root = image_fixture_proof_requested(args)
     os_context_enabled = os_resource_selected(args)
     parts_observation = material_parts.selected(args)
@@ -999,6 +1003,30 @@ def prepare(args):
                            Artifacts=['metadata-fixture.obj','metadata-fixture.exe','metadata-fixture.pdb','dependencies.json']),
                       dict(Name='metadata-fixture-test', Stage='Probe', Image=str(fixture_root/'metadata-fixture.exe'),
                            Arguments=[], DeadlineSeconds=15, Artifacts=[])] + stages
+            if registration_enabled:
+                read(HERE/'prepare_image_registration_metadata.py', 32*1024)
+                main, cli, reuse['RegistrationMetadata'] = registration_metadata.overlay(main, cli, read)
+                payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'] = main.encode(), cli.encode()
+                f2observer = read(HERE/image_provenance.HELPER, 32*1024,
+                                  registration_metadata.BASE_OBSERVER[1]).replace(b'\r\n', b'\n')
+                payloads['prepared/selected_image_registration_observer.hpp'] = registration_metadata.observer_source(f2observer).encode()
+                registration_root = run/'registration-fixture-compile'
+                registration_args = ['/nologo', '/std:c++20', '/EHsc', '/W4', '/WX', '/MT', '/Od', '/Z7', '/external:W0',
+                    '/external:I'+str(source/'src/zonetool'),
+                    '/external:I'+str(source/'deps/json/single_include/nlohmann'),
+                    '/I'+str(HERE), '/I'+str(output/'prepared'),
+                    '/sourceDependencies', str(registration_root/'dependencies.json'),
+                    '/Fo'+str(registration_root/'registration-fixture.obj'), '/Fe'+str(registration_root/'registration-fixture.exe'),
+                    str(HERE/registration_metadata.FIXTURE), '/link', '/INCREMENTAL:NO',
+                    '/DEBUG', '/PDB:'+str(registration_root/'registration-fixture.pdb')]
+                payloads['registration-fixture.rsp'] = ' '.join(map(quote, registration_args)).encode()
+                # The new API has its own 39-check gate. Do not relabel the
+                # unchanged historical mapper54/guard13 as this actual fixture.
+                stages = [dict(Name='registration-fixture-compile', Stage='Compile', Image=str(compiler_dir/'cl.exe'),
+                               Arguments=['@'+str(output/'registration-fixture.rsp')], DeadlineSeconds=120,
+                               Artifacts=['registration-fixture.obj','registration-fixture.exe','registration-fixture.pdb','dependencies.json']),
+                          dict(Name='registration-fixture-test', Stage='Probe', Image=str(registration_root/'registration-fixture.exe'),
+                               Arguments=[], DeadlineSeconds=15, Artifacts=[])] + stages[2:]
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -1090,6 +1118,18 @@ def prepare(args):
                                    ('MetadataFixtureResponse', output/'metadata-fixture.rsp'),
                                    ('MetadataEntry', HERE/'native_image_metadata.inc')]:
                     profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+                if registration_enabled:
+                    profile.update(Name=registration_metadata.NAME, Option=registration_metadata.OPTION,
+                        ObservationSchema=registration_metadata.SCHEMA, RegistrationSchema=registration_metadata.SCHEMA,
+                        RegistrationFixtureChecks=39, RegistrationCPPQualified=False)
+                    for name, path in [('RegistrationWiring', HERE/'prepare_image_registration_metadata.py'),
+                                       ('RegistrationContract', HERE/registration_metadata.CONTRACT),
+                                       ('RegistrationCapture', HERE/registration_metadata.CAPTURE),
+                                       ('RegistrationEntry', HERE/registration_metadata.ENTRY),
+                                       ('RegistrationFixture', HERE/registration_metadata.FIXTURE),
+                                       ('RegistrationObserver', output/'prepared/selected_image_registration_observer.hpp'),
+                                       ('RegistrationResponse', output/'registration-fixture.rsp')]:
+                        profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
         if zombies_observation:
             profile['Name'] = zombies_observer.SOURCE_PROFILE
             profile['ObservationSchema'] = zombies_observer.SCHEMA
@@ -1124,7 +1164,7 @@ def prepare(args):
     if os_context is not None: plan['OSResourceContext'] = os_context
     raw = (json.dumps(plan,indent=2)+'\n').encode()
     require_preparation_bounds(raw, payloads, parts_profile=parts_observation, provenance_profile=image_observation,
-                               metadata_profile=image_metadata_enabled)
+                               metadata_profile=image_metadata_enabled, registration_profile=registration_enabled)
     payloads['build-plan.local.json'] = raw
     output.mkdir()
     for name, data in payloads.items():
@@ -1159,6 +1199,7 @@ if __name__ == '__main__':
     parser.add_argument('--material-parts-v1',action='store_true')
     parser.add_argument('--image-provenance-v1',action='store_true')
     parser.add_argument('--image-metadata-v1',action='store_true')
+    parser.add_argument('--image-registration-metadata-v1',action='store_true')
     parser.add_argument('--image-provenance-fixture-proof-root',type=Path)
     parser.add_argument('--os-context-tzres-20261014',action='store_true')
     parser.add_argument('--os-context-proof',type=Path)

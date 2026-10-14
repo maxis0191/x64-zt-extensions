@@ -212,11 +212,30 @@ Successful 528 bytes means two complete header copies. The nested F2 schema is
 its unchanged query-only diagnostic. Lifetime, allocation retention, atomicity,
 same object, runtime ABI, pixels and Ready stay false.
 
-The pending source contract pins the derived observer/main/CLI. Four targeted
+The pending source contract pins the derived observer/main/CLI. Six targeted
 Python source checks pass, including exact consumer shape and actual renderer
 guard syntax/exclusivity. The authored native fixture has 39 expected checks and
 uses the same leaves on owned synthetic pages, including protection withdrawal
 between guard and copy. It has not been compiled or executed; no in-page fault
 is claimed measured. Old H53 and CPP D cannot qualify the changed observer API.
-This source seam is not wired into an operational build/launcher yet: fresh CPP
-fixture/full CLI qualification, exact plan review and separate Native GO remain.
+The reviewed build recipe adds the explicit `--image-registration-metadata-v1`
+flag on top of the exact metadata/provenance source pair. It selects one finite
+five-stage H1 cohort: registration fixture compile/test, fresh main, fresh T7
+CLI, link. The actual fixture must exit zero with empty stderr and exactly
+`IW7_T7_REGISTRATION_HEADER_CHECKS=39` before either TU can compile. Historical
+mapper54/guard13 source pins remain unchanged and are not relabelled as this
+fixture. The new CLI stays below its dedicated 192 KiB source cap; other profile
+caps remain unchanged. The cohort retains the existing 600-second deadline,
+256 MiB output bound and 1 MiB receipt reserve, artifact/dependency guards and
+original-job ownership/closure policy.
+
+DEFAULT returns before native imports, opaque input hashing, lease admission or
+output creation. It reports the new API source-pending/CPP-unqualified with no
+candidate, independently of the historical base H proof. The existing base proof
+only enables the recipe; the new 39-check fixture and complete five-stage closed
+receipt must qualify the changed API. Source guard tests exercise altered plans,
+order/arguments/artifacts, old markers and false DEFAULT claims. With the actual
+historical H text proofs, 34 PowerShell gates and 16 targeted Python source checks
+pass; the new API still reports pending after the base proof is accepted. Fresh admitted
+PREP, exact actual-plan review, CPP qualification and separate Native GO remain;
+the new launcher is still inactive and no native execution is claimed here.

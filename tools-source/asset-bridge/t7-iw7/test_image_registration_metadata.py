@@ -4,6 +4,8 @@ import os
 import re
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
+import prepare_build as build
 import prepare_image_metadata as metadata
 import prepare_image_provenance as provenance
 import prepare_image_registration_metadata as registration
@@ -12,6 +14,25 @@ from test_image_provenance import ProvenanceTransitionTests
 
 
 class RegistrationSourceTests(unittest.TestCase):
+    def test_prepare_refuses_incomplete_selection_before_any_io(self):
+        with patch.object(build, 'path_checked', side_effect=AssertionError('Preparation IO reached')) as read:
+            with self.assertRaises(ValueError):
+                build.prepare(SimpleNamespace(image_registration_metadata_v1=True))
+            read.assert_not_called()
+
+    def test_registration_payload_cap_does_not_expand_old_profile(self):
+        options = dict(provenance_profile=True, metadata_profile=True)
+        payload = {'source': b'x'*(320*1024+1)}
+        with self.assertRaises(ValueError):
+            build.require_preparation_bounds(b'{}', payload, **options)
+        build.require_preparation_bounds(b'{}', payload, registration_profile=True, **options)
+        for invalid in ({'registration_profile': True}, {'registration_profile': 1, **options}):
+            with self.assertRaises(ValueError):
+                build.require_preparation_bounds(b'{}', payload, **invalid)
+        with self.assertRaises(ValueError):
+            build.require_preparation_bounds(b'{}', {'source': b'x'*(384*1024+1)},
+                                             registration_profile=True, **options)
+
     def test_selection_is_explicit_and_does_not_admit_the_legacy_pair_alone(self):
         self.assertFalse(registration.selected(SimpleNamespace()))
         self.assertTrue(registration.selected(SimpleNamespace(image_registration_metadata_v1=True,
