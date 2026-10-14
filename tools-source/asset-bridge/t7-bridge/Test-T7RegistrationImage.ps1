@@ -99,4 +99,3 @@ $r.refused=$true
 Check ((ConvertFrom-T7RegistrationImageRecord (Encode-Record) 1) -ceq 'RegistrationRecordRefused') 'Registration refusal lost.'
 Refuses {ConvertFrom-T7RegistrationImageRecord (Encode-Record) 0}
 [ordered]@{Status='Passed';Checks=$checks;AuthoredCPP39Objects=$true;NativeRun=$false;LeaseAcquired=$false;OpaqueRead=$false}|ConvertTo-Json
-
