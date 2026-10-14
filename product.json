@@ -500,6 +500,7 @@
     "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueTrace.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7Prepatch.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7PrepatchReferenceV2Consumer.ps1",
+    "tools-source/asset-bridge/t7-bridge/Test-T7ReferenceV2HostPublication.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExport.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportDiagnostic.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExportV2.ps1",

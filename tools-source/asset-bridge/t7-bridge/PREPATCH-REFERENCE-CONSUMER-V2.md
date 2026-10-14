@@ -65,3 +65,16 @@ the fixture was corrected to assign a real array before the passing run.
 The preparation helper's first parse refused before creating outputs; its
 parenthesis correction preceded the create-only preparation. These failures
 did not start a native process or consume a probe attempt.
+
+Peer review of the initial consumer found a deterministic Run-only refusal:
+it published its own host-start marker before repeating the create-only
+validation. DEFAULT legitimately passed without that marker. The final
+validation now occurs after admission and before publication; the exclusive
+CreateNew marker and refusal of existing attempts remain intact. Eleven
+causal checks execute the actual post-admission prelude on synthetic file
+metadata, then reproduce the old-order refusal by moving only that validation.
+No lease, provider or native process participates in these checks. The fixture
+runs its extracted prelude as a file to retain the real PSCommandPath semantics.
+The initial code/package/plan and DEFAULT witness remain historical and do
+not qualify the corrected consumer. Prepare a new source/plan and fresh
+entry DEFAULT before the final review and any separate probe GO.

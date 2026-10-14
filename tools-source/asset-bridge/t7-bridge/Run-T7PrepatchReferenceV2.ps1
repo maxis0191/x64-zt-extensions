@@ -64,6 +64,8 @@ try {
         CaptureOutcome='NoCapture';CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;InputMetadata=@()}
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'T7 reference V2 diagnostic only'
     $state.LeaseToken=$context.Lease.Token
+    # Last create-only check precedes publication of our own host-start marker.
+    Assert-T7RefV2Plan $plan $repo $PSCommandPath
     $taskProcess=[Diagnostics.Process]::GetCurrentProcess()
     $taskHostState=[pscustomobject]@{Host=[pscustomobject]@{PID=$PID;CreatedUtc=$taskProcess.StartTime.ToUniversalTime().ToString('o');Image=$shell};Plan=$plan;PlanSHA256=$PlanSHA256;Context=$context;State=$state;Phase='Running';CanExit=$false}
     [AppDomain]::CurrentDomain.SetData('IW7.T7PrepatchReferenceV2',$taskHostState)
@@ -71,7 +73,6 @@ try {
     $taskStartBytes=[Text.UTF8Encoding]::new($false).GetBytes(($taskHostState.Host|ConvertTo-Json)+"`n")
     $taskStartStream=[IO.FileStream]::new($taskStartPath,'CreateNew','Write','Read');try{$taskStartStream.Write($taskStartBytes,0,$taskStartBytes.Length)}finally{$taskStartStream.Dispose()}
     Enable-T7RefV2RuntimeProfile $plan $context
-    Assert-T7RefV2Plan $plan $repo $PSCommandPath
     $marker=[IO.FileStream]::new((Join-Path $plan.RunRoot 'attempt.json'),'CreateNew','Write','Read')
     try{$bytes=[Text.Encoding]::UTF8.GetBytes((([ordered]@{Schema='iw7.t7-prepatch-reference-attempt/2';PlanSHA256=$PlanSHA256;StartedUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress)+"`n"));$marker.Write($bytes,0,$bytes.Length);$attempted=$true}finally{$marker.Dispose()}
     foreach($pin in $plan.Bindings|Where-Object {!$_.IsText}){$guards.Add((Open-H1Pin $pin));Assert-H1Deadline $script:T7RefV2Started 200}
