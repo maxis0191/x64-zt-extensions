@@ -5,13 +5,14 @@ $base=Get-Content -LiteralPath $PlanPath -Raw|ConvertFrom-Json
 $temp=[IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('iw7-sound-plan-'+[guid]::NewGuid().ToString('N'))))
 [IO.Directory]::CreateDirectory($temp)|Out-Null
 try {
-    foreach($case in 'Valid','PlanHash','CoreHash','BudgetString','LowerBudget','MissingSABS','WrongPhasePath','HelperRawHash',
+    foreach($case in 'Valid','ReviewedLowerEstimates','PlanHash','CoreHash','BudgetString','LowerBudget','MissingSABS','WrongPhasePath','HelperRawHash',
         'CandidateReceiptHash','CandidateStateHash','MissingCandidateEvidence','OldToolHash'){
         $plan=$base|ConvertTo-Json -Depth 25|ConvertFrom-Json
         switch($case){
             'CoreHash' {($plan.HashInputs|Where-Object Path -Like '*SoundFF.Core.ps1').SHA256='0'*64}
             'BudgetString' {$plan.PhysicalBytes=[string]$plan.PhysicalBytes}
             'LowerBudget' {$plan.CommitBytes=1GB}
+            'ReviewedLowerEstimates' {$plan.PhysicalBytes=1;$plan.CommitBytes=1;$plan.Review.physical_bytes=1;$plan.Review.commit_bytes=1}
             'MissingSABS' {$plan.MutableOutputs=@($plan.MutableOutputs|Where-Object {!$_.EndsWith('.sabs')})}
             'WrongPhasePath' {$plan.Review.phase_specs[2].cwd=$temp}
             'HelperRawHash' {($plan.HashInputs|Where-Object Path -Like '*MaterialV2.Core.ps1').SHA256='0'*64}
@@ -24,13 +25,13 @@ try {
         $hash=(Get-FileHash -LiteralPath $path).Hash;if($case -eq 'PlanHash'){$hash='0'*64}
         $failed=$false
         try{$result=& "$PSScriptRoot/Build-SoundFF.ps1" -PlanPath $path -PlanSHA256 $hash|ConvertFrom-Json}catch{$failed=$true}
-        if($failed -ne ($case -ne 'Valid')){throw "Wrong default Plan outcome: $case"}
+        if($failed -ne ($case -notin 'Valid','ReviewedLowerEstimates')){throw "Wrong default Plan outcome: $case"}
         if(Test-Path -LiteralPath $plan.RunRoot){throw 'Default Plan created native root'}
-        if($case -eq 'Valid' -and ($result.HeavyExecutionAuthorizedByPlan -or $result.Ready)){throw 'Default Plan overclaims authorization'}
+        if($case -in 'Valid','ReviewedLowerEstimates' -and ($result.HeavyExecutionAuthorizedByPlan -or $result.Ready)){throw 'Default Plan overclaims authorization'}
     }
     # The PowerShell gate must agree with Python about canonical source identity,
     # but must still reject newline conversion against an existing runtime pin.
-    $manifest=Get-Content -LiteralPath "$PSScriptRoot/sab_ff_helpers.json" -Raw|ConvertFrom-Json
+    $manifest=Get-Content -LiteralPath "$PSScriptRoot/sab_ff_helpers-20261014.json" -Raw|ConvertFrom-Json
     $fake=Join-Path $temp 'helpers';[IO.Directory]::CreateDirectory($fake)|Out-Null
     foreach($newline in "`n","`r`n"){
         $pins=@(foreach($entry in $manifest.files.PSObject.Properties){
@@ -51,7 +52,7 @@ try {
     $failed=$false;try{Assert-SoundFFHelperSources $PSScriptRoot $fake $pins}catch{$failed=$true}
     if(!$failed){throw 'Rehashed real source mutation bypassed canonical pin'}
     if(('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7HudFileIdentity' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Default Plan loaded a native type'}
-    '16 default-Plan and source-identity cases passed; no native type, job, lease, stock or RunRoot.'
+    '17 default-Plan and source-identity cases passed; no native type, job, lease, stock or RunRoot.'
 }finally{
     $resolved=[IO.Path]::GetFullPath($temp)
     if(!$resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()),[StringComparison]::OrdinalIgnoreCase) -or
