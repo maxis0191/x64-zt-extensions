@@ -1,0 +1,57 @@
+{
+  "schema": "iw7.t7-registration-image-metadata-source/1",
+  "source_profile": "t7-registration-image-header-metadata-v1",
+  "native_option": "-t7-iw7-image-registration-metadata-v1",
+  "report_schema": "iw7.t7-registration-image-header-metadata/1",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "capture_phase": "after_original_model_add",
+  "recheck_phase": "after_original_model_add",
+  "image_header_bytes": 264,
+  "completed_header_copies": 2,
+  "registration_header_bytes_copied": 528,
+  "image_name_max_utf8_bytes": 255,
+  "fixture_expected_checks": 39,
+  "fixture_stdout": "IW7_T7_REGISTRATION_HEADER_CHECKS=39\n",
+  "source_only_pending": true,
+  "cpp_qualified": false,
+  "native_observed": false,
+  "ready": false,
+  "base_observer": {
+    "bytes": 15069,
+    "sha256": "d8b3f07f787f03dbda7c0305e2aad685c131130fbe43a839145e869858925c16"
+  },
+  "derived_observer": {
+    "bytes": 16575,
+    "sha256": "9c82b0969e3d44c9dbafb5fa4d6cf0b60fce450d60a77291342e97518c365380"
+  },
+  "base_main": {
+    "bytes": 43482,
+    "sha256": "b786f2db40e4c70346846bccb336c86c957efbd76f1c9365994138119a4e4363"
+  },
+  "base_cli": {
+    "bytes": 154456,
+    "sha256": "17c07359a55e23324239f9663a8d4ead3cb9d3343a8b7ff0d4baf01ca4dfae6b"
+  },
+  "files": {
+    "registration_image_header_capture.hpp": {
+      "bytes": 16485,
+      "sha256": "edf7bec2865e2098782bb4b31e58a48508c83bcbdf35d190affa7b451f0e6345"
+    },
+    "native_image_registration_metadata.inc": {
+      "bytes": 1313,
+      "sha256": "a05009334f2f8c62083963e8aa399bc8de557a169c627f3277a2f0d3925d02ac"
+    },
+    "registration_image_header_fixture.cpp": {
+      "bytes": 12041,
+      "sha256": "fb067267b3b7ecd7081a2d72ecd7add7bbdf468d13085dd75a85c498eb4a59fa"
+    }
+  },
+  "main": {
+    "bytes": 43620,
+    "sha256": "05f601ffdeff533809acb023e53b850570f08f79594d5954232338f3a1b597b8"
+  },
+  "cli": {
+    "bytes": 175031,
+    "sha256": "26e9ae7ff1a3f016130b57cea265a73a8ecbcdb6bed20b3bc39a4c7f51742967"
+  }
+}

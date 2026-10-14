@@ -180,3 +180,43 @@ plan/DEFAULT/GO comes first; header-body observation needs its own GO. Real stre
 keys, mip/layout qualification, whole-object extraction/DDS and owner gameplay
 remain unqualified. Main, stock, occupied clients, banks and frozen cohorts stay
 preserved.
+
+## Additive registration-owned source route
+
+Actual F2 on 2026-10-15 found the selected image field readable at the synchronous
+post-original-MODEL-add callback, but MEM_RESERVE/nonreadable at the later lookup.
+The numerical image field stayed equal; this does not prove lifetime, same object,
+decommit cause or runtime ABI. The IMAGE add bypass and simple-image loader remain
+unchanged. No lookup-body admission is inferred from the earlier query.
+
+The source-only `prepare_image_registration_metadata.py` overlay derives a new
+observer from the exact unchanged F2 helper, preserving the original API bytes
+and old packages. Its distinct option is
+`-t7-iw7-image-registration-metadata-v1`. The collector is enabled/reset before
+load and called under the existing observer mutex immediately after the selected
+registration capture, following the original MODEL add exactly once. It rechecks
+the same returned-model/material/table/binding chain, fresh readable full ranges,
+two owned 264-byte copies and two bounded UTF-8 name reads during that callback.
+Raw byte188 is validated before any typed GfxImage copy/view. Separate noinline
+leaves contain only the fixed header memcpy or one name-byte copy, with SEH for
+access-violation/in-page faults only. A failed copy is discarded without retry or
+DTO publication; complete-copy counters do not invent partially read byte totals.
+
+Finalization uses cached owned bytes/name/DTO only. The existing MODEL lookup is
+used for nondefault and numerical association checks; no historical image/name
+pointer is read there. The report is the separate closed 33-key schema
+`iw7.t7-registration-image-header-metadata/1`, profile
+`t7-registration-image-header-metadata-v1`, with capture/recheck phase explicitly
+`after_original_model_add` and ordinal correlated with that same F2 context.
+Successful 528 bytes means two complete header copies. The nested F2 schema is
+its unchanged query-only diagnostic. Lifetime, allocation retention, atomicity,
+same object, runtime ABI, pixels and Ready stay false.
+
+The pending source contract pins the derived observer/main/CLI. Four targeted
+Python source checks pass, including exact consumer shape and actual renderer
+guard syntax/exclusivity. The authored native fixture has 39 expected checks and
+uses the same leaves on owned synthetic pages, including protection withdrawal
+between guard and copy. It has not been compiled or executed; no in-page fault
+is claimed measured. Old H53 and CPP D cannot qualify the changed observer API.
+This source seam is not wired into an operational build/launcher yet: fresh CPP
+fixture/full CLI qualification, exact plan review and separate Native GO remain.
