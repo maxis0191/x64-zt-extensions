@@ -86,5 +86,14 @@ contract's pre-PR39 test pin before any binary content, lease or run directory.
 That source package remains unchanged. The correction updates only the exact
 streamed-test snapshot and its C2 binding; it does not rewrite the test or
 relax the older profiles.
+The corrected source package at `278ea63ef90b7c9acca8edee86f99b8094920846`
+verifies 890 exported text files / 8484677 bytes. Its 313411-byte source manifest
+has SHA256 `d8c8c4c0b114c3c7d59418a730be6dec0e3ec88381985fef2caa590c043dc65c`.
+The real DEFAULT check passes for the 369645-byte plan, SHA256
+`c559d838ced188d7ca0628e4dda063f5699d1b499f4d6c9e1b30a3c8244734f9`:
+151 bindings, 1146 inputs, no missing pins and main/zonetool11/link stages.
+NativeTypesLoaded, BinaryInputsHashed, LeaseAcquired, RunRootCreated and Ready
+are all false. This package/plan remains a separate immutable source checkpoint;
+the result is not a build receipt or permission to execute.
 Next: review the C2 source and coordinate its distinct ops projection before
 any build or stock execution.
