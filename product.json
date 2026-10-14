@@ -792,7 +792,11 @@
     "tools-source/asset-bridge/t7-iw7/prepare_image_provenance.py",
     "tools-source/asset-bridge/t7-iw7/test_image_provenance.py",
     "tools-source/asset-bridge/t7-iw7/image-provenance-source-contract.json",
-    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE.md"
+    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE.md",
+    "tools-source/asset-bridge/animation/rig/raygun/README.md",
+    "tools-source/asset-bridge/animation/rig/raygun/source-plan.json",
+    "tools-source/asset-bridge/animation/rig/raygun/source_handoff.py",
+    "tools-source/asset-bridge/animation/rig/raygun/test_source_handoff.py"
   ],
   "dependencies": [
     {
