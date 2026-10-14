@@ -18,6 +18,7 @@ import prepare
 import readback
 import model_lab
 import prepare_writer
+import modal_window
 
 
 class ArenaTests(unittest.TestCase):
@@ -283,6 +284,51 @@ if(!$caught -or $script:Calls.Count){throw 'Different root generation allowed di
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock date source checks require pwsh')
+    def test_modal_text_is_one_original_helper_and_no_dialog_stays_negative(self):
+        script=r'''
+param($Core,$Measure,$Root)
+$ErrorActionPreference='Stop'
+. $Core
+function Get-H1Clock {55000L}
+$script:Created='2026-10-14T00:00:00.0000006Z'
+function Get-H1OriginalState($Owner){[pscustomobject]@{RootExited=$false;PID=$Owner.PID;Image=$Owner.Image;CreatedUtc=$script:Created}}
+function Register-H1Original {}
+$script:Calls=0;$script:Found=$true
+function Invoke-OriginalArenaTool($Context,$Exe,$SHA,$Arguments,$Work,$RunRoot,$Phase,$Inputs,$Seconds){
+    $script:Calls++
+    if($Phase -cne 'load-modal' -or $Seconds -ne 10 -or '--snapshot' -cin $Arguments -or '-z' -cin $Arguments){throw 'Only one modal helper is allowed'}
+    $filetime=$Arguments[[array]::IndexOf($Arguments,'--created-filetime')+1]
+    if($filetime -cne [string](([datetimeoffset]$script:Created).UtcDateTime.ToFileTimeUtc())){throw 'Exact original 100ns creation identity lost'}
+    if($Arguments[[array]::IndexOf($Arguments,'--parent-pid')+1] -cne [string]$PID){throw 'Original caller identity lost'}
+    $output=$Arguments[[array]::IndexOf($Arguments,'--output')+1]
+    @{schema='iw7.world-modal-window/1';identity_verified_after=$true;modal_window_observed=$script:Found}|ConvertTo-Json|Set-Content -LiteralPath $output
+    $Context.Closed=$true;[pscustomobject]@{ExitCode=0;JobClosed=$true}
+}
+$logs=Join-Path $Root 'logs';[IO.Directory]::CreateDirectory($logs)|Out-Null
+$marker='[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_mp"...'
+[IO.File]::WriteAllText((Join-Path $logs 'stdout.log'),$marker+"`n")
+$target=[pscustomobject]@{Owner=[pscustomobject]@{PID=123;Image=(Join-Path $Root 'authored.exe')};Closed=$false;Lease=[pscustomobject]@{Token='authored'};Work=$Root}
+$state=@{Identity=@{PID=123;Image=$target.Owner.Image;CreatedUtc=$script:Created}}
+$options=[pscustomobject]@{StartedMs=0L;RunRoot=(Join-Path $Root 'found');ModalTextOnly=$true;ModalSource='authored-modal.py';Python='authored-python';PythonSHA256=('1'*64);ToolSHA256=('3'*64);Inputs=@()}
+$e=[ordered]@{Attempted=$false;LastBytes=(Get-Item -LiteralPath (Join-Path $logs 'stdout.log')).Length;LastProgressMs=0L;Outcome='NotTriggered'}
+$caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$_.Exception.Message -ceq 'Load diagnostic captured; material reference not measured.'}
+if(!$caught -or $script:Calls -ne 1 -or $e.Outcome -cne 'Captured' -or !$e.ModalWindowObserved -or !$target.DiagnosticContext.Closed){throw 'Modal capture differs'}
+$script:Calls=0;$script:Found=$false;$e.Attempted=$false;$e.Outcome='NotTriggered';$options.RunRoot=Join-Path $Root 'negative'
+$caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$_.Exception.Message -ceq 'No owned modal window observed in the bounded scan.'}
+if(!$caught -or $script:Calls -ne 1 -or $e.Outcome -cne 'NoModalWindowObserved' -or $e.ModalWindowObserved -or !$target.DiagnosticContext.Closed){throw 'Negative modal outcome was fabricated or closure lost'}
+$dummy=@{PackageRoot=$Root;RunRoot=$Root;StockBindingPlan='absent';StockBindingPlanSHA256=('1'*64);ToolSource=$Root;CandidateRoot=$Root;CandidateArtifactSHA256=('2'*64);NativeJobAssembly='absent.dll'}
+$caught=$false;try{& $Measure @dummy -ModalTextOnly}catch{$caught=$_.Exception.Message -ceq 'Modal text requires the explicit load diagnostic opt-in.'}
+if(!$caught){throw 'Modal path without diagnostic opt-in was not refused before file access'}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'modal-source.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('LoadDiagnostic.Core.ps1')),
+                str(Path(model_lab.__file__).with_name('Measure-StockReference.ps1')),temp],
+                capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock date source checks require pwsh')
     def test_stock_metadata_accepts_typed_and_short_dates_but_refuses_changed_ticks(self):
         # Evaluate the actual refusal predicate with authored metadata only.
         # No retail file, native type, reservation or process owner is consulted.
@@ -384,13 +430,20 @@ if($script:QualificationCalls -ne 1 -or !$state.CandidateQualifiedUnderLease){th
                   '-StockBindingPlanSHA256',model_lab.digest(binding.read_bytes()),'-ToolSource',str(tool),
                   '-CandidateRoot',str(root/'absent-candidate'),'-CandidateArtifactSHA256','1'*64,
                   '-NativeJobAssembly',str(root/'absent-owner.dll')]
-            def planned():
-                result=subprocess.run(args,capture_output=True,text=True,timeout=20)
+            def planned(*extra):
+                result=subprocess.run(args+list(extra),capture_output=True,text=True,timeout=20)
                 self.assertEqual(result.returncode,0,result.stdout+result.stderr)
                 value=json.loads(result.stdout)
                 self.assertFalse(value['StockBytesRead']);self.assertFalse(value['NativeTypesLoaded']);self.assertFalse(value['LeaseAcquired'])
                 return value
             baseline=planned();prior=baseline['PlanSHA256']
+            modal=planned('-LoadDiagnostic','-ModalTextOnly')
+            self.assertEqual(modal['Plan']['Diagnostic']['Mode'], 'global-mp-modal-text')
+            self.assertIsNone(modal['Plan']['Diagnostic']['Cdb'])
+            self.assertEqual([modal['Plan']['Diagnostic'][name] for name in ('CPUSeconds','SnapshotSeconds','OfflineStackSeconds')], [0,0,0])
+            for name in ('tools-source/asset-bridge/world/original-arena/modal_window.py',
+                         'tools-source/asset-bridge/recipient/recipient_dialog.py'):
+                self.assertIn(str(package/name), [pin['Path'] for pin in modal['Plan']['SourcePins']])
             for name in ('tools-source/asset-bridge/world/original-arena/model_lab.py',
                          'tools-source/asset-bridge/world/original-arena/readback.py',
                          'tools-source/asset-bridge/h1-fixture/inspect_fixture.py'):
@@ -670,6 +723,103 @@ if(!$caught -or $context.Closed -or $context.Owner -or $previous.StopCalls -ne 0
                 "if($errors.Count){throw ($errors|Out-String)}\n")
             result=subprocess.run([shutil.which('pwsh'),'-NoProfile','-File',str(script)],capture_output=True,text=True,timeout=20)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+
+class ModalWindowTests(unittest.TestCase):
+    class API:
+        def __init__(self):
+            self.helper = dict(pid=44, parent_pid=7, created_filetime=300, image=r'C:\python.exe')
+            self.target = dict(pid=9, parent_pid=7, created_filetime=200, image=r'C:\work\zonetool.exe')
+            self.owners = {10:9, 20:9, 21:9}
+            self.classes = {10:'#32770', 20:'Static', 21:'Button'}
+            self.title = 'Engine notice'
+            self.controls = [20, 21]
+            self.texts = {20:'Authored error fixture.'}
+            self.reads = []; self.enumerations = 0; self.hook = None
+
+        def current_handle(self): return 1
+        def identity(self, handle): return dict(self.helper if handle == 1 else self.target)
+        def window_owner(self, hwnd): return self.owners[hwnd]
+        def windows(self, pid): self.enumerations += 1; return [10]
+        def class_name(self, hwnd): return self.classes[hwnd]
+        def caption(self, hwnd): return self.title
+        def children(self, hwnd): return list(self.controls)
+        def is_child(self, root, child): return root == 10 and child in self.controls
+        def static_text(self, hwnd):
+            self.reads.append(hwnd)
+            if self.hook: self.hook(hwnd)
+            value = self.texts[hwnd]
+            if isinstance(value, BaseException): raise value
+            return value, False
+
+    def setUp(self):
+        self.api = self.API()
+        self.expected = dict(self.api.target, sha256='expected')
+
+    def snapshot(self, digest=lambda path:'expected', clock=lambda:0):
+        return modal_window.capture(self.api, 2, self.expected, digest, clock)
+
+    def test_any_owned_dialog_caption_and_only_static_text(self):
+        record = self.snapshot()
+        self.assertTrue(record['identity_verified_after'])
+        self.assertTrue(record['modal_window_observed'])
+        self.assertEqual(record['title'], 'Engine notice')
+        self.assertEqual(record['controls'][0]['text'], 'Authored error fixture.')
+        self.assertEqual(self.api.reads, [20])
+        self.assertFalse(record['interaction_performed'])
+
+    def test_original_creation_parent_and_image_refuse_before_window_enumeration(self):
+        for field, value in [('pid',99), ('parent_pid',8), ('created_filetime',201), ('image',r'C:\other.exe')]:
+            with self.subTest(field=field):
+                self.api = self.API(); self.api.target[field] = value
+                with self.assertRaises(OSError): self.snapshot()
+                self.assertEqual(self.api.enumerations, 0)
+        self.api = self.API(); self.api.helper['parent_pid'] = 8
+        with self.assertRaises(OSError): self.snapshot()
+
+    def test_root_reassignment_and_hash_failure_discard_text(self):
+        self.api.owners[10] = 99
+        record = self.snapshot()
+        self.assertFalse(record['identity_verified_after']); self.assertEqual(self.api.reads, [])
+        self.api = self.API(); record = self.snapshot(digest=lambda path:'bad')
+        self.assertFalse(record['identity_verified_after']); self.assertEqual(self.api.enumerations, 0)
+
+    def test_child_reassignment_after_read_discards_all_attribution(self):
+        self.api.hook = lambda hwnd:self.api.owners.update({hwnd:99})
+        record = self.snapshot()
+        self.assertFalse(record['identity_verified_after'])
+        self.assertEqual((record['title'], record['controls'], record['text_bytes']), (None, [], 0))
+
+    def test_no_dialog_is_an_observed_negative_with_no_control_read(self):
+        self.api.classes[10] = 'ConsoleWindowClass'
+        record = self.snapshot()
+        self.assertTrue(record['identity_verified_after']); self.assertFalse(record['modal_window_observed'])
+        self.assertEqual(self.api.reads, [])
+
+    def test_timeout_keeps_owned_caption_and_marks_missing_body(self):
+        self.api.texts[20] = OSError('WM_GETTEXT timeout')
+        record = self.snapshot()
+        self.assertTrue(record['identity_verified_after']); self.assertTrue(record['modal_window_observed'])
+        self.assertEqual(record['controls'][0]['text'], '')
+        self.assertIn('timeout', record['controls'][0]['error'])
+
+    def test_control_and_utf8_bounds_and_soft_deadline(self):
+        self.api.controls = list(range(20,50))
+        for hwnd in self.api.controls:
+            self.api.owners[hwnd] = 9; self.api.classes[hwnd] = 'Static'; self.api.texts[hwnd] = '😀'*3000
+        record = self.snapshot()
+        self.assertLessEqual(len(self.api.reads), 8); self.assertLessEqual(record['text_bytes'], 16*1024)
+        self.assertTrue(record['text_truncated'])
+        self.api = self.API(); ticks = iter([0,3])
+        record = self.snapshot(clock=lambda:next(ticks))
+        self.assertEqual(self.api.reads, []); self.assertTrue(record['text_truncated'])
+
+    def test_changed_caption_and_final_hash_discard_snapshot(self):
+        self.api.hook = lambda hwnd:setattr(self.api, 'title', 'Changed')
+        self.assertFalse(self.snapshot()['identity_verified_after'])
+        self.api = self.API(); hashes = iter(['expected','bad'])
+        record = self.snapshot(digest=lambda path:next(hashes))
+        self.assertFalse(record['identity_verified_after']); self.assertEqual(record['controls'], [])
 
 
 if __name__ == '__main__':
