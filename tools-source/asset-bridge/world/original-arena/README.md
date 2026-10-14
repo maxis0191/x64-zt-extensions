@@ -100,6 +100,54 @@ for this source change; collision remains a separate native engine task.
 
 ## Collision that still needs a native primitive
 
+### 2026-10-14: source contract for the first original box
+
+The optional `prepare.py --first-box obstacle` writes `first-box.source.json`
+alongside the existing inputs. It binds the geometry document's SHA-256 and
+selects surface0 vertices144–167 / triangles72–83. The combined model remains
+168 vertices /84 triangles; this selection does not isolate its rendered mesh.
+Default preparation and writer/ModelLab/readback inputs remain byte-identical.
+No new FF, native serializer, provider, gameplay fixture or HKX format is added.
+
+For the first obstacle, local min=(16,-32,0), max=(48,32,32), midpoint=(32,0,16)
+and half=(16,32,16). Model angles are identity(0,0,0), with X→X/Y→Y/Z→Z axes.
+The source mapping is `world = model_origin + uniform_scale * local`.
+Default origin=(0,0,0), scale=1 makes these exact local/world bounds coincide.
+`--model-origin X Y Z` / `--model-scale S` require a selected box, positive exact
+float32 scale/origin, and exact finite noncollapsed float32 endpoint results.
+Rounded or collapsed world endpoints are refused before output creation.
+
+Example **source preparation only**, with a fresh output:
+
+```powershell
+python -B tools-source/asset-bridge/world/original-arena/prepare.py --output <fresh-source> --first-box obstacle --model-origin 0 0 0 --model-scale 1
+```
+
+The same optional arguments can accompany the existing measured M7 material
+binding. The sidecar then carries only that named reference; it does not turn
+the measured nondefault reference into a rendered material or texture proof.
+
+The current collision provider's source contract accepts absolute IW7 game
+min/max on a dedicated `script_model`: call `solid()` before
+`collision_createbox(minimum,maximum,1)` for world0 and one observed box. Use a
+distinct collision owner; its origin/angles/modelscale do not transform these
+arguments. The provider computes float32 midpoint/half, instantiates at that
+midpoint with quaternion(0,0,0,1), and internally converts half-extents1/32.
+Do not predivide GSC bounds or infer a rotated body from a rotated visible model.
+
+Native collision E qualified a solo zero-client query/removal/counter episode,
+not this geometry, seven simultaneous bodies, rendered contact, prediction or
+player movement. Existing Rig/BO3 display geometry is a different source and is
+not used to infer these bounds. This sidecar is source correspondence only:
+actual render transform/bounds, collision, prediction, movement and runtime
+remain false. It is not consumed by the writer or gameplay fixture.
+
+Next: measure the actual identity-rotated visible original obstacle and bind
+its observed origin/scale to these exact source faces before proposing one
+collision episode. The current writer can only produce the combined seven-box
+profile. An isolated24/12 model needs a separately reviewed profile change and
+FF/build plan; neither is authorized by this source-only preparation.
+
 The reference query expands each authored box by the query half-extents and
 intersects a segment using slabs. Query coordinates are **box centers**, not
 player feet. It handles start-solid, misses, tangency and motion into a boundary.

@@ -1610,3 +1610,27 @@ Runtime/GPU texture/shader appearance, original-arena FF, collision/physics and
 owner acceptance remain unqualified. Next: bind this immutable reference evidence
 into the existing original-arena writer proposal, inspect its encoding and normal
 source contract, then review a new operator/GO before any native build/readback.
+
+## 2026-10-14: first original box source correspondence
+
+An opt-in original-arena preparation sidecar binds its geometry SHA-256 and
+selects the obstacle's existing24 vertices/12 triangles inside the combined
+168/84 mesh. Exact local min(16,-32,0)/max(48,32,32), identity model angles,
+uniform scale and explicit model origin define the proposed world bounds.
+X/Y/Z retain their corresponding axes. Lossy/collapsed float32 world endpoints
+are refused before writing. Existing writer/header/geometry/ModelLab inputs and
+default preparation remain unchanged; the sidecar is not a build/runtime input.
+
+The native provider accepts absolute world bounds on a dedicated world0 solid
+script_model, observed1, with identity quaternion and internal1/32 conversion.
+Owner origin/angles/modelscale are not applied to its arguments. This proposal
+uses one box only and does not inherit native E's solo zero-client counter
+episode, the Rig ribbon/BO3 prop's display, or player acceptance. A measured M7
+reference may be named in the sidecar; payload/render qualification remains false.
+
+Source tests check golden bounds/face indices, transformed mesh corners, invalid
+placement rejection, unchanged writer inputs and named-only material binding.
+No compile, FF, live fixture, physics serialization, prediction, stock/opaque
+reads or game run followed. Next: independent source review/private Git workflow;
+then separately review the actual visible geometry/transform and one native-box
+episode. Isolating a24/12 rendered model would require a reviewed profile change.

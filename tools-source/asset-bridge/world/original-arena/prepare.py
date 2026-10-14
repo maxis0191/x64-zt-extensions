@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 import struct
 
-from arena import NAME, REPO, geometry, goal_trigger, original_scene, parse, route_check, validate
+from arena import NAME, REPO, first_box_contract, geometry, goal_trigger, original_scene, parse, route_check, validate
 _spec = importlib.util.spec_from_file_location('_arena_writer_contract',REPO/'ops/model-lab/prepare_writer.py')
 _contract = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_contract)
@@ -90,10 +90,13 @@ def adapt_writer(source, *, material=None):
     return source.replace('paris_model_probe', NAME)
 
 
-def prepare(output, scene_path=None, *, tool_source=None, recipient_evidence=None, stock_root=None):
+def prepare(output, scene_path=None, *, tool_source=None, recipient_evidence=None, stock_root=None,
+            first_box=None, model_origin=None, model_scale=1):
     output = safe_path(output)
     if output.exists():
         raise ValueError('Fresh output directory required')
+    if first_box is None and (model_origin is not None or model_scale != 1):
+        raise ValueError('Model placement requires an explicit first-box selection')
     material, evidence_hash, tool_hashes = None, None, None
     if any(value is not None for value in (tool_source, recipient_evidence, stock_root)):
         if any(value is None for value in (tool_source, recipient_evidence, stock_root)):
@@ -117,6 +120,8 @@ def prepare(output, scene_path=None, *, tool_source=None, recipient_evidence=Non
             source = parse(stream.read(1024*1024+1))
     scene = validate(source)
     mesh = geometry(scene)
+    box_contract = None if first_box is None else first_box_contract(
+        scene, first_box, [0, 0, 0] if model_origin is None else model_origin, model_scale)
     trigger, converted = goal_trigger(scene)
     route = route_check(scene)
     if not route['clear'] or not route['goal_reached']:
@@ -134,6 +139,12 @@ def prepare(output, scene_path=None, *, tool_source=None, recipient_evidence=Non
     for name, value in (('probe_geometry.hpp', header(mesh, material)), ('arena_writer.cpp', writer)):
         with (output/name).open('x', encoding='utf-8', newline='\n') as stream:
             stream.write(value)
+    if box_contract is not None:
+        box_contract['geometry_source_sha256'] = hashlib.sha256((output/'geometry.source.json').read_bytes()).hexdigest()
+        box_contract['material_reference'] = material
+        with (output/'first-box.source.json').open('x', encoding='utf-8', newline='\n') as stream:
+            json.dump(box_contract, stream, indent=2, allow_nan=False)
+            stream.write('\n')
     if material is not None:
         manifest = {'schema':'iw7.original-arena-writer-source/1','source_pin':PIN,
                     'model_name':NAME,'mesh_name':NAME+'_lod0','material_reference':material,
@@ -160,6 +171,10 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=Path)
     parser.add_argument('--recipient-evidence', type=Path)
     parser.add_argument('--stock-root', type=Path)
+    parser.add_argument('--first-box', help='One original solid for source-only collision correspondence')
+    parser.add_argument('--model-origin', nargs=3, type=float)
+    parser.add_argument('--model-scale', type=float, default=1)
     args = parser.parse_args()
     print(json.dumps(prepare(args.output, args.scene,tool_source=args.source,
-                             recipient_evidence=args.recipient_evidence,stock_root=args.stock_root), indent=2))
+                             recipient_evidence=args.recipient_evidence,stock_root=args.stock_root,
+                             first_box=args.first_box,model_origin=args.model_origin,model_scale=args.model_scale), indent=2))
