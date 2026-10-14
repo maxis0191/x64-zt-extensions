@@ -636,7 +636,8 @@ class ResidentRigidTests(unittest.TestCase):
     def test_ff_dump_binds_runtime_surface_cache_without_widening_source_stage(self):
         with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
             base = Path(folder)
-            _, _, staged, plan = self.staged(base, self.multi(), distance=1000000)
+            fixture = self.multi()
+            _, _, staged, plan = self.staged(base, fixture, distance=1000000)
             dump = base / 'roundtrip'
             for role, name in (('model', plan['model_name']), ('mesh', plan['mesh_name'])):
                 relative = ('xmodel/' + name + '.xmb') if role == 'model' else ('xsurface/' + name + '.xsb')
@@ -654,6 +655,16 @@ class ResidentRigidTests(unittest.TestCase):
             result = rigid_export.verify_dump(staged, dump, ff)
             self.assertTrue(result['geometry_roundtrip_verified'])
             self.assertFalse(result['runtime_verified'])
+            # A correct header cache cannot replace complete strict mesh validation.
+            mesh.write_bytes(mesh_bytes[:6+56+2+len(plan['mesh_name'])+1])
+            with self.assertRaises(ValueError):
+                rigid_export.verify_dump(staged, dump, ff)
+            changed_mesh = bytearray(mesh_bytes)
+            changed_mesh[fixture.records['mesh']['surface_1.vertices']+6+24] ^= 1
+            mesh.write_bytes(changed_mesh)
+            with self.assertRaises(ValueError):
+                rigid_export.verify_dump(staged, dump, ff)
+            mesh.write_bytes(mesh_bytes)
             struct.pack_into('<Q', model_bytes, 6+272, pointer+1)
             model.write_bytes(model_bytes)
             with self.assertRaisesRegex(ValueError, 'surface cache differs'):
