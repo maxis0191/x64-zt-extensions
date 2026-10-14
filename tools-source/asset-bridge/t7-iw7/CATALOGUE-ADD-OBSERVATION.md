@@ -1,5 +1,45 @@
 # C2: observe the existing T7 asset-add call
 
+## Actual native build - 2026-10-14
+
+The coordinator admitted one compile-only C2 run from merged source
+`171431e27c6fc1a56419d78879c31db72589e1d4`. Its source manifest is 313411 bytes /
+`78f5a290cc1f3abb6f3dd24b68281f70eafb3f452de3ac700b06e20aca4c84dd`.
+The exact 370045-byte plan is
+`ac70f09550aebef38c2cd564be4685d7c5ae989fda7f4235049f3fb8af15459c`;
+it binds 151 bindings (145 text, six binary), 1146 dependency inputs and 66
+additional headers. The compiled CLI remains 119139 bytes /
+`19af683d0c609d43cefc7c93dd3d7fa6f7ae1a6f5b90d2945d37b1830bda1111`.
+This frozen code/source package is separate from subsequent documentation heads.
+
+The real main, zonetool11 and link stages each exited **0**. The build receipt
+reports **Passed**, elapsed **27.519 seconds**, inputs reverified, original tree
+closure confirmed and lease released, without quarantine. The 25016-byte receipt
+has SHA256 `533a2a5ac33198481bdde797d2f51898237ec7c59b98c855530d3cd16fc6298c`.
+
+| Artifact | Bytes | SHA256 recorded under the original lease |
+| --- | ---: | --- |
+| `zonetool-t7.exe` | 21929984 | `02b26ad8d6dabe5e4e7e725022f6bb14d4f3be14ece554586fd8fe58af8bd820` |
+| `zonetool-t7.pdb` | 138653696 | `a89298f579b181115c69350c0db46c945126f6e20b5c547f5715d08960d569b8` |
+
+Both artifact tuples were reverified before original cleanup/release. No opaque
+artifact content was read or rehashed after release. Each original compiler/link
+job observed only its own VCTIP member twice, verified its parent/identity and
+ended with zero active processes and zero members through the guarded policy.
+The original own-host context closed with zero guards and no lease. Its actual
+PTY **28190 exited 0**, tool chunk `0252d3`; CanExit alone was not used as proof.
+Fresh postflight at 01:40:41.7975976 UTC found the original host and all six
+compiler/VCTIP identities absent, no game/build process and no reservation.
+Main27016 remained without a process/UDP binding, matching preflight; no server,
+configuration or bank was changed. Private receipts retain exact identities.
+
+The six bounded text closure pins and index are retained with the frozen package.
+The index is 2609 bytes /
+`a659b617c37645053a2056bcd2e193bb6aabbfff4b15354a02a0355f76d86293`.
+The candidate was **not executed**: no C2 catalogue, stock load, asset-add
+observation, runtime ABI or compatibility success is claimed. The earlier C
+NoCatalogue outcome and unknown RawFile/default-resolution cause remain open.
+
 The C `zm_common` experiment is still **Failed / NoCatalogue**. Its 17 observer
 records include donor-load entry but no selected public-find call or donor-load
 return. The 133-byte fatal reports **RawFile/default-asset resolution** for
@@ -75,8 +115,8 @@ the frozen C and V2 binding branches keep their prior test pins. The module and
 adapter have separate exact source bindings. No arbitrary
 changed-TU reuse is admitted and the older C transition is not relaxed.
 
-This is source preparation. Native compilation, actual observation and a
-catalogue are unverified; they require separately reviewed plans and admission.
+At the source-only checkpoint below, native compilation, actual observation and
+a catalogue were unverified; separate reviewed plans and admission were required.
 The local checkpoint passes 36 Python tests (including actual pinned-source
 wiring/inversion, matching/refused/interrupted records and the frozen C positive
 transition) and 526 PowerShell profile/input checks. These are source/contract
@@ -95,5 +135,6 @@ The real DEFAULT check passes for the 369645-byte plan, SHA256
 NativeTypesLoaded, BinaryInputsHashed, LeaseAcquired, RunRootCreated and Ready
 are all false. This package/plan remains a separate immutable source checkpoint;
 the result is not a build receipt or permission to execute.
-Next: review the C2 source and coordinate its distinct ops projection before
-any build or stock execution.
+Next: the launcher owner qualifies the frozen C2 receipt and closure, then the
+coordinator may assign a separate one-zone observation. This build authorizes
+no catalogue/stock execution.
