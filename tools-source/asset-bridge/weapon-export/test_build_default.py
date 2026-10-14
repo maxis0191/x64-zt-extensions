@@ -96,5 +96,65 @@ class DefaultTests(unittest.TestCase):
         self.assertIn('physical NoExit host',result.stderr)
         self.assertFalse(Path(self.plan['RunRoot']).exists())
 
+    def source_fragment(self, body, *arguments):
+        # Execute only the actual bounded reader/finally AST, never the Run body.
+        script=self.root/'source-fragment.ps1'
+        script.write_text('''param([string]$Runner,[string]$Directory,[int]$FailAt)
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Runner,[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'Source parse failed'}
+$reader=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Read-PlayerSource'},$true)
+. ([scriptblock]::Create($reader.Extent.Text))
+'''+body,encoding='utf-8')
+        return subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(script),
+            str(RUNNER),str(self.root),*map(str,arguments)], text=True,capture_output=True,timeout=15)
+
+    def test_verified_source_stream_blocks_replacement_until_disposed(self):
+        result=self.source_fragment('''
+$path=Join-Path $Directory 'provider.ps1'
+$hash=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()
+$guards=[Collections.Generic.List[object]]::new()
+$null=Read-PlayerSource $path $hash (Get-Item $path).Length $guards
+$blocked=$false
+try{$writer=[IO.File]::Open($path,'Open','Write','None');$writer.Dispose()}catch{$blocked=$true}
+if(!$blocked -or $guards.Count -ne 1){throw 'Verified source guard did not prevent replacement'}
+$guards[0].Dispose()
+$writer=[IO.File]::Open($path,'Open','Write','None');$writer.Dispose()
+Write-Output 'source-guard-causal-pass'
+''')
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertIn('source-guard-causal-pass',result.stdout)
+
+    def test_deadline_failure_before_and_after_release_keeps_honest_state(self):
+        for fail_at in (0,4,7):
+            with self.subTest(fail_at=fail_at):
+                # Each synthetic finalization has its own new ordinary output.
+                result=self.source_fragment('''
+$runRoot=Join-Path $Directory ('finalization-'+$FailAt)
+[IO.Directory]::CreateDirectory($runRoot)|Out-Null
+$plan=[pscustomobject]@{RunRoot=$runRoot;GroupDeadlineSeconds=600;MetadataReserveBytes=1048576;OutputLimitBytes=268435456}
+$PlanSHA256='0'*64;$script:T7GroupStarted=0;$script:ClockChecks=0;$script:Releases=0
+function Assert-H1Deadline($Started,$Seconds){$script:ClockChecks++;if($FailAt -gt 0 -and $script:ClockChecks -eq $FailAt){throw 'Synthetic original-clock deadline'}}
+function Measure-H1Output($Path){$sum=(Get-ChildItem -LiteralPath $Path -File | Measure-Object -Property Length -Sum).Sum;if($null -eq $sum){0}else{$sum}}
+function Exit-IW7ResourceLease($Token){$script:Releases++}
+$guards=[Collections.Generic.List[object]]::new();$guards.Add([IO.MemoryStream]::new())
+$context=[pscustomobject]@{Closed=$true;Owner=$null;Lease=[pscustomobject]@{Token='synthetic-source-only'};Guards=$guards}
+$state=[ordered]@{Status='MeasuredPassed';Host=[ordered]@{SourceOnly=$true};MeasuredReadback=$false;FinalReadback=$false;LeaseReleased=$false;GuardsDisposed=$false;CanExit=$false;Ready=$false}
+$created=$true;$failure=$null
+$try=$ast.Find({param($n) $n -is [Management.Automation.Language.TryStatementAst] -and $null -ne $n.Finally -and $n.Finally.Extent.Text.Contains('$state.FinalReadback')},$true)
+$text=$try.Finally.Extent.Text
+$null=. ([scriptblock]::Create($text.Substring(1,$text.Length-2)))
+[ordered]@{Status=$state.Status;CanExit=$state.CanExit;Releases=$script:Releases;Guards=$guards.Count;LeaseHeld=($null -ne $context.Lease);FinalReadback=$state.FinalReadback}|ConvertTo-Json -Compress
+''',fail_at)
+                self.assertEqual(result.returncode,0,result.stderr)
+                report=json.loads(result.stdout)
+                if fail_at==0:
+                    self.assertEqual((report['Status'],report['CanExit'],report['Releases']),('Passed',True,1))
+                elif fail_at==4:
+                    self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld']),('UnknownRetained',False,0,1,True))
+                else:
+                    self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld'],report['FinalReadback']),('ClosedFinalizationIncomplete',False,1,0,False,False))
+
 
 if __name__=='__main__': unittest.main()

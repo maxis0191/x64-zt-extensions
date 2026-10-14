@@ -36,6 +36,9 @@ opaque input, admit a workload, create the runtime root or run a compiler. Run
 is a separately reviewed entry and requires an actual fresh physical NoExit/dot
 host before imports/admission/native IO. The original context is retained in
 `$global:IW7PlayerTemplateBuild`; closure unknown retains owner/guards/lease/host.
+The bounded source reader transfers its same verified read/shareRead streams
+to that original guard list before Core/Scheduler imports or admission. It does
+not close a checked provider and reopen it after execution has begun.
 
 The planned native path keeps the existing H1 job/creation identity policies,
 compiler/linker VCTIP closure, input guards, bounded whole-output accounting and
@@ -43,6 +46,10 @@ exact 8/10 fixture stdout. Measured artifact and closure receipts are verified
 before release. After ordinary release, the final closure/readback determines
 CanExit. A post-release publication failure reports ClosedFinalizationIncomplete
 and retains the NoExit host; it does not claim the released lease is retained.
+The original 600-second clock covers input reverify, publication and readback,
+including checks immediately before release and after final readback. The final
+disk receipt says ClosedReleasedPendingPostflight; Passed/CanExit are available
+only in the retained state after that last clock check, then external postflight.
 The host's true terminal exit and fresh absence/registry remain external
 postflight requirements. This source caller has not run natively and is not a
 CPP/export GO. Separate reviewed source plan and capsule hashes are required.

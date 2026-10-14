@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
-function Read-PlayerSource([string]$Path,[string]$SHA256,[long]$Bytes=-1) {
+function Read-PlayerSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$KeepGuards=$null) {
     if($SHA256 -cnotmatch '^[0-9a-f]{64}$' -or ![IO.Path]::IsPathFullyQualified($Path)){throw 'Exact source binding required.'}
     for($part=$Path;$part;$part=[IO.Path]::GetDirectoryName($part)){
         if((Get-Item -LiteralPath $part).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked source ancestry refused.'}
@@ -16,8 +16,10 @@ function Read-PlayerSource([string]$Path,[string]$SHA256,[long]$Bytes=-1) {
         if($used -gt 2MB){throw 'Source grew above cap before hash/decode.'}
         $raw=[byte[]]::new($used);[Array]::Copy($buffer,$raw,$used)
         if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($raw)).ToLowerInvariant() -cne $SHA256){throw 'Source hash differs.'}
-        [Text.Encoding]::UTF8.GetString($raw)
-    }finally{$stream.Dispose()}
+        $decoded=[Text.Encoding]::UTF8.GetString($raw)
+        if($null -ne $KeepGuards){$stream.Position=0;$KeepGuards.Add($stream);$stream=$null}
+        $decoded
+    }finally{if($null -ne $stream){$stream.Dispose()}}
 }
 $plan=Read-PlayerSource $PlanPath $PlanSHA256 | ConvertFrom-Json -Depth 30
 if(!$plan.PSObject.Properties['RunnerBinding'] -or $plan.RunnerBinding.Path -cne $PSCommandPath){throw 'Exact specialized runner binding required.'}
@@ -80,12 +82,17 @@ $state=[ordered]@{Schema='iw7.player-template-build/1';PlanSHA256=$PlanSHA256;St
 $global:IW7PlayerTemplateBuild=[pscustomobject]@{Context=$context;State=$state;Plan=$plan;Guards=$guards}
 $failure=$null;$created=$false
 try{
+    # Reverify and retain the SAME read/shareRead streams before source imports,
+    # scheduler effects or admission. The bounded source reader is unchanged
+    # except for transferring its verified stream to the original guard list.
+    foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)+$providerPins+@($plan.RunnerBinding)){
+        $null=Read-PlayerSource $pin.Path $pin.SHA256 $pin.Bytes $guards
+    }
     . $providers.Core
     . $providers.Scheduler
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'IW7 one-TU player template CLI and 8+10 fixtures'
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
-    # Keep all providers and source bindings guarded before loading their types.
-    foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)+$providerPins+@($plan.RunnerBinding)){$guards.Add((Open-H1Pin $pin))}
+    # The source guards acquired before imports remain held through release.
     . $providers.CompilerCore
     . $providers.CompilerPolicySource
     . $providers.Profile
@@ -108,7 +115,7 @@ try{
         $context.Owner=$null
         $script:T7CurrentStage=$stage;$stageRoot=Join-Path $plan.RunRoot $stage.Name
         [IO.Directory]::CreateDirectory($stageRoot)|Out-Null
-        $current=[ordered]@{Name=$stage.Name;Stage=$stage.Stage;DeadlineSeconds=$stage.DeadlineSeconds;TreeClosureConfirmed=$false;
+        $current=[ordered]@{Name=$stage.Name;Stage=$stage.Stage;PlanSHA256=$PlanSHA256;DeadlineSeconds=$stage.DeadlineSeconds;TreeClosureConfirmed=$false;
             MaxObservedOutputBytes=$state.MaxObservedOutputBytes;CompilerTelemetry=[ordered]@{Completed=$false;Action=$null}}
         $state.Stages.Add($current)
         $image=if($stage.Stage -ceq 'Probe'){
@@ -129,20 +136,28 @@ try{
         $state.MaxObservedOutputBytes=[math]::Max($state.MaxObservedOutputBytes,$current.MaxObservedOutputBytes)
     }
     foreach($pin in $plan.RetainedInputPins){Open-T7Pin $pin $context}
-    foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)+$providerPins){$null=Read-PlayerSource $pin.Path $pin.SHA256 $pin.Bytes}
+    foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)+$providerPins){
+        Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+        $null=Read-PlayerSource $pin.Path $pin.SHA256 $pin.Bytes
+        Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+    }
     $state.NativeInputsReverified=$true;$state.Status='MeasuredPassed'
 }catch{$failure=$_;$state.Status='Failed';$state.Error=$_.Exception.Message}
 finally{
     if(!$context.Closed -and $context.Owner){try{$context.Owner.StopAndConfirm(5000);$context.Closed=$context.Owner.Closed}catch{$state.ClosureError=$_.Exception.Message}}
     if($created -and $context.Closed -and $context.Lease){
         try{
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
             $measured=Join-Path $plan.RunRoot 'measured-before-release.json'
             $raw=[Text.UTF8Encoding]::new($false).GetBytes(($state|ConvertTo-Json -Depth 20)+"`n")
             if($raw.Length -gt $plan.MetadataReserveBytes -or (Measure-H1Output $plan.RunRoot)+$raw.Length -gt $plan.OutputLimitBytes){throw 'Measured receipt exceeds reserved total output.'}
             $stream=[IO.File]::Open($measured,'CreateNew','Write','Read')
             try{$stream.Write($raw);$stream.Flush($true)}finally{$stream.Dispose()}
             $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($raw)).ToLowerInvariant()
-            $null=Read-PlayerSource $measured $hash $raw.Length;$state.MeasuredReadback=$true
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            $null=Read-PlayerSource $measured $hash $raw.Length
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            $state.MeasuredReadback=$true
             # This verified closure tuple exists while the exact guards and lease
             # are still retained. Failed publication/readback cannot release them.
             $before=[ordered]@{Schema='iw7.player-template-build-before-release/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$hash;
@@ -155,18 +170,24 @@ finally{
             try{$stream.Write($beforeBytes);$stream.Flush($true)}finally{$stream.Dispose()}
             $beforeHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($beforeBytes)).ToLowerInvariant()
             $null=Read-PlayerSource $beforeFile $beforeHash $beforeBytes.Length
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
             Exit-IW7ResourceLease -Token $context.Lease.Token;$context.Lease=$null;$state.LeaseReleased=$true
             foreach($guard in $guards){$guard.Dispose()};$guards.Clear();$state.GuardsDisposed=$true
-            $state.Status=if($failure){'FailedClosed'}else{'Passed'}
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
             $closure=[ordered]@{Schema='iw7.player-template-build-closure/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$hash;
-                BeforeReleaseSHA256=$beforeHash;Host=$state.Host;Status=$state.Status;OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$true;CandidateExecuted=$false;Ready=$false}
+                BeforeReleaseSHA256=$beforeHash;Host=$state.Host;Status='ClosedReleasedPendingPostflight';PostReadbackDeadlineRequired=$true;
+                OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$true;CandidateExecuted=$false;Ready=$false}
             $final=Join-Path $plan.RunRoot 'final-closure.json';$bytes=[Text.UTF8Encoding]::new($false).GetBytes(($closure|ConvertTo-Json -Depth 10)+"`n")
             if($raw.Length+$beforeBytes.Length+$bytes.Length -gt $plan.MetadataReserveBytes -or
                (Measure-H1Output $plan.RunRoot)+$bytes.Length -gt $plan.OutputLimitBytes){throw 'Final closure exceeds reserved output.'}
             $stream=[IO.File]::Open($final,'CreateNew','Write','Read')
             try{$stream.Write($bytes);$stream.Flush($true)}finally{$stream.Dispose()}
             $finalHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
-            $null=Read-PlayerSource $final $finalHash $bytes.Length;$state.FinalReadback=$true;$state.CanExit=$true
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            $null=Read-PlayerSource $final $finalHash $bytes.Length
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            $state.Status=if($failure){'FailedClosed'}else{'Passed'}
+            $state.FinalReadback=$true;$state.CanExit=$true
         }catch{$state.FinalizationError=$_.Exception.Message;if(!$failure){$failure=$_}}
     }
     if(!$state.CanExit){
