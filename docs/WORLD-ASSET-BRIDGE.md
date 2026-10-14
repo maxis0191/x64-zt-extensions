@@ -1671,3 +1671,37 @@ loading prohibition. Both owners reported these constraints from source only.
 Next: complete source review/private Git workflow, inspect the concrete writer
 cap and generate/review a new local recipe before any Build GO. No FF/Game stage
 or new isolated24/12 profile is authorized by this source proposal.
+
+## 2026-10-14: first native arena writer B closed after reader ABI mismatch
+
+Unique B used the reviewed recipe8bf49ae8/capsulee679f5b5 and native2f's sole
+Build admission. All33 bound inputs, including cl/link/vctip/Python/NativeJob,
+qualified under that admission. Compile/link/writer exited0 in approximately
+2.28/3.16/0.24 seconds; the independent Check exited1 in0.25 seconds. Generated
+records were XMB984 bytes/XSB6274 bytes, with168/84 and the named M7 reference.
+The failed Check is not a native readback pass or material/GPU/physics proof.
+
+Its exact failing tuple was expected `(0,1,0,1,255,6,1)`, actual
+`(0,1,0,1,255,6,0)`. The pinned XModel layout identifies byte14 as
+characterCollBoundsType, zero-initialized by the writer; hasLods is byte9 and
+already true. The source reader and synthetic fixture now require the correct0.
+A causal executes old-predicate refusal/new-check success and still rejects the
+other metadata corruptions. Complete corrected-source readback of the preserved
+B records passes as a light diagnostic, without a new CPP/helper run or lease.
+B's original outcome remains Failed and all frozen inputs/evidence are retained.
+
+Original compile/link/fixture/check jobs all closed. Published output934974 bytes,
+source-final integrity and the immutable BEFORE-release run.json were verified
+before the helper confirmed release. Its returned state in the same real NoExit
+host had FinalReceiptVerified=true/LeaseReleased=true/Confirmed/token null; the
+historical snapshot's false/NotAttempted fields were not rewritten. Guard and
+actual original-handle closure, null native quarantine and empty fresh registry
+qualified a separate FailedKnownClosed caller recovery. No PID/JSON reconstruction
+or second lease was used. Fresh host/parent/native identities were absent.
+
+Exit audit correction: native reader exited1, child shell received exit1, but
+the actual outer PTY returned0 through the old Launch. Prior PTY1 statements
+are explicitly retracted by additive evidence; failure/closure remain distinct.
+The next source C capsule must propagate the actual child status through the
+outer launch, preserve B and obtain a new reviewed heavy GO. No stock, FF, Game,
+Main/bank/config mutation, renderer, collision, prediction or movement acceptance.
