@@ -27,6 +27,73 @@ finally:
 
 
 class ModelSourceTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell admission fixture requires pwsh')
+    def test_resident_candidate_dry_run_defers_opaque_checks_until_lease(self):
+        script = r'''
+param($Entry,$Root)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Entry,[ref]$tokens,[ref]$errors)
+if($errors){throw 'Entry parse failed'}
+$blocks=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$CandidateRoot'},$true))
+$calls=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Assert-BeaconCandidate'},$true))
+$admission=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Enter-IW7ResourceLease'},$true))[0]
+$dry=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$DryRun'},$true))[0]
+if($calls.Count -ne 1 -or $calls[0].Extent.StartOffset -le $admission.Extent.EndOffset -or $admission.Extent.StartOffset -le $dry.Extent.EndOffset){throw 'Candidate qualifier must follow DryRun and admission'}
+$CandidateRoot=Join-Path $Root 'candidate';$repo=Join-Path $Root 'package'
+[IO.Directory]::CreateDirectory((Join-Path $repo 'sdk/modding'))|Out-Null
+[IO.Directory]::CreateDirectory((Join-Path $CandidateRoot 'bin'))|Out-Null
+[IO.File]::WriteAllText((Join-Path $repo 'sdk/modding/BeaconFF.Core.ps1'),'# Authored import only')
+$toolPath=Join-Path $CandidateRoot 'bin/zonetool-community.exe'
+[IO.File]::WriteAllText($toolPath,'Authored original fake EXE')
+$expected=(Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $toolPath).Hash.ToLowerInvariant()
+$metadata=Join-Path $CandidateRoot 'build-artifact.local.json'
+@{schema='iw7.zonetool-community-candidate/1';executable=@{path=$toolPath;sha256=$expected}}|ConvertTo-Json|Set-Content $metadata
+$CandidateArtifactSHA256='1'*64;$ToolProvenance='';$NativeJobAssembly='';$arena=$false
+$script:Admitted=$false;$script:OpaqueReads=0;$script:QualificationCalls=0
+function Resolve-IW7BasePath($Base,$Relative){Join-Path $Base $Relative}
+function Read-BeaconJson($Path,$Limit){Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}
+function Assert-BeaconHash($Path,$SHA){if($Path -ine $metadata){throw 'Pre-admission opaque hash'}}
+function Get-AppxPackage($Name){[pscustomobject]@{Version='1.2606.22001.0';InstallLocation=(Join-Path $Root 'authored-debugger')}}
+function Get-FileHash($LiteralPath){
+    if(!$script:Admitted){throw 'Opaque read before lease'}
+    $script:OpaqueReads++
+    if($LiteralPath -ieq $toolPath){return Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath}
+    if($LiteralPath -like '*cdb.exe'){return [pscustomobject]@{Hash='5F54ABAFCA3AE5638BBF807D402FABB350A64575C1DFA9FBFC7F5732DF5BEE67'}}
+    throw 'Unexpected opaque input'
+}
+function Assert-BeaconCandidate($Base,$SHA){
+    if(!$script:Admitted){throw 'Qualifier called before lease'}
+    $script:QualificationCalls++
+    if((Get-FileHash $toolPath).Hash.ToLowerInvariant() -cne $expected){throw 'Pinned candidate EXE changed'}
+    [pscustomobject]@{Path=$toolPath;SHA256=$expected}
+}
+. ([scriptblock]::Create($blocks[0].Extent.Text))
+$preCdb=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '!$CandidateRoot -or !$arena'},$true))[0]
+. ([scriptblock]::Create($preCdb.Extent.Text))
+$DryRun=$true;$RunRoot='authored-fresh-run';$inputs=@([pscustomobject]@{Relative='authored-input'});$sourceNames=@('authored-source');$reader=$null
+$preview=& ([scriptblock]::Create($dry.Extent.Text))
+if(($preview|ConvertFrom-Json).Ready -ne $false -or $script:OpaqueReads -ne 0 -or $script:QualificationCalls -ne 0){throw 'Candidate DryRun read opaque bytes'}
+$qualifier=$calls[0];while($qualifier -and $qualifier -isnot [Management.Automation.Language.IfStatementAst]){$qualifier=$qualifier.Parent}
+$script:Admitted=$true;$state=@{}
+[IO.File]::WriteAllText($toolPath,'Authored changed fake EXE')
+$refused=$false;try{. ([scriptblock]::Create($qualifier.Extent.Text))}catch{$refused=$_.Exception.Message -eq 'Pinned candidate EXE changed'}
+if(!$refused -or $state.ContainsKey('CandidateQualifiedUnderLease') -or $script:OpaqueReads -ne 1){throw 'Changed candidate must refuse after admission'}
+[IO.File]::WriteAllText($toolPath,'Authored original fake EXE')
+. ([scriptblock]::Create($qualifier.Extent.Text))
+$postCdb=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim().StartsWith('$CandidateRoot -and !$arena -and')},$true))[0]
+if($postCdb.Extent.StartOffset -le $admission.Extent.EndOffset){throw 'Candidate diagnostic hash must follow admission'}
+. ([scriptblock]::Create($postCdb.Extent.Text))
+if(!$state.CandidateQualifiedUnderLease -or $script:OpaqueReads -ne 3){throw 'Existing candidate and diagnostic checks must each run once'}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'candidate-admission.ps1'
+            path.write_text(script, encoding='utf-8')
+            result = subprocess.run(['pwsh', '-NoLogo', '-NoProfile', '-File', str(path),
+                                     str(ROOT / 'ops/model-lab/Build-ModelFF.ps1'), folder],
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_ff_admission_rejects_stale_distance_metadata(self):
         script = r'''
 param($Repo)
