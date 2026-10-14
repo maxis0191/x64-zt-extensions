@@ -110,7 +110,7 @@ foreach($name in @('iw7_ship.exe','amd_ags_x64.dll','bink2w64.dll','d3dcompiler_
 }
 foreach($entry in $inputs){$f=Get-Item -LiteralPath $entry.Source;$null=Resolve-IW7BasePath $stock $entry.Relative
     if($StockBindingPlan){
-        if($f.Length -ne $entry.Bytes -or $f.LastWriteTimeUtc.ToString('o') -cne $entry.ModifiedUtc -or [int]$f.Attributes -ne $entry.Attributes -or $entry.Mode -cnotin @('Copy','HardLink')){throw 'Observed stock metadata/mode changed.'}
+        if($f.Length -ne $entry.Bytes -or $f.LastWriteTimeUtc.Ticks -ne ([datetimeoffset]$entry.ModifiedUtc).UtcDateTime.Ticks -or [int]$f.Attributes -ne $entry.Attributes -or $entry.Mode -cnotin @('Copy','HardLink')){throw 'Observed stock metadata/mode changed.'}
         $id=[IW7HudFileIdentity]::Read($entry.Source);Assert-FFStockIdentity $entry $id
         $entry|Add-Member NoteProperty SourceId $id -Force
         continue
