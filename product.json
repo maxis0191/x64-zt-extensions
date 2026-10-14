@@ -798,10 +798,16 @@
     "tools-source/asset-bridge/t7-iw7/test_image_provenance.py",
     "tools-source/asset-bridge/t7-iw7/image-provenance-source-contract.json",
     "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE.md",
+    "tools-source/asset-bridge/t7-iw7/test_image_provenance_build.py",
+    "tools-source/asset-bridge/t7-iw7/Test-ImageProvenanceBuild.ps1",
+    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE-PRODUCER.md",
     "tools-source/asset-bridge/animation/rig/raygun/README.md",
     "tools-source/asset-bridge/animation/rig/raygun/source-plan.json",
     "tools-source/asset-bridge/animation/rig/raygun/source_handoff.py",
-    "tools-source/asset-bridge/animation/rig/raygun/test_source_handoff.py"
+    "tools-source/asset-bridge/animation/rig/raygun/test_source_handoff.py",
+    "tools-source/asset-bridge/animation/rig/raygun/OWNED-SKIN-SEAM.md",
+    "tools-source/asset-bridge/animation/rig/raygun/owned_skin_mapping.py",
+    "tools-source/asset-bridge/animation/rig/raygun/test_owned_skin.py"
   ],
   "dependencies": [
     {
