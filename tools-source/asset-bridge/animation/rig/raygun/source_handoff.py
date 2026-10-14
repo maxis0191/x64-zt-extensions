@@ -1,10 +1,16 @@
 """Check bounded Ray Gun reference metadata; never read or emit game payloads."""
 import argparse
+import importlib.util
 import json
 from pathlib import Path
 import re
 
-LIMIT = 64 * 1024
+LIMIT = 32 * 1024
+SLOT_LIMIT = 64 * 1024  # Existing fixed source contract is 36,853 bytes.
+_io_path = Path(__file__).resolve().parents[3] / 't7-iw7' / 'image_metadata_consumer.py'
+_io_spec = importlib.util.spec_from_file_location('raygun_shared_metadata_io', _io_path)
+metadata_io = importlib.util.module_from_spec(_io_spec)
+_io_spec.loader.exec_module(metadata_io)
 PIN = 'fab935826c898806855376662a8a03317b3ad8f1'
 FIELDS = {'view': 'weapDef.gunXModel', 'world': 'weapDef.worldModel',
           'hands': 'weapDef.handXModel'}
@@ -28,20 +34,10 @@ def keys(value, expected, label):
             f'{label}: unexpected or missing fields')
 
 
-def unique_pairs(pairs):
-    result = {}
-    for key, value in pairs:
-        require(key not in result, f'Duplicate JSON key: {key}')
-        result[key] = value
-    return result
-
-
-def read_metadata(path):
-    # The bound applies to the bytes actually read, including a growing file.
-    with Path(path).open('rb') as stream:
-        raw = stream.read(LIMIT + 1)
-    require(len(raw) <= LIMIT, 'Metadata exceeds 64 KiB')
-    return json.loads(raw.decode('utf-8-sig'), object_pairs_hook=unique_pairs)
+def read_metadata(path, *, limit=LIMIT):
+    # Reuse the reviewed ordinary-file/handle boundary, without its image schema.
+    raw = metadata_io.read_report(path, limit=limit)
+    return metadata_io.strict_json(raw, limit=limit)
 
 
 def name(value):
@@ -176,7 +172,7 @@ def main():
                         default=Path(__file__).with_name('source-plan.json'))
     args = parser.parse_args()
     slot_path = Path(__file__).resolve().parents[3] / 'weapon' / 'slot-contract.json'
-    report = check(read_metadata(args.request), read_metadata(slot_path))
+    report = check(read_metadata(args.request), read_metadata(slot_path, limit=SLOT_LIMIT))
     print(json.dumps(report, indent=2))
 
 

@@ -55,8 +55,12 @@ python -B tools-source/asset-bridge/animation/rig/raygun/source_handoff.py
 python -B -m unittest discover -s tools-source/asset-bridge/animation/rig/raygun -v
 ```
 
-The checker reads at most 64 KiB per JSON using a bounded read before decoding,
-rejects duplicate keys, and writes only a report to stdout. A future local
+The checker reuses the reviewed `image_metadata_consumer.read_report` and
+`strict_json` IO boundary, without calling its image consumer/schema. Requests
+are limited to 32 KiB; the fixed existing 36,853-byte slot contract alone uses
+an explicit 64 KiB bound. Lexical Windows/suffix, ordinary file/size and reparse
+checks precede open, and opened handle identity/size checks precede bounded read.
+Duplicate keys and nonfinite JSON are refused. It writes only a report to stdout. A future local
 `--request` may declare exact observed asset names and receipt references.
 Each evidence entry contains `source_kind: retained-bo3-metadata`, a lowercase
 receipt SHA-256 and the observed source field. Model entries contain `name`,
@@ -78,6 +82,15 @@ unchanged weapon-reference tests. Reproducing the existing slot contract from
 the retained source matches all 260 IW7 entries. Product ownership and whitespace
 checks pass. The default report has no donor references and 15 explicit metadata
 gaps. These checks involve no native compiler, retail payload, FF or game.
+
+Independent review refused initial head `0fc0840`: the old reader opened input
+before checking that it was an ordinary bounded JSON file. The correction reuses
+the merged PR122 IO functions instead of adding another reader. Its 21 handoff
+tests, 29 shared-IO tests and 11 weapon-reference tests pass. Causal spies show
+the old head opens and reads all four exe/ADS/device/oversize cases; the corrected
+reader opens and reads none. Replaced handle identity/size is refused before
+reading, and growth is bounded before parsing. All fixtures are original source
+data; no actual opaque file or referenced receipt is read by these tests.
 
 ## Next source evidence and separate heavy proposal
 
