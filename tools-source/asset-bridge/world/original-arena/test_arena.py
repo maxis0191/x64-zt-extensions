@@ -227,6 +227,63 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell pack binding source checks require pwsh')
+    def test_required_pack17_is_opt_in_same_provider_and_preserves_baseline(self):
+        script=r'''
+param($Helper,$Root)
+$ErrorActionPreference='Stop'
+. $Helper
+$baseline=@(foreach($i in 1..71){[pscustomobject]@{Relative="main/authored-$i.ff";Source=(Join-Path $Root "absent-$i.ff");Mode='HardLink'}})
+$baseline+=[pscustomobject]@{Relative='main/fileSysCheck.cfg';Source=(Join-Path $Root 'sentinel');Mode='Copy'}
+$baseline[0]=[pscustomobject]@{Relative='zone/assetfile1.pak';Source=(Join-Path $Root 'assetfile1.pak');Mode='HardLink';ExpectedSourceId='11111111:0000000000000001'}
+$record=[pscustomobject]@{Schema='iw7.world-required-pak17/1';BaselineBindingSHA256=('a'*64);ReviewedManifestSHA256='9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4';Input=[pscustomobject]@{Relative='zone/assetfile17.pak';Source=(Join-Path $Root 'assetfile17.pak');Mode='HardLink';Bytes=104595492L;ModifiedUtc='2026-09-29T21:45:47.6718742Z';Attributes=32;ExpectedSourceId='11111111:0000000000000017';ExpectedSHA256='6f5c0d1937b5a707d4e1fb3009f68a827714d9e4a72ff2d6570b57dbf6b0f058'}}
+$prior=$baseline|ConvertTo-Json -Depth 5 -Compress
+$one=Get-ArenaRequiredPak17Input $baseline $record ('a'*64)
+if($one.Relative -cne 'zone/assetfile17.pak' -or $one.ExpectedSourceId -cne $record.Input.ExpectedSourceId -or $one.ExpectedSHA256 -cne $record.Input.ExpectedSHA256){throw 'Supplement lost guarded identity/content binding'}
+if($baseline.Count -ne 72 -or ($baseline|ConvertTo-Json -Depth 5 -Compress) -cne $prior){throw 'Original baseline mutated'}
+if(@($baseline)+@($one) -isnot [array] -or (@($baseline)+@($one)).Count -ne 73){throw 'Wrong supplement size'}
+foreach($kind in 'relative','source','mode','bytes','sha','id','attrs','baseline','manifest'){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json
+    switch($kind){
+        relative {$bad.Input.Relative='assetfile17.pak'}
+        source {$bad.Input.Source=Join-Path $Root 'different-provider/assetfile17.pak'}
+        mode {$bad.Input.Mode='Copy'}
+        bytes {$bad.Input.Bytes=1}
+        sha {$bad.Input.ExpectedSHA256='0'*64}
+        id {$bad.Input.ExpectedSourceId='22222222:0000000000000017'}
+        attrs {$bad.Input.Attributes=33}
+        baseline {$bad.BaselineBindingSHA256='b'*64}
+        manifest {$bad.ReviewedManifestSHA256='0'*64}
+    }
+    $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
+    if(!$caught){throw "Invalid supplemental $kind accepted"}
+}
+foreach($field in 'Schema','BaselineBindingSHA256','ReviewedManifestSHA256'){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.$field=@($bad.$field)
+    $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
+    if(!$caught){throw "Singleton receipt $field accepted"}
+}
+foreach($field in 'Relative','Mode','Source','ExpectedSHA256','ExpectedSourceId','Bytes','ModifiedUtc','Attributes'){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.Input.$field=@($bad.Input.$field)
+    $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
+    if(!$caught){throw "Singleton input $field accepted"}
+}
+foreach($badSize in @('104595492',104595492.0,$true)){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.Input.Bytes=$badSize
+    $caught=$false;try{$null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)}catch{$caught=$true}
+    if(!$caught){throw 'Coerced non-integer size accepted'}
+}
+foreach($time in @($record.Input.ModifiedUtc,[datetime]'2026-09-29T21:45:47.6718742Z',[datetimeoffset]'2026-09-29T21:45:47.6718742Z')){
+    $bad=$record|ConvertTo-Json -Depth 5|ConvertFrom-Json;$bad.Input.ModifiedUtc=$time
+    $null=Get-ArenaRequiredPak17Input $baseline $bad ('a'*64)
+}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'pack17.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('Pak17Binding.Core.ps1')),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell diagnostic source checks require pwsh')
     def test_load_diagnostic_is_one_shot_original_identity_and_offline_only(self):
         script=r'''

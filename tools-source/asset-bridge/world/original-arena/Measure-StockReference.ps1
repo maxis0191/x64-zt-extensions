@@ -2,11 +2,13 @@ param([Parameter(Mandatory)][string]$PackageRoot,[Parameter(Mandatory)][string]$
     [Parameter(Mandatory)][string]$StockBindingPlan,[Parameter(Mandatory)][string]$StockBindingPlanSHA256,
     [Parameter(Mandatory)][string]$ToolSource,[Parameter(Mandatory)][string]$CandidateRoot,
     [Parameter(Mandatory)][string]$CandidateArtifactSHA256,[Parameter(Mandatory)][string]$NativeJobAssembly,
-    [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$ModalTextOnly,[switch]$Run)
+    [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$ModalTextOnly,
+    [string]$RequiredPak17Binding,[string]$RequiredPak17BindingSHA256,[switch]$Run)
 # Default hashes only small source/receipt files. No native type, stock reads,
 # hardlinks, admission, candidate binary hash or process is created before -Run.
 $ErrorActionPreference='Stop'
 if($ModalTextOnly -and !$LoadDiagnostic){throw 'Modal text requires the explicit load diagnostic opt-in.'}
+if([bool]$RequiredPak17Binding -ne [bool]$RequiredPak17BindingSHA256){throw 'Pack17 supplement needs its exact metadata receipt and digest.'}
 $PackageRoot=[IO.Path]::GetFullPath($PackageRoot);$RunRoot=[IO.Path]::GetFullPath($RunRoot)
 $work=Join-Path $RunRoot 'work';$material='mopw/character_park_clown_zombie_shoes'
 $native='2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1';$creator='f4e5e45df043f65811098063307d8065b3a33d30'
@@ -25,6 +27,14 @@ if($inputs.Count -ne 72 -or @($inputs|Where-Object {$_.Relative -eq 'main/fileSy
 $package=Get-Content -LiteralPath "$PackageRoot/source-workspace.json" -Raw|ConvertFrom-Json
 if($package.revisions.'iw7-mod-components' -cne $native){throw 'Current TelemetryOnly native provider required.'}
 $pins=@($bindingPin,(SmallPin $PSCommandPath),(SmallPin "$PackageRoot/source-workspace.json"))
+if($RequiredPak17Binding){
+    $supplementPin=SmallPin $RequiredPak17Binding
+    if($supplementPin.SHA256 -cne $RequiredPak17BindingSHA256){throw 'Required pack17 metadata receipt changed.'}
+    $pins+=@($supplementPin,(SmallPin "$PackageRoot/tools-source/asset-bridge/world/original-arena/Pak17Binding.Core.ps1"))
+    . "$PackageRoot/tools-source/asset-bridge/world/original-arena/Pak17Binding.Core.ps1"
+    $supplement=Get-Content -LiteralPath $RequiredPak17Binding -Raw|ConvertFrom-Json
+    $inputs+=Get-ArenaRequiredPak17Input $inputs $supplement $bindingPin.SHA256
+}
 foreach($name in 'ops/Base-Client.Core.ps1','ops/Lab-Paths.ps1','ops/Resource-Scheduler.Core.ps1',
     'ops/Resource-Memory.ps1','ops/Resource-RecorderOwnedProcess.Core.ps1','ops/native/ResourceMemory.cs',
     'ops/hud-lab/HudFileIdentity.cs','ops/model-lab/ModelFF.Core.ps1','ops/model-lab/prepare_writer.py','ops/model-lab/geometry.py',
