@@ -326,6 +326,8 @@ Native25's model_probe diagnostic targets `paris_model_probe` and its mesh;
 sharing the zone/NCS names does not admit `paris_original_arena` or its mesh.
 Its scene observer is Rig-only. A future opt-in World diagnostic/profile and
 separate protected consumer must be reviewed by those owners before render GO.
+These filters constrain diagnostic qualification, not general engine loading;
+an omitted World witness cannot establish absence of that model in the engine.
 
 **FF coverage gap:** current ModelFF accepts exactly the72-input binding and
 declares assetfile1. M7's successful reference used a fixed33-PAK/104-input cohort.

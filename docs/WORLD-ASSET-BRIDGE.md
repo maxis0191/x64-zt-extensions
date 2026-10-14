@@ -1664,9 +1664,10 @@ prediction, player movement and GPU normal encoding remain unqualified.
 Current FF72 binding does not carry M7's fixed33 PAK cohort. This is an explicit
 follow-up gap, not an accepted FF recipe. Native62/Ops55 admission/consumer
 coordination is separate; Rig/BO3/ribbon assets are not World geometry proof.
-Native25 currently probes legacy paris_model_probe names and only observes Rig
-scenes; it does not admit paris_original_arena. Sharing zone/NCS names is not a
-World renderer route. Both owners reported these constraints from source only.
+Native25 diagnostics currently probe legacy paris_model_probe names and only
+observe Rig scenes; they do not target paris_original_arena. Sharing zone/NCS
+names does not create a World diagnostic witness. This is not a general engine
+loading prohibition. Both owners reported these constraints from source only.
 Next: complete source review/private Git workflow, inspect the concrete writer
 cap and generate/review a new local recipe before any Build GO. No FF/Game stage
 or new isolated24/12 profile is authorized by this source proposal.
