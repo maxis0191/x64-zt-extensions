@@ -281,6 +281,21 @@ class ConsumerTests(unittest.TestCase):
                         c.read_report(target)
                     spy.assert_not_called()
 
+    def test_windows_stream_and_device_paths_refuse_before_metadata_or_open(self):
+        paths = (r"C:\folder\authored.exe:report.json", r"authored.exe:report.json",
+                 r"C:\folder\authored.json::$DATA", r"C:report.json",
+                 r"\\?\C:\folder\report.json", r"\\.\C:\folder\report.json",
+                 r"\??\C:\folder\report.json", r"\\??\C:\folder\report.json",
+                 r"\\?\GLOBALROOT\Device\HarddiskVolume1\report.json",
+                 r"\\?\UNC\server\share\report.json", "//?/C:/folder/report.json", "NUL.json")
+        for target in paths:
+            with self.subTest(path=target), patch.object(Path, "lstat", side_effect=AssertionError("metadata queried")) as metadata, \
+                    patch.object(Path, "open", side_effect=AssertionError("content opened")) as opened:
+                with self.assertRaisesRegex(ValueError, "ordinary report path"):
+                    c.read_report(target)
+                metadata.assert_not_called()
+                opened.assert_not_called()
+
     def test_growth_and_replacement_are_refused_before_returning_bytes(self):
         with tempfile.TemporaryDirectory() as temp:
             target = Path(temp)/"authored.json"
@@ -308,6 +323,10 @@ class ConsumerTests(unittest.TestCase):
             self.assertEqual(run.returncode, 0, run.stderr)
             self.assertEqual(json.loads(run.stdout)["outcome"], "ProvenanceMetadataObserved")
             self.assertEqual(target.read_bytes(), before)
+            relative = subprocess.run([sys.executable, "-B", script, target.name, "--native-exit-code", "0"],
+                                      cwd=temp, capture_output=True, text=True, timeout=10)
+            self.assertEqual(relative.returncode, 0, relative.stderr)
+            self.assertEqual(json.loads(relative.stdout), json.loads(run.stdout))
             missing = subprocess.run([sys.executable, "-B", script, str(Path(temp)/"missing.json")],
                                      capture_output=True, text=True, timeout=10)
             self.assertNotEqual(missing.returncode, 0)

@@ -3,7 +3,7 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import re
 import stat
 
@@ -169,6 +169,12 @@ def classify(report, exit_code):
 
 def read_report(path):
     """Read only a small regular JSON file after metadata checks, never opaque inputs."""
+    lexical = str(path).replace("\\", "/")
+    need(not lexical.casefold().startswith(("//?/", "//./", "/??/", "//??/")), "ordinary report path required; device namespace refused")
+    drive = re.match("[A-Za-z]:", lexical)
+    remainder = lexical[2:] if drive else lexical
+    need(":" not in remainder and (not drive or remainder.startswith("/")), "ordinary report path required; stream or drive-relative path refused")
+    need(not PureWindowsPath(lexical).is_reserved(), "ordinary report path required; reserved device refused")
     path = Path(path).absolute()
     need(path.suffix.lower() == ".json", "existing .json report required before open")
     declared = path.lstat()
