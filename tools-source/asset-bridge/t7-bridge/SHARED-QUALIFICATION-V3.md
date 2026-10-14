@@ -173,3 +173,11 @@ source import. The source fixture now checks both raw representations and
 mutation refusals; actual DEFAULT runs use an absent donor directory and do not
 qualify any stock. Old qualifiers, plans, receipts and sealed Q inputs retain
 their bytes. Changes to this larger helper need another reviewed source tuple.
+
+The affected group fixture passes 244 controls from a freshly composed source
+workspace (code `8e3f843`, 928 text files / 9,025,235 bytes), including actual
+DEFAULT on the original and independent LF/CRLF source trees with absent donor
+directories. The Catalogue finalizer fixture passes 233 controls in the same
+workspace. No stock read, native types, real lease or `-Run` occurs. Running the
+group fixture directly in the product-only checkout lacks its declared ops
+dependencies; the documented composed-workspace invocation supplies them.
