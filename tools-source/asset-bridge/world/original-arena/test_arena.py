@@ -226,6 +226,50 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell diagnostic source checks require pwsh')
+    def test_load_diagnostic_is_one_shot_original_identity_and_offline_only(self):
+        script=r'''
+param($Helper,$Root)
+$ErrorActionPreference='Stop'
+. $Helper
+$marker='[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_mp"...'
+$e=[ordered]@{Attempted=$false;LastBytes=10L;LastProgressMs=30000L}
+if(Test-ArenaLoadDiagnosticTrigger $e 44999 10 $marker){throw 'Early diagnostic'}
+if(!(Test-ArenaLoadDiagnosticTrigger $e 45000 10 $marker)){throw 'Exact timed stall not detected'}
+$e.Attempted=$true;if(Test-ArenaLoadDiagnosticTrigger $e 60000 10 $marker){throw 'Diagnostic repeated'}
+$e.Attempted=$false;if(Test-ArenaLoadDiagnosticTrigger $e 60000 11 $marker){throw 'Progress mistaken for stall'}
+function Get-H1Clock {60000L}
+function Get-H1OriginalState($Owner){[pscustomobject]@{RootExited=$false;PID=$Owner.PID;Image=$Owner.Image;ActiveProcesses=1}}
+$script:Calls=@();$script:Registered=0
+function Register-H1Original { $script:Registered++ }
+function Invoke-OriginalArenaTool($Context,$Exe,$SHA,$Arguments,$Work,$RunRoot,$Phase,$Inputs,$Seconds){
+    $script:Calls+=,$Phase
+    if($Phase -ceq 'load-cpu' -and ($Seconds -ne 10 -or '--threads' -cnotin $Arguments)){throw 'Wrong CPU witness'}
+    if($Phase -ceq 'load-snapshot'){
+        if($Seconds -ne 15 -or '--snapshot' -cnotin $Arguments){throw 'Wrong snapshot bound'}
+        $output=$Arguments[[array]::IndexOf($Arguments,'--output')+1];[IO.File]::WriteAllText($output,'Authored minidump placeholder')
+    }
+    if($Phase -ceq 'load-stack' -and ($Seconds -ne 20 -or '-z' -cnotin $Arguments -or '-p' -cin $Arguments)){throw 'Debugger must read only offline dump'}
+    $Context.Closed=$true;[pscustomobject]@{ExitCode=0;JobClosed=$true}
+}
+$logs=Join-Path $Root 'logs';[IO.Directory]::CreateDirectory($logs)|Out-Null
+[IO.File]::WriteAllText((Join-Path $logs 'stdout.log'),$marker+"`n")
+$target=[pscustomobject]@{Owner=[pscustomobject]@{PID=123;Image=(Join-Path $Root 'authored.exe')};Closed=$false;Lease=[pscustomobject]@{Token='authored'};Work=$Root}
+$state=@{Identity=@{PID=123;Image=$target.Owner.Image;CreatedUtc='2026-10-14T00:00:00Z'}}
+$options=[pscustomobject]@{StartedMs=0L;RunRoot=$Root;CaptureSource='authored.py';Python='authored-python';PythonSHA256=('1'*64);Cdb='authored-cdb';CdbSHA256=('2'*64);Symbols=$Root;ToolSHA256=('3'*64);Inputs=@()}
+$e=[ordered]@{Attempted=$false;LastBytes=(Get-Item -LiteralPath (Join-Path $logs 'stdout.log')).Length;LastProgressMs=0L;Outcome='NotTriggered'}
+$caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$_.Exception.Message -ceq 'Load diagnostic captured; material reference not measured.'}
+if(!$caught -or $e.Outcome -cne 'Captured' -or $script:Calls.Count -ne 3 -or $script:Registered -ne 1 -or !$target.DiagnosticContext.Closed){throw 'Bounded capture/closure differs'}
+$script:Calls=@();$e.Attempted=$false;$state.Identity.PID=124
+$caught=$false;try{Invoke-ArenaLoadDiagnostic $target $state $logs $options $e}catch{$caught=$true}
+if(!$caught -or $script:Calls.Count){throw 'Nonoriginal target allowed diagnostics'}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'diagnostic-source.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('LoadDiagnostic.Core.ps1')),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock date source checks require pwsh')
     def test_stock_metadata_accepts_typed_and_short_dates_but_refuses_changed_ticks(self):
         # Evaluate the actual refusal predicate with authored metadata only.
@@ -362,12 +406,13 @@ function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,$SHA,$Logs){
         $Context.Owner=[pscustomobject]@{Closed=$false;StopCalls=0}
         $Context.Owner|Add-Member ScriptMethod StopAndConfirm {param($Ms);if($Ms -ne 5000){throw 'Wrong original stop deadline'};$this.StopCalls++;$this.Closed=$true}
     }
+    if($script:Mode -ceq 'diag-unknown'){$Context|Add-Member NoteProperty DiagnosticContext ([pscustomobject]@{Closed=$false})}
     if($script:Mode -cne 'pass'){throw 'Authored owner failure'}
     Test-H1Budget $Plan $State
     $State.Identity=[ordered]@{PID=1234;Image=$Start.FileName;CreatedUtc='2026-10-14T00:00:00Z'}
     $State.TreeClosureConfirmed=$true;$State.ExitCode=0;$Context.Closed=$true;$Context.Owner.Closed=$true
 }
-foreach($mode in 'pass','failed','unknown'){
+foreach($mode in 'pass','failed','unknown','diag-unknown'){
     $script:Mode=$mode;$work=Join-Path $Root $mode;[IO.Directory]::CreateDirectory($work)|Out-Null
     $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token='authored'};Work=$work}
     if($mode -ceq 'pass'){
@@ -378,6 +423,7 @@ foreach($mode in 'pass','failed','unknown'){
         if(!$caught){throw 'Failure was accepted'}
         if($mode -ceq 'failed' -and (!$context.Closed -or $context.Owner.StopCalls -ne 1)){throw 'Original owner cleanup differs'}
         if($mode -ceq 'unknown' -and ($context.Closed -or $context.Owner)){throw 'Unknown factory was treated as closed'}
+        if($mode -ceq 'diag-unknown' -and ($context.Closed -or $context.Owner.StopCalls -ne 1 -or !$context.Owner.Closed)){throw 'Closed target falsely qualified unknown diagnostic job'}
     }
 }
 $work=Join-Path $Root 'reused';[IO.Directory]::CreateDirectory($work)|Out-Null

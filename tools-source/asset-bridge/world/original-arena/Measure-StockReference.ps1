@@ -2,7 +2,7 @@ param([Parameter(Mandatory)][string]$PackageRoot,[Parameter(Mandatory)][string]$
     [Parameter(Mandatory)][string]$StockBindingPlan,[Parameter(Mandatory)][string]$StockBindingPlanSHA256,
     [Parameter(Mandatory)][string]$ToolSource,[Parameter(Mandatory)][string]$CandidateRoot,
     [Parameter(Mandatory)][string]$CandidateArtifactSHA256,[Parameter(Mandatory)][string]$NativeJobAssembly,
-    [string]$PlanSHA256,[switch]$Run)
+    [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$Run)
 # Default hashes only small source/receipt files. No native type, stock reads,
 # hardlinks, admission, candidate binary hash or process is created before -Run.
 $ErrorActionPreference='Stop'
@@ -34,6 +34,18 @@ foreach($name in 'ops/Base-Client.Core.ps1','ops/Lab-Paths.ps1','ops/Resource-Sc
     'tools-source/asset-bridge/t7-iw7/readback.py','tools-source/asset-bridge/t7-iw7/boot_contract.py',
     'tools-source/asset-bridge/t7-iw7/export_contract.py','tools-source/asset-bridge/t7-iw7/streamed_contract.py',
     'tools-source/asset-bridge/world/original-arena/OriginalArena.Process.ps1'){$pins+=SmallPin "$PackageRoot/$name"}
+$diagnostic=$null
+if($LoadDiagnostic){
+    foreach($name in 'tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1','ops/iw7_capture.py','ops/iw7_debugger.py'){$pins+=SmallPin "$PackageRoot/$name"}
+    $debugger=Get-AppxPackage Microsoft.WinDbg
+    if($debugger.Version -ne '1.2606.22001.0'){throw 'Existing reviewed offline debugger metadata required.'}
+    $diagnostic=[ordered]@{Mode='global-mp-load-witness';TriggerMs=45000;NoProgressMs=15000;PhaseSeconds=120;
+        CaptureSource="$PackageRoot/ops/iw7_capture.py";Cdb=(Join-Path $debugger.InstallLocation 'amd64/cdb.exe');
+        CdbSHA256='5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67';
+        CPUSeconds=5;SnapshotSeconds=15;OfflineStackSeconds=20;DumpAcceptanceBytes=32MB;
+        OutputThresholdBytes=256MB;OutputEnforcement='Sampled';DumpFlags='0x1820';FullMemory=$false;
+        MaterialProof=$false;NoCPOrMPSkip=$true}
+}
 # Keep the exact shared writer normal-encoding proof set, rather than a new list.
 # Actual names are supplied by the reviewed shared writer via its small source CLI.
 $python=(Get-Command python -CommandType Application|Select-Object -First 1).Source
@@ -50,7 +62,8 @@ $plan=[ordered]@{Schema='iw7.original-arena-reference-plan/1';Image=(Join-Path $
     NativePolicyRevision=$native;CreatorSourceRevision=$creator;RunRoot=$RunRoot;SourcePackageRevisions=$package.revisions;
     CandidateRoot=[IO.Path]::GetFullPath($CandidateRoot);CandidateArtifactSHA256=$CandidateArtifactSHA256;
     NativeJobAssembly=[IO.Path]::GetFullPath($NativeJobAssembly);SourcePins=$pins;StockInputs=$inputs;
-    PhysicalEstimate=8GB;CommitEstimate=11GB;DeadlineSeconds=240;RuntimeVerified=$false;MaterialPayloadVerified=$false}
+    PhysicalEstimate=8GB;CommitEstimate=11GB;DeadlineSeconds=$(if($LoadDiagnostic){120}else{240});
+    Diagnostic=$diagnostic;RuntimeVerified=$false;MaterialPayloadVerified=$false}
 $planRaw=[Text.UTF8Encoding]::new($false).GetBytes(($plan|ConvertTo-Json -Depth 25)+"`n")
 $actualPlanSHA=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($planRaw)).ToLowerInvariant()
 if(!$Run){[ordered]@{PlanSHA256=$actualPlanSHA;Plan=$plan;StockBytesRead=$false;NativeTypesLoaded=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json -Depth 28;return}
@@ -68,6 +81,7 @@ $guards=[Collections.Generic.List[IDisposable]]::new();$stockGuards=[Collections
 $saved=$false;$created=$false;$failure=$null
 $state=[ordered]@{Schema='iw7.original-arena-reference-run/1';PlanSHA256=$actualPlanSHA;Status='Preparing';Restored=$false;
     StockPreserved=$false;SourceHashesUnchanged=$false;RetainedLeaseToken=$lease.Token;LeaseReleased=$false;RuntimeVerified=$false;MaterialPayloadVerified=$false}
+$loadEvidence=[ordered]@{Attempted=$false;LastBytes=-1L;LastProgressMs=0L;Outcome='NotTriggered';SymbolsVerified=$false}
 try{
     foreach($pin in $pins){$guards.Add([IO.File]::Open($pin.Path,'Open','Read','Read'));Assert-BeaconHash $pin.Path $pin.SHA256}
     $candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256
@@ -102,7 +116,16 @@ try{
     [IO.File]::WriteAllBytes((Join-Path $RunRoot 'requested.csv'),[Text.UTF8Encoding]::new($false).GetBytes("material,$material`n"))
     [IO.File]::WriteAllBytes((Join-Path $RunRoot 'reference-request.json'),$requestRaw)
     [IO.File]::WriteAllBytes((Join-Path $RunRoot 'reference-plan.json'),$planRaw)
-    $state.Process=Invoke-OriginalArenaTool $context $plan.Image $toolSHA $arguments $work $RunRoot reference $inputs
+    $poll=$null
+    if($LoadDiagnostic){
+        . "$PackageRoot/tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1"
+        $options=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$RunRoot;CaptureSource=$diagnostic.CaptureSource;
+            Python=$python;PythonSHA256=(Get-FileHash -LiteralPath $python).Hash;Cdb=$diagnostic.Cdb;CdbSHA256=$diagnostic.CdbSHA256;
+            Symbols=(Join-Path $CandidateRoot 'bin');ToolSHA256=$toolSHA;Inputs=$inputs}
+        $poll={param($target,$current,$logs);Invoke-ArenaLoadDiagnostic $target $current $logs $options $loadEvidence}
+    }
+    $state.Process=Invoke-OriginalArenaTool $context $plan.Image $toolSHA $arguments $work $RunRoot reference $inputs $plan.DeadlineSeconds $poll
+    if($LoadDiagnostic){$state.Status='DiagnosticNotTriggered';$state.MaterialReferenceMeasured=$false}
     $output=Resolve-IW7BasePath $work 'enemy-catalog/original_arena_material.csv'
     if((Get-Item -LiteralPath $output).Length -gt 4096){throw 'One-row CSV bound exceeded.'}
     [IO.Directory]::CreateDirectory((Join-Path $RunRoot 'enemy-catalog'))|Out-Null
@@ -110,8 +133,14 @@ try{
     Copy-Item -LiteralPath $state.Process.Stdout -Destination (Join-Path $RunRoot 'stdout.log')
     Assert-ModelFFInputs $inputs $work
     foreach($pin in $pins){Assert-BeaconHash $pin.Path $pin.SHA256};$state.SourceHashesUnchanged=$true
-}catch{$failure=$_;$state.Status='Failed';$state.Failure=$_.Exception.Message}
+}catch{
+    $failure=$_;$state.Status='Failed';$state.Failure=$_.Exception.Message
+    if($LoadDiagnostic -and $loadEvidence.Outcome -ceq 'Captured' -and $context.Closed){
+        $failure=$null;$state.Status='DiagnosticCaptured';$state.MaterialReferenceMeasured=$false
+    }
+}
 finally{
+    if($LoadDiagnostic){$state.Diagnostic=$loadEvidence}
     if($context.Closed){
         try{
             foreach($pin in $pins){Assert-BeaconHash $pin.Path $pin.SHA256}
@@ -126,7 +155,7 @@ finally{
             # locked, then dispose read guards before removing borrowed links.
             foreach($guard in $stockGuards){$guard.Dispose()}
             if($saved){$null=Restore-IW7BaseTransaction $state.Transaction;$state.Restored=$true;Assert-ModelFFInputs $inputs $work -SourceOnly;Assert-FFStockContent $inputs;$state.StockPreserved=$true}
-            if(!$failure -and $state.Restored -and $state.StockPreserved){
+            if(!$failure -and !$LoadDiagnostic -and $state.Restored -and $state.StockPreserved){
                 $closure=[ordered]@{Schema='iw7.original-arena-reference-process/1';PlanSHA256=$actualPlanSHA;RequestSHA256=$requestSHA;
                     ImageSHA256=$toolSHA;Identity=$state.Process.Identity;Arguments=$arguments;ExitCode=$state.Process.ExitCode;
                     RootExited=$state.Process.RootExited;ActiveProcesses=$state.Process.ActiveProcesses;JobClosed=$state.Process.JobClosed;Restored=$true;StockPreserved=$true}

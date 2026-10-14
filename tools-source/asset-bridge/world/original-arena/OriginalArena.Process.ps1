@@ -1,7 +1,7 @@
 # Specialized caller of the existing H1 original-job owner. Import is pure.
 # The caller holds one admission; no nested lease or PID adoption is introduced.
 function Invoke-OriginalArenaTool($Context,[string]$Executable,[string]$SHA256,[string[]]$Arguments,
-    [string]$Work,[string]$RunRoot,[string]$Phase,$Inputs,[int]$Seconds=240) {
+    [string]$Work,[string]$RunRoot,[string]$Phase,$Inputs,[int]$Seconds=240,[scriptblock]$OnOriginalPoll=$null) {
     if(!$Context.Closed -or !$Context.Lease){throw 'Closed previous original job and current admission required.'}
     $logs=Join-Path $RunRoot ('owned-'+$Phase)
     if(Test-Path -LiteralPath $logs){throw 'Fresh original arena phase logs required.'}
@@ -39,6 +39,7 @@ function Invoke-OriginalArenaTool($Context,[string]$Executable,[string]$SHA256,[
             }
         }
         $State.LastMemoryObservation=[ordered]@{Policy='TelemetryOnly';Snapshot=(Get-IW7ResourceSnapshot)}
+        if($OnOriginalPoll -and $State.Identity){& $OnOriginalPoll $Context $State $logs}
     }
     try {
         # As in Invoke-WorldStage, clear the closed previous owner BEFORE a new
@@ -58,6 +59,7 @@ function Invoke-OriginalArenaTool($Context,[string]$Executable,[string]$SHA256,[
         if(!$Context.Closed -and $Context.Owner){
             try{$Context.Owner.StopAndConfirm(5000);$Context.Closed=$Context.Owner.Closed}catch{}
         }
+        if($Context.PSObject.Properties['DiagnosticContext'] -and !$Context.DiagnosticContext.Closed){$Context.Closed=$false}
         throw
     }
 }
