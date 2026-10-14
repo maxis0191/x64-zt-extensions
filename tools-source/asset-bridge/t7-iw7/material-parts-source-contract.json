@@ -1,0 +1,26 @@
+{
+  "schema": "iw7.t7-material-parts-source/1",
+  "source_profile": "t7-material-parts-v1",
+  "files": {
+    "selected_material_parts_observation.hpp": {
+      "lf_bytes": 8380,
+      "lf_sha256": "f2dbec9ad952978ef5d88dafd608a0aef6417fd649b0f04fa7088732c822fbb5"
+    },
+    "selected_material_parts_observation_fixture.cpp": {
+      "lf_bytes": 7236,
+      "lf_sha256": "fed5af1e0744f8321c028e18e5c7428091d8a66303e5303b06511cbfd0e77366"
+    },
+    "native_material_parts.inc": {
+      "lf_bytes": 2553,
+      "lf_sha256": "9ca297876807b1ce9e62ee3ad18224cff1ef7036935ab214351ee75e3655607b"
+    }
+  },
+  "main": {
+    "bytes": 43366,
+    "sha256": "031464d8b41c6ae56c94b33f5d65e228b1ab1f4899c40e3688597c4cf7e526d5"
+  },
+  "cli": {
+    "bytes": 124187,
+    "sha256": "5fb998fdf25364ecf0a820e89dfd103133a7a0415178f59672dbab53ea784f69"
+  }
+}

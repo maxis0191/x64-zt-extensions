@@ -12,6 +12,7 @@ import prepare_catalog_trace
 import prepare_message_publication
 import prepare_catalog_zombies_observation as zombies_observer
 import prepare_catalog_add_observation as add_observer
+import prepare_material_parts as material_parts
 
 HERE = Path(__file__).resolve().parent
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
@@ -526,6 +527,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
 
 
 def prepare(args):
+    parts_observation = material_parts.selected(args)
     zombies_observation = zombies_observation_selected(args)
     add_observation = add_observation_selected(args)
     source, e7, output, run, adapter, providers, job = [path_checked(getattr(args, n)) for n in
@@ -761,6 +763,14 @@ def prepare(args):
                 'C2 requires the verified render-only V2 publication reuse closure')
         payloads['prepared/zonetool.cpp'], reuse['ZombiesAddObservationC2'] = add_observation_transition(
             payloads['prepared/zonetool.cpp'])
+    if parts_observation:
+        require(reuse is not None and catalog_publication and selected_streamed_render_only_v2,
+                'Parts metadata requires the verified E5 publication reuse closure')
+        read(HERE/'prepare_material_parts.py', 32*1024)
+        main, cli, marker = material_parts.overlay(payloads['prepared/main.cpp'].decode(),
+                                                   payloads['prepared/zonetool.cpp'].decode(), read)
+        payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'] = main.encode(), cli.encode()
+        reuse['MaterialParts'] = marker
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -824,6 +834,15 @@ def prepare(args):
             for name, path in [('ObserverSource',HERE/'native_catalog_add_observation.inc'),
                                ('ObserverAdapter',HERE/'prepare_catalog_add_observation.py')]:
                 profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+        if parts_observation:
+            profile.update(Name=material_parts.NAME, Option=material_parts.OPTION,
+                           ArgumentCount=5, ObservationSchema=material_parts.SCHEMA)
+            for name, path in [('PartsWiring',HERE/'prepare_material_parts.py'),
+                               ('PartsSource',HERE/material_parts.HELPER),
+                               ('PartsEntry',HERE/material_parts.ENTRY),
+                               ('PartsContract',HERE/material_parts.CONTRACT),
+                               ('PartsFixture',HERE/'selected_material_parts_observation_fixture.cpp')]:
+                profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
     plan = {'Schema':'iw7.t7-minimal-build-plan/1','SourceCommit':contract['native_source_commit'],
         'RunRoot':str(run),'PreparedRoot':str(output/'prepared'),'Runner':str(HERE/'Run-T7Build.ps1'),
         'Profile':str(HERE/'T7Build.Profile.ps1'), **{k:str(providers/v) for k,v in roles.items()},
@@ -865,6 +884,7 @@ if __name__ == '__main__':
     parser.add_argument('--selected-streamed-render-only-v2',action='store_true')
     parser.add_argument('--zombies-catalogue-observation',action='store_true')
     parser.add_argument('--zombies-add-observation-c2',action='store_true')
+    parser.add_argument('--material-parts-v1',action='store_true')
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))
