@@ -189,6 +189,42 @@ foreach($spec in @(@('model',(1MB+1)),@('mesh',(16MB+1)))){
 $bad=Copy-Value $manifest;$bad.mesh.relative_path='xsurface/../escape.xsb'
 Refuses {Assert-T7ResidentExportManifest $bad $plan} 'artifact path'
 
+# V2 streamed provenance is opt-in; all bytes here are invented metadata.
+$v2Request=[pscustomobject]@{schema='iw7.t7-iw7-selected-streamed-request/2';target='iw7';profile='selected-streamed-render-only-rigid-one-lod';
+    zone='mp_freerun_04';model='p7_fre_platform_cap_02';lod=0;xpak_key='f58d58f1fc9b6b01';collision_policy='omit-source-rigid-collision-trees';
+    packages=@([pscustomobject]@{path='zone/mp_initial.xpak';identity='D088B64A:000C0000001EB2FD';bytes=654311424})}
+$streamPlan=Copy-Value $plan;$streamPlan|Add-Member NoteProperty SelectedStreamedRenderOnlyV2 ([pscustomobject]@{Schema='iw7.t7-selected-streamed-render-only-plan/2'})
+$streamPlan|Add-Member NoteProperty SelectedXpakProvider ([pscustomobject]@{RelativePath='zone/mp_initial.xpak';FileId='D088B64A:000C0000001EB2FD';
+    Metadata=[pscustomobject]@{Bytes=654311424};IndexOffset=653787136;IndexBytes=31152;EntryOffset=653815768;PayloadOffset=146723456;PayloadBytes=7680})
+$savedReader=(Get-Item Function:Read-T7SelectedStreamedRequestFile).ScriptBlock
+function Read-T7SelectedStreamedRequestFile($Plan){$v2Request}
+try{
+    $streamManifest=Copy-Value $manifest;$streamManifest.schema='iw7.t7-iw7-selected-streamed-export/2'
+    $streamManifest.profile=$v2Request.profile;$streamManifest.geometry_profile='t7-iw7-selected-streamed-render-only-v2'
+    $streamManifest.output_root_key=Get-T7ResidentExportOutputKey $streamPlan
+    Check ($streamManifest.output_root_key -ceq 't7_iw7_streamed_e02a67b60f90ed8731320c25b72d5f5bc5c444bc1b4f50a86a0daa3745155eca') 'V2 root key differs from the independently reviewed request.'
+    $streamManifest|Add-Member NoteProperty selected_mesh_payload ([pscustomobject]@{key_hex='f58d58f1fc9b6b01';source_shared_flags=9;cpu_view_shared_flags=8;
+        source_surface_flags=@(32,32,32,32,32);opaque_descriptor_words_hex=@('0000000000000000','0000000000000000','0003ffffffffc000');
+        descriptor_field_semantics_verified=$false;package_path='zone/mp_initial.xpak';package_identity='D088B64A:000C0000001EB2FD';file_bytes=654311424;
+        hash_table_offset=653787136;hash_entry_offset=653815768;payload_offset=146723456;compressed_bytes=7680;packed_entry_size=7680;indexed_bytes=31152;
+        opcodes=@(3);opaque_header_offsets=@(0);payload_bytes=18624;payload_sha256=('a'*64);headers_rechecked=$true;atomic_snapshot_proven=$false;engine_object_writes=$false})
+    $streamManifest|Add-Member NoteProperty selected_collision_policy ([pscustomobject]@{policy='omit-source-rigid-collision-trees';scope='render-only';
+        source_tree_present=@($true,$true,$true,$true,$true);cpu_tree_present=@($false,$false,$false,$false,$false);collision_dropped=@($true,$true,$true,$true,$true);
+        collision_tree_payload_bytes_read=0;collision_conversion_attempted=$false;collision_compatibility_verified=$false;ready=$false})
+    Assert-T7ResidentExportManifest $streamManifest $streamPlan;$checks++
+    foreach($name in 'policy','scope'){
+        $bad=Copy-Value $streamManifest;$bad.selected_collision_policy.$name=@($bad.selected_collision_policy.$name)
+        Refuses {Assert-T7ResidentExportManifest $bad $streamPlan} 'Exact render-only collision scope'
+    }
+    $badRequest=Copy-Value $v2Request;$badRequest.collision_policy=@($badRequest.collision_policy)
+    Refuses {Assert-T7SelectedStreamedRequest $badRequest -RenderOnly} 'Exact E5 render-only collision policy'
+    $bad=Copy-Value $streamManifest;$bad.PSObject.Properties.Remove('selected_collision_policy')
+    Refuses {Assert-T7ResidentExportManifest $bad $streamPlan} 'Exact catalogue fields'
+    $bad=Copy-Value $streamManifest;$bad.selected_collision_policy.cpu_tree_present[0]=$true
+    Refuses {Assert-T7ResidentExportManifest $bad $streamPlan} 'CPU view'
+    Refuses {Assert-T7ResidentExportManifest $streamManifest $plan} 'Exact catalogue fields'
+}finally{Set-Item Function:Read-T7SelectedStreamedRequestFile $savedReader}
+
 $root=Join-Path ([IO.Path]::GetTempPath()) ('t7-export-v2-tests-'+[guid]::NewGuid().ToString('N'))
 $context=[pscustomobject]@{Closed=$true;Lease=[pscustomobject]@{Token='synthetic-only'};Guards=[Collections.Generic.List[object]]::new()}
 function Close-Guards {foreach($guard in $context.Guards){$guard.Dispose()};$context.Guards.Clear()}
