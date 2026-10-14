@@ -25,11 +25,11 @@ namespace
             const std::lock_guard lock(sync);
             enabled=true;paused=released=false;observed_mutex=nullptr;
         }
-        void stop(std::mutex& publication)
+        void stop(std::mutex& publication_mutex)
         {
             std::unique_lock lock(sync);
             if (!enabled) return;
-            observed_mutex=&publication;paused=true;cv.notify_all();
+            observed_mutex=&publication_mutex;paused=true;cv.notify_all();
             cv.wait(lock,[&]{return released;});
             enabled=false;
         }
@@ -210,8 +210,12 @@ int main()
         check(refused.at("registration_search_refused") == true &&
             refused.at("capture_complete") == false);
         bool original_error = false;
+        std::atomic<bool> original_failure{true}; // Runtime error path; keep a reachable return for /W4 /WX.
         try { unknown.original_add_and_observe(t7::ASSET_TYPE_XMODEL,incoming,
-            [](t7::XAssetType,t7::XAssetHeader)->t7::XAssetHeader {throw std::runtime_error("Original");}); }
+            [&original_failure](t7::XAssetType,t7::XAssetHeader)->t7::XAssetHeader {
+                if (original_failure.load(std::memory_order_relaxed)) throw std::runtime_error("Original");
+                return t7::XAssetHeader{};
+            }); }
         catch (const std::runtime_error& error) { original_error=std::string(error.what())=="Original"; }
         check(original_error);
 

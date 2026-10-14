@@ -62,6 +62,52 @@ def missing_registration():
 
 
 class ConsumerTests(unittest.TestCase):
+    def test_shared_64k_metadata_does_not_expand_producer_32k_entrypoints(self):
+        empty_size = len(json.dumps({"data":""}).encode())
+        raw = json.dumps({"data":"x"*(36853-empty_size)}).encode()
+        self.assertEqual(len(raw), 36853)
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp)/"authored-slots.json"
+            target.write_bytes(raw)
+            self.assertEqual(c.read_report(target, limit=65536), raw)
+            self.assertEqual(len(c.strict_json(raw, limit=65536)["data"]), 36853-empty_size)
+            with patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                with self.assertRaisesRegex(ValueError, "bounded JSON"):
+                    c.read_report(target)
+                spy.assert_not_called()
+            with self.assertRaisesRegex(ValueError, "bounded JSON"):
+                c.strict_json(raw)
+
+    def test_shared_metadata_limits_refuse_before_metadata_or_open(self):
+        for limit in (0, True, 32767, 65537, 32768.0, 2**32):
+            with self.subTest(limit=limit), patch.object(Path, "lstat", side_effect=AssertionError("metadata queried")) as metadata, \
+                    patch.object(Path, "open", side_effect=AssertionError("content opened")) as opened:
+                with self.assertRaisesRegex(ValueError, "32 or 64"):
+                    c.read_report("authored.json", limit=limit)
+                with self.assertRaisesRegex(ValueError, "32 or 64"):
+                    c.strict_json(b"{}", limit=limit)
+                metadata.assert_not_called()
+                opened.assert_not_called()
+
+    def test_shared_64k_guard_keeps_lexical_and_preopen_bounds(self):
+        for path in ("authored.exe", r"C:\folder\authored.exe:report.json", r"\\?\GLOBALROOT\report.json"):
+            with self.subTest(path=path), patch.object(Path, "lstat", side_effect=AssertionError("metadata queried")) as metadata, \
+                    patch.object(Path, "open", side_effect=AssertionError("content opened")) as opened:
+                with self.assertRaises(ValueError):
+                    c.read_report(path, limit=65536)
+                metadata.assert_not_called()
+                opened.assert_not_called()
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp)/"oversized.json"
+            target.write_bytes(b" "*65537)
+            with patch.object(Path, "open", side_effect=AssertionError("content opened")) as opened:
+                with self.assertRaisesRegex(ValueError, "bounded JSON"):
+                    c.read_report(target, limit=65536)
+                opened.assert_not_called()
+        for raw in (b'{"x":1,"x":2}', b'{"x":NaN}', b'"\xff"', b" "*65537):
+            with self.assertRaises((ValueError, UnicodeError)):
+                c.strict_json(raw, limit=65536)
+
     def test_complete_readable_still_has_no_body_admission_or_identity_proof(self):
         result = c.classify(report(), 0)
         self.assertEqual(result["outcome"], "ProvenanceMetadataObserved")
