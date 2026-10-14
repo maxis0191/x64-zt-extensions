@@ -231,6 +231,12 @@ class ConsumerTests(unittest.TestCase):
             self.assertNotEqual(missing.returncode, 0)
             self.assertEqual(missing.stdout, "")
             self.assertEqual(set(Path(temp).iterdir()), {target})
+            target.write_text("null", encoding="utf-8")
+            invalid = subprocess.run([sys.executable, "-B", script, str(target), "--native-exit-code", "1"],
+                                     capture_output=True, text=True, timeout=10)
+            self.assertNotEqual(invalid.returncode, 0)
+            self.assertEqual(invalid.stdout, "")
+            self.assertEqual(target.read_text(encoding="utf-8"), "null")
 
 
 if __name__ == "__main__":

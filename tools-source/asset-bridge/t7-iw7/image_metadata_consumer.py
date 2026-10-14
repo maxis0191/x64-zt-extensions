@@ -171,6 +171,7 @@ def main():
     with args.report.open("rb") as stream:
         raw = stream.read(LIMIT + 1)
     report = strict_json(raw)
+    need(type(report) is dict, "existing producer record must be a JSON object")
     result = consume(report) if args.native_exit_code is None else classify(report, args.native_exit_code)
     result["source_report_sha256"] = hashlib.sha256(raw).hexdigest()
     print(json.dumps(result, indent=2))
