@@ -2,11 +2,18 @@
 import copy
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 import prepare_material_parts_probe as probe
 
 def pin(path):return dict(Path=path,Bytes=1,SHA256='a'*64)
 
 class PartsPlanTests(unittest.TestCase):
+    def test_declared_opaque_suffix_refuses_before_any_open(self):
+        for suffix in ('.exe','.pdb','.dll','.ff','.xpak','.tlog'):
+            target=Path.cwd()/('authored-never-created'+suffix)
+            with self.subTest(suffix=suffix),patch.object(Path,'open',side_effect=AssertionError('content opened')):
+                with self.assertRaisesRegex(ValueError,'extension'):probe.read_text_pin(target)
+
     def fixture(self):
         base='C:\\authored\\'
         boots=[dict(pin(base+f'zone\\boot{i}.ff'),QualificationScript=pin(base+f'script{i%12}.ps1'),

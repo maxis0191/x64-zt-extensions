@@ -52,6 +52,14 @@ dispose or PID adoption path is introduced. The original NoExit host must still
 complete and have its true PTY exit and fresh independent absence observed.
 
 Source checks use authored plans/reports; they do not prove a stock observation.
+The first source candidate passed 61 parts-recipient assertions; catalogue
+233, original-host 210, publication 371, resident/export 338+230+301+398 and
+opaque-manifest 146 assertions also passed. The 14 Python bridge tests passed
+in its composed source package. Initial broad checks from the product editing
+checkout lacked its declared SDK/file-ID dependencies; those errors were kept
+and the corresponding composed groups passed. No native CLI, real admission
+or stock content was used for these source checks.
+
 Next: independent source review, private merge, fresh source composition, a
 separately authorized preparation/DEFAULT and exact operational packet review,
 then one separately admitted metadata request. Pixels, decoded dimensions,

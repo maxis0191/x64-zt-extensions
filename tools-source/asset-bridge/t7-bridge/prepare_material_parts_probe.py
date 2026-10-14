@@ -8,6 +8,7 @@ import copy
 import datetime
 import hashlib
 import json
+import os
 from pathlib import Path, PureWindowsPath
 
 REFERENCE_PIN=(70998,'90deea83d976a0bc96a16f481362019bcdf1d7c02ff09d131412df1c0dca1f7c')
@@ -40,10 +41,16 @@ def key(path):return str(path).replace('/','\\').casefold()
 def read_text_pin(path,expected=None):
     path=Path(path)
     require(path.is_absolute() and path==path.resolve(),'Canonical absolute text path required')
+    require(path.suffix.lower() in ('.json','.ps1','.py','.cs','.hpp','.inc','.cpp','.rsp'),'Declared source/JSON extension required')
     for parent in (path,*path.parents):
         require(not parent.is_symlink() and not parent.is_junction(),'Reparse text path refused')
-    raw=path.read_bytes()
-    require(0<len(raw)<=1024*1024,'Bounded source/JSON text required')
+    require(0<path.stat().st_size<=1024*1024,'Bounded source/JSON text required')
+    with path.open('rb') as stream:
+        size=os.fstat(stream.fileno()).st_size
+        require(0<size<=1024*1024,'Opened source/JSON size differs')
+        if expected:require(size==expected[0],'Exact retained text length differs')
+        raw=stream.read(1024*1024+1)
+        require(len(raw)==size,'Source/JSON text changed during read')
     raw.decode('utf-8-sig')
     pin=dict(Path=str(path),Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest())
     if expected:require((pin['Bytes'],pin['SHA256'])==expected,'Exact retained text identity differs')
