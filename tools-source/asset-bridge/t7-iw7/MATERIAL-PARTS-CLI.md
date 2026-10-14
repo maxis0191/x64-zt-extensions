@@ -114,6 +114,63 @@ admission, a deferred hash failure and invalid IsText. It invokes no scheduler,
 compiler or real tlog/binary read. C stays frozen; native execution requires a
 fresh reviewed plan bound to the corrected runner.
 
+The separately admitted D preparation/actual DEFAULT passed on 2026-10-14 at
+07:27 UTC, using sealed product source `ed62c6f9cf20e41d909fe801da9a50949f1cb4db`
+and the existing preparer. Its runner is 60,689 bytes/`586a847c`; source manifest
+is 322,827 bytes/`328dcb91`. The 371,363-byte D plan has SHA-256
+`d0c82f92332a37d96f3be71f828f6d47386a5327c67f579e9b6089e9cea0504c`.
+The admission receipt is 8,381 bytes/`4ea17c69dcd7c0f3eedd80d827b258db7542f90b3dd55deb5fd95ad7685d0698`;
+actual DEFAULT stdout is 5,184 bytes/`c28caa65257afcae2f77c598b976bc761e3df80b73897380fdee086a1b30e1a5`,
+with empty stderr. Both owned children and the original NoExit host exited 0;
+fresh observation at 07:28:29 UTC found them absent and the lease registry empty.
+
+Read-only C/D comparison retained all 1,146 input pins and 154 binding paths
+after scope normalization. Exactly five binding hashes differ: the corrected
+runner and four response files whose contents differ only in the new paths.
+Actual prepared main/CLI and G2/G3 source bytes were rehashed and are identical;
+retained opaque objects were not rehashed outside admission. The comparison
+receipt is 3,106 bytes/`ced32f4fd3539ec8ce116035cd6cad8177f0851a24568290289c9275a4d43bd4`.
+DEFAULT again reports no native types, binary hashing, build lease or run-root
+creation, with Ready false. A minimal 892-byte capsule (`92496c02`) calls only
+the existing D runner with the exact plan and main/CLI/link stages. A/B/C stay unchanged.
+
+The separately admitted native D attempt on 2026-10-14 at 07:37 UTC refused
+before compiler launch: Open-T7Pin reported `T7 input hash/length differs` while
+guarding the retained inputs. Native receipt is 5,420 bytes/SHA-256
+`55c96374d843403b3486a05b66e70dd19d74bf1a284d96f4017a2fb91f67b3a9`,
+Status Failed, no stages, zero artifact output, confirmed tree closure/lease
+release and no quarantine. The original NoExit host actually exited 1; fresh
+07:40:17 UTC observation found it, its parent and compiler/link/telemetry processes
+absent, with no leases. No EXE/PDB, candidate, probe, stock, FF or game was produced
+or executed. Successful DEFAULT D remains a preparation proof; native D remains
+Failed. Its generic error does not identify the offending pin. Diagnose that
+exact input under a separate admission before correcting provenance or retrying;
+never adopt a different opaque hash or rewrite the frozen D plan.
+
+Two separately admitted read-only diagnoses narrowed this refusal. The six
+opaque tool/job bindings all passed unchanged (receipt 5,302 bytes/`58e651d0`);
+the subsequent exact Inputs list stopped after 1,138 passing pins, at index
+1,139 (`plan.Inputs[1138]`), `C:\Windows\System32\TZRES.DLL`. Its size stayed
+12,288 bytes, but the sealed SHA-256
+`f3f5ef83a67c503991d728f62cf039cbb52a18d6eb82197dec23ede8f0996108`
+differs from the under-lease observation
+`1398cf1d866e49a8ba351e2a30a7803b50c8b595d17f776abe8d2ec4a9c6fb10`.
+The input diagnosis receipt is 2,672 bytes/`c06117cbd2fe378dd9105a88ac84ccb3dbb323a8cfd247795b634e5a949525db`,
+Status Refused, guards disposed and lease released. The original host exited 1;
+fresh 07:51:41 UTC observation found owned absence and no leases. No later
+input was read, no different hash adopted and no native retry performed.
+
+This OS/toolchain pin originates in the immutable checksum seal `f52867e7`,
+with an original 2026-09-08 modification date. The current file's observed
+2026-10-14 02:39 UTC modification coincides with Windows servicing; Setup events
+record UpdateAgentLCU staging/installing KB5127647, but do not identify that
+file's replacement. An OS-update explanation remains an inference. Microsoft's
+[TimeZoneInfo source](https://github.com/microsoft/referencesource/blob/main/mscorlib/system/timezoneinfo.cs)
+uses System32 `tzres.dll` resources for localized time-zone names. Its current
+identity/signature and the remaining input suffix need qualification before
+any explicit environment refresh. Preserve the old seal and D failure; do not
+roll back a Windows DLL or silently repin a historical build.
+
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
 bytes, mismatched G2 metadata and any unqualified selected header/name/recheck.
