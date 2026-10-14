@@ -562,3 +562,31 @@ separately admitted independent readback of these exact model/mesh/report
 tuples, followed by explicit IW7 material rebinding before any FF/runtime test.
 Collision compatibility, source-geometry correspondence, texture appearance,
 FF roundtrip, runtime verification, owner acceptance and Ready remain false.
+
+### FF pre-admission metadata refusal on 2026-10-14
+
+The first FF invocation stopped at the stock metadata gate before acquiring an
+Extract reservation, qualifying/hashing the candidate PE, reading stock content
+or launching the native tool. No FF run directory was created. The separate
+stage adoption had already verified all 11 files/65,739 bytes, including the
+unchanged preparation plan `750d25d7`, and released its Analysis reservation.
+That adopted stage and the failed operator package/plan remain preserved.
+
+All 72 stock rows failed the date comparison even though sizes, attributes,
+mapping modes and exact UTC ticks matched. The bundled PowerShell JSON reader
+returned `ModifiedUtc` as a DateTime; the old gate compared its implicit string
+representation with `LastWriteTimeUtc.ToString('o')`. The correction compares
+UTC ticks through DateTimeOffset, accepting the same instant represented as an
+ISO string, DateTime or DateTimeOffset without rounding or dropping precision.
+The existing size, attributes, valid-mode, pinned mapping digest, NTFS identity
+and admitted content checks remain mandatory.
+
+The actual gate fixture accepts equivalent instants, fractional trailing zeros
+and explicit offsets; it rejects one changed tick, size, attributes, invalid
+mode and malformed date. A valid mapping-mode change also invalidates the
+unchanged stock-plan digest. These are authored source checks, not a new retail
+content qualification. The original NoExit host subsequently exited 1; a fresh
+03:34:16 UTC witness found host 9284 and adoption child 28636 absent with no
+leases. Next: review/merge the corrected source, compose a fresh operator and
+pin its retry plan before the coordinator grants another FF slot. FF and Ready
+remain false.

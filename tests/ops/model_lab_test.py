@@ -27,6 +27,57 @@ finally:
 
 
 class ModelSourceTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock metadata fixture requires pwsh')
+    def test_selected_stock_metadata_compares_exact_utc_instants(self):
+        script = r'''
+param($Entry,$Root)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Entry,[ref]$tokens,[ref]$errors)
+if($errors){throw 'Entry parse failed'}
+$gates=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Observed stock metadata/mode changed.'") -and $n.Clauses[0].Item1.Extent.Text.Trim() -cne '$StockBindingPlan'},$true))
+if($gates.Count -ne 1){throw 'Unique actual stock metadata gate required'}
+$gate=[scriptblock]::Create($gates[0].Extent.Text)
+$path=Join-Path $Root 'authored-stock.bin'
+[IO.File]::WriteAllText($path,'Authored metadata fixture')
+[IO.File]::SetLastWriteTimeUtc($path,[datetime]::Parse('2026-09-29T21:46:19.4827250Z').ToUniversalTime())
+$f=Get-Item -LiteralPath $path
+$instant=[datetimeoffset]$f.LastWriteTimeUtc
+function New-Entry {
+    [pscustomobject]@{Bytes=$f.Length;ModifiedUtc=$f.LastWriteTimeUtc.ToString('o');Attributes=[int]$f.Attributes;Mode='HardLink'}
+}
+foreach($date in @($f.LastWriteTimeUtc.ToString('o'),$f.LastWriteTimeUtc,$instant,$instant.ToOffset([timespan]::FromHours(2)).ToString('o'))){
+    $entry=New-Entry;$entry.ModifiedUtc=$date
+    . $gate
+}
+# JSON may return a DateTime on newer PowerShell and a string on older versions.
+# Both must preserve the instant, including optional trailing fractional zeros.
+foreach($text in @($f.LastWriteTimeUtc.ToString('o'),'2026-09-29T21:46:19.482725Z')){
+    $entry=New-Entry;$entry.ModifiedUtc=$text
+    $entry=$entry|ConvertTo-Json|ConvertFrom-Json
+    . $gate
+}
+foreach($case in @('tick','bytes','attributes','mode','malformed')){
+    $entry=New-Entry
+    switch($case){
+        tick {$entry.ModifiedUtc=$instant.AddTicks(1).ToString('o')}
+        bytes {$entry.Bytes++}
+        attributes {$entry.Attributes=$entry.Attributes -bxor [int][IO.FileAttributes]::ReadOnly}
+        mode {$entry.Mode='Invalid'}
+        malformed {$entry.ModifiedUtc='not-a-date'}
+    }
+    $refused=$false;try{. $gate}catch{$refused=$true}
+    if(!$refused){throw "Changed $case accepted"}
+}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'stock-metadata.ps1'
+            path.write_text(script, encoding='utf-8')
+            result = subprocess.run(['pwsh', '-NoLogo', '-NoProfile', '-File', str(path),
+                                     str(ROOT / 'ops/model-lab/Build-ModelFF.ps1'), folder],
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock selector fixture requires pwsh')
     def test_selected_stock_binding_is_explicitly_limited_to_render_only_candidate(self):
         script = r'''
@@ -66,6 +117,12 @@ try{Invoke-ActualSelector|Out-Null}catch{$refused=$_.Exception.Message -eq 'Exis
 if(!$refused){throw 'Independent copied sentinel must remain mandatory'}
 Write-Fixture;$StockBindingPlanSHA256='1'*64;$refused=$false
 try{Invoke-ActualSelector|Out-Null}catch{$refused=$true};if(!$refused){throw 'Binding digest must remain mandatory'}
+Write-Fixture
+$changed=Get-Content -LiteralPath $StockBindingPlan -Raw|ConvertFrom-Json
+$changed.stock_binding.inputs[1].Mode='Copy'
+$changed|ConvertTo-Json -Depth 5|Set-Content $StockBindingPlan
+$refused=$false;try{Invoke-ActualSelector|Out-Null}catch{$refused=$true}
+if(!$refused){throw 'Changed valid mapping mode must invalidate the pinned binding digest'}
 Write-Fixture;$arena=$true;$rigid=$false;$plan.geometry_profile='iw7-original-arena-rigid-v1'
 if(@(Invoke-ActualSelector).Count -ne 72){throw 'Original World stock selector changed'}
 '''
