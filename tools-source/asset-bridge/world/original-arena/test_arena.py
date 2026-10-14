@@ -19,6 +19,7 @@ import readback
 import model_lab
 import prepare_writer
 import modal_window
+from test_coverage import CoverageTests
 
 
 class ArenaTests(unittest.TestCase):
