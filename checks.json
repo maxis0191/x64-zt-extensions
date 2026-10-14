@@ -1074,6 +1074,18 @@
       ]
     },
     {
+      "id": "test_rigid_control_assets",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/animation/rig/test_rigid_control_assets.ps1",
+        "-SourcePackage",
+        "{workspace}"
+      ]
+    },
+    {
       "id": "test_rigid_control_operator",
       "command": [
         "pwsh",
