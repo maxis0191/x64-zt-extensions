@@ -214,10 +214,10 @@ same object, runtime ABI, pixels and Ready stay false.
 
 The pending source contract pins the derived observer/main/CLI. Six targeted
 Python source checks pass, including exact consumer shape and actual renderer
-guard syntax/exclusivity. The authored native fixture has 39 expected checks and
+guard syntax/exclusivity. At PR138 the authored native fixture had 39 expected checks and
 uses the same leaves on owned synthetic pages, including protection withdrawal
-between guard and copy. It has not been compiled or executed; no in-page fault
-is claimed measured. Old H53 and CPP D cannot qualify the changed observer API.
+between guard and copy. It was then uncompiled/unexecuted; no in-page fault
+was claimed measured. Old H53 and CPP D cannot qualify the changed observer API.
 The reviewed build recipe adds the explicit `--image-registration-metadata-v1`
 flag on top of the exact metadata/provenance source pair. It selects one finite
 five-stage H1 cohort: registration fixture compile/test, fresh main, fresh T7
@@ -236,6 +236,45 @@ only enables the recipe; the new 39-check fixture and complete five-stage closed
 receipt must qualify the changed API. Source guard tests exercise altered plans,
 order/arguments/artifacts, old markers and false DEFAULT claims. With the actual
 historical H text proofs, 34 PowerShell gates and 16 targeted Python source checks
-pass; the new API still reports pending after the base proof is accepted. Fresh admitted
-PREP, exact actual-plan review, CPP qualification and separate Native GO remain;
-the new launcher is still inactive and no native execution is claimed here.
+pass; the new API still reports pending after the base proof is accepted. Actual
+PREP/CPP qualification is recorded below. A separate native plan and GO remain;
+source-pending contracts and historical cohorts retain their original bytes.
+
+## Registration CPP A checkpoint - 2026-10-15
+
+Extension source b38a5d9cacc39f1e150a7ad0de21000c6e2f52d4, merged by
+cc751a0816f657a61f93c38faf461f72579598de, produced a new cohort against unchanged
+native source fab935826c898806855376662a8a03317b3ad8f1. Its source manifest is
+362970 bytes / f13f0a2d319f500603d7b07bbb96a195b06fe2b2c34115c542252e74c0830b83.
+Admitted PREP/default passed and closed; actual plan is 396872 bytes /
+dd85b86f508439ee45ff9a23543f8b7e16e852b8dab39bf2215ebb1c53f6f4e4, with
+1146 input pins, zero missing pins and 178 bindings (172 text, six opaque).
+
+Under a distinct CPP GO, all five phases exited zero and closed: registration
+fixture compile/test, main, T7 CLI, link. The fixture actually emitted exactly
+`IW7_T7_REGISTRATION_HEADER_CHECKS=39`, with empty stderr and EngineInvoked=false.
+Full input rechecks passed; RegistrationFixturePassed and the actual receipt's
+RegistrationCPPQualified are true. Immutable source descriptors remain pending.
+The group took 31.039 seconds; observed output before receipt publication was
+214198204 bytes, below 256 MiB. Receipt is 46047 bytes /
+24380749ad1407e71587c57cfe35aea770cfa75510247749a8c165f7cdb8c0b1.
+
+The new linked EXE recorded under admission is 22024704 bytes /
+eeeca36f26ff2c76b98a608fe17a6b47259401b1cd800f73fe886bd099ac6dbc; PDB is
+139661312 bytes / 4cb8083da5e371ddcac48caacabdc2e287a27703f0556902bff53ff1a480474d.
+These are receipt pins, without a free binary reread. Original AppDomain and
+PSVariable context/guard/state references matched at preexit, original link
+job/process handles were closed, native and caller guards were zero and the
+lease was released. Preexit is 2313 bytes /
+011864cfc3f0e61a54b4ea3ed0a2bd94761ba8d4b82a0c70857e140cc559020b.
+True terminal82491 exited zero. Fresh closure at 2026-10-14T23:32:50.2191057Z
+found all 11 captured identities absent and no heavy/game process or lease;
+closure is 1287 bytes / 68408f6d089a7a7870073f612030136466a961e312186990405c1f298526407d.
+
+The text handoff is 9556 bytes /
+066aa9e359a6b2232e9920b82404f3652c09d9b3f97a75f1588ed38becf62ebc. It binds
+the exact source/plan/receipt/preexit/closure, fixture stdout and recorded link
+artifacts. Next: review a separate native registration-metadata plan/capsule
+against this new tuple. The candidate has never run; engine header/name capture,
+runtime ABI, in-page fault behavior, pixels, rendering and owner gameplay remain
+unqualified. Historical D/F2, Main, stock and banks remain preserved.
