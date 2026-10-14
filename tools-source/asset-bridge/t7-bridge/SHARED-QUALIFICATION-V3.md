@@ -156,3 +156,28 @@ would be **875,944,664 bytes**. Its existing hardlinks do not duplicate payload
 storage, but logical tree accounting still counts those bytes. A future concrete
 plan must be separately pinned and checked against the 128 KiB plan and 64-entry
 catalogue tree limits. Source preparation changes none of the sealed Q pins.
+
+## Future helper bound correction, 2026-10-14
+
+The source-suite DEFAULT failed before admission because the reviewed
+`T7Catalogue.Profile.ps1` had grown beyond the original 128 KiB helper bound.
+The future qualifier retains 128 KiB for every other helper. Only the exact
+Catalogue path can exceed it, with raw LF tuple 150,096 bytes /
+`57c9ef83b9eb9535d57f0d8d4fa1fffdff3e389849258892993715382922b6d6` or
+raw CRLF tuple 151,909 /
+`a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29`.
+These identify the reviewed source at main `e21ecbb2ce73b7993279dca43043ad771e12ef70`;
+there is no runtime line-ending normalization, generic cap increase or payload
+allowance. Other role/path/hash/size/type combinations remain refused before
+source import. The source fixture now checks both raw representations and
+mutation refusals; actual DEFAULT runs use an absent donor directory and do not
+qualify any stock. Old qualifiers, plans, receipts and sealed Q inputs retain
+their bytes. Changes to this larger helper need another reviewed source tuple.
+
+The affected group fixture passes 244 controls from a freshly composed source
+workspace (code `8e3f843`, 928 text files / 9,025,235 bytes), including actual
+DEFAULT on the original and independent LF/CRLF source trees with absent donor
+directories. The Catalogue finalizer fixture passes 233 controls in the same
+workspace. No stock read, native types, real lease or `-Run` occurs. Running the
+group fixture directly in the product-only checkout lacks its declared ops
+dependencies; the documented composed-workspace invocation supplies them.

@@ -1263,3 +1263,24 @@ paris_model_probe FF, with CPPreload=false. Those handlers do not call the enemy
 reference loader, and there is no scoped skip-global_mp switch in the retained
 reference-check CLI. Its material inventory remains an external named reference;
 it cannot replace the missing independent nondefault cp_zmb measurement.
+
+## Proposed next witness: one bounded original load diagnostic
+
+No supported CP-only reference switch exists in the retained primary CLI. The
+opt-in World `-LoadDiagnostic` source route preserves loader order and stages
+the same selected stock under one admission, then observes the original live
+root. At 45 seconds with global_mp unchanged for 15 seconds, it records five
+seconds of CPU/I/O by thread, one light stack minidump and offline CDB output.
+Original diagnostic jobs share the existing reservation, with combined unknown
+closure quarantining guards/lease even when the original target has closed.
+
+After capture the exact target is stopped/restored, within a 120-second phase;
+it reports DiagnosticCaptured, never a material/reference proof. Existing
+snapshot flags 0x1820 contain normal stacks, region/thread information and
+unloaded modules, without full-memory data. Dump acceptance is 32 MiB and output
+thresholds are sampled. The detailed single-experiment contract and its primary
+Microsoft source are in `original-arena/LOAD-DIAGNOSTIC.md`. Pure source mocks
+cover one-shot/progress gating, original identity, offline-only debugger arguments
+and unknown diagnostic retention. Capture, symbols and stack classification
+remain unrun pending a separate reviewed Plan and coordinated GO. No T7 consumer,
+caller51, loader CPP, stock payload or gameplay was changed or exercised.

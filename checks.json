@@ -313,6 +313,28 @@
       ]
     },
     {
+      "id": "Test-T7LinkV3Consumer",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3Consumer.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7LinkV3Report",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3Report.ps1"
+      ]
+    },
+    {
       "id": "Test-T7ReferenceV2HostPublication",
       "command": [
         "pwsh",
@@ -1049,6 +1071,18 @@
         "-NoProfile",
         "-File",
         "ops/Test-AssetSourcePins.ps1"
+      ]
+    },
+    {
+      "id": "test_rigid_control_operator",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/animation/rig/test_rigid_control_operator.ps1",
+        "-SourcePackage",
+        "{workspace}"
       ]
     }
   ]
