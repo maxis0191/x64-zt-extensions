@@ -1911,3 +1911,12 @@ qualifier import now includes C2, retaining the same required text pin and
 limits. Validate the corrected operational plan through the actual entrypoint
 in a fresh `-NoProfile` process with no preparation-helper imports before any
 new Stock GO. No compiler or supplied game asset needs to change for this fix.
+
+Corrected source `221cb4dd` passed that actual fresh entry DEFAULT. A new
+NoProfile/noninteractive parent, importing no profile, started the actual host
+entry in a separate NoProfile child without Run. The child naturally exited 0,
+reported `PlanCheckedPendingGO`, and all native-type/hash/reservation/creation/
+Ready flags were false. Its 2,004-byte receipt SHA256 is
+`645ca3f6fd5edc9f723082a0fcad5f3d37e78a89677d4e819facec2f2085b17c`.
+The exact Process object and subsequent CIM observation confirmed closure.
+The old refused invocation remains separate; no C2 stock run is implied.
