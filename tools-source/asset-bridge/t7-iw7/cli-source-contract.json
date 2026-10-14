@@ -171,5 +171,27 @@
     "Review private three-TU incremental build plus original-job supervisor adapter and obtain stage GO.",
     "Bind available exact T7 dedicated engine, selected stock files, bootstrap dependencies and recipient restore profile before native GO.",
     "Validate serialized parse and geometry; resolve material payloads and source-zone provenance separately."
-  ]
+  ],
+  "prepatch_reference_v2": {
+    "schema": "iw7.t7-prepatch-reference-build/2",
+    "source_profile": "t7-prepatch-reference-v2",
+    "files": {
+      "native_prepatch_probe.inc": {
+        "lf_bytes": 16281,
+        "lf_sha256": "a9f458d2783c845af6958c896bda07fa4b92a5ea23a14c9e5d1201fe234a2018"
+      },
+      "prepare_prepatch.py": {
+        "lf_bytes": 3078,
+        "lf_sha256": "162763ab503a7971bc56753e3aba9fc1c76bf181881f9bddf45718456467e129"
+      },
+      "native_prepatch_reference_v2.inc": {
+        "lf_bytes": 15785,
+        "lf_sha256": "0309b81376d3708cc8de43d297b43fbdfbdd535120e0ad054c157735c2c7457a"
+      },
+      "prepare_prepatch_reference.py": {
+        "lf_bytes": 3665,
+        "lf_sha256": "89f3f26699f1240400c4bd96f2987963374658e55a8501cab7dc2543a84ceace"
+      }
+    }
+  }
 }

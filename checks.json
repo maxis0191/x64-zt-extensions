@@ -511,6 +511,17 @@
       ]
     },
     {
+      "id": "Test-T7PrepatchReference",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-T7PrepatchReference.ps1"
+      ]
+    },
+    {
       "id": "Test-Watchpoint",
       "command": [
         "pwsh",
