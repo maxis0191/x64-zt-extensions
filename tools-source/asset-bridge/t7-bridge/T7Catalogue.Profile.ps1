@@ -37,7 +37,7 @@ function Assert-T7CatalogueZombiesObservationPlan($Plan) {
        !(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes 16384) -or $Plan.TraceStderrLimitBytes -ne 16384){
         throw 'Catalogue C requires its exact schema, Zombies zone and 16 KiB trace bound.'
     }
-    foreach($name in 'ResidentSurfaceCountDiagnostic','ResidentMultiSurfaceV2','SelectedMeshMaterialObservation','SelectedStreamedStaticV1'){
+    foreach($name in 'ResidentSurfaceCountDiagnostic','ResidentMultiSurfaceV2','SelectedMeshMaterialObservation','SelectedStreamedStaticV1','SelectedStreamedRenderOnlyV2'){
         if($Plan.PSObject.Properties[$name]){throw 'Catalogue C cannot select an export experiment.'}
     }
 }
@@ -364,6 +364,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($Plan.PSObject.Properties['ResidentMultiSurfaceV2'] -and !$export){throw 'Resident multi-surface v2 is restricted to the export operation.'}
     if($Plan.PSObject.Properties['SelectedMeshMaterialObservation'] -and !$export){throw 'Selected observation probe is restricted to the export operation.'}
     if($Plan.PSObject.Properties['SelectedStreamedStaticV1'] -and !$export){throw 'Selected-streamed E3 is restricted to the export operation.'}
+    if($Plan.PSObject.Properties['SelectedStreamedRenderOnlyV2'] -and !$export){throw 'Render-only E5 is restricted to the export operation.'}
     $streamed=$export -and [bool](Get-T7SelectedStreamedExport $Plan)
     $schema=if($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
     $reportLimit=if($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
@@ -397,7 +398,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($export -and (Get-T7ResidentExportVersion $Plan) -eq 2){$bindingCount+=6} # D header and five closed-build evidence texts.
         if($export -and (Get-T7SelectedObservationProbe $Plan)){$bindingCount+=3} # E2 source/probe pins and distinct closure bundle.
         if($streamed){$bindingCount+=9} # Eight E3 build text pins beyond D plus the operational streamed reader contract.
-        if($streamed -and (Test-T7SelectedStreamedE4Build $Plan)){$bindingCount+=2} # E4 actual tool return and completion texts.
+        if($streamed -and ((Test-T7SelectedStreamedE4Build $Plan) -or (Get-T7SelectedStreamedRenderOnly $Plan))){$bindingCount+=2} # E4/E5 actual tool return and completion texts.
         if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0 -or
            !(Test-T7CatalogueInteger $Plan.OutputLimitBytes ($zoneSpec.FixedBytes+64MB+$limits.TotalBytes+$selectedExtraBytes)) -or
            @($Plan.Bindings).Count -ne $bindingCount){throw 'Exact qualified collection budget/binding count required.'}
@@ -444,7 +445,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($export){$bindingLimit+=9}
     if($diagnostic){$bindingLimit++}
     if($streamed){$bindingLimit+=9}
-    if($streamed -and (Test-T7SelectedStreamedE4Build $Plan)){$bindingLimit+=2}
+    if($streamed -and ((Test-T7SelectedStreamedE4Build $Plan) -or (Get-T7SelectedStreamedRenderOnly $Plan))){$bindingLimit+=2}
     if(@($Plan.Bindings).Count -gt $bindingLimit -or @($Plan.Bindings.Path|Sort-Object -Unique).Count -ne @($Plan.Bindings).Count){throw 'Bounded unique bindings required.'}
     $bindingPaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pin in $Plan.Bindings) {
@@ -907,7 +908,7 @@ function New-T7CatalogueStart($Plan) {
     if((Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'){
         Assert-T7ResidentExportRequest $Plan.ExportRequest
         $streamed=[bool](Get-T7SelectedStreamedExport $Plan)
-        $command=if($streamed){'-t7-iw7-model-streamed-v1'}elseif((Get-T7ResidentExportVersion $Plan) -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
+        $command=if(Get-T7SelectedStreamedRenderOnly $Plan){'-t7-iw7-model-streamed-v2'}elseif($streamed){'-t7-iw7-model-streamed-v1'}elseif((Get-T7ResidentExportVersion $Plan) -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
         $start.ArgumentList.Clear()
         foreach($argument in @($command,$Plan.ExportRequest.zone,$Plan.ExportRequest.model,'0')){$start.ArgumentList.Add($argument)}
         if($streamed){$start.ArgumentList.Add('streamed-request.json')}

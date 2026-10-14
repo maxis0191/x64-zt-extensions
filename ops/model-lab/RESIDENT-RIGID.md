@@ -179,3 +179,19 @@ that also selected the null initialization) were corrected before this checkpoin
 No native exporter/FF build, actual readback, game, stock payload read/hash or
 resource admission was performed. Next: coordinator source review/integration;
 native qualification and any real execution require their distinct approved step.
+
+On 2026-10-14, the render-only streamed export/2 schema was added to the
+existing large-manifest dispatch in `load_export`. Its export-manifest cap
+remains the reader's 256 KiB; derived receipts and FF plans retain their
+separate one-MiB cap. The legacy resident export/1 cap remains four KiB.
+A synthetic regression first reproduced the erroneous four-KiB
+refusal, then passed full staging and staged verification after the correction.
+It retains the exact source manifest and mesh, explicit ordered recipient
+bindings and only the declared LOD change. Oversized V2 and legacy V1 manifests
+remain refused. This source-only correction does not alter the compiled E5
+candidate or prove native FF/runtime behavior.
+The 13 streamed-contract tests, 28 Model Lab tests in a fresh pinned source
+composition and repository boundaries (715 tracked/697 exports/three
+dependencies) passed. An initial Model Lab run from the uncomposed checkout
+failed nine dependency-based checks because the Native/SDK files were absent;
+the full composed run passed without relaxing those checks.
