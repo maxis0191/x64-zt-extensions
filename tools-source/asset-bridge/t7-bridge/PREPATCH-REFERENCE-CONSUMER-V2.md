@@ -46,3 +46,22 @@ literal UTC JSON and stopped Main/port/bank conflicts. No test starts a
 candidate or loads the native provider. Native capture and interpretation
 still require a separate GO; ABI, provider ownership, boot and catalogue
 compatibility are never inferred from source checks or CaptureComplete.
+
+Source verification on 2026-10-14: 168 targeted controls passed without a
+provider/process/lease or opaque input read. Code source `334fd8da` composed
+903 text files/8784857 bytes. The actual entrypoint in a separate fresh
+NoProfile child naturally exited 0 and reported PlanCheckedPendingGO with
+CandidateBound true and all native-type/binary-hash/lease/file-creation/Ready
+flags false. Its parent imported no project helper, the child Process was
+disposed after exit and subsequent CIM observation confirmed absence.
+The 1337-byte DEFAULT witness SHA256 is
+`f3270378ade58870400bd62ec782b3068b345ce2c23ebddbfbf31c2d3b1cd8a0`.
+The prepared plan used 30 bindings (23 text/seven binary metadata), two
+hardlinked engine/Steam aliases, no copied game bytes and the closed producer
+cohort above. This is source/metadata qualification, not a native probe GO.
+
+An initial test-fixture expression unwrapped its supposed singleton array;
+the fixture was corrected to assign a real array before the passing run.
+The preparation helper's first parse refused before creating outputs; its
+parenthesis correction preceded the create-only preparation. These failures
+did not start a native process or consume a probe attempt.
