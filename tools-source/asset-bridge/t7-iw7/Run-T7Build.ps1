@@ -344,13 +344,13 @@ function Assert-T7OSResourceContext($Plan) {
     $new='1398cf1d866e49a8ba351e2a30a7803b50c8b595d17f776abe8d2ec4a9c6fb10'
     $inputs=@($Plan.Inputs|Where-Object {$_.Path -eq $tz})
     if(!$Plan.PSObject.Properties['OSResourceContext']){
-        if($inputs.Count -gt 1 -or ($inputs.Count -eq 1 -and ($inputs[0].Path -cne $tz -or
+        if($inputs.Count -gt 1 -or ($inputs.Count -eq 1 -and ($inputs[0].Path -isnot [string] -or $inputs[0].Path -cne $tz -or
            ($inputs[0].Bytes -isnot [int] -and $inputs[0].Bytes -isnot [long]) -or
            $inputs[0].Bytes -ne 12288 -or $inputs[0].SHA256 -isnot [string] -or $inputs[0].SHA256 -cne $old))){throw 'Historical OS pin requires an explicit qualified context.'}
         return $null
     }
     $context=$Plan.OSResourceContext
-    if($null -eq $context -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3') -or
+    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3') -or
        (@($context.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'After,Before,Evidence,KBFileAttributionVerified,Name,ProductVersion,Schema,SignatureStatus,SignatureType,SignerThumbprint,SourceOSDate'){
         throw 'Exact opt-in OS context fields/profile required.'
     }
@@ -371,9 +371,9 @@ function Assert-T7OSResourceContext($Plan) {
        $proof.Bytes -ne 8907 -or $proof.SHA256 -isnot [string] -or
        $proof.SHA256 -cne '5a282c19995af210fd9d7c55a8692d87d4456526352fe21034a8f07d83a9fd9d' -or
        @($Plan.Bindings|Where-Object {$_.Path -eq $proof.Path}).Count -ne 1 -or
-       @($Plan.Bindings|Where-Object {$_.Path -ceq $proof.Path -and ($_.Bytes -is [int] -or $_.Bytes -is [long]) -and $_.Bytes -eq 8907 -and
-          $_.SHA256 -ceq $proof.SHA256 -and $_.IsText -is [bool] -and $_.IsText}).Count -ne 1){throw 'Exact guarded OS qualification proof required.'}
-    if($inputs.Count -ne 1 -or $inputs[0].Path -cne $tz -or
+       @($Plan.Bindings|Where-Object {$_.Path -is [string] -and $_.Path -ceq $proof.Path -and ($_.Bytes -is [int] -or $_.Bytes -is [long]) -and $_.Bytes -eq 8907 -and
+          $_.SHA256 -is [string] -and $_.SHA256 -ceq $proof.SHA256 -and $_.IsText -is [bool] -and $_.IsText}).Count -ne 1){throw 'Exact guarded OS qualification proof required.'}
+    if($inputs.Count -ne 1 -or $inputs[0].Path -isnot [string] -or $inputs[0].Path -cne $tz -or
        ($inputs[0].Bytes -isnot [int] -and $inputs[0].Bytes -isnot [long]) -or
        $inputs[0].Bytes -ne 12288 -or $inputs[0].SHA256 -isnot [string] -or $inputs[0].SHA256 -cne $new){throw 'Unique qualified TZRES Input required.'}
     $stream=Open-T7Bootstrap $proof.Path $proof.Bytes $proof.SHA256

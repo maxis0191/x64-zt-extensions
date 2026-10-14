@@ -32,12 +32,13 @@ foreach($family in 't7-material-parts-v1','t7-prepatch-link-v3'){
     $p=$raw|ConvertFrom-Json;$p.BuildProfile.Name=$family
     if((Assert-T7OSResourceContext $p) -cne $proofPath){throw 'Positive fixed context refused'};$checks++
 }
-foreach($case in 'null','extra','wrongprofile','datearray','bytesbool','wrongbefore','wrongafter','freeproofsha','missingbinding','doublebinding','mismatchedduplicate','casealiasbinding','bindingbytesstring','untypedbinding','changedinput','doubleinput','casealiasinput','inputhasharray','kbattribution'){
+foreach($case in 'null','extra','wrongprofile','profilearray','datearray','bytesbool','wrongbefore','wrongafter','freeproofsha','missingbinding','doublebinding','mismatchedduplicate','casealiasbinding','bindingpatharray','bindingshaarray','bindingshamixedarray','bindingbytesstring','untypedbinding','changedinput','doubleinput','casealiasinput','inputpatharray','inputhasharray','kbattribution'){
     $p=$raw|ConvertFrom-Json
     switch($case){
         null {$p.OSResourceContext=$null}
         extra {$p.OSResourceContext|Add-Member NoteProperty Extra 'unexpected'}
         wrongprofile {$p.BuildProfile.Name='t7-catalog-message-publication'}
+        profilearray {$p.BuildProfile.Name=@('t7-material-parts-v1')}
         datearray {$p.OSResourceContext.SourceOSDate=@('2026-10-14')}
         bytesbool {$p.OSResourceContext.After.Bytes=$true}
         wrongbefore {$p.OSResourceContext.Before.SHA256=$new}
@@ -47,16 +48,21 @@ foreach($case in 'null','extra','wrongprofile','datearray','bytesbool','wrongbef
         doublebinding {$p.Bindings+=@($p.Bindings[0])}
         mismatchedduplicate {$copy=$p.Bindings[0]|ConvertTo-Json|ConvertFrom-Json;$copy.SHA256='e'*64;$p.Bindings+=@($copy)}
         casealiasbinding {$copy=$p.Bindings[0]|ConvertTo-Json|ConvertFrom-Json;$copy.Path=$proofPath.ToLowerInvariant();$p.Bindings+=@($copy)}
+        bindingpatharray {$p.Bindings[0].Path=@($proofPath)}
+        bindingshaarray {$p.Bindings[0].SHA256=@($sha)}
+        bindingshamixedarray {$p.Bindings[0].SHA256=@($sha,('f'*64))}
         bindingbytesstring {$p.Bindings[0].Bytes='8907'}
         untypedbinding {$p.Bindings[0].IsText='true'}
         changedinput {$p.Inputs[0].SHA256=$old}
         doubleinput {$p.Inputs+=@($p.Inputs[0])}
         casealiasinput {$p.Inputs[0].Path=$tz.ToLowerInvariant()}
+        inputpatharray {$p.Inputs[0].Path=@($tz)}
         inputhasharray {$p.Inputs[0].SHA256=@($new)}
         kbattribution {$p.OSResourceContext.KBFileAttributionVerified=$true}
     }
+    $openedBefore=$script:opened
     $refused=$false;try{$null=Assert-T7OSResourceContext $p}catch{$refused=$true}
-    if(!$refused){throw "Invalid OS context accepted: $case"};$checks++
+    if(!$refused -or $script:opened -ne $openedBefore){throw "Invalid OS context accepted or proof opened: $case"};$checks++
 }
 $p=$raw|ConvertFrom-Json;$p.PSObject.Properties.Remove('OSResourceContext');$p.Bindings=@();$p.Inputs[0].SHA256=$old
 $null=Assert-T7OSResourceContext $p;$checks++

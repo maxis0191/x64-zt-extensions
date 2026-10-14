@@ -202,11 +202,14 @@ checks qualify this interface only; a fresh plan/DEFAULT and CPP still need
 their own coordinator groups.
 
 Source verification: 366 Python tests passed (nine optional source/environment
-skips); actual AST guards passed 23 OS-context, 132 binding, 24 parts, 48 V3
+skips); actual AST guards passed 28 OS-context, 132 binding, 24 parts, 48 V3
 and 100 V2 checks. Complete parts/V3 binding checks also accepted authored
 copies of the frozen plan metadata with only the qualified context added.
 These checks read text metadata only and do not qualify a new DEFAULT run,
 binary inputs, compilation or engine behavior.
+Independent review found collection-valued proof Binding Path/SHA256, Input
+Path and profile Name could pass PowerShell comparisons. The correction checks
+their string types; five regression mutations now refuse before proof opening.
 
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
