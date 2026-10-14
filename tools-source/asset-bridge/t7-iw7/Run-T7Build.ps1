@@ -30,6 +30,9 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
         $Plan.ReuseCompile.PSObject.Properties.Name -contains 'RecompiledZonetool'
     $zombies=$null -ne $profile -and $profile.Name -ceq 't7-zombies-catalogue-observation-c'
     $add=$null -ne $profile -and $profile.Name -ceq 't7-zombies-catalogue-observation-c2'
+    $reference=$null -ne $profile -and $profile.Name -ceq 't7-prepatch-reference-v2'
+    $referenceMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['PrepatchReferenceV2']
+    if($reference -ne $referenceMarker){throw 'Prepatch V2 profile and marker must be paired.'}
     $publication=$null -ne $profile -and $profile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')
     if($cliMarker -and !$publication){throw 'CLI rebuild marker requires the publication profile.'}
     if($publication -and (!$cliMarker -or $Plan.ReuseCompile.RecompiledZonetool -isnot [bool] -or
@@ -46,6 +49,64 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             Helper=(Join-Path $Plan.PreparedRoot 'native_prepatch_probe.inc')
             Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
             PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+        }
+    } elseif($reference) {
+        foreach($name in 'Name','Option','Report','ObservationSchema') {
+            if($profile.$name -isnot [string]){throw "Prepatch V2 text scalar required: profile.$name"}
+        }
+        foreach($name in 'SourcePlan','Receipt','SourcePlanSHA256','ReceiptSHA256') {
+            if($Plan.ReuseCompile.$name -isnot [string]){throw "Prepatch V2 text scalar required: reuse.$name"}
+        }
+        if((@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'ArgumentCount,BaseBuildPlan,BaseBuildReceipt,BaseHelper,BaseWiring,Helper,Name,ObservationSchema,Option,PreparedMain,Report,Wiring' -or
+           $profile.Option -cne '-t7-prepatch-reference-v2' -or $profile.ArgumentCount -ne 2 -or
+           ($profile.ArgumentCount -isnot [int] -and $profile.ArgumentCount -isnot [long]) -or
+           $profile.Report -cne 't7-prepatch-reference-v2.local.json' -or
+           $profile.ObservationSchema -cne 'iw7.t7-prepatch-reference-observation/2' -or
+           $Plan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+           (@($Plan.Stages.Name)-join ',') -cne 'main,link'){throw 'Exact two-function prepatch V2 profile required.'}
+        foreach($other in 'RecompiledZonetool','ResidentMultiSurfaceV2','SelectedStreamedStaticV1','SelectedStreamedRenderOnlyV2','ZombiesObservationC','ZombiesAddObservationC2','ResidentSurfaceCountDiagnostic') {
+            if($Plan.ReuseCompile.PSObject.Properties[$other]){throw 'Prepatch V2 cannot mix with CLI/catalogue/export markers.'}
+        }
+        $marker=$Plan.ReuseCompile.PrepatchReferenceV2
+        foreach($name in 'Schema','SourceProfile','BaseMainSHA256','MainSHA256','RetainedMainSHA256','HelperSHA256') {
+            if($marker.$name -isnot [string]){throw "Prepatch V2 text scalar required: marker.$name"}
+        }
+        if((@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseMainBytes,BaseMainSHA256,HelperBytes,HelperSHA256,MainBytes,MainSHA256,RetainedMainBytes,RetainedMainSHA256,Schema,SourceProfile' -or
+           $marker.Schema -cne 'iw7.t7-prepatch-reference-build/2' -or $marker.SourceProfile -cne 't7-prepatch-reference-v2' -or
+           $marker.BaseMainBytes -ne 13160 -or $marker.BaseMainSHA256 -cne '55081db20863f291f4f1fea8c1c995995e5e548b56acf043201fbb2e361f3934' -or
+           $marker.RetainedMainBytes -ne 12854 -or $marker.RetainedMainSHA256 -cne '40de5fda829cec32a5d75359f58e69c84db7d8ee54f198cf6befa2a6ebe6f86e' -or
+           $marker.MainBytes -ne 14524 -or $marker.MainSHA256 -cne 'e719365c5a7f407218a7218bd9c7090421934042c34a9f163d9a8e3d42ee1e28' -or
+           $marker.HelperBytes -ne 15785 -or $marker.HelperSHA256 -cne '0309b81376d3708cc8de43d297b43fbdfbdd535120e0ad054c157735c2c7457a') {throw 'Exact prepatch V2 source transition required.'}
+        foreach($name in 'BaseMainBytes','MainBytes','HelperBytes','RetainedMainBytes') {
+            if($marker.$name -isnot [int] -and $marker.$name -isnot [long]){throw 'Prepatch V2 integer lengths required.'}
+        }
+        $paths=@{
+            Helper=(Join-Path $Plan.PreparedRoot 'native_prepatch_reference_v2.inc')
+            Wiring=(Join-Path $SourceRoot 'prepare_prepatch_reference.py')
+            BaseHelper=(Join-Path $SourceRoot 'native_prepatch_probe.inc')
+            BaseWiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
+            BaseBuildPlan=$Plan.ReuseCompile.SourcePlan
+            BaseBuildReceipt=$Plan.ReuseCompile.Receipt
+            PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+        }
+        $expected=@{
+            Helper=@(15785,'0309b81376d3708cc8de43d297b43fbdfbdd535120e0ad054c157735c2c7457a')
+            Wiring=@(3665,'89f3f26699f1240400c4bd96f2987963374658e55a8501cab7dc2543a84ceace')
+            BaseHelper=@(16281,'a9f458d2783c845af6958c896bda07fa4b92a5ea23a14c9e5d1201fe234a2018')
+            BaseWiring=@(3078,'162763ab503a7971bc56753e3aba9fc1c76bf181881f9bddf45718456467e129')
+            PreparedMain=@(14524,'e719365c5a7f407218a7218bd9c7090421934042c34a9f163d9a8e3d42ee1e28')
+            BaseBuildPlan=@(292575,'422e79898fa2b16defc8193182fe146e2db5d73aeb4516c2bd2aaf87c409c4de')
+            BaseBuildReceipt=@(26199,'af6beecf7a8892e16266a7641d2799f665f86fa8ad7c40c61561b782534f7897')
+        }
+        if($Plan.ReuseCompile.SourcePlanSHA256 -cne $expected.BaseBuildPlan[1] -or
+           $Plan.ReuseCompile.ReceiptSHA256 -cne $expected.BaseBuildReceipt[1]){throw 'Frozen C compilation evidence required for V2.'}
+        foreach($name in $paths.Keys) {
+            foreach($field in 'Path','SHA256') {
+                if($profile.$name.$field -isnot [string]){throw "Prepatch V2 text scalar required: pin.$name.$field"}
+            }
+            if($profile.$name.Bytes -isnot [int] -and $profile.$name.Bytes -isnot [long]){throw 'Prepatch V2 integer pin length required.'}
+            if((@($profile.$name.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+               $profile.$name.Bytes -ne $expected[$name][0] -or $profile.$name.SHA256 -cne $expected[$name][1]){throw 'Frozen prepatch V2 text pin differs.'}
         }
     } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')) {
         $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring'
@@ -146,6 +207,9 @@ function Assert-T7InputBindings($Plan) {
     # the explicit selected-streamed marker adds five exact source bindings.
     $bindings=@($Plan.Bindings);$inputs=@($Plan.Inputs)
     $reuse=if($Plan.PSObject.Properties.Name -contains 'ReuseCompile'){$Plan.ReuseCompile}else{$null}
+    $reference=$null -ne $reuse -and $null -ne $reuse.PSObject.Properties['PrepatchReferenceV2']
+    $referenceProfile=$null -ne $Plan.PSObject.Properties['BuildProfile'] -and $null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -ceq 't7-prepatch-reference-v2'
+    if($reference -or $referenceProfile){$null=Assert-T7BuildProfile $Plan ([IO.Path]::GetDirectoryName($Plan.Runner))}
     $zombies=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ZombiesObservationC'
     $add=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ZombiesAddObservationC2'
     if($zombies -and $add){throw 'C and C2 observation markers are exclusive.'}

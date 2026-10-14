@@ -7,6 +7,7 @@ from pathlib import Path, PureWindowsPath
 import re
 import prepare_cli
 import prepare_prepatch
+import prepare_prepatch_reference as reference_probe
 import prepare_catalog_trace
 import prepare_message_publication
 import prepare_catalog_zombies_observation as zombies_observer
@@ -23,6 +24,8 @@ UNITS = tuple(zip(prepare_cli.PATHS[:3], ('main.obj', 'zonetool11.obj', 'xpak.ob
                   ('main.cpp', 'zonetool.cpp', 'common/xpak.cpp')))
 SDK_PINS = {'rc.exe': (55640, '43da1503c262c30894c851589bf0155f8365d77e63a5f7bc13982320e3a6b42d'),
             'rcdll.dll': (264536, '9a11e4759adc48abe1fa9e3082ad7db4b53f4d6d77701c13729f4ffd47ae934c')}
+REFERENCE_SOURCE_PINS = {**reference_probe.PINS,
+    'prepare_prepatch_reference.py': (3665, '89f3f26699f1240400c4bd96f2987963374658e55a8501cab7dc2543a84ceace')}
 
 # Source25 approved module; this finite C transition does not relax E4 reuse.
 ZOMBIES_SOURCE_PINS = {
@@ -387,7 +390,8 @@ def surface_count_dependency_proof(prior, receipt, dependency_json, e7_journals,
 
 def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_main=False, catalog_trace=False,
                       recompile_zonetool=False, surface_count_dependencies=None, e7_dependency_text=None,
-                      resident_multisurface_v2=False, selected_streamed_static_v1=False, selected_streamed_render_only_v2=False):
+                      resident_multisurface_v2=False, selected_streamed_static_v1=False, selected_streamed_render_only_v2=False,
+                      prepatch_reference_v2=False):
     """Bind successful sub-stages of the retained failed group, never relabel it."""
     prior = json.loads(prior_plan_raw); receipt = json.loads(receipt_raw)
     require(prior['Schema'] == 'iw7.t7-minimal-build-plan/1' and
@@ -446,14 +450,20 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
                     'Bytes':new[0],'SHA256':new[1],
                     'WiredBytes':wired_pins[name][0], 'WiredSHA256':wired_pins[name][1]}
                     for name,(old,new) in transitions.items()])
-    if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepare_prepatch.HELPER)
+    require(type(prepatch_reference_v2) is bool and (not prepatch_reference_v2 or
+            (recompile_main is True and catalog_trace is False and recompile_zonetool is False and
+             not resident_multisurface_v2 and not selected_streamed_static_v1 and not selected_streamed_render_only_v2)),
+            'Prepatch V2 requires its exclusive main/link profile')
+    prepatch_module = reference_probe.HELPER if prepatch_reference_v2 else prepare_prepatch.HELPER
+    if recompile_main and not catalog_trace: expected_payloads.add('prepared/'+prepatch_module)
     require({n for n in payloads if n.startswith('prepared/')} == expected_payloads,
             'Exact native payload inventory required for reuse')
     old_text = []
     for name, raw in payloads.items():
         if not name.startswith('prepared/'): continue
-        if recompile_main and not catalog_trace and name == 'prepared/'+prepare_prepatch.HELPER:
+        if recompile_main and not catalog_trace and name == 'prepared/'+prepatch_module:
             require(0 < len(raw) <= 64*1024, 'Bounded pre-patch helper required')
+            if prepatch_reference_v2: reference_probe.require_pin(raw, reference_probe.PINS[prepatch_module], 'helper')
             continue
         path = prepared/name.removeprefix('prepared/')
         pin = prior_bindings.get(key(path))
@@ -465,6 +475,10 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             old_text.append(pin)
             continue
         if (recompile_main and name == 'prepared/main.cpp') or (recompile_zonetool and name == 'prepared/zonetool.cpp'):
+            if prepatch_reference_v2:
+                require(pin and (pin['Bytes'],pin['SHA256']) == reference_probe.RETAINED_MAIN,
+                        'Prepatch V2 must retain its exact base main')
+                reference_probe.require_pin(raw, reference_probe.MAIN, 'wired main')
             require(pin and pin['SHA256'] != hashlib.sha256(raw).hexdigest(),
                     'Recompiled TU must differ from its retained source: '+name)
             old_text.append(pin)
@@ -528,6 +542,8 @@ def prepare(args):
     payloads, replaced = command_payloads(cl, link, source, output/'prepared', run)
     _, patched = prepare_cli.render(source)
     prepatch_helper = getattr(args, 'prepatch_helper', None)
+    prepatch_reference_v2 = getattr(args, 'prepatch_reference_v2', False)
+    require(type(prepatch_reference_v2) is bool, 'Explicit prepatch V2 boolean required')
     catalog_publication = bool(getattr(args, 'catalog_message_publication', False))
     surface_count_diagnostic = getattr(args, 'resident_surface_count_diagnostic', False)
     selected_streamed_static_v1 = getattr(args, 'selected_streamed_static_v1', False)
@@ -545,19 +561,22 @@ def prepare(args):
     catalog_callers = bool(getattr(args, 'catalog_callers', False) or catalog_message)
     catalog_exit = bool(getattr(args, 'catalog_exit', False) or catalog_callers)
     catalog_trace = bool(getattr(args, 'catalog_trace', False) or catalog_exit)
-    require(sum(map(bool, (prepatch_helper, getattr(args, 'catalog_trace', False),
+    require(sum(map(bool, (prepatch_helper, prepatch_reference_v2, getattr(args, 'catalog_trace', False),
                           getattr(args, 'catalog_exit', False), getattr(args, 'catalog_callers', False),
                           getattr(args, 'catalog_message', False), catalog_publication))) <= 1,
             'Pre-patch and catalogue diagnostic profiles are exclusive')
     require(bool(getattr(args, 'ordinary_plan', None)) == catalog_trace and
             bool(getattr(args, 'ordinary_receipt', None)) == catalog_trace,
             'Catalogue trace requires both ordinary D2 text proofs')
-    recompile_main = bool(prepatch_helper or catalog_trace)
+    recompile_main = bool(prepatch_helper or prepatch_reference_v2 or catalog_trace)
     if recompile_main:
         require(args.reuse_plan and args.reuse_compile_receipt, 'Main rebuild must reuse qualified prior compilation')
     if prepatch_helper:
         payloads['prepared/'+prepare_prepatch.HELPER] = read(prepatch_helper,64*1024)
         patched[prepare_cli.PATHS[0]] = prepare_prepatch.wire_main(patched[prepare_cli.PATHS[0]])
+    elif prepatch_reference_v2:
+        payloads['prepared/'+reference_probe.HELPER] = read(HERE/reference_probe.HELPER,64*1024).replace(b'\r\n',b'\n')
+        patched[prepare_cli.PATHS[0]] = reference_probe.wire_main(patched[prepare_cli.PATHS[0]])
     for path, _, relative in UNITS: payloads['prepared/'+relative] = patched[path].encode()
     payloads['prepared/common/xpak.hpp'] = patched[prepare_cli.PATHS[3]].encode()
     contract = json.loads(read(HERE/'cli-source-contract.json'))
@@ -567,11 +586,22 @@ def prepare(args):
         raw = read(adapter/name).decode().replace('\r\n', '\n').encode()
         require(hashlib.sha256(raw).hexdigest() == pin['lf_sha256'] and len(raw) == pin['lf_bytes'], 'Exact conversion header/fixture required')
         payloads['prepared/'+name] = raw
+    if prepatch_reference_v2:
+        payloads.update(reference_probe.retained_payloads(read(args.reuse_plan,2*1024**2),
+            read(args.reuse_compile_receipt,128*1024),read))
     for name, pin in contract['files'].items():
         raw = read(HERE/name).decode().replace('\r\n', '\n').encode()
         require(hashlib.sha256(raw).hexdigest() == pin['lf_sha256'], 'CLI source contract differs')
+    if prepatch_reference_v2:
+        expected_reference = {'schema':reference_probe.BUILD_SCHEMA,'source_profile':reference_probe.NAME,
+            'files':{name:{'lf_bytes':pin[0],'lf_sha256':pin[1]} for name,pin in REFERENCE_SOURCE_PINS.items()}}
+        require(contract.get('prepatch_reference_v2') == expected_reference, 'Exact prepatch V2 source contract required')
+        for name,pin in REFERENCE_SOURCE_PINS.items():
+            reference_probe.require_pin(read(HERE/name,64*1024).replace(b'\r\n',b'\n'),pin,name)
     for name in ('prepare_build.py', 'prepare_prepatch.py', 'Run-T7Build.ps1', 'T7Build.Profile.ps1'):
         read(HERE/name)
+    if prepatch_reference_v2:
+        for name in ('prepare_prepatch_reference.py', *reference_probe.PINS): read(HERE/name,64*1024)
     if catalog_trace: read(HERE/'prepare_catalog_trace.py')
     if catalog_publication:
         read(HERE/'prepare_message_publication.py',64*1024)
@@ -707,7 +737,9 @@ def prepare(args):
             recompile_zonetool=catalog_publication, surface_count_dependencies=surface_count_dependencies,
             e7_dependency_text={'read':e7_dependency_text,'compile':cl_raw,'link':link_raw}
                 if surface_count_diagnostic or resident_multisurface_v2 else None,
-            resident_multisurface_v2=resident_multisurface_v2, selected_streamed_static_v1=selected_streamed_static_v1, selected_streamed_render_only_v2=selected_streamed_render_only_v2)
+            resident_multisurface_v2=resident_multisurface_v2, selected_streamed_static_v1=selected_streamed_static_v1, selected_streamed_render_only_v2=selected_streamed_render_only_v2,
+            prepatch_reference_v2=prepatch_reference_v2)
+        if prepatch_reference_v2: reuse['PrepatchReferenceV2'] = reference_probe.marker()
         if resident_multisurface_v2:
             reuse['ResidentMultiSurfaceV2']['AdditionalHeaderInputs'] = multisurface_headers
         reuse.update({'SourcePlan':str(path_checked(args.reuse_plan)),
@@ -744,7 +776,16 @@ def prepare(args):
         bindings[key(path)] = dict(expected[key(path)], IsText=False)
     require(bindings[key(compiler_dir/'cl.exe')]['SHA256'] == CL_SHA, 'Pinned compiler differs')
     profile = None
-    if prepatch_helper:
+    if prepatch_reference_v2:
+        profile = {'Name':reference_probe.NAME,'Option':reference_probe.OPTION,'ArgumentCount':2,
+                   'Report':reference_probe.REPORT,'ObservationSchema':reference_probe.SCHEMA}
+        for name, path in [('Helper',output/'prepared'/reference_probe.HELPER),
+                           ('Wiring',HERE/'prepare_prepatch_reference.py'),
+                           ('BaseHelper',HERE/'native_prepatch_probe.inc'),('BaseWiring',HERE/'prepare_prepatch.py'),
+                           ('BaseBuildPlan',args.reuse_plan),('BaseBuildReceipt',args.reuse_compile_receipt),
+                           ('PreparedMain',output/'prepared/main.cpp')]:
+            profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+    elif prepatch_helper:
         profile = {'Name':prepare_prepatch.NAME,'Option':prepare_prepatch.OPTION,'ArgumentCount':2,
                    'Report':prepare_prepatch.REPORT}
         for name, path in [('Helper',output/'prepared'/prepare_prepatch.HELPER),
@@ -812,6 +853,7 @@ if __name__ == '__main__':
     parser.add_argument('--reuse-plan',type=Path)
     parser.add_argument('--reuse-compile-receipt',type=Path)
     parser.add_argument('--prepatch-helper',type=Path)
+    parser.add_argument('--prepatch-reference-v2',action='store_true')
     parser.add_argument('--catalog-trace',action='store_true')
     parser.add_argument('--catalog-exit',action='store_true')
     parser.add_argument('--catalog-callers',action='store_true')
