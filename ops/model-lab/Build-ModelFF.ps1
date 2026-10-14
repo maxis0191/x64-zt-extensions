@@ -55,22 +55,21 @@ foreach($name in $sourceNames){$p=Resolve-IW7BasePath $source $name;if((Get-File
 if($CandidateRoot){
     if($ToolProvenance -or $CandidateArtifactSHA256 -cnotmatch '^[a-fA-F0-9]{64}$'){throw 'One explicit community candidate artifact required.'}
     . "$repo/sdk/modding/BeaconFF.Core.ps1"
-    if($arena){
-        # LIGHT reads only this bounded producer metadata. Full e7 EXE/tlog
-        # qualification is below, under the existing Extract reservation.
-        $candidateMetadata=Resolve-IW7BasePath $CandidateRoot 'build-artifact.local.json'
-        if((Get-Item -LiteralPath $candidateMetadata).Length -gt 64KB){throw 'Bounded candidate metadata required.'}
-        Assert-BeaconHash $candidateMetadata $CandidateArtifactSHA256
-        $candidateArtifact=Read-BeaconJson $candidateMetadata 65536
-        $tool=Resolve-IW7BasePath $CandidateRoot 'bin/zonetool-community.exe'
-        if($candidateArtifact.schema -cne 'iw7.zonetool-community-candidate/1' -or $candidateArtifact.executable.path -ine $tool -or
-            $candidateArtifact.executable.sha256 -cne 'e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04'){throw 'Explicit retained e7 original-arena candidate metadata required.'}
-        $provenance=[pscustomobject]@{BinarySHA256=$candidateArtifact.executable.sha256}
-    }else{
-        $candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256
-        $tool=$candidate.Path
-        $provenance=[pscustomobject]@{BinarySHA256=$candidate.SHA256}
+    # LIGHT reads only bounded producer metadata for both arena and resident
+    # candidates. Full EXE/tlog qualification runs under the Extract lease.
+    $candidateMetadata=Resolve-IW7BasePath $CandidateRoot 'build-artifact.local.json'
+    if((Get-Item -LiteralPath $candidateMetadata).Length -gt 64KB){throw 'Bounded candidate metadata required.'}
+    Assert-BeaconHash $candidateMetadata $CandidateArtifactSHA256
+    $candidateArtifact=Read-BeaconJson $candidateMetadata 65536
+    $tool=Resolve-IW7BasePath $CandidateRoot 'bin/zonetool-community.exe'
+    if($candidateArtifact.schema -cne 'iw7.zonetool-community-candidate/1' -or $candidateArtifact.executable.path -ine $tool -or
+       $candidateArtifact.executable.sha256 -isnot [string] -or $candidateArtifact.executable.sha256 -cnotmatch '^[a-fA-F0-9]{64}$'){
+        throw 'Explicit bounded candidate producer metadata required.'
     }
+    if($arena -and $candidateArtifact.executable.sha256 -cne 'e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04'){
+        throw 'Explicit retained e7 original-arena candidate metadata required.'
+    }
+    $provenance=[pscustomobject]@{BinarySHA256=$candidateArtifact.executable.sha256}
     $symbols=Join-Path $CandidateRoot 'bin'
     $buildArguments=@('-headless','-unbuffered-io','-strict-content-sources','-buildzone','paris_model_probe')
     $offlineArguments=@('-headless','-unbuffered-io','-strict-content-sources','-verifyzone','paris_model_probe')
@@ -126,7 +125,8 @@ if(!@($inputs | Where-Object Relative -eq 'main/code_pre_gfx.ff').Count){throw '
 $cdb=$null
 if(!$CandidateRoot -or !$arena){
     $package=Get-AppxPackage Microsoft.WinDbg;$cdb=Join-Path $package.InstallLocation 'amd64/cdb.exe'
-    if($package.Version -ne '1.2606.22001.0' -or (Get-FileHash -LiteralPath $cdb).Hash -cne '5F54ABAFCA3AE5638BBF807D402FABB350A64575C1DFA9FBFC7F5732DF5BEE67'){throw 'Known bounded offline diagnostics required.'}
+    if($package.Version -ne '1.2606.22001.0' -or
+       (!$CandidateRoot -and (Get-FileHash -LiteralPath $cdb).Hash -cne '5F54ABAFCA3AE5638BBF807D402FABB350A64575C1DFA9FBFC7F5732DF5BEE67')){throw 'Known bounded offline diagnostics required.'}
 }
 $reader=$null
 if($ReaderRun){$readerRoot=Assert-IW7LabPath ((Resolve-Path -LiteralPath $ReaderRun).Path) (Join-Path $repo 'runtime');$r=Get-Content -LiteralPath (Join-Path $readerRoot 'writer-provenance.json') -Raw | ConvertFrom-Json
@@ -149,10 +149,13 @@ function Invoke-ModelFFTool([string]$Phase,[string[]]$Arguments) {
     Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase $Phase -ToolArguments $Arguments
 }
 try{
-    if($CandidateRoot -and $arena){
+    if($CandidateRoot){
         $candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256
         if($candidate.Path -ine $tool -or $candidate.SHA256 -ine $provenance.BinarySHA256){throw 'Admitted candidate differs from planned producer metadata.'}
         $state.CandidateQualifiedUnderLease=$true
+    }
+    if($CandidateRoot -and !$arena -and (Get-FileHash -LiteralPath $cdb).Hash -cne '5F54ABAFCA3AE5638BBF807D402FABB350A64575C1DFA9FBFC7F5732DF5BEE67'){
+        throw 'Known bounded offline diagnostics required.'
     }
     if($StockBindingPlan){
         foreach($entry in $inputs){$stockGuards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'))}

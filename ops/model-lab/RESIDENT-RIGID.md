@@ -195,3 +195,14 @@ composition and repository boundaries (715 tracked/697 exports/three
 dependencies) passed. An initial Model Lab run from the uncomposed checkout
 failed nine dependency-based checks because the Native/SDK files were absent;
 the full composed run passed without relaxing those checks.
+
+The community-candidate FF path now defers its full `Assert-BeaconCandidate`
+EXE/tlog qualification until the existing Extract lease, before copying/loading
+or starting the tool. Its candidate `DryRun` reads bounded producer metadata
+and retains the original arena's exact e7 restriction. The existing non-arena
+CDB digest check also runs under that lease, once, after candidate qualification.
+The legacy ToolProvenance/reader path and World original-owner/stock restoration
+remain unchanged. A source-only fixture runs the actual metadata and admission
+blocks: candidate preview reads no opaque bytes; changed authored fake EXE bytes
+are refused after admission; the valid candidate and diagnostic checks each run
+once. This fixture launches no engine and reads no retail or qualified tool PE.
