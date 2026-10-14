@@ -38,13 +38,13 @@ if($plan.schema -cne "iw7.model-ff-plan/$planVersion" -or $plan.source_pin -cne 
     @($plan.source_files.PSObject.Properties).Count -ne 5 -or @($sourceNames | Where-Object {$_ -cnotin $plan.source_files.PSObject.Properties.Name}).Count){throw 'Pinned five-input original FF preparation required.'}
 if($arena){
     if($ReaderRun){throw 'Original arena uses its independent arena reader, not the cube native reader.'}
-    $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+    $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source
     $arenaReader=Join-Path $repo 'tools-source/asset-bridge/world/original-arena/model_lab.py'
     $validation=& $Python -B -S $arenaReader verify-stage --source $source
     if($LASTEXITCODE -ne 0){throw 'Original arena source/byte validation failed.'}
 }elseif($rigid){
     if($ReaderRun){throw 'Cube native reader is not the resident rigid reader.'}
-    $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+    $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source
     $validation=& $Python -B -S "$PSScriptRoot/rigid_export.py" verify-stage --source $source
     if($LASTEXITCODE -ne 0){throw 'Resident derivation failed independent source/byte validation.'}
 }else{

@@ -32,7 +32,7 @@ foreach($name in 'ops/Base-Client.Core.ps1','ops/Lab-Paths.ps1','ops/Resource-Sc
     'tools-source/asset-bridge/world/original-arena/OriginalArena.Process.ps1'){$pins+=SmallPin "$PackageRoot/$name"}
 # Keep the exact shared writer normal-encoding proof set, rather than a new list.
 # Actual names are supplied by the reviewed shared writer via its small source CLI.
-$python=(Get-Command python -CommandType Application).Source
+$python=(Get-Command python -CommandType Application|Select-Object -First 1).Source
 $normalJson=& $python -I -B -c 'import importlib.util,json,sys; s=importlib.util.spec_from_file_location("w",sys.argv[1]);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);print(json.dumps(m.INTERFACES[-3:]))' "$PackageRoot/ops/model-lab/prepare_writer.py"
 if($LASTEXITCODE){throw 'Shared normal source contract could not be read.'}
 $normal=@($normalJson|ConvertFrom-Json)
@@ -131,7 +131,7 @@ finally{
                 foreach($pair in @(@('csv','enemy-catalog/original_arena_material.csv'),@('stdout','stdout.log'),@('closure','reference-closure.json'))){
                     $file=Get-Item -LiteralPath (Join-Path $RunRoot $pair[1]);$snapshots[$pair[0]]=[ordered]@{path=$pair[1];bytes=$file.Length;sha256=(Get-FileHash -LiteralPath $file.FullName).Hash.ToLowerInvariant()}
                 }
-                $normalProof=@(foreach($name in $normal){$pin=@($pins|Where-Object Path -IEQ (Join-Path $ToolSource $name))[0];[ordered]@{path=$name;sha256=$pin.SHA256}})
+                $normalProof=@(foreach($name in $normal){$path=[IO.Path]::GetFullPath((Join-Path $ToolSource $name));$pin=@($pins|Where-Object Path -IEQ $path)[0];[ordered]@{path=$name;sha256=$pin.SHA256}})
                 $evidence=[ordered]@{schema='iw7.original-arena-recipient-reference/1';source_pin='fab935826c898806855376662a8a03317b3ad8f1';recipient='cp_zmb';material=$material;snapshot_only=$true;runtime_verified=$false;material_payload_verified=$false;reference_snapshot=$snapshots;normal_encoding_source=$normalProof}
                 $evidence|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $RunRoot 'reference-evidence.json') -Encoding utf8
                 $checkArguments=@('-I','-S','-B',"$PackageRoot/tools-source/asset-bridge/world/original-arena/model_lab.py",'verify-reference',

@@ -48,7 +48,7 @@ try {
     $sdk='C:/Program Files (x86)/Windows Kits/10';$version='10.0.26100.0'
     $cl=[IO.Path]::GetFullPath("$vc/bin/Hostx64/x64/cl.exe")
     $link=[IO.Path]::GetFullPath("$vc/bin/Hostx64/x64/link.exe")
-    $python=(Get-Command python).Source
+    $python=(Get-Command python -CommandType Application|Select-Object -First 1).Source
     $policy=Get-MaterialV2CompilerPolicy $cl
     $clPin=Pin $cl $policy.CompilerSHA256.ToLowerInvariant()
     $linkPin=Pin $link 'a364af801a8539e4324d9489313dbf001d959128451fc99a27b24676bbac058f'
