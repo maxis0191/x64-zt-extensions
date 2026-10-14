@@ -29,13 +29,14 @@ try {
     . $profile
     $plan=Read-T7RefV2Json $PlanPath
     Assert-T7RefV2Plan $plan $repo $PSCommandPath
+    $protocol=Get-T7ReferenceProtocol $plan.CandidateProfile
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
     $job=@($plan.Bindings|Where-Object {$_.Path -ceq $plan.JobAssembly -and !$_.IsText})
     if($job.Count -ne 1 -or $job[0].SHA256 -cne '5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8'){throw 'Existing witnessed NativeJob pin required.'}
     $shell=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
     if($plan.HostImage -cne $shell -or @($plan.Bindings|Where-Object {$_.Path -ceq $shell -and !$_.IsText}).Count -ne 1){throw 'Exact current PowerShell host pin required.'}
-    Assert-T7RefV2Build $plan (Read-T7RefV2Json $plan.BuildPlan 1MB)
-    Assert-T7RefV2ClosedBuildPins $plan (Read-T7RefV2Json $plan.BuildClosedPins)
+    Assert-T7RefV2Build $plan (Read-T7RefV2Json $plan.BuildPlan 1MB) $null $protocol.Name
+    if($protocol.Name -ceq 't7-prepatch-reference-v2'){Assert-T7RefV2ClosedBuildPins $plan (Read-T7RefV2Json $plan.BuildClosedPins)}
     $candidateReady=$null -ne $plan.CandidateSource
     if($candidateReady) {
         Assert-T7RefV2String $plan.CandidateSource 'CandidateSource';Assert-T7RefV2String $plan.CandidateSHA256 'CandidateSHA256'
@@ -52,17 +53,18 @@ try {
             CandidateBound=$candidateReady;NativeTypesLoaded=$false;BinaryInputsHashed=$false;LeaseAcquired=$false;FilesCreated=$false;Ready=$false}|ConvertTo-Json
         return
     }
+    if($protocol.Name -ceq 't7-prepatch-link-v3'){throw 'V3 actual CPP receipt/closure cohort must be qualified before Run.'}
     if(!$candidateReady){throw 'Instrumented candidate required before Run.'}
     Assert-T7RefV2HostArguments $plan $PlanPath $PlanSHA256 ([Environment]::GetCommandLineArgs()) $shell ([Reflection.Assembly]::GetEntryAssembly().Location)
     if([AppDomain]::CurrentDomain.GetData('IW7.T7PrepatchReferenceV2')){throw 'Original V2 host already consumed; no re-entry.'}
     if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Fresh PowerShell host required.'}
     . $scheduler
     $before=Assert-T7RefV2Main $plan
-    $state=[ordered]@{Schema='iw7.t7-prepatch-reference-run/2';Status='Running';PlanSHA256=$PlanSHA256;
+    $state=[ordered]@{Schema=$protocol.RunSchema;Status='Running';PlanSHA256=$PlanSHA256;
         Stage='Prepatch';DeadlineSeconds=120;MaxObservedOutputBytes=0L;Identity=$null;ExitCode=$null;
         TreeClosureConfirmed=$true;LeaseReleased=$false;Quarantined=$false;TerminationRequested=$false;
         CaptureOutcome='NoCapture';CompatibilityProven=$false;Ready=$false;MainBefore=$before;InputsReverified=$false;InputMetadata=@()}
-    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'T7 reference V2 diagnostic only'
+    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 6GB -CommitBytes 8GB -Owner ('T7 '+$protocol.Name+' diagnostic only')
     $state.LeaseToken=$context.Lease.Token
     # Last create-only check precedes publication of our own host-start marker.
     Assert-T7RefV2Plan $plan $repo $PSCommandPath
@@ -74,7 +76,7 @@ try {
     $taskStartStream=[IO.FileStream]::new($taskStartPath,'CreateNew','Write','Read');try{$taskStartStream.Write($taskStartBytes,0,$taskStartBytes.Length)}finally{$taskStartStream.Dispose()}
     Enable-T7RefV2RuntimeProfile $plan $context
     $marker=[IO.FileStream]::new((Join-Path $plan.RunRoot 'attempt.json'),'CreateNew','Write','Read')
-    try{$bytes=[Text.Encoding]::UTF8.GetBytes((([ordered]@{Schema='iw7.t7-prepatch-reference-attempt/2';PlanSHA256=$PlanSHA256;StartedUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress)+"`n"));$marker.Write($bytes,0,$bytes.Length);$attempted=$true}finally{$marker.Dispose()}
+    try{$bytes=[Text.Encoding]::UTF8.GetBytes((([ordered]@{Schema=$protocol.AttemptSchema;PlanSHA256=$PlanSHA256;StartedUtc=[DateTime]::UtcNow.ToString('o')}|ConvertTo-Json -Compress)+"`n"));$marker.Write($bytes,0,$bytes.Length);$attempted=$true}finally{$marker.Dispose()}
     foreach($pin in $plan.Bindings|Where-Object {!$_.IsText}){$guards.Add((Open-H1Pin $pin));Assert-H1Deadline $script:T7RefV2Started 200}
     $state.InputMetadata=@($plan.Bindings|Where-Object {!$_.IsText}|ForEach-Object {
         $item=Get-Item -LiteralPath $_.Path;[pscustomobject]@{Path=$_.Path;Bytes=$item.Length;Attributes=[string]$item.Attributes;LastWriteUtc=$item.LastWriteTimeUtc.ToString('o')}
@@ -85,7 +87,7 @@ try {
     $null=[Reflection.Assembly]::LoadFrom($plan.JobAssembly)
     Assert-H1Deadline $script:T7RefV2Started 200
     Test-H1Budget $plan $state
-    Invoke-H1OwnedStage $plan $state $context (New-T7RefV2Start $plan) $plan.CandidateSHA256 $plan.StageRoot
+    Invoke-H1OwnedStage $plan $state $context (New-T7RefV2Start $plan $protocol.Name) $plan.CandidateSHA256 $plan.StageRoot
 }catch{
     $failure=$_
     if($state){$state.Error=$_.Exception.Message;$state.Status='Failed'}
@@ -94,7 +96,7 @@ try {
     # still exist. Never rehash binary inputs after Complete-H1Stage releases it.
     if($state -and $attempted -and $context.Closed -and $context.Lease) {
         try {
-            $state.CaptureOutcome=Read-T7RefV2Report $plan $state $context
+            $state.CaptureOutcome=Read-T7RefV2Report $plan $state $context $protocol.Name
             foreach($pin in $plan.Bindings){$guard=Open-H1Pin $pin;try{}finally{$guard.Dispose()};Assert-H1Deadline $script:T7RefV2Started 200}
             foreach($before in $state.InputMetadata) {
                 $now=Get-Item -LiteralPath $before.Path
@@ -111,7 +113,7 @@ try {
     if($state -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
         # Only the bounded diagnostic JSON is read after forced closure. No
         # binary rehash or success qualification occurs outside the reservation.
-        try{$state.CaptureOutcome=Read-T7RefV2Report $plan $state $context}
+        try{$state.CaptureOutcome=Read-T7RefV2Report $plan $state $context $protocol.Name}
         catch{$state.ReportError=$_.Exception.Message}
     }
     if($state -and !$context.Closed){$state.CaptureOutcome='NotInspectedWhileJobUnclosed'}
