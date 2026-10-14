@@ -1540,3 +1540,34 @@ unqualified. Next: review a source-only alternative to sequential dependency
 probes—an exact qualified index, or a finite manifest-bound group of existing
 assetfile packs with one reviewed modal read in the next original scenario.
 No new group is inferred to be minimally necessary or silently staged by M6.
+
+## 2026-10-14: M7 stopped at the runtime-options initializer
+
+The one approved grouped attempt used merged `ffcbb7ad`,39 source pins,104
+inputs/106 managed entries and the existing single Extract admission. All stock
+identity/content checks passed, the33 fixed PAK aliases and normal inputs were
+staged, then the shared options initializer failed under strict mode:
+`The property 'CaptureSource' cannot be found on this object.`
+The combined diagnostic specification omitted CaptureSource and CdbSHA256 while
+the runtime initializer accessed both. This was a source contract mismatch;
+the frozen generated tuple remained unchanged. No zonetool process, modal helper,
+reference reader, reference CSV or material proof was produced.
+
+The ordinary known-closure path restored all106 managed entries and proved
+source/stock preservation. The three stock-content validation passes completed;
+no managed target remains. Savedfalse/token state is pre-release history. The
+original NoExit host matched its recorded PID/image/creation at13:43:58 UTC,
+with reference quarantine null and full registry zero. Its own PTY actually
+exited with code1. Fresh13:44:51 UTC found original host/parent absent, no scope
+process and zero leases. Old packages, proof/caches, Main27016, bank/config and
+owner clients were preserved. There was no automatic retry or new dependency.
+
+The minimal source correction explicitly supplies null CaptureSource/CdbSHA256
+for the getter-only combined mode, preserving real legacy diagnostic source/hash
+contracts. Source fixtures exercise the actual options initializer under strict
+mode and its planner serialization, with old-shape failure/new-contract success.
+An additional pure probe against the frozen actual M7 composed recipe reproduced
+the failure and passed the corrected source without native/stock effects. This
+does not establish runtime/material/GPU/physics acceptance. Next: complete the
+corrected source review/private Git workflow, generate a new tuple and obtain
+a distinct coordinated GO. Consumed tupleB must not be replayed or edited.

@@ -101,7 +101,8 @@ if($ReferenceModalOnce){
     $diagnostic=[ordered]@{Mode='reference-with-one-modal';ReferenceModalOnce=$true;TriggerMs=45000;LatestTriggerMs=220000;
         NoProgressMs=15000;PhaseSeconds=240;GlobalClosureReserveMs=10000;RequiredDiagnosticAndClosureBudgetMs=20000;
         ModalTextOnly=$true;ModalSource="$PackageRoot/tools-source/asset-bridge/world/original-arena/modal_window.py";
-        WindowRecordBytes=64KB;WindowHelperSeconds=10;CPUSeconds=0;SnapshotSeconds=0;OfflineStackSeconds=0;Cdb=$null;
+        WindowRecordBytes=64KB;WindowHelperSeconds=10;CPUSeconds=0;SnapshotSeconds=0;OfflineStackSeconds=0;
+        CaptureSource=$null;Cdb=$null;CdbSHA256=$null;
         MaterialProof=$false;ReferenceProofRequiresCSV=$true;NoModalContinues=$true;CapturedModalFails=$true;NoCPOrMPSkip=$true}
 }
 # Keep the exact shared writer normal-encoding proof set, rather than a new list.
