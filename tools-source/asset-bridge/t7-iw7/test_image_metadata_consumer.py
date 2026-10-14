@@ -2,9 +2,12 @@
 import json
 from pathlib import Path
 import subprocess
+import stat
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 import image_metadata_consumer as c
 
@@ -235,6 +238,63 @@ class ConsumerTests(unittest.TestCase):
             with self.subTest(raw=raw[:40]), self.assertRaises((ValueError, UnicodeError)):
                 c.strict_json(raw)
         self.assertEqual(c.strict_json(json.dumps(report()).encode())["model"], c.MODEL)
+
+    def test_cli_opaque_suffix_and_oversize_refuse_before_any_open(self):
+        with tempfile.TemporaryDirectory() as temp:
+            opaque = Path(temp)/"authored.exe"
+            opaque.write_text(json.dumps(report()), encoding="utf-8")
+            oversized = Path(temp)/"oversized.json"
+            oversized.write_bytes(b" "*(c.LIMIT+1))
+            for target, reason in ((opaque, "existing .json"), (oversized, "bounded JSON")):
+                with self.subTest(target=target.name), patch.object(sys, "argv", ["consumer", str(target)]), \
+                        patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                    with self.assertRaisesRegex(ValueError, reason):
+                        c.main()
+                    spy.assert_not_called()
+
+    def test_regular_file_and_reparse_metadata_refuse_before_open(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)/"directory.json"
+            directory.mkdir()
+            with patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                with self.assertRaisesRegex(ValueError, "regular JSON"):
+                    c.read_report(directory)
+                spy.assert_not_called()
+            target = Path(temp)/"authored.json"
+            target.write_text(json.dumps(report()), encoding="utf-8")
+            for mode in (stat.S_IFIFO, stat.S_IFCHR, stat.S_IFBLK, stat.S_IFSOCK, stat.S_IFLNK):
+                with self.subTest(mode=mode), patch.object(Path, "lstat", return_value=SimpleNamespace(st_mode=mode)), \
+                        patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                    with self.assertRaisesRegex(ValueError, "regular JSON"):
+                        c.read_report(target)
+                    spy.assert_not_called()
+            original = Path.lstat
+            for bad_path in (target, target.parent):
+                def metadata(path):
+                    if path == bad_path:
+                        return SimpleNamespace(st_mode=stat.S_IFREG if path == target else stat.S_IFDIR,
+                                               st_size=64, st_file_attributes=0x400)
+                    return original(path)
+                with self.subTest(path=bad_path.name), patch.object(Path, "lstat", metadata), \
+                        patch.object(Path, "open", side_effect=AssertionError("content opened")) as spy:
+                    with self.assertRaisesRegex(ValueError, "reparse JSON"):
+                        c.read_report(target)
+                    spy.assert_not_called()
+
+    def test_growth_and_replacement_are_refused_before_returning_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp)/"authored.json"
+            target.write_text(json.dumps(report()), encoding="utf-8")
+            identity = target.stat()
+            with patch.object(c.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG,
+                              st_size=c.LIMIT+1, st_dev=identity.st_dev, st_ino=identity.st_ino)):
+                with self.assertRaisesRegex(ValueError, "identity/size"):
+                    c.read_report(target)
+            with patch.object(c.os, "fstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG,
+                              st_size=identity.st_size, st_dev=identity.st_dev, st_ino=identity.st_ino+1)):
+                with self.assertRaisesRegex(ValueError, "identity/size"):
+                    c.read_report(target)
+            self.assertEqual(c.strict_json(c.read_report(target))["model"], c.MODEL)
 
     def test_cli_reads_only_existing_json_and_does_not_fabricate_missing_report(self):
         script = str(Path(c.__file__).resolve())
