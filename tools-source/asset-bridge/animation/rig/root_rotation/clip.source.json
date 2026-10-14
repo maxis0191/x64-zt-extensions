@@ -1,0 +1,13 @@
+{
+  "schema": "iw7.original-root-rotation-authoring/1",
+  "name": "paris_original_probe_root_rotate",
+  "channels": ["tag_origin"],
+  "numframes": 30,
+  "framerate": 30,
+  "loop": true,
+  "tag_origin_x_degrees": [[0, 0], [10, 45], [20, -45], [30, 0]],
+  "notetrack": {"name": "probe_contact", "normalized_time": 0.5},
+  "frequency": 1,
+  "root_motion": false,
+  "translation_tracks": false
+}
