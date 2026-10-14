@@ -1854,3 +1854,50 @@ and compatibility remain unproven. Q ends the delegated runtime work: no ninth
 input, new metadata, R or export follows this authorization. The coordinator's
 separate metadata-only inventory for an explicitly chosen future V3 set is outside
 this closed delegation and does not establish a dependency list.
+
+## C2 operative qualification, separate from C1
+
+The C2 consumer selects only `t7-zombies-catalogue-observation-c2` together with
+`ZombiesAddObservationC2.Schema=iw7.t7-zm-add-observation-plan/1`, operation
+Catalogue, zone `zm_common` and the existing 16 KiB combined stderr bound.
+Mixed C1/export selectors refuse. Native argv remains
+`-t7-iw7-catalog zm_common`; the existing 24 bootstrap and 28 original-input
+collection is reused without adding a zone or overriding default Lua resolution.
+
+Its actual compilation is code source `171431e2`, plan SHA256 `ac70f095`,
+receipt 25,016 bytes/SHA256 `533a2a5a`, and the original admitted executable
+21,929,984 bytes/SHA256
+`02b26ad8d6dabe5e4e7e725022f6bb14d4f3be14ece554586fd8fe58af8bd820`.
+The PDB tuple remains 138,653,696 bytes/SHA256 `a89298f5`, copied from that
+original receipt. Neither opaque artifact is read or hashed during source-only
+qualification. C1's fa45/88f and its 107785/c480→118485/917 source transition
+remain exact; C2 separately seals 112377/c63→119139/19af under its six-field
+build marker. It explicitly adopts the actual C2 source's G/a884 and render-only
+source epoch, without activating an export or targeted image observer.
+
+The consumer reuses the common three closed compiler/link stages, 413 direct
+link objects, 151 bindings (145 text/six opaque), 1,146 inputs and 66-header
+proof. Its separate guarded source/closure pins also seal all six original
+closure records and their 2,609-byte index SHA256 `a659b617`. The original
+tool return, original host generation, three stage generations and owned VCTIP
+parents/creation times must agree with the unchanged admitted receipt. The
+inventory's capture time and the later tool-recording time are distinct;
+recording time is never invented as actual process-exit time.
+
+Actual read-only qualification passes 25 guarded texts/1,479,526 bytes, and
+fourteen mixed tuple/closure mutations refuse. The new finite PowerShell reader
+matches the original Python `split_observation` acceptance, exact records and
+unchanged F bytes on 49 vectors. Its 73 source fixtures cover both target-name
+prefixes, paired call/TID correlation, incomplete entries, unknown selection,
+fastfile read states, CRLF, 512-byte rows and the ten-record boundary. Legacy F
+still uses its unchanged 8 KiB parser and retains the opaque fatal message and
+original phase/caller evidence. An unknown target selection or absent event is
+never converted into a claim that lookup did not occur or Lua executed.
+
+The prospective runtime plan has 103 bindings (C1's 102 plus the C2 closure
+index), 28 inputs, 24 bootstraps and two native arguments. Prepare a committed,
+verified short source workspace and a create-only `runtime/t7-catalog-...` root,
+then run DEFAULT and fresh preflight. Source qualification and DEFAULT do not
+execute the candidate. A real C2 stock invocation remains gated on a separately
+assigned coordinator slot and explicit GO; there is no catalogue or gameplay
+acceptance yet.

@@ -493,6 +493,7 @@
     "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueMessage.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueOpaqueManifest.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7CataloguePublication.ps1",
+    "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueAddC2.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueTrace.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7Prepatch.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7ResidentExport.ps1",
