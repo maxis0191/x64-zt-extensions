@@ -1,0 +1,52 @@
+{
+  "schema": "iw7.raygun-source-plan/1",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "private_weapon_proposals": ["sdk_raygun_zm", "sdk_raygun_pap_zm"],
+  "evidence": {},
+  "models": {
+    "view": null,
+    "world": null,
+    "hands": null
+  },
+  "clips": {
+    "idle": null,
+    "empty_idle": null,
+    "fire": null,
+    "reload": null,
+    "reload_empty": null,
+    "raise": null,
+    "drop": null,
+    "ads_fire": null,
+    "ads_up": null,
+    "ads_down": null
+  },
+  "tags": {
+    "view_muzzle": null,
+    "world_muzzle": null
+  },
+  "recipient": {
+    "model_fields": {
+      "view": "weapDef.gunXModel",
+      "world": "weapDef.worldModel",
+      "hands": "weapDef.handXModel"
+    },
+    "package_fields": [
+      "weapDef.szXAnims",
+      "weapDef.szXAnimsRightHanded",
+      "weapDef.szXAnimsLeftHanded"
+    ],
+    "slots": {
+      "idle": ["WEAP_ANIM_IDLE", 107],
+      "empty_idle": ["WEAP_ANIM_EMPTY_IDLE", 108],
+      "fire": ["WEAP_ANIM_FIRE", 109],
+      "reload": ["WEAP_ANIM_RELOAD", 171],
+      "reload_empty": ["WEAP_ANIM_RELOAD_EMPTY", 172],
+      "raise": ["WEAP_ANIM_RAISE", 179],
+      "drop": ["WEAP_ANIM_DROP", 182],
+      "ads_fire": ["WEAP_ANIM_ADS_FIRE", 207],
+      "ads_up": ["WEAP_ANIM_ADS_UP", 249],
+      "ads_down": ["WEAP_ANIM_ADS_DOWN", 250]
+    },
+    "muzzle_tag_expectation": "tag_flash"
+  }
+}
