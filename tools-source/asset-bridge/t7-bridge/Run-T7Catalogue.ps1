@@ -21,7 +21,7 @@ try {
     $required=@($PSCommandPath,$profile,$prepatchProfile,$core,$scheduler,$fileIdentity,
         (Join-Path $repo 'ops/Resource-Memory.ps1'),(Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'))
     $export=[bool]($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'ResidentExportV1')
-    $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-zombies-catalogue-observation-c')
+    $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2'))
     $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
     if($export -or $zombies){$required+=@($exportProfile)}
     foreach($path in $required) {

@@ -1901,3 +1901,13 @@ then run DEFAULT and fresh preflight. Source qualification and DEFAULT do not
 execute the candidate. A real C2 stock invocation remains gated on a separately
 assigned coordinator slot and explicit GO; there is no catalogue or gameplay
 acceptance yet.
+
+The first fresh C2 NoExit launch refused during its initial DEFAULT, before
+runtime retention, native types, admission or candidate execution: the runner
+had imported the shared resident qualifier only for C1/export. Calling DEFAULT
+from the preparation script had masked that omission with an outer import.
+The refused source9b plan and host proof remain frozen. The runner's shared
+qualifier import now includes C2, retaining the same required text pin and
+limits. Validate the corrected operational plan through the actual entrypoint
+in a fresh `-NoProfile` process with no preparation-helper imports before any
+new Stock GO. No compiler or supplied game asset needs to change for this fix.
