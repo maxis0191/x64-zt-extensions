@@ -387,33 +387,33 @@ typed backward-reference constraints. All five source collision pointers were
 present; the CPU/serialized view has none. The manifest records five omissions,
 zero collision payload bytes read and no collision compatibility claim.
 
-The first reader process exited0 and produced a valid 7,730-byte readback, but
+The first reader process exited with code 0 and produced a valid 7,730-byte readback, but
 the local controller refused before staging: a progress `Write-Output` polluted
-its returned JSON object. That controller exit1 and failed receipt are retained.
+its returned JSON object. The controller exit with code 1 and failed receipt are retained.
 Only the progress stream was corrected to `Write-Host`, with a fresh run root;
 the exact corrected function passed a source-only return-shape fixture. The
-approved retry then ran readback, preparation and staged verification to exit0.
+approved retry then ran readback, preparation and staged verification, each exiting with code 0.
 Original handles confirmed child closure, four input guards closed, the lease
-was released, the original controller actually exited0, and a fresh inventory
+was released, the original controller actually exited with code 0, and a fresh inventory
 found no owned/heavy process or lease. A fast reader's creation timestamp was
 not captured by CIM; no replacement identity is inferred.
 
 The five actual source material slots were explicitly rebound, in order, to
 `mopw/character_park_clown_zombie_shoes`; these are distinct from the selected
 material observer's seven texture bindings. LOD distance changed explicitly
-from1150 to1,000,000. Only defining material strings and that four-byte LOD field
+from 1150 to 1,000,000. Only defining material strings and that four-byte LOD field
 changed; the XSB remains byte-identical and raw native evidence is preserved.
-The derived plan has grammar2 and exactly five source files.
+The derived plan has grammar version 2 and exactly five source files.
 
-The admitted receipt is32,303 bytes, SHA256
+The admitted receipt is 32,303 bytes, SHA256
 `b45d6b2bec7b127efd730a5cf19991761649cc1ab8ca43103d053783b0377172`.
-Derived XMB:1,217 bytes, SHA256
+Derived XMB: 1,217 bytes, SHA256
 `25634aa98e51ffd8421389f0c2c9296d615db9b9416fc4e458355c181589b39c`.
-Unchanged XSB:22,456 bytes, SHA256
+Unchanged XSB: 22,456 bytes, SHA256
 `290aa9f4f7132ebecd766de707779b45f27fc17941cdeb542876b14b3fd1a32c`.
-Plan:2,274 bytes, SHA256
+Plan: 2,274 bytes, SHA256
 `750d25d7d34c8c5849aa2048f1052fc1c5fd3c51cafd61e43268f4c003951686`.
-Derived receipt:12,584 bytes, SHA256
+Derived receipt: 12,584 bytes, SHA256
 `231e9fd55d19d1dd85a391d4e2b73cae2c21e39324ed6d69630f8df0240c0471`.
 Artifact hashes were recorded during admission, not rehashed after release.
 This proves independent parsing and declared source derivation. FF build and
