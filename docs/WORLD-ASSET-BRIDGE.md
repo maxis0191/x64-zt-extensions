@@ -1,5 +1,23 @@
 # World asset bridge: source preparation
 
+## Future resource regression contract - 2026-10-14
+
+The full product source run at `965188d` failed `test_observer_stages` because
+it still required `Commit high water` at 86% after the owner removed percentage
+stops. The World runtime profile already forwards the shared H1 `TelemetryOnly`
+observer; no runtime policy change is needed here. The corrected source test
+requires stage success and fresh observations at 85%, 86%, 99% and 100%, without
+pressure allocations. The real scheduler/registration functions are exercised
+in a fixture-local registry for competing leases, wrong/unreadable identities,
+retention of a live child and recovery only after proven absence. Original-stage
+identity failure, unconfirmed closure, deadlines, output limits and native exit
+failure remain refusal cases. No native provider, compiler, process child or
+account-wide lease is started by these tests.
+
+The failed producer logs, frozen observer plans/capsules and earlier evidence
+retain their original bytes. Future source packages adopt the corrected test;
+the change does not requalify a historical plan or establish gameplay evidence.
+
 Evidence date: 2026-10-12. This work maps the retained H1-to-IW7 converter and
 implements a bounded client-trigger record adapter using original data. It does
 not produce a playable custom map, an IW7 fastfile, or a BO3-style map editor.
