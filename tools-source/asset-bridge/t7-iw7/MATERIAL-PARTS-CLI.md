@@ -211,6 +211,61 @@ Independent review found collection-valued proof Binding Path/SHA256, Input
 Path and profile Name could pass PowerShell comparisons. The correction checks
 their string types; five regression mutations now refuse before proof opening.
 
+## E preparation and DEFAULT with the qualified OS context
+
+One separately authorized Analysis group prepared E and ran actual DEFAULT on
+2026-10-14. Its immutable source package is revision
+`a8ecff7cb61323cd0e6f75d10e596d55e63a7753`: 940 text files / 9,151,934 bytes,
+manifest 331,468 bytes / SHA-256
+`ed972cfad8de6985b9c307f65b56a0fe03de6cba442e590eebdddb0b7869db28`.
+The qualified runner is 72,050 bytes /
+`5b984d5bb28f9865e62c3ad50142e1e6cd0579bc06fbe388abb838707799895e`.
+The 5,070-byte preparation wrapper (`f49dd6d2`) differs from reviewed D only
+in four literal paths and the two finite OS options with the fixed proof path.
+It preserves the existing one-Analysis lease, owned child identities,
+timeouts, closure/finally and quarantine behavior.
+
+Python preparation and the DEFAULT child both exited 0. Actual E plan:
+`runtime/material-parts-plan-e/build-plan.local.json`, 372,668 bytes /
+SHA-256 `cfeb5610dd5322d9137eaa9804590cf023a865236a1132e95e354919ef23084e`.
+It contains 1,146 Inputs and 155 Bindings (149 text / six opaque), with one
+top-level finite OS context and one added exact qualification-proof binding.
+DEFAULT reports NativeTypesLoaded/BinaryInputsHashed/LeaseAcquired/
+RunRootCreated/Ready false. The wrapper's Analysis reservation is distinct
+from those DEFAULT flags; this group did not compile or execute a candidate.
+The admission receipt is 8,381 bytes /
+`c7135f3b25536bdd2a199f15a809620d789fb877e1fe8fb877ecbe453282a7ad`;
+DEFAULT stdout is 5,184 bytes /
+`88c4cbdfe58a6c9c4928593fa666faba44d7cb857f20de30b7bb6d954a7f43e5`,
+and stderr is empty.
+
+The receipt confirms child closure and lease release. Original NoExit host
+25172 (parent 576) was captured before execution, then genuinely exited 0
+through PTY session 79201 / chunk `1f66b0`. Fresh 09:40:13 UTC observation
+found the host, parent and both children absent, no heavy/game processes,
+and no leases. `runtime/material-parts-native-WAIT-ROOT-e` remained absent.
+No CPP, binary input qualification, stock probe, pixels or runtime acceptance
+is inferred from this preparation.
+
+The light D/E correspondence reads only JSON and generated text: 1,145 Input
+pins are identical and only the exact 12,288-byte TZRES hash changes from
+`f3f5ef83` to `1398cf1d`. Generated main.cpp (43,366 / `031464d8`) and
+zonetool.cpp (124,224 / `0dd4b3be`) are byte-identical to D. ReuseCompile and
+stages are unchanged after scope normalization; all four response files differ
+only by source/plan scope. The seven shared text-binding deltas are the reviewed
+runner/preparer, the CLI source contract's additional weapon metadata, and
+those four response paths. The added eighth binding is only the fixed OS proof.
+The correspondence is 5,877 bytes /
+`15777005e9aa0fcc3134cb3232b7d82d9eb614c3601e53433cc1280df2c98d0d`.
+
+A source-only 892-byte CPP wrapper (`2b7860f1`) now binds the actual E plan,
+using four literal substitutions from D's existing minimal wrapper. It retains
+the runner's own single admission and does not add an outer lease. It has not
+been invoked. Future main/zonetool11 Compile and Link stages keep 120-second
+limits and the same 410 objects / 18 libraries / one resource. A separate CPP
+GO and fresh original-host evidence remain required. Old D, the original seal,
+V3 add721 and the accepted FF/readback/display cohorts remain immutable.
+
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
 bytes, mismatched G2 metadata and any unqualified selected header/name/recheck.
