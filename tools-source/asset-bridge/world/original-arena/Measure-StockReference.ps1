@@ -2,10 +2,11 @@ param([Parameter(Mandatory)][string]$PackageRoot,[Parameter(Mandatory)][string]$
     [Parameter(Mandatory)][string]$StockBindingPlan,[Parameter(Mandatory)][string]$StockBindingPlanSHA256,
     [Parameter(Mandatory)][string]$ToolSource,[Parameter(Mandatory)][string]$CandidateRoot,
     [Parameter(Mandatory)][string]$CandidateArtifactSHA256,[Parameter(Mandatory)][string]$NativeJobAssembly,
-    [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$Run)
+    [string]$PlanSHA256,[switch]$LoadDiagnostic,[switch]$ModalTextOnly,[switch]$Run)
 # Default hashes only small source/receipt files. No native type, stock reads,
 # hardlinks, admission, candidate binary hash or process is created before -Run.
 $ErrorActionPreference='Stop'
+if($ModalTextOnly -and !$LoadDiagnostic){throw 'Modal text requires the explicit load diagnostic opt-in.'}
 $PackageRoot=[IO.Path]::GetFullPath($PackageRoot);$RunRoot=[IO.Path]::GetFullPath($RunRoot)
 $work=Join-Path $RunRoot 'work';$material='mopw/character_park_clown_zombie_shoes'
 $native='2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1';$creator='f4e5e45df043f65811098063307d8065b3a33d30'
@@ -37,15 +38,20 @@ foreach($name in 'ops/Base-Client.Core.ps1','ops/Lab-Paths.ps1','ops/Resource-Sc
 $diagnostic=$null
 if($LoadDiagnostic){
     foreach($name in 'tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1','ops/iw7_capture.py','ops/iw7_debugger.py'){$pins+=SmallPin "$PackageRoot/$name"}
-    $debugger=Get-AppxPackage Microsoft.WinDbg
-    if($debugger.Version -ne '1.2606.22001.0'){throw 'Existing reviewed offline debugger metadata required.'}
-    $diagnostic=[ordered]@{Mode='global-mp-load-witness';TriggerMs=45000;LatestTriggerMs=60000;NoProgressMs=15000;PhaseSeconds=120;
+    if($ModalTextOnly){foreach($name in 'tools-source/asset-bridge/world/original-arena/modal_window.py','tools-source/asset-bridge/recipient/recipient_dialog.py'){$pins+=SmallPin "$PackageRoot/$name"}}
+    $debugger=$null
+    if(!$ModalTextOnly){
+        $debugger=Get-AppxPackage Microsoft.WinDbg
+        if($debugger.Version -ne '1.2606.22001.0'){throw 'Existing reviewed offline debugger metadata required.'}
+    }
+    $diagnostic=[ordered]@{Mode=$(if($ModalTextOnly){'global-mp-modal-text'}else{'global-mp-load-witness'});TriggerMs=45000;LatestTriggerMs=60000;NoProgressMs=15000;PhaseSeconds=120;
         GlobalClosureReserveMs=10000;RequiredDiagnosticAndClosureBudgetMs=60000;
-        CaptureSource="$PackageRoot/ops/iw7_capture.py";Cdb=(Join-Path $debugger.InstallLocation 'amd64/cdb.exe');
-        CdbSHA256='5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67';
-        CPUSeconds=5;SnapshotSeconds=15;OfflineStackSeconds=20;DumpAcceptanceBytes=32MB;
-        OutputThresholdBytes=256MB;OutputEnforcement='Sampled';DumpFlags='0x1820';FullMemory=$false;
+        CaptureSource="$PackageRoot/ops/iw7_capture.py";Cdb=$(if(!$ModalTextOnly){Join-Path $debugger.InstallLocation 'amd64/cdb.exe'});
+        CdbSHA256=$(if(!$ModalTextOnly){'5f54abafca3ae5638bbf807d402fabb350a64575c1dfa9fbfc7f5732df5bee67'});
+        CPUSeconds=$(if($ModalTextOnly){0}else{5});SnapshotSeconds=$(if($ModalTextOnly){0}else{15});OfflineStackSeconds=$(if($ModalTextOnly){0}else{20});DumpAcceptanceBytes=$(if($ModalTextOnly){0}else{32MB});
+        OutputThresholdBytes=256MB;OutputEnforcement='Sampled';DumpFlags=$(if(!$ModalTextOnly){'0x1820'});FullMemory=$false;
         MaterialProof=$false;NoCPOrMPSkip=$true}
+    if($ModalTextOnly){$diagnostic.ModalTextOnly=$true;$diagnostic.ModalSource="$PackageRoot/tools-source/asset-bridge/world/original-arena/modal_window.py";$diagnostic.WindowRecordBytes=64KB;$diagnostic.WindowHelperSeconds=10}
 }
 # Keep the exact shared writer normal-encoding proof set, rather than a new list.
 # Actual names are supplied by the reviewed shared writer via its small source CLI.
@@ -123,6 +129,7 @@ try{
         $options=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$RunRoot;CaptureSource=$diagnostic.CaptureSource;
             Python=$python;PythonSHA256=(Get-FileHash -LiteralPath $python).Hash;Cdb=$diagnostic.Cdb;CdbSHA256=$diagnostic.CdbSHA256;
             Symbols=(Join-Path $CandidateRoot 'bin');ToolSHA256=$toolSHA;Inputs=$inputs}
+        if($ModalTextOnly){$options|Add-Member NoteProperty ModalTextOnly $true;$options|Add-Member NoteProperty ModalSource $diagnostic.ModalSource}
         $poll={param($target,$current,$logs);Invoke-ArenaLoadDiagnostic $target $current $logs $options $loadEvidence}
     }
     $state.Process=Invoke-OriginalArenaTool $context $plan.Image $toolSHA $arguments $work $RunRoot reference $inputs $plan.DeadlineSeconds $poll
@@ -141,7 +148,7 @@ try{
     }
 }
 finally{
-    if($LoadDiagnostic){$state.Diagnostic=$loadEvidence}
+    if($LoadDiagnostic){$state.Diagnostic=$loadEvidence;$state.MaterialReferenceMeasured=$false}
     if($context.Closed){
         try{
             foreach($pin in $pins){Assert-BeaconHash $pin.Path $pin.SHA256}
