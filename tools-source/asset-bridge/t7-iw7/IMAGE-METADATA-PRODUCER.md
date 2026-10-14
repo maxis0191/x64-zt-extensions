@@ -162,8 +162,8 @@ Its admitted linked EXE is 21998592 bytes /
 PDB is 139399168 bytes /
 1fc2663c3f7e9fe08e7dd901b201c33110e51d05d99e0fa84bf781296a220dec.
 These hashes are taken from the admitted receipt; no free binary reread is
-required. Compilation took 28.43 seconds and complete output stayed 200262944
-bytes, below the 256 MiB bound. The original AppDomain/PSVariable references
+required. Compilation took 28.43 seconds and output before receipt publication
+was 200262944 bytes, below the 256 MiB bound. The original AppDomain/PSVariable references
 matched at preexit, all native/caller guards were zero and CanExit was true.
 Terminal99450 exited zero. Fresh closure at 2026-10-14T21:09:38.9317107Z found
 all 11 identities absent and no heavy/game process or lease. Its 858-byte closure
