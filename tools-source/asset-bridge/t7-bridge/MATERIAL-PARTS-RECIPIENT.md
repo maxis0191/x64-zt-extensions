@@ -282,8 +282,9 @@ analysis JSON is 35,381 bytes /
 and the admission receipt is 2,462 bytes /
 `aee7b9e0f408e99029fadd56e30a16d09b6d7ae2d323961ce485c9404e4cdd55`.
 They are retained under `IW7-Runtime/t7-link-v3-one-analysis-20261014/run-a`.
-The receipt preserves false live-memory/opaque-input/ABI/pool-data/boot/runtime
-qualification flags. D468 owns the separate primary Link interpretation.
+The analysis JSON preserves false live-memory/opaque-input/ABI/pool-data/boot/
+runtime-compatibility flags. The admission receipt separately records its owned
+tool dependencies and closure. D468 owns the primary Link interpretation.
 
 The decoder's 743 records cover 2,753 bytes without gaps; that is a linear
 decode inventory, not 743 proven executable instructions. Find returns at
