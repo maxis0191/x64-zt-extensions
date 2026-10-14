@@ -1205,3 +1205,61 @@ source test accepts string/trimmed/typed dates and still refuses a one-tick,
 size or attribute change. No retail payload, native job, writer, FF or gameplay
 was run. The former a49a Plan stays immutable and is retired from execution;
 the corrected source requires a fresh reviewed Plan before any heavy slot.
+
+## 2026-10-14: actual original-arena reference attempt M failed closed
+
+Root approved one material-reference measurement only. The corrected source
+`372b1a9` (merged by PR58 / `dec599d`) composed 899 files / 8,724,005 bytes with
+explicit native2f TelemetryOnly providers. Their resource helper blobs match
+current native0d7; that compatibility does not relabel the package as native0d7.
+The internal recipe digest was
+`f45318b6eac6b71d2885ef676036b2d090b2fbc1dd040d30a86040e239c2c65c`;
+the outer plan-file digest was
+`17186c04de585270644cfc015c0503a074f5af2b94cde23a56c93c10033c17ef`.
+The distinct digests are retained at their original identities.
+
+The fresh bundled PS7 host launched the retained e7 candidate at 05:24:07 UTC.
+Actual qualification and stock content/identity checks ran under the helper's
+one Extract reservation; no enclosing/nested admission or memory threshold was
+added. The 72-entry selection staged 71 same-ID hardlinks plus the independent
+77-byte sentinel. No whole game/client copy or game scenario was prepared.
+
+The final log line was `Loading zone "global_mp"...`; stdout retained 1,449 bytes
+and stderr was empty. At 05:26:32 UTC, the tool had consumed 148.45 CPU seconds,
+with 443,027,456-byte working set and 593,072,128-byte private allocation. These
+are one process sample, not measured peaks. At its 240-second deadline, the
+original owner stopped/closed the exact job. No selective CSV or stock reference
+success marker was produced. This is a load timeout, not a proven crash, missing
+material, bad stock or memory-capacity finding.
+
+The borrowed-file transaction restored all 74 managed entries. Stock content,
+source hashes and the read-only sentinel were preserved. `state.local.json` was
+published before lease release, so its old token and `LeaseReleased=false` are
+not current reservation evidence. The original live host subsequently showed
+no AppDomain quarantine object, and the authoritative registry had no token or
+lease. After that proof, only its own PTY was resumed and exited with actual code
+1. Fresh 05:32:44 UTC observations found the owned tool/host/parent and all native
+heavy candidates absent, with zero leases. Main27016, banks/configuration and
+owner clients were untouched. The before-release snapshot remains immutable;
+the separate original-host and final postflight records explain the correction.
+
+Pinned source `load_enemy_source_zones` calls global_mp synchronously before
+global_cp/common_cp/cp_zmb. `load_zone` prints that log before DB_LoadXAssets.
+The CP material query was never reached; without a native stack the busy-loop
+location and root cause remain unknown. Diagnostic authorization arrived after
+the tool had exited, so no reused PID was opened for a snapshot. No retry,
+material-bound writer, FF, GPU or physics result is implied. Runtime/owner
+acceptance remain false, and the M approval is consumed.
+
+Next action: review the smallest CP reference path or a bounded native load
+witness using the retained source/stock. A new candidate or repeat measurement
+needs a fresh plan and coordinated slot. Do not replace the missing nondefault
+reference proof with an E5 FF inventory name. The collision worker retains sole
+native shape/runner ownership; eventual integration uses the same seven-box
+scene JSON, reviewed transform and clear-before-delete lifecycle.
+
+The E5 owner confirmed its actual build/verify/dump route loads only the produced
+paris_model_probe FF, with CPPreload=false. Those handlers do not call the enemy
+reference loader, and there is no scoped skip-global_mp switch in the retained
+reference-check CLI. Its material inventory remains an external named reference;
+it cannot replace the missing independent nondefault cp_zmb measurement.
