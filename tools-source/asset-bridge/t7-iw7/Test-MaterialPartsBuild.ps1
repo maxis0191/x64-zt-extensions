@@ -92,7 +92,64 @@ try{
         $refused=$false;try{. $sourcePinGuard}catch{$refused=$true}
         if(!$refused){throw "Invalid selected-streamed pin case accepted: $case"};$checks++
     }
-    "PASS actual material-parts finite guard: $checks checks; authored JSON only, no binaries or engine."
+    $checks+= & {
+        # Execute the actual bootstrap selection/admission/deferred-read ASTs
+        # with inert file/lease stubs. No scheduler, tlog or binary is opened.
+        $before=@($ast.FindAll({param($node)
+            $node -is [Management.Automation.Language.ForEachStatementAst] -and
+            $node.Condition.Extent.Text -ceq '$plan.Bindings' -and
+            $node.Body.Extent.Text.Contains('Binding text/binary classification required.')},$true))
+        $admission=@($ast.FindAll({param($node)
+            $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+            $node.Left.Extent.Text -ceq '$context.Lease' -and
+            $node.Right.Extent.Text.StartsWith('Enter-IW7ResourceLease ')},$true))
+        $after=@($ast.FindAll({param($node)
+            $node -is [Management.Automation.Language.ForEachStatementAst] -and
+            $node.Condition.Extent.Text.Contains("GetExtension(`$_.Path),'.tlog',[StringComparison]::OrdinalIgnoreCase") -and
+            $node.Body.Extent.Text.Contains('Open-T7Bootstrap')},$true))
+        if($before.Count -ne 1 -or $admission.Count -ne 1 -or $after.Count -ne 1 -or
+            $before[0].Extent.StartOffset -ge $admission[0].Extent.StartOffset -or
+            $admission[0].Extent.StartOffset -ge $after[0].Extent.StartOffset){throw 'Actual tlog admission order differs'}
+        $pre=[scriptblock]::Create($before[0].Extent.Text)
+        $enter=[scriptblock]::Create($admission[0].Extent.Text)
+        $post=[scriptblock]::Create($after[0].Extent.Text)
+        $io=[pscustomobject]@{Admitted=$false;Reject=$false;HashFault=$false}
+        $reads=[Collections.Generic.List[string]]::new()
+        function Open-T7Bootstrap($Path,$Bytes,$SHA256){
+            $tlog=[IO.Path]::GetExtension($Path) -ieq '.tlog'
+            if($Run -and $tlog -and !$io.Admitted){throw 'Tlog opened before admission'}
+            $reads.Add($Path)
+            if($tlog -and $io.HashFault){throw 'Authored deferred hash refusal'}
+        }
+        function Get-Item($LiteralPath){[pscustomobject]@{Length=17}}
+        function Enter-IW7ResourceLease($Scope,$Kind,$PhysicalBytes,$CommitBytes,$Owner){
+            if($io.Reject){throw 'Authored competing group'}
+            $io.Admitted=$true;[pscustomobject]@{Token='authored'}
+        }
+        $plan=[pscustomobject]@{RunRoot='C:\authored\run';PhysicalBytes=4;CommitBytes=6;Bindings=@(
+            [pscustomobject]@{Path='C:\authored\source.ps1';IsText=$true;Bytes=17;SHA256=('a'*64)},
+            [pscustomobject]@{Path='C:\authored\CL.command.1.tlog';IsText=$true;Bytes=17;SHA256=('b'*64)},
+            [pscustomobject]@{Path='C:\authored\LINK.command.1.TLOG';IsText=$true;Bytes=17;SHA256=('c'*64)},
+            [pscustomobject]@{Path='C:\authored\compiler.exe';IsText=$false;Bytes=17;SHA256=('d'*64)})}
+        $context=[pscustomobject]@{Lease=$null}
+        $Run=$false;. $pre
+        if($reads.Count -ne 3 -or $io.Admitted){throw 'DEFAULT bootstrap behavior changed'}
+        $reads.Clear();$Run=$true;. $pre
+        if($reads.Count -ne 1 -or $io.Admitted){throw 'Run did not defer only tlogs'}
+        . $enter;. $post
+        if($reads.Count -ne 3 -or !$io.Admitted){throw 'Admitted deferred reads missing'}
+        $reads.Clear();$io.Admitted=$false;$io.Reject=$true;$caught=$false
+        try{. $pre;. $enter;. $post}catch{$caught=$true}
+        if(!$caught -or $io.Admitted -or $reads.Count -ne 1){throw 'Refused admission opened a tlog'}
+        $reads.Clear();$io.Reject=$false;$io.HashFault=$true;$caught=$false
+        try{. $pre;. $enter;. $post}catch{$caught=$true}
+        if(!$caught -or !$io.Admitted -or $reads.Count -ne 2){throw 'Deferred hash refusal ordering changed'}
+        $reads.Clear();$io.Admitted=$false;$io.HashFault=$false;$plan.Bindings[0].IsText=1;$caught=$false
+        try{. $pre;. $enter;. $post}catch{$caught=$true}
+        if(!$caught -or $io.Admitted -or $reads.Count){throw 'Non-boolean binding classification accepted'}
+        6
+    }
+    "PASS actual material-parts finite guard: $checks checks; authored metadata only, no binaries or engine."
 }finally{
     $full=[IO.Path]::GetFullPath($root);$temporary=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
     if(!$full.StartsWith($temporary,[StringComparison]::OrdinalIgnoreCase)){throw 'Authored cleanup target outside temporary root'}
