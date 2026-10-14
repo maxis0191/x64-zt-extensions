@@ -123,3 +123,32 @@ refusal before opening. The two snapshot reads now call the existing
 bound and strict JSON parser. Six adapter tests prove zero metadata/open for
 ADS, devices and non-JSON names, plus oversized and changed opened identities.
 The large pinned historical text reader and native capture route are unchanged.
+
+
+## Actual preparation and ordinary DEFAULT, 2026-10-14 UTC
+
+The first reviewed C preparation ran its factory and ordinary DEFAULT to exit
+zero, but its overall attempt exited one. The packet writer retained its actual
+ReadWrite/FileShare.Read stream; reopening that same packet through Get-FileHash
+caused our own sharing violation. The failed receipt, packet, plan and original
+host closure remain preserved. Factory/DEFAULT exit zero was never reported as
+overall preparation success.
+
+D corrected one caller assignment to use the SAME verified publication object's
+Pin, then used fresh targets. The factory and ordinary DEFAULT both exited zero;
+DEFAULT reported its six runtime/opaque/lease/output/Ready flags false. The original
+NoExit host exited zero after verified pre-release receipt publication, separate
+honest actual-release proof, original context checks and confirmed guard closure.
+A fresh independent observation found all four original processes absent and no
+heavy process or lease. Main's stopped original generation and 68 bank metadata
+entries were unchanged; bank contents were not opened. Inherited Python variables
+were cleared/restored, and the source factory used -B -S.
+
+Actual D plan: 58,966 bytes /
+`f473283f202d8445dfddde46e5ab3753ea1e9893b591810ec903ed65d8b2b747`.
+Capture packet: 3,508 bytes /
+`24af180cb660e5c9e3cfaeed130092a03c66f212f0fe349ba2217c4f9a2b8254`.
+The preserved pre-release receipt says release pending; the separate preexit
+proof and actual original-host exit confirm release. This qualifies preparation
+and DEFAULT only. F2 native execution needs its separately reviewed packet/GO;
+image-body metadata and any image extraction remain separate later gates.
