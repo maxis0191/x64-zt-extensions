@@ -614,9 +614,11 @@
     "tools-source/asset-bridge/t7-iw7/test_material_parts.py",
     "tools-source/asset-bridge/t7-iw7/test_os_resource_context.py",
     "tools-source/asset-bridge/t7-iw7/PUBLICATION-BUILD-A.md",
+    "tools-source/asset-bridge/t7-iw7/RAYGUN-SOURCE-ROUTE.md",
     "tools-source/asset-bridge/t7-iw7/Run-T7Build.ps1",
     "tools-source/asset-bridge/t7-iw7/SELECTED-STREAMED-STATIC.md",
     "tools-source/asset-bridge/t7-iw7/SELECTED-XPAK-CLI.md",
+    "tools-source/asset-bridge/t7-iw7/REAL-TEXTURE-SUCCESSION.md",
     "tools-source/asset-bridge/t7-iw7/SOURCE-AUDIT.md",
     "tools-source/asset-bridge/t7-iw7/STREAMED-MESH-PAYLOAD.md",
     "tools-source/asset-bridge/t7-iw7/T7-IMAGES.md",
@@ -786,7 +788,14 @@
     "tools-source/asset-bridge/t7-iw7/prepare_catalog_add_observation.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_add_observation.py",
     "tools-source/asset-bridge/t7-iw7/test_catalog_add_build.py",
-    "tools-source/asset-bridge/t7-iw7/CATALOGUE-ADD-OBSERVATION.md"
+    "tools-source/asset-bridge/t7-iw7/CATALOGUE-ADD-OBSERVATION.md",
+    "tools-source/asset-bridge/t7-iw7/selected_image_provenance.hpp",
+    "tools-source/asset-bridge/t7-iw7/selected_image_provenance_fixture.cpp",
+    "tools-source/asset-bridge/t7-iw7/native_image_provenance.inc",
+    "tools-source/asset-bridge/t7-iw7/prepare_image_provenance.py",
+    "tools-source/asset-bridge/t7-iw7/test_image_provenance.py",
+    "tools-source/asset-bridge/t7-iw7/image-provenance-source-contract.json",
+    "tools-source/asset-bridge/t7-iw7/IMAGE-PROVENANCE.md"
   ],
   "dependencies": [
     {

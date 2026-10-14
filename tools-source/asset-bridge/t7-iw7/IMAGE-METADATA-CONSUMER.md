@@ -42,6 +42,22 @@ fields, positive body/payload bytes and promoted proof flags are refused.
 the producer contract. Complete metadata with a nonzero exit remains a failed
 process. Calling `classify(None, exit_code)` records absence; it creates no
 producer report. A missing CLI input file is an error with no output report.
+The CLI accepts only a nonempty regular `.json` file of at most 32 KiB. It checks
+lexical Windows stream/device/extended namespace and reserved-device paths
+before any filesystem metadata or open, while allowing ordinary relative and
+absolute JSON paths. It then checks
+the suffix, size and every path component for reparse metadata before opening,
+then rechecks the opened file's identity and size before a bounded read. The
+pure bytes/dict API remains the interface for a record selected from stdout.
+`read_report(path, *, limit=32768)` and `strict_json(raw, *, limit=32768)` expose
+the same guards/parser for other source metadata. Only explicit integer bounds of
+32768 or 65536 bytes are allowed. Callers own their metadata schema; these
+helpers imply no capture or runtime admission. Their defaults and the
+provenance CLI remain fixed at 32768 bytes. A separate source slot
+contract larger than 32 KiB can use 64 KiB without expanding the native report.
+The shared-bound extension passes 29 targeted source tests, including a
+36,853-byte authored metadata file accepted only with explicit 64 KiB, unchanged
+32 KiB defaults, invalid-limit zero-IO refusals and the same path/JSON guards.
 
 The existing Catalogue/H1 owner remains responsible for selecting exactly one
 stdout marker, guarding and pinning the closed log, bounds on stdout/stderr,
@@ -70,7 +86,7 @@ rendering and collision are unqualified; the future slot-0 diffuse proposal
 must preserve the other four recipient material slots. Machine receipts and
 game data remain outside Git.
 
-Validation on 2026-10-14: 22 targeted Python tests pass using authored JSON
+Validation on 2026-10-14: 26 targeted Python tests pass using authored JSON
 cases, including complete MEM_FREE, two-region coverage, null image, missing
 registration, duplicate/search refusal, late recheck failure and failed native
 exit. No native producer, memory query, engine or game was run by these tests.
@@ -78,6 +94,17 @@ Independent review identified and corrected an invalid nonobserved binding
 that could claim complete/readable query metadata. The causal test now refuses
 each query flag or region in that case, while preserving a real observed
 binding's query metadata after a failed recheck.
+The later CLI review found a missing metadata gate before file opening. A
+follow-up correction rejects authored opaque suffixes, oversized JSON,
+directories and reparse metadata before any open; opened growth/replacement
+also refuses. These cases use authored files and metadata mocks, never an
+actual executable, SDK, game asset or producer.
+Independent Windows review also found that a named NTFS stream could pass the
+regular-file metadata gate. The lexical correction rejects colons outside a
+drive anchor and device/extended namespace paths before lstat or open. Tests
+use fictitious ADS paths with zero-call spies, never a real stream, and retain
+ordinary relative/absolute JSON acceptance. The failed 6710436 review and its
+earlier 25-test evidence remain retained.
 Next gates remain separate: real producer fixture, reviewed producer merge,
 launcher/result source integration, newly qualified full CLI build, fresh
 ordinary DEFAULT preparation, then an explicit native GO. Every consumer
