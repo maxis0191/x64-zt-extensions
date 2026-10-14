@@ -338,11 +338,68 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     }
     return $true
 }
+function Assert-T7OSResourceContext($Plan) {
+    $tz='C:\WINDOWS\SYSTEM32\TZRES.DLL'
+    $old='f3f5ef83a67c503991d728f62cf039cbb52a18d6eb82197dec23ede8f0996108'
+    $new='1398cf1d866e49a8ba351e2a30a7803b50c8b595d17f776abe8d2ec4a9c6fb10'
+    $inputs=@($Plan.Inputs|Where-Object {$_.Path -eq $tz})
+    if(!$Plan.PSObject.Properties['OSResourceContext']){
+        if($inputs.Count -gt 1 -or ($inputs.Count -eq 1 -and ($inputs[0].Path -isnot [string] -or $inputs[0].Path -cne $tz -or
+           ($inputs[0].Bytes -isnot [int] -and $inputs[0].Bytes -isnot [long]) -or
+           $inputs[0].Bytes -ne 12288 -or $inputs[0].SHA256 -isnot [string] -or $inputs[0].SHA256 -cne $old))){throw 'Historical OS pin requires an explicit qualified context.'}
+        return $null
+    }
+    $context=$Plan.OSResourceContext
+    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3') -or
+       (@($context.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'After,Before,Evidence,KBFileAttributionVerified,Name,ProductVersion,Schema,SignatureStatus,SignatureType,SignerThumbprint,SourceOSDate'){
+        throw 'Exact opt-in OS context fields/profile required.'
+    }
+    $texts=@{Schema='iw7.t7-os-resource-context/1';Name='windows-tzres-20261014';SourceOSDate='2026-10-14';
+        ProductVersion='10.0.26100.9711';SignatureStatus='Valid';SignatureType='Catalog';SignerThumbprint='667BBA1E1F478221AA65DE4F75187A751B03A453'}
+    foreach($name in $texts.Keys){if($context.$name -isnot [string] -or $context.$name -cne $texts[$name]){throw 'Exact dated Microsoft OS context required.'}}
+    if($context.KBFileAttributionVerified -isnot [bool] -or $context.KBFileAttributionVerified){throw 'Unproven KB attribution must remain false.'}
+    foreach($row in @(@('Before',$old),@('After',$new))){
+        $pin=$context.($row[0])
+        if((@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+           $pin.Path -isnot [string] -or $pin.Path -cne $tz -or
+           ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -ne 12288 -or
+           $pin.SHA256 -isnot [string] -or $pin.SHA256 -cne $row[1]){throw 'Exact single TZRES transition required.'}
+    }
+    $proof=$context.Evidence
+    if((@($proof.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+       $proof.Path -isnot [string] -or ($proof.Bytes -isnot [int] -and $proof.Bytes -isnot [long]) -or
+       $proof.Bytes -ne 8907 -or $proof.SHA256 -isnot [string] -or
+       $proof.SHA256 -cne '5a282c19995af210fd9d7c55a8692d87d4456526352fe21034a8f07d83a9fd9d' -or
+       @($Plan.Bindings|Where-Object {$_.Path -eq $proof.Path}).Count -ne 1 -or
+       @($Plan.Bindings|Where-Object {$_.Path -is [string] -and $_.Path -ceq $proof.Path -and ($_.Bytes -is [int] -or $_.Bytes -is [long]) -and $_.Bytes -eq 8907 -and
+          $_.SHA256 -is [string] -and $_.SHA256 -ceq $proof.SHA256 -and $_.IsText -is [bool] -and $_.IsText}).Count -ne 1){throw 'Exact guarded OS qualification proof required.'}
+    if($inputs.Count -ne 1 -or $inputs[0].Path -isnot [string] -or $inputs[0].Path -cne $tz -or
+       ($inputs[0].Bytes -isnot [int] -and $inputs[0].Bytes -isnot [long]) -or
+       $inputs[0].Bytes -ne 12288 -or $inputs[0].SHA256 -isnot [string] -or $inputs[0].SHA256 -cne $new){throw 'Unique qualified TZRES Input required.'}
+    $stream=Open-T7Bootstrap $proof.Path $proof.Bytes $proof.SHA256
+    $reader=[IO.StreamReader]::new($stream,[Text.Encoding]::UTF8,$true,4096,$true)
+    try{$observed=$reader.ReadToEnd()|ConvertFrom-Json -Depth 15}finally{$reader.Dispose()}
+    $r=$observed.OSResource
+    if($observed.Schema -cne 'iw7.t7-os-resource-qualification/1' -or $observed.Status -cne 'ObservationComplete' -or
+       $observed.GuardsDisposed -isnot [bool] -or !$observed.GuardsDisposed -or
+       $observed.LeaseReleased -isnot [bool] -or !$observed.LeaseReleased -or
+       $observed.Ready -isnot [bool] -or $observed.Ready -or @($observed.Postflight.Leases).Count -ne 0 -or
+       $r.Path -cne $tz -or $r.HistoricalBytes -ne 12288 -or $r.HistoricalSHA256 -cne $old -or
+       $r.ObservedBytes -ne 12288 -or $r.ObservedSHA256 -cne $new -or $r.ProductVersion -cne $texts.ProductVersion -or
+       $r.SignatureStatus -cne 'Valid' -or $r.SignatureType -cne 'Catalog' -or
+       $r.SignerSubject -cne 'CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US' -or
+       $r.SignerThumbprint -cne $texts.SignerThumbprint -or
+       $r.ContractAccepted -isnot [bool] -or $r.ContractAccepted -or $r.PinAdopted -isnot [bool] -or $r.PinAdopted){throw 'Closed measured OS proof differs.'}
+    return $proof.Path
+}
 function Assert-T7InputBindings($Plan) {
-    # This runs before any binding is opened, binary metadata is queried or
-    # provider is loaded. Legacy128 and sealed E2/v2144 remain unchanged;
+    # This runs before binary metadata is queried or a provider is loaded.
+    # Only the finite opt-in text proof is opened here. Legacy128 and sealed E2/v2144 remain unchanged;
     # the explicit selected-streamed marker adds five exact source bindings.
-    $bindings=@($Plan.Bindings);$inputs=@($Plan.Inputs)
+    $osProofPath=Assert-T7OSResourceContext $Plan
+    # The one finite proof binding is guarded above; all historical source/input
+    # cardinality and bijection checks below continue over their unchanged set.
+    $bindings=@($Plan.Bindings|Where-Object {!$osProofPath -or $_.Path -cne $osProofPath});$inputs=@($Plan.Inputs)
     $reuse=if($Plan.PSObject.Properties.Name -contains 'ReuseCompile'){$Plan.ReuseCompile}else{$null}
     $reference=$null -ne $reuse -and $null -ne $reuse.PSObject.Properties['PrepatchReferenceV2']
     $referenceProfile=$null -ne $Plan.PSObject.Properties['BuildProfile'] -and $null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -ceq 't7-prepatch-reference-v2'

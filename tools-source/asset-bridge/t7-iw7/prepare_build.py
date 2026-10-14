@@ -547,7 +547,56 @@ def require_preparation_bounds(raw, payloads, *, parts_profile=False):
             'Preparation bound exceeded')
 
 
+OS_RESOURCE_PATH = r'C:\WINDOWS\SYSTEM32\TZRES.DLL'
+OS_RESOURCE_BEFORE = 'f3f5ef83a67c503991d728f62cf039cbb52a18d6eb82197dec23ede8f0996108'
+OS_RESOURCE_AFTER = '1398cf1d866e49a8ba351e2a30a7803b50c8b595d17f776abe8d2ec4a9c6fb10'
+OS_RESOURCE_PROOF = (8907, '5a282c19995af210fd9d7c55a8692d87d4456526352fe21034a8f07d83a9fd9d')
+
+
+def os_resource_selected(args):
+    flag = getattr(args, 'os_context_tzres_20261014', False)
+    proof = getattr(args, 'os_context_proof', None)
+    require(type(flag) is bool and bool(proof) == flag, 'Explicit paired TZRES context/proof required')
+    if flag:
+        require(getattr(args, 'material_parts_v1', False) is True or
+                getattr(args, 'prepatch_link_v3', False) is True, 'TZRES context requires explicit parts or V3')
+    return flag
+
+
+def os_resource_context(path, read, expected):
+    raw = read(path, 16*1024, OS_RESOURCE_PROOF[1])
+    require(len(raw) == OS_RESOURCE_PROOF[0], 'Exact dated OS qualification proof required')
+    proof = json.loads(raw)
+    require(type(proof) is dict and proof.get('Schema') == 'iw7.t7-os-resource-qualification/1' and
+            proof.get('Status') == 'ObservationComplete' and proof.get('GuardsDisposed') is True and
+            proof.get('LeaseReleased') is True and proof.get('Ready') is False and
+            proof.get('CPPExecuted') is False and proof.get('CandidateExecuted') is False and
+            proof.get('StockRead') is False and proof.get('Postflight', {}).get('Leases') == [],
+            'Closed non-native OS qualification required')
+    resource = proof.get('OSResource', {})
+    required = dict(Path=OS_RESOURCE_PATH, HistoricalBytes=12288, HistoricalSHA256=OS_RESOURCE_BEFORE,
+        ObservedBytes=12288, ObservedSHA256=OS_RESOURCE_AFTER, ProductVersion='10.0.26100.9711',
+        CompanyName='Microsoft Corporation', SignatureStatus='Valid', SignatureType='Catalog',
+        SignerSubject='CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US',
+        SignerThumbprint='667BBA1E1F478221AA65DE4F75187A751B03A453', ContractAccepted=False, PinAdopted=False)
+    require(all(type(resource.get(k)) is type(v) and resource[k] == v for k,v in required.items()),
+            'Exact measured Microsoft TZRES resource required')
+    require(type(proof.get('Pins')) is list and len(proof['Pins']) == 10 and
+            all(p.get('GuardPassed') is True and p.get('ExpectedBytes') == p.get('ActualBytes') and
+                p.get('ExpectedSHA256') == p.get('ActualSHA256') for p in proof['Pins']),
+            'Exact unchanged D/V3 suffix qualification required')
+    before = dict(Path=OS_RESOURCE_PATH, Bytes=12288, SHA256=OS_RESOURCE_BEFORE)
+    require(expected.get(key(OS_RESOURCE_PATH)) == before, 'Historical TZRES pin must remain exact')
+    after = dict(before, SHA256=OS_RESOURCE_AFTER)
+    expected[key(OS_RESOURCE_PATH)] = after
+    return dict(Schema='iw7.t7-os-resource-context/1', Name='windows-tzres-20261014', SourceOSDate='2026-10-14',
+        Before=before, After=after, Evidence=dict(Path=str(path), Bytes=OS_RESOURCE_PROOF[0], SHA256=OS_RESOURCE_PROOF[1]),
+        ProductVersion='10.0.26100.9711', SignatureStatus='Valid', SignatureType='Catalog',
+        SignerThumbprint=required['SignerThumbprint'], KBFileAttributionVerified=False)
+
+
 def prepare(args):
+    os_context_enabled = os_resource_selected(args)
     parts_observation = material_parts.selected(args)
     zombies_observation = zombies_observation_selected(args)
     add_observation = add_observation_selected(args)
@@ -662,6 +711,7 @@ def prepare(args):
         read(providers/name)
     seed = json.loads(read(args.seed_seal, 2*1024**2, SEED_SHA))
     expected = {key(p['Path']): {k: p[k] for k in ('Path','Bytes','SHA256')} for p in seed['Inputs']}
+    os_context = os_resource_context(args.os_context_proof, read, expected) if os_context_enabled else None
     # Preserve the qualified E7 artifacts explicitly, in addition to every
     # reused link input. Read this small historical receipt, not the binaries.
     e7_receipt = json.loads(read(e7/'build-artifact.local.json'))
@@ -897,6 +947,7 @@ def prepare(args):
         'OutputLimitBytes':256*1024**2,'MetadataReserveBytes':1024**2,'CleanupSeconds':5,
         'ReusedObjects':410,'ReusedProjectLibraries':18,'ReusedResources':1,'NativeExecuted':False,
         'ToolchainFullyHermetic':False,'Ready':False}
+    if os_context is not None: plan['OSResourceContext'] = os_context
     raw = (json.dumps(plan,indent=2)+'\n').encode()
     require_preparation_bounds(raw, payloads, parts_profile=parts_observation)
     payloads['build-plan.local.json'] = raw
@@ -931,6 +982,8 @@ if __name__ == '__main__':
     parser.add_argument('--zombies-catalogue-observation',action='store_true')
     parser.add_argument('--zombies-add-observation-c2',action='store_true')
     parser.add_argument('--material-parts-v1',action='store_true')
+    parser.add_argument('--os-context-tzres-20261014',action='store_true')
+    parser.add_argument('--os-context-proof',type=Path)
     parser.add_argument('--ordinary-plan',type=Path)
     parser.add_argument('--ordinary-receipt',type=Path)
     print(json.dumps(prepare(parser.parse_args()),indent=2))

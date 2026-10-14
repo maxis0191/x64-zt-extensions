@@ -31,6 +31,21 @@ function Invoke-ArenaLoadDiagnostic($Target,$State,[string]$Logs,$Options,$Evide
     $dir=Join-Path $Options.RunRoot 'load-diagnostic';[IO.Directory]::CreateDirectory($dir)|Out-Null
     $cpu=Join-Path $dir 'cpu-threads.jsonl';$dump=Join-Path $dir 'load.dmp'
     try {
+        if($Options.PSObject.Properties['ModalTextOnly'] -and $Options.ModalTextOnly){
+            $window=Join-Path $dir 'modal-window.json'
+            $createdFiletime=([datetimeoffset]$State.Identity.CreatedUtc).UtcDateTime.ToFileTimeUtc()
+            $args=@('-B','-S',$Options.ModalSource,'--pid',[string]$State.Identity.PID,'--parent-pid',[string]$PID,
+                '--image',$State.Identity.Image,'--created',$State.Identity.CreatedUtc,'--created-filetime',[string]$createdFiletime,
+                '--sha256',$Options.ToolSHA256,'--output',$window)
+            $Evidence.Window=Invoke-OriginalArenaTool $diag $Options.Python $Options.PythonSHA256 $args $Target.Work $Options.RunRoot load-modal $Options.Inputs (Get-ArenaDiagnosticSeconds $Options 10)
+            if((Get-Item -LiteralPath $window).Length -gt 64KB){throw 'Modal window record exceeds 64 KiB.'}
+            $record=Get-Content -LiteralPath $window -Raw|ConvertFrom-Json
+            if($record.schema -cne 'iw7.world-modal-window/1' -or $record.identity_verified_after -ne $true){throw 'Modal target/window identity not confirmed.'}
+            $Evidence.ModalWindowObserved=$record.modal_window_observed
+            if($record.modal_window_observed -ne $true){$Evidence.Outcome='NoModalWindowObserved';throw 'No owned modal window observed in the bounded scan.'}
+            $Evidence.Outcome='Captured';$Evidence.SymbolsVerified=$false
+            $Evidence.Limits='One original-target modal snapshot; text may be absent/truncated. No new CPU, minidump or CDB operation. No interaction or material reference proof.'
+        }else{
         # No new admission. All diagnostic children use the existing original
         # NativeJob helper and the same reservation; restore requires both jobs.
         $identityArgs=@('--pid',[string]$State.Identity.PID,'--image',$State.Identity.Image,
@@ -48,8 +63,10 @@ function Invoke-ArenaLoadDiagnostic($Target,$State,[string]$Logs,$Options,$Evide
         $Evidence.Stack=Invoke-OriginalArenaTool $diag $Options.Cdb $Options.CdbSHA256 $args $Target.Work $Options.RunRoot load-stack $Options.Inputs (Get-ArenaDiagnosticSeconds $Options 20)
         $Evidence.Outcome='Captured';$Evidence.SymbolsVerified=$false
         $Evidence.Limits='Live stack witness; not crash or dependency/root-cause proof. Dump and output limits sampled; 32 MiB dump acceptance. No debugger attaches to live target.'
+        }
     } catch {
-        $Evidence.Outcome='Failed';$Evidence.Error=$_.Exception.Message
+        if($Evidence.Outcome -cne 'NoModalWindowObserved'){$Evidence.Outcome='Failed'}
+        $Evidence.Error=$_.Exception.Message
         throw
     } finally {
         $Evidence.DiagnosticClosed=$diag.Closed

@@ -9,6 +9,9 @@ if($errors.Count){throw 'Runner syntax errors.'}
 $definition=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-T7InputBindings'},$true)
 if(!$definition){throw 'Actual binding validator missing.'}
 . ([scriptblock]::Create($definition.Extent.Text))
+$os=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-T7OSResourceContext'},$true)
+if(!$os){throw 'Actual OS context guard missing.'}
+. ([scriptblock]::Create($os.Extent.Text))
 $checks=0;$entryChecks=0
 function New-BindingFixture {
     $headers=@(foreach($match in [regex]::Matches([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'prepare_build.py')),
