@@ -235,7 +235,7 @@ candidate, independently of the historical base H proof. The existing base proof
 only enables the recipe; the new 39-check fixture and complete five-stage closed
 receipt must qualify the changed API. Source guard tests exercise altered plans,
 order/arguments/artifacts, old markers and false DEFAULT claims. With the actual
-historical H text proofs, 28 PowerShell gates and 16 targeted Python source checks
+historical H text proofs, 34 PowerShell gates and 16 targeted Python source checks
 pass; the new API still reports pending after the base proof is accepted. Fresh admitted
 PREP, exact actual-plan review, CPP qualification and separate Native GO remain;
 the new launcher is still inactive and no native execution is claimed here.

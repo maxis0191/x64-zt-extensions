@@ -61,6 +61,20 @@ try{
         $p.Bindings=@($p.Bindings|Where-Object Path -CNE $pin.Path)+@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
     }
     if(!(Assert-T7BuildProfile $p $PSScriptRoot)){throw 'New authored full registration profile refused'};$checks++
+    # Reproduce the actual prior PowerShell singleton-array comparison bypass.
+    # All other values and hashes stay valid, so they cannot mask this defect.
+    $guard=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-T7RegistrationMetadataTransition'},$true).Extent.Text
+    $typeGate=$ast.Find({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Registration schema/profile text scalars required.'")},$true).Extent.Text
+    $before=$guard.Replace('function Assert-T7RegistrationMetadataTransition(', 'function Assert-T7RegistrationBeforeTypeFix(').Replace($typeGate,'')
+    . ([scriptblock]::Create($before))
+    foreach($field in 'Schema','SourceProfile','RegistrationSchema'){
+        $bad=$p|ConvertTo-Json -Depth 25|ConvertFrom-Json
+        if($field -ceq 'RegistrationSchema'){$bad.BuildProfile.$field=@($bad.BuildProfile.$field)}
+        else{$bad.ReuseCompile.RegistrationMetadata.$field=@($bad.ReuseCompile.RegistrationMetadata.$field)}
+        Assert-T7RegistrationBeforeTypeFix $bad $PSScriptRoot;$checks++
+        $reason='';try{Assert-T7RegistrationMetadataTransition $bad $PSScriptRoot}catch{$reason=$_.Exception.Message}
+        if($reason -cne 'Registration schema/profile text scalars required.'){throw "Scalar type refusal masked or missing: $field"};$checks++
+    }
     foreach($case in 'missing-marker','wrong-base','wrong-output','wrong-profile','old-native-option','premature-cpp','wrong-check-count','missing-header','duplicate-header','missing-test','test-before-compile','old-fixture-order','wrong-argv','wrong-deadline','wrong-artifact','wrong-observer'){
         $bad=$p|ConvertTo-Json -Depth 25|ConvertFrom-Json
         switch($case){

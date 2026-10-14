@@ -225,6 +225,9 @@ function Assert-T7ImageMetadataFixtureStages($Plan,[string]$SourceRoot) {
 }
 function Assert-T7RegistrationMetadataTransition($Plan,[string]$SourceRoot) {
     $p=$Plan.BuildProfile;$m=$Plan.ReuseCompile.RegistrationMetadata
+    if($m.Schema -isnot [string] -or $m.SourceProfile -isnot [string] -or $p.RegistrationSchema -isnot [string]){
+        throw 'Registration schema/profile text scalars required.'
+    }
     $keys='BaseCLIBytes,BaseCLISHA256,BaseMainBytes,BaseMainSHA256,CLIBytes,CLISHA256,CPPQualified,MainBytes,MainSHA256,Ready,Schema,SourceOnlyPending,SourceProfile'
     if((@($m.PSObject.Properties.Name|Sort-Object)-join ',') -cne $keys -or
        $m.Schema -cne 'iw7.t7-registration-image-metadata-build/1' -or $m.SourceProfile -cne 't7-registration-image-header-metadata-v1' -or
