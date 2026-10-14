@@ -21,8 +21,9 @@ try {
     $required=@($PSCommandPath,$profile,$prepatchProfile,$core,$scheduler,$fileIdentity,
         (Join-Path $repo 'ops/Resource-Memory.ps1'),(Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'))
     $export=[bool]($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'ResidentExportV1')
+    $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-zombies-catalogue-observation-c')
     $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
-    if($export){$required+=@($exportProfile)}
+    if($export -or $zombies){$required+=@($exportProfile)}
     foreach($path in $required) {
         $pin=@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true})
         if($pin.Count -ne 1 -or $pin[0].Bytes -gt 1MB){throw 'Bounded exact source binding missing.'}
@@ -30,7 +31,7 @@ try {
     }
     . $prepatchProfile # Functions only; reuse environment/Main checks without changing the diagnostic.
     . $profile
-    if($export){. $exportProfile}
+    if($export -or $zombies){. $exportProfile} # C consumes only the shared build qualifier.
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
     if($export){Assert-T7ResidentExportCatalogue $plan}
