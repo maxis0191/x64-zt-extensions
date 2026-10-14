@@ -2,6 +2,7 @@ import copy
 import unittest
 import importlib.util
 import sys
+import tempfile
 from pathlib import Path
 import boot_contract as boot
 import export_contract as export
@@ -98,6 +99,56 @@ class StreamedContractTests(unittest.TestCase):
         self.assertEqual(receipt['geometry_profile'], stream.GEOMETRY_PROFILE_V2)
         self.assertEqual([row['source'] for row in receipt['material_rebinds']], ['original/clay', 'original/metal'])
         self.assertFalse(receipt['runtime_verified'])
+
+    def test_render_only_large_manifest_stages_with_existing_metadata_bound(self):
+        from test_readback import Synthetic, SyntheticMulti
+        synthetic = SyntheticMulti(materials=['original/clay', 'original/metal'])
+        request, template = self.render_fixture()
+        synthetic.request.update(schema=stream.REQUEST_SCHEMA_V2, profile=stream.PROFILE_V2,
+            collision_policy=stream.COLLISION_POLICY, xpak_key=request['xpak_key'], packages=request['packages'])
+        synthetic.manifest.update(schema=stream.EXPORT_SCHEMA_V2, profile=stream.PROFILE_V2,
+            geometry_profile=stream.GEOMETRY_PROFILE_V2, output_root_key=stream.root_key(synthetic.request),
+            selected_mesh_payload=template['selected_mesh_payload'], selected_collision_policy=template['selected_collision_policy'])
+        path = Path(__file__).resolve().parents[3] / 'ops/model-lab/rigid_export.py'
+        spec = importlib.util.spec_from_file_location('_render_only_staging_test', path)
+        lab = importlib.util.module_from_spec(spec); spec.loader.exec_module(lab)
+        bindings = [dict(slot=i, source=name, target=lab.MATERIAL)
+                    for i, name in enumerate(synthetic.manifest['material_dependencies'])]
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / 'export'; root.mkdir()
+            for role, data in synthetic.outputs.items():
+                artifact = root / synthetic.manifest[role]['relative_path']
+                artifact.parent.mkdir(parents=True, exist_ok=True); artifact.write_bytes(data)
+            request_path, manifest_path = root / 'request.json', root / 'manifest.json'
+            request_path.write_bytes(lab.json_bytes(synthetic.request))
+            manifest_bytes = lab.json_bytes(synthetic.manifest) + b' ' * 4097
+            self.assertGreater(len(manifest_bytes), 4096)
+            self.assertLessEqual(len(manifest_bytes), lab.rb.MANIFEST_LIMIT)
+            manifest_path.write_bytes(manifest_bytes)
+            sys.path.insert(0, str(path.parent))
+            try:
+                output = Path(folder) / 'stage'
+                plan = lab.stage(root, request_path, manifest_path, output,
+                                 lod_distance=1000000, rebinds=bindings)
+                self.assertEqual(plan['schema'], 'iw7.model-ff-plan/2')
+                self.assertEqual(plan['geometry_profile'], stream.GEOMETRY_PROFILE_V2)
+                self.assertEqual(lab.verify_stage(output, scene=True)[0], plan)
+                self.assertEqual((output / 'evidence/manifest.json').read_bytes(), manifest_bytes)
+                self.assertEqual((output / synthetic.manifest['mesh']['relative_path']).read_bytes(),
+                                 bytes(synthetic.outputs['mesh']))
+                self.assertFalse(plan['ready'])
+                manifest_path.write_bytes(manifest_bytes + b' ' * (lab.rb.MANIFEST_LIMIT - len(manifest_bytes) + 1))
+                with self.assertRaisesRegex(ValueError, 'input file size/type'):
+                    lab.stage(root, request_path, manifest_path, Path(folder) / 'oversized',
+                              lod_distance=1000000, rebinds=bindings)
+                self.assertFalse((Path(folder) / 'oversized').exists())
+                legacy = Synthetic()
+                request_path.write_bytes(lab.json_bytes(legacy.request))
+                manifest_path.write_bytes(lab.json_bytes(legacy.manifest) + b' ' * 4097)
+                with self.assertRaisesRegex(ValueError, 'V1 manifest exceeds 4 KiB'):
+                    lab.load_export(root, request_path, manifest_path)
+            finally:
+                sys.path.pop(0)
 
     def test_streamed_receipt_uses_same_independent_serialized_geometry_reader(self):
         from test_readback import SyntheticMulti

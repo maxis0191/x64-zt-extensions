@@ -131,7 +131,7 @@ def load_export(root, request_path, manifest_path):
     manifest_bytes = rb.read_bounded(manifest_path, rb.MANIFEST_LIMIT)
     request, manifest = decode_document(request_bytes), decode_document(manifest_bytes)
     rb.check(type(manifest) is dict, 'Export manifest object required')
-    rb.check(manifest.get('schema') in ('iw7.t7-iw7-resident-export/2', rb.STREAMED_SCHEMA) or len(manifest_bytes) <= 4096,
+    rb.check(manifest.get('schema') in ('iw7.t7-iw7-resident-export/2', rb.STREAMED_SCHEMA, rb.STREAMED_SCHEMA_V2) or len(manifest_bytes) <= 4096,
              'V1 manifest exceeds 4 KiB')
     rb.validate_export(manifest, request)
     model = rb.read_bounded(root / manifest['model']['relative_path'], rb.MODEL_LIMIT)
