@@ -839,7 +839,8 @@
     "tools-source/asset-bridge/t7-iw7/registration_image_header_capture.hpp",
     "tools-source/asset-bridge/t7-iw7/registration_image_header_fixture.cpp",
     "tools-source/asset-bridge/t7-iw7/registration-image-metadata-source-contract.json",
-    "tools-source/asset-bridge/t7-iw7/test_image_registration_metadata.py"
+    "tools-source/asset-bridge/t7-iw7/test_image_registration_metadata.py",
+    "tools-source/asset-bridge/t7-iw7/Test-ImageRegistrationBuild.ps1"
   ],
   "dependencies": [
     {
