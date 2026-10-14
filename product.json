@@ -698,7 +698,12 @@
     "tools-source/asset-bridge/world/verify_source.py",
     "tools-source/asset-bridge/world/world_clipmap_observer.hpp",
     "tools-source/asset-bridge/world/zonetool-fab9358-trigger-types.patch",
-    "tools-source/asset-bridge/world/zonetool-fab9358-world-observer.patch"
+    "tools-source/asset-bridge/world/zonetool-fab9358-world-observer.patch",
+    "tools-source/asset-bridge/t7-iw7/native_catalog_add_observation.inc",
+    "tools-source/asset-bridge/t7-iw7/prepare_catalog_add_observation.py",
+    "tools-source/asset-bridge/t7-iw7/test_catalog_add_observation.py",
+    "tools-source/asset-bridge/t7-iw7/test_catalog_add_build.py",
+    "tools-source/asset-bridge/t7-iw7/CATALOGUE-ADD-OBSERVATION.md"
   ],
   "dependencies": [
     {

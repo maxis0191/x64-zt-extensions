@@ -339,6 +339,36 @@ foreach($change in @(
     $fixture=New-RenderOnlyProfileFixture;. $change;Must-Refuse $fixture
 }
 
+function New-AddProfileFixture {
+    $fixture=New-RenderOnlyProfileFixture
+    $fixture.BuildProfile.Name='t7-zombies-catalogue-observation-c2'
+    $fixture.BuildProfile|Add-Member NoteProperty ObservationSchema 'iw7.t7-zm-add-observation/1'
+    $fixture.ReuseCompile|Add-Member NoteProperty ZombiesAddObservationC2 ([pscustomobject]@{
+        Schema='iw7.t7-zm-add-observation-build/1';SourceProfile='t7-zombies-catalogue-observation-c2';
+        BaseCLIBytes=112377;BaseCLISHA256='c63d9552464da674d3b03c35f7edc16385fb9370b113a3925fd7bc4835fb005a';
+        CLIBytes=119139;CLISHA256='19af683d0c609d43cefc7c93dd3d7fa6f7ae1a6f5b90d2945d37b1830bda1111'})
+    $fixture.BuildProfile.PreparedCLI.Bytes=119139
+    @($fixture.Bindings|Where-Object Path -CEQ $fixture.BuildProfile.PreparedCLI.Path)[0].Bytes=119139
+    foreach($row in @(@('ObserverSource','native_catalog_add_observation.inc'),@('ObserverAdapter','prepare_catalog_add_observation.py'))) {
+        $pin=[pscustomobject]@{Path=(Join-Path $PSScriptRoot $row[1]);Bytes=1024;SHA256=('a'*64)}
+        $fixture.BuildProfile|Add-Member NoteProperty $row[0] $pin
+        $fixture.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
+    }
+    return $fixture
+}
+if(!(Assert-T7BuildProfile (New-AddProfileFixture) $PSScriptRoot)){throw 'C2 profile refused.'};$checks++
+foreach($change in @(
+    {$fixture.BuildProfile.Name='t7-catalog-message-publication'},
+    {$fixture.BuildProfile.ObservationSchema='iw7.t7-zm-observation/1'},
+    {$fixture.ReuseCompile.PSObject.Properties.Remove('ZombiesAddObservationC2')},
+    {$fixture.BuildProfile.ObserverAdapter.Path='C:\other.py'},
+    {$fixture.BuildProfile.ObserverSource.Path=Join-Path $PSScriptRoot 'native_catalog_zombies_observation.inc'},
+    {$fixture.BuildProfile|Add-Member NoteProperty ObservationContract @{}},
+    {$fixture.ReuseCompile.RecompiledZonetool=$false}
+)) {
+    $fixture=New-AddProfileFixture;. $change;Must-Refuse $fixture
+}
+
 $bindingResult=(& (Join-Path $PSScriptRoot 'Test-T7InputBindings.ps1'))|ConvertFrom-Json
 if(!$bindingResult.Passed -or $bindingResult.NativeInvoked -or $bindingResult.OpaqueContentRead){throw 'Early input binding tests failed.'}
 $checks+=$bindingResult.Checks
