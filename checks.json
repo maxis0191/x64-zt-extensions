@@ -313,6 +313,28 @@
       ]
     },
     {
+      "id": "Test-T7LinkV3Consumer",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3Consumer.ps1"
+      ]
+    },
+    {
+      "id": "Test-T7LinkV3Report",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7LinkV3Report.ps1"
+      ]
+    },
+    {
       "id": "Test-T7ReferenceV2HostPublication",
       "command": [
         "pwsh",
