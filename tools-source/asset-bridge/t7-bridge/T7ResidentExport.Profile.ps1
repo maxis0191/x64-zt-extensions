@@ -958,7 +958,8 @@ function Assert-T7SelectedStreamedE5Closure($Plan,$Receipt,$Build,$Pins) {
 }
 function Assert-T7SelectedStreamedCollisionPolicy($Policy,[int]$Surfaces) {
     Assert-T7CatalogueFields $Policy @('policy','scope','source_tree_present','cpu_tree_present','collision_dropped','collision_tree_payload_bytes_read','collision_conversion_attempted','collision_compatibility_verified','ready')
-    if($Policy.policy -cne 'omit-source-rigid-collision-trees' -or $Policy.scope -cne 'render-only' -or
+    if($Policy.policy -isnot [string] -or $Policy.scope -isnot [string] -or
+       $Policy.policy -cne 'omit-source-rigid-collision-trees' -or $Policy.scope -cne 'render-only' -or
        !(Test-T7CatalogueInteger $Policy.collision_tree_payload_bytes_read 0)){throw 'Exact render-only collision scope and zero payload read required.'}
     foreach($name in 'source_tree_present','cpu_tree_present','collision_dropped'){
         if($Policy.$name -isnot [array] -or $Policy.$name.Count -ne $Surfaces){throw 'Exactly N ordered collision booleans required.'}
@@ -982,7 +983,7 @@ function Assert-T7SelectedStreamedRequest($Request,[switch]$RenderOnly) {
     $package=$Request.packages[0];Assert-T7CatalogueFields $package @('path','identity','bytes')
     if($package.path -cne 'zone/mp_initial.xpak' -or $package.identity -cne 'D088B64A:000C0000001EB2FD' -or
        !(Test-T7CatalogueInteger $package.bytes 654311424) -or $package.bytes -ne 654311424){throw 'Exact observed E3 provider required.'}
-    if($RenderOnly -and $Request.collision_policy -cne 'omit-source-rigid-collision-trees'){throw 'Exact E5 render-only collision policy required.'}
+    if($RenderOnly -and ($Request.collision_policy -isnot [string] -or $Request.collision_policy -cne 'omit-source-rigid-collision-trees')){throw 'Exact E5 render-only collision policy required.'}
 }
 function Get-T7ResidentExportOutputKey($Plan) {
     if(!(Get-T7SelectedStreamedExport $Plan)){return (Get-T7ResidentExportKey $Plan.ExportRequest)}

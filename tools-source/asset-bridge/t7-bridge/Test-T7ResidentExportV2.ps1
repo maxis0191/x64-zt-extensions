@@ -212,6 +212,12 @@ try{
         source_tree_present=@($true,$true,$true,$true,$true);cpu_tree_present=@($false,$false,$false,$false,$false);collision_dropped=@($true,$true,$true,$true,$true);
         collision_tree_payload_bytes_read=0;collision_conversion_attempted=$false;collision_compatibility_verified=$false;ready=$false})
     Assert-T7ResidentExportManifest $streamManifest $streamPlan;$checks++
+    foreach($name in 'policy','scope'){
+        $bad=Copy-Value $streamManifest;$bad.selected_collision_policy.$name=@($bad.selected_collision_policy.$name)
+        Refuses {Assert-T7ResidentExportManifest $bad $streamPlan} 'Exact render-only collision scope'
+    }
+    $badRequest=Copy-Value $v2Request;$badRequest.collision_policy=@($badRequest.collision_policy)
+    Refuses {Assert-T7SelectedStreamedRequest $badRequest -RenderOnly} 'Exact E5 render-only collision policy'
     $bad=Copy-Value $streamManifest;$bad.PSObject.Properties.Remove('selected_collision_policy')
     Refuses {Assert-T7ResidentExportManifest $bad $streamPlan} 'Exact catalogue fields'
     $bad=Copy-Value $streamManifest;$bad.selected_collision_policy.cpu_tree_present[0]=$true
