@@ -1,4 +1,9 @@
 # Fixed catalogue adapter. Ownership, pin readers and closure stay in H1Native.Core.
+function Test-T7ImageProvenancePlan($Plan) {
+    [bool]($Plan.PSObject.Properties['SelectedImageProvenanceV1'] -or
+        ($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ImageProvenanceV1') -or
+        ($Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -ceq 't7-image-provenance-v1'))
+}
 function Get-T7CatalogueZoneSpec($Name='mp_freerun_04') {
     if($Name -isnot [string] -or $Name -cnotin @('mp_freerun_04','zm_common')){throw 'Only exact allowlisted catalogue zones are allowed.'}
     $bytes=if($Name -ceq 'mp_freerun_04'){16977344L}else{36332480L}
@@ -22,7 +27,7 @@ function Get-T7CataloguePlanZoneSpec($Plan) {
 }
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -isnot [string] -or $Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -isnot [string] -or $Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
 function Assert-T7CatalogueZombiesObservationPlan($Plan) {
@@ -354,10 +359,14 @@ function Assert-T7CatalogueDistinctInputIds($Plan,$InputFileIds) {
 }
 function Get-T7CatalogueOperation($Plan) {
     if(!$Plan.PSObject.Properties['Operation']){return 'Catalogue'}
-    if($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1')){throw 'Unknown T7 operation.'}
+    if($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1')){throw 'Unknown T7 operation.'}
     $Plan.Operation
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
+    if(Test-T7ImageProvenancePlan $Plan){
+        Assert-T7ImageProvenanceSourcePlan $Plan
+        Assert-T7ImageProvenanceOperationalGate
+    }
     $export=(Get-T7CatalogueOperation $Plan) -ceq 'ResidentExportV1'
     $parts=(Get-T7CatalogueOperation $Plan) -ceq 'MaterialPartsV1' -or (Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-material-parts-v1' -or [bool]$Plan.PSObject.Properties['SelectedMaterialPartsV1']
     if($parts){Assert-T7MaterialPartsPlan $Plan}
@@ -494,6 +503,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     Assert-T7CatalogueBootstrapBindings $Plan
 }
 function Assert-T7CatalogueBuild($Plan,$Receipt) {
+    if(Test-T7ImageProvenancePlan $Plan){Assert-T7ImageProvenanceOperationalGate}
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     Assert-T7CatalogueZombiesAddPlan $Plan
     if($candidateProfile -ceq 't7-zombies-catalogue-observation-c' -or $Plan.PSObject.Properties['ZombiesObservationC']){
@@ -925,6 +935,7 @@ function New-T7CatalogueAlias($Pin,[string]$Destination,$Context) {
     [pscustomobject]@{Path=$Destination;Source=$Pin.Path;Bytes=$Pin.Bytes;SHA256=$Pin.SHA256;FileId=$aliasId}
 }
 function New-T7CatalogueStart($Plan) {
+    if(Test-T7ImageProvenancePlan $Plan){Assert-T7ImageProvenanceOperationalGate}
     $start=New-T7PrepatchStart $Plan # Environment setup only; diagnostic is not invoked.
     $zoneSpec=Get-T7CataloguePlanZoneSpec $Plan
     $start.ArgumentList.Clear();$start.ArgumentList.Add('-t7-iw7-catalog');$start.ArgumentList.Add($zoneSpec.Name)

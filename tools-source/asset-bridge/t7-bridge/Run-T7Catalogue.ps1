@@ -24,11 +24,16 @@ try {
     $parts=[bool]($plan.PSObject.Properties['SelectedMaterialPartsV1'] -or
         ($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'MaterialPartsV1') -or
         ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-material-parts-v1'))
+    $provenance=[bool]($plan.PSObject.Properties['SelectedImageProvenanceV1'] -or
+        ($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'ImageProvenanceV1') -or
+        ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-image-provenance-v1'))
     $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2'))
     $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
     if($export -or $zombies){$required+=@($exportProfile)}
     $partsProfile=Join-Path $PSScriptRoot 'T7MaterialParts.Profile.ps1'
     if($parts){$required+=@($partsProfile)}
+    $provenanceProfile=Join-Path $PSScriptRoot 'T7ImageProvenance.Profile.ps1'
+    if($provenance){$required+=@($provenanceProfile)}
     foreach($path in $required) {
         $pin=@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true})
         if($pin.Count -ne 1 -or $pin[0].Bytes -gt 1MB){throw 'Bounded exact source binding missing.'}
@@ -38,6 +43,7 @@ try {
     . $profile
     if($export -or $zombies){. $exportProfile} # C consumes only the shared build qualifier.
     if($parts){. $partsProfile}
+    if($provenance){. $provenanceProfile} # Source gate only; no qualified CLI or execution route.
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
     if($export){Assert-T7ResidentExportCatalogue $plan}
