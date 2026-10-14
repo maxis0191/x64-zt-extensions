@@ -147,6 +147,30 @@ Failed. Its generic error does not identify the offending pin. Diagnose that
 exact input under a separate admission before correcting provenance or retrying;
 never adopt a different opaque hash or rewrite the frozen D plan.
 
+Two separately admitted read-only diagnoses narrowed this refusal. The six
+opaque tool/job bindings all passed unchanged (receipt 5,302 bytes/`58e651d0`);
+the subsequent exact Inputs list stopped after 1,138 passing pins, at index
+1,139 (`plan.Inputs[1138]`), `C:\Windows\System32\TZRES.DLL`. Its size stayed
+12,288 bytes, but the sealed SHA-256
+`f3f5ef83a67c503991d728f62cf039cbb52a18d6eb82197dec23ede8f0996108`
+differs from the under-lease observation
+`1398cf1d866e49a8ba351e2a30a7803b50c8b595d17f776abe8d2ec4a9c6fb10`.
+The input diagnosis receipt is 2,672 bytes/`c06117cbd2fe378dd9105a88ac84ccb3dbb323a8cfd247795b634e5a949525db`,
+Status Refused, guards disposed and lease released. The original host exited 1;
+fresh 07:51:41 UTC observation found owned absence and no leases. No later
+input was read, no different hash adopted and no native retry performed.
+
+This OS/toolchain pin originates in the immutable checksum seal `f52867e7`,
+with an original 2026-09-08 modification date. The current file's observed
+2026-10-14 02:39 UTC modification coincides with Windows servicing; Setup events
+record UpdateAgentLCU staging/installing KB5127647, but do not identify that
+file's replacement. An OS-update explanation remains an inference. Microsoft's
+[TimeZoneInfo source](https://github.com/microsoft/referencesource/blob/main/mscorlib/system/timezoneinfo.cs)
+uses System32 `tzres.dll` resources for localized time-zone names. Its current
+identity/signature and the remaining input suffix need qualification before
+any explicit environment refresh. Preserve the old seal and D failure; do not
+roll back a Windows DLL or silently repin a historical build.
+
 G3 uses two bounded owned 264-byte header copies approved by G2's existing
 Readable guard. It rejects extra/ambiguous captures, differing addresses or
 bytes, mismatched G2 metadata and any unqualified selected header/name/recheck.
