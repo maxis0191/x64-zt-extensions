@@ -1085,6 +1085,21 @@
       ]
     },
     {
+      "id": "original_root_rotation_source",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/asset-bridge/animation/rig/root_rotation",
+        "-p",
+        "test_*.py",
+        "-v"
+      ]
+    },
+    {
       "id": "test_rigid_control_assets",
       "command": [
         "pwsh",
