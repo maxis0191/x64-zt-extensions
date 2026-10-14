@@ -440,6 +440,65 @@ only a future explicit native CLI epoch may adopt and activate the new entry.
 No T7 engine, game, stock extraction, image/pixel IO or native caller activation
 occurred in G.
 
+### First authentic diffuse: opt-in parts probe source
+
+E5's completed metadata still contains no image name, format, size or stream key.
+Its material slot 0 is `mc/t7_metal_trim_safehouse_mobile_09`; diffuse-hash binding
+4 (`0xA0AB1041`, raw usage 1) was not attempted. This 32-bit binding hash is not
+the 64-bit XPAK object key. The other four source material slots and their existing
+IW7 shoe rebindings do not establish an authentic BO3 texture.
+
+The separate [parts adapter](selected_material_parts_observation.hpp) preserves
+the exact G2 header `a8848a92` and fixture `b3de6888`. It reuses `observe_binding`
+with a guarded callback and collects exactly two owned copies of 264-byte ranges
+after the original guard approves them. Any third matching range refuses, rather
+than being ignored or classified by a type heuristic. The 64 KiB budget charges
+both original reads and the additional 528 copied bytes. Before adding parts, the
+adapter requires the exact selected row, G2's header/name rechecks, two copies at
+the same address with identical full header bytes, and metadata identical to G2.
+Original G2 refusals remain refusals, without publishing stream descriptors.
+
+Only the opt-in entry `selected_material_parts_observation::observe_binding_parts`
+announces diagnostic schema `/3`. It publishes the four physical part records
+from that owned header: packed count/size word, raw four-bit count and 28-bit size,
+dimensions, canonical 64-bit key and three opaque descriptor words. A declared
+count above four is flagged outside bounds; it never controls a memory walk.
+Native raw 32-bit format and its first byte are both retained because the primary
+layout descriptions differ in format field width. No masking, format conversion,
+package guess, pointer address, pixel copy or allocation-retention claim is added.
+The separate [fixture](selected_material_parts_observation_fixture.cpp) has an
+expected 32 focused checks for raw field widths/high-bit keys, negative ranges,
+exact selection, count bounds, preserved G2 refusal, third capture and budget.
+These changed C++ cases remain **uncompiled/unexecuted** at this source stage.
+
+The coordinated future CLI mode is explicit:
+`-t7-iw7-material-parts-v1 mp_freerun_04 p7_fre_platform_cap_02 0`.
+It selects material slot 0 / image binding 4 / expected hash `0xA0AB1041`, emits
+bounded JSON and stops before geometry, XPAK payload decoding or FF output.
+The caller/build transition is owned separately; default render bytes, legacy
+factories and frozen E5 inputs are preserved. Native compilation and this one
+stock probe require their own coordinator slot and exact source/input plan.
+
+After successful real metadata, reuse the qualified selected-XPAK CLI for one
+authentic complete object of at most 262,144 decoded/encoded bytes. The primary
+[Greyhound reader](https://github.com/Scobalula/Greyhound/blob/22c3d17f7428573042b56f43af0ed2585989bebd/src/WraithXCOD/WraithXCOD/GameBlackOps3.cpp#L588-L643)
+uses the first cumulative size or the difference from the preceding cumulative
+size for later parts. Preserve the raw words and refuse underflow, zero or
+oversized objects; do not substitute a binding hash or truncate an object to one
+mip. Keep sRGB as observed. DDS construction must validate the complete decoded
+layout before reusing the existing encoder; resident metadata cannot be forged
+to admit a streamed object.
+
+The first textured FF is a distinct stage derived from the preserved E5 geometry:
+change only material handle 0 to a private material, keep four shoe handles and
+the exact mesh/UV/index data, and embed the one authentic diffuse with measured
+IW7 material state. The retained beacon recipe supplies a potential packed-color
+template, with recipient normal/specular behavior explicitly borrowed rather
+than claimed BO3-faithful. Its opaque state/constant inputs need fresh guarded
+admission before copying. The existing shoe-only FF/runtime gates need narrow,
+reviewed variant support from their owners; the old `750d25d7` plan and `50ca9124`
+FF remain immutable. No image payload, DDS or textured FF exists yet.
+
 At native pin `fab935826c898806855376662a8a03317b3ad8f1`,
 [T7 MaterialTextureDef](https://github.com/bigmangeekf/x64-zt/blob/fab935826c898806855376662a8a03317b3ad8f1/src/zonetool/zonetool/t7/structs.hpp#L731-L772)
 contains `image`, `nameHash`, `uvScale`, `texSizeShift[2]`, `uvOffset[3]`, `usage`
