@@ -67,6 +67,30 @@ full-plan DEFAULT by its actual AST/output schema. The first renderer identity
 test also caught an insertion splitting the F2 entry comment from its function;
 the complete original entry is now retained contiguously.
 
+On 2026-10-14 admitted PREP B generated the real 384208-byte plan
+`4e479a02930f6582cc07b5cc7997673ee91914ee8d7d13224d148393c3d23536`
+with all 1146 input pins, but DEFAULT exited 1 before printing its result.
+The fixture guard incorrectly compared a mixed-case native path with the
+producer's lowercase Windows input identity using case-sensitive equality.
+The exact T7 header was present (72314 bytes / f1f46442); no header was missing.
+That single comparison now follows Windows case-insensitive identity while
+retaining the exact path and unique sealed-input requirement. The causal source
+control reproduces the old refusal; lowercase succeeds and absent, foreign and
+duplicate header identities still refuse.
+
+B's generated package, plan and refused receipt remain immutable. The receipt
+is 4445 bytes / fb870a1b99aa3c91ea4386743eeea7e64c6724527364cdf77c0a983c4b55702e.
+Both original jobs closed, held inputs were reverified, publication completed
+and the lease released. Original NoExit/AppDomain closure was confirmed with
+zero guards, then terminal14176 exited 1. Fresh observation found the four
+original processes and all heavy/game processes absent, with leases.json empty.
+An initial closure probe used the wrong state.json filename and produced a null
+lease; that failed probe is retained and is not an empty-registry proof. The
+verified additive closure is 368 bytes /
+22103b47240c72181ba0c9ac17ea4caa67852b7b69e2b518459cea29a7589f4d.
+No CPP, native candidate or stock operation ran in B. A fresh source cohort and
+separately reviewed PREP successor are required; B cannot be replayed or relabeled.
+
 Next: source review/private Git/exact-head CI audit, fresh cohort and reviewed
 admitted preparation/CPP capsule. Its mapper/guard results, full CLI artifact
 hashes and original closure must be measured. A separately reviewed native F2
