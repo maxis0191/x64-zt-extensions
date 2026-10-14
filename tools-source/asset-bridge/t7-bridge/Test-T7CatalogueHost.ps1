@@ -11,6 +11,13 @@ function Refuses([scriptblock]$Body,[string]$Pattern){
     Check $caught ('Expected refusal: '+$Pattern)
 }
 function Pin([string]$Path){[pscustomobject]@{Path=$Path;Bytes=(Get-Item -LiteralPath $Path).Length;SHA256=(Get-FileHash -LiteralPath $Path).Hash.ToLowerInvariant()}}
+# Match the real runner's local import followed by closure in the original host.
+Check (!(Get-Command Get-T7SelectedStreamedExport -ErrorAction SilentlyContinue)) 'Clean host unexpectedly has the runner-local selector.'
+& {
+    . (Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1')
+    Check ([bool](Get-Command Get-T7SelectedStreamedExport -ErrorAction SilentlyContinue)) 'Runner-local selector was not loaded.'
+}
+Check (!(Get-Command Get-T7SelectedStreamedExport -ErrorAction SilentlyContinue)) 'Runner-local selector leaked into host closure scope.'
 $temporary=Join-Path ([IO.Path]::GetTempPath()) ('t7-host-tests-'+[guid]::NewGuid().ToString('N'))
 $null=[IO.Directory]::CreateDirectory($temporary)
 try {
