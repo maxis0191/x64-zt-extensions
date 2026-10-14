@@ -14,8 +14,38 @@ import prepare_message_publication
 import prepare_catalog_zombies_observation as zombies_observer
 import prepare_catalog_add_observation as add_observer
 import prepare_material_parts as material_parts
+import prepare_image_provenance as image_provenance
 
 HERE = Path(__file__).resolve().parent
+
+
+def image_provenance_selected(args):
+    selected = getattr(args, 'image_provenance_v1', False)
+    require(type(selected) is bool, 'Explicit image-provenance boolean required')
+    if selected:
+        require(getattr(args, 'catalog_message_publication', False) is True and
+                getattr(args, 'selected_streamed_render_only_v2', False) is True and
+                all(getattr(args, name, False) is False for name in (
+                    'material_parts_v1', 'prepatch_reference_v2', 'prepatch_link_v3',
+                    'selected_streamed_static_v1', 'resident_multisurface_v2',
+                    'resident_surface_count_diagnostic', 'zombies_catalogue_observation',
+                    'zombies_add_observation_c2', 'catalog_trace', 'catalog_exit',
+                    'catalog_callers', 'catalog_message')) and
+                not getattr(args, 'prepatch_helper', None) and
+                bool(getattr(args, 'reuse_plan', None)) and bool(getattr(args, 'reuse_compile_receipt', None)),
+                'Image provenance requires exclusive E5 publication and retained compile proofs')
+    return selected
+
+
+def image_provenance_transition(payloads, read):
+    # Bind both adapters: the frozen provenance overlay reuses parts' exact E5/G2 primitives.
+    read(HERE/'prepare_material_parts.py', 32*1024)
+    read(HERE/'prepare_image_provenance.py', 32*1024)
+    main, cli, marker = image_provenance.overlay(payloads['prepared/main.cpp'].decode(),
+                                              payloads['prepared/zonetool.cpp'].decode(), read)
+    marker.update(BaseMainBytes=material_parts.BASE_MAIN[0], BaseMainSHA256=material_parts.BASE_MAIN[1],
+                  BaseCLIBytes=material_parts.BASE_CLI[0], BaseCLISHA256=material_parts.BASE_CLI[1])
+    return main.encode(), cli.encode(), marker
 CL_LOG_SHA = 'a7083ce5b9ba2fe1421c4f8733cf1d1e0b286549dbc55a44f3ef30ceb3c05333'
 LINK_LOG_SHA = '70455d2f32a9b034dda20fbaf48443ee68a02e552381edbf88b19d219f1f66b2'
 E7_READ_PIN = (15206288, 'd9cdd533796a9fe14e0d5140d8adcbf5cbc932fafd4c06e18a615d15199a2185')
@@ -538,11 +568,13 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
-def require_preparation_bounds(raw, payloads, *, parts_profile=False):
+def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False):
     require(type(parts_profile) is bool, 'Explicit parts preparation profile required')
+    require(type(provenance_profile) is bool and not (parts_profile and provenance_profile),
+            'Exclusive explicit provenance preparation profile required')
     # Only the closed, explicitly selected G3 source transition gets this cap.
     # This bounds authored output bytes, not RAM/commit admission or asset reads.
-    payload_limit = (288 if parts_profile else 256) * 1024
+    payload_limit = (288 if parts_profile or provenance_profile else 256) * 1024
     require(len(raw) <= 2*1024**2 and sum(map(len,payloads.values())) <= payload_limit,
             'Preparation bound exceeded')
 
@@ -559,7 +591,9 @@ def os_resource_selected(args):
     require(type(flag) is bool and bool(proof) == flag, 'Explicit paired TZRES context/proof required')
     if flag:
         require(getattr(args, 'material_parts_v1', False) is True or
-                getattr(args, 'prepatch_link_v3', False) is True, 'TZRES context requires explicit parts or V3')
+                getattr(args, 'prepatch_link_v3', False) is True or
+                getattr(args, 'image_provenance_v1', False) is True,
+                'TZRES context requires explicit parts, provenance or V3')
     return flag
 
 
@@ -596,6 +630,7 @@ def os_resource_context(path, read, expected):
 
 
 def prepare(args):
+    image_observation = image_provenance_selected(args)
     os_context_enabled = os_resource_selected(args)
     parts_observation = material_parts.selected(args)
     zombies_observation = zombies_observation_selected(args)
@@ -857,6 +892,11 @@ def prepare(args):
                                                    payloads['prepared/zonetool.cpp'].decode(), read)
         payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'] = main.encode(), cli.encode()
         reuse['MaterialParts'] = marker
+    if image_observation:
+        require(reuse is not None and catalog_publication and selected_streamed_render_only_v2,
+                'Image provenance requires the verified E5 publication reuse closure')
+        payloads['prepared/main.cpp'], payloads['prepared/zonetool.cpp'], reuse['ImageProvenance'] = \
+            image_provenance_transition(payloads, read)
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -916,6 +956,16 @@ def prepare(args):
                                ('MainResponse',output/'main.obj.rsp'),('CLIResponse',output/'zonetool11.obj.rsp'),
                                ('LinkResponse',output/'link.rsp')]:
                 profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+        if image_observation:
+            profile.update(Name=image_provenance.NAME, Option=image_provenance.OPTION,
+                           ArgumentCount=5, ObservationSchema=image_provenance.SCHEMA, SourceOnlyPending=True)
+            for name, path in [('ProvenanceBaseWiring',HERE/'prepare_material_parts.py'),
+                               ('ProvenanceWiring',HERE/'prepare_image_provenance.py'),
+                               ('ProvenanceSource',HERE/image_provenance.HELPER),
+                               ('ProvenanceEntry',HERE/image_provenance.ENTRY),
+                               ('ProvenanceContract',HERE/image_provenance.CONTRACT),
+                               ('ProvenanceFixture',HERE/image_provenance.FIXTURE)]:
+                profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
         if zombies_observation:
             profile['Name'] = zombies_observer.SOURCE_PROFILE
             profile['ObservationSchema'] = zombies_observer.SCHEMA
@@ -949,7 +999,7 @@ def prepare(args):
         'ToolchainFullyHermetic':False,'Ready':False}
     if os_context is not None: plan['OSResourceContext'] = os_context
     raw = (json.dumps(plan,indent=2)+'\n').encode()
-    require_preparation_bounds(raw, payloads, parts_profile=parts_observation)
+    require_preparation_bounds(raw, payloads, parts_profile=parts_observation, provenance_profile=image_observation)
     payloads['build-plan.local.json'] = raw
     output.mkdir()
     for name, data in payloads.items():
@@ -982,6 +1032,7 @@ if __name__ == '__main__':
     parser.add_argument('--zombies-catalogue-observation',action='store_true')
     parser.add_argument('--zombies-add-observation-c2',action='store_true')
     parser.add_argument('--material-parts-v1',action='store_true')
+    parser.add_argument('--image-provenance-v1',action='store_true')
     parser.add_argument('--os-context-tzres-20261014',action='store_true')
     parser.add_argument('--os-context-proof',type=Path)
     parser.add_argument('--ordinary-plan',type=Path)

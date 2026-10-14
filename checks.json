@@ -390,6 +390,17 @@
       ]
     },
     {
+      "id": "Test-T7ImageProvenanceLauncher",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7ImageProvenanceLauncher.ps1"
+      ]
+    },
+    {
       "id": "Test-T7Catalogue",
       "command": [
         "pwsh",
@@ -1142,6 +1153,16 @@
         "-NoProfile",
         "-File",
         "tools-source/asset-bridge/t7-iw7/Test-T7OSResourceContext.ps1"
+      ]
+    },
+    {
+      "id": "tools-source-image-provenance-build-profile",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-ImageProvenanceBuild.ps1"
       ]
     },
     {
