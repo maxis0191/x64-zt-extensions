@@ -1634,3 +1634,40 @@ No compile, FF, live fixture, physics serialization, prediction, stock/opaque
 reads or game run followed. Next: independent source review/private Git workflow;
 then separately review the actual visible geometry/transform and one native-box
 episode. Isolating a24/12 rendered model would require a reviewed profile change.
+
+## 2026-10-14: standalone writer source plan and Python pin correction
+
+The next proposal reuses the existing168/84 writer/readback, M7 named reference
+and one obstacle sidecar. Pure source preparation produced nine files (seven
+default inputs plus the named-material manifest and sidecar), without compiling,
+reading stock/tool payloads, staging aliases or starting a game. The standalone
+Build uses no retail stock. Direct preparation needs `-B -S`, because `-I`
+removes the script directory required by its `import arena`; the independent
+readback continues to use `-I -S -B`.
+
+The writer still declared the stale Python digest31073dad. The actual M7D
+reference reader had already recorded Python3.12 digest
+`4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a`,
+exit0/root exited/active0/job closed. Only this pin is corrected; existing source
+tests exercise the real Pin assignment against that historical receipt contract,
+with old-pin refusal/new-pin match and no pre-admission opaque qualification.
+No binary was rehashed for this correction. The future Build must requalify
+actual cl/link/vctip/Python/NativeJob digests under its single admitted reservation
+before launching any process, and retain the original context if proof is unknown.
+
+The operator proposal keeps the source helper's exact native2f policy, direct
+Compile→Link→writer→independent readback, original PS7 NoExit host identity,
+sampled output/deadlines and guarded source-final/closure/release path. Model
+names remain paris_original_arena / paris_original_arena_lod0. Render/physics,
+prediction, player movement and GPU normal encoding remain unqualified.
+
+Current FF72 binding does not carry M7's fixed33 PAK cohort. This is an explicit
+follow-up gap, not an accepted FF recipe. Native62/Ops55 admission/consumer
+coordination is separate; Rig/BO3/ribbon assets are not World geometry proof.
+Native25 diagnostics currently probe legacy paris_model_probe names and only
+observe Rig scenes; they do not target paris_original_arena. Sharing zone/NCS
+names does not create a World diagnostic witness. This is not a general engine
+loading prohibition. Both owners reported these constraints from source only.
+Next: complete source review/private Git workflow, inspect the concrete writer
+cap and generate/review a new local recipe before any Build GO. No FF/Game stage
+or new isolated24/12 profile is authorized by this source proposal.

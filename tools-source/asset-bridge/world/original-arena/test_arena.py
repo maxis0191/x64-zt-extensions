@@ -630,6 +630,46 @@ if($script:QualificationCalls -ne 1 -or !$state.CandidateQualifiedUnderLease){th
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell LIGHT plan checks require pwsh')
+    def test_writer_pin_matches_closed_reader_receipt_and_refuses_old_pin(self):
+        script = r'''
+param($Writer,$Root)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Writer,[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'Writer source parse failed'}
+$pin=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Pin'},$true))[0]
+. ([scriptblock]::Create($pin.Extent.Text))
+$assignment=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$pythonPin'},$true))
+if($assignment.Count -ne 1){throw 'One existing Python pin assignment required'}
+$guards=[Collections.Generic.List[IDisposable]]::new();$entries=[Collections.Generic.List[object]]::new()
+$python=Join-Path $Root 'authored-python.exe';[IO.File]::WriteAllText($python,'Authored source placeholder; not a tool')
+# Historical closed M7D reader receipt, supplied as text, never a new opaque hash.
+$closedReaderSHA='4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a'
+$script:Admitted=$false;$script:Calls=0
+function Assert-BeaconHash($Path,$Expected){
+    if(!$script:Admitted){throw 'Opaque qualification before admission'}
+    $script:Calls++
+    if($Path -cne $python -or $Expected -cne $closedReaderSHA){throw 'Declared pin differs from historical reader receipt'}
+}
+try {
+    # Actual source Pin defers known binary digests, including the stale one.
+    $old=Pin $python '31073dad142bc7f3374e3122aa668270052c9ad37d0aaab803ae73f184c3a43b'
+    . ([scriptblock]::Create($assignment[0].Extent.Text))
+    if($script:Calls -ne 0){throw 'Planning qualified an opaque tool'}
+    $script:Admitted=$true
+    $refused=$false;try{Assert-BeaconHash $old.Path $old.SHA256}catch{$refused=$_.Exception.Message -ceq 'Declared pin differs from historical reader receipt'}
+    if(!$refused){throw 'Stale writer pin was not refused'}
+    Assert-BeaconHash $pythonPin.Path $pythonPin.SHA256
+    if($script:Calls -ne 2){throw 'Expected stale failure and corrected match'}
+} finally {foreach($guard in $guards){$guard.Dispose()}}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'writer-pin-source.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('Build-ArenaWriter.ps1')),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell LIGHT plan checks require pwsh')
     def test_light_measurement_plan_binds_checker_and_local_imports(self):
         helper=Path(model_lab.__file__).with_name('Measure-StockReference.ps1')
         # Authored source/receipt placeholders only; default planning must never

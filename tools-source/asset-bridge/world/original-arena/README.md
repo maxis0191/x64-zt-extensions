@@ -262,3 +262,77 @@ These are source-reviewed routes, not native run receipts. Source mocks test the
 delegation, telemetry-only pressure and failure/unknown-owner handling; they do
 not qualify a native job. Actual measured reference, writer/FF/readback receipts,
 pixels, collision, navigation and owner gameplay remain pending coordinated GO.
+
+## 2026-10-14: writer-only plan after the measured M7 reference
+
+The first writer proposal retains the existing seven-box168/84 profile and one
+obstacle sidecar. The seven default preparation files plus material-bound
+`arena-writer-source.json` and `first-box.source.json` make nine source files.
+The native helper consumes its existing four files (writer, header, geometry,
+material manifest); the sidecar is not an engine payload. Source preparation
+uses `python -B -S prepare.py`: direct `-I` removes the script directory needed
+by `import arena`. The independent reader retains its existing `-I -S -B` route.
+
+Use the immutable M7D evidence/CSV hashes recorded in WORLD-ASSET-BRIDGE.md and
+the pinned ZoneTool interface source `fab935826c898806855376662a8a03317b3ad8f1`.
+No stock file is needed by this standalone writer. Material binding consults
+only its small reference snapshots/request/closed plan and three normal source
+proofs; it does not copy material payloads or replay the reference measurement.
+The composed package must retain native helper policy
+`2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1` and the exact reviewed assets revision.
+
+The writer's stale Python pin `31073dad…` is corrected to
+`4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a`.
+This digest comes from the actual closed M7D reference reader: Python3.12,
+exit0, root exited, active0 and job closed at14:14:25 UTC. This source correction
+is not a fresh binary measurement. The next admitted Build must hold/recheck
+the actual selected Python image against that digest before any process starts.
+The exact pin fails if PATH resolves another Python; there is no fallback.
+MSVC14.44.35207/SDK10.0.26100.0, cl/link/vctip and NativeJob5f pins remain unchanged.
+
+Plan through existing `Build-ArenaWriter.ps1`, then review its newly generated
+local recipe hash before a separate GO. Start the approved invocation in one
+fresh original PS7 host with `-NoExit` before `-File`/`-Command`, record that
+host's image/PID/parent/creation before the helper, and preserve its same live
+AppDomain for failure/quarantine inspection. Invoke the helper once. It owns
+the sole Build lease, guarded inputs, Compile→Link→Fixture→Check jobs and
+closure/source-final/output/release path. No wrapper lease, independent kill,
+stock aliases, game launch or replacement supervisor is required.
+
+Expected readback: XModel `paris_original_arena`, XSurface
+`paris_original_arena_lod0`, root `tag_origin`, one root/surface/LOD,168/84,
+identity bind/model scale1, midpoint(0,0,40), half(272,208,56), named M7 material,
+all positions/UVs/normal candidates/white colors/indices/rigid coverage and three
+root part masks. Writer self-read compares full packed attributes including
+tangents; the independent reader checks the listed semantics and complete
+record consumption. It hashes packed streams but does not independently decode
+tangents or qualify normal encoding on the GPU. Physics names, collision tree,
+blend streams and runtime qualification remain absent/false. Each XMB/XSB is
+bounded to8192 bytes; Check stdout is bounded to4KiB with empty stderr.
+
+The existing shared Compile+Link allowance is90 seconds, Fixture10, Check5,
+whole group120. Output64MiB is sampled, with2MiB stream threshold and1MiB
+metadata reserve. The2GiB/3GiB estimates are telemetry under the pinned policy,
+not independent admission thresholds. Known opaque image digests are deferred
+until the single Build admission. Unknown closure/source proof retains the
+original guard/owner/lease context; no receipt/PID/token recreates those handles.
+
+Future FF naming remains zone/FF/rawfile `paris_model_probe` and NCS
+`ncs_mdl_paris_model_probe`, with five payload inputs and three metadata files
+in staging. Ops55's Rig consumer uses a different FF/model cohort and must stay
+preserved. A future World consumer needs its own admitted model names and a
+measured identity actor/transform; Native62 and Ops55 own those changes.
+Native25's model_probe diagnostic targets `paris_model_probe` and its mesh;
+sharing the zone/NCS names does not admit `paris_original_arena` or its mesh.
+Its scene observer is Rig-only. A future opt-in World diagnostic/profile and
+separate protected consumer must be reviewed by those owners before render GO.
+These filters constrain diagnostic qualification, not general engine loading;
+an omitted World witness cannot establish absence of that model in the engine.
+
+**FF coverage gap:** current ModelFF accepts exactly the72-input binding and
+declares assetfile1. M7's successful reference used a fixed33-PAK/104-input cohort.
+The standalone writer proves neither cohort sufficient for a new FF. Do not
+pass the M7 cohort as a72-input plan or claim FF provenance from source tests.
+Any finite-cohort FF extension is a separate source follow-up after measured
+writer/readback and demonstrated need, with the existing managed transaction.
+No FF/Extract/Game authorization is included in this writer-only proposal.
