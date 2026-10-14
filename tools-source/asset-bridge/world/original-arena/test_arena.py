@@ -127,6 +127,76 @@ class ArenaTests(unittest.TestCase):
         self.assertEqual(prepare.literal(1+2**-24), '1.0f')
         self.assertEqual(prepare.literal(-(1+2**-24)), '-1.0f')
 
+    def test_first_obstacle_contract_selects_existing_faces_and_absolute_bounds(self):
+        contract = arena.first_box_contract(self.scene, 'obstacle', [0, 0, 0])
+        self.assertEqual(contract['local_bounds'], {'minimum': [16, -32, 0], 'maximum': [48, 32, 32]})
+        self.assertEqual(contract['world_bounds'], contract['local_bounds'])
+        self.assertEqual(contract['mesh_selection'], {'surface': 0, 'first_vertex': 144,
+                         'vertex_count': 24, 'first_triangle': 72, 'triangle_count': 12,
+                         'isolated_render_model': False})
+        native = contract['native_box']
+        self.assertEqual((native['world'], native['observed']), (0, 1))
+        self.assertEqual(native['origin'], [32, 0, 16])
+        self.assertEqual(native['half_size'], [16, 32, 16])
+        self.assertEqual(native['rotation_xyzw'], [0, 0, 0, 1])
+        self.assertFalse(native['owner_transform_applied'])
+        self.assertEqual(native['provider_internal_game_to_havok_scale'], 1/32)
+        self.assertTrue(native['solid_before_create_required'])
+        self.assertTrue(all(value is False for key, value in contract.items() if key.endswith('_verified')))
+
+    def test_translated_scaled_box_matches_all_selected_mesh_corners(self):
+        contract = arena.first_box_contract(self.scene, 'obstacle', [1024, 2048, 512], 3)
+        world = contract['world_bounds']
+        self.assertEqual(world, {'minimum': [1072, 1952, 512], 'maximum': [1168, 2144, 608]})
+        self.assertEqual(contract['native_box']['origin'], [1120, 2048, 560])
+        self.assertEqual(contract['native_box']['half_size'], [48, 96, 48])
+        surface = arena.geometry(self.scene)['surfaces'][0]
+        vertices = surface['vertices'][144:168]
+        transformed = [[3*v['position'][i]+[1024, 2048, 512][i] for i in range(3)] for v in vertices]
+        self.assertEqual([min(v[i] for v in transformed) for i in range(3)], world['minimum'])
+        self.assertEqual([max(v[i] for v in transformed) for i in range(3)], world['maximum'])
+        corners = {(x, y, z) for x in (1072, 1168) for y in (1952, 2144) for z in (512, 608)}
+        self.assertEqual({tuple(v) for v in transformed}, corners)
+        self.assertTrue(all(144 <= i < 168 for triangle in surface['triangles'][72:84] for i in triangle))
+        # Internal provider conversion belongs to the provider, not to GSC bounds.
+        self.assertEqual([h/32 for h in contract['native_box']['half_size']], [1.5, 3, 1.5])
+
+    def test_first_box_refuses_missing_names_invalid_or_lossy_placement(self):
+        cases = [('missing', [0, 0, 0], 1), ('obstacle', [0, 0], 1),
+                 ('obstacle', [True, 0, 0], 1), ('obstacle', [math.nan, 0, 0], 1),
+                 ('obstacle', [1+2**-24, 0, 0], 1), ('obstacle', [2**30, 0, 0], 1),
+                 ('obstacle', [0, 0, 0], 0), ('obstacle', [0, 0, 0], -1),
+                 ('obstacle', [0, 0, 0], True), ('obstacle', [0, 0, 0], math.inf),
+                 ('obstacle', [0, 0, 0], 1+2**-24), ('obstacle', [0, 0, 0], 2**124)]
+        for name, origin, scale in cases:
+            with self.subTest(name=name, origin=origin, scale=scale), self.assertRaises(ValueError):
+                arena.first_box_contract(self.scene, name, origin, scale)
+        # Exact endpoints alone do not guarantee exact float32 midpoint/half.
+        scene = copy.deepcopy(self.scene)
+        scene['solids'][-1]['minimum'][0] = .25+2**-25
+        scene['solids'][-1]['maximum'][0] = 4096
+        with self.assertRaisesRegex(ValueError, 'midpoint/half rounding'):
+            arena.first_box_contract(scene, 'obstacle', [0, 0, 0])
+
+    def test_optional_box_sidecar_preserves_existing_writer_inputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            baseline, selected = root/'baseline', root/'selected'
+            prepare.prepare(baseline)
+            result = prepare.prepare(selected, first_box='obstacle', model_origin=[1024, 2048, 512], model_scale=3)
+            self.assertEqual((result['vertices'], result['triangles'], result['prepared_files']), (168, 84, 8))
+            for path in baseline.iterdir():
+                self.assertEqual(path.read_bytes(), (selected/path.name).read_bytes())
+            contract = json.loads((selected/'first-box.source.json').read_bytes())
+            self.assertEqual(contract['geometry_source_sha256'], hashlib.sha256((selected/'geometry.source.json').read_bytes()).hexdigest())
+            self.assertIsNone(contract['material_reference'])
+            self.assertFalse(contract['rendered_bounds_verified'])
+            self.assertFalse(contract['physics_serialized'])
+            for kwargs in ({'first_box': 'absent'}, {'model_origin': [1, 2, 3]}, {'model_scale': 2}):
+                output = root/'invalid'
+                with self.assertRaises(ValueError): prepare.prepare(output, **kwargs)
+                self.assertFalse(output.exists())
+
 
 def synthetic_records(mesh, material=None):
     """Tiny authored typed streams for reader fault injection, never retail data."""
@@ -751,14 +821,14 @@ if(!$caught -or $context.Closed -or $context.Owner -or $previous.StopCalls -ne 0
         path=root/'recipient.json';path.write_text(json.dumps(evidence))
         return tool,stock,path,evidence
 
-    def prepare_fixture(self,root):
+    def prepare_fixture(self,root,**kwargs):
         tool,stock,evidence,_=self.binding_fixture(root)
         prepared=root/'prepared'
         # Test-authored interfaces/evidence; this bypass is scoped to this mock,
         # never a production CLI flag or a claim about live retail snapshots.
         hashes=prepare_writer.source_hashes(tool,check_pin=False)
         with patch.object(prepare,'source_hashes',return_value=hashes):
-            prepare.prepare(prepared,tool_source=tool,recipient_evidence=evidence,stock_root=stock)
+            prepare.prepare(prepared,tool_source=tool,recipient_evidence=evidence,stock_root=stock,**kwargs)
         geometry=json.loads((prepared/'geometry.source.json').read_bytes())
         artifacts=root/'artifacts'
         for name,raw in zip(model_lab.PAIR,synthetic_records(geometry,readback.MATERIAL)):
@@ -779,6 +849,17 @@ if(!$caught -or $context.Closed -or $context.Owner -or $previous.StopCalls -ne 0
             for name in ('geometry.source.json','arena.source.json','route.reference.json'):
                 self.assertEqual((prepared/name).read_bytes(),(unbound/name).read_bytes())
             with self.assertRaises(ValueError):prepare.prepare(root/'partial',recipient_evidence=root/'recipient.json')
+
+    def test_first_box_sidecar_keeps_named_material_reference_unqualified(self):
+        with tempfile.TemporaryDirectory() as temp:
+            prepared,_ = self.prepare_fixture(Path(temp),first_box='obstacle')
+            contract = json.loads((prepared/'first-box.source.json').read_bytes())
+            self.assertEqual(contract['material_reference'], readback.MATERIAL)
+            self.assertFalse(contract['material_payload_verified'])
+            self.assertFalse(contract['rendered_bounds_verified'])
+            manifest = json.loads((prepared/'arena-writer-source.json').read_bytes())
+            self.assertEqual(set(manifest['source_files']), {'geometry.source.json', 'probe_geometry.hpp', 'arena_writer.cpp'})
+            self.assertEqual(manifest['selected_counts']['vertices'], 168)
 
     def test_shared_recipient_validator_refuses_missing_changed_and_escape_proofs(self):
         with tempfile.TemporaryDirectory() as temp:
