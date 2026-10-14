@@ -287,6 +287,14 @@ Historical main guards reconstruct to their exact old hashes; the frozen C
 snapshot still passes its positive transition. Source tests and DEFAULT do not
 prove a new native build, exported retail model or visible pixels.
 
+The final future E5 cohort explicitly adopts PR33's MaterialG helper
+(18583 bytes/SHAa8848a92) and fixture (20260 bytes/SHAb3de6888), already qualified
+with109 actual synthetic native cases. The caller remains the original
+five-argument `observe` with schema1 and image0 behavior. The new targeted
+`observe_binding` API is not activated by this E5 geometry change. This is an
+explicit new source epoch before any E5 compilation; compiled E3/E4 and the
+frozen CatalogueC cohort retain MaterialE/0ea and their original receipts.
+
 `prepare_build.py --selected-streamed-static-v1` selects a separate transition
 table and marker. Legacy128 and E2/v2144 bindings remain unchanged. This epoch
 has149 bindings (143 text/six opaque), 1,146 inputs and the same66-header proof.

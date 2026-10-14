@@ -318,7 +318,7 @@ function New-RenderOnlyBindingFixture {
         CollisionPolicy='omit-source-rigid-collision-trees'})
     foreach($row in @(
         @('prepared/main.cpp',13160,'55081db20863f291f4f1fea8c1c995995e5e548b56acf043201fbb2e361f3934',43254,'5aef1fad310071f5e680a9f5b4dbd6a303af6ea8605fccb5dc5705cb386b761d'),
-        @('prepared/zonetool.cpp',110229,'81be2ff09aa9b433c3f1e63f6adc47800670bd040e3dad09753e2a67534d888e',110283,'f0436457967f13d3e4cbd429ad00624bd774dd7c64e9e649d3a77364cd528bef'))) {
+        @('prepared/zonetool.cpp',112323,'774c5e0a2716c27c381a1f353d02ba504488affe3350faf84ce1d802a2d98be8',112377,'c63d9552464da674d3b03c35f7edc16385fb9370b113a3925fd7bc4835fb005a'))) {
         $transition=@($fixture.ReuseCompile.ResidentMultiSurfaceV2.SourceTransitions|Where-Object Path -CEQ $row[0])[0]
         $transition.Bytes=$row[1];$transition.SHA256=$row[2];$transition.WiredBytes=$row[3];$transition.WiredSHA256=$row[4]
         $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\plan\'+$row[0].Replace('/','\')))[0]
@@ -330,6 +330,12 @@ function New-RenderOnlyBindingFixture {
         @('native_streamed_export.inc',10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
         @('streamed_contract.py',10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
         @('test_streamed_contract.py',13768,'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'))) {
+        $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
+        $pin.Bytes=$row[1];$pin.SHA256=$row[2]
+    }
+    foreach($row in @(
+        @('selected_material_observation.hpp',18583,'a8848a92b8d7918fbe91ec4b68df123b1eaab89edde9d8a7c24d5a0cfb576ffc'),
+        @('selected_material_observation_fixture.cpp',20260,'b3de68880b6f8c717c2e70ed44497ae2f95f37db7e73bbf34ef014d8e5b6fc6f'))) {
         $pin=@($fixture.Bindings|Where-Object Path -CEQ ('C:\fixture\'+$row[0]))[0]
         $pin.Bytes=$row[1];$pin.SHA256=$row[2]
     }
