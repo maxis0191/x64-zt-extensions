@@ -186,7 +186,7 @@ function Assert-T7ResidentMultiSurfaceBuild($Plan,$Receipt,$Build) {
     $streamed=[bool](Get-T7SelectedStreamedExport $Plan)
     $zombies=(Get-T7CatalogueCandidateProfile $Plan) -ceq 't7-zombies-catalogue-observation-c'
     $bindingCount=if($zombies){151}elseif($streamed){149}elseif($observation){144}else{141}
-    $transitionSHA=if($zombies -or ($streamed -and (Test-T7SelectedStreamedE4Build $Plan))){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}elseif($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}elseif($observation){'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}else{'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'}
+    $transitionSHA=if($streamed -and (Get-T7SelectedStreamedRenderOnly $Plan)){'09f477a869eabe0794118dff29a8412773b30ab4602ea7c18190ea748768a395'}elseif($zombies -or ($streamed -and (Test-T7SelectedStreamedE4Build $Plan))){'76570ca356d90c45c04b7cd4c8e46ff8126fc1cdb9c0919562dbb265955bee6b'}elseif($streamed){'50e4bbe0d8bfb0df9a091dbc2034a8730071a9011c9825cf49ef9583120694ed'}elseif($observation){'e1b572bfacbce89260ffce52d21c26e15f2ae2aa5172256cd063797b9a0f1b1c'}else{'fcedb13a3e4b16bd2b4af0957780b755e235d99a91ffe1dc4b8f9bc7a3ed5a46'}
     if(!$Build.ReuseCompile.PSObject.Properties['ResidentMultiSurfaceV2'] -or
        $Build.ReuseCompile.PSObject.Properties['ResidentSurfaceCountDiagnostic']){throw 'Exact resident v2 reuse marker required.'}
     $proof=$Build.ReuseCompile.ResidentMultiSurfaceV2
@@ -407,7 +407,7 @@ function Assert-T7ResidentExportPlan($Plan,[string]$Repo) {
     $version=Get-T7ResidentExportVersion $Plan
     $null=Get-T7SelectedObservationProbe $Plan
     $streamed=[bool](Get-T7SelectedStreamedExport $Plan)
-    $command=if($streamed){'-t7-iw7-model-streamed-v1'}elseif($version -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
+    $command=if($streamed -and (Get-T7SelectedStreamedRenderOnly $Plan)){'-t7-iw7-model-streamed-v2'}elseif($streamed){'-t7-iw7-model-streamed-v1'}elseif($version -eq 2){'-t7-iw7-model-v2'}else{'-t7-iw7-model'}
     $arguments=@($command,'mp_freerun_04','p7_fre_platform_cap_02','0');if($streamed){$arguments+=@('streamed-request.json');Assert-T7SelectedStreamedProvider $Plan}
     $diagnostic=Get-T7ResidentExportDiagnostic $Plan
     if((Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV3' -or
@@ -454,7 +454,7 @@ function Assert-T7ResidentExportCatalogue($Plan) {
     $receipt=Read-H1SmallJson $Plan.SourceCatalogueReceipt.Path 128KB
     $catalogue=Read-H1SmallJson $Plan.SourceCatalogue.Path 512KB
     $request=Read-H1SmallJson $Plan.ExportRequestFile.Path 4KB
-    if(Get-T7SelectedStreamedExport $Plan){Assert-T7SelectedStreamedRequest $request}
+    if(Get-T7SelectedStreamedExport $Plan){Assert-T7SelectedStreamedRequest $request -RenderOnly:(Get-T7SelectedStreamedRenderOnly $Plan)}
     else{Assert-T7ResidentExportRequest $request;if(($request|ConvertTo-Json -Compress) -cne ($Plan.ExportRequest|ConvertTo-Json -Compress)){throw 'Standalone export request differs.'}}
     if($base.Schema -cne 'iw7.t7-catalogue-plan/1' -or $receipt.Schema -cne 'iw7.t7-catalogue-run/1' -or
        $receipt.PlanSHA256 -cne $Plan.SourceCataloguePlan.SHA256 -or $receipt.Status -cne 'CatalogueObservedPendingDonorReview' -or
@@ -529,13 +529,15 @@ function Assert-T7ResidentExportManifest($Manifest,$Plan) {
         'output_mesh_name','output_root_key','target','profile','geometry_profile','root_bone_name','selected_counts','material_dependencies','model','mesh')+$falseFields
     if($version -eq 2){$fields+=@('surface_records','geometry_work_bytes_upper_bound')}
     if($streamed){$fields+=@('selected_mesh_payload')}
+    if(Get-T7SelectedStreamedRenderOnly $Plan){$fields+=@('selected_collision_policy')}
     Assert-T7CatalogueFields $Manifest $fields
     foreach($field in 'schema','requested_zone','source_model','output_model_name','output_root_key','target','profile','geometry_profile'){
         if($Manifest.$field -isnot [string]){throw 'Export manifest scalar string required.'}
     }
-    $schema=if($streamed){'iw7.t7-iw7-selected-streamed-export/1'}else{'iw7.t7-iw7-resident-export/'+$version}
-    $profile=if($streamed){'selected-streamed-rigid-one-lod'}else{'resident-rigid-one-lod'}
-    $geometry=if($streamed){'t7-iw7-selected-streamed-static-v1'}else{'t7-iw7-resident-static-v'+$version}
+    $renderOnly=$streamed -and (Get-T7SelectedStreamedRenderOnly $Plan)
+    $schema=if($renderOnly){'iw7.t7-iw7-selected-streamed-export/2'}elseif($streamed){'iw7.t7-iw7-selected-streamed-export/1'}else{'iw7.t7-iw7-resident-export/'+$version}
+    $profile=if($renderOnly){'selected-streamed-render-only-rigid-one-lod'}elseif($streamed){'selected-streamed-rigid-one-lod'}else{'resident-rigid-one-lod'}
+    $geometry=if($renderOnly){'t7-iw7-selected-streamed-render-only-v2'}elseif($streamed){'t7-iw7-selected-streamed-static-v1'}else{'t7-iw7-resident-static-v'+$version}
     if($Manifest.schema -cne $schema -or $Manifest.target -cne 'iw7' -or
        $Manifest.profile -cne $profile -or $Manifest.geometry_profile -cne $geometry -or
        $Manifest.requested_zone -cne $Plan.ExportRequest.zone -or $Manifest.source_model -cne $Plan.ExportRequest.model -or
@@ -557,6 +559,7 @@ function Assert-T7ResidentExportManifest($Manifest,$Plan) {
         }
     }
     if($streamed){Assert-T7SelectedStreamedPayload $Manifest.selected_mesh_payload $Plan $Manifest.selected_counts.surfaces}
+    if($renderOnly){Assert-T7SelectedStreamedCollisionPolicy $Manifest.selected_collision_policy $Manifest.selected_counts.surfaces}
     foreach($spec in @(@('model',('xmodel/'+$Plan.ExportRequest.model+'.xmb'),1MB),
         @('mesh',('xsurface/'+$Manifest.output_mesh_name.Replace('\','/')+'.xsb'),16MB))){
         $artifact=$Manifest.($spec[0]);Assert-T7CatalogueFields $artifact @('relative_path','bytes','sha256')
@@ -656,6 +659,7 @@ function Read-T7ResidentExportReport($Plan,$State,$Context) {
 
 # E3 is an explicit new epoch; the D/E2 selectors and their retained pins stay exact.
 function Get-T7SelectedStreamedExport($Plan) {
+    if(Get-T7SelectedStreamedRenderOnly $Plan){return $Plan.SelectedStreamedRenderOnlyV2}
     if(!$Plan.PSObject.Properties['SelectedStreamedStaticV1']){return $null}
     $marker=$Plan.SelectedStreamedStaticV1
     Assert-T7CatalogueFields $marker @('Schema')
@@ -665,8 +669,18 @@ function Get-T7SelectedStreamedExport($Plan) {
        $Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']){throw 'Distinct selected-streamed E3 contract required.'}
     $marker
 }
+function Get-T7SelectedStreamedRenderOnly($Plan) {
+    if(!$Plan.PSObject.Properties['SelectedStreamedRenderOnlyV2']){return $false}
+    $marker=$Plan.SelectedStreamedRenderOnlyV2;Assert-T7CatalogueFields $marker @('Schema')
+    if($marker.Schema -cne 'iw7.t7-selected-streamed-render-only-plan/2' -or
+       (Get-T7ResidentExportVersion $Plan) -ne 2 -or
+       $Plan.PSObject.Properties['SelectedStreamedStaticV1'] -or $Plan.PSObject.Properties['SelectedMeshMaterialObservation'] -or
+       $Plan.PSObject.Properties['ResidentSurfaceCountDiagnostic']){throw 'Distinct E5 render-only v2 plan required.'}
+    $true
+}
 function Get-T7SelectedStreamedBuildPins($Plan) {
     if(!(Get-T7SelectedStreamedExport $Plan)){throw 'Explicit E3 selector required.'}
+    if(Get-T7SelectedStreamedRenderOnly $Plan){return (Get-T7SelectedStreamedE5BuildPins $Plan)}
     if(Test-T7SelectedStreamedE4Build $Plan){return (Get-T7SelectedStreamedE4BuildPins $Plan)}
     $prepared=Join-Path (Split-Path $Plan.BuildPlan -Parent) 'prepared'
     $source=Split-Path (Split-Path (Split-Path $Plan.BuildPlan -Parent) -Parent) -Parent
@@ -701,6 +715,7 @@ function Get-T7SelectedStreamedBuildPins($Plan) {
     $pins
 }
 function Assert-T7SelectedStreamedClosure($Plan,$Receipt,$Build,$Pins) {
+    if(Get-T7SelectedStreamedRenderOnly $Plan){Assert-T7SelectedStreamedE5Closure $Plan $Receipt $Build $Pins;return}
     if(Test-T7SelectedStreamedE4Build $Plan){Assert-T7SelectedStreamedE4Closure $Plan $Receipt $Build $Pins;return}
     Assert-T7CatalogueFields $Build.ReuseCompile.SelectedStreamedStaticV1 @('Schema','GeometryProfile')
     if($Build.ReuseCompile.SelectedStreamedStaticV1.Schema -cne 'iw7.t7-selected-streamed-static-build/1' -or
@@ -858,10 +873,108 @@ function Assert-T7SelectedStreamedE4Closure($Plan,$Receipt,$Build,$Pins) {
     if(([datetimeoffset]$inventory.CapturedUtc).UtcTicks -le ([datetimeoffset]$exitProof.CapturedUtc).UtcTicks -or
        ([datetimeoffset]$exitProof.CapturedUtc).UtcTicks -le ([datetimeoffset]$hostProof.HostCreationUtc).UtcTicks){throw 'E4 host/exit/absence ordering differs.'}
 }
-function Assert-T7SelectedStreamedRequest($Request) {
-    Assert-T7CatalogueFields $Request @('schema','target','profile','zone','model','lod','xpak_key','packages')
-    if($Request.schema -cne 'iw7.t7-iw7-selected-streamed-request/1' -or $Request.target -cne 'iw7' -or
-       $Request.profile -cne 'selected-streamed-rigid-one-lod' -or $Request.zone -cne 'mp_freerun_04' -or
+function Get-T7SelectedStreamedE5BuildPins($Plan) {
+    if(!(Get-T7SelectedStreamedRenderOnly $Plan)){throw 'Explicit E5 render-only selector required.'}
+    $prepared=Join-Path (Split-Path $Plan.BuildPlan -Parent) 'prepared'
+    $source=Split-Path (Split-Path (Split-Path $Plan.BuildPlan -Parent) -Parent) -Parent
+    $root=Split-Path $Plan.BuildReceipt -Parent;$pins=[ordered]@{}
+    foreach($row in @(
+        @('BuildPlan',$Plan.BuildPlan,368157,'b702de6b61403a2abd3be6a01a2504058d58bdfb082dc67d9b07e6cd6a911063'),
+        @('BuildReceipt',$Plan.BuildReceipt,24288,'942c4963e40ee18e10a9bcafdd8fc38b8140582e6fcea479f6c95ebce68b61b8'),
+        @('Header',(Join-Path $prepared 't7_iw7_resident_model.hpp'),21290,'857d57b5f3c1c970f45e513e357215f3506e9c48b2daea4b4f62cb33e0d9bce4'),
+        @('HostClosure',(Join-Path $root 'original-host-closure.local.json'),339,'5cec4f0db38b6b0546df2aaeda046e122c0f3f16cc5e2dad2c2a9d4ca0594c0e'),
+        @('HostExit',(Join-Path $root 'original-host-exit-request.local.json'),372,'b2101fc68afdeab89cfa66db64355e02a619918924b4ce940732e459ee7a674b'),
+        @('Inventory',(Join-Path $root 'post-host-inventory.local.json'),964,'20d2a0cfec5759e6917d5f6e874e60efacc5f5151d68e943329ba08aaa137aaf'),
+        @('Bundle',(Join-Path $root 'closure-bundle-final.local.json'),1341,'6ba7950c10bd925711ac284f8077f2ed140ac6f1b24f5a36622547ce9e16dd13'),
+        @('ToolReturn',(Join-Path $root 'original-host-tool-return.local.json'),373,'670bdf6ac2935440505b1a211dc8b7892c2165aa50ecbd965443503f60dcc0b0'),
+        @('Completion',(Join-Path $root 'completion.local.json'),14273,'e5a2d25bdccc482dfd00b94379eb74683af2edcfa3b1ac72e479e5160130f0fe'),
+        @('SourceReceipt',(Join-Path $source 'source-workspace.json'),311609,'973e77d41e8300ec3330987ada8bdca4a2bb0e7a3c4d625381511cd4d6117051'),
+        @('NativeExport',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/native_export.inc'),18796,'ea2904c37beeaa652c9a56b66775f3a45df0de4250095059dc0769b79f7d7fdd'),
+        @('MaterialHeader',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/selected_material_observation.hpp'),18583,'a8848a92b8d7918fbe91ec4b68df123b1eaab89edde9d8a7c24d5a0cfb576ffc'),
+        @('MaterialFixture',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/selected_material_observation_fixture.cpp'),20260,'b3de68880b6f8c717c2e70ed44497ae2f95f37db7e73bbf34ef014d8e5b6fc6f'),
+        @('PayloadHeader',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/streamed_mesh_payload.hpp'),18512,'53265601cec86ba6e0b731e54d9c706f41d390756f4e4566ace70bd5fbd25adf'),
+        @('StreamedHeader',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/t7_iw7_streamed_model.hpp'),11951,'04007fa53fc6a3cc0307a589e7f28cebfa1c2a37c6071e0a2cb9ded412782453'),
+        @('NativeStreamed',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/native_streamed_export.inc'),10919,'f4fdc95d6a29bbe36c9140beff11567ab3ecc4d87f3c28e1e4e7fa4a25ec92c7'),
+        @('StreamedContract',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/streamed_contract.py'),10366,'cc584cf6d2ff82be77b9ef0e926cda75ac7768f85e906d6eef22c2f8c2572df4'),
+        @('StreamedTest',(Join-Path $source 'tools-source/asset-bridge/t7-iw7/test_streamed_contract.py'),13768,'86392ae7934213692ae4c9453579d4b006d2665d6a80aaf52e39a41edc18bb3c'))){
+        $pin=[pscustomobject]@{Path=$row[1];Bytes=$row[2];SHA256=$row[3]};Assert-T7CatalogueTextPin $pin $Plan.Bindings;$pins[$row[0]]=$pin
+    }
+    if($Plan.ExpectedBuildPlanSHA256 -cne $pins.BuildPlan.SHA256 -or $Plan.ExpectedBuildReceiptSHA256 -cne $pins.BuildReceipt.SHA256 -or
+       $Plan.CandidateBytes -ne 21924864 -or $Plan.CandidateSHA256 -cne 'aa322cac65d61d2ed8fa544f79a117201a3fcde8408b6b6cb59ea745f20f5d2f'){throw 'Exact compiled E5 v2 build and candidate required.'}
+    $pins
+}
+function Assert-T7SelectedStreamedE5Closure($Plan,$Receipt,$Build,$Pins) {
+    $marker=$Build.ReuseCompile.SelectedStreamedRenderOnlyV2
+    Assert-T7CatalogueFields $marker @('Schema','GeometryProfile','CollisionPolicy')
+    if($marker.Schema -cne 'iw7.t7-selected-streamed-render-only-build/2' -or $marker.GeometryProfile -cne 't7-iw7-selected-streamed-render-only-v2' -or
+       $marker.CollisionPolicy -cne 'omit-source-rigid-collision-trees' -or $Build.ReuseCompile.PSObject.Properties['SelectedStreamedStaticV1'] -or
+       $Build.ReuseCompile.PSObject.Properties['ZombiesObservationC'] -or $Build.BuildProfile.PreparedCLI.Bytes -ne 112377 -or
+       $Build.BuildProfile.PreparedCLI.SHA256 -cne 'c63d9552464da674d3b03c35f7edc16385fb9370b113a3925fd7bc4835fb005a'){throw 'Exact E5 v2 compiler profile required.'}
+    foreach($name in 'NativeExport','MaterialHeader','MaterialFixture','PayloadHeader','StreamedHeader','NativeStreamed','StreamedContract','StreamedTest'){Assert-T7CatalogueTextPin $Pins[$name] $Build.Bindings}
+    $source=Read-H1SmallJson $Pins.SourceReceipt.Path 512KB
+    if($source.schema -cne 'iw7.source-workspace/1' -or $source.revisions.'x64-zt-extensions' -cne 'af41e7680da51ac67d4a52bc4fad978b9ccf44e8' -or
+       $source.revisions.'iw7-mod-components' -cne '2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1'){throw 'Exact E5 compilation source provenance required.'}
+    $hostProof=Read-H1SmallJson $Pins.HostClosure.Path 2KB;$exitProof=Read-H1SmallJson $Pins.HostExit.Path 2KB
+    $tool=Read-H1SmallJson $Pins.ToolReturn.Path 2KB;$inventory=Read-H1SmallJson $Pins.Inventory.Path 2KB
+    $completion=Read-H1SmallJson $Pins.Completion.Path 16KB;$bundle=Read-H1SmallJson $Pins.Bundle.Path 4KB
+    Assert-T7CatalogueFields $completion.SourceMarker @('Schema','GeometryProfile','CollisionPolicy')
+    foreach($name in 'Schema','GeometryProfile','CollisionPolicy'){
+        if($completion.SourceMarker.$name -cne $marker.$name){throw 'E5 completion source marker differs.'}
+    }
+    if($hostProof.Schema -cne 'iw7.t7-e5-original-build-host-closure/1' -or $exitProof.Schema -cne 'iw7.t7-e5-original-host-exit-request/1' -or
+       $tool.Schema -cne 'iw7.t7-e5-original-host-tool-return/1' -or $inventory.Schema -cne 'iw7.t7-e5-post-host-inventory/1' -or
+       $completion.Schema -cne 'iw7.t7-e5-native-build-completion/1' -or $bundle.Schema -cne 'iw7.t7-e5-build-closure-bundle/1'){throw 'Exact original E5 closure schemas required.'}
+    foreach($proof in @($hostProof,$exitProof)){
+        foreach($name in 'Closed','LeaseNull'){if($proof.$name -isnot [bool] -or !$proof.$name){throw 'E5 original host is not closed.'}}
+        if($proof.Host -ne 14904 -or $proof.Session -ne 83868 -or $proof.Guards -ne 0 -or $proof.PlanSHA256 -cne $Pins.BuildPlan.SHA256 -or
+           ([datetimeoffset]$proof.HostCreationUtc).UtcTicks -ne ([datetimeoffset]'2026-10-14T00:28:39.6665468Z').UtcTicks){throw 'Exact E5 original host identity required.'}
+    }
+    if($hostProof.Status -cne 'Passed' -or $hostProof.CanExit -isnot [bool] -or !$hostProof.CanExit -or $exitProof.RequestedExitCode -ne 0 -or
+       $tool.Session -ne 83868 -or $tool.ChunkId -cne 'dfb099' -or $tool.ExitCode -ne 0 -or $tool.OriginalInnerPID -ne 14904 -or $tool.OriginalOuterPID -ne 25564 -or
+       ([datetimeoffset]$tool.OriginalInnerCreationUtc).UtcTicks -ne ([datetimeoffset]$hostProof.HostCreationUtc).UtcTicks -or
+       $inventory.OriginalPTY -ne 83868 -or (@($inventory.OwnPIDSet)-join '|') -cne '25564|14904|22580|5220|2560|2888|8452|15080' -or
+       @($inventory.OwnPresent).Count -ne 0 -or @($inventory.Heavy).Count -ne 0 -or @($inventory.ResourceStatus.Leases).Count -ne 0 -or
+       $completion.SourceHead -cne $source.revisions.'x64-zt-extensions' -or $completion.PlanPath -cne $Pins.BuildPlan.Path -or
+       $completion.PlanSHA256 -cne $Pins.BuildPlan.SHA256 -or $completion.ReceiptPath -cne $Pins.BuildReceipt.Path -or $completion.PostflightPath -cne $Pins.Inventory.Path -or
+       $completion.Status -cne 'Passed' -or $completion.LeaseToken -cne $Receipt.LeaseToken -or
+       $bundle.SourceHead -cne $source.revisions.'x64-zt-extensions' -or $bundle.PlanSHA256 -cne $Pins.BuildPlan.SHA256 -or
+       $bundle.OriginalPTY -ne 83868 -or $bundle.ActualExitCode -ne 0 -or $bundle.ActualExitChunk -cne 'dfb099' -or @($bundle.Files).Count -ne 6){throw 'Exact E5 actual tool/build completion required.'}
+    foreach($name in 'InputsReverified','TreeClosureConfirmed','LeaseReleased'){if($completion.$name -isnot [bool] -or !$completion.$name){throw 'E5 completion is not closed.'}}
+    foreach($name in 'Path','Bytes','SHA256'){
+        if($completion.OriginalToolReturn.$name -cne $Pins.ToolReturn.$name){throw 'E5 completion tool pin differs.'}
+    }
+    foreach($proof in @(@{Object=$completion;Names=@('CandidateExecuted','Quarantined','StockExecuted','GeometryVerified','RuntimeVerified','Ready')},@{Object=$bundle;Names=@('OpaqueArtifactsReread')})){
+        foreach($name in $proof.Names){if($proof.Object.$name -isnot [bool] -or $proof.Object.$name){throw 'E5 build evidence overclaims its scope.'}}
+    }
+    foreach($pin in @($Pins.BuildReceipt,$Pins.HostClosure,$Pins.HostExit,$Pins.ToolReturn,$Pins.Inventory,$Pins.Completion)){
+        if(@($bundle.Files|Where-Object {$_.Name -ceq [IO.Path]::GetFileName($pin.Path) -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256}).Count -ne 1){throw 'E5 bundle pin differs.'}
+    }
+    for($i=0;$i -lt 3;$i++){$stage=$Receipt.Stages[$i];$snap=$stage.LastOriginalSnapshot
+        if($stage.Identity.PID -ne @(22580,5220,2560)[$i] -or $snap.RootExited -isnot [bool] -or !$snap.RootExited -or $snap.RootExitCode -ne 0 -or $snap.ActiveProcesses -ne 0 -or
+           $snap.PID -ne $stage.Identity.PID -or $snap.Image -cne $stage.Identity.Image -or ([datetimeoffset]$snap.CreatedUtc).UtcTicks -ne ([datetimeoffset]$stage.Identity.CreatedUtc).UtcTicks){throw 'Exact closed original E5 compiler/link jobs required.'}
+    }
+    if(([datetimeoffset]$inventory.CapturedUtc).UtcTicks -le ([datetimeoffset]$exitProof.CapturedUtc).UtcTicks -or
+       ([datetimeoffset]$exitProof.CapturedUtc).UtcTicks -le ([datetimeoffset]$hostProof.HostCreationUtc).UtcTicks){throw 'E5 original lifecycle ordering differs.'}
+}
+function Assert-T7SelectedStreamedCollisionPolicy($Policy,[int]$Surfaces) {
+    Assert-T7CatalogueFields $Policy @('policy','scope','source_tree_present','cpu_tree_present','collision_dropped','collision_tree_payload_bytes_read','collision_conversion_attempted','collision_compatibility_verified','ready')
+    if($Policy.policy -cne 'omit-source-rigid-collision-trees' -or $Policy.scope -cne 'render-only' -or
+       !(Test-T7CatalogueInteger $Policy.collision_tree_payload_bytes_read 0)){throw 'Exact render-only collision scope and zero payload read required.'}
+    foreach($name in 'source_tree_present','cpu_tree_present','collision_dropped'){
+        if($Policy.$name -isnot [array] -or $Policy.$name.Count -ne $Surfaces){throw 'Exactly N ordered collision booleans required.'}
+        foreach($value in $Policy.$name){if($value -isnot [bool]){throw 'Exact collision booleans required.'}}
+    }
+    for($i=0;$i -lt $Surfaces;$i++){if($Policy.cpu_tree_present[$i] -or $Policy.collision_dropped[$i] -ne $Policy.source_tree_present[$i]){throw 'Foreign trees must be omitted only in the CPU view.'}}
+    foreach($name in 'collision_conversion_attempted','collision_compatibility_verified','ready'){if($Policy.$name -isnot [bool] -or $Policy.$name){throw 'Collision conversion and compatibility remain unproved.'}}
+}
+function Assert-T7SelectedStreamedRequest($Request,[switch]$RenderOnly) {
+    $fields=@('schema','target','profile','zone','model','lod','xpak_key','packages')
+    if($RenderOnly){$fields+=@('collision_policy')}
+    Assert-T7CatalogueFields $Request $fields
+    $schema=if($RenderOnly){'iw7.t7-iw7-selected-streamed-request/2'}else{'iw7.t7-iw7-selected-streamed-request/1'}
+    $profile=if($RenderOnly){'selected-streamed-render-only-rigid-one-lod'}else{'selected-streamed-rigid-one-lod'}
+    if($Request.schema -cne $schema -or $Request.target -cne 'iw7' -or
+       $Request.profile -cne $profile -or $Request.zone -cne 'mp_freerun_04' -or
        $Request.model -cne 'p7_fre_platform_cap_02' -or !(Test-T7CatalogueInteger $Request.lod 0) -or
        $Request.xpak_key -cne 'f58d58f1fc9b6b01' -or $Request.packages -isnot [array] -or $Request.packages.Count -ne 1){
         throw 'Only the observed E3 donor/key and single qualified provider are admitted.'
@@ -869,11 +982,13 @@ function Assert-T7SelectedStreamedRequest($Request) {
     $package=$Request.packages[0];Assert-T7CatalogueFields $package @('path','identity','bytes')
     if($package.path -cne 'zone/mp_initial.xpak' -or $package.identity -cne 'D088B64A:000C0000001EB2FD' -or
        !(Test-T7CatalogueInteger $package.bytes 654311424) -or $package.bytes -ne 654311424){throw 'Exact observed E3 provider required.'}
+    if($RenderOnly -and $Request.collision_policy -cne 'omit-source-rigid-collision-trees'){throw 'Exact E5 render-only collision policy required.'}
 }
 function Get-T7ResidentExportOutputKey($Plan) {
     if(!(Get-T7SelectedStreamedExport $Plan)){return (Get-T7ResidentExportKey $Plan.ExportRequest)}
     $request=Read-T7SelectedStreamedRequestFile $Plan
-    $rows=@('t7-iw7-selected-streamed-static-v1',$request.zone,$request.model,'0',$request.xpak_key,
+    $geometry=if(Get-T7SelectedStreamedRenderOnly $Plan){'t7-iw7-selected-streamed-render-only-v2'}else{'t7-iw7-selected-streamed-static-v1'}
+    $rows=@($geometry,$request.zone,$request.model,'0',$request.xpak_key,
         $request.packages[0].path,$request.packages[0].identity,[string]$request.packages[0].bytes)
     't7_iw7_streamed_'+[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::ASCII.GetBytes(($rows -join "`n")))).ToLowerInvariant()
 }
@@ -891,7 +1006,9 @@ function Assert-T7SelectedStreamedProvider($Plan) {
        $p.EntryOffset -ne 653815768 -or $p.PayloadOffset -ne 146723456 -or $p.PayloadBytes -ne 7680){throw 'Exact admitted provider/header/index/target extent required.'}
     # This large package must never enter the ordinary whole-file SHA pin path.
     if(@($Plan.Bindings|Where-Object Path -CEQ $m.Path).Count){throw 'Selected XPAK cannot be a whole-file H1 binding.'}
-    if($Plan.ExportRequestFile.Bytes -ne 377 -or $Plan.ExportRequestFile.SHA256 -cne '2f79f63fdf6378ee420b0f63ef5e1d19dedcb55909a77f759ac071247839502c'){
+    $renderOnly=Get-T7SelectedStreamedRenderOnly $Plan
+    $requestBytes=if($renderOnly){463}else{377};$requestSHA=if($renderOnly){'66e9d49388dfe18bd5c088ef0c945ede544b4410c0dc31ae8e1b95efaf21db8d'}else{'2f79f63fdf6378ee420b0f63ef5e1d19dedcb55909a77f759ac071247839502c'}
+    if($Plan.ExportRequestFile.Bytes -ne $requestBytes -or $Plan.ExportRequestFile.SHA256 -cne $requestSHA){
         throw 'Exact independently validated request bytes required.'
     }
     $request=Read-T7SelectedStreamedRequestFile $Plan
@@ -901,7 +1018,7 @@ function Assert-T7SelectedStreamedProvider($Plan) {
         if($rows.Count -ne 1 -or ($rows[0]|ConvertTo-Json -Compress) -cne ($metadata|ConvertTo-Json -Compress)){throw 'Selected provider/request metadata not retained in exact input rows.'}
     }
     if($Plan.SelectedStreamedRequestMetadata.Path -cne $Plan.ExportRequestFile.Path -or
-       $Plan.SelectedStreamedRequestMetadata.Bytes -ne 377){throw 'Request alias source metadata differs.'}
+       $Plan.SelectedStreamedRequestMetadata.Bytes -ne $requestBytes){throw 'Request alias source metadata differs.'}
     if(([datetimeoffset]$m.LastWriteUtc).UtcDateTime.ToFileTimeUtc() -ne 134362733249245718L -or
        ([datetimeoffset]$m.CreationUtc).UtcDateTime.ToFileTimeUtc() -ne 134362732743239258L){throw 'Selected provider dates differ from discovery.'}
 }
@@ -975,6 +1092,6 @@ function Read-T7SelectedStreamedRequestFile($Plan) {
     Assert-T7CatalogueTextPin $Plan.ExportRequestFile $Plan.Bindings
     if($Plan.ExportRequestFile.Bytes -gt 4KB){throw 'Bounded flat request required.'}
     $guard=Open-H1Pin $Plan.ExportRequestFile
-    try{$request=Read-H1SmallJson $Plan.ExportRequestFile.Path 4KB;Assert-T7SelectedStreamedRequest $request;return $request}
+    try{$request=Read-H1SmallJson $Plan.ExportRequestFile.Path 4KB;Assert-T7SelectedStreamedRequest $request -RenderOnly:(Get-T7SelectedStreamedRenderOnly $Plan);return $request}
     finally{$guard.Dispose()}
 }

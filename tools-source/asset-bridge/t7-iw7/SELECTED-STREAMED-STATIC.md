@@ -1,5 +1,57 @@
 # Selected streamed static model
 
+## E5 explicit render-only v2 qualification, 2026-10-14
+
+E5 is a distinct opt-in runtime plan marker
+`SelectedStreamedRenderOnlyV2: {Schema: "iw7.t7-selected-streamed-render-only-plan/2"}`.
+It cannot coexist with the E3/E4 marker, observation probe, diagnostic or Catalogue C.
+The actual compiler marker has exactly schema
+`iw7.t7-selected-streamed-render-only-build/2`, geometry profile
+`t7-iw7-selected-streamed-render-only-v2` and collision policy
+`omit-source-rigid-collision-trees`. Build source is immutable
+`af41e7680da51ac67d4a52bc4fad978b9ccf44e8`; plan 368,157 bytes /
+`b702de6b61403a2abd3be6a01a2504058d58bdfb082dc67d9b07e6cd6a911063`,
+receipt 24,288 bytes / `942c4963e40ee18e10a9bcafdd8fc38b8140582e6fcea479f6c95ebce68b61b8`,
+admitted candidate 21,924,864 bytes /
+`aa322cac65d61d2ed8fa544f79a117201a3fcde8408b6b6cb59ea745f20f5d2f`.
+Source transition digest is 716 bytes /
+`09f477a869eabe0794118dff29a8412773b30ab4602ea7c18190ea748768a395`.
+The three actual compiler/link jobs closed with zero active processes. Original
+host 14904 and PTY 83868 actually exited zero in chunk `dfb099`; the separate
+context, exit, actual tool return, fresh inventory and build completion are bound
+by the E5 closure bundle. No E4/C record is relabelled and no opaque artifact
+is read/hashed by this source qualifier.
+
+The new owned request is 463 bytes /
+`66e9d49388dfe18bd5c088ef0c945ede544b4410c0dc31ae8e1b95efaf21db8d`, with schema
+`iw7.t7-iw7-selected-streamed-request/2`, profile
+`selected-streamed-render-only-rigid-one-lod` and the explicit collision policy.
+It keeps the exact model, zone, LOD zero, hexadecimal key and single provider.
+The five arguments use `-t7-iw7-model-streamed-v2`; independent C++/Python/PS
+root-key rules produce
+`t7_iw7_streamed_e02a67b60f90ed8731320c25b72d5f5bc5c444bc1b4f50a86a0daa3745155eca`.
+The old 377-byte v1 request and its root remain immutable. Provider header/index,
+retained identity, payload extent, input guards and output limits are unchanged.
+
+Export schema `/2` additionally requires ordered `selected_collision_policy`
+booleans for source presence, CPU presence and omitted trees. Every CPU tree is
+false, omission equals source presence, foreign collision payload bytes read are
+zero, and conversion/compatibility/readiness remain false. This permits only the
+reviewed render view; it does not accept source collision or establish physics.
+V1 retains its existing refusal. Material G source `a8848a92...` / fixture
+`b3de6888...` are explicitly part of this E5 compilation, but its five-argument
+observer still uses schema1/image zero: no targeted binding/image-four call is
+activated by this operator change.
+
+Read-only actual qualification passes on 30 guarded texts / 1,582,126 bytes.
+Nine mixed tuple/closure refusals pass; the shared/request/collision suites pass
+398 checks, manifest v2 integration 285, and Python streamed contracts 12. These
+are source and completed-text checks, not a stock sonde or converted mesh. The
+source-only negative bundle expectation was corrected to E5's actual earlier
+tool/build-completion refusal. A fresh 114-binding/29-input/23-bootstrap DEFAULT
+plan and an independently reviewed exact operator head must precede a separate
+coordinator GO for one stock invocation.
+
 ## E4 stock A refusal observed, 2026-10-14 Paris
 
 The separately authorized E4 stock sonde used operator source
