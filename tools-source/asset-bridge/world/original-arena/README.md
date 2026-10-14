@@ -49,7 +49,7 @@ After a coordinated build, the independent check is:
 python -B tools-source/asset-bridge/world/original-arena/readback.py --artifacts <owned-writer-artifacts> --geometry-source <prepared-geometry.source.json>
 ```
 
-Current source result: 27 targeted tests pass. Default source preparation produces seven
+Current source result: 28 targeted tests pass. Default source preparation produces seven
 files, including a 55,918-byte geometry document and about 14 KiB of adapted C++.
 No native compile, fastfile, material binding or game result is implied. The
 previous World 24-case native receipt is preserved at its original paths and
@@ -184,9 +184,11 @@ python -I -S -B "$world/model_lab.py" verify-stage --source $staged
 ```
 
 Default measurement and writer Plan modes read small sources/receipts and defer
-known executable hashes to Run. Do not invoke Build-ModelFF's legacy DryRun as a
-LIGHT planner: candidate qualification reads its binary/build receipt before that
-switch. The measured reference plan/request/native image/identity/full log output
+known executable hashes until the Run reservation is held. The original-arena
+ModelFF candidate path reads bounded metadata first and qualifies the actual e7
+EXE/tlog under its existing Extract reservation. Other ModelFF paths retain
+their existing qualification behavior; general DryRun is not a replacement for
+the World LIGHT recipe. The measured reference plan/request/native image/identity/full log output
 are bound together; an open job, wrong recipe digest, replaced root image, extra
 CSV row, wrong output marker or unrestored stock is refused. The reader is also
 run before publishing successful reference status.

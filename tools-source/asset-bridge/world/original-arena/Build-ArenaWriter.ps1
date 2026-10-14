@@ -16,9 +16,9 @@ $entries=[Collections.Generic.List[object]]::new()
 $state=$null;$current=$null;$failed=$null
 function Pin($Path,$Expected=''){
     $f=[IO.File]::Open($Path,'Open','Read','Read');$guards.Add($f)
-    # Known executables are represented by their reviewed digests in LIGHT.
-    # Run hashes them before admission/execution; source files always rehash.
-    $sha=if($Expected -and !$Run){$Expected}else{[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($f)).ToLowerInvariant()}
+    # Known executables stay deferred until the existing Run admission below.
+    # Source files always rehash; binary metadata/digests keep Plan stable.
+    $sha=if($Expected){$Expected}else{[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($f)).ToLowerInvariant()}
     if($Expected -and $sha -cne $Expected){throw 'Input pin changed'}
     $pin=[pscustomobject]@{Path=[IO.Path]::GetFullPath($Path);Bytes=$f.Length;SHA256=$sha}
     $entries.Add($pin);$pin
@@ -85,6 +85,9 @@ try {
     $state=[ordered]@{Schema='iw7.original-arena-native-run/1';Status='Preparing';Plan=$plan;Stages=[Collections.Generic.List[object]]::new();
         NativeHarnessPassed=$false;PhysicsSerialized=$false;FFBuilt=$false;RuntimeVerified=$false;SourceHashesUnchanged=$false;JobClosureVerified=$true;
         LeaseReleased=$false;LeaseReleaseState='NotAttempted';RetainedLeaseToken=$context.Lease.Token;FinalBytes=$null}
+    # Opaque cl/link/vctip/Python/NativeJob hashes are read only while the one
+    # admitted Build reservation is held, before loading or starting any owner.
+    foreach($pin in $entries){Assert-BeaconHash $pin.Path $pin.SHA256}
     [Reflection.Assembly]::LoadFrom($NativeJobAssembly)|Out-Null
     Add-Type -LiteralPath "$PackageRoot/tools-source/asset-bridge/h1-fixture/H1Native.JobMembers.cs"
     $buildStarted=Get-H1Clock

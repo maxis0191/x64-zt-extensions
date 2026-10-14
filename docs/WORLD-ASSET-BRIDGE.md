@@ -1183,3 +1183,13 @@ or fail its source guard check; they cannot leave SourceHashesUnchanged true.
 The 27th authored source test generates LIGHT Plans with nonexistent stock/tool/
 owner inputs, mutates each checker/cursor source and verifies that the digest
 changes without native types, stock reads, admission or output-root creation.
+
+Architecture review found two additional opaque-read ordering gaps. The World
+writer previously validated known executable hashes before Build admission;
+the World FF candidate qualified its EXE/tlog before Extract admission. Their
+actual validation now occurs under the existing reservation before any owner
+load/start, with small source/producer metadata left in LIGHT. The unused CDB
+hash check is omitted for the original-owner World path; legacy/non-arena HUD
+qualification and diagnostics remain unchanged. The 28th source mock checks
+deferred writer pins and World metadata versus admitted candidate validation.
+All 28 World source tests pass; this still provides no native execution proof.

@@ -226,6 +226,53 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell admission source checks require pwsh')
+    def test_world_opaque_qualification_is_deferred_to_existing_admission(self):
+        script=r'''
+param($Writer,$FF,$Root)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$writerAst=[Management.Automation.Language.Parser]::ParseFile($Writer,[ref]$tokens,[ref]$errors)
+$pin=@($writerAst.FindAll({param($node);$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Pin'},$true))[0]
+. ([scriptblock]::Create($pin.Extent.Text))
+$guards=[Collections.Generic.List[IDisposable]]::new();$entries=[Collections.Generic.List[object]]::new();$Run=$true
+$fake=Join-Path $Root 'authored.exe';[IO.File]::WriteAllText($fake,'Authored changed binary')
+try{$result=Pin $fake ('1'*64);if($result.SHA256 -cne ('1'*64)){throw 'Opaque bytes were hashed before admission'}}finally{foreach($guard in $guards){$guard.Dispose()}}
+$commands=@($writerAst.FindAll({param($node);$node -is [Management.Automation.Language.CommandAst]},$true))
+$lease=@($commands|Where-Object {$_.GetCommandName() -ceq 'Enter-IW7ResourceLease'})[0]
+$hash=@($commands|Where-Object {$_.GetCommandName() -ceq 'Assert-BeaconHash'})[0]
+if(!$lease -or !$hash -or $hash.Extent.StartOffset -le $lease.Extent.EndOffset){throw 'Writer opaque validation must follow existing admission'}
+$ast=[Management.Automation.Language.Parser]::ParseFile($FF,[ref]$tokens,[ref]$errors)
+$block=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.IfStatementAst] -and $node.Clauses[0].Item1.Extent.Text.Trim() -ceq '$CandidateRoot'},$true))[0]
+$arena=$true;$ToolProvenance='';$CandidateArtifactSHA256='1'*64;$NativeJobAssembly='absent-owner.dll'
+$CandidateRoot=Join-Path $Root 'candidate';$repo=Join-Path $Root 'package'
+[IO.Directory]::CreateDirectory((Join-Path $repo 'sdk/modding'))|Out-Null;[IO.Directory]::CreateDirectory($CandidateRoot)|Out-Null
+[IO.File]::WriteAllText((Join-Path $repo 'sdk/modding/BeaconFF.Core.ps1'),'# Authored pure import')
+$toolPath=Join-Path $CandidateRoot 'bin/zonetool-community.exe';$sha='e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04'
+@{schema='iw7.zonetool-community-candidate/1';executable=@{path=$toolPath;sha256=$sha}}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $CandidateRoot 'build-artifact.local.json')
+$script:Admitted=$false;$script:QualificationCalls=0
+function Resolve-IW7BasePath($Root,$Relative){Join-Path $Root $Relative}
+function Assert-BeaconHash($Path,$SHA){if(!(Split-Path $Path -Leaf).Equals('build-artifact.local.json')){throw 'Opaque pre-admission hash'}}
+function Read-BeaconJson($Path,$Limit){Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}
+function Assert-BeaconCandidate($Root,$Artifact){if(!$script:Admitted){throw 'Opaque candidate qualified without admission'};$script:QualificationCalls++;[pscustomobject]@{Path=$toolPath;SHA256=$sha}}
+. ([scriptblock]::Create($block.Extent.Text))
+if($script:QualificationCalls -ne 0 -or $tool -ine $toolPath){throw 'LIGHT metadata must not qualify candidate binary'}
+$calls=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'Assert-BeaconCandidate'},$true))
+$lease=@($ast.FindAll({param($node);$node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -ceq 'Enter-IW7ResourceLease'},$true))[0]
+$admittedCall=@($calls|Where-Object {$_.Extent.StartOffset -gt $lease.Extent.EndOffset})[0]
+if(!$admittedCall){throw 'World FF qualifier must follow existing admission'}
+$underLease=$admittedCall;while($underLease -and $underLease -isnot [Management.Automation.Language.IfStatementAst]){$underLease=$underLease.Parent}
+$script:Admitted=$true;$state=@{}
+. ([scriptblock]::Create($underLease.Extent.Text))
+if($script:QualificationCalls -ne 1 -or !$state.CandidateQualifiedUnderLease){throw 'Admitted actual candidate validation missing'}
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'admission-source.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('Build-ArenaWriter.ps1')),
+                str(arena.REPO/'ops/model-lab/Build-ModelFF.ps1'),temp],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell LIGHT plan checks require pwsh')
     def test_light_measurement_plan_binds_checker_and_local_imports(self):
         helper=Path(model_lab.__file__).with_name('Measure-StockReference.ps1')
