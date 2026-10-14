@@ -1,5 +1,6 @@
 param([ValidateSet('Build','Restore')][string]$Action='Build',[Parameter(Mandatory)][string]$RunRoot,
-    [string]$StockToolRoot,[string]$SourceRoot,[string]$ToolProvenance,[string]$ReaderRun,[string]$Python='python',[switch]$DryRun)
+    [string]$StockToolRoot,[string]$SourceRoot,[string]$ToolProvenance,[string]$ReaderRun,[string]$Python='python',
+    [string]$CandidateRoot,[string]$CandidateArtifactSHA256,[switch]$DryRun)
 $ErrorActionPreference='Stop'
 $ops=Split-Path $PSScriptRoot -Parent;$repo=Split-Path $ops -Parent
 . "$ops/Base-Client.Core.ps1"
@@ -50,12 +51,25 @@ if($arena){
     Assert-ModelFFDistanceCandidate $plan
 }
 foreach($name in $sourceNames){$p=Resolve-IW7BasePath $source $name;if((Get-FileHash -LiteralPath $p).Hash -ine $plan.source_files.$name){throw 'Original FF preparation changed.'}}
-$provenance=Get-Content -LiteralPath $ToolProvenance -Raw | ConvertFrom-Json
-$tool=Join-Path (Split-Path ([IO.Path]::GetFullPath($ToolProvenance)) -Parent) 'zonetool.exe'
-if($provenance.SourceCommit -cne $plan.source_pin -or $provenance.Repository -cne 'https://github.com/bigmangeekf/x64-zt.git' -or
+if($CandidateRoot){
+    if($ToolProvenance -or $CandidateArtifactSHA256 -cnotmatch '^[a-fA-F0-9]{64}$'){throw 'One explicit community candidate artifact required.'}
+    . "$repo/sdk/modding/BeaconFF.Core.ps1"
+    $candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256
+    $tool=$candidate.Path
+    $provenance=[pscustomobject]@{BinarySHA256=$candidate.SHA256}
+    $symbols=Join-Path $CandidateRoot 'bin'
+    $buildArguments=@('-headless','-unbuffered-io','-strict-content-sources','-buildzone','paris_model_probe')
+}else{
+    if(!$ToolProvenance -or $CandidateArtifactSHA256){throw 'Existing tool provenance or explicit community candidate required.'}
+    $provenance=Get-Content -LiteralPath $ToolProvenance -Raw | ConvertFrom-Json
+    $tool=Join-Path (Split-Path ([IO.Path]::GetFullPath($ToolProvenance)) -Parent) 'zonetool.exe'
+    if($provenance.SourceCommit -cne $plan.source_pin -or $provenance.Repository -cne 'https://github.com/bigmangeekf/x64-zt.git' -or
     $provenance.Status -cnotin @('TestsPassedReviewedBinary','TestsPassedReviewRequired') -or @($provenance.Tests).Count -ne 2 -or
     @($provenance.Tests | Where-Object {$_.Passed -ne $true -or $_.Name -cnotin @('filesystem_ownership_tests','sound_bank_subset_tests')}).Count -or
-    @($provenance.Tests.Name | Select-Object -Unique).Count -ne 2 -or (Get-FileHash -LiteralPath $tool).Hash -ine $provenance.BinarySHA256){throw 'Pinned experimental tool source/tests/hash required.'}
+        @($provenance.Tests.Name | Select-Object -Unique).Count -ne 2 -or (Get-FileHash -LiteralPath $tool).Hash -ine $provenance.BinarySHA256){throw 'Pinned experimental tool source/tests/hash required.'}
+    $symbols=Split-Path $ToolProvenance -Parent
+    $buildArguments=@('-headless','-unbuffered-io','-buildzone','paris_model_probe')
+}
 $zones=@('code_pre_gfx','code_post_gfx','common','common_mp','common_cp','common_core_mp','global','global_mp','global_cp','global_core_mp','cp_zmb')
 $names=@($zones | ForEach-Object {"$_.ff";"patch_$_.ff";"techsets_$_.ff"})
 $inputs=@()
@@ -100,16 +114,16 @@ try{
     Copy-Item -LiteralPath $tool -Destination (Join-Path $work 'zonetool.exe');if((Get-FileHash -LiteralPath (Join-Path $work 'zonetool.exe')).Hash -ine $provenance.BinarySHA256){throw 'Tool copy hash differs.'}
     Assert-ModelFFInputs $inputs $work
     $state.Status='Building';Write-ModelFFState $state $statePath
-    $state.Build=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols (Split-Path $ToolProvenance -Parent) -Phase hud-build -ToolArguments @('-headless','-unbuffered-io','-buildzone','paris_model_probe')
+    $state.Build=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase hud-build -ToolArguments $buildArguments
     if($state.Build.ExitCode){throw 'Model FF build failed.'}
     $ff=Resolve-IW7BasePath $work 'zone/paris_model_probe.ff';Copy-Item -LiteralPath $ff -Destination (Join-Path $RunRoot 'mod.ff')
     $state.FF=[ordered]@{Path='mod.ff';Bytes=(Get-Item -LiteralPath $ff).Length;SHA256=(Get-FileHash -LiteralPath $ff).Hash};$state.Status='CompiledRetained';Write-ModelFFState $state $statePath
-    $state.Offline=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols (Split-Path $ToolProvenance -Parent) -Phase hud-offline -ToolArguments @('-headless','-unbuffered-io','-verifyzone','paris_model_probe')
+    $state.Offline=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase hud-offline -ToolArguments @('-headless','-unbuffered-io','-verifyzone','paris_model_probe')
     if($state.Offline.ExitCode){$state.Status='OfflineUnresolved';throw 'Bootstrap reference/inventory load failed; retained FF is not recipient-linked.'}
     $materials=if($rigid -or $arena){@(Get-ModelFFMaterials $plan)}else{@('mopw/character_park_clown_zombie_shoes')}
     $rows=@(Get-ModelFFInventory ([IO.File]::ReadAllText($state.Offline.Stdout)) $modelName $meshName $materials);[IO.File]::WriteAllLines((Join-Path $RunRoot 'assets.csv'),[string[]]$rows)
     $state.InventoryVerified=$true;$state.Status='BootstrapInventoryVerified';Write-ModelFFState $state $statePath
-    $state.Dump=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols (Split-Path $ToolProvenance -Parent) -Phase hud-roundtrip -ToolArguments @('-headless','-unbuffered-io','-dumpzone','paris_model_probe')
+    $state.Dump=Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase hud-roundtrip -ToolArguments @('-headless','-unbuffered-io','-dumpzone','paris_model_probe')
     if($state.Dump.ExitCode){throw 'Bootstrap model re-dump failed.'}
     $dump=Join-Path $work 'dump/paris_model_probe'
     foreach($name in $artifactNames){$p=Resolve-IW7BasePath $dump $name;$target=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $target))|Out-Null;Copy-Item -LiteralPath $p -Destination $target}

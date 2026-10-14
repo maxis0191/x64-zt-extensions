@@ -225,6 +225,66 @@ class IndependentReaderTests(unittest.TestCase):
 
 
 class ModelLabTests(unittest.TestCase):
+    def reference_fixture(self,root):
+        tool,_,_,legacy=self.binding_fixture(root)
+        measurement=root/'measurement';measurement.mkdir()
+        request={'schema':'iw7.original-arena-reference-request/1','recipient':'cp_zmb',
+                 'material':readback.MATERIAL,'input_csv':'requested.csv','output_csv':'world_material'}
+        request_raw=model_lab.json_bytes(request)
+        (measurement/'reference-request.json').write_bytes(request_raw)
+        (measurement/'requested.csv').write_bytes(('material,'+readback.MATERIAL+'\n').encode())
+        closure={'Schema':'iw7.original-arena-reference-process/1','ExitCode':0,'RootExited':True,
+                 'ActiveProcesses':0,'JobClosed':True,'PlanSHA256':'1'*64,
+                 'ImageSHA256':'e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04',
+                 'Identity':{'PID':1234,'Image':str(root/'fixture-tool.exe'),'CreatedUtc':'2026-10-14T00:00:00Z'},
+                 'Arguments':['-headless','-unbuffered-io','-strict-content-sources','-enemy-reference-check',
+                              'cp_zmb','requested.csv','world_material'],'RequestSHA256':model_lab.digest(request_raw)}
+        outputs={'csv':('type,name,status\nmaterial,'+readback.MATERIAL+',verified\n').encode(),
+                 'stdout':b'ENEMY_REFERENCE_CHECK map=cp_zmb rows=1 verified=1 missing=0 default=0 output=enemy-catalog/world_material.csv\n',
+                 'closure':model_lab.json_bytes(closure)}
+        snapshots={}
+        for key,data in outputs.items():
+            name='enemy-catalog/world_material.csv' if key=='csv' else key+('.json' if key=='closure' else '.txt')
+            (measurement/name).parent.mkdir(exist_ok=True);(measurement/name).write_bytes(data)
+            snapshots[key]={'path':name,'bytes':len(data),'sha256':model_lab.digest(data)}
+        evidence={'schema':'iw7.original-arena-recipient-reference/1','source_pin':prepare_writer.PIN,
+                  'recipient':'cp_zmb','material':readback.MATERIAL,'snapshot_only':True,
+                  'runtime_verified':False,'material_payload_verified':False,
+                  'reference_snapshot':snapshots,'normal_encoding_source':legacy['normal_encoding_source']}
+        path=root/'reference.json';path.write_bytes(model_lab.json_bytes(evidence))
+        return tool,measurement,path,evidence,closure
+
+    def test_current_reference_binding_requires_nondefault_row_closed_job_and_exact_request(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);tool,measurement,path,evidence,closure=self.reference_fixture(root)
+            self.assertEqual(model_lab.validate_reference_evidence(tool,path,measurement)[0],readback.MATERIAL)
+            for kind in ('default','missing','extra','open','wrong-tool','wrong-request','identity'):
+                altered=copy.deepcopy(evidence);changed=copy.deepcopy(closure)
+                csv_path=measurement/evidence['reference_snapshot']['csv']['path']
+                csv_original=csv_path.read_bytes()
+                if kind in ('default','missing','extra'):
+                    data=(('type,name,status\nmaterial,'+readback.MATERIAL+','+kind+'\n') if kind!='extra'
+                          else csv_original.decode()+'material,other,verified\n').encode()
+                    csv_path.write_bytes(data)
+                    altered['reference_snapshot']['csv'].update(bytes=len(data),sha256=model_lab.digest(data))
+                else:
+                    if kind=='open':changed['ActiveProcesses']=1
+                    if kind=='wrong-tool':changed['ImageSHA256']='0'*64
+                    if kind=='wrong-request':changed['Arguments'][4]='cp_rave'
+                    if kind=='identity':changed['Identity']['PID']=0
+                    data=model_lab.json_bytes(changed);(measurement/'closure.json').write_bytes(data)
+                    altered['reference_snapshot']['closure'].update(bytes=len(data),sha256=model_lab.digest(data))
+                path.write_bytes(model_lab.json_bytes(altered))
+                with self.subTest(kind=kind),self.assertRaises(ValueError):
+                    model_lab.validate_reference_evidence(tool,path,measurement)
+                csv_path.write_bytes(csv_original)
+                (measurement/'closure.json').write_bytes(model_lab.json_bytes(closure))
+            path.write_bytes(model_lab.json_bytes(evidence))
+            hashes=prepare_writer.source_hashes(tool,check_pin=False)
+            with patch.object(prepare,'source_hashes',return_value=hashes):
+                prepare.prepare(root/'new-bound',tool_source=tool,recipient_evidence=path,stock_root=measurement)
+            self.assertIn(readback.MATERIAL,(root/'new-bound/probe_geometry.hpp').read_text())
+
     def binding_fixture(self,root):
         tool,stock=root/'tool',root/'stock'
         for name in prepare_writer.INTERFACES:

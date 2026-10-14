@@ -1,8 +1,10 @@
 """Stage/recheck original arena records through the existing ModelLab FF path."""
 import argparse
+import csv
 import hashlib
 import importlib.util
 import json
+import io
 from pathlib import Path
 import re
 
@@ -25,6 +27,73 @@ MATERIAL = readback.MATERIAL
 PAIR = ('xmodel/'+MODEL+'.xmb', 'xsurface/'+MESH+'.xsb')
 GEOMETRY = 'evidence/geometry.source.json'
 WRITER = 'evidence/arena-writer-source.json'
+
+
+def validate_reference_evidence(tool_source,evidence_path,measurement_root):
+    """One named nondefault stock reference; no material payload/GPU claim."""
+    evidence,raw = document(evidence_path,65536)
+    readback.check(type(evidence) is dict and evidence.get('schema') == 'iw7.original-arena-recipient-reference/1' and
+                   evidence.get('source_pin') == PIN and evidence.get('recipient') == 'cp_zmb' and
+                   evidence.get('material') == MATERIAL and evidence.get('snapshot_only') is True and
+                   evidence.get('runtime_verified') is False and evidence.get('material_payload_verified') is False,
+                   'Explicit original arena stock reference measurement required')
+    root = safe_path(measurement_root)
+    snapshots = evidence.get('reference_snapshot',{})
+    readback.check(type(snapshots) is dict and set(snapshots) == {'csv','stdout','closure'},
+                   'Complete reference CSV/log/original-job closure snapshot required')
+    captured = {}
+    for key,item in snapshots.items():
+        readback.check(type(item) is dict and set(item) == {'path','bytes','sha256'} and
+                       type(item['path']) is str and type(item['bytes']) is int and 0 < item['bytes'] <= 1024**2,
+                       'Bounded reference snapshot entry required')
+        path = safe_path(root/item['path'])
+        readback.check(path.is_relative_to(root), 'Reference snapshot path escapes measurement root')
+        data = readback.bounded(path,1024**2)
+        readback.check(len(data) == item['bytes'] and digest(data) == item['sha256'], 'Reference snapshot changed')
+        captured[key] = data
+    rows = list(csv.reader(io.StringIO(captured['csv'].decode('utf-8-sig'))))
+    readback.check(rows == [['type','name','status'],['material',MATERIAL,'verified']],
+                   'Exactly one nondefault registered stock material reference required')
+    log = captured['stdout'].decode('utf-8-sig')
+    marker = 'ENEMY_REFERENCE_CHECK map=cp_zmb rows=1 verified=1 missing=0 default=0 output='
+    readback.check(sum(line.startswith(marker) for line in log.splitlines()) == 1 and
+                   not re.search(r'\[ (?:ERROR|FATAL) \]',log), 'Actual selective CP reference-check log required')
+    closure,_ = document(root/snapshots['closure']['path'],1024**2)
+    readback.check(type(closure) is dict, 'Original reference process closure object required')
+    expected_args = ['-headless','-unbuffered-io','-strict-content-sources','-enemy-reference-check','cp_zmb']
+    args = closure.get('Arguments',[]) if type(closure) is dict else []
+    readback.check(closure.get('Schema') == 'iw7.original-arena-reference-process/1' and
+                   type(closure.get('ExitCode')) is int and closure['ExitCode'] == 0 and
+                   closure.get('RootExited') is True and type(closure.get('ActiveProcesses')) is int and
+                   closure['ActiveProcesses'] == 0 and closure.get('JobClosed') is True and
+                   type(closure.get('PlanSHA256')) is str and re.fullmatch('[a-f0-9]{64}',closure['PlanSHA256']) and
+                   closure.get('ImageSHA256') == 'e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04' and
+                   type(args) is list and len(args) == 7 and args[:5] == expected_args and
+                   type(args[6]) is str and re.fullmatch('[a-z0-9_]{1,128}',args[6]),
+                   'Successful closed original selective-reference process required')
+    identity = closure.get('Identity',{})
+    readback.check(type(identity) is dict and type(identity.get('PID')) is int and identity['PID'] > 0 and
+                   type(identity.get('Image')) is str and Path(identity['Image']).is_absolute() and
+                   type(identity.get('CreatedUtc')) is str and re.fullmatch(
+                       r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|\+00:00)',identity['CreatedUtc']),
+                   'Original process identity required with reference measurement')
+    requests,requests_raw = document(root/'reference-request.json',4096)
+    readback.check(requests == {'schema':'iw7.original-arena-reference-request/1','recipient':'cp_zmb',
+                                'material':MATERIAL,'input_csv':args[5],'output_csv':args[6]} and
+                   digest(requests_raw) == closure.get('RequestSHA256'), 'Closed reference process request binding differs')
+    input_path = safe_path(root/args[5])
+    readback.check(input_path.is_relative_to(root) and
+                   readback.bounded(input_path,4096) == ('material,'+MATERIAL+'\n').encode(), 'Single material request CSV differs')
+    readback.check(safe_path(root/snapshots['csv']['path']) == safe_path(root/'enemy-catalog'/(args[6]+'.csv')),
+                   'Selective reference output path differs from the actual native command')
+    refs = evidence.get('normal_encoding_source',[])
+    readback.check(type(refs) is list and len(refs) == 3 and
+                   {ref['path'] for ref in refs} == set(writer.INTERFACES[-3:]), 'Exact normal-source proof set required')
+    for ref in refs:
+        path = safe_path(Path(tool_source)/ref['path'])
+        readback.check(path.is_relative_to(safe_path(tool_source)) and
+                       digest(readback.bounded(path,1024**2)) == ref['sha256'], 'Normal source proof changed')
+    return MATERIAL,digest(raw)
 
 
 def digest(raw):
