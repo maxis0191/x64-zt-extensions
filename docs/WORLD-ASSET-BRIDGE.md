@@ -1501,3 +1501,42 @@ against retained reviewed metadata, preserving the original 72-input baseline
 and strict pack17 checks. A new 74-input World-only tuple requires its own review
 and coordinated GO before content hashing/borrowing or a reference attempt;
 other FF/rig profiles remain unchanged.
+
+## 2026-10-14: M6 qualified pack37, then failed at the CP deadline
+
+One approved plain-reference attempt used merged source `f2d57737`, 33 source
+pins, 74 stock inputs and 76 managed entries. Internal recipe:
+`11754541d6083979bf785f92621075ff4f09196631e5412ba66054939a6207bc`;
+distinct outer plan digest:
+`8aca95cc5726ed2c213389e1261f881321f08262df1b4a5deafd811ce3e6a96a`.
+The unchanged approved 3,985-byte NoExit capsule received the original entry's
+host/parent identity record before running, without another admission or owner.
+
+All 74 current identities/content passed the guarded prelaunch checks. Pack37
+matched historical expected SHA prefix839c1da3 and the pinned current NTFS
+identity, size, attributes and UTC time. Its staged alias had the retained source
+file ID; pack17 retained its existing identity/content. No other pack was added.
+The original target started at 12:17:58 UTC. Stdout remained at global_cp with
+1,665 bytes and empty stderr. At the original 240-second deadline it failed
+with Stage deadline exceeded. No reference CSV/evidence or reader success was
+produced. No window/CPU/dump/CDB diagnostic occurred; this remaining CP failure's
+cause is unknown, and the prior M5 body is not a newly measured M6 cause.
+
+The original owner confirmed closure through the reviewed path. All 76 managed
+entries restored, source hashes/stock content remained unchanged and both added
+pack aliases were removed. The saved pre-release false/token remains historical;
+the authoritative current registry contained zero leases. Only the original
+NoExit catch loop was interrupted after verifying restoration and target absence.
+Its own live AppDomain, with matching PID/image/creation, then showed no reference
+quarantine and zero leases at 12:25:11 UTC. The original PTY actually exited with
+code1. Fresh 12:26:15 UTC postflight found original host/parent/target absent,
+no scope process and zero leases. No reference-reader job ran. Four generated
+dcache artifacts remain local outside the transaction; older packages/receipts
+were preserved. Main 27016, banks/configuration, network and owner clients were
+untouched. No automatic retry or additional pack/diagnostic followed.
+
+M6 approval is consumed. CP reference, material, writer/FF, GPU and physics remain
+unqualified. Next: review a source-only alternative to sequential dependency
+probes—an exact qualified index, or a finite manifest-bound group of existing
+assetfile packs with one reviewed modal read in the next original scenario.
+No new group is inferred to be minimally necessary or silently staged by M6.

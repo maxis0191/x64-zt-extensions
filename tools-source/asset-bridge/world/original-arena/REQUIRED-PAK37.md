@@ -36,3 +36,38 @@ The next action is independent source/plan/capsule review, private Git completio
 and a distinct merged-source tuple/GO before one M6 reference attempt. Adding
 pack37 is not proof of a complete CP load, nondefault material, writer/FF, GPU or
 physics. A future missing dependency must be measured; no other pack is assumed.
+
+## Actual M6 outcome, 2026-10-14
+
+One reviewed plain-reference attempt used merged source f2d57737, recipe
+11754541d6083979bf785f92621075ff4f09196631e5412ba66054939a6207bc and outer plan
+8aca95cc5726ed2c213389e1261f881321f08262df1b4a5deafd811ce3e6a96a. The approved
+3,985-byte NoExit capsule and metadata-only original entry were unchanged.
+All 74 current source identities/content passed under the original one admission
+before native launch, including pack37 expected SHA839c1da3 and NTFS identity.
+Its zone alias matched the retained source identity; no other pack was added.
+The source-only receipt remains immutable with its historical pre-run flags.
+
+The original target began at 12:17:58 UTC. Stdout remained at global_cp, 1,665
+bytes, with empty stderr. The 240-second deadline failed with Stage deadline
+exceeded. No reference CSV/evidence or reference reader was produced. No modal,
+CPU, dump or CDB diagnostic was requested in this attempt; the cause of this
+remaining CP stall is unknown. The M5 message is not a newly measured M6 cause.
+
+The original owner confirmed closure, all 76 managed entries restored and
+source hashes/stock content remained preserved. Both temporary pack aliases
+were removed. The saved state preceded release and still contains a historical
+false/token; the current authoritative registry was empty. Only the original
+NoExit catch loop was interrupted after those checks. At 12:25:11 UTC its same
+PID/image/creation matched, its reference quarantine was null and registry zero;
+the original PTY then exited with real code 1. Fresh 12:26:15 UTC postflight
+found original target/host/parent absent, no scope process and zero leases.
+The reference reader never ran. Four generated dcache paths remain local outside
+the transaction; prior runtime evidence was preserved. Main 27016, bank/config,
+network settings and owner clients were untouched. No automatic retry followed.
+
+M6 approval is consumed. Material reference, writer/FF, GPU and physics remain
+unqualified. Next: compare an exact existing dependency index with a finite,
+manifest-bound group of retained assetfile packs and one reviewed modal read in
+the next original scenario. That is a separate source proposal/decision; it does
+not expand this consumed 74-input tuple or authorize new hashes/aliases/runtime.
