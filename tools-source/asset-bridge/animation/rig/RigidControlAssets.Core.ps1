@@ -107,6 +107,9 @@ function New-RCAPhaseSpec($Context,$Phase) {
 function Invoke-RCAPhase($Context,$Phase,[scriptblock]$Observe) {
     & $Observe
     $spec=New-RCAPhaseSpec $Context $Phase;$specPath=Join-Path $Context.Plan.RunRoot ($Phase.Id+'.spec.json')
+    # rig_phase creates its fresh phase leaf with mkdir(), not parents=True.
+    # Establish the owned common parent before any original child factory.
+    [IO.Directory]::CreateDirectory((Split-Path $spec.logs))|Out-Null
     Write-RigNewJson $spec $specPath;$specHash=(Get-FileHash -LiteralPath $specPath).Hash
     Add-RigGuard $specPath $specHash $Context.Guards $Context.Baselines
     $args=@('-I','-B',(Join-Path $Context.SourcePackage 'tools-source/asset-bridge/animation/rig/rig_phase.py'),
