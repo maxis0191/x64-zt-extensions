@@ -189,3 +189,8 @@ It retains the exact source manifest and mesh, explicit ordered recipient
 bindings and only the declared LOD change. Oversized V2 and legacy V1 manifests
 remain refused. This source-only correction does not alter the compiled E5
 candidate or prove native FF/runtime behavior.
+The 13 streamed-contract tests, 28 Model Lab tests in a fresh pinned source
+composition and repository boundaries (715 tracked/697 exports/three
+dependencies) passed. An initial Model Lab run from the uncomposed checkout
+failed nine dependency-based checks because the Native/SDK files were absent;
+the full composed run passed without relaxing those checks.
