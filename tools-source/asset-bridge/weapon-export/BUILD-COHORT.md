@@ -75,3 +75,21 @@ unexecuted Source plan adds exactly those pins; no SDK/opaque scan or failed
 object reuse occurs. Source fixture bytes are unchanged. Actual content of the
 previously unguarded consumed headers cannot be qualified retrospectively.
 Recompilation/link requires a new exact plan/capsule review and distinct CPP GO.
+
+2026-10-15 actual G CPP checkpoint: the unchanged six-stage caller rebuilt both
+fixtures and the fresh IW7 TU, then linked all 413 objects with only the old IW7
+object replaced. All six stages exited zero; native markers again passed 8/10.
+The strict dependency guard accepted all 722 IW7 includes with the 38 added
+Source pins. Native and Source inputs were reverified before lease release.
+Artifact hashes were recorded and read back under that lease; the linked tool
+is 22015488 bytes, SHA256
+`a84b12ad2570cf520f32c9f9416d7b4f2f794136d6fc69693e7f4e56a4e3fe0f`.
+
+The compiled weapon extension is source head `7e3e042`, with native `fab9358`
+and retained texture `1ad68ee` inputs. It is not a claim that every merged
+extension was rebuilt. The original link owner/job/process handles closed with
+root exit zero/Active0; the same NoExit context was inspected before true terminal
+exit zero. Fresh postflight found all 11 captured identities absent and no lease.
+This qualifies the bounded CPP/link checkpoint only. The new tool has never run
+its player-template CLI; export, full template observation, weapon/physics/PAP
+and game acceptance remain false and need their separate current-stock GO.
