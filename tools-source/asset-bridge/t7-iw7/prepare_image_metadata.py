@@ -79,11 +79,14 @@ def wire(main, cli, source_files, base_contract, observer):
                   't7-prepatch-reference-v2', 't7-prepatch-link-v3',
                   't7-iw7-material-parts-v1', 't7-iw7-image-provenance-v1')
     for i, option in enumerate(exclusions):
-        selector += '\t\t\t\t\tutils::flags::has_flag("'+option+'")'+(' ||\n' if i+1 < len(exclusions) else '))))\n')
+        selector += '\t\t\t\t\tutils::flags::has_flag("'+option+'")'+(' ||\n' if i+1 < len(exclusions) else ')))\n')
     selector += '\t\t\t\t\tthrow std::runtime_error("Exclusive exact image-metadata arguments required");\n'
     cli = once(cli, '\t\t\t\tconst bool provenance =', selector+'\t\t\t\tconst bool provenance =')
-    cli = once(cli, 'utils::flags::has_flag("t7-iw7-material-parts-v1"))))',
-               'utils::flags::has_flag("t7-iw7-material-parts-v1") || '+FLAG+'))))')
+    # The immutable F2 source pair includes one surplus guard terminator.
+    # Replace its complete terminal line in this extension, including the
+    # original terminator; a partial match left another extra ')' behind.
+    cli = once(cli, 'utils::flags::has_flag("t7-iw7-material-parts-v1")))))\n',
+               'utils::flags::has_flag("t7-iw7-material-parts-v1") || '+FLAG+')))\n')
     cli = once(cli, '\t\t\t\tif (provenance) observe_selected_image_provenance_iw7(args[2], args[3], args[4]);',
                '\t\t\t\tif (image_metadata) observe_selected_image_metadata_iw7(args[2], args[3], args[4]);\n'
                '\t\t\t\telse if (provenance) observe_selected_image_provenance_iw7(args[2], args[3], args[4]);')

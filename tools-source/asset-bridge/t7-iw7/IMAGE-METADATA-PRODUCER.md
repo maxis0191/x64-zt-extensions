@@ -56,8 +56,9 @@ combined fixture. It first runs the corrected PR124 mapper (54 checks expected),
 then the actual guarded G2 function and reader (13 checks expected). Raw0/1/2/ff,
 a valid different snapshot versus the consumed invalid copy, nested scopes,
 exception unwinding and valid legacy behavior are covered. Exact stdout and zero
-stderr/exit are required before CLI compilation. These fixtures are currently
-authored source; neither result is a measured CPP pass, and H53 is separate.
+stderr/exit are required before CLI compilation. Admitted CPP C on 2026-10-14
+compiled and executed these 54 mapper and 13 guarded-reader checks successfully.
+This measured synthetic result is separate from H53 and from full CLI success.
 
 Local source checks exercise the renderer, fixed scope, actual profile/stage and
 H-proof guards. They found and corrected a response helper name, exact phase
@@ -91,9 +92,57 @@ verified additive closure is 368 bytes /
 No CPP, native candidate or stock operation ran in B. A fresh source cohort and
 separately reviewed PREP successor are required; B cannot be replayed or relabeled.
 
-Next: source review/private Git/exact-head CI audit, fresh cohort and reviewed
-admitted preparation/CPP capsule. Its mapper/guard results, full CLI artifact
-hashes and original closure must be measured. A separately reviewed native F2
+PREP C used source0ae6147 and produced the real 384208-byte plan
+eb6f92bbaca3dfa4ea2f0dcbcda6d93840565449090659d168909644eb32033c.
+Both Python preparation and DEFAULT exited zero. DEFAULT retained null candidate
+pins and all six flags false. Held inputs were reverified, receipt publication
+verified, the lease released and all original guards closed. The same original
+NoExit context was inspected before terminal94117 exited zero; a fresh closure
+found its four processes absent and the correct leases.json empty. C's package,
+plan and preparation evidence remain immutable.
+
+The separately authorized five-phase CPP C then passed fixture compile/test and
+main compilation. The fixture stdout is 129 bytes /
+472f5784b87850a11d466ce8cbef3658e5bb7ba9a06436ad25c68201929010e5;
+the admitted fixture EXE is 907264 bytes /
+1cf1822100629dfc7a4f5f652de32f23489f323a00878ede7380211e1f44f4ce.
+These artifact hashes come from the admitted receipt, not a later free binary read.
+However, zonetool11 exited 2 with C2059 at generated CLI lines3107 and3119.
+Its 505-byte stdout has hash
+927ba47d861c82c5f95a53178f45117bd7a5770b1f16df2057ab5808eca984ed.
+The existing successful-compiler identity check then reported its own refusal,
+masking the earlier compiler diagnostic; that check is unchanged. An interim log
+view incorrectly attributed the refusal to main and said zonetool11 had not run.
+The complete receipt corrects this: main passed, zonetool11 failed and link never
+started. The overall build is Failed, not a full CLI pass.
+
+The metadata selector emitted one surplus closing parenthesis. Its partial
+replacement of the inherited F2 selector left two surplus closers in the derived
+CLI. The metadata renderer now closes its own predicate correctly and replaces
+the complete inherited terminal line. Frozen F2/G2/G3 source, contracts, entry,
+observer, ABI and native scope remain unchanged. Only three ')' bytes disappear
+from the derived CLI: 154456 bytes /
+17c07359a55e23324239f9663a8d4ead3cb9d3343a8b7ff0d4baf01ca4dfae6b.
+Main and all metadata mapper/reader source pins remain unchanged. Targeted source
+checks parse both actual generated predicates, accept exact exclusive argv and
+refuse malformed/mixed selection. Restoring the three terminators reproduces the
+exact failed C CLI154459/d9d3296d and both syntax failures.
+
+CPP C's failed receipt is 27899 bytes /
+f9544ea827a578386f4d77aa6f911b70b9c237f89f9ce1de136a4b3f56a30a03.
+Its original H1 jobs and VCTIP children closed and the lease released. The actual
+AppDomain/PSVariable context, guards and state references were retained before
+execution and matched at preexit; native and caller guards were zero. Terminal
+56415 exited 1. The fresh 2026-10-14T20:42:19.5156637Z closure found all eight
+recorded identities absent, no heavy/game processes and leases.json empty.
+Its 931-byte closure hash is
+0fa389f75f5b1a572e1f971e93bf1b186e01323aa2c89dd0b13a4ae90a64ede7.
+Post-build input rechecks were not reached; that result remains unverified.
+No linked candidate or stock/game operation ran. Failed C data is immutable.
+
+Next: source review/private Git/exact-head CI audit, fresh successor cohort and
+reviewed admitted preparation/CPP capsule. Full CLI artifacts and complete input
+rechecks/closure must still be measured. A separately reviewed native F2
 plan/DEFAULT/GO comes first; header-body observation needs its own GO. Real stream
 keys, mip/layout qualification, whole-object extraction/DDS and owner gameplay
 remain unqualified. Main, stock, occupied clients, banks and frozen cohorts stay

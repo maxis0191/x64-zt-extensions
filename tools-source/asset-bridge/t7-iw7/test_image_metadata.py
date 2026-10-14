@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -12,6 +13,58 @@ from test_image_provenance import ProvenanceTransitionTests
 
 
 class MetadataSourceTests(unittest.TestCase):
+    @staticmethod
+    def cli_guard(cli, selector):
+        tail = cli.split('const bool '+selector+' =', 1)[1].split('\n', 1)[1]
+        return tail.split('throw std::runtime_error(', 1)[0].strip()
+
+    @staticmethod
+    def python_predicate(statement):
+        if not statement.startswith('if (') or not statement.endswith(')'):
+            raise ValueError('Complete C++ if statement required')
+        expression = statement[4:-1]
+        expression = re.sub(r'utils::flags::has_flag\("([^"]+)"\)',
+                            lambda match: repr(match[1])+' in flags', expression)
+        return '('+expression.replace('&&', ' and ').replace('||', ' or ').replace('!', 'not ')+')'
+
+    @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'), 'Exact retained native SOURCE not supplied')
+    def test_rendered_cli_guards_parse_refuse_mixed_modes_and_reproduce_failed_c(self):
+        base = ProvenanceTransitionTests()
+        main, cli = base.base()
+        f2main, f2cli, _ = provenance.overlay(main, cli, base.read)
+        new_main, new_cli, _ = metadata.overlay(f2main, f2cli, base.read)
+        failed_c_cli = new_cli
+        for selector, option, surplus in (
+                ('image_metadata', 't7-iw7-image-metadata-v1', 1),
+                ('provenance', 't7-iw7-image-provenance-v1', 2)):
+            statement = self.cli_guard(new_cli, selector)
+            self.assertEqual(new_cli.count(statement), 1)
+            depth = 0
+            for character in statement:
+                depth += (character == '(') - (character == ')')
+                self.assertGreaterEqual(depth, 0, 'Unmatched rendered C++ guard terminator')
+            self.assertEqual(depth, 0)
+            predicate = compile(self.python_predicate(statement), '<rendered CLI guard>', 'eval')
+            def refused(selected, flags):
+                return eval(predicate, {'__builtins__': {}}, {selector: selected, 'flags': flags})
+            self.assertFalse(refused(True, {option}), 'Exact exclusive selection must remain usable')
+            self.assertTrue(refused(False, {option}), 'Malformed selected argv must refuse')
+            self.assertFalse(refused(False, set()), 'Unselected legacy mode must remain untouched')
+            exclusions = set(re.findall(r'has_flag\("([^"]+)"\)', statement)) - {option}
+            self.assertEqual(len(exclusions), 10)
+            for other in exclusions:
+                self.assertTrue(refused(True, {option, other}), 'Every mixed mode must refuse')
+            # Reverse only the three actual extra terminators and recover the
+            # exact source compiled in failed C, rather than a lookalike case.
+            failed_statement = statement + ')' * surplus
+            with self.assertRaises(SyntaxError):
+                compile(self.python_predicate(failed_statement), '<failed C guard>', 'eval')
+            failed_c_cli = failed_c_cli.replace(statement, failed_statement, 1)
+        self.assertEqual(provenance.pin(failed_c_cli.encode()),
+                         (154459, 'd9d3296d79ec5c33e969b773ad124c7e4cf977226e12de7593af278353d29d6e'))
+        self.assertEqual(provenance.pin(new_main.encode()),
+                         (43482, 'b786f2db40e4c70346846bccb336c86c957efbd76f1c9365994138119a4e4363'))
+
     def test_exclusive_extension_selection_before_prepare_io(self):
         self.assertFalse(metadata.selected(SimpleNamespace()))
         self.assertTrue(metadata.selected(SimpleNamespace(image_metadata_v1=True, image_provenance_v1=True)))
