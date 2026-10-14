@@ -132,7 +132,7 @@ function Get-T7CatalogueBootstraps($Plan) {
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
             throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
         }
-        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2')){throw 'Qualified collection requires MSG profile.'}
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1')){throw 'Qualified collection requires MSG profile or explicit parts.'}
         $items=@($Plan.Bootstraps);$total=0L
         $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)

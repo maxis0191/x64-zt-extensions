@@ -85,6 +85,7 @@ foreach($row in @(@('BuildPlan',372668,'cfeb5610dd5322d9137eaa9804590cf023a86523
     $bindings+=@([ordered]@{Path=('C:\authored\'+$row[0]);Bytes=$row[1];SHA256=$row[2];IsText=$true})
 }
 $plan=[ordered]@{Operation='MaterialPartsV1';CandidateProfile='t7-material-parts-v1';SelectedMaterialPartsV1=$marker;
+    BootstrapPolicy='QualifiedCollectionV3';Bootstraps=@(1..23);SharedQualification=@{};
     Arguments=@('-t7-iw7-material-parts-v1','mp_freerun_04','p7_fre_platform_cap_02','0');OutputKey='t7_iw7_material_parts_v1';ReportLimitBytes=65536;
     TraceStderrLimitBytes=16384;CandidateBytes=21963264;CandidateSHA256='cce8bbb8f068b4897a391880db316bd1d7586f26f7ec0c1cee2316d76c8644b3';
     ExpectedBuildPlanSHA256='cfeb5610dd5322d9137eaa9804590cf023a865236a1132e95e354919ef23084e';ExpectedBuildReceiptSHA256='e81604ea36272540d2a62df7aaa236dcdd92bb0d04821ab9b2f887636a074a25';
@@ -92,11 +93,13 @@ $plan=[ordered]@{Operation='MaterialPartsV1';CandidateProfile='t7-material-parts
 $p=Copy-Authored $plan;$null=Assert-T7MaterialPartsPlan $p;$checks++
 Check ((Get-T7CatalogueHostSchema $p 'run') -ceq 'iw7.t7-material-parts-run/1') 'Parts host schema lost'
 Check ((Get-T7CatalogueHostOutcomeName $p) -ceq 'PartsOutcome') 'Parts host outcome lost'
-foreach($case in @('operation','profile','markerextra','mixedexport','extraargument','lodarray','name','candidate','planhash','receipthash','bindingpath','bindingsha','bindingbytes','pinpath','pinsha','duplicatebinding','missingbinding','metadataarray')){
+foreach($case in @('operation','profile','legacy-bootstrap','missing-bootstrap','markerextra','mixedexport','extraargument','lodarray','name','candidate','planhash','receipthash','bindingpath','bindingsha','bindingbytes','pinpath','pinsha','duplicatebinding','missingbinding','metadataarray')){
     $p=Copy-Authored $plan
     switch($case){
         operation {$p.Operation='Catalogue'}
         profile {$p.CandidateProfile=@('t7-material-parts-v1')}
+        legacy-bootstrap {$p.BootstrapPolicy='Legacy'}
+        missing-bootstrap {$p.Bootstraps=@(1..22)}
         markerextra {$p.SelectedMaterialPartsV1|Add-Member NoteProperty Extra 1}
         mixedexport {$p|Add-Member NoteProperty ExportRequest @{} }
         extraargument {$p.Arguments+=@('streamed-request.json')}
@@ -118,4 +121,34 @@ foreach($case in @('operation','profile','markerextra','mixedexport','extraargum
 }
 Refuses {Read-T7MaterialPartsReport $null $null ([pscustomobject]@{Closed=$false;Lease=$null})} 'Unclosed metadata read accepted'
 Refuses {Read-T7MaterialPartsReport $null $null ([pscustomobject]@{Closed=$true;Lease=$null})} 'Unadmitted metadata read accepted'
+# Execute the real build qualifier too: its local variables must not collide
+# with read-only PowerShell $Host, and closed evidence must retain its semantics.
+$p=Copy-Authored $plan
+$build=[pscustomobject]@{SourceCommit='fab935826c898806855376662a8a03317b3ad8f1';BuildProfile=[pscustomobject]@{Name='t7-material-parts-v1'}}
+foreach($name in 'Wiring','PreparedMain','BaseBuildPlan','BaseBuildReceipt','LinkResponse'){
+    $pin=[pscustomobject]@{Path=('C:\authored\'+$name);Bytes=1;SHA256=('a'*64)}
+    $build.BuildProfile|Add-Member NoteProperty $name $pin
+    $p.Bindings+=@([pscustomobject]@{Path=$pin.Path;Bytes=1;SHA256=$pin.SHA256;IsText=$true})
+}
+$dep=[pscustomobject]@{Path='C:\authored\main\dependencies.json';Bytes=1;SHA256=('b'*64)}
+$p.Bindings+=@([pscustomobject]@{Path=$dep.Path;Bytes=1;SHA256=$dep.SHA256;IsText=$true})
+$receipt=[pscustomobject]@{Stages=@(foreach($name in 'main','zonetool11','link'){
+    [pscustomobject]@{Name=$name;ExitCode=0;TreeClosureConfirmed=$true;CompilerTelemetry=[pscustomobject]@{Completed=$true;AfterStop=[pscustomobject]@{ActiveProcesses=0}};Artifacts=@($dep)}
+})}
+$script:partsHostFixture=[pscustomobject]@{Host=[pscustomobject]@{PID=16544};Parent=[pscustomobject]@{PID=9964};WrapperRun=$false}
+$script:partsClosureFixture=[pscustomobject]@{OriginalSession=16448;TruePTYChunk='8dd283';TruePTYExitCode=0;OwnedProcesses=@();Leases=@()}
+function Read-H1SmallJson($Path,$Limit){
+    switch($Path){
+        'C:\authored\BuildPlan' {$build}
+        'C:\authored\SourceManifest' {[pscustomobject]@{revisions=[pscustomobject]@{'x64-zt-extensions'='a8ecff7cb61323cd0e6f75d10e596d55e63a7753'}}}
+        'C:\authored\HostWitness' {$script:partsHostFixture}
+        'C:\authored\ClosureWitness' {$script:partsClosureFixture}
+        default {throw 'Unexpected source fixture read'}
+    }
+}
+$null=Assert-T7MaterialPartsBuild $p $receipt;$checks++
+$script:partsHostFixture.Parent.PID=1
+Refuses {Assert-T7MaterialPartsBuild $p $receipt} 'Wrong original build parent accepted'
+$script:partsHostFixture.Parent.PID=9964;$receipt.Stages[1].CompilerTelemetry.Completed=$false
+Refuses {Assert-T7MaterialPartsBuild $p $receipt} 'Unclosed original telemetry accepted'
 [pscustomobject]@{Schema='iw7.t7-material-parts-recipient-source-tests/1';Checks=$checks;Passed=$true;NativeExecuted=$false;OpaqueRead=$false;LeaseAcquired=$false}|ConvertTo-Json -Compress

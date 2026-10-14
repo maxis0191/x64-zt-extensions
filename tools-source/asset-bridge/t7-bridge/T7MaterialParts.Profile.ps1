@@ -10,6 +10,10 @@ function Assert-T7MaterialPartsPlan($Plan) {
        $Plan.CandidateProfile -isnot [string] -or $Plan.CandidateProfile -cne 't7-material-parts-v1'){
         throw 'Parts operation/profile/marker must be paired.'
     }
+    if($Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cne 'QualifiedCollectionV3' -or
+       $Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -ne 23 -or !$Plan.PSObject.Properties['SharedQualification']){
+        throw 'Parts requires the explicit 23-member qualified V3 collection.'
+    }
     $marker=$Plan.SelectedMaterialPartsV1
     Assert-T7CatalogueFields $marker @('Schema','SourceManifest','HostWitness','ClosureWitness','PartsHeader','PartsEntry','PartsContract')
     if($marker.Schema -isnot [string] -or $marker.Schema -cne 'iw7.t7-material-parts-probe/1'){
@@ -67,11 +71,11 @@ function Assert-T7MaterialPartsBuild($Plan,$Receipt) {
     # All these texts have been opened by the runner's existing read guards.
     $build=Read-H1SmallJson $Plan.BuildPlan 1MB
     $manifest=Read-H1SmallJson $Plan.SelectedMaterialPartsV1.SourceManifest.Path 1MB
-    $host=Read-H1SmallJson $Plan.SelectedMaterialPartsV1.HostWitness.Path 4096
+    $partsBuildHost=Read-H1SmallJson $Plan.SelectedMaterialPartsV1.HostWitness.Path 4096
     $closure=Read-H1SmallJson $Plan.SelectedMaterialPartsV1.ClosureWitness.Path 8192
     if($build.BuildProfile.Name -cne 't7-material-parts-v1' -or $build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
        $manifest.revisions.'x64-zt-extensions' -cne 'a8ecff7cb61323cd0e6f75d10e596d55e63a7753' -or
-       $host.Host.PID -ne 16544 -or $host.Parent.PID -ne 9964 -or $host.WrapperRun -isnot [bool] -or $host.WrapperRun -or
+       $partsBuildHost.Host.PID -ne 16544 -or $partsBuildHost.Parent.PID -ne 9964 -or $partsBuildHost.WrapperRun -isnot [bool] -or $partsBuildHost.WrapperRun -or
        $closure.OriginalSession -ne 16448 -or $closure.TruePTYChunk -cne '8dd283' -or
        !(Test-T7CatalogueInteger $closure.TruePTYExitCode 0) -or @($closure.OwnedProcesses).Count -or @($closure.Leases).Count -or
        @($Receipt.Stages).Count -ne 3 -or (@($Receipt.Stages.Name)-join ',') -cne 'main,zonetool11,link'){

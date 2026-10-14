@@ -249,6 +249,13 @@ try {
         $f=New-Qualified $count 'QualifiedCollectionV3'
         Refuses {Get-T7CatalogueBootstraps $f.Plan} 'one through 32'
     }
+    # Causal regression: the G3 candidate must reach the SAME qualified inventory
+    # validator without being reclassified as a historical MSG candidate.
+    $f=New-Qualified 23 'QualifiedCollectionV3'
+    $f.Plan.CandidateProfile='t7-material-parts-v1'
+    Check (@(Get-T7CatalogueBootstraps $f.Plan).Count -eq 23) 'G3 profile rejected by qualified inventory gate.'
+    $f.Plan.CandidateProfile='ordinary-d2'
+    Refuses {Get-T7CatalogueBootstraps $f.Plan} 'MSG profile'
     foreach($policy in 'QualifiedCollectionV1','QualifiedCollectionV2'){
         $f=New-Qualified 9 $policy
         Refuses {Get-T7CatalogueBootstraps $f.Plan} 'one through 8'

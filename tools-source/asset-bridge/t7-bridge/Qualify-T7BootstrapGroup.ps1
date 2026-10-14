@@ -45,7 +45,9 @@ function Assert-T7QualificationHelperBinding($Pin,[string[]]$Required,[string]$C
         ($Pin.Bytes -eq 150096 -and $Pin.SHA256 -ceq '57c9ef83b9eb9535d57f0d8d4fa1fffdff3e389849258892993715382922b6d6') -or
         ($Pin.Bytes -eq 151909 -and $Pin.SHA256 -ceq 'a5d67419a16f246b2f96c51950a0ced538ab48e720322887b39ff4909d348d29') -or
         ($Pin.Bytes -eq 151018 -and $Pin.SHA256 -ceq 'ecf2c14c9b4b063c4e90c0465fcc72f58f58049d3e3b401a5d8cc01ab23cd42d') -or
-        ($Pin.Bytes -eq 152840 -and $Pin.SHA256 -ceq '5dcf897e3926697055498844b930eeabe69ea2482fd1bcdaacb019bd4a2ced15'))){return}
+        ($Pin.Bytes -eq 152840 -and $Pin.SHA256 -ceq '5dcf897e3926697055498844b930eeabe69ea2482fd1bcdaacb019bd4a2ced15') -or
+        ($Pin.Bytes -eq 151059 -and $Pin.SHA256 -ceq '7beede96dbb6818472d829ff03a0ac59a1a52a37265bb8812b83fc8b23e6ac78') -or
+        ($Pin.Bytes -eq 152881 -and $Pin.SHA256 -ceq '972012a714c7b4f4ae79913c5c7cc4326a6fba432d3b58f313e22e3d782ad5a7'))){return}
     throw 'Oversized helper requires the exact reviewed Catalogue source tuple.'
 }
 function Assert-T7QualificationGroupPlan($Plan,[string]$Repo,[string]$Runner,[string]$Hash){
