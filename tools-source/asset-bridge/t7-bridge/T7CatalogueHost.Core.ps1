@@ -2,13 +2,13 @@
 Set-StrictMode -Version Latest
 function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
     $export=[bool]($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ResidentExportV1')
-    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1'))){throw 'Unknown T7 host operation.'}
-    $prefix=if($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}else{'iw7.t7-catalogue-'}
+    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1'))){throw 'Unknown T7 host operation.'}
+    $prefix=if($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ImageProvenanceV1'){'iw7.t7-image-provenance-'}else{'iw7.t7-catalogue-'}
     $prefix+$Kind+'/1'
 }
 function Get-T7CatalogueHostOutcomeName($Plan) {
     $schema=Get-T7CatalogueHostSchema $Plan 'run'
-    if($schema -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}elseif($schema -ceq 'iw7.t7-material-parts-run/1'){'PartsOutcome'}else{'CatalogueOutcome'}
+    if($schema -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}elseif($schema -ceq 'iw7.t7-material-parts-run/1'){'PartsOutcome'}elseif($schema -ceq 'iw7.t7-image-provenance-run/1'){'ProvenanceOutcome'}else{'CatalogueOutcome'}
 }
 function Get-T7CatalogueHostIdentity {
     $process=[Diagnostics.Process]::GetCurrentProcess()
@@ -82,14 +82,18 @@ function Open-T7CatalogueHostInputs([string]$PlanPath,[string]$PlanSHA256,[strin
         return $state
     }catch{Close-T7CatalogueHostGuards $state;throw}
 }
-function Assert-T7CatalogueHostArguments($State,[string[]]$ActualArguments,$HostIdentity) {
+function Assert-T7CatalogueHostArguments($State,$ActualArguments,$HostIdentity,$ActualEntryAssembly=[Reflection.Assembly]::GetEntryAssembly().Location) {
     $expected=@($State.Contract.HostImage,'-NoLogo','-NoProfile','-NoExit','-File',$State.EntryPath,
         '-PlanPath',$State.PlanPath,'-PlanSHA256',$State.PlanSHA256,'-RunRoot',$State.RunRoot,
         '-HostContractPath',$State.ContractPath,'-HostContractSHA256',$State.ContractSHA256,'-Run')
-    if($HostIdentity.Image -cne $State.Contract.HostImage -or $ActualArguments.Count -ne $expected.Count){throw 'Fresh exact NoProfile/NoExit host arguments required.'}
-    # Managed pwsh reports pwsh.dll in argv[0]; the executable is checked above.
+    $managed=Join-Path ([IO.Path]::GetDirectoryName($State.Contract.HostImage)) 'pwsh.dll'
+    if($HostIdentity.Image -cne $State.Contract.HostImage -or $ActualArguments -isnot [array] -or $ActualArguments.Count -ne $expected.Count -or
+       $ActualEntryAssembly -isnot [string] -or $ActualEntryAssembly -cne $managed -or $ActualArguments[0] -isnot [string] -or
+       ($ActualArguments[0] -cne $State.Contract.HostImage -and $ActualArguments[0] -cne $ActualEntryAssembly)){
+        throw 'Fresh exact physical/managed NoProfile/NoExit host arguments required.'
+    }
     for($index=1;$index -lt $expected.Count;$index++){
-        if($ActualArguments[$index] -cne $expected[$index]){throw 'Fresh exact NoProfile/NoExit host arguments required.'}
+        if($ActualArguments[$index] -isnot [string] -or $ActualArguments[$index] -cne $expected[$index]){throw 'Fresh exact NoProfile/NoExit host arguments required.'}
     }
 }
 function Assert-T7CatalogueHostReceipt($State,$Receipt) {
