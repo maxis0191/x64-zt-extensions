@@ -140,9 +140,41 @@ Its 931-byte closure hash is
 Post-build input rechecks were not reached; that result remains unverified.
 No linked candidate or stock/game operation ran. Failed C data is immutable.
 
-Next: source review/private Git/exact-head CI audit, fresh successor cohort and
-reviewed admitted preparation/CPP capsule. Full CLI artifacts and complete input
-rechecks/closure must still be measured. A separately reviewed native F2
+The corrected source merged as 1ad68ee74a9775b5eefb150c9316dfee6fad5df9.
+Its additive PREP D initially had a schema literal damaged by a prefix text
+substitution; that unexecuted tuple remains frozen. D2 restored the exact
+`iw7.t7-image-metadata-prepare-capsule/1` literal and used complete quoted path
+tokens. Sources and recorded opaque pins stayed unchanged. Admitted PREP D2
+then passed Python and DEFAULT, producing actual plan384208 /
+9e735ab7cf6d557ee2ff3e474f179967ecb4fb7f3dbda517c63c82784c766a21
+with the corrected CLI17c07359, all1146 inputs and171 bindings. Its same original
+context closed, terminal97088 exited zero and fresh closure found all four
+identities absent with leases.json empty. No CPP ran under that PREP GO.
+
+The separate CPP D GO then passed all five phases: fixture compile, actual
+54 mapper +13 reader checks, main, zonetool11 and link. Each exited zero and
+closed its original H1 job; all four compiler/VCTIP pairs were verified and
+closed. Complete inputs were reverified, receipt publication checked and the
+lease released. The 39862-byte receipt has SHA256
+73cebdc2857222a8a984e43d8aa37ceacaf2ffe08b9454b531ab93b112b7aff9.
+Its admitted linked EXE is21998592 bytes /
+552a9805ff3fc66748b76bec2f93dda11924c68d371d809b7f3f04bb3438bdbd;
+PDB is139399168 bytes /
+1fc2663c3f7e9fe08e7dd901b201c33110e51d05d99e0fa84bf781296a220dec.
+These hashes are taken from the admitted receipt; no free binary reread is
+required. Compilation took28.43 seconds and complete output stayed200262944
+bytes below the256 MiB bound. The original AppDomain/PSVariable references
+matched at preexit, all native/caller guards were zero and CanExit was true.
+Terminal99450 exited zero. Fresh closure at2026-10-14T21:09:38.9317107Z found
+all11 identities absent and no heavy/game process or lease. Its858-byte closure
+hash is d567af8bcc2a1385074e24d17b771a6979d3e08b51ba19cc0abd07c6cb38a871.
+CPP D is technically passed; the linked candidate was never executed. No stock,
+engine image-body observation, pixels, rendering or owner gameplay is claimed.
+The compiled cohort stays source1ad68ee / CLI154456-17c07359 / plan9e735ab7;
+later documentation commits cannot relabel that tuple or historical E candidates.
+
+Next: reseal the existing consumer/launcher against this new compiled cohort
+using its recorded pins and original closure proof. A separately reviewed native F2
 plan/DEFAULT/GO comes first; header-body observation needs its own GO. Real stream
 keys, mip/layout qualification, whole-object extraction/DDS and owner gameplay
 remain unqualified. Main, stock, occupied clients, banks and frozen cohorts stay
