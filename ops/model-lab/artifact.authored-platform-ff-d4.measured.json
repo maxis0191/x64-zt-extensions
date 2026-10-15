@@ -1,0 +1,161 @@
+{
+  "schema": "iw7.authored-model-ff-preflight-checkpoint/1",
+  "date_utc": "2026-10-15",
+  "scope": "SDK31 authored inputs stage passed; subsequent pre-alias SourceValidation preparation refused; known failed operation closed",
+  "assets_revision": "a5be8bd6204c608f5c17f6a68454f7365c4695ec",
+  "native_source_revision": "fab935826c898806855376662a8a03317b3ad8f1",
+  "writer_producer_revision": "8f55ac7819d93f5bcede273aea3e478ae9438a12",
+  "stage_sdk_revision": "24edc27ff7f379613d51ae9d91b3f10054d67b6a",
+  "consumer_sdk_revision_not_executed": "62cf38834a0cbcd7243a3d52ce6100c1edbd9cdc",
+  "sdk_runtime_revision": "6dcfc719e0535509f109c593fa4342ce201b5523",
+  "admission_count": 1,
+  "actual_phase": {
+    "name": "authored-stage",
+    "image": "python.exe",
+    "created_utc": "2026-10-15T08:22:49.3844118Z",
+    "exit_code": 0,
+    "original_tree_closure_confirmed": true,
+    "elapsed_ms": 346.18299999833107,
+    "max_observed_output_bytes": 100328,
+    "max_observed_stream_bytes": 7842
+  },
+  "sdk_inputs_staged": true,
+  "sdk_report_opaque_inputs_read_under_admission": true,
+  "sdk_report_build_verified": false,
+  "standalone_cpp_rebuilt": false,
+  "accepted_source_plan": {
+    "schema": "iw7.model-ff-plan/3",
+    "geometry_profile": "iw7-authored-rigid-v1",
+    "bytes": 4936,
+    "sha256": "02285a22c7a10333dfb1d3593479cc2248c81eddf2eb90405f35a7ae7ddd19a1",
+    "material_payload_copied": true,
+    "material_closure_verified": false,
+    "normalized_geometry_source_sha256": "31f8d2ae3a4b71a156a2ba6ad341eccd807264fa89dd5a2d237a073cf307c882",
+    "ff_built": false,
+    "ready": false
+  },
+  "candidate_qualified_under_original_admission": true,
+  "candidate_binary_sha256_measured_under_admission": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "stock_inputs_measured": 104,
+  "hardlink_inputs": 95,
+  "copy_inputs": 9,
+  "unique_stock_providers_measured": 73,
+  "stock_inputs_with_target_id_at_refusal": 0,
+  "failure": {
+    "message": "The property 'TargetId' cannot be found on this object. Verify that the property exists.",
+    "error_id": "PropertyNotFoundStrict,Microsoft.PowerShell.Commands.WhereObjectCommand",
+    "source": "tools-source/asset-bridge/world/original-arena/OriginalArena.Process.ps1",
+    "line": 23,
+    "before_original_owner_reset_and_start": true,
+    "source_validation_owner_created": false,
+    "source_validation_state_null": true,
+    "source_validation_empty_log_directory_created": true,
+    "owned_stock_work_directory_created": false
+  },
+  "stock_transaction_started": false,
+  "stock_restoration_exercised": false,
+  "entry_restored_flag": false,
+  "entry_stock_preserved_flag": false,
+  "unreached_native_phases": [
+    "SourceValidation",
+    "Build",
+    "Offline",
+    "Dump",
+    "GeometryReader",
+    "SurfaceReader"
+  ],
+  "evidence": {
+    "capsule.source.json": {
+      "bytes": 4264,
+      "sha256": "e2f97a8c12c52ba136290005c49cf688aa06b6994d42956413324585461468fc"
+    },
+    "ff-plan.local.json": {
+      "bytes": 361381,
+      "sha256": "a872c2b2eefa661e119aa2fead4f8d75a54fc539fbe35af19747fbe3698b69a0"
+    },
+    "authored-ff-d4.outer.ps1": {
+      "bytes": 13495,
+      "sha256": "4d940f949080c8e27b1623fc08a5422e8bb363d5f8dccaf872b3e0d3fc920cd8"
+    },
+    "author-inputs.local.json": {
+      "bytes": 3558,
+      "sha256": "17e6dc31ce94711958aa5339699b240ed8f5f54893d1b14c81dc437d84e5a303"
+    },
+    "main-stock-source.local.json": {
+      "bytes": 606,
+      "sha256": "ae3cb170120f3f4cece1cc683c28b65b6da35d08a66bb9a0e6e7312822a1b711"
+    },
+    "authored-native-run.json": {
+      "bytes": 56161,
+      "sha256": "14813566a9a5f937ee0f04b30f8775cffae0ce16c99be82255dd9a035e98e12e"
+    },
+    "owned-authored-stage/stdout.log": {
+      "bytes": 7842,
+      "sha256": "2987c23766d44de7b99eb8ec0b4c00d637b818fc7b9c88af84bc442beef341de"
+    },
+    "owned-authored-stage/stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source/model-ff-plan.json": {
+      "bytes": 4936,
+      "sha256": "02285a22c7a10333dfb1d3593479cc2248c81eddf2eb90405f35a7ae7ddd19a1"
+    },
+    "d4-failure-inspection.local.json": {
+      "bytes": 8954,
+      "sha256": "88422249cc129d7611e6492cc57963aaaeb3ee0b7dac3f4aab9f621a6fe14956"
+    },
+    "d4-error-record.local.json": {
+      "bytes": 3619,
+      "sha256": "b86ce2dec153b9592676b43af9b9196b0a40e14a6a8f48fa5ced249e5df31fec"
+    },
+    "d4-failure-preexit.local.json": {
+      "bytes": 3479,
+      "sha256": "eaec874844c592fbc940610d759879c6781efec5dba628a5642d7aab3ed634f8"
+    },
+    "d4-failure-closure.local.json": {
+      "bytes": 1328,
+      "sha256": "ce99fff37c5d3f4035cbaeba3bdaea8b4c952fc10a13190ee6e935e2277bb789"
+    },
+    "d4-postexit.local.json": {
+      "bytes": 1082,
+      "sha256": "45f4a92412a4fb7348fadfe946203f30955ed3673ae1699dffa86906f1e418b0"
+    },
+    "Close-AuthoredFFD4Failure-R2.Source.local.ps1": {
+      "bytes": 13145,
+      "sha256": "6292eb7cdbb74fc7261d3b6cb415c18a1dfc04eb1941fe6a19bdced825fa1421"
+    },
+    "Close-AuthoredFFD4Failure-R3.Source.local.ps1": {
+      "bytes": 13152,
+      "sha256": "6eb9c66649ac16db5bf6d78c611334e055de623b18dce5619af7f02c725bf009"
+    }
+  },
+  "closure_proposal_r2_invoked": false,
+  "closure_r2_review_issue": "Final generic-list array conversion outside try could fail; R3 uses Publications.ToArray()",
+  "closure_r3_only_one_expression_delta": true,
+  "closure_r3_invoked": true,
+  "closure_reconstructed_owner_or_job_context": false,
+  "closure_flush_true_same_guard_json_readback": true,
+  "original_references_verified": true,
+  "known_failed_closed": true,
+  "original_guards_closed": true,
+  "failure_publications_unchanged_at_exit": true,
+  "lease_released_by_original_entry": true,
+  "manual_lease_release_or_job_kill": false,
+  "python_environment_restored": true,
+  "true_pty_aggregate_exit_code": 1,
+  "postexit_captured_utc": "2026-10-15T08:43:50.4874572Z",
+  "fresh_original_identities_games_compiler_and_lease_inventory_empty": true,
+  "root_independently_confirmed_closure_before_slot_release": true,
+  "bind_materialize_run": false,
+  "ff_built": false,
+  "ff_inventory_verified": false,
+  "ff_geometry_readback_verified": false,
+  "ff_material_and_serialized_image_bytes_verified": false,
+  "rendered_pixels_verified": false,
+  "collision_or_player_contact_verified": false,
+  "game_run": false,
+  "owner_gameplay_accepted": false,
+  "ready": false,
+  "native_or_stock_artifacts_reopened_for_documentation": false
+}
