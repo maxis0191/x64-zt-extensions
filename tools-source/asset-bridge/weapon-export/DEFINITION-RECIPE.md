@@ -24,7 +24,8 @@ the exact already-declared native header. `/FI` avoids fragile quoted `/D`
 macro values; no native header or bool/enum layout is synthesized.
 MSVC's documented [`/D` parsing](https://learn.microsoft.com/en-us/cpp/build/reference/d-preprocessor-definitions?view=msvc-170)
 strips command-line quotation marks; the forced-include file supplies an ordinary
-C++ string literal instead. Its actual compilation remains unmeasured.
+C++ string literal instead. CPP N reached the actual readset compilation and
+failed there as recorded below; no successful definition fixture is measured.
 
 The fixed definition response compiles `test_definition_readset.cpp`, emits its
 own object/EXE/PDB/dependency report, and keeps `/MT /DNDEBUG /W4 /WX /Y-` with
@@ -87,3 +88,29 @@ The output contains Source/JSON/RSP and a future CPP capsule; it contains no
 binary candidate or current qualification. `recipe-source-receipt.json` keeps
 CPP/extraction/mechanics readiness false. The ordinary DEFAULT's actual receipt
 is produced only during that future admitted Analysis operation.
+
+## Actual PREP N and failed CPP N, 2026-10-15
+
+PREP N used the reviewed Source package at merge
+`4a20fae1e1515b5f550b5ff960ebe30a68c3fb69`. Its admitted Python preparation and
+ordinary DEFAULT both exited zero. DEFAULT verified the actual 100-case fixture,
+four headers, forced include and response, ten stages and authored8/28/36/100;
+native-types/input-hash/run-root/lease/ready flags stayed false and candidate
+fields stayed null. The original PREP owner and guards closed, its physical
+terminal exited zero, and Root independently released that Analysis ledger.
+
+The generated plan was 419,991 bytes, SHA256
+`614fc9b370274f151a844dd8114743b34ecdcb83a51155e0e2e9252a24856fc8`.
+Under a distinct CPP GO, N passed the three existing probes (72 actual checks),
+then failed compiling `native_definition_readset.hpp` line102: MSVC C2220/C4702,
+unreachable code treated as an error. The 100-case fixture did not execute;
+IW7 TU and link did not run. There is no new candidate or inherited J qualification.
+
+For bool/float instantiations, both constexpr branches already returned, leaving
+the shared success return unreachable. The canonical Source correction places
+that return inside only the integer/enum fallback, preserving guarded copying,
+bool and finite-float validation, `/W4 /WX`, and the fixed 100-case fixture.
+The runner's exact normalized readset hash changes with that reviewed Source.
+The generated N package, plan, responses and failed receipts remain immutable.
+A new package/PREP/CPP sibling and distinct admission are required to validate
+the correction in MSVC; existing Source checks alone do not do so.

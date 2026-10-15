@@ -250,3 +250,32 @@ template export, authoring eligibility, weapon grant, projectile damage/physics,
 retail PAP transaction and owner gameplay acceptance remain false. The original
 PROJECTILE3/3 template and author guards remain unchanged. A separate exact
 Source profile-export packet and distinct Root Extract GO must precede its CLI.
+
+## Actual neutral-definition CPP N failure, 2026-10-15
+
+PREP N prepared and DEFAULT-verified merge
+`4a20fae1e1515b5f550b5ff960ebe30a68c3fb69`, native Source
+`fab935826c898806855376662a8a03317b3ad8f1`, and the retained J declarations.
+After its own Root CPP GO, name8/argv28/primary36 compiled and ran successfully:
+72 checks passed. Definition compilation then exited2 with C2220/C4702 at the
+readset's shared success return, with `/W4 /WX` active. The wrapper subsequently
+reported `Successful original compiler handle identity required.` because that
+compiler observer requires exit0. The 100 definition checks, IW7 TU and link
+never ran. N is FailedClosed, not a 172-check result or a linked candidate.
+
+The failed stage's last pre-finally snapshot retains ActiveProcesses1 and
+TreeClosureConfirmed=false. It is not rewritten as a passing stage. The same
+actual final owner later had Closed=true, compiler exit2 and its original
+job/process/IO handles closed; original context CanExit=true, zero guards and a
+null lease were checked before physical terminal exit1. Fresh postflight at
+13:43:32 UTC found all twelve captured identities absent, no game/compiler/
+ZoneTool/VCTIP process and no authoritative lease. Root independently read the
+persisted closure proofs, corroborated those absences at 13:44:13 UTC and
+released its heavy ledger. This does not change the failed compile result.
+
+The correction is a Source-only move of `return true` into the integer/enum
+fallback. Bool/float branches retain their returns and validation. There is no
+warning suppression, relaxed response or modified generated N input. A later
+Source revision, prepared sibling and distinct Root CPP GO must establish whether
+MSVC accepts the fix. No extraction, Native49 strict3/3 change, authoring,
+projectile/PAP mechanics or owner gameplay acceptance follows from this failure.

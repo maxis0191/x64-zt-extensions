@@ -38,7 +38,7 @@ function Assert-PlayerDefinitionFixture($Plan){
     $expected=@{
         'test_definition_readset.cpp'='e003afa43e469ffb651f047135c596d0710dca75b81290d2717759dc4aa65542'
         'native_definition_access.hpp'='92eb62fd94a18397ea09de034330009aaa17d16abaf037d98e041412f4ce1890'
-        'native_definition_readset.hpp'='6242ee9fb76e5881aa28224138f36543250066f5254ea455332c68670967f84d'
+        'native_definition_readset.hpp'='eb6957a20506e87f75f056a040c8213d979fbd64a79765700593e9f78ff6bcb6'
         'native_definition_fields.inc'='302e324b98175981ba8ae3e071a23e125ed83353d8319ca60a9c0390f47db7e3'
         'native_definition_gate.hpp'='314667bfc966bd38ba8040a9a3b12f7cef513819659ce170f05547bd0b0e409f'
     }

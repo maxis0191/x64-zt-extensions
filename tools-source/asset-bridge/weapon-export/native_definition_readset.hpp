@@ -98,8 +98,8 @@ namespace player_definition_readset
                     // or normalizing it, but require the guarded copy as well.
                     T raw;
                     if (!load(address, raw, field)) return false;
+                    return true;
                 }
-                return true;
             }
         }
         template<class Count> bool count(Count value, size_t& result, const char* field)

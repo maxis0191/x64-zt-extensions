@@ -1,7 +1,9 @@
 # Neutral registered player definitions: Source contract
 
-2026-10-15: implemented Source only. No new C++ fixture, compiler, native
-serializer, extraction or game run has executed for this mode. Actual M remains
+2026-10-15: Source implementation, admitted PREP N and failed CPP N are recorded
+separately. CPP N passed name8/argv28/primary36, then its definition fixture
+failed compilation with C4702 under `/WX`; its 100 checks did not run. No new
+IW7 TU, link, native serializer, extraction or game run executed. Actual M remains
 the closed metadata observation described in EXPORT-COHORT.md: base type1,
 PAP type0, raw PAP flag1/true, one association. Candidate J does not contain this
 new route. Source checks and authored C++ checks are different evidence.
@@ -142,13 +144,14 @@ hex (`dump_hex` uses `%02X`); the neutral producer now applies the existing
 The closed reader and legacy producer remain unchanged. These were Source
 corrections before any compilation or extraction of this mode.
 
-`test_definition_readset.cpp` authors88 checks using the real pinned structures
+`test_definition_readset.cpp` authors100 checks using the real pinned structures
 and production `with_pair` gate. It covers unchanged values, missing copy,
 integer-copy refusal, unreadable spans, count/overflow/string/UTF8/bool/float
 refusals, inline21 arrays, curves, nested mappings/subblocks, all32 turret masks,
 script conversion failures/full32-bit IDs, aggregate budgets and the AV-only
-leaf. It has **not been compiled or executed**. The existing name8/argv28/
-primary36 fixtures are likewise only authored at this new revision.
+leaf. Its first actual compile attempt failed; none of those 100 checks has
+executed. The existing name8/argv28/primary36 probes passed at the exact N Source
+revision recorded in BUILD-COHORT.md, which does not qualify a later correction.
 
 The build plan's explicit `PairDefinitionsCLI=true` requires both existing
 fixture profiles and the fixed ten-stage sequence: name compile/test8, argv
@@ -158,7 +161,12 @@ link. The definition compile must bind the exact native structs header via
 the ordinary source guard policy. Incomplete older6/8-stage plans cannot build
 the new module. Old modules retain their existing6/8-stage contracts.
 
-Next: finish exact Source review/CI/private merge, then prepare a fresh CPP
-capsule for separate Root GO. Only its actual closed candidate may feed a
+The C4702 correction moves the success return into the integer/enum fallback;
+bool and floating-point branches retain their validation returns. `/W4 /WX`
+remain enabled. Existing Source checks cannot establish successful MSVC
+compilation; the unchanged 100-case fixture needs a new admitted compiler run.
+
+Next: finish exact Source review/CI/private merge, then a new Source package,
+PREP sibling and separately admitted CPP capsule. Only its actual closed candidate may feed a
 separately admitted neutral extraction. No CPP, Native, Extract, authoring or
 game authorization follows from this Source document.
