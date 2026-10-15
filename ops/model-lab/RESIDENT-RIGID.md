@@ -411,4 +411,11 @@ recipient versus local inventory, tampering and false provenance refusal,
 existing PowerShell input/inventory/admission gates, image/material readback
 comparisons and unchanged legacy inventory. No actual CPP, FF, PE, stock, lease,
 native process or game run has occurred. The source route is connected;
-Creator must keep native build/readback/runtime qualification pending.
+Creator must keep FF build/readback/runtime qualification pending for this
+Source-only connection.
+
+The separate 2026-10-15 original platform CPP run now qualifies the standalone
+writer and native geometry readback for that exact project. See the
+[closed run and remaining gates](../../docs/AUTHORED-PLATFORM-CPP-2026-10-15.md).
+The authored FF connection above remains Source-only; its material, FF and
+runtime claims are unchanged by the standalone geometry result.
