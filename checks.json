@@ -314,6 +314,16 @@
       ]
     },
     {
+      "id": "Test-T7PrepatchImageCallerConsumer",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7PrepatchImageCallerConsumer.ps1"
+      ]
+    },
+    {
       "id": "Test-T7PrepatchReferenceV2Consumer",
       "command": [
         "pwsh",

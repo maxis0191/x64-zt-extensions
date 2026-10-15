@@ -619,6 +619,8 @@
     "tools-source/asset-bridge/t7-bridge/prepare_material_parts_probe.py",
     "tools-source/asset-bridge/t7-bridge/extract_registration_bindings_record.py",
     "tools-source/asset-bridge/t7-bridge/test_extract_registration_bindings_record.py",
+    "tools-source/asset-bridge/t7-bridge/Test-T7PrepatchImageCallerConsumer.ps1",
+    "tools-source/asset-bridge/t7-bridge/PREPATCH-IMAGE-CALLER-CONSUMER.md",
     "tools-source/asset-bridge/t7-bridge/test_material_parts_probe.py",
     "tools-source/asset-bridge/t7-bridge/prepatch-environment-20261012.json",
     "tools-source/asset-bridge/t7-bridge/prepatch-runtime-observation-20261012.json",
