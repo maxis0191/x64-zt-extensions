@@ -74,6 +74,7 @@ function Assert-T7RegistrationBindingsCpp80Shape($Build,$Receipt,$PlanSHA256,$Fi
            $path.Substring(2).Contains(':') -or $path -match '["\x00-\x1f]'){throw 'Declared canonical CPP80 roots required.'}
     }
     $p=$Build.BuildProfile;$rp=$Receipt.BuildProfile
+    if($p -isnot [pscustomobject] -or $rp -isnot [pscustomobject]){throw 'Typed CPP80 recipe and receipt profile objects required.'}
     foreach($profile in @($p,$rp)){
         foreach($row in @(@('Name','t7-registration-material-bindings-v1'),@('Option','-t7-iw7-registration-material-bindings-v1'),
             @('ObservationSchema','iw7.t7-registration-material-bindings/1'),@('BindingsSchema','iw7.t7-registration-material-bindings/1'),

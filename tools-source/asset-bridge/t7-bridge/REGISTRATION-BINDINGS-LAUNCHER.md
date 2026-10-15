@@ -93,7 +93,12 @@ cohort. A matching body alone cannot qualify CPP80, launch a candidate, or
 inherit the old CPP39/87 results. No runtime proof tuple is introduced here.
 
 The Source test uses explicitly authored bodies and nonexistent `C:\authored`
-artifact declarations. Its 113 controls include failed/unclosed phases, wrong
+artifact declarations. Its 115 controls include failed/unclosed phases, wrong
 39/41 counts, input proof promotion, Source-pin null/type/hash drift, artifact
 and plan mismatch, live compiler members, old incoming markers and continued
 gate refusal after a valid shape. No real artifact is generated or inspected.
+
+Peer review found that a one-element array around either BuildProfile container
+could pass PowerShell property enumeration. Both containers now require an
+explicit PSCustomObject before profile iteration, with separate refusal causals.
+The original Source candidate remains in history; no operational gate was opened.

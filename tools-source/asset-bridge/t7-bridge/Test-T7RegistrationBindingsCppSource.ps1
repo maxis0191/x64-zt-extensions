@@ -64,6 +64,10 @@ $out=@(Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $hash $stdout
 Check ($out.Count -eq 0) 'Shape emitted a qualification result.'
 Check (($f|ConvertTo-Json -Depth 24 -Compress) -ceq $before) 'Shape changed its input bodies.'
 Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $hash ($stdout.Replace("`n","`r`n")) $stderr;Check $true 'CRLF marker refused.'
+foreach($side in 'Build','Receipt'){
+    $f=New-DeclaredFixture;$f.$side.BuildProfile=@($f.$side.BuildProfile)
+    Refuses {Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $hash $stdout $stderr}
+}
 foreach($bad in @($null,@($hash),'old')){Refuses {Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $bad $stdout $stderr}}
 foreach($bad in @($null,@($stdout),($stdout+'extra'),"IW7_T7_REGISTRATION_HEADER_CHECKS=39`nIW7_T7_INCOMING_IMAGE_CHECKS=48`n")){
     Refuses {Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $hash $bad $stderr}
