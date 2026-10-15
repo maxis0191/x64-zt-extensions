@@ -2,13 +2,13 @@
 Set-StrictMode -Version Latest
 function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
     $export=[bool]($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ResidentExportV1')
-    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1'))){throw 'Unknown T7 host operation.'}
-    $prefix=if($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationImageMetadataV1'){'iw7.t7-registration-image-'}elseif($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ImageProvenanceV1'){'iw7.t7-image-provenance-'}else{'iw7.t7-catalogue-'}
+    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1'))){throw 'Unknown T7 host operation.'}
+    $prefix=if($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'IncomingImageObservationV1'){'iw7.t7-incoming-image-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationImageMetadataV1'){'iw7.t7-registration-image-'}elseif($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ImageProvenanceV1'){'iw7.t7-image-provenance-'}else{'iw7.t7-catalogue-'}
     $prefix+$Kind+'/1'
 }
 function Get-T7CatalogueHostOutcomeName($Plan) {
     $schema=Get-T7CatalogueHostSchema $Plan 'run'
-    if($schema -ceq 'iw7.t7-registration-image-run/1'){'RegistrationOutcome'}elseif($schema -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}elseif($schema -ceq 'iw7.t7-material-parts-run/1'){'PartsOutcome'}elseif($schema -ceq 'iw7.t7-image-provenance-run/1'){'ProvenanceOutcome'}else{'CatalogueOutcome'}
+    if($schema -ceq 'iw7.t7-incoming-image-run/1'){'IncomingObservationOutcome'}elseif($schema -ceq 'iw7.t7-registration-image-run/1'){'RegistrationOutcome'}elseif($schema -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}elseif($schema -ceq 'iw7.t7-material-parts-run/1'){'PartsOutcome'}elseif($schema -ceq 'iw7.t7-image-provenance-run/1'){'ProvenanceOutcome'}else{'CatalogueOutcome'}
 }
 function Get-T7CatalogueHostIdentity {
     $process=[Diagnostics.Process]::GetCurrentProcess()

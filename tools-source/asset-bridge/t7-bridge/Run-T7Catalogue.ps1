@@ -30,6 +30,9 @@ try {
     $registration=[bool]($plan.PSObject.Properties['SelectedRegistrationImageHeaderV1'] -or
         ($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'RegistrationImageMetadataV1') -or
         ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-registration-image-header-metadata-v1'))
+    $incoming=[bool]($plan.PSObject.Properties['SelectedIncomingImageObservationV1'] -or
+        ($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'IncomingImageObservationV1') -or
+        ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-incoming-image-header-observation-v1'))
     $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2'))
     $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
     if($export -or $zombies){$required+=@($exportProfile)}
@@ -39,6 +42,8 @@ try {
     if($provenance -or $registration){$required+=@($provenanceProfile)}
     $registrationProfile=Join-Path $PSScriptRoot 'T7RegistrationImage.Profile.ps1'
     if($registration){$required+=@($registrationProfile)}
+    $incomingProfile=Join-Path $PSScriptRoot 'T7IncomingImage.Profile.ps1'
+    if($incoming){$required+=@($incomingProfile)}
     foreach($path in $required) {
         $pin=@($plan.Bindings|Where-Object {$_.Path -ceq $path -and $_.IsText -eq $true})
         if($pin.Count -ne 1 -or $pin[0].Bytes -gt 1MB){throw 'Bounded exact source binding missing.'}
@@ -50,6 +55,7 @@ try {
     if($parts){. $partsProfile}
     if($provenance -or $registration){. $provenanceProfile} # Retained NULL gate or exact compiled-D F2 route.
     if($registration){. $registrationProfile}
+    if($incoming){. $incomingProfile}
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     $provenance=Test-T7ImageProvenanceCompiledPlan $plan
     foreach($pin in $plan.Bindings|Where-Object IsText){if($pin.Path -cnotin $required){$guards.Add((Open-H1Pin $pin))}}
