@@ -615,3 +615,56 @@ grant, projectile damage/physics, retail PAP transaction and owner gameplay
 acceptance remain false. The original PROJECTILE3/3 template and author guards
 still refuse this 1/0 pair; no field was coerced. Any next template/author work
 needs a separate bounded Source proposal, exact review and distinct execution GO.
+
+## Actual neutral-definition R refusal and safety closure, 2026-10-15
+
+After exact independent reviews and its own Extract GO, R invoked the existing
+neutral caller once, at Source208 merge
+`e2c96b6a97db2f4874ae9eafec5e19bf7e72c57b`, using the qualified CPP Q candidate
+as a declaration. Its 47,735-byte plan SHA256 is
+`f84d00542c2957cb59d5f3bc5abfd0a14b478fc807dc1d2d6cb95597d4e4379f`;
+the 1,252-byte entry SHA256 is
+`4f781ed7b8a9d7f823e2b66de59a7bfe2b97c5f2e0b833881d5c6bf0eb5246a3`.
+This did not run the candidate: preflight stopped before its copy or CLI call.
+
+The root Stock35 transaction prepared seven immutable aliases and preserved its
+sources, with zero retail bytes copied. The first main row, `code_post_gfx.ff`,
+then refused: historical manifest link count38, actual count18. The recorded
+file identity, volume, size, attributes, creation and modification values still
+matched. This proves stale link-count metadata, not a different asset or a
+reason to force the old manifest. Main preflight retained three actual handles,
+zero sources/groups, zero created links/directories and no journal. Zone
+preparation had not begun. No candidate, native export or full definitions ran.
+
+Ordinary finalization refused the unprepared transaction and retained
+UnknownRetained, CanExit false, the original lease and guards. Its error was
+`Live NTFS stock metadata differs from reviewed manifest.`; finalization recorded
+`Unprepared stock effects are retained.`. These failures remain unchanged.
+
+Root and independent architecture review then approved a separate safety-only
+Source script, 10,475 bytes / SHA256
+`4ff545cc8b870235e8d2d84fa1576f67e9f7a90e25d7d97bdc7bd02e44c787b1`.
+It asserted the same actual root/context/state/plan/lists and original handles,
+prebounded three receipt buffers before any closure/release, and kept all117
+original input guards plus three actual publication streams through final
+same-stream readback and the original clock check. Existing Stock35 guard close
+disposed the three known main handles; it performed no stock read, Undo, unlink
+or phase change. The seven prepared root aliases remain owned and retained.
+
+The three safety receipts total1,951 bytes. After actual lease release and final
+readback, all117 input, three main and three publication SafeFileHandles were
+verified closed. SafetyCleanupKnownComplete and safety-only CanExit became true;
+original Status/errors/MeasuredReadback false/FinalReadback false stayed intact.
+The helper completed at514,377 ms and same-context preexit at550,970 ms, within
+the unchanged600-second group clock. There was no retry, clock reset or extension.
+The original physical terminal exited1; fresh absence/empty registry and Root's
+independent corroboration at16:50:25 UTC completed safety closure and slot release.
+
+R remains FailedBeforeCLI with safety closure only. The immutable pre-Root
+failure handoff is6,274 bytes / SHA256
+`06281acbbe37204437f7043f5c4717d90dc019c6cebd1cd3919b48c0c65b2447`.
+Q's compilation qualification remains unchanged; retail full definitions,
+runtime ABI/lifetime, RayGun/PAP/projectile/physics and owner gameplay remain
+unqualified. Next: a separately reviewed bounded metadata-only observation of
+the same fixed stock, then a new exact manifest/export packet. R and its old
+manifests are not retried, relabelled or adopted as a successful extraction.
