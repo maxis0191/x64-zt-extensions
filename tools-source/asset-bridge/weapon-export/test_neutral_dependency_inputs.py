@@ -61,6 +61,21 @@ class InputRoleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'identity drift'):
             production.classify([self.pin(r'C:\native\src\a.hpp')], roots, parent_plan_sha256='b' * 64)
 
+    def test_attached_include_suffix_refuses_instead_of_truncating_root(self):
+        environment = {'INCLUDE': r'C:\sdk\include', 'PATH': r'C:\compiler\bin', 'LIB': r'C:\sdk\lib'}
+        for response in ('/I"C:\\native\\include"suffix /c input.cpp', '/I"C:\\native"/I"C:\\other"'):
+            with self.subTest(response=response), self.assertRaisesRegex(ValueError, 'quoted'):
+                production.from_pinned_response_environment(response, environment)
+
+    def test_win32_alias_components_refuse_for_leaf_directory_and_root(self):
+        for path in (r'C:\native\src\a.hpp.', 'C:\\native\\src\\a.hpp ',
+                     r'C:\native.\src\a.hpp', 'C:\\native \\src\\a.hpp'):
+            with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'trailing dot/space'):
+                self.classify([self.pin(r'C:\native\src\a.hpp'), self.pin(path)])
+        for root in (r'C:\native\include.', 'C:\\native\\include '):
+            with self.subTest(root=root), self.assertRaisesRegex(ValueError, 'trailing dot/space'):
+                production.role_roots([root], [r'C:\compiler\bin'], [r'C:\sdk\lib'])
+
 
 if __name__ == '__main__':
     unittest.main()

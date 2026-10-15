@@ -120,9 +120,10 @@ Source-only render against the four exact pinned native texts verifies byte
 preservation outside the dependency regions and the one header insertion.
 No C++ PASS is claimed from any Python check.
 
-Six additional declaration-only Python tests cover compiler input roles,
+Eight additional declaration-only Python tests cover compiler input roles,
 extensionless headers, tuple preservation, search-root boundaries, malformed
-metadata and refusal of implicit roots. They do not open inherited inputs.
+metadata, attached include-option suffixes, trailing-dot/space Win32 aliases
+in every component and refusal of implicit roots. They do not open inherited inputs.
 
 The initial reviewed head `6bbb3960c9ca7073d7d981cbb106ae67bf3886dc` wrongly
 required the optional fixed-capacity `notetrackFXMapValues` pointer when NULL.

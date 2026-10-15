@@ -19,7 +19,9 @@ def require(value, message):
 def identity(text):
     require(isinstance(text, str) and text and not any(ord(c) < 32 or c == '"' for c in text),
             'Ordinary lexical Windows path required')
-    require(not any(part in ('.', '..') for part in re.split(r'[\\/]', text)), 'Relative path segments refused')
+    parts = re.split(r'[\\/]', text)
+    require(not any(part in ('.', '..') for part in parts), 'Relative path segments refused')
+    require(not any(part.endswith(('.', ' ')) for part in parts if part), 'Win32 trailing dot/space aliases refused')
     path = PureWindowsPath(text)
     require(path.is_absolute() and re.fullmatch(r'[a-zA-Z]:', path.drive) and ':' not in text[2:],
             'Absolute drive path without alternate stream required')
@@ -44,7 +46,7 @@ def from_pinned_response_environment(response, environment):
     """Parse only the reviewed quoted /I roots and sealed INCLUDE/PATH/LIB strings."""
     require(isinstance(response, str) and len(response.encode()) <= 1048576, 'Bounded response Source required')
     require(isinstance(environment, dict), 'Pinned sealed environment object required')
-    includes = re.findall(r'(?:^|\s)/I"([^"\r\n]+)"', response, re.I)
+    includes = re.findall(r'(?:^|\s)/I"([^"\r\n]+)"(?=\s|$)', response, re.I)
     # No bare /I form is silently omitted from this closed source profile.
     require(len(re.findall(r'(?:^|\s)/I', response, re.I)) == len(includes), 'Every /I root must be explicitly quoted')
     values = []
