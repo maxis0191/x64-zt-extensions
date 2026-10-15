@@ -125,9 +125,17 @@ No shared H1 implementation or serializer changes.
 
 The local checked factory stores its actual result in the original context before
 its second group/phase check. Each phase clock starts before setup and H1 receives
-that original start. Source controls run the actual finalizer on nine publication
+that original start. Source controls run the actual finalizer on eleven publication
 and disposal outcomes and seven factory deadline cases; the original late-receipt
 tests remain separate. The isolated deadline harness now defines its legacy mode
 selectors explicitly, fixing its first standalone run's undefined-selector failure.
 The corrected runner needs a fresh reviewed package/plan and a distinct CPP GO;
 the successful PREP C plan must never be repinned in place.
+
+Review of the first runner correction44b98d5 reproduced a stale Passed pin when
+late receipt retirement failed. The deadline fallback now invalidates that pin
+before any retirement/republication attempt. A second causal advances the clock
+during the final publication readbacks; a fresh deadline check now runs before
+completion. Either unknown path retains the original guards/context and CanExit
+false, even if a stale Passed file remains. The failed candidate stays in Git;
+neither correction has qualified or executed CPP80.

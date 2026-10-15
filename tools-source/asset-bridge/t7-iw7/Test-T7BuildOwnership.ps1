@@ -41,11 +41,17 @@ function Write-H1Receipt($Plan,$State,$Root,[string]$Name='receipt.json',[switch
     $script:Events.Add('publish:'+ $Name)
     if(($script:FailureAt -ceq 'pre-write' -and $Name -ceq 'receipt-before-release.json') -or
        ($script:FailureAt -ceq 'post-write' -and $Name -ceq 'receipt.json')){throw 'fake publication failed'}
+    if($Name -ceq 'receipt.json'){
+        $script:CanonicalStatus=$State.Status
+        if($script:FailureAt -ceq 'late-move'){$script:FakeClock=601000.0}
+    }
     [pscustomobject]@{Path=('C:\authored\'+$Name);Bytes=1;SHA256=('a'*64)}
 }
+function Assert-H1Path($Path){if($script:FailureAt -ceq 'late-move'){throw 'fake retirement refused before Move'};throw 'Unexpected filesystem path inspection'}
 function Open-H1Pin($Pin){
     Check ($guards.Count -eq 1 -and !$guards[0].Closed) 'Inputs were dropped before publication readback'
     $script:Opens++
+    if($script:FailureAt -ceq 'readback-deadline' -and $script:Opens -eq 4){$script:FakeClock=601000.0}
     if(($script:FailureAt -ceq 'pre-open' -and $script:Opens -eq 1) -or
        ($script:FailureAt -ceq 'post-open' -and $script:Opens -eq 2) -or
        ($script:FailureAt -ceq 'recheck' -and $script:Opens -eq 3)){throw 'fake publication readback failed'}
@@ -54,6 +60,7 @@ function Open-H1Pin($Pin){
 function Invoke-FinalizerCase([string]$Case){
     $script:FailureAt=$Case;$script:Events=[Collections.Generic.List[string]]::new()
     $script:FakeClock=1000.0;$script:Releases=0;$script:Opens=0
+    $script:CanonicalStatus=$null
     $guards=[Collections.Generic.List[object]]::new();$input=New-FakeGuard 'input';$guards.Add($input)
     $owner=[pscustomobject]@{Closed=$true;ExitCode=0}
     $context=[pscustomobject]@{Owner=$owner;Closed=$true;Lease=[pscustomobject]@{Token='FAKE_NO_ADMISSION'};Guards=$guards;
@@ -84,9 +91,13 @@ function Invoke-FinalizerCase([string]$Case){
         }else{
             Check ($null -eq $context.Lease -and $script:Releases -eq 1 -and $context.PublicationGuards.Count -gt 0) 'Postpublication failure lost prior held publication'
         }
+        if($Case -cin @('late-move','readback-deadline')){
+            Check ($state.Status -ceq 'Failed' -and $script:CanonicalStatus -ceq 'Passed' -and
+                !$context.CompletionPublished -and $null -ne $failure) 'Expired/uncorrected Passed publication was treated as known completion'
+        }
     }
 }
-foreach($case in @('success','known-failure','no-owned-root','pre-write','pre-open','post-write','post-open','recheck','dispose')){Invoke-FinalizerCase $case}
+foreach($case in @('success','known-failure','no-owned-root','pre-write','pre-open','post-write','post-open','recheck','dispose','late-move','readback-deadline')){Invoke-FinalizerCase $case}
 function Invoke-FactoryCase([double]$Now,[double]$After,[double]$Phase,[int]$Factories,[int]$Starts,[bool]$Retained){
     $script:FakeClock=$Now;$script:AfterFactory=$After;$script:FactoryCalls=0;$script:Starts=0
     $script:T7StageStarted=$Phase;$script:T7StageDeadlineSeconds=120
@@ -108,5 +119,5 @@ Invoke-FactoryCase 119000 121000 0 1 0 $true
 Invoke-FactoryCase 599000 600000 599000 1 0 $true
 Invoke-FactoryCase 119000 120000 0 1 0 $true
 Check (!('IW7.AnimationProbe.NativeJob' -as [type])) 'Source tests loaded native job type'
-[ordered]@{SourceOnly=$true;Checks=$checks;FinalizerCases=9;FactoryCases=7;ActualClockOrdering=$true;
+[ordered]@{SourceOnly=$true;Checks=$checks;FinalizerCases=11;FactoryCases=7;ActualClockOrdering=$true;
     CPPExecuted=$false;SDKOrOpaqueBytesRead=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json -Compress

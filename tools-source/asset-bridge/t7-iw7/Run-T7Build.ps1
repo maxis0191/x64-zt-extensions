@@ -1465,6 +1465,7 @@ try {
             try{Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds}
             catch {
                 $failure=$_;$state.Status='Failed';$state.GroupDeadlineError=$_.Exception.Message
+                $finalReceipt=$null # The late Passed pin is invalid even if retirement/republication fails.
                 if($registration){$state.RegistrationCPPQualified=$false}
                 if($incoming){$state.IncomingCPPQualified=$false}
                 $state.ElapsedMs=(Get-H1Clock)-$script:T7GroupStarted
@@ -1484,8 +1485,13 @@ try {
                 $context.PublicationGuards.Add((Open-H1Pin $finalReceipt))
                 $context.Publications.Add($finalReceipt)
                 foreach($publication in $context.Publications){$verified=Open-H1Pin $publication;$verified.Dispose()}
+                Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
                 $context.CompletionPublished=$true
-            }catch{if(!$failure){$failure=$_};$state.FinalizationError=$_.Exception.Message}
+            }catch{
+                if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message
+                if($registration){$state.RegistrationCPPQualified=$false}
+                if($incoming){$state.IncomingCPPQualified=$false}
+            }
         }
     }
     # Keep the same input/publication guards and original context on any unknown
