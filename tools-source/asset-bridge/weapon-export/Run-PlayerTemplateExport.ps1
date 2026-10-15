@@ -2,8 +2,19 @@
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
-function Read-PlayerExportSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$Keep=$null){
-    if($SHA256 -cnotmatch '^[0-9a-f]{64}$' -or ![IO.Path]::IsPathFullyQualified($Path)){throw 'Exact bounded Source pin required.'}
+function Read-PlayerExportSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$Keep=$null,
+ [ValidateSet('Plan','Runner','Provider','Metadata','Request','StockManifest','Receipt')][string]$Role='Metadata'){
+    # Role/path/extension checks precede Get-Item and, crucially, FileStream.
+    if($SHA256 -cnotmatch '^[0-9a-f]{64}$' -or $Path -cnotmatch '^[A-Za-z]:\\' -or
+       ![IO.Path]::IsPathFullyQualified($Path) -or [IO.Path]::GetFullPath($Path) -cne $Path -or
+       $Path.Substring(2).Contains(':') -or $Path -match '[\x00-\x1f]' -or
+       @($Path.Substring(3) -split '[\\/]'|Where-Object {$_ -in @('.','..') -or $_.TrimEnd(' ','.') -cne $_ -or $_ -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'}).Count){throw 'Ordinary role-bound Source path required before open.'}
+    $extension=[IO.Path]::GetExtension($Path).ToLowerInvariant();$name=[IO.Path]::GetFileName($Path)
+    $allowed=if($Role -in @('Plan','StockManifest','Receipt')){@('.json')}elseif($Role -eq 'Request'){@('.csv')}elseif($Role -in @('Runner','Provider')){@('.ps1','.cs')}else{@('.json','.jsonl')}
+    $providers=@('H1Native.Core.ps1','Resource-Scheduler.Core.ps1','T7Build.Profile.ps1','Stock-Links.Core.ps1','BeaconFF.Core.ps1','OriginalArena.Process.ps1',
+        'Lab-Paths.ps1','StockLinks.cs','Resource-Memory.ps1','Resource-RecorderOwnedProcess.Core.ps1','ResourceMemory.cs')
+    if($extension -cnotin $allowed -or ($Role -eq 'Runner' -and $name -cne 'Run-PlayerTemplateExport.ps1') -or
+       ($Role -eq 'Provider' -and $name -cnotin $providers)){throw 'Text Source role/suffix/name refused before open.'}
     for($part=$Path;$part;$part=[IO.Path]::GetDirectoryName($part)){if((Get-Item $part).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Source redirect refused.'}}
     $stream=[IO.FileStream]::new($Path,'Open','Read','Read')
     try{
@@ -17,28 +28,36 @@ function Read-PlayerExportSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[
         if($null -ne $Keep){$stream.Position=0;$Keep.Add($stream);$stream=$null};$text
     }finally{if($stream){$stream.Dispose()}}
 }
-$plan=Read-PlayerExportSource $PlanPath $PlanSHA256|ConvertFrom-Json -Depth 30
+$plan=Read-PlayerExportSource $PlanPath $PlanSHA256 -Role Plan|ConvertFrom-Json -Depth 30
 if($plan.Schema -cne 'iw7.player-template-export-source/1' -or $plan.Ready -or $plan.CandidateExecuted -or
  $plan.StockContentQualified -or $plan.RetailAliasCount -ne 70 -or $plan.UniqueRetailSources -ne 39 -or
  $plan.RunnerBinding.Path -cne $PSCommandPath -or $plan.GroupSeconds -ne 600 -or $plan.ToolSeconds -ne 240 -or
  $plan.GeneratedLimitBytes -ne 16777216 -or $plan.MetadataReserveBytes -ne 1048576){throw 'Exact unexecuted finite export plan required.'}
-$null=Read-PlayerExportSource $plan.RunnerBinding.Path $plan.RunnerBinding.SHA256 $plan.RunnerBinding.Bytes
-foreach($pin in $plan.SourceBindings){$null=Read-PlayerExportSource $pin.Path $pin.SHA256 $pin.Bytes}
+$null=Read-PlayerExportSource $plan.RunnerBinding.Path $plan.RunnerBinding.SHA256 $plan.RunnerBinding.Bytes -Role Runner
+foreach($pin in $plan.SourceBindings){$null=Read-PlayerExportSource $pin.Path $pin.SHA256 $pin.Bytes -Role $pin.Role}
 foreach($name in 'Core','Scheduler','Profile','StockCore','BeaconCore','ArenaProcess'){
     if(@($plan.SourceBindings|Where-Object Path -CEQ $plan.Providers.$name).Count -ne 1){throw 'Exact existing provider Source binding required.'}
 }
-$request=Read-PlayerExportSource $plan.Request.Path $plan.Request.SHA256 $plan.Request.Bytes
+$request=Read-PlayerExportSource $plan.Request.Path $plan.Request.SHA256 $plan.Request.Bytes -Role Request
 if($request -cne "weapon,iw7_shredder_zm`nattachment,shredderpap1`n" -or $plan.Request.Bytes -ne 47){throw 'Exact two-row request required.'}
 if($plan.Pack -cne 'paris_enemy_cp_zmb_raygun_template_a_player_weapon_source' -or
  (@($plan.StockManifests.Name)-join '|') -cne 'root|main|zone' -or (@($plan.StockManifests|ForEach-Object {$_.Count})-join '|') -cne '7|31|32'){throw 'Fixed pair/layout required.'}
-foreach($manifest in $plan.StockManifests){$null=Read-PlayerExportSource $manifest.Path $manifest.SHA256 $manifest.Bytes}
+foreach($manifest in $plan.StockManifests){$null=Read-PlayerExportSource $manifest.Path $manifest.SHA256 $manifest.Bytes -Role StockManifest}
 if(Test-Path $plan.RunRoot){throw 'Fresh owned runtime required.'}
 if(!$Run){[ordered]@{Schema='iw7.player-export-default/1';PlanSHA256=$PlanSHA256;RetailAliases=70;UniqueRetailSources=39;
  NativeTypesLoaded=$false;OpaqueInputsRead=$false;LeaseAcquired=$false;RuntimeCreated=$false;CandidateExecuted=$false;Ready=$false}|ConvertTo-Json;return}
 $hostArgs=[Environment]::GetCommandLineArgs();$commandIndex=[Array]::IndexOf($hostArgs,'-Command')
-if('-NoExit' -cnotin $hostArgs -or $commandIndex -lt 0 -or $hostArgs[$commandIndex+1] -notmatch '^\s*\.\s+' -or $MyInvocation.InvocationName -cne '.'){throw 'Physical fresh NoExit/dot host required.'}
+$bundled='C:\Users\ezvalo\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe'
+$managed=Join-Path (Split-Path $bundled -Parent) 'pwsh.dll'
+if($hostArgs.Count -ne 6 -or $hostArgs[0] -cne $managed -or $hostArgs[1] -cne '-NoLogo' -or $hostArgs[2] -cne '-NoProfile' -or
+ $hostArgs[3] -cne '-NoExit' -or $commandIndex -ne 4 -or $hostArgs[5] -cne $plan.ExpectedHostCommand -or
+ $plan.ExpectedHostCommand -cne (". '"+$plan.CapsulePath+"' -Run") -or $MyInvocation.InvocationName -cne '.' -or
+ [Reflection.Assembly]::GetEntryAssembly().Location -cne $managed){throw 'Physical fresh NoExit/dot managed invocation required.'}
 $physical=Get-CimInstance Win32_Process -Filter "ProcessId=$PID"
-if(!$physical.ExecutablePath -or !$physical.CreationDate -or $physical.CommandLine -notmatch '(?i)-NoExit\b' -or
+$currentProcess=[Diagnostics.Process]::GetCurrentProcess()
+try{$physicalImage=$currentProcess.MainModule.FileName;$physicalCreated=$currentProcess.StartTime.ToUniversalTime().ToString('o')}finally{$currentProcess.Dispose()}
+if($physical.ExecutablePath -cne $bundled -or $physicalImage -cne $bundled -or !$physical.CreationDate -or
+ $physical.CreationDate.ToUniversalTime().ToString('o') -cne $physicalCreated -or $physical.CommandLine -notmatch '(?i)-NoExit\b' -or
  ('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7StockLinksV1.Ntfs' -as [type])){throw 'Fresh original host identity required.'}
 $guards=[Collections.Generic.List[object]]::new()
 $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards;Work=$plan.WorkRoot}
@@ -122,10 +141,50 @@ function Read-PlayerOutput([string]$Path,[int]$Cap){
     Assert-PlayerExportClock
     [pscustomobject]@{Path=$Path;Bytes=$used;SHA256=$sha;Text=[Text.Encoding]::UTF8.GetString($raw)}
 }
+function Convert-PlayerNativeJson([string]$Text,[string]$Kind){
+    $document=[Text.Json.JsonDocument]::Parse($Text)
+    try{
+        $value=$document.RootElement
+        if($value.ValueKind -ne [Text.Json.JsonValueKind]::Object){throw 'Native JSON root must be an object.'}
+        $queue=[Collections.Generic.Queue[Text.Json.JsonElement]]::new();$queue.Enqueue($value)
+        while($queue.Count){
+            $node=$queue.Dequeue()
+            if($node.ValueKind -eq [Text.Json.JsonValueKind]::Object){
+                $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+                foreach($property in $node.EnumerateObject()){if(!$seen.Add($property.Name)){throw 'Duplicate native JSON field.'};$queue.Enqueue($property.Value)}
+            }elseif($node.ValueKind -eq [Text.Json.JsonValueKind]::Array){foreach($child in $node.EnumerateArray()){$queue.Enqueue($child)}}
+        }
+        if($Kind -cne 'manifest'){
+            if($value.GetProperty('szInternalName').ValueKind -ne [Text.Json.JsonValueKind]::String -or
+               $value.GetProperty('szInternalName').GetString() -cne $Kind){throw 'Native internal name must be the exact scalar string.'}
+        }else{
+            $strings=@{schema='iw7.player-weapon-templates/1';donor='cp_zmb';native_source_pin='fab935826c898806855376662a8a03317b3ad8f1';
+                weapon='iw7_shredder_zm';pap_attachment='shredderpap1';engine_weapon_type='projectile'}
+            $flags=@('bo3_assets_authenticated','weapon_granted','projectile_damage_verified','retail_pap_transaction_verified','gameplay_accepted')
+            $keys=@($value.EnumerateObject()|ForEach-Object Name);$required=@($strings.Keys)+$flags+@('files')
+            if($keys.Count -ne $required.Count -or @($keys|Where-Object {$_ -cnotin $required}).Count){throw 'Closed native manifest shape required.'}
+            foreach($name in $strings.Keys){$property=$value.GetProperty($name);if($property.ValueKind -ne [Text.Json.JsonValueKind]::String -or $property.GetString() -cne $strings[$name]){throw 'Native manifest scalar string differs.'}}
+            foreach($name in $flags){if($value.GetProperty($name).ValueKind -ne [Text.Json.JsonValueKind]::False){throw 'Native manifest literal false required.'}}
+            $files=$value.GetProperty('files');if($files.ValueKind -ne [Text.Json.JsonValueKind]::Array -or $files.GetArrayLength() -ne 2){throw 'Exact native manifest file array required.'}
+            $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+            foreach($file in $files.EnumerateArray()){
+                if($file.ValueKind -ne [Text.Json.JsonValueKind]::Object){throw 'Manifest file object required.'}
+                $names=@($file.EnumerateObject()|ForEach-Object Name)
+                if($names.Count -ne 3 -or @($names|Where-Object {$_ -cnotin @('path','bytes','sha256')}).Count){throw 'Closed manifest file shape required.'}
+                $path=$file.GetProperty('path');$hash=$file.GetProperty('sha256');$size=$file.GetProperty('bytes');[long]$bytes=0
+                if($path.ValueKind -ne [Text.Json.JsonValueKind]::String -or $path.GetString() -cnotin @('weapons/iw7_shredder_zm.json','attachments/shredderpap1.json') -or !$paths.Add($path.GetString()) -or
+                   $hash.ValueKind -ne [Text.Json.JsonValueKind]::String -or $hash.GetString() -cnotmatch '^[0-9a-fA-F]{64}$' -or
+                   $size.ValueKind -ne [Text.Json.JsonValueKind]::Number -or !$size.TryGetInt64([ref]$bytes) -or $bytes -lt 1 -or $bytes -gt 2MB){throw 'Manifest path/hash/bounded integer bytes required.'}
+            }
+        }
+        $Text|ConvertFrom-Json -Depth 100
+    }finally{$document.Dispose()}
+}
 try{
-    foreach($pin in @($plan.SourceBindings)+@($plan.RunnerBinding)+@($plan.Request)+@($plan.StockManifests)){
-        $null=Read-PlayerExportSource $pin.Path $pin.SHA256 $pin.Bytes $guards
-    }
+    foreach($pin in $plan.SourceBindings){$null=Read-PlayerExportSource $pin.Path $pin.SHA256 $pin.Bytes $guards -Role $pin.Role}
+    $null=Read-PlayerExportSource $plan.RunnerBinding.Path $plan.RunnerBinding.SHA256 $plan.RunnerBinding.Bytes $guards -Role Runner
+    $null=Read-PlayerExportSource $plan.Request.Path $plan.Request.SHA256 $plan.Request.Bytes $guards -Role Request
+    foreach($pin in $plan.StockManifests){$null=Read-PlayerExportSource $pin.Path $pin.SHA256 $pin.Bytes $guards -Role StockManifest}
     . $plan.Providers.Core;. $plan.Providers.Scheduler
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 8GB -CommitBytes 12GB -Owner 'One Shredder/PAP native template export'
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
@@ -182,7 +241,8 @@ try{
         $path=Join-Path $output $relative;$cap=if($relative -ceq 'player-template-manifest.json'){16384}else{2MB}
         $read=Read-PlayerOutput $path $cap
         $pin=[pscustomobject]@{Path=$path;Bytes=$read.Bytes;SHA256=$read.SHA256}
-        $data=$read.Text|ConvertFrom-Json -Depth 100
+        $kind=if($relative -ceq 'player-template-manifest.json'){'manifest'}elseif($relative -like 'weapons/*'){'iw7_shredder_zm'}else{'shredderpap1'}
+        $data=Convert-PlayerNativeJson $read.Text $kind
         if($relative -ceq 'player-template-manifest.json'){$state.NativeManifest=$data}else{
             $name=if($relative -like 'weapons/*'){'iw7_shredder_zm'}else{'shredderpap1'}
             if($data.szInternalName -cne $name){throw 'Native JSON identity differs.'}

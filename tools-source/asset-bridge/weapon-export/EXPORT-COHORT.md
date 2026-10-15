@@ -12,6 +12,10 @@ separate Root GO and a fresh physical NoExit/dot host. Same verified Source
 streams remain held before provider imports and admission; the original context,
 stock transactions and returned copy-creator streams are published before effects.
 Unknown creation/closure keeps those actual objects, guards, lease and host.
+Source roles, text suffixes and ordinary drive paths are checked before opening
+any stream; device/ADS/opaque paths cannot become DEFAULT Source bindings. Run
+also verifies the exact bundled physical image, CLR entry/argv0 and literal
+NoLogo/NoProfile/NoExit/dot-capsule command before imports or admission.
 
 The existing bootstrap layout has 70 retail alias entries but 39 unique sources:
 31 FFs under main and zone, assetfile1.pak under zone, plus seven root binary/DLL
@@ -43,10 +47,16 @@ through a cap+1 buffer before hash/decode and kept guarded; no sparse substitute
 Measured and closure receipts are flushed/read back before release. Final disk
 status stays PendingPostflight; CanExit follows final clock/readback/budget checks.
 True terminal exit and fresh identity/registry absence remain external postflight.
+The native manifest is a closed typed object: exact scalar strings including
+projectile type, literal false scope flags, two unique typed file entries and
+bounded integer byte counts. Singleton arrays, numeric strings, duplicate or
+extra/missing fields are rejected before PowerShell comparisons.
 
-29 Source/refusal/causal controls cover the build and preparation modules plus
+32 Source/refusal/causal controls cover the build and preparation modules plus
 this caller's pure DEFAULT, wrong layout/provider/request, before-native host
 refusal, actual bounded output-reader guard and small-copy/alias-budget behavior.
+Targeted mutations additionally cover the strict JSON fields and before-open
+Source-role refusals. Original f991 and Source packets A/B/C remain unqualified.
 No real stock preparation, native export, full template observation, BO3 asset
 authentication, weapon grant/reload/projectile/physics/PAP transaction or game
 acceptance is established by these controls. Ready stays false.

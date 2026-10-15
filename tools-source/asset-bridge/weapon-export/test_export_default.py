@@ -6,11 +6,11 @@ def pin(path):return dict(Path=str(path),Bytes=path.stat().st_size,SHA256=hashli
 class ExportDefaultTests(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
-  provider=self.root/'provider.ps1';provider.write_bytes(b'# must not import\n')
+  provider=self.root/'H1Native.Core.ps1';provider.write_bytes(b'# must not import\n')
   csv=self.root/'requested.csv';csv.write_bytes(b'weapon,iw7_shredder_zm\nattachment,shredderpap1\n')
   self.plan=dict(Schema='iw7.player-template-export-source/1',Ready=False,CandidateExecuted=False,StockContentQualified=False,
    RetailAliasCount=70,UniqueRetailSources=39,GroupSeconds=600,ToolSeconds=240,GeneratedLimitBytes=16777216,MetadataReserveBytes=1048576,
-   RunnerBinding=pin(RUNNER),SourceBindings=[pin(provider)],Request=pin(csv),Pack='paris_enemy_cp_zmb_raygun_template_a_player_weapon_source',
+   RunnerBinding=pin(RUNNER),SourceBindings=[dict(**pin(provider),Role='Provider')],Request=pin(csv),Pack='paris_enemy_cp_zmb_raygun_template_a_player_weapon_source',
    Providers={k:str(provider) for k in ('Core','Scheduler','Profile','StockCore','BeaconCore','ArenaProcess')},RunRoot=str(self.root/'absent'),StockManifests=[])
   for name,count in (('root',7),('main',31),('zone',32)):
    path=self.root/(name+'.json');path.write_bytes(b'{}\n');self.plan['StockManifests'].append(dict(**pin(path),Name=name,Count=count))
@@ -70,4 +70,39 @@ try{Test-PlayerGenerated $state}catch{$refused=$true}
 if(!$refused){throw 'Unproven alias exemption accepted'}
 Write-Output 'budget-causal-pass'
 ''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('budget-causal-pass',r.stdout)
+ def test_native_manifest_scalar_and_closed_shape_mutants(self):
+  manifest=dict(schema='iw7.player-weapon-templates/1',donor='cp_zmb',native_source_pin='fab935826c898806855376662a8a03317b3ad8f1',weapon='iw7_shredder_zm',pap_attachment='shredderpap1',engine_weapon_type='projectile',
+   bo3_assets_authenticated=False,weapon_granted=False,projectile_damage_verified=False,retail_pap_transaction_verified=False,gameplay_accepted=False,
+   files=[dict(path='weapons/iw7_shredder_zm.json',bytes=2,sha256='a'*64),dict(path='attachments/shredderpap1.json',bytes=2,sha256='b'*64)])
+  cases=[('valid',json.dumps(manifest),False)]
+  for name in ('schema','donor','weapon','pap_attachment','native_source_pin','engine_weapon_type'):
+   changed=json.loads(json.dumps(manifest));changed[name]=[changed[name]];cases.append((name,json.dumps(changed),True))
+  changed=json.loads(json.dumps(manifest));changed['files'][0]['bytes']='2';cases.append(('bytes-string',json.dumps(changed),True))
+  for value in (None,'hitscan'):
+   changed=json.loads(json.dumps(manifest))
+   if value is None:del changed['engine_weapon_type']
+   else:changed['engine_weapon_type']=value
+   cases.append(('weapon-type',json.dumps(changed),True))
+  cases.append(('duplicate',json.dumps(manifest).replace('"donor": "cp_zmb"','"donor":"cp_zmb","donor":"cp_zmb"'),True))
+  for label,text,refused in cases:
+   with self.subTest(label=label):
+    path=self.root/'data.json';path.write_text(text,encoding='utf-8')
+    r=self.fragment('Convert-PlayerNativeJson',f"$refused=$false;try{{$null=Convert-PlayerNativeJson ([IO.File]::ReadAllText((Join-Path $Directory 'data.json'))) 'manifest'}}catch{{$refused=$true}};if($refused -ne ${str(refused).lower()}){{throw 'Shape causal mismatch'}}")
+    self.assertEqual(r.returncode,0,r.stderr)
+ def test_weapon_internal_name_array_refused(self):
+  path=self.root/'data.json';path.write_text('{"szInternalName":["iw7_shredder_zm"]}',encoding='utf-8')
+  r=self.fragment('Convert-PlayerNativeJson',"$refused=$false;try{$null=Convert-PlayerNativeJson ([IO.File]::ReadAllText((Join-Path $Directory 'data.json'))) 'iw7_shredder_zm'}catch{$refused=$true};if(!$refused){throw 'Array name accepted'}")
+  self.assertEqual(r.returncode,0,r.stderr)
+ def test_source_roles_reject_opaque_ads_and_device_before_any_open(self):
+  r=self.fragment('Read-PlayerExportSource','''
+foreach($path in @((Join-Path $Directory 'absent.exe'),(Join-Path $Directory 'absent.obj'),(Join-Path $Directory 'absent.tlog'),
+ (Join-Path $Directory 'known.json:stream'),'\\\\.\\NUL',(Join-Path $Directory 'NUL.json'))){
+ $refused=$false
+ try{$null=Read-PlayerExportSource $path ('0'*64) 0 -Role Metadata}catch{
+  if($_.Exception.Message -notmatch 'before open'){throw};$refused=$true
+ }
+ if(!$refused){throw 'Opaque/device path accepted'}
+}
+Write-Output 'before-open-role-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('before-open-role-pass',r.stdout)
 if __name__=='__main__':unittest.main()
