@@ -8,6 +8,12 @@ Failed C/D attempts remain recorded. Full CLI, FF, runtime roundtrip and gamepla
 remain unqualified; the readback leaf is still unimplemented.
 It does not change the historical module or CPP Q qualification below.
 
+The [descriptive inventory lot](NEUTRAL-INVENTORY.md) completed its distinct
+CPP F gate at Source `a97bfc9`: original 16 plus 12 new real PASS, both native TUs,
+complete dependency/input checks and Root-verified ordinary closure. It still
+activates no CLI, builder or runtime route; later doc/merge heads are not newly
+compiled.
+
 The neutral full-definition route completed CPP Q and its distinct admitted T2
 capture of the full Shredder/PAP definitions. See
 [NEUTRAL-DEFINITIONS.md](NEUTRAL-DEFINITIONS.md) and
@@ -139,3 +145,9 @@ translation unit that must replace its retained object in a fresh reviewed
 compilation. It does not guess an object label from old logs, edit the T7/texture
 recipe, or read SDK/tlogs. Later compatible overlays need an explicit order review.
 No compiled CLI, template JSON, stock binding, export or Ready is qualified here.
+
+## Descriptive dependency inventory
+
+The bounded Source-only inventory and pure typed identity contract are documented
+in [NEUTRAL-INVENTORY.md](NEUTRAL-INVENTORY.md). They retain the strict
+FX/VFX/RETICLE policy and activate no CLI, builder, parser route or runtime.

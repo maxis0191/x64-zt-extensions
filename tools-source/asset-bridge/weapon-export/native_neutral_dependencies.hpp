@@ -48,13 +48,28 @@ namespace zonetool::iw7::neutral_dependencies
     inline bool reference_supported(int type)
     { return type == ASSET_TYPE_FX || type == ASSET_TYPE_VFX || type == ASSET_TYPE_RETICLE; }
 
+    // Descriptive recognition never grants reference-only support. Keep this
+    // finite set aligned with the two pinned pure walkers, without body walks.
+    inline bool reference_recognized(int type)
+    {
+        switch (type)
+        {
+        case ASSET_TYPE_ANIM_PACKAGE: case ASSET_TYPE_ATTACHMENT: case ASSET_TYPE_FX:
+        case ASSET_TYPE_GESTURE: case ASSET_TYPE_LASER: case ASSET_TYPE_MATERIAL:
+        case ASSET_TYPE_RETICLE: case ASSET_TYPE_RUMBLE: case ASSET_TYPE_SFX_PACKAGE:
+        case ASSET_TYPE_TRACER: case ASSET_TYPE_VFX: case ASSET_TYPE_VFX_PACKAGE:
+        case ASSET_TYPE_XMODEL: return true;
+        default: return false;
+        }
+    }
+
     class Collector
     {
     public:
         static constexpr size_t max_occurrences = 8192, max_external = 4096;
         static constexpr size_t max_edges = 8192, max_text = 1048576, max_manifest = 1048576;
         static constexpr size_t max_elements = 8192, max_dynamic = 64;
-        explicit Collector(Copy copy = av_copy, void* context = nullptr) : copy_(copy), context_(context) {}
+        explicit Collector(Copy copy = av_copy, void* context = nullptr) : Collector(false, copy, context) {}
         Collector(const Collector&) = delete;
         Collector& operator=(const Collector&) = delete;
         bool good() const { return error_ == nullptr; }
@@ -78,6 +93,11 @@ namespace zonetool::iw7::neutral_dependencies
         }
         bool fx_kind(FxCombinedType kind)
         { return kind == FX_COMBINED_FX || kind == FX_COMBINED_VFX || reject("FX discriminant"); }
+        static bool valid_name(std::string_view name)
+        {
+            return !name.empty() && name.size() <= 511 && name.front() != ',' &&
+                name != "default" && name != "$default" && name.find('\0') == std::string_view::npos && utf8(name);
+        }
         bool asset(int type, const char* name, Origin origin)
         {
             if (!good() || frozen_ || roots_ == 0 || budget_.occurrences == max_occurrences)
@@ -89,7 +109,8 @@ namespace zonetool::iw7::neutral_dependencies
             const bool owned = (type == ASSET_TYPE_WEAPON && key == weapon_name) ||
                 (type == ASSET_TYPE_ATTACHMENT && key == attachment_name);
             // Any private root name with the wrong type must not become external.
-            if (!owned && (key == weapon_name || key == attachment_name || !reference_supported(type)))
+            if (!owned && (key == weapon_name || key == attachment_name ||
+                !(descriptive_ ? reference_recognized(type) : reference_supported(type))))
                 return reject("unsupported external type or private type mismatch");
             size_t ref = 0;
             while (ref < references_.size() && !(references_[ref].type == type && references_[ref].name == key)) ++ref;
@@ -140,6 +161,10 @@ namespace zonetool::iw7::neutral_dependencies
         const std::vector<Reference>& references() const { return references_; }
         const std::vector<Edge>& edges() const { return edges_; }
     private:
+        friend class Inventory;
+        // Only Inventory can select descriptive recording. A normal Collector
+        // cannot be widened by a caller flag, predicate or later mutation.
+        Collector(bool descriptive, Copy copy, void* context) : copy_(copy), context_(context), descriptive_(descriptive) {}
         static bool utf8(std::string_view value)
         {
             for (size_t i = 0; i < value.size();)
@@ -172,7 +197,7 @@ namespace zonetool::iw7::neutral_dependencies
                 if (output[length] == 0)
                 {
                     const std::string_view name(output.data(), length);
-                    if (!length || output[0] == ',' || name == "default" || name == "$default" || !utf8(name))
+                    if (!valid_name(name))
                         return reject("name encoding/default");
                     return true;
                 }
@@ -206,12 +231,39 @@ namespace zonetool::iw7::neutral_dependencies
             return true;
         }
         Copy copy_; void* context_; Owner owner_ = Owner::weapon;
+        const bool descriptive_;
         const char* error_ = nullptr;
         size_t roots_ = 0, elements_ = 0;
         Budget budget_;
         bool frozen_ = false;
         std::vector<Reference> references_;
         std::vector<Edge> edges_;
+    };
+
+    // A distinct descriptive surface: same bounds, names, provenance and typed
+    // walkers, but no verify_rows or conversion to the strict Collector API.
+    // A complete inventory can still be policy-blocked. Neither result is a
+    // builder token, manifest/hash proof or authorization to initialize bodies.
+    class Inventory : private Collector
+    {
+    public:
+        explicit Inventory(Copy copy = av_copy, void* context = nullptr) : Collector(true, copy, context) {}
+        using Collector::max_occurrences; using Collector::max_external;
+        using Collector::max_edges; using Collector::max_text; using Collector::max_manifest;
+        using Collector::max_elements; using Collector::max_dynamic;
+        using Collector::good; using Collector::error; using Collector::reject;
+        using Collector::begin; using Collector::required; using Collector::count;
+        using Collector::fx_kind; using Collector::valid_name; using Collector::asset;
+        using Collector::freeze; using Collector::frozen; using Collector::occurrences;
+        using Collector::external_count; using Collector::text_bytes; using Collector::manifest_bytes;
+        using Collector::references; using Collector::edges;
+        size_t blocked_external_count() const
+        {
+            size_t count = 0;
+            for (const auto& ref : references()) if (!ref.owned && !reference_supported(ref.type)) ++count;
+            return count;
+        }
+        bool policy_blocked() const { return !frozen() || blocked_external_count() != 0; }
     };
 
     // Only the legacy adapter has a zone. It forwards the original sequence and
@@ -240,6 +292,12 @@ namespace zonetool::iw7::neutral_dependencies
         if (!weapon || !attachment) return collector.reject("missing parsed pair");
         return collector.begin(Owner::weapon, weapon->szInternalName) && visit_weapon(weapon, collector) &&
             collector.begin(Owner::attachment, attachment->name) && visit_attachment(attachment, collector) && collector.freeze();
+    }
+    inline bool inventory_pair(WeaponCompleteDef* weapon, WeaponAttachment* attachment, Inventory& inventory)
+    {
+        if (!weapon || !attachment) return inventory.reject("missing parsed pair");
+        return inventory.begin(Owner::weapon, weapon->szInternalName) && visit_weapon(weapon, inventory) &&
+            inventory.begin(Owner::attachment, attachment->name) && visit_attachment(attachment, inventory) && inventory.freeze();
     }
     // Small public-parse seam; no init, member asset_, real zone or CLI host.
     template<class WeaponParser, class AttachmentParser, class Memory>
