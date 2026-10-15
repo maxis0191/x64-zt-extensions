@@ -1417,7 +1417,7 @@ if(!$refused){throw 'Changed retained readback accepted'}
             rigid_export.verify_stage(staged, scene=True)
             producer = (ROOT / 'ops/model-lab/Build-ModelFF.ps1').read_text()
             start = producer.index('if((Get-Item -LiteralPath $planPath).Length -gt 1MB)')
-            stop = producer.index('$modelName=if($rigid -or $arena)', start)
+            stop = producer.index('$modelName=', start)
             gate = producer[start:stop]
             script = base / 'metadata-bound.ps1'
             script.write_text(r'''param($Repo,$Root,$PlanPath)
@@ -1573,9 +1573,9 @@ foreach($profile in @('t7-iw7-resident-static-v1','t7-iw7-resident-static-v2','u
 # stock, admission or process body. This catches an accidentally v1-only gate.
 $ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/model-lab/Build-ModelFF.ps1",[ref]$tokens,[ref]$errors)
 if($errors){throw $errors}
-$gate=$ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Pinned five-input")},$true)
+$gate=$ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Pinned exact original FF source preparation required.'")},$true)
 if(@($gate).Count -ne 1){throw 'Ambiguous build source gate'}
-$plan=$valid;$planVersion=2;$sourceNames=@(Get-ModelFFSourceNames $plan)
+$plan=$valid;$planVersion=2;$authored=$false;$sourceNames=@(Get-ModelFFSourceNames $plan)
 Invoke-Expression $gate[0].Extent.Text
 $planVersion=1;$refused=$false;try{Invoke-Expression $gate[0].Extent.Text}catch{$refused=$true}
 if(!$refused){throw 'Crossed version accepted by actual build source gate'}
