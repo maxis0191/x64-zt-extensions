@@ -1,9 +1,14 @@
-param([Parameter(Mandatory)][string]$PreparedRoot,[switch]$DryRun,[string]$Python='python')
+param([Parameter(Mandatory)][string]$PreparedRoot,[switch]$DryRun,[string]$Python='python',[string]$ToolSource)
 $ErrorActionPreference='Stop'
 $ops=Split-Path $PSScriptRoot -Parent;$repo=Split-Path $ops -Parent
 . "$ops/Lab-Paths.ps1"
 . "$ops/Resource-Scheduler.Core.ps1"
-$source=Join-Path $repo 'tools/x64-zt-enemy'
+$source=if($ToolSource){
+    $writerSourceRoot=[IO.Path]::GetFullPath($ToolSource)
+    $writerSourceRoot=Assert-IW7LabPath $writerSourceRoot $writerSourceRoot
+    if(!(Test-Path -LiteralPath $writerSourceRoot -PathType Container)){throw 'Existing ordinary writer tool source directory required.'}
+    $writerSourceRoot
+}else{Join-Path $repo 'tools/x64-zt-enemy'}
 $prepared=Assert-IW7LabPath ([IO.Path]::GetFullPath($PreparedRoot)) (Join-Path $repo 'runtime')
 $manifestPath=Join-Path $prepared 'writer-source.json'
 if((Get-Item -LiteralPath $manifestPath).Length -gt 512KB){throw 'Bounded writer source manifest required.'}
@@ -48,7 +53,7 @@ $include=@((Join-Path $vc 'include'),(Join-Path $sdk "Include/$sdkVersion/ucrt")
 $compilerArgs=@('/nologo','/std:c++20','/EHsc','/D_CRT_SECURE_NO_WARNINGS','/MD','/W4','/bigobj')
 $compilerArgs+=@($include | ForEach-Object { '/I'+$_ })
 $compilerArgs+=@(('/Fo'+(Join-Path $prepared 'writer.obj')),('/Fe'+(Join-Path $prepared 'model-writer.exe')),(Join-Path $prepared 'writer.cpp'),'/link',('/LIBPATH:'+(Join-Path $vc 'lib/x64')),('/LIBPATH:'+(Join-Path $sdk "Lib/$sdkVersion/ucrt/x64")),('/LIBPATH:'+(Join-Path $sdk "Lib/$sdkVersion/um/x64")),'user32.lib','kernel32.lib')
-$plan=[ordered]@{SourcePin=$head;PreparedRoot=$prepared;Compiler=$compiler;Arguments=$compilerArgs;PhysicalBytes=2GB;CommitBytes=3GB;SingleTranslationUnit=$true;GameProcess=$false;Ready=$false}
+$plan=[ordered]@{SourcePin=$head;ToolSource=$source;PreparedRoot=$prepared;Compiler=$compiler;Arguments=$compilerArgs;PhysicalBytes=2GB;CommitBytes=3GB;SingleTranslationUnit=$true;GameProcess=$false;Ready=$false}
 if($DryRun){$plan | ConvertTo-Json -Depth 8;return}
 Invoke-IW7ResourceJob -Scope $prepared -Kind Build -PhysicalBytes 2GB -CommitBytes 3GB -Owner 'Original cube pinned standalone writer' -Body {
     $oldPath=$env:PATH
@@ -80,7 +85,7 @@ Invoke-IW7ResourceJob -Scope $prepared -Kind Build -PhysicalBytes 2GB -CommitByt
             $path=Assert-IW7LabPath (Join-Path $prepared "artifacts/$name") $prepared
             [ordered]@{Path=$name;Bytes=(Get-Item -LiteralPath $path).Length;SHA256=(Get-FileHash -LiteralPath $path).Hash}
         })
-        [ordered]@{Schema='iw7.model-writer-build/1';SourcePin=$head;Source=$manifest;CompilerSHA256=(Get-FileHash -LiteralPath $compiler).Hash;WriterSHA256=(Get-FileHash -LiteralPath $exe).Hash;
+        [ordered]@{Schema='iw7.model-writer-build/1';SourcePin=$head;ToolSource=$source;Source=$manifest;CompilerSHA256=(Get-FileHash -LiteralPath $compiler).Hash;WriterSHA256=(Get-FileHash -LiteralPath $exe).Hash;
             Artifacts=$assets;Roundtrip=$roundtrip;FFBuilt=$false;PixelsVerified=$false;Ready=$false} | ConvertTo-Json -Depth 12 |
             Set-Content -LiteralPath (Join-Path $prepared 'writer-provenance.json')
     } finally {$env:PATH=$oldPath}
