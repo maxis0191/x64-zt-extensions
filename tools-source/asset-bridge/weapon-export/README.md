@@ -1,13 +1,17 @@
 # Bounded IW7 player/PAP source export support
 
-The new neutral full-definition route is **Source only**; see
-[NEUTRAL-DEFINITIONS.md](NEUTRAL-DEFINITIONS.md) for the exact1/0 capture,
-complete finite readset, output contract and separate future CPP/extraction gates.
-Candidate J and actual M below do not contain/execute this new route.
+The neutral full-definition route completed CPP Q and its distinct admitted T2
+capture of the full Shredder/PAP definitions. See
+[NEUTRAL-DEFINITIONS.md](NEUTRAL-DEFINITIONS.md) and
+[EXPORT-COHORT.md](EXPORT-COHORT.md) for the unchanged observed1/0 pair, finite
+readset, exact output bindings and actual ordinary closure. Runtime ABI/lifetime,
+roundtrip, weapon grant, projectile/physics, retail PAP and gameplay remain
+unqualified. Candidate J and actual M below are older, separate checkpoints;
+neither contained/executed this new route.
 
 2026-10-14 initial checkpoint: inactive source support before native compilation.
 
-Current 2026-10-15 checkpoint: BUILD-COHORT.md records actual CPP J (62 checks),
+Earlier 2026-10-15 checkpoint: BUILD-COHORT.md records actual CPP J (62 checks),
 with the earlier instrumented CPP I (54 checks),
 and EXPORT-COHORT.md records actual refused K (`weapType=1` at Source offset0x22C).
 These dated initial-support notes do not replace those receipts. The separate

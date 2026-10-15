@@ -737,12 +737,108 @@ Source208 candidate; a later DOC merge does not rebuild or qualify its CLI.
 Retail content, neutral full definitions, runtime ABI/lifetime, RayGun/PAP/
 projectile/physics and owner gameplay remain unqualified.
 
-The next Source T2 plan derives per-transaction expectations from the untouched
+The subsequent Source T2 plan derives per-transaction expectations from the untouched
 S3 baselines, accumulating only earlier aliases created by that same new T group.
 Thus main expects 18 for the example, then zone expects 19 after T's main link;
 its global baseline stays 18. Exactly 31 overlapping zone FF rows need that offset;
 PAKs without an earlier occurrence stay at baseline. An unshifted first T proposal
 is retained and unexecuted. Source causals exercise the actual Stock35 predicate
-on 102 projected rows, not newly created aliases. A future independently reviewed
-Extract admission must revalidate current metadata and qualify candidate/content
+on 102 projected rows, not newly created aliases. Its independently reviewed
+Extract admission had to revalidate current metadata and qualify candidate/content
 before execution; snapshots can age and never justify forcing a manifest.
+
+## Actual T2 neutral definitions and ordinary closure, 2026-10-15
+
+After Root, architecture and contract approved the exact Source packet, T2
+invoked its capsule once in the physical bundled NoExit/dot host. The plan is
+52,226 bytes / SHA256
+`3f7e2cd40305ff5ab0ab8fe54121a85a5d912d237618284c2d272b488aa15bd9`;
+the capsule is 1,253 bytes / SHA256
+`919351aa4ae037978f213fb5f50f42e7ba1a2240eb6bd597796855a2c8a46417`.
+Its fixed donor is `cp_zmb`; the 47-byte request contains only
+`weapon,iw7_shredder_zm` and `attachment,shredderpap1`. PairDefinitions is true,
+PairProfile is absent, and no modal or diagnostic alternative was selected.
+
+Original admission freshly bound the unchanged Source208 caller and CPP Q
+candidate under that invocation's lease. The candidate image is 22,161,408 bytes /
+SHA256 `6e9265bd48b7b74535eff6ce1bd0ba91631e91d359bc5ed29eaa14fe453b8bc9`.
+No DOC merge rebuilt it or changed its compiled Source208 revision. Metadata
+preflight accepted all three sequential Stock35 transactions: root7, main31,
+zone64, totaling102 new aliases. Their71 unique source contents were pinned
+under admission. All sources were preserved and zero retail bytes were copied.
+The three separately retained auxiliary copy creators are not retail copies.
+R's seven aliases and all historical failed scopes remain retained separately.
+
+The exact neutral CLI exited0 in9,875.304 ms. Its owned native root exited,
+active process count became0 and its original job closed. The exact success
+marker and independent closed readers accepted precisely three artifacts:
+
+| Artifact | Bytes | SHA256 |
+| --- | ---: | --- |
+| player-definition-pair-manifest.json | 1,372 | `53253b710fad8393755330a887f5647e9468c711bfe53992eeb6551ce426851b` |
+| weapons/iw7_shredder_zm.json | 46,914 | `c0a29687b9ac2e6c8170aa8009228b955f05eeebe3d40c175ba5881a64f88f8a` |
+| attachments/shredderpap1.json | 4,270 | `d133639ccf680daec59fc6d969534bca87773900e4b14e444257ce6686e1ba64` |
+
+The manifest binds both native files and reports source-layout observations
+only. Integer base1/PAP0 and true PAP flag were retained, with no field coercion.
+Both complete definition readbacks and stock confirmation preceded
+NeutralCaptureComplete/FullDefinitionsObserved true. NativeExportComplete stays
+false in this mode. Generated output plus the three lifecycle receipts was
+1,522,405 bytes, within the unchanged16MiB+1MiB policy. Tool240/group600 seconds
+were unchanged; no invocation retry, deadline extension or clock reset occurred.
+
+Ordinary finalization wrote/read back the measured and before-release receipts,
+closed the three prepared stock transactions' actual guards and released the
+original lease. The final receipt truthfully remains
+ClosedReleasedGuardsHeldPendingReadback with GuardsDisposed false and220 input /
+three publication handles still held. Final same-stream readback and the last
+clock/budget checks completed before their disposal. Later same-context preexit
+proved all220 original input and three publication SafeFileHandles closed, both
+lists empty, lease null, original NativeJob retained and Closed=true, and
+CanExit true. The same global/script/AppDomain root, context/state/plan/source
+list and each published Stock35 slot were directly compared by reference.
+All102 original stock source and three directory handles were closed, all71
+content streams and three copy creators were unreadable/unwritable. Individual
+copy-creator SafeFileHandles were not separately retained; no stronger proof is
+claimed for those creator handles than their actual closed stream state.
+
+Two Source-only postflight publication attempts stopped before creating a file:
+one used a nonexistent clock helper name, then the first helper incorrectly
+required Owner null. The actual successful native Owner remains retained and
+Closed=true. The corrected additive helper checked that original object and
+published/read back the preexit attestation without rerunning the capsule or
+changing state, clocks, stock or the lease. These Source corrections are retained.
+Preexit observed218,724 ms on the original group clock. Explicit guarded inline
+exit completed the real PTY with exit0; fresh18:20:49 UTC postflight found the
+original host/parent/native identities absent, no game/compiler/ZoneTool/VCTIP,
+and zero resource leases.
+
+The three ordinary lifecycle receipts total68,462 bytes. Their SHA256 values are:
+
+| Source receipt | Bytes | SHA256 |
+| --- | ---: | --- |
+| measured-before-release.json | 67,416 | `bc4d1d6c7ea3b4cd04b0923da954d12c9272374ecd5188233207afe388fe80e5` |
+| closure-before-release.json | 475 | `f9b74c63c99f289f49d244743e4512a10d2a7aa59577d5844dc406e7a91d85f0` |
+| final-closure.json | 571 | `3d793a8fb12406170d6b7f2244107dc06fdea9ca254577bc66b89b5cae3602e8` |
+
+The Source-only preexit attestation is4,239 bytes / SHA256
+`20ad7fa3a11d3b34173759fcc44f7da2fde65ecb95a42c39ee643295c7e0c5bd`;
+postexit absence is399 bytes /
+`9122ff7a8e7bc90cf8f53e4564f73e8661b4963fa68a76ace4ae2e13a0f324b0`.
+The immutable pre-Root actual handoff is10,306 bytes /
+`22c52db5b91eac68d70bf635b38bb7f0c193e41e7e8f13e2d89e9550df850211`.
+Its publisher rechecked only Source JSON/receipt bindings; it did not reopen
+candidate, retail content or exported native bodies after release. Root read and
+hashed the five receipts and their chain, corroborated fresh absence/empty
+registry at18:22:49 UTC, qualified only the neutral capture/content pins and
+released its heavy ledger. The additive qualification is1,161 bytes / SHA256
+`5da18c3b54928a5ed934b904e431704cf1ba58d1eb9a4a41900c42c7ea3d0886`.
+The immutable pre-Root handoff remains unchanged with its original pending flags.
+
+T2 is a neutral full-definition observation with actual ordinary closure. It
+does not qualify dependency bodies, projectile author eligibility, runtime
+ABI/lifetime, roundtrip, weapon grant, damage/physics, retail PAP transactions or
+owner gameplay. Ready remains false. Native49's unchanged PROJECTILE3/3 author
+guard still refuses this1/0 pair. Any consumer inspection or next authoring step
+requires a separate bounded Source proposal and the applicable review/admission.
+No game, FF build, CPP rebuild or retired texture route ran in this invocation.
