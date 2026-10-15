@@ -255,7 +255,7 @@ try {
     $f.Plan.CandidateProfile='t7-material-parts-v1'
     Check (@(Get-T7CatalogueBootstraps $f.Plan).Count -eq 23) 'G3 profile rejected by qualified inventory gate.'
     $f.Plan.CandidateProfile='ordinary-d2'
-    Refuses {Get-T7CatalogueBootstraps $f.Plan} 'MSG profile'
+    Refuses {Get-T7CatalogueBootstraps $f.Plan} 'explicit supported profile'
     foreach($policy in 'QualifiedCollectionV1','QualifiedCollectionV2'){
         $f=New-Qualified 9 $policy
         Refuses {Get-T7CatalogueBootstraps $f.Plan} 'one through 8'

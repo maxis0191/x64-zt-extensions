@@ -8,7 +8,7 @@ $core=Join-Path $repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
 . $core
 $guards=[Collections.Generic.List[object]]::new()
 $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards}
-$state=$null;$failure=$null;$attempted=$false;$plan=$null;$zonePin=$null;$export=$false;$parts=$false;$provenance=$false;$registration=$false;$incoming=$false
+$state=$null;$failure=$null;$attempted=$false;$plan=$null;$zonePin=$null;$export=$false;$parts=$false;$provenance=$false;$registration=$false;$incoming=$false;$registrationBindings=$false
 try {
     $size=(Get-Item -LiteralPath $PlanPath).Length
     if($size -gt 128KB){throw 'Catalogue plan exceeds 128 KiB.'}
@@ -33,13 +33,18 @@ try {
     $incoming=[bool]($plan.PSObject.Properties['SelectedIncomingImageObservationV1'] -or
         ($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'IncomingImageObservationV1') -or
         ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-incoming-image-header-observation-v1'))
+    $registrationBindings=[bool]($plan.PSObject.Properties['SelectedRegistrationMaterialBindingsV1'] -or
+        ($plan.PSObject.Properties['Operation'] -and $plan.Operation -ceq 'RegistrationMaterialBindingsV1') -or
+        ($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -ceq 't7-registration-material-bindings-v1') -or
+        ($plan.PSObject.Properties['Schema'] -and $plan.Schema -cin @('iw7.t7-registration-bindings-source-plan/1','iw7.t7-registration-bindings-plan/1')) -or
+        ($plan.PSObject.Properties['Arguments'] -and $plan.Arguments -ccontains '-t7-iw7-registration-material-bindings-v1'))
     $zombies=[bool]($plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -cin @('t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2'))
     $exportProfile=Join-Path $PSScriptRoot 'T7ResidentExport.Profile.ps1'
     if($export -or $zombies){$required+=@($exportProfile)}
     $partsProfile=Join-Path $PSScriptRoot 'T7MaterialParts.Profile.ps1'
     if($parts){$required+=@($partsProfile)}
     $provenanceProfile=Join-Path $PSScriptRoot 'T7ImageProvenance.Profile.ps1'
-    if($provenance -or $registration -or $incoming){$required+=@($provenanceProfile)}
+    if($provenance -or $registration -or $incoming -or $registrationBindings){$required+=@($provenanceProfile)}
     $registrationProfile=Join-Path $PSScriptRoot 'T7RegistrationImage.Profile.ps1'
     if($registration){$required+=@($registrationProfile)}
     $incomingProfile=Join-Path $PSScriptRoot 'T7IncomingImage.Profile.ps1'
@@ -53,7 +58,7 @@ try {
     . $profile
     if($export -or $zombies){. $exportProfile} # C consumes only the shared build qualifier.
     if($parts){. $partsProfile}
-    if($provenance -or $registration -or $incoming){. $provenanceProfile} # Shared guarded stdout reader; incoming operational gate remains closed.
+    if($provenance -or $registration -or $incoming -or $registrationBindings){. $provenanceProfile} # Existing guarded stdout reader.
     if($registration){. $registrationProfile}
     if($incoming){. $incomingProfile}
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
@@ -99,6 +104,16 @@ try {
         $state.IncomingObservationOutcome='IncomingNoReport';$state.SelectedIncomingObservation=$null
         $attemptSchema='iw7.t7-incoming-image-attempt/1';$leaseOwner='T7 incoming image-header metadata only'
     }
+    if($registrationBindings){
+        $state.Schema='iw7.t7-registration-bindings-run/1';$state.Stage='RegistrationBindings';$state.Remove('CatalogueOutcome')
+        $state.RegistrationBindingsOutcome='RegistrationBindingsNoReport';$state.SelectedRegistrationBindings=$null
+        $attemptSchema='iw7.t7-registration-bindings-attempt/1';$leaseOwner='T7 seven material bindings metadata only'
+        $context|Add-Member NoteProperty PublicationGuards ([Collections.Generic.List[object]]::new())
+        $context|Add-Member NoteProperty Publications ([Collections.Generic.List[object]]::new())
+        $context|Add-Member NoteProperty PreReleasePublished $false
+        $context|Add-Member NoteProperty CompletionPublished $false
+        $context|Add-Member NoteProperty CanExit $false
+    }
     if($parts){
         $state.Schema='iw7.t7-material-parts-run/1';$state.Stage='MaterialParts';$state.Remove('CatalogueOutcome')
         $state.PartsOutcome='NoPartsMetadata';$state.SelectedPartsMetadata=$null
@@ -111,8 +126,12 @@ try {
         $state.SerializedParseVerified=$false;$state.DependencyPayloadsVerified=$false
         $attemptSchema='iw7.t7-resident-export-attempt/1';$leaseOwner='T7 one-model resident export'
     }
+    if($registrationBindings -and [AppDomain]::CurrentDomain.GetData('IW7.T7RegistrationBindings.Run')){throw 'Original bindings context already exists.'}
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 6GB -CommitBytes 8GB -Owner $leaseOwner
     $state.LeaseToken=$context.Lease.Token
+    if($registrationBindings){
+        [AppDomain]::CurrentDomain.SetData('IW7.T7RegistrationBindings.Run',[pscustomobject]@{Context=$context;State=$state;Guards=$guards})
+    }
     Enable-T7CatalogueRuntimeProfile $plan
     Assert-T7CataloguePlan $plan $repo $PSCommandPath
     $marker=[IO.FileStream]::new((Join-Path $plan.RunRoot 'attempt.json'),'CreateNew','Write','Read')
@@ -159,11 +178,12 @@ try {
     # while guards/admission remain; failure never becomes a successful catalogue.
     if($state -and $attempted -and $context.Owner -and $context.Closed -and $context.Lease) {
         try {
-            try{if(!$export -and !$parts -and !$provenance -and !$registration -and !$incoming){Read-T7CatalogueTrace $plan $state $context}}
+            try{if(!$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and !$registrationBindings){Read-T7CatalogueTrace $plan $state $context}}
             catch{if(!$failure){$failure=$_};$state.TraceError=$_.Exception.Message;$state.Status='Failed'}
             Assert-T7CatalogueEngineOutputs $plan -Closed -Context $context
             $state.EngineOutputsValidated=$true
-            if($incoming){$state.IncomingObservationOutcome=Read-T7IncomingImageRecord $plan $state $context}
+            if($registrationBindings){$state.RegistrationBindingsOutcome=Read-T7RegistrationBindingsRecord $plan $state $context}
+            elseif($incoming){$state.IncomingObservationOutcome=Read-T7IncomingImageRecord $plan $state $context}
             elseif($registration){$state.RegistrationOutcome=Read-T7RegistrationImageRecord $plan $state $context}
             elseif($provenance){$state.ProvenanceOutcome=Read-T7ImageProvenanceRecord $plan $state $context}
             elseif($parts){$state.PartsOutcome=Read-T7MaterialPartsReport $plan $state $context}
@@ -185,23 +205,27 @@ try {
             if(!$failure -and $export -and $state.ExportOutcome -cne 'ExportFilesObserved'){throw 'No qualified selective export was produced.'}
             if(!$failure -and $parts -and $state.PartsOutcome -cne 'PartsMetadataObserved'){throw 'No qualified G3 metadata observation was produced.'}
             if(!$failure -and $incoming -and $state.IncomingObservationOutcome -cne 'IncomingRecordCaptured'){throw 'No incoming record was captured for deep review.'}
+            if(!$failure -and $registrationBindings -and $state.RegistrationBindingsOutcome -cne 'RegistrationBindingsRecordCaptured'){throw 'No bindings record was captured for the independent typed reader.'}
             if(!$failure -and $registration -and $state.RegistrationOutcome -cne 'RegistrationRecordCaptured'){throw 'No complete owned-registration record was captured.'}
             if(!$failure -and $provenance -and $state.ProvenanceOutcome -cne 'ProvenanceRecordCaptured'){throw 'No complete F2 provenance record was captured.'}
-            if(!$failure -and !$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
-            if(!$failure -and !$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and (Get-T7CatalogueCandidateProfile $plan) -cne 'ordinary-d2' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
+            if(!$failure -and !$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and !$registrationBindings -and $state.CatalogueOutcome -cnotin @('EmptyCatalogue','CatalogueWithNames')){throw 'No qualified catalogue was produced.'}
+            if(!$failure -and !$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and !$registrationBindings -and (Get-T7CatalogueCandidateProfile $plan) -cne 'ordinary-d2' -and $state.TraceOutcome -cne 'TraceObserved'){throw 'Trace candidate produced no qualified enabled trace.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
-    if($state){Complete-H1Stage $context $state}
+    if($state){
+        if($registrationBindings){Complete-H1Stage $context $state -BeforeReleaseCheck {Publish-T7RegistrationBindingsBeforeRelease $plan $state $context}}
+        else{Complete-H1Stage $context $state}
+    }
     if($state -and $attempted -and $context.Closed) {
         try{$state.MainAfter=Assert-T7CatalogueMain $plan}
         catch{if(!$failure){$failure=$_};$state.MainAfterError=$_.Exception.Message;$state.Status='Failed'}
     }
-    if($state -and !$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
+    if($state -and !$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and !$registrationBindings -and $attempted -and $context.Closed -and !$context.Lease -and !$state.InputsReverified -and $state.TerminationRequested) {
         # After forced closure, inspect only bounded diagnostics, never hash payloads.
         try{Read-T7CatalogueTrace $plan $state $context}catch{$state.TraceError=$_.Exception.Message}
         try{$state.CatalogueOutcome=Read-T7CatalogueReport $plan $state $context}catch{$state.ReportError=$_.Exception.Message}
     }
-    if($state -and !$context.Closed){if($incoming){$state.IncomingObservationOutcome='NotInspectedWhileJobUnclosed'}elseif($registration){$state.RegistrationOutcome='NotInspectedWhileJobUnclosed'}elseif($provenance){$state.ProvenanceOutcome='NotInspectedWhileJobUnclosed'}elseif($parts){$state.PartsOutcome='NotInspectedWhileJobUnclosed'}elseif($export){$state.ExportOutcome='NotInspectedWhileJobUnclosed'}else{$state.CatalogueOutcome='NotInspectedWhileJobUnclosed'}}
+    if($state -and !$context.Closed){if($registrationBindings){$state.RegistrationBindingsOutcome='NotInspectedWhileJobUnclosed'}elseif($incoming){$state.IncomingObservationOutcome='NotInspectedWhileJobUnclosed'}elseif($registration){$state.RegistrationOutcome='NotInspectedWhileJobUnclosed'}elseif($provenance){$state.ProvenanceOutcome='NotInspectedWhileJobUnclosed'}elseif($parts){$state.PartsOutcome='NotInspectedWhileJobUnclosed'}elseif($export){$state.ExportOutcome='NotInspectedWhileJobUnclosed'}else{$state.CatalogueOutcome='NotInspectedWhileJobUnclosed'}}
     if($state -and $attempted) {
         if($context.Owner -and $context.Closed){$state.ClosureEvidence='Pinned NativeJob CloseConfirmed rechecks original RootExited and ActiveProcesses==0; original ExitCode retained.'}
         $state.FinishedUtc=[DateTime]::UtcNow.ToString('o')
@@ -209,35 +233,42 @@ try {
             if(!$state.Quarantined){Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
             if(!$failure -and $context.Closed -and !$context.Lease -and $state.LeaseReleased -and
                !$state.TerminationRequested -and $state.InputsReverified -and $state.EngineOutputsValidated){
-                if($incoming -and $state.IncomingObservationOutcome -ceq 'IncomingRecordCaptured' -and $state.ExitCode -eq 0 -and
+                if($registrationBindings -and $state.RegistrationBindingsOutcome -ceq 'RegistrationBindingsRecordCaptured' -and $state.ExitCode -eq 0 -and
+                   !$state.Quarantined -and $state.TreeClosureConfirmed){$state.Status='RegistrationBindingsCapturedPendingReview'}
+                elseif($incoming -and $state.IncomingObservationOutcome -ceq 'IncomingRecordCaptured' -and $state.ExitCode -eq 0 -and
                    !$state.Quarantined -and $state.TreeClosureConfirmed){$state.Status='IncomingRecordCapturedPendingReview'}
                 elseif($registration -and $state.RegistrationOutcome -ceq 'RegistrationRecordCaptured'){$state.Status='RegistrationRecordCapturedPendingReview'}
                 elseif($provenance -and $state.ProvenanceOutcome -ceq 'ProvenanceRecordCaptured'){$state.Status='ProvenanceRecordCapturedPendingReview'}
                 elseif($parts -and $state.PartsOutcome -ceq 'PartsMetadataObserved'){$state.Status='PartsMetadataObservedPendingReview'}
                 elseif($export -and $state.ExportOutcome -ceq 'ExportFilesObserved'){$state.Status='ExportObservedPendingReadback'}
-                elseif(!$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
+                elseif(!$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and !$registrationBindings -and $state.CatalogueOutcome -cin @('EmptyCatalogue','CatalogueWithNames')){$state.Status='CatalogueObservedPendingDonorReview'}
             }
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message}
         try {
-            Write-H1Receipt $plan $state $plan.StageRoot
-            if($state.Status -cin @('CatalogueObservedPendingDonorReview','ExportObservedPendingReadback','PartsMetadataObservedPendingReview','ProvenanceRecordCapturedPendingReview','RegistrationRecordCapturedPendingReview','IncomingRecordCapturedPendingReview')) {
+            $finalReceipt=Write-H1Receipt $plan $state $plan.StageRoot -PassThru:$registrationBindings
+            if($state.Status -cin @('CatalogueObservedPendingDonorReview','ExportObservedPendingReadback','PartsMetadataObservedPendingReview','ProvenanceRecordCapturedPendingReview','RegistrationRecordCapturedPendingReview','IncomingRecordCapturedPendingReview','RegistrationBindingsCapturedPendingReview')) {
                 try{Assert-H1Deadline $script:T7CatalogueGroupStarted 200}
                 catch {
                     $failure=$_;$state.Status='Failed';$state.FinalizationError=$_.Exception.Message
                     [IO.File]::Move((Join-Path $plan.StageRoot 'receipt.json'),(Join-Path $plan.StageRoot 'receipt.deadline-exceeded.json'))
-                    Write-H1Receipt $plan $state $plan.StageRoot
+                    $finalReceipt=Write-H1Receipt $plan $state $plan.StageRoot -PassThru:$registrationBindings
                 }
             }
+            if($registrationBindings){Complete-T7RegistrationBindingsPublication $finalReceipt $context}
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';Write-Warning ('Receipt publication failed: '+$_.Exception.Message)}
     }
-    if($context.Closed -and !$context.Lease){foreach($guard in $guards){$guard.Dispose()};$guards.Clear()}
+    if($context.Closed -and !$context.Lease -and (!$registrationBindings -or !$state -or (!$attempted -and !$context.Publications.Count) -or ($context.CompletionPublished -and !$context.PublicationGuards.Count))){
+        foreach($guard in $guards){$guard.Dispose()};$guards.Clear()
+        if($registrationBindings -and $state -and $context.CompletionPublished -and !$context.PublicationGuards.Count){$context.CanExit=$true}
+    }
+    if($registrationBindings -and $state -and $attempted -and !$context.CanExit){$state.Quarantined=$true;$state.Status='Quarantined'}
 }
 if($state -and $state.Quarantined) {
     Write-Warning 'Original owner/lease/guards retained in IW7.H1.Quarantine; keep this host for recovery. No retry.'
     while($true){Start-Sleep -Seconds 1}
 }
 if($state){
-    $outcomeName=if($incoming){'IncomingObservationOutcome'}elseif($registration){'RegistrationOutcome'}elseif($provenance){'ProvenanceOutcome'}elseif($parts){'PartsOutcome'}elseif($export){'ExportOutcome'}else{'CatalogueOutcome'}
+    $outcomeName=if($registrationBindings){'RegistrationBindingsOutcome'}elseif($incoming){'IncomingObservationOutcome'}elseif($registration){'RegistrationOutcome'}elseif($provenance){'ProvenanceOutcome'}elseif($parts){'PartsOutcome'}elseif($export){'ExportOutcome'}else{'CatalogueOutcome'}
     [ordered]@{Status=$state.Status;($outcomeName)=$state[$outcomeName];Receipt=(Join-Path $plan.StageRoot 'receipt.json');Ready=$false}|ConvertTo-Json
 }
 if($failure){throw $failure}
