@@ -29,8 +29,20 @@ int main()
         args = pair_valid(); args[4] = std::string("bad\0.csv", 8); check(!iw7_player_template_cli::pair_exact(args));
         args = pair_valid(); args[4] = std::string(1025, 'a'); check(!iw7_player_template_cli::pair_exact(args));
         args = pair_valid(); args[0].clear(); check(!iw7_player_template_cli::pair_exact(args));
-        if (checks != 18) throw std::runtime_error("Exact player-template argv count required");
-        std::printf("IW7_PLAYER_TEMPLATE_ARGV_CHECKS=18\n");
+        const auto definitions_valid = [&] { auto values = valid; values[2] = "-iw7-player-weapon-pair-definitions";
+            values[5] = "paris_enemy_cp_zmb_raygun_pair_definitions_a"; return values; };
+        args = definitions_valid(); check(iw7_player_template_cli::definitions_selected(args) && iw7_player_template_cli::definitions_exact(args) && !iw7_player_template_cli::pair_exact(args) && !iw7_player_template_cli::exact(args));
+        args = definitions_valid(); args.push_back("-dumpzone"); check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[2] = "-iw7-player-weapon-templates"; check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[1] = "-dumpzone"; check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[3] = "cp_rave"; check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[4] = std::string("bad\0.csv", 8); check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[4] = std::string(1025, 'a'); check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[0].clear(); check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[5] = "paris_enemy_cp_zmb_raygun_pair_profile_a"; check(!iw7_player_template_cli::definitions_exact(args));
+        args = definitions_valid(); args[4] = "-iw7-player-weapon-pair-profile"; check(!iw7_player_template_cli::definitions_exact(args));
+        if (checks != 28) throw std::runtime_error("Exact player-template argv count required");
+        std::printf("IW7_PLAYER_TEMPLATE_ARGV_CHECKS=28\n");
         return 0;
     }
     catch (const std::exception& error) { std::fprintf(stderr, "%s\n", error.what()); return 1; }

@@ -1,4 +1,4 @@
-# Specialized six/eight-stage caller of existing H1 ownership and T7 artifact/link policies.
+# Specialized six/eight/ten-stage caller of existing H1 ownership and T7 artifact/link policies.
 # Default reads only bounded source/metadata. No tool/game/export entry exists.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run)
@@ -30,15 +30,19 @@ if($plan.Schema -cne 'iw7.player-template-cohort-source/1' -or $plan.Ready -or $
 $names=@('name-compile','name-test','argv-compile','argv-test','iw7','link')
 $primaryFixture=($null -ne $plan.PSObject.Properties['PrimaryGuardFixture'])
 $pairCLI=($null -ne $plan.PSObject.Properties['PairProfileCLI'])
+$definitionCLI=($null -ne $plan.PSObject.Properties['PairDefinitionsCLI'])
 if($pairCLI -and ($plan.PairProfileCLI -isnot [bool] -or !$plan.PairProfileCLI -or !$primaryFixture)){throw 'Explicit pair-profile CLI requires the primary fixture profile.'}
-$argvChecks=if($pairCLI){18}else{10}
+if($definitionCLI -and ($plan.PairDefinitionsCLI -isnot [bool] -or !$plan.PairDefinitionsCLI -or !$pairCLI -or !$primaryFixture)){throw 'Explicit neutral definition CLI requires both existing fixture profiles.'}
+$argvChecks=if($definitionCLI){28}elseif($pairCLI){18}else{10}
 if($pairCLI -and ($plan.Stages[3].ExpectedChecks -isnot [int] -and $plan.Stages[3].ExpectedChecks -isnot [long])){throw 'Scalar integer pair argv fixture count required.'}
 if($primaryFixture){
     if($plan.PrimaryGuardFixture -isnot [bool] -or !$plan.PrimaryGuardFixture){throw 'Explicit true primary-guard fixture opt-in required.'}
     $names=@('name-compile','name-test','argv-compile','argv-test','primary-compile','primary-test','iw7','link')
 }
+if($definitionCLI){$names=@($names[0..5])+@('definition-compile','definition-test')+@($names[6..7])}
 if((@($plan.Stages.Name)-join '|') -cne ($names-join '|') -or $plan.Stages[1].ExpectedChecks -ne 8 -or $plan.Stages[3].ExpectedChecks -ne $argvChecks -or
-   ($primaryFixture -and (($plan.Stages[5].ExpectedChecks -isnot [int] -and $plan.Stages[5].ExpectedChecks -isnot [long]) -or $plan.Stages[5].ExpectedChecks -ne 36))){throw 'Fixed source-selected 8+10-or-18/36 stage sequence required.'}
+   ($primaryFixture -and (($plan.Stages[5].ExpectedChecks -isnot [int] -and $plan.Stages[5].ExpectedChecks -isnot [long]) -or $plan.Stages[5].ExpectedChecks -ne 36)) -or
+   ($definitionCLI -and (($plan.Stages[7].ExpectedChecks -isnot [int] -and $plan.Stages[7].ExpectedChecks -isnot [long]) -or $plan.Stages[7].ExpectedChecks -ne 88))){throw 'Fixed source-selected 8+10-or-18-or-28/36/88 stage sequence required.'}
 if($plan.GroupDeadlineSeconds -ne 600 -or $plan.OutputLimitBytes -ne 268435456 -or $plan.MetadataReserveBytes -ne 1048576){throw 'Fixed cohort deadline/output reserve required.'}
 $kinds=@('Compile','Probe','Compile','Probe','Compile','Link')
 $artifacts=@('name.obj|name.exe|name.pdb|compile.pdb|dependencies.json','','argv.obj|argv.exe|argv.pdb|compile.pdb|dependencies.json','','iw7-player-cli.obj|compile.pdb|dependencies.json','zonetool-iw7-player.exe|zonetool-iw7-player.pdb|zonetool-iw7-player.lib|zonetool-iw7-player.exp')
@@ -46,19 +50,23 @@ if($primaryFixture){
     $kinds=@('Compile','Probe','Compile','Probe','Compile','Probe','Compile','Link')
     $artifacts=@($artifacts[0..3])+@('primary.obj|primary.exe|primary.pdb|compile.pdb|dependencies.json','')+@($artifacts[4..5])
 }
+if($definitionCLI){
+    $kinds=@($kinds[0..5])+@('Compile','Probe')+@($kinds[6..7])
+    $artifacts=@($artifacts[0..5])+@('definition.obj|definition.exe|definition.pdb|compile.pdb|dependencies.json','')+@($artifacts[6..7])
+}
 for($index=0;$index -lt $names.Count;$index++){
     $stage=$plan.Stages[$index];$probe=$kinds[$index] -ceq 'Probe'
-    if($primaryFixture -and $index -in @(4,5) -and ($stage.Name -isnot [string] -or $stage.Stage -isnot [string] -or $stage.Image -isnot [string] -or
+    if((($primaryFixture -and $index -in @(4,5)) -or ($definitionCLI -and $index -in @(6,7))) -and ($stage.Name -isnot [string] -or $stage.Stage -isnot [string] -or $stage.Image -isnot [string] -or
        $stage.Arguments -isnot [array] -or $stage.Artifacts -isnot [array] -or ($probe -and $stage.ExpectedStdout -isnot [string]))){throw 'Scalar exact primary fixture stage required.'}
     if($stage.Stage -cne $kinds[$index] -or $stage.DeadlineSeconds -ne $(if($probe){15}else{120}) -or
        (@($stage.Artifacts)-join '|') -cne $artifacts[$index]){throw 'Fixed cohort phase/artifacts required.'}
     if($probe){
-        $fixture=if($index -eq 1){'name'}elseif($index -eq 3){'argv'}else{'primary'}
-        $expected=if($index -eq 1){"IW7_PLAYER_TEMPLATE_NAME_CHECKS=8`n"}elseif($index -eq 3){"IW7_PLAYER_TEMPLATE_ARGV_CHECKS=$argvChecks`n"}else{"IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=36`n"}
+        $fixture=if($index -eq 1){'name'}elseif($index -eq 3){'argv'}elseif($index -eq 5){'primary'}else{'definition'}
+        $expected=if($index -eq 1){"IW7_PLAYER_TEMPLATE_NAME_CHECKS=8`n"}elseif($index -eq 3){"IW7_PLAYER_TEMPLATE_ARGV_CHECKS=$argvChecks`n"}elseif($index -eq 5){"IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=36`n"}else{"IW7_PLAYER_DEFINITION_READSET_CHECKS=88`n"}
         if($stage.Image -cne (Join-Path (Join-Path $plan.RunRoot "$fixture-compile") "$fixture.exe") -or @($stage.Arguments).Count -ne 0 -or
            $stage.ExpectedStdout -cne $expected){throw 'Fixed cohort probe image/marker required.'}
     }else{
-        $rsp=if($index -eq 0){'name'}elseif($index -eq 2){'argv'}elseif($primaryFixture -and $index -eq 4){'primary'}else{$stage.Name}
+        $rsp=if($index -eq 0){'name'}elseif($index -eq 2){'argv'}elseif($primaryFixture -and $index -eq 4){'primary'}elseif($definitionCLI -and $index -eq 6){'definition'}else{$stage.Name}
         $image=if($stage.Name -ceq 'link'){Join-Path (Split-Path $plan.Compiler -Parent) 'link.exe'}else{$plan.Compiler}
         if($stage.Image -cne $image -or @($stage.Arguments).Count -ne 1 -or $stage.Arguments[0] -cne ('@'+(Join-Path $plan.PreparedRoot "$rsp.rsp"))){throw 'Fixed cohort compiler/link response required.'}
     }
@@ -67,15 +75,18 @@ if(!$plan.PSObject.Properties['OwnDirectIncludeCoverage'] -or @($plan.OwnDirectI
    @($plan.OwnDirectIncludeCoverage|Where-Object {-not $_.Pinned}).Count -gt 0 -or !$plan.RequireActualDependenciesWithinGuardedSet){throw 'Own IW7 source coverage and future exact dependency guard required.'}
 $primaryModule=$false
 $pairModule=$false
+$definitionModule=$false
 foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)){
     $text=Read-PlayerSource $pin.Path $pin.SHA256 $pin.Bytes
     if($pin.Path -ceq (Join-Path $plan.PreparedRoot 'src/zonetool/zonetool/iw7/zonetool.cpp')){
         $primaryModule=$text.Contains('IW7_PLAYER_TEMPLATE_PRIMARY_REFUSAL schema=1') -and $text.Contains('first_failure(reader)')
         $pairModule=$text.Contains('IW7_PLAYER_PAIR_PROFILE donor=cp_zmb') -and $text.Contains('iw7_player_template_cli::pair_selected(args)')
+        $definitionModule=$text.Contains('IW7_PLAYER_PAIR_DEFINITIONS donor=cp_zmb') -and $text.Contains('iw7_player_template_cli::definitions_selected(args)') -and $text.Contains('player_definition_readset::with_pair(')
     }
 }
 if($primaryFixture -ne $primaryModule){throw 'Exact primary module/fixture profile pairing required.'}
 if($pairCLI -ne $pairModule){throw 'Exact pair profile CLI/18-check fixture pairing required.'}
+if($definitionCLI -ne $definitionModule){throw 'Exact neutral definition CLI/28-argv/88-readset fixture pairing required.'}
 $providers=$plan.Providers
 $providerPins=@(foreach($name in 'Core','CompilerCore','ObserverSource','CompilerPolicySource','Scheduler','Profile'){
     $pin=@($plan.ParentBindings|Where-Object {$_.Path -ieq $providers.$name -and $_.IsText})
@@ -84,7 +95,7 @@ $providerPins=@(foreach($name in 'Core','CompilerCore','ObserverSource','Compile
 })
 if(Test-Path -LiteralPath $plan.RunRoot){throw 'Fresh owned runtime output required.'}
 if(!$Run){
-    [ordered]@{Schema='iw7.player-template-build-default/1';PlanSHA256=$PlanSHA256;Stages=$names.Count;NameChecksAuthored=8;ArgvChecksAuthored=$argvChecks;PrimaryChecksAuthored=$(if($primaryFixture){36}else{0});
+    [ordered]@{Schema='iw7.player-template-build-default/1';PlanSHA256=$PlanSHA256;Stages=$names.Count;NameChecksAuthored=8;ArgvChecksAuthored=$argvChecks;PrimaryChecksAuthored=$(if($primaryFixture){36}else{0});DefinitionChecksAuthored=$(if($definitionCLI){88}else{0});
         NativeTypesLoaded=$false;NativeInputsHashed=$false;RunRootCreated=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json
     return
 }
@@ -116,7 +127,7 @@ try{
     }
     . $providers.Core
     . $providers.Scheduler
-    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner $(if($pairCLI){'IW7 one-TU pair profile CLI and 8+18+36 fixtures'}elseif($primaryFixture){'IW7 one-TU player template CLI and 8+10+36 fixtures'}else{'IW7 one-TU player template CLI and 8+10 fixtures'})
+    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner $(if($definitionCLI){'IW7 one-TU neutral pair definitions and 8+28+36+88 fixtures'}elseif($pairCLI){'IW7 one-TU pair profile CLI and 8+18+36 fixtures'}elseif($primaryFixture){'IW7 one-TU player template CLI and 8+10+36 fixtures'}else{'IW7 one-TU player template CLI and 8+10 fixtures'})
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     # The source guards acquired before imports remain held through release.
     . $providers.CompilerCore

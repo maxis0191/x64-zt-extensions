@@ -1,5 +1,10 @@
 # Bounded IW7 player/PAP source export support
 
+The new neutral full-definition route is **Source only**; see
+[NEUTRAL-DEFINITIONS.md](NEUTRAL-DEFINITIONS.md) for the exact1/0 capture,
+complete finite readset, output contract and separate future CPP/extraction gates.
+Candidate J and actual M below do not contain/execute this new route.
+
 2026-10-14 initial checkpoint: inactive source support before native compilation.
 
 Current 2026-10-15 checkpoint: BUILD-COHORT.md records actual CPP J (62 checks),
