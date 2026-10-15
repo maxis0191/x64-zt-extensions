@@ -4,6 +4,11 @@ function Test-T7IncomingImageIntent($Plan) {
         ($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'IncomingImageObservationV1') -or
         ($Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -ceq 't7-incoming-image-header-observation-v1'))
 }
+function Test-T7IncomingImageCompiledPlan($Plan) {
+    [bool]($Plan.PSObject.Properties['Schema'] -and $Plan.Schema -is [string] -and $Plan.Schema -ceq 'iw7.t7-incoming-image-plan/1' -and
+        $Plan.PSObject.Properties['Operation'] -and $Plan.Operation -is [string] -and $Plan.Operation -ceq 'IncomingImageObservationV1' -and
+        $Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -is [string] -and $Plan.CandidateProfile -ceq 't7-incoming-image-header-observation-v1')
+}
 function Test-T7RegistrationImagePlan($Plan) {
     [bool]($Plan.PSObject.Properties['Schema'] -and $Plan.Schema -ceq 'iw7.t7-registration-image-plan/1' -and
         $Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationImageMetadataV1' -and
@@ -157,7 +162,7 @@ function Get-T7CatalogueBootstraps($Plan) {
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
             throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
         }
-        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1')){throw 'Qualified collection requires an explicit supported profile.'}
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')){throw 'Qualified collection requires an explicit supported profile.'}
         $items=@($Plan.Bootstraps);$total=0L
         $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -383,7 +388,11 @@ function Get-T7CatalogueOperation($Plan) {
     $Plan.Operation
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
-    if(Test-T7IncomingImageIntent $Plan){Assert-T7IncomingImageSourcePlan $Plan;Assert-T7IncomingImageOperationalGate}
+    $incoming=Test-T7IncomingImageIntent $Plan
+    if($incoming){
+        if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageSourcePlan $Plan;Assert-T7IncomingImageOperationalGate}
+        Assert-T7IncomingImagePlan $Plan
+    }
     $registration=Test-T7RegistrationImageIntent $Plan
     if($registration){Assert-T7RegistrationImagePlan $Plan}
     if(Test-T7ImageProvenancePlan $Plan){
@@ -405,8 +414,8 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($Plan.PSObject.Properties['SelectedStreamedStaticV1'] -and !$export){throw 'Selected-streamed E3 is restricted to the export operation.'}
     if($Plan.PSObject.Properties['SelectedStreamedRenderOnlyV2'] -and !$export){throw 'Render-only E5 is restricted to the export operation.'}
     $streamed=$export -and [bool](Get-T7SelectedStreamedExport $Plan)
-    $schema=if($registration){'iw7.t7-registration-image-plan/1'}elseif($provenance){'iw7.t7-image-provenance-plan/1'}elseif($parts){'iw7.t7-material-parts-plan/1'}elseif($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
-    $reportLimit=if($parts -or $provenance -or $registration){64KB}elseif($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
+    $schema=if($incoming){'iw7.t7-incoming-image-plan/1'}elseif($registration){'iw7.t7-registration-image-plan/1'}elseif($provenance){'iw7.t7-image-provenance-plan/1'}elseif($parts){'iw7.t7-material-parts-plan/1'}elseif($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
+    $reportLimit=if($incoming){32KB}elseif($parts -or $provenance -or $registration){64KB}elseif($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     Assert-T7CatalogueZombiesObservationPlan $Plan
@@ -436,6 +445,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($candidateProfile -ceq 't7-zombies-catalogue-observation-c2'){$bindingCount+=12} # C2 also seals its six-pin index.
         if($parts){$bindingCount+=7} # One adapter plus six exact E source/closure texts.
         if($registration){$bindingCount+=14}
+        if($incoming){$bindingCount+=24} # Registration-sized source closure plus nine incoming pins and fresh witness.
         if($provenance){$bindingCount+=6} # Adapter + four closure texts + prepared CLI beyond base build texts.
         if($export){$bindingCount+=9}
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
@@ -460,17 +470,17 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
     if($candidateProfile -cne 'ordinary-d2') {
-        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192};'t7-zombies-catalogue-observation-c'{16384};'t7-zombies-catalogue-observation-c2'{16384};'t7-material-parts-v1'{16384};'t7-image-provenance-v1'{16384};'t7-registration-image-header-metadata-v1'{16384}}
+        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192};'t7-zombies-catalogue-observation-c'{16384};'t7-zombies-catalogue-observation-c2'{16384};'t7-material-parts-v1'{16384};'t7-image-provenance-v1'{16384};'t7-registration-image-header-metadata-v1'{16384};'t7-incoming-image-header-observation-v1'{16384}}
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
-    $rootPattern=if($registration){'^t7-registration-image-[a-z][a-z0-9-]*$'}elseif($provenance){'^t7-image-provenance-[a-z][a-z0-9-]*$'}elseif($parts){'^t7-material-parts-[a-z][a-z0-9-]*$'}elseif($export){'^t7-export-[a-z][a-z0-9-]*$'}else{'^t7-catalog-[a-z][a-z0-9-]*$'}
+    $rootPattern=if($incoming){'^t7-incoming-image-[a-z][a-z0-9-]*$'}elseif($registration){'^t7-registration-image-[a-z][a-z0-9-]*$'}elseif($provenance){'^t7-image-provenance-[a-z][a-z0-9-]*$'}elseif($parts){'^t7-material-parts-[a-z][a-z0-9-]*$'}elseif($export){'^t7-export-[a-z][a-z0-9-]*$'}else{'^t7-catalog-[a-z][a-z0-9-]*$'}
     if([IO.Path]::GetDirectoryName($Plan.RunRoot) -cne (Join-Path $Repo 'runtime') -or
        [IO.Path]::GetFileName($Plan.RunRoot) -cnotmatch $rootPattern -or
        $Plan.WorkingDirectory -cne (Join-Path $Plan.RunRoot 'work') -or
        $Plan.StageRoot -cne (Join-Path $Plan.RunRoot 'evidence') -or
        $Plan.Image -cne (Join-Path $Plan.WorkingDirectory 't7-zonetool-candidate.exe')){throw 'Exact catalogue command/root required.'}
-    if(!$export -and !$parts -and !$provenance -and !$registration -and (@($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -isnot [string] -or
+    if(!$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and (@($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -isnot [string] -or
        $Plan.Arguments[0] -cne '-t7-iw7-catalog' -or $Plan.Arguments[1] -isnot [string] -or
        $Plan.Arguments[1] -cne $zoneSpec.Name -or $Plan.OutputKey -isnot [string] -or
        $Plan.OutputKey -cne $zoneSpec.OutputKey)){throw 'Exact catalogue command/root required.'}
@@ -489,6 +499,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 't7-zombies-catalogue-observation-c2'){$bindingLimit+=12}
     if($parts){$bindingLimit+=7}
     if($registration){$bindingLimit+=14}
+    if($incoming){$bindingLimit+=24}
     if($provenance){$bindingLimit+=6}
     if($export){$bindingLimit+=9}
     if($diagnostic){$bindingLimit++}
@@ -534,7 +545,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     Assert-T7CatalogueBootstrapBindings $Plan
 }
 function Assert-T7CatalogueBuild($Plan,$Receipt) {
-    if(Test-T7IncomingImageIntent $Plan){Assert-T7IncomingImageOperationalGate}
+    if(Test-T7IncomingImageIntent $Plan){
+        if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageOperationalGate}
+        Assert-T7IncomingImageBuild $Plan $Receipt;return
+    }
     if(Test-T7RegistrationImageIntent $Plan){Assert-T7RegistrationImageBuild $Plan $Receipt;return}
     if(Test-T7ImageProvenanceCompiledPlan $Plan){Assert-T7ImageProvenanceBuild $Plan $Receipt;return}
     if(Test-T7ImageProvenancePlan $Plan){Assert-T7ImageProvenanceOperationalGate}
@@ -969,13 +983,16 @@ function New-T7CatalogueAlias($Pin,[string]$Destination,$Context) {
     [pscustomobject]@{Path=$Destination;Source=$Pin.Path;Bytes=$Pin.Bytes;SHA256=$Pin.SHA256;FileId=$aliasId}
 }
 function New-T7CatalogueStart($Plan) {
-    if(Test-T7IncomingImageIntent $Plan){Assert-T7IncomingImageOperationalGate}
+    if(Test-T7IncomingImageIntent $Plan){
+        if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageOperationalGate}
+        Assert-T7IncomingImagePlan $Plan
+    }
     if(Test-T7RegistrationImageIntent $Plan){Assert-T7RegistrationImagePlan $Plan}
     if((Test-T7ImageProvenancePlan $Plan) -and !(Test-T7ImageProvenanceCompiledPlan $Plan)){Assert-T7ImageProvenanceOperationalGate}
     $start=New-T7PrepatchStart $Plan # Environment setup only; diagnostic is not invoked.
     $zoneSpec=Get-T7CataloguePlanZoneSpec $Plan
     $start.ArgumentList.Clear();$start.ArgumentList.Add('-t7-iw7-catalog');$start.ArgumentList.Add($zoneSpec.Name)
-    if(Test-T7RegistrationImagePlan $Plan){$start.ArgumentList.Clear();foreach($argument in $Plan.Arguments){$start.ArgumentList.Add($argument)}}
+    if((Test-T7IncomingImageCompiledPlan $Plan) -or (Test-T7RegistrationImagePlan $Plan)){$start.ArgumentList.Clear();foreach($argument in $Plan.Arguments){$start.ArgumentList.Add($argument)}}
     if(Test-T7ImageProvenanceCompiledPlan $Plan){
         Assert-T7ImageProvenanceCompiledPlan $Plan;$start.ArgumentList.Clear()
         foreach($argument in $Plan.Arguments){$start.ArgumentList.Add($argument)}

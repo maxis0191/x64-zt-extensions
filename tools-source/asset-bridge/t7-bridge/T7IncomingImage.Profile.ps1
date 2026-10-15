@@ -1,4 +1,4 @@
-# Pending finite Source interface. No compiled candidate or operational mode exists.
+# Finite pending proposals and the separately qualified, closed CPP87 cohort.
 function Assert-T7IncomingImageSourcePlan($Plan) {
     foreach($name in 'Schema','Operation','CandidateProfile'){
         if($Plan.$name -isnot [string]){throw 'Typed incoming Source selectors required.'}
@@ -46,7 +46,191 @@ function Assert-T7IncomingImageSourcePlan($Plan) {
     for($i=0;$i -lt 4;$i++){if($Plan.Arguments[$i] -isnot [string] -or $Plan.Arguments[$i] -cne $expected[$i]){throw 'Exact incoming Source arguments required.'}}
 }
 function Assert-T7IncomingImageOperationalGate {
-    throw 'Incoming observation awaits a new actual closed CPP cohort; operational DEFAULT and Run are unavailable.'
+    throw 'Incoming Source proposal requires a qualified plan from the new actual closed CPP cohort; operational DEFAULT and Run are unavailable for Source proposals.'
+}
+
+function Get-T7IncomingImageCohort {
+    [ordered]@{
+        ReviewedPrerequisiteSource='41e595f09dabdd6dff14439f09bd701bddd4a235';Source='bde117b8dd40945033d00231b28738b345f09fdb'
+        NativeSource='fab935826c898806855376662a8a03317b3ad8f1';EXEBytes=22059008;EXESHA256='4fcb0205e30979457784d1b883a153ecf5c20751543b68dfb184671d59e3ee4d'
+        Plan=@(403533,'2becaab02373a248dbcf5797501680beeb4d80f1c5603cbe969540a35776c0f9')
+        Receipt=@(49161,'481dfa424367320699ee368b7272fa17d64b29babef775efe63f4e1fcd81f9b4')
+        Contract=@(4613,'a2cdaf54b7387616bd56d9a78538e7a273ec35e9eb2f6f6ac1e130ecd3851323')
+        SourceManifest=@(372028,'d38eef9eb4be10c865cbed0bbc15ea12617321bc673cc8674ae514a997e31c59')
+        HostWitness=@(10340,'9a895ee72e2d75909d006ee4bd8f0893cc172e992c9d016de7858dff71d2620b')
+        ClosureWitness=@(6327,'5c33ec17caddb888a07d4f7697bba12bf97f9e54612549a3922fcbae144b7a66')
+        FixtureStdout=@(71,'414c5d2a646e4a9d3671ae904a9d6d1f8109b559790ef2045fbbc7f8ffbbfdf2')
+        FreshWitness=@(401,'98b8636504f3484b48cea365590a340c3bcad98c7a9369341997f0cca23786bf')
+        OriginalIDs=@(23212,23336,21256,24680,22760,27180,7692,2840,29024,26324,19212)
+    }
+}
+function Assert-T7IncomingImageCohortPin($Pin,[string]$Name,$Bindings) {
+    $c=Get-T7IncomingImageCohort
+    Assert-T7CatalogueFields $Pin @('Path','Bytes','SHA256')
+    if($Pin.Path -isnot [string] -or !(Test-T7CatalogueInteger $Pin.Bytes 1MB) -or $Pin.Bytes -ne $c[$Name][0] -or
+       $Pin.SHA256 -isnot [string] -or $Pin.SHA256 -cne $c[$Name][1]){throw 'Exact typed closed CPP87 text pin required.'}
+    Assert-T7CatalogueTextPin $Pin $Bindings
+}
+function Assert-T7IncomingImagePlan($Plan) {
+    if(!(Test-T7IncomingImageCompiledPlan $Plan)){throw 'Exact incoming compiled plan selectors required.'}
+    $c=Get-T7IncomingImageCohort;$m=$Plan.SelectedIncomingImageObservationV1
+    Assert-T7CatalogueFields $m @('Schema','ReviewedPrerequisiteSource','CompiledExtensionSource','Contract','SourceManifest','HostWitness','ClosureWitness','FixtureStdout','FreshWitness')
+    foreach($name in 'Schema','ReviewedPrerequisiteSource','CompiledExtensionSource'){
+        if($m.$name -isnot [string]){throw 'Typed CPP87 Source identities required.'}
+    }
+    if($m.Schema -cne 'iw7.t7-incoming-image-cpp87/1' -or $m.ReviewedPrerequisiteSource -cne $c.ReviewedPrerequisiteSource -or
+       $m.CompiledExtensionSource -cne $c.Source -or $Plan.BootstrapPolicy -isnot [string] -or $Plan.BootstrapPolicy -cne 'QualifiedCollectionV3' -or
+       $Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -ne 23 -or !$Plan.PSObject.Properties['SharedQualification'] -or $null -eq $Plan.SharedQualification -or
+       $Plan.CandidateSource -isnot [string] -or $Plan.BuildPlan -isnot [string] -or $Plan.BuildReceipt -isnot [string] -or
+       !(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -ne $c.EXEBytes -or
+       $Plan.CandidateSHA256 -isnot [string] -or $Plan.CandidateSHA256 -cne $c.EXESHA256 -or
+       $Plan.ExpectedBuildPlanSHA256 -isnot [string] -or $Plan.ExpectedBuildPlanSHA256 -cne $c.Plan[1] -or
+       $Plan.ExpectedBuildReceiptSHA256 -isnot [string] -or $Plan.ExpectedBuildReceiptSHA256 -cne $c.Receipt[1] -or
+       $Plan.OutputKey -isnot [string] -or $Plan.OutputKey -cne 't7_iw7_incoming_image_observation_v1' -or
+       !(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes 16384) -or $Plan.TraceStderrLimitBytes -ne 16384){throw 'Exact closed CPP87 collection/tuple required.'}
+    foreach($name in 'SelectedImageProvenanceV1','SelectedRegistrationImageHeaderV1','SelectedMaterialPartsV1','SelectedXpakProvider','ExportRequest','ExportRequestFile',
+        'SelectedStreamedRenderOnlyV2','SelectedMeshMaterialObservation','ResidentMultiSurfaceV2','ResidentSurfaceCountDiagnostic','SelectedStreamedStaticV1','ZombiesObservationC','ZombiesAddObservationC2'){
+        if($Plan.PSObject.Properties[$name]){throw 'Incoming compiled metadata cannot select another operation/provider.'}
+    }
+    $expected=@('-t7-iw7-incoming-image-header-v1','mp_freerun_04','p7_fre_platform_cap_02','0')
+    if($Plan.Arguments -isnot [array] -or $Plan.Arguments.Count -ne 4){throw 'Exact incoming compiled arguments required.'}
+    for($i=0;$i -lt 4;$i++){if($Plan.Arguments[$i] -isnot [string] -or $Plan.Arguments[$i] -cne $expected[$i]){throw 'Exact incoming compiled arguments required.'}}
+    foreach($name in 'Contract','SourceManifest','HostWitness','ClosureWitness','FixtureStdout','FreshWitness'){
+        Assert-T7IncomingImageCohortPin $m.$name $name $Plan.Bindings
+    }
+    foreach($name in 'Plan','Receipt'){
+        $path=if($name -ceq 'Plan'){$Plan.BuildPlan}else{$Plan.BuildReceipt}
+        Assert-T7IncomingImageCohortPin ([pscustomobject]@{Path=$path;Bytes=$c[$name][0];SHA256=$c[$name][1]}) $name $Plan.Bindings
+    }
+}
+function Assert-T7IncomingImageBuild($Plan,$Receipt) {
+    Assert-T7IncomingImagePlan $Plan;$m=$Plan.SelectedIncomingImageObservationV1
+    $build=Read-H1SmallJson $Plan.BuildPlan 1MB
+    Assert-T7IncomingImageCpp87 $Plan $build $Receipt (Read-H1SmallJson $m.SourceManifest.Path 1MB) `
+        (Read-H1SmallJson $m.HostWitness.Path 16KB) (Read-H1SmallJson $m.ClosureWitness.Path 8KB) (Read-H1SmallJson $m.FreshWitness.Path 8KB)
+    foreach($name in 'Wiring','PreparedMain','PreparedCLI','BaseBuildPlan','BaseBuildReceipt','LinkResponse',
+        'RegistrationWiring','RegistrationContract','RegistrationCapture','RegistrationEntry','RegistrationFixture','RegistrationObserver','RegistrationResponse',
+        'IncomingWiring','IncomingContract','IncomingMembers','IncomingModule','IncomingEntry','IncomingFixture','IncomingCapture','IncomingObserver','IncomingBaselineFixture'){
+        Assert-T7CatalogueTextPin $build.BuildProfile.$name $Plan.Bindings
+    }
+    if($build.BuildProfile.IncomingContract.Path -cne $m.Contract.Path){throw 'Same corrected CPP87 contract pin required.'}
+    $dependencies=@($Receipt.Stages[2].Artifacts|Where-Object {[IO.Path]::GetFileName($_.Path) -ceq 'dependencies.json'})
+    if($dependencies.Count -ne 1){throw 'One original CPP87 main dependency text required.'}
+    Assert-T7CatalogueTextPin $dependencies[0] $Plan.Bindings
+    if(([IO.File]::ReadAllText($m.FixtureStdout.Path)).Replace("`r`n","`n") -cne "IW7_T7_REGISTRATION_HEADER_CHECKS=39`nIW7_T7_INCOMING_IMAGE_CHECKS=48`n"){
+        throw 'Actual CPP87 two-marker fixture stdout required.'
+    }
+}
+function Assert-T7IncomingImageCpp87($Plan,$Build,$Receipt,$Manifest,$HostWitness,$Closure,$Fresh) {
+    $c=Get-T7IncomingImageCohort;$p=$Build.BuildProfile
+    foreach($entry in @(@($Plan,@('CandidateSource','BuildReceipt','ExpectedBuildPlanSHA256','ExpectedBuildReceiptSHA256')),
+        @($Build,@('SourceCommit','RunRoot')),@($p,@('Name','Option','ObservationSchema','IncomingSchema','RegistrationSchema')),
+        @($Receipt,@('Schema','Status','PlanSHA256')),@($HostWitness,@('Schema','SourceCommit','Status')),
+        @($Closure,@('Schema','SourceCommit','Status','ActualCompletionChunk')),@($Fresh,@('Schema')))){
+        foreach($name in $entry[1]){if($entry[0].$name -isnot [string]){throw 'Typed CPP87 proof text scalars required.'}}
+    }
+    if($Manifest.revisions.'x64-zt-extensions' -isnot [string]){throw 'Typed compiled Source revision required.'}
+    if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -ne $c.EXEBytes -or
+       $Plan.CandidateSHA256 -isnot [string] -or $Plan.CandidateSHA256 -cne $c.EXESHA256 -or
+       $Plan.ExpectedBuildPlanSHA256 -cne $c.Plan[1] -or $Plan.ExpectedBuildReceiptSHA256 -cne $c.Receipt[1] -or
+       $Build.SourceCommit -cne $c.NativeSource -or $Manifest.revisions.'x64-zt-extensions' -cne $c.Source -or
+       $p.Name -cne 't7-incoming-image-header-observation-v1' -or $p.Option -cne '-t7-iw7-incoming-image-header-v1' -or
+       !(Test-T7CatalogueInteger $p.ArgumentCount 5) -or $p.ArgumentCount -ne 5 -or
+       $p.ObservationSchema -cne 'iw7.t7-incoming-image-header-observation/1' -or $p.IncomingSchema -cne $p.ObservationSchema -or
+       $p.RegistrationSchema -cne 'iw7.t7-registration-image-header-metadata/1' -or
+       !(Test-T7CatalogueInteger $p.RegistrationFixtureChecks 39) -or $p.RegistrationFixtureChecks -ne 39 -or
+       !(Test-T7CatalogueInteger $p.IncomingFixtureChecks 48) -or $p.IncomingFixtureChecks -ne 48 -or
+       $Receipt.Schema -cne 'iw7.t7-minimal-build/1' -or $Receipt.Status -cne 'Passed' -or $Receipt.PlanSHA256 -cne $c.Plan[1]){throw 'Exact measured CPP87 recipe/source/receipt required.'}
+    foreach($name in 'SourceOnlyPending','RegistrationCPPQualified','IncomingCPPQualified'){
+        if($p.$name -isnot [bool] -or $p.$name){throw 'CPP87 recipe must preserve its unqualified input flags.'}
+    }
+    foreach($name in 'InputsReverified','TreeClosureConfirmed','LeaseReleased','RegistrationFixturePassed','IncomingFixturePassed','RegistrationCPPQualified','IncomingCPPQualified'){
+        if($Receipt.$name -isnot [bool] -or !$Receipt.$name){throw 'CPP87 actual receipt qualification missing.'}
+    }
+    foreach($name in 'Quarantined','CandidateExecuted'){if($Receipt.$name -isnot [bool] -or $Receipt.$name){throw 'CPP87 must remain closed/unexecuted.'}}
+    if($Receipt.Stages -isnot [array] -or $Receipt.Stages.Count -ne 5 -or ($Receipt.Stages.Name -join '|') -cne 'registration-fixture-compile|registration-fixture-test|main|zonetool11|link' -or
+       ($Receipt.Stages.Stage -join '|') -cne 'Compile|Probe|Compile|Compile|Link'){throw 'Exact five CPP87 stages required.'}
+    # Only the four actual compiler stages have completed compiler telemetry.
+    # The inherited top-level placeholder and Probe telemetry remain false.
+    foreach($stage in $Receipt.Stages){
+        if($stage.Name -isnot [string] -or $stage.Stage -isnot [string] -or !(Test-T7CatalogueInteger $stage.ExitCode 0) -or
+           $stage.TreeClosureConfirmed -isnot [bool] -or !$stage.TreeClosureConfirmed){throw 'CPP87 stage failed/unclosed.'}
+        if($stage.Stage -cin @('Compile','Link')){
+            $t=$stage.CompilerTelemetry
+            if($t.Completed -isnot [bool] -or !$t.Completed -or $t.AfterStop.RootExited -isnot [bool] -or !$t.AfterStop.RootExited -or
+               !(Test-T7CatalogueInteger $t.AfterStop.RootExitCode 0) -or !(Test-T7CatalogueInteger $t.AfterStop.ActiveProcesses 0) -or
+               $t.AfterStopMembers.Members -isnot [array] -or $t.AfterStopMembers.Members.Count){throw 'CPP87 original compiler/job not empty.'}
+        }
+    }
+    $probe=$Receipt.Stages[1]
+    if(!(Test-T7CatalogueInteger $probe.LegacyRegistrationChecks 39) -or $probe.LegacyRegistrationChecks -ne 39 -or
+       !(Test-T7CatalogueInteger $probe.IncomingChecks 48) -or $probe.IncomingChecks -ne 48 -or
+       $probe.EngineInvoked -isnot [bool] -or $probe.EngineInvoked){throw 'Actual 39+48 authored fixture required.'}
+    if($HostWitness.Schema -cne 'iw7.t7-incoming-image-cpp-preexit/1' -or $HostWitness.SourceCommit -cne $c.Source -or $HostWitness.Status -cne 'Passed'){
+        throw 'Exact CPP87 original preexit required.'
+    }
+    foreach($name in 'SameActualCallerAppDomain','SameOriginalContextPSVariable','SameOriginalStatePSVariable','SameOriginalGuardsPSVariable','SameOriginalOwnerReference',
+        'OriginalContextClosed','OriginalOwnerClosed','CallerSourcePinsReverified','LeaseNull','CanExit','InputsReverified','LeaseReleased','TreeClosureConfirmed',
+        'RegistrationFixturePassed','IncomingFixturePassed','RegistrationCPPQualified','IncomingCPPQualified','ExactCreationFILETIMEsInt64','FourCompilerStageTelemetryCompleted','ProbeCompilerTelemetryNotApplicable'){
+        if($HostWitness.$name -isnot [bool] -or !$HostWitness.$name){throw 'CPP87 original context proof missing.'}
+    }
+    foreach($name in 'CandidateExecuted','NativeCLIExecuted','StockRead','Ready','PhaseProjectionIncomplete'){
+        if($HostWitness.$name -isnot [bool] -or $HostWitness.$name){throw 'CPP87 preexit overclaims or lacks full projection.'}
+    }
+    if(!(Test-T7CatalogueInteger $HostWitness.BuildGuards 0) -or !(Test-T7CatalogueInteger $HostWitness.CallerSourceGuards 0) -or
+       $HostWitness.Host.PID -ne 19212 -or $HostWitness.Parent.PID -ne 26324 -or
+       $HostWitness.Host.CreationFileTime -isnot [long] -or $HostWitness.Host.CreationFileTime -ne 134365054279170774L -or
+       $HostWitness.Parent.CreationFileTime -isnot [long] -or $HostWitness.Parent.CreationFileTime -ne 134365054277439850L){throw 'CPP87 exact host generation/guards required.'}
+    foreach($name in 'NoExitVerified','VerifiedBeforeImportsAndAdmission'){if($HostWitness.Host.$name -isnot [bool] -or !$HostWitness.Host.$name){throw 'Original fresh NoExit host required.'}}
+    foreach($name in 'Invocation','EntryAssembly','Image'){if($HostWitness.Host.$name -isnot [string]){throw 'Typed CPP87 host texts required.'}}
+    if($HostWitness.Parent.Image -isnot [string]){throw 'Typed CPP87 parent image required.'}
+    if($HostWitness.Host.Invocation -cne '.' -or $HostWitness.Host.EntryAssembly -cne [IO.Path]::ChangeExtension($HostWitness.Host.Image,'.dll') -or
+       $HostWitness.Parent.Image -cne $HostWitness.Host.Image -or $HostWitness.Host.Arguments -isnot [array] -or $HostWitness.Host.Arguments.Count -ne 6 -or
+       $HostWitness.Host.Arguments[0] -cne $HostWitness.Host.EntryAssembly -or ($HostWitness.Host.Arguments[1..4] -join '|') -cne '-NoLogo|-NoProfile|-NoExit|-Command'){
+        throw 'CPP87 exact physical/managed dot invocation required.'
+    }
+    foreach($argument in $HostWitness.Host.Arguments){if($argument -isnot [string]){throw 'Typed CPP87 host arguments required.'}}
+    foreach($proof in $Closure.Receipt,$Closure.SameOriginalContextProof,$Closure.FreshObservation){
+        if($proof.SHA256 -isnot [string]){throw 'Typed CPP87 closure text hashes required.'}
+    }
+    if($Closure.Schema -cne 'iw7.t7-incoming-image-cpp-closure/1' -or $Closure.SourceCommit -cne $c.Source -or $Closure.Status -cne 'Passed' -or
+       !(Test-T7CatalogueInteger $Closure.ActualTruePTYSession 50444) -or $Closure.ActualTruePTYSession -ne 50444 -or
+       !(Test-T7CatalogueInteger $Closure.ActualTruePTYExitCode 0) -or $Closure.ActualCompletionChunk -cne '1ae1c5' -or
+       $Closure.Receipt.SHA256 -cne $c.Receipt[1] -or $Closure.SameOriginalContextProof.SHA256 -cne $c.HostWitness[1] -or
+       $Closure.FreshObservation.SHA256 -cne $c.FreshWitness[1] -or !(Test-T7CatalogueInteger $Closure.LeaseRegistryCount 0)){
+        throw 'CPP87 exact independent original closure required.'
+    }
+    foreach($name in 'AllElevenOriginalIdentitiesAbsent','InputsReverified','LeaseReleased','TreeClosureConfirmed','RegistrationCPPQualified','IncomingCPPQualified','NoOpaqueArtifactReopened'){
+        if($Closure.$name -isnot [bool] -or !$Closure.$name){throw 'CPP87 independent closure proof missing.'}
+    }
+    foreach($name in 'CandidateExecuted','NativeCLIExecuted','StockRead','Ready','ContextReconstructed'){
+        if($Closure.$name -isnot [bool] -or $Closure.$name){throw 'CPP87 closure overclaims runtime or reconstructed context.'}
+    }
+    if($HostWitness.KnownOriginalIdentities -isnot [array] -or $HostWitness.KnownOriginalIdentities.Count -ne 11 -or
+       $Closure.OriginalIdentityObservations -isnot [array] -or $Closure.OriginalIdentityObservations.Count -ne 11){throw 'Eleven original CPP87 identities required.'}
+    for($i=0;$i -lt 11;$i++){
+        $known=$HostWitness.KnownOriginalIdentities[$i];$seen=$Closure.OriginalIdentityObservations[$i]
+        if(!(Test-T7CatalogueInteger $known.PID ([int]::MaxValue)) -or $known.PID -ne $c.OriginalIDs[$i] -or $known.Image -isnot [string] -or
+           $known.CreationFileTime -isnot [long] -or $known.CreationFileTime -le 0 -or $seen.Expected.PID -ne $known.PID -or
+           !(Test-T7CatalogueInteger $seen.Expected.PID ([int]::MaxValue)) -or $seen.Expected.Image -isnot [string] -or
+           $seen.Expected.Image -cne $known.Image -or $seen.Expected.CreationFileTime -isnot [long] -or $seen.Expected.CreationFileTime -ne $known.CreationFileTime -or
+           $seen.OriginalIdentityPresent -isnot [bool] -or $seen.OriginalIdentityPresent -or $null -ne $seen.Live){throw 'Original CPP87 identity closure differs.'}
+    }
+    foreach($pair in @(@($HostWitness.Parent,9),@($HostWitness.Host,10))){
+        $known=$HostWitness.KnownOriginalIdentities[$pair[1]]
+        if($known.PID -ne $pair[0].PID -or $known.Image -cne $pair[0].Image -or $known.CreationFileTime -ne $pair[0].CreationFileTime){throw 'CPP87 host closure generation differs.'}
+    }
+    if($Fresh.Schema -cne 'iw7.t7-incoming-image-cpp-fresh-identities/1' -or $Fresh.OriginalPIDs -isnot [array] -or
+       ($Fresh.OriginalPIDs -join '|') -cne ($c.OriginalIDs -join '|') -or !(Test-T7CatalogueInteger $Fresh.RegistryVersion 1) -or $Fresh.RegistryVersion -ne 1 -or
+       !(Test-T7CatalogueInteger $Fresh.RegistryLeaseCount 0) -or $Fresh.NoProcessStopped -isnot [bool] -or !$Fresh.NoProcessStopped){throw 'CPP87 fresh independent observations required.'}
+    foreach($name in 'LiveAtOriginalPIDs','CompilerOrVCTIP'){if($Fresh.$name -isnot [array] -or $Fresh.$name.Count){throw 'CPP87 fresh closure is not empty.'}}
+    foreach($originalPID in $Fresh.OriginalPIDs){if(!(Test-T7CatalogueInteger $originalPID ([int]::MaxValue))){throw 'Typed CPP87 fresh PIDs required.'}}
+    $exe=@($Receipt.Stages[-1].Artifacts|Where-Object {$_.Path -ceq $Plan.CandidateSource})
+    if($exe.Count -ne 1 -or !(Test-T7CatalogueInteger $exe[0].Bytes 64MB) -or $exe[0].Bytes -ne $c.EXEBytes -or
+       $exe[0].SHA256 -isnot [string] -or $exe[0].SHA256 -cne $c.EXESHA256 -or
+       $Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe') -or $Plan.BuildReceipt -cne (Join-Path $Build.RunRoot 'receipt.json')){
+        throw 'Original admitted CPP87 link artifact metadata required.'
+    }
 }
 
 # Shell capture only. Consumer150 owns DTO/counter/copy semantics and deep outcomes.

@@ -1,4 +1,4 @@
-# Pending incoming IMAGE observation interface
+# Incoming IMAGE Source and closed CPP87 qualification
 
 The Source147 contract is pinned at reviewed extension source
 4873ef4a4ce8478020d8533651f123f8feadfa95, merged by 8a04291.
@@ -13,8 +13,8 @@ The added fixture include changes its bytes to 9,865 /
 the 42/15/10 protocol is unchanged. The validator accepts only those two exact
 revision/hash pairs. It refuses mixed pairs and the failed Source2057 attempt
 as a corrected prerequisite. Both proposals remain Source-only and CPP-pending;
-neither supplies a compiled candidate or changes the unconditional operational
-gate. A successful corrected build still needs its own actual closed evidence.
+neither supplies a compiled candidate or bypasses its Source-proposal gate.
+The separate compiled plan below qualifies only the actual corrected cohort.
 
 This finite interface uses the existing Catalogue/H1 entry points and names a
 future IncomingObservationOutcome. The Source shell capture seam uses that same
@@ -27,9 +27,43 @@ The Source plan selects IncomingImageObservationV1 and
 The fixed target `$camo_base_normal` belongs to the producer contract, never an
 extra argument. Seven candidate/build identity fields and the qualified mip fact
 must remain NULL; CPPQualified, NativeObserved and Ready remain false.
-Operational plan/DEFAULT, build qualification and start setup all refuse while
-there is no actual closed CPP cohort. The older F2, registration33/DTO124 and
+Operational plan/DEFAULT, build qualification and start setup all refuse these
+Source proposals. The older F2, registration33/DTO124 and
 lookup metadata paths retain their own contracts and measured candidates.
+
+The distinct `iw7.t7-incoming-image-plan/1` compiled plan pins CPP B: reviewed
+prerequisite Source41e595, compiled extension Sourcebde117b8dd40945033d00231b28738b345f09fdb,
+native Sourcefab935826c898806855376662a8a03317b3ad8f1. Documentation merge b20bdb5
+is not the compiled revision. Its original link artifact was measured under the
+build lease: 22,059,008 bytes /
+`4fcb0205e30979457784d1b883a153ecf5c20751543b68dfb184671d59e3ee4d`.
+This Source integration compares that recorded metadata; it never reopens the PE
+or PDB. Failed CPP A and the old eeeca candidate remain separate history.
+
+The finite qualifier pins recipe 403,533 bytes / 2becaab0..., receipt 49,161 /
+481dfa42..., compiled-source manifest 372,028 / d38eef9e..., preexit 10,340 /
+9a895ee7..., closure 6,327 / 5c33ec17..., fresh observation 401 / 98b86365...,
+and fixture stdout 71 / 414c5d2a.... Full hashes are in Get-T7IncomingImageCohort.
+It requires the five original stages in order, zero original exits, closed trees,
+four completed compiler telemetry records with empty original jobs, and exactly
+39 legacy plus 48 incoming authored checks before main/CLI/link. The inherited
+top-level compiler placeholder and the noncompiler Probe telemetry stay false;
+neither is used as completed compiler evidence. The exact recipe only records
+fixture success after both markers match and stderr is empty.
+
+The original preexit uses its actual SameOriginal* PSVariable/context/owner fields,
+released lease, zero source/build guards and CanExit. Independent closure pins
+the final true PTY 50444 exit zero, completion chunk 1ae1c5, all eleven original
+identities absent, and the empty fresh compiler/lease observation. This does not
+reconstruct an owner or repoll that closed PTY. It is build evidence only.
+
+CPP recipe/receipt/manifest use the existing explicit 1 MiB H1 JSON reader;
+preexit is bounded to 16 KiB and closure/fresh observation to 8 KiB. The ordinary
+incoming observation/consumer JSON cap remains 32 KiB. No shared guard is raised.
+The compiled route retains QualifiedCollectionV3's 23 items and shared qualifier,
+106 unique bindings for that existing collection, a 32 KiB report cap and 16 KiB
+stderr cap. The corrected contract marker aliases the guarded IncomingContract
+pin; it must not be added twice. No factory or new host is introduced.
 
 The future producer observation has 42 outer keys, 15 case keys and 10 snapshot
 keys. Four slots stay distinct and ordered: bootstrap/reference,
@@ -75,7 +109,8 @@ absence/refusal/nonzero boundaries, four slots, typed fields, duplicate properti
 UTF-8 byte cap and mocked guarded-read seam. The mock is not live job evidence.
 No game, stock, PE, SDK or opaque content is read by this Source work.
 
-Next: await the new recipe's actual original-job/fixture/host/terminal closure.
-A qualified CPP tuple, separately
-reviewed preparation/ordinary DEFAULT and distinct Root Native GO are required
-before any future observation. Never fill these NULLs from old eeeca or F2 proof.
+Next: obtain the separate Root factory GO, then the separate ordinary DEFAULT
+six-false check, then a distinct Root Native GO before any incoming observation.
+This Source PR executes none of those operations. Source proposals keep their
+NULL fields; only the distinct compiled plan may name this closed CPP B tuple.
+Never inherit old eeeca or F2 proof, or treat CPP checks as engine acceptance.
