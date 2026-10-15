@@ -1,0 +1,162 @@
+{
+  "schema": "iw7.t7-registration-material-bindings-source/1",
+  "source_profile": "t7-registration-material-bindings-v1",
+  "native_option": "-t7-iw7-registration-material-bindings-v1",
+  "report_schema": "iw7.t7-registration-material-bindings/1",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "capture_phase": "after_original_model_add",
+  "recheck_phase": "after_original_model_add",
+  "source_only_pending": true,
+  "cpp_qualified": false,
+  "native_observed": false,
+  "ready": false,
+  "binding_count": 7,
+  "image_header_bytes": 264,
+  "header_byte_limit": 3696,
+  "image_name_max_utf8_bytes": 255,
+  "image_name_control_bytes_refused": true,
+  "metadata_read_limit": 65536,
+  "output_limit": 32768,
+  "model_callback_limit": 1024,
+  "model_callback_trigger_max": 1025,
+  "fixture_expected_checks": 41,
+  "fixture_stdout": "IW7_T7_REGISTRATION_BINDINGS_CHECKS=41\n",
+  "outer_keys": [
+    "allocation_retained",
+    "atomic_snapshot_proven",
+    "binding_count",
+    "bindings",
+    "bindings_enumerated",
+    "capture_ordinal",
+    "capture_phase",
+    "completed_header_bytes",
+    "descriptor_admissible",
+    "duplicate_registration",
+    "header_byte_limit",
+    "header_copies",
+    "image_header_bytes",
+    "image_name_max_utf8_bytes",
+    "lifetime_proven",
+    "lod",
+    "matched_registrations",
+    "metadata_read_limit",
+    "model",
+    "model_binding_correlated",
+    "model_callbacks",
+    "model_default",
+    "native_source_commit",
+    "payload_bytes_read",
+    "pixels_copied",
+    "qualified_object_mip_count",
+    "ready",
+    "reason",
+    "recheck_phase",
+    "refused",
+    "registration_chain",
+    "registration_search_refused",
+    "renderer_binding_proven",
+    "runtime_abi_proven",
+    "same_object_proven",
+    "schema",
+    "slot",
+    "source_asset_name_association_proven",
+    "source_profile",
+    "zone",
+    "zone_load_complete"
+  ],
+  "row_keys": [
+    "index",
+    "binding_hash_u32",
+    "usage_u16",
+    "image_pointer_present",
+    "raw_name",
+    "leading_comma_reference",
+    "registration_chain",
+    "binding_rechecked",
+    "snapshot"
+  ],
+  "chain_keys": [
+    "model_header_hex",
+    "material_hex",
+    "texture_table_hex"
+  ],
+  "row_chain_keys": [
+    "model_header_hex",
+    "material_hex",
+    "texture_table_hex",
+    "image_field_hex"
+  ],
+  "snapshot_keys": [
+    "callback_header_name_rechecked",
+    "completed_header_bytes",
+    "copy_fault",
+    "header_copies",
+    "header_observed",
+    "header_rechecked",
+    "image",
+    "name_rechecked",
+    "reason",
+    "refused"
+  ],
+  "base_capture": {
+    "bytes": 16485,
+    "sha256": "edf7bec2865e2098782bb4b31e58a48508c83bcbdf35d190affa7b451f0e6345"
+  },
+  "base_observer": {
+    "bytes": 16575,
+    "sha256": "9c82b0969e3d44c9dbafb5fa4d6cf0b60fce450d60a77291342e97518c365380"
+  },
+  "base_members": {
+    "bytes": 2791,
+    "sha256": "ddb287aa8efa02a8ba6201403bc2cadd716c14a881d188a244099d93a729dc76"
+  },
+  "derived_capture": {
+    "bytes": 19790,
+    "sha256": "775567e57593dff9985ed4f7f648a2b433245046bcfb4196faa15fece91deb9b"
+  },
+  "derived_observer": {
+    "bytes": 17722,
+    "sha256": "c71bece4148970b8cd268bc44e7b8327af77fabfc39034df87493e9c2ee4abab"
+  },
+  "base_main": {
+    "bytes": 43620,
+    "sha256": "05f601ffdeff533809acb023e53b850570f08f79594d5954232338f3a1b597b8"
+  },
+  "base_cli": {
+    "bytes": 175031,
+    "sha256": "26e9ae7ff1a3f016130b57cea265a73a8ecbcdb6bed20b3bc39a4c7f51742967"
+  },
+  "main": {
+    "bytes": 43764,
+    "sha256": "970fe08a0ff0a1b0ce19c48f240a8fa361870d94349c5a1ed926db2ad321df49"
+  },
+  "cli": {
+    "bytes": 190891,
+    "sha256": "d732c8e33cc6b15ee912443dc5cd043b95122f095cec7ec5cd1be1a8e46304ec"
+  },
+  "files": {
+    "registration_material_bindings.hpp": {
+      "bytes": 8907,
+      "sha256": "d171f28ae818ad5506d18dbbc4d5d5cf85ad4a1f1e656c00fca4c5575770db0d"
+    },
+    "native_registration_material_bindings.inc": {
+      "bytes": 985,
+      "sha256": "d47924a7028a8299099aa1c29bf445e0ca52ab401671c3148273f665d74301d3"
+    },
+    "registration_material_bindings_fixture.cpp": {
+      "bytes": 7594,
+      "sha256": "51ec0ec81c65e7f3a602e00b094ef87c74fda255aa32f54d0331c8fa697f9fd9"
+    }
+  },
+  "semantics": {
+    "global_complete": "Unique registration, completed zone load and rechecked seven-row table; no successful image sample required",
+    "partial": "Structural/global refusal preserves a diagnostic prefix of 0..7 rows; bytes unknown after structural catch",
+    "per_row": "snapshot.refused independent; subsequent rows still attempted; raw_name/leading_comma_reference null on refusal",
+    "counters": "header_copies sums published snapshots; completed_header_bytes null for any partial-copy fault or structural catch; otherwise sum*264",
+    "numeric_chain": "Row first three chain fields equal outer fields; image_field_hex is the copied binding pointer; numeric rechecks do not establish engine object identity",
+    "native_exit": "Complete global window can exit 0 with independently refused rows; global refusal logs report then throws",
+    "legacy": "No F2 binding4/hash admission; old F2/CPP39/CPP87 inputs immutable",
+    "names": "Owned raw UTF-8 1..255 bytes, C0 controls refused; one leading comma is reference marker, ordinary name is not full-definition proof",
+    "lookup": "No DB lookup or IsDefault; model_default null; finalization uses owned JSON only"
+  }
+}
