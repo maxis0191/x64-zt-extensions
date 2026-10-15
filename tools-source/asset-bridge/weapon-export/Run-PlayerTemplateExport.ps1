@@ -71,12 +71,41 @@ $state=[ordered]@{Schema='iw7.player-template-export/1';Status='Pending';PlanSHA
  Host=[ordered]@{PID=$PID;Image=$physical.ExecutablePath;CreatedUtc=$physicalCreated;CimCreatedUtc=$physical.CreationDate.ToUniversalTime().ToString('o')};
  Inputs=[Collections.Generic.List[object]]::new();ContentPins=[Collections.Generic.List[object]]::new();
  CreatedCopies=[Collections.Generic.List[object]]::new();UnknownCopyCreation=$false;LeaseReleased=$false;GuardsDisposed=$false;CandidateExecuted=$false}
-$root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new()}
+$root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new();ContentGuards=@{}}
 $global:IW7PlayerTemplateExport=$root;[AppDomain]::CurrentDomain.SetData($root.Key,$root)
+$script:PlayerTemplateExportOriginalRoot=$root
 $failure=$null;$created=$false
-function Assert-PlayerExportClock{Assert-H1Deadline $script:T7GroupStarted $plan.GroupSeconds}
-function Pin-PlayerOpaque($Pin){Open-T7Pin $Pin $context}
+function Assert-PlayerExportClock{Assert-H1Deadline $script:T7GroupStarted $script:PlayerTemplateExportOriginalRoot.Plan.GroupSeconds}
+function Assert-PlayerExportCaller($Token,$Target){
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot
+    if(![object]::ReferenceEquals([AppDomain]::CurrentDomain.GetData($playerRoot.Key),$playerRoot) -or
+       $null -eq $playerRoot.Context.Lease -or $playerRoot.Context.Lease.Token -cne $Token -or
+       $PID -ne $playerRoot.State.Host.PID){throw 'Original admitted export root required.'}
+    Assert-PlayerExportClock
+}
+function New-PlayerStockTransaction($Manifest,$LinkPlan){
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot;$slot='Stock_'+$Manifest.Name
+    try{
+        New-IW7StockLinkTransaction -Plan $LinkPlan -OwnerRoot $playerRoot -RetentionKey $playerRoot.Key -TransactionSlot $slot -LeaseToken $playerRoot.Context.Lease.Token -ValidateCaller {param($Token,$Target) Assert-PlayerExportCaller $Token $Target} -JournalPath (Join-Path $playerRoot.Plan.RunRoot ('stock-'+$Manifest.Name+'.jsonl'))
+    }finally{
+        # Stock35 publishes the actual transaction before its callback can throw.
+        # Retain that same object even when the factory never returns to us.
+        if($playerRoot.Contains($slot)){
+            $published=$playerRoot[$slot]
+            if(![object]::ReferenceEquals($published.OwnerRoot,$playerRoot) -or $published.TransactionSlot -cne $slot){throw 'Original published stock slot differs.'}
+            if(!@($playerRoot.StockContexts|Where-Object {[object]::ReferenceEquals($_,$published)}).Count){$playerRoot.StockContexts.Add($published)}
+        }
+    }
+}
+function Pin-PlayerOpaque($Pin){Open-T7Pin $Pin $script:PlayerTemplateExportOriginalRoot.Context}
+function Get-PlayerSourceHandle($Source){
+    $held=$script:PlayerTemplateExportOriginalRoot.ContentGuards[$Source.Path]
+    if(!$held -or $held.Identity -cne $Source.Before.Identity -or !$held.Stream -or
+       $held.Stream.SafeFileHandle.IsClosed -or $held.Stream.SafeFileHandle.IsInvalid){throw 'Original held content guard required after stock apply.'}
+    $held.Stream.SafeFileHandle
+}
 function Copy-PlayerOwned($Pin,[string]$Target,[switch]$Mutable){
+    $root=$script:PlayerTemplateExportOriginalRoot;$state=$root.State
     Assert-PlayerExportClock;Pin-PlayerOpaque $Pin
     $state.UnknownCopyCreation=$true
     $output=[IO.FileStream]::new($Target,'CreateNew','Write','Read')
@@ -87,14 +116,23 @@ function Copy-PlayerOwned($Pin,[string]$Target,[switch]$Mutable){
     if(!$Mutable){Pin-PlayerOpaque $record};Assert-PlayerExportClock
 }
 function Confirm-PlayerStock{
+    $root=$script:PlayerTemplateExportOriginalRoot;$plan=$root.Plan;$state=$root.State
     $totals=@{}
     foreach($tx in $root.StockContexts){
-        if(!$tx.Prepared -or $tx.UnknownCreation -or ![object]::ReferenceEquals($tx.OwnerRoot,$root)){throw 'Original prepared stock context required.'}
+        Assert-IW7StockLinkContext $tx
+        if($tx.UnknownCreation -or ![object]::ReferenceEquals($tx.OwnerRoot,$root)){throw 'Original known stock context required.'}
+        if(!$tx.Prepared){
+            if($tx.Phase -cne 'PublishedBeforePreflight' -or $tx.Guards.Count -or $tx.Sources.Count -or
+               $tx.CreatedLinks.Count -or $tx.CreatedDirectories.Count -or $null -ne $tx.JournalStream){throw 'Unprepared stock effects are retained.'}
+            continue
+        }
         foreach($source in $tx.Sources){if(!$totals.ContainsKey($source.Before.Identity)){$totals[$source.Before.Identity]=0};$totals[$source.Before.Identity]++}
     }
     foreach($tx in $root.StockContexts){foreach($source in $tx.Sources){
         $base=@($plan.SourceBaselines|Where-Object Identity -CEQ $source.Before.Identity)[0]
-        Assert-IW7StockStableMetadata ([IW7StockLinksV1.Ntfs]::Inspect($source.Guard)) $source.Before ($base.Links+$totals[$source.Before.Identity])
+        # Stock35 closes its own source guards after a successful Apply.
+        # Our original content stream was held before Apply and stays owned.
+        Assert-IW7StockStableMetadata ([IW7StockLinksV1.Ntfs]::Inspect((Get-PlayerSourceHandle $source))) $source.Before ($base.Links+$totals[$source.Before.Identity])
         Assert-IW7StockStableMetadata (Get-IW7StockLinkMetadata $source.Path) $source.Before ($base.Links+$totals[$source.Before.Identity])
         Assert-IW7StockStableMetadata (Get-IW7StockLinkMetadata $source.Target) $source.Before ($base.Links+$totals[$source.Before.Identity])
     }}
@@ -106,7 +144,8 @@ function Confirm-PlayerStock{
     }
     Assert-PlayerExportClock
 }
-function Test-PlayerGenerated($Current,[long]$Limit=$plan.GeneratedLimitBytes){
+function Test-PlayerGenerated($Current,[long]$Limit=$script:PlayerTemplateExportOriginalRoot.Plan.GeneratedLimitBytes){
+    $root=$script:PlayerTemplateExportOriginalRoot;$plan=$root.Plan;$state=$root.State
     Assert-PlayerExportClock
     $items=[Collections.Generic.List[object]]::new();$queue=[Collections.Generic.Queue[string]]::new();$queue.Enqueue($plan.RunRoot)
     while($queue.Count){
@@ -136,6 +175,7 @@ function Test-PlayerGenerated($Current,[long]$Limit=$plan.GeneratedLimitBytes){
     Assert-PlayerExportClock
 }
 function Read-PlayerOutput([string]$Path,[int]$Cap){
+    $guards=$script:PlayerTemplateExportOriginalRoot.Context.Guards
     Assert-PlayerExportClock;Assert-H1Path $Path
     $stream=[IO.FileStream]::new($Path,'Open','Read','Read');$guards.Add($stream)
     if($stream.Length -le 0 -or $stream.Length -gt $Cap){throw 'Output length exceeds bound.'}
@@ -198,19 +238,15 @@ try{
     Pin-PlayerOpaque $plan.JobAssembly
     [Reflection.Assembly]::LoadFrom($plan.JobAssembly.Path)|Out-Null
     [IO.Directory]::CreateDirectory($plan.RunRoot)|Out-Null;$created=$true
-    $validate={param($Token,$Target)
-        if(![object]::ReferenceEquals([AppDomain]::CurrentDomain.GetData($root.Key),$root) -or $null -eq $context.Lease -or
-         $context.Lease.Token -cne $Token -or $PID -ne $state.Host.PID){throw 'Original admitted export root required.'}
-        Assert-PlayerExportClock
-    }
     foreach($manifest in $plan.StockManifests){
         $linkPlan=Read-IW7StockLinkPlan -ManifestPath $manifest.Path -ExpectedManifestSHA256 $manifest.SHA256 -SourceRoot $plan.StockSourceRoot -TargetRoot $manifest.Target
-        $tx=New-IW7StockLinkTransaction -Plan $linkPlan -OwnerRoot $root -RetentionKey $root.Key -TransactionSlot ('Stock_'+$manifest.Name) -LeaseToken $context.Lease.Token -ValidateCaller $validate -JournalPath (Join-Path $plan.RunRoot ('stock-'+$manifest.Name+'.jsonl'))
-        $root.StockContexts.Add($tx);Invoke-IW7StockLinkPreflight $tx
+        $tx=New-PlayerStockTransaction $manifest $linkPlan
+        Invoke-IW7StockLinkPreflight $tx
         foreach($source in $tx.Sources){
             if(@($state.ContentPins|Where-Object Path -IEQ $source.Path).Count -eq 0){
                 # Fresh content evidence now, never a relabelled historical SHA.
                 $stream=[IO.FileStream]::new($source.Path,'Open','Read','Read');$guards.Add($stream)
+                $root.ContentGuards[$source.Path]=[pscustomobject]@{Stream=$stream;Identity=$source.Before.Identity}
                 if($stream.Length -ne $source.Before.Bytes -or $stream.Length -gt 256MB){throw 'Finite source length differs.'}
                 $hash=[Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
                 try{$buffer=[byte[]]::new(1MB);while(($n=$stream.Read($buffer)) -gt 0){$hash.AppendData($buffer,0,$n);Assert-PlayerExportClock};$sha=[Convert]::ToHexString($hash.GetHashAndReset()).ToLowerInvariant()}finally{$hash.Dispose()}
@@ -269,7 +305,7 @@ finally{
         try{
             Confirm-PlayerStock;Test-PlayerGenerated $state
             $state.OriginalRootAndJobClosed=$context.Closed
-            $state.StockTransactions=@($root.StockContexts|ForEach-Object{[ordered]@{Target=$_.Plan.TargetRoot;Prepared=$_.Prepared;SourcePreserved=$_.SourcePreserved;UnknownCreation=$_.UnknownCreation;CreatedLinks=$_.CreatedLinks.Count}})
+            $state.StockTransactions=@($root.StockContexts|ForEach-Object{[ordered]@{Target=$_.Plan.TargetRoot;Phase=$_.Phase;Prepared=$_.Prepared;SourcePreserved=$_.SourcePreserved;UnknownCreation=$_.UnknownCreation;CreatedLinks=$_.CreatedLinks.Count}})
             $path=Join-Path $plan.RunRoot 'measured-before-release.json'
             $raw=[Text.UTF8Encoding]::new($false).GetBytes(($state|ConvertTo-Json -Depth 30)+"`n")
             if($raw.Length -gt $plan.MetadataReserveBytes){throw 'Metadata reserve exceeded.'}
@@ -278,7 +314,8 @@ finally{
             $null=Read-PlayerExportSource $path $sha $raw.Length;Assert-PlayerExportClock
             Test-PlayerGenerated $state ($plan.GeneratedLimitBytes+$plan.MetadataReserveBytes)
             $before=[ordered]@{Schema='iw7.player-export-before-release/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$sha;OriginalRootAndJobClosed=$true;
-                StockPreparedAndPreserved=$true;OriginalLeaseToken=$context.Lease.Token;SourceGuardsHeld=$guards.Count;CandidateExecuted=$state.CandidateExecuted;Ready=$false}
+                StockPreparedAndPreserved=($root.StockContexts.Count -eq $plan.StockManifests.Count -and !@($root.StockContexts|Where-Object {!$_.Prepared}).Count);
+                StockClosureVerified=$true;OriginalLeaseToken=$context.Lease.Token;SourceGuardsHeld=$guards.Count;CandidateExecuted=$state.CandidateExecuted;Ready=$false}
             $beforeBytes=[Text.UTF8Encoding]::new($false).GetBytes(($before|ConvertTo-Json)+"`n")
             if($raw.Length+$beforeBytes.Length -gt $plan.MetadataReserveBytes){throw 'Reserved metadata exceeded.'}
             $beforePath=Join-Path $plan.RunRoot 'closure-before-release.json';$stream=[IO.File]::Open($beforePath,'CreateNew','Write','Read');try{$stream.Write($beforeBytes);$stream.Flush($true)}finally{$stream.Dispose()}

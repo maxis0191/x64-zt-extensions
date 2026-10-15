@@ -39,7 +39,8 @@ $t=$null;$e=$null;$a=[Management.Automation.Language.Parser]::ParseFile($Runner,
 function Assert-PlayerExportClock {}
 function Assert-H1Path($Path){if((Get-Item -LiteralPath $Path).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Redirect'}}
 $guards=[Collections.Generic.List[object]]::new()
-'''+f"$f=$a.Find({{param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq '{name}'}},$true)\n. ([scriptblock]::Create($f.Extent.Text))\n"+body,encoding='utf-8')
+$script:PlayerTemplateExportOriginalRoot=@{Context=[pscustomobject]@{Guards=$guards}}
+'''+''.join(f"$f=$a.Find({{param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq '{n}'}},$true)\n. ([scriptblock]::Create($f.Extent.Text))\n" for n in ([name] if isinstance(name,str) else name))+body,encoding='utf-8')
   return subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),str(RUNNER),str(self.root)],capture_output=True,text=True,timeout=15)
  def test_actual_output_reader_caps_before_hash_and_keeps_guard(self):
   r=self.fragment('Read-PlayerOutput','''
@@ -63,6 +64,7 @@ $plan=[pscustomobject]@{RunRoot=$Directory;WorkRoot=$work;GeneratedLimitBytes=10
 $state=[ordered]@{Inputs=@([pscustomobject]@{Target=$alias;SourceId='same';TargetId='same'});CreatedCopies=@()}
 # Ignore the enclosing Source fragment itself by defining only work as run root.
 $plan.RunRoot=$work
+$script:PlayerTemplateExportOriginalRoot.Plan=$plan;$script:PlayerTemplateExportOriginalRoot.State=$state
 Test-PlayerGenerated $state
 if($state.GeneratedObservedBytes -ne 10){throw 'Small copy excluded from output accounting'}
 $state.Inputs[0].TargetId='different';$refused=$false
@@ -115,4 +117,36 @@ if(Test-PlayerHostCreation $different $kernel){throw 'Different creation accepte
 if($kernel.ToString('o') -cne '2026-10-14T23:40:12.2195679Z'){throw 'Kernel identity precision lost'}
 Write-Output 'precision-causal-pass'
 ''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('precision-causal-pass',r.stdout)
+ def test_callbacks_resist_dynamic_context_plan_and_state_shadow(self):
+  r=self.fragment(('Assert-PlayerExportClock','Assert-PlayerExportCaller'),'''
+$script:T7GroupStarted='original-clock'
+function Assert-H1Deadline($Started,$Seconds){if($Started -cne 'original-clock' -or $Seconds -ne 600){throw 'Wrong retained clock'}}
+$script:PlayerTemplateExportOriginalRoot=@{Key='iw7.source-causal';Context=[pscustomobject]@{Lease=[pscustomobject]@{Token='source-only'}};Plan=[pscustomobject]@{GroupSeconds=600};State=@{Host=@{PID=$PID}}}
+[AppDomain]::CurrentDomain.SetData('iw7.source-causal',$script:PlayerTemplateExportOriginalRoot)
+function Invoke-DynamicShadow {
+ $Context=@{LeaseToken='stock';Plan=@{TargetRoot='unused'}};$plan=$Context.Plan;$state=@{Host=@{PID=-1}};$root=@{}
+ Assert-PlayerExportCaller 'source-only' 'unused'
+}
+Invoke-DynamicShadow
+$refused=$false;try{Assert-PlayerExportCaller 'wrong' 'unused'}catch{$refused=$true}
+if(!$refused){throw 'Wrong actual lease token accepted'}
+[AppDomain]::CurrentDomain.SetData('iw7.source-causal',@{})
+$refused=$false;try{Invoke-DynamicShadow}catch{$refused=$true}
+if(!$refused){throw 'Different AppDomain root accepted'}
+Write-Output 'scope-causal-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('scope-causal-pass',r.stdout)
+ def test_after_apply_uses_original_content_handle_and_refuses_closed_or_wrong_identity(self):
+  r=self.fragment('Get-PlayerSourceHandle','''
+$path=Join-Path $Directory 'held.json';[IO.File]::WriteAllText($path,'{}')
+$content=[IO.FileStream]::new($path,'Open','Read','Read')
+$stock=[IO.FileStream]::new($path,'Open','Read','Read');$stockHandle=$stock.SafeFileHandle;$stock.Dispose()
+$source=[pscustomobject]@{Path=$path;Before=[pscustomobject]@{Identity='same'};Guard=$stockHandle}
+$script:PlayerTemplateExportOriginalRoot.ContentGuards=@{};$script:PlayerTemplateExportOriginalRoot.ContentGuards[$path]=[pscustomobject]@{Identity='same';Stream=$content}
+if(![object]::ReferenceEquals((Get-PlayerSourceHandle $source),$content.SafeFileHandle)){throw 'Original content handle changed'}
+$source.Before.Identity='different';$refused=$false;try{$null=Get-PlayerSourceHandle $source}catch{$refused=$true}
+if(!$refused){throw 'Wrong content identity accepted'}
+$source.Before.Identity='same';$content.Dispose();$refused=$false;try{$null=Get-PlayerSourceHandle $source}catch{$refused=$true}
+if(!$refused){throw 'Closed content handle accepted'}
+Write-Output 'after-apply-guard-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('after-apply-guard-pass',r.stdout)
 if __name__=='__main__':unittest.main()
