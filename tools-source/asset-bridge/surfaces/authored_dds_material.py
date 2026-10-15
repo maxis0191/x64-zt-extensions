@@ -96,7 +96,9 @@ def prepare_material(*, zone, image_name, material_name, texture_slot, dds, temp
                 "explicit IW7 texture semantic required")
         asset_name(row["image"])
     other_images = sorted({row["image"] for i, row in enumerate(textures) if i != texture_slot})
-    require(image_name not in other_images, "authored image cannot alias a recipient image")
+    recipient_keys = {name.casefold() for name in other_images}
+    require(len(recipient_keys) == len(other_images) and image_name.casefold() not in recipient_keys,
+            "authored image cannot alias a recipient image, including Windows case aliases")
     constants = material.get("constantTable")
     require(constants is None or type(constants) is list, "IW7 constant table required")
     if constants:

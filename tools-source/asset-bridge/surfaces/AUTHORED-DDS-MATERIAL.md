@@ -39,6 +39,9 @@ refuse. No special asset name is embedded in the API. `texture_slot` is the
 explicit integer index in the IW7 material's `textureTable`, distinct from the
 model's material slot. Only that row's image name changes. Its IW7 semantic,
 sampler/hash fields, technique, constants and all other material fields remain.
+Authored and recipient image names cannot alias by Windows case folding. Review
+caught that missing refusal in the initial Source candidate; the mixed-case
+counterexample is retained alongside the corrective commit.
 
 ## External template bytes and recipients
 

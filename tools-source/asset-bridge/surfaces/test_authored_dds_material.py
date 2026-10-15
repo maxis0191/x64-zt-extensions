@@ -116,7 +116,7 @@ class AuthoredMaterialTests(unittest.TestCase):
 
     def test_names_slots_recipient_alias_and_template_closure_refuse(self):
         for field, values in (("zone", ("../bad", "a/b", "NUL")),
-                              ("image_name", ("a:stream", "a,b", ",retail", "iw7_original_normal")),
+                              ("image_name", ("a:stream", "a,b", ",retail", "iw7_original_normal", "IW7_ORIGINAL_NORMAL")),
                               ("material_name", ("a\\b", "bad name", "../x")),
                               ("texture_slot", (True, -1, 2, "1"))):
             for value in values:
