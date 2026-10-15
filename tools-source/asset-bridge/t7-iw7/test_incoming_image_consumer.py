@@ -72,10 +72,10 @@ class IncomingConsumerTests(unittest.TestCase):
             result = c.classify(value, 0)
         self.assertEqual(result["outcome"], "IncomingMetadataObserved")
         self.assertIs(result["metadata_only"], True)
-        self.assertEqual(result["cases"][0]["image"]["width"], 0)
-        self.assertEqual(result["cases"][3]["image"]["width"], 8)
+        self.assertEqual(result["cases"][0]["snapshot"]["image"]["width"], 0)
+        self.assertEqual(result["cases"][3]["snapshot"]["image"]["width"], 8)
         self.assertEqual(result["cases"][0]["raw_name"], ",$camo_base_normal")
-        self.assertIsNone(result["cases"][1]["image"])
+        self.assertIsNone(result["cases"][1]["snapshot"])
         for key in ("descriptor_admissible", "source_asset_name_association_proven", "model_binding_correlated",
                     "renderer_binding_proven", "same_object_proven", "runtime_abi_proven", "pixels_copied", "ready"):
             self.assertIs(result[key], False)
@@ -154,7 +154,7 @@ class IncomingConsumerTests(unittest.TestCase):
         item = report(); item.update(image_callbacks=1, ordinary_name_events=0, ordinary_name_observed=False,
                                      ordinary_absence_scope="not_observed_in_this_bounded_callback_window")
         item["cases"][3] = copy.deepcopy(item["cases"][1]); item["cases"][3]["phase"] = "map_load"
-        self.assertIsNone(c.consume(item)["cases"][3]["image"])
+        self.assertIsNone(c.consume(item)["cases"][3]["snapshot"])
         altered = copy.deepcopy(item); altered["cases"][3]["snapshot"] = {}
         with self.assertRaises(ValueError): c.consume(altered)
         item = refused(item); item.update(map_complete=False, ordinary_absence_scope="partial_or_refused_callback_window")

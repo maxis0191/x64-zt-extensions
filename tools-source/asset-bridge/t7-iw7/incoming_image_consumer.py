@@ -135,10 +135,7 @@ def consume(report):
              "nonzero scalar summary differs from the owned DTO")
         need(count != 0 or row["raw_name"] is None, "absent slot contains a fabricated sample")
         need(not count or observed or report["refused"], "failed matching sample cannot qualify a complete window")
-        summaries.append({key: row[key] for key in
-                          ("phase", "name_category", "state", "raw_name", "effective_name",
-                           "matching_events_in_phase", "unique_in_phase", "nonzero_descriptor_scalar_fields")})
-        summaries[-1]["image"] = row["snapshot"]["image"] if observed else None
+        summaries.append(dict(row))  # Retain the validated copy/fault/name diagnostics and raw DTO.
     need(references == counts[0] + counts[2] and ordinary == counts[1] + counts[3], "event totals differ from slots")
     accounted = nonmatches + references + ordinary
     need(accounted <= callbacks <= accounted + 1 and (report["refused"] or accounted == callbacks),
@@ -155,8 +152,9 @@ def consume(report):
             "window_complete": report["window_complete"], "cases": summaries, "metadata_only": True,
             "descriptor_admissible": False, "qualified_object_mip_count": None,
             "source_asset_name_association_proven": False, "model_binding_correlated": False,
-            "renderer_binding_proven": False, "same_object_proven": False, "runtime_abi_proven": False,
-            "pixels_copied": False, "ready": False}
+            "renderer_binding_proven": False, "same_pointer_proven": False, "same_object_proven": False,
+            "allocation_retained": False, "atomic_snapshot_proven": False, "lifetime_proven": False,
+            "runtime_abi_proven": False, "pixels_copied": False, "payload_bytes_read": 0, "ready": False}
 
 
 def classify(report, native_exit_code):
