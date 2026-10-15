@@ -244,4 +244,6 @@ try{
     if(![IO.Path]::GetFullPath($largePath).StartsWith([IO.Path]::GetFullPath($largeRoot)+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Synthetic cleanup path escaped'}
     [IO.File]::Delete($largePath);[IO.Directory]::Delete($largeRoot)
 }
-[ordered]@{SourceOnly=$true;Assertions=$checks;NativeProcessStarted=$false;StockRead=$false;LeaseAcquired=$false;Result='PASS'}|ConvertTo-Json -Compress
+$pathMetadataReport=(& "$Repo/tests/ops/Test-ModelFFPathPreflight.Source.ps1" -Entry "$Repo/ops/model-lab/ModelFF.PathPreflight.ps1")|ConvertFrom-Json
+Require ($pathMetadataReport.Passed -and $pathMetadataReport.SourceOnly -and !$pathMetadataReport.NativeJobStarted -and !$pathMetadataReport.LeaseAcquired) 'Path/JSON Source causals must pass without native work or admission'
+[ordered]@{SourceOnly=$true;Assertions=$checks;PathMetadataSourceCases=$pathMetadataReport.CaseCount;NativeProcessStarted=$false;StockRead=$false;LeaseAcquired=$false;Result='PASS'}|ConvertTo-Json -Compress

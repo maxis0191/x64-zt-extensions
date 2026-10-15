@@ -151,6 +151,154 @@ rewrite it, poll the closed PTY or patch the failed generated package. After
 Source review/CI/merge, prepare a fresh C sibling and obtain another distinct
 Analysis GO; Native still needs its own GO.
 
+## Closed Native B capture and JSON transport adapter
+
+Analysis C on Source `8ef3440ff35c34cb3ef3a857ebccabb544d8fc15`
+completed factory and ordinary DEFAULT with 112 bindings, 27 metadata inputs and
+23 bootstraps. Its six execution/Ready flags remained false. A separately
+authorized Native B then exited 0 and captured the marked bindings record.
+This later launcher Source is distinct from compiled CPP Source `0f669b58`.
+
+Native B is closed: true PTY52255 exit0/chunk91a0ab must never be polled again.
+Root independently corroborated absence of its original three process identities,
+games/CPP helpers and leases at 2026-10-15T10:45:41.2265033Z. The original H1
+context and guards closed, lease was released and CanExit was true. No rerun is
+needed to address this text transport problem.
+
+The immutable captured `stdout.log` is 13,829 bytes/SHA-256
+`930a2e3b3b15e421424176be26c9312be685d420474d8731e271e28dfa52408a`.
+The final receipt is 36,384 bytes/SHA-256
+`33cb7e53e938b2688d395fd5c6f5f78d28929841620d4a7088b23592f6ddc1a4`.
+Both remain in the original Source8ef package's
+`runtime/t7-registration-bindings-c/evidence`. Neither contains a standalone
+producer JSON artifact. The unchanged consumer CLI rejected `.log` before open
+with `existing .json report required before open`; this was a role refusal, not
+an interpretation of the seven rows.
+
+`extract_registration_bindings_record.py` supplies only the missing transport
+artifact. Its required arguments are `--log`, `--log-bytes`, `--log-sha256`,
+`--output-json`, `--provenance-json` and the independently supplied original
+`--native-exit-code`. Run it from a fresh reviewed Source package only after the
+Source PR/review/exact-head CI/merge and separate application authorization.
+There is no implicit Native, factory, DEFAULT or consumer invocation.
+
+The adapter requires strict UTF-8 log bytes <=1 MiB, their exact Bytes/SHA pin,
+the globally unique literal `T7_REGISTRATION_MATERIAL_BINDINGS` marker and the
+existing H1 single-line JSON framing. Prefix diagnostics and CRLF/LF are allowed;
+multiline records, trailing material and ambiguous selection refuse. The object
+is <=32 KiB, uses the unchanged bounded strict JSON decoder (recursive duplicate
+fields/nonfinite constants refuse), depth <=25 and exact schema/profile/native
+Source identities. These are transport checks; the adapter does not interpret
+the 41/9/10 DTO fields.
+
+The new `.json` contains the exact original `{...}` byte slice, with no BOM,
+newline or reserialization. Its separate <=16-KiB provenance records the origin
+log path/Bytes/SHA, marker, marker/record offsets in UTF-8 bytes, record length/
+SHA, extractor Source path/Bytes/SHA and original native exit. Both outputs must
+be fresh ordinary absolute `.json` paths with existing parents. Device, ADS,
+reserved, reparse, opaque suffix, overlap and overwrite paths refuse. CreateNew,
+flush/fsync and readback apply to each new file. Both same original output
+streams stay open through provenance publication and final path/identity/bytes
+checks; the same held original log is read and identity checked again before
+completion. Independent review reproduced an earlier candidate returning success
+after the JSON changed during provenance publication. That candidate is retained
+in history; final held-output checks and mutation/reparse/identity causals now
+refuse this case. On failure, any new partial
+artifact remains for diagnosis and must not be interpreted as successful output.
+This is a bounded local integrity check, not a claim of protection from every
+concurrent adversarial filesystem change.
+
+Authored tests cover non-ASCII byte offsets, braces/quotes inside strings,
+CRLF/LF, exact size/depth boundaries, duplicate/embedded markers, bad UTF-8,
+garbage/duplicate fields, path and pin refusals, CreateNew races, flush/readback
+failures and changed input bytes/leaf identity. An authored full DTO passes from
+the adapter into the unchanged reader CLI; an incomplete DTO can pass transport
+and still fails that reader. No actual capture is parsed by these tests.
+
+The immutable original H1 receipt remains RecordCapturedPendingReview: deep metadata NULL,
+NativeObserved/DescriptorAdmissible/Ready=false, qualified mips NULL and payload
+bytes zero. After authorized materialization, the unchanged consumer CLI must
+validate the real standalone JSON with actual native exit0. Descriptor/mip,
+association, lifetime, ABI, providers, DDS, FF, renderer and pixels remain
+unqualified by capture or transport alone. Original packages, receipts and logs
+remain immutable; no PE/PDB/SDK/retail reopening is part of this adapter.
+
+## Actual standalone record and strict reader: 2026-10-15
+
+Transport PR197 merged as `5ab64d8d82fb7b7edff66468ea87c7046133e6a4`.
+Root and independent 5d approved exact head16056bc after the held-output fix.
+All 62 composed bridge tests (including 17 transport cases) and nine unchanged
+consumer tests passed without skips. Hosted CI did not run: all four expected
+jobs directly reported account billing refusal before runner/steps; the existing
+conditional exception and exact-head evidence are recorded in PR197 comments
+6190481986 and 6190558328. This is not hosted CI PASS.
+
+After a separate Root text-application GO, one application of the merged Source
+adapter exited 0 under the existing Python `-I -B -S`. The fresh Source package
+manifest is 389682/SHA
+`c2f257bec55b4d6728114b82f7f4f348d9db3093358132f6822fd076b878b765`.
+Adapter8596/SHA
+`32868c9678bbc9903622e892b95fc5ce530bbb0147d97160113817b3ba9aa464`
+and both reader files exactly matched the reviewed Git blobs before entry.
+
+The new record is 13353/SHA
+`6e3b56a24fe588497f9eb845c1eaa5f2823c86de41a96acf85c43c8dd256623c`;
+its separate transport provenance is 1257/SHA
+`dfd0f4fd9278d1a1da93cf32b736de6a8b741b56b26656fa298e6fe18283592f`.
+The marker/record byte offsets are 440/474, record length13353. A separate bounded
+read verified the exact original slice and unchanged original stdout13829/SHA930a
+listed above. Application proof1654/SHA
+`2020dc16db2d972f04ff9bad8ba7e4517119c116c10abe701e30072f16885a7c`
+and the new sibling artifacts are recorded in PR197 comment6190608725. Frozen
+packages/logs/receipts were not edited. No Native rerun, CPP or lease occurred.
+
+Independent 5d verified those pins/provenance and ran the unchanged consumer CLI
+Source6d/reader9687/SHA8e1 listed in the qualifier, with original native exit0.
+Python exited0: `RegistrationBindingsObserved`, complete, seven observed
+snapshots and zero refusals. The original shell receipt's deep outcome NULL is
+historical capture evidence and is not rewritten by this later interpretation.
+The CLI stdout was captured by the original exec call and interpreted in 5d's
+memory; no original result file or separate reader receipt was retained on disk.
+The report below is that analysis transcription, not a new authenticated receipt.
+No result-file Bytes/SHA is invented, and nothing is reconstructed from this
+transcription. The record/provenance/application pins authenticate those inputs.
+
+One MODEL registration matched among ten callbacks (capture ordinal1), with
+zone load complete, bindings enumerated, no duplicate/search refusal and capture/
+recheck phase `after_original_model_add`. Fourteen 264-byte header copies total
+3696 metadata bytes, 528 per row. Every row's raw name and copied image name are
+exactly `,$camo_base_normal` (one leading comma); pointer-present, binding recheck
+and snapshot header/name/callback-name rechecks are true, copy fault/refusal false.
+
+| Row | Raw binding hash_u32 | Raw usage_u16 |
+| --- | ---: | ---: |
+| 0 | 118975474 | 16 |
+| 1 | 949867535 | 0 |
+| 2 | 1507003663 | 2 |
+| 3 | 1829399704 | 8 |
+| 4 | 2695565377 | 1 |
+| 5 | 3948059469 | 0 |
+| 6 | 3963893764 | 4 |
+
+All seven published image fields are `0000000064a002a0`, with the same published
+MODEL/material/table chain. These are observed field values, not proof of same
+object, pointer identity or lifetime. Hash/usage values have no semantic mapping
+or separate sampler in this contract; none is inferred.
+
+All published dimensions (width/height/depth/width1/height1), levels, format,
+map type, sizes, flags, streaming/part counts, fallback levels/sizes and source
+semantic are zero. Each snapshot's four parts are inactive, dimensions/packed
+size/key zero; fallback-pointer and delay-load-pixels are false. This describes
+the published fields, not every byte of the 264-byte headers.
+
+The transport and strict DTO gates are now passed for this exact artifact.
+Descriptor admissibility, authenticated source/model/renderer association,
+same-object/pointer, retained allocation, atomic snapshot, runtime ABI, lifetime,
+pixels and Ready remain false; qualified mip count NULL, payload bytes0 and
+model_default NULL. Next is a separately reviewed Source investigation of a
+non-reference descriptive definition and its authenticated association/stability;
+these observations authorize no body/provider/XPAK/DDS, FF, Native or game step.
+
 ## Historical PR170 Source-only seam (superseded for the compiled route)
 
 The seven material0 bindings have a distinct Source proposal in the existing
