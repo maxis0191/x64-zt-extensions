@@ -6,6 +6,13 @@ closure and released its slot at 16:13:59 UTC. No candidate CLI, retail serializ
 extraction or game run has executed. BUILD-COHORT.md records its exact plan,
 artifact declarations and original/additive qualification receipts.
 
+The subsequent R attempt refused stale stock link-count metadata before candidate
+copy or CLI execution. Seven root aliases remain owned; the main/zone aliases
+were not created. Reviewed safety-only closure preserved R's original failure
+and false measured/final readbacks, verified all actual handles closed and ended
+with terminal exit1. Root corroborated closure at16:50:25 UTC. See
+EXPORT-COHORT.md; no full-definition/runtime result follows from this attempt.
+
 N/O2 failures and P's execution/finalization facts remain separate.
 N failed definition compilation with C4702; O2 reached compiler exit0 but its
 strict dependency guard refused `shared/cderr.h` before the100-case probe.
@@ -188,9 +195,12 @@ its remaining bookkeeping failure is recorded separately. The current runner
 correction has Source-only owned-output tests and was subsequently validated by
 Q's distinct fresh admitted cycle; it does not retroactively qualify P.
 
-Next: prepare and review a separate neutral full-definitions export packet using
-Q's declared candidate tuple and the existing OwnedH1/Stock35 caller, producer,
-manifest and independent readers. Source preparation opens neither the candidate
-nor retail stock and creates no aliases or lease. Analysis, CLI, Extract, Native,
-authoring and game execution need a distinct exact review and GO. PaP, RayGun,
-projectile and physics mechanics remain unqualified.
+Next: prepare a bounded metadata-only observation proposal for the known fixed
+stock before a new neutral export packet. Actual current metadata must be
+qualified under a distinct admission; historical link counts are not forced or
+silently overwritten in R. Preserve its seven owned aliases and unique evidence.
+Reuse Q unchanged with the existing OwnedH1/Stock35 caller, producer, manifest
+and independent readers. Source preparation opens neither candidate nor stock,
+creates no aliases or lease, and invokes no DEFAULT. Metadata observation, CLI,
+Extract, Native, authoring and game execution need distinct exact review and GO.
+PaP, RayGun, projectile and physics mechanics remain unqualified.
