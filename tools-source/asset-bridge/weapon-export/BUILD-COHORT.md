@@ -1,13 +1,16 @@
 # IW7 player-template CLI: separate source cohort
 
-The new neutral mode has a separate **unexecuted** ten-stage Source contract:
+The neutral mode has a separate ten-stage contract, executed and qualified by
+CPP Q at merge `e2c96b6a97db2f4874ae9eafec5e19bf7e72c57b` on 2026-10-15:
 `PairDefinitionsCLI=true` requires the existing primary/profile selections,
 argv28 and a new production-readset fixture100. Name8 and primary36 remain.
 See NEUTRAL-DEFINITIONS.md. Historical CPP J's62 results and candidate533c
-remain unchanged and do not qualify this new source or its fixtures.
+remain unchanged and do not qualify this new source or its fixtures. Q's actual
+172-check build and ordinary closure are recorded at the end of this document;
+they do not qualify CLI execution or retail extraction.
 
 DEFINITION-RECIPE.md defines the tracked Source builder and real fixture/RSP
-contract for that future Analysis/PREP. DEFAULT verifies the actual100-case
+contract for Analysis/PREP. DEFAULT verifies the actual100-case
 fixture and all owned readset headers, refusing marker-only stubs and altered
 compiler responses before any native type/input/admission. No actual PREP/CPP
 result follows from the recipe or its small Source unit fixtures.
@@ -350,5 +353,58 @@ The canonical runner correction prebounds the three metadata receipts under
 lease and avoids rescanning native outputs after release. It retains the shared
 Core cap64,1-MiB metadata reserve and256-MiB total limit. The owned63-entry causal
 and overflow/deadline cases are described in DEFINITION-RECIPE.md. A fresh
-prepared revision and distinct Root CPP GO must validate the complete corrected
-flow. No automatic retry, candidate execution or extraction is authorized.
+prepared revision and distinct Root CPP GO were required to validate the complete
+corrected flow; Q below supplies that separate result. It does not qualify P.
+
+## Actual neutral-definition CPP Q:172 checks and ordinary closure
+
+Q compiled Source208 merge `e2c96b6a97db2f4874ae9eafec5e19bf7e72c57b`, with
+native source pin `fab935826c898806855376662a8a03317b3ad8f1`. Its 419,802-byte
+plan SHA256 is `d8432df0fd21283a77313a96a496d067278d74adab8e7f889ab94956a7671f6c`;
+the 4,259-byte physical NoExit capsule SHA256 is
+`c7021a0fed8a76583889c0a2a58b9f6dcfc5f7b908d5908ee66dcdec2dd8ffd8`.
+All ten stages exited 0 with their original trees closed: name8, argv28,
+primary36, definition100, fresh IW7 TU and link. Strict dependency guards
+accepted every compile report, including 268 definition and 722 IW7 includes.
+The link retained 412 objects and used the one freshly compiled IW7 object.
+
+The executable tuple recorded under the original lease is 22,161,408 bytes /
+SHA256 `6e9265bd48b7b74535eff6ce1bd0ba91631e91d359bc5ed29eaa14fe453b8bc9`;
+PDB 140,800,000 bytes / SHA256
+`e9a1c508e1edd6b22a7988f2f75230e76f22bb6eb1e21106de9e330a2ac45648`.
+These are declarations from original under-lease memory/receipts, not artifacts
+reopened, copied or rehashed after release. No candidate CLI ran.
+
+Native inputs and Source were reverified under the original lease. Ordinary
+finalization published/read back measured and before-release receipts, released
+the lease/disposed guards, then published/read back the prebounded final receipt
+without a native-output rescan. The three metadata receipts total 57,404 bytes,
+within the unchanged 1-MiB reserve. The final disk snapshot remains honestly
+`ClosedReleasedPendingPostflight`; the same retained state subsequently reached
+Passed, FinalReadback and CanExit true. Its actual context/owner references were
+unchanged; the final native owner's five retained job/process/IO handles were
+closed. Individual Source-handle references were not retained by this caller,
+so their direct inspection was unavailable rather than reconstructed.
+
+The original host exited 0: true PTY83459, terminal chunk `b3bb2a`. Fresh postflight
+found all 18 captured identities absent, no compiler/client/VCTIP and no leases.
+The original Paris Main identity was preserved in that snapshot; this does not
+promise a fixed Main identity across later operations. Root
+independently verified receipt hashes and fresh absence/registry at 16:13:59 UTC,
+then released the heavy slot and qualified Q as PassedClosed. No safety recovery
+was needed. P remains ClosedFinalizationIncomplete and unqualified.
+
+The immutable pre-Root actual handoff remains 16,244 bytes / SHA256
+`870dbe1b97e25cbb88315e43fcb044adeccc7a03d38b0182a17a9b069015b416`, with
+qualification pending. The additive Root-qualified receipt is 2,661 bytes /
+SHA256 `95f78ff2c115b4bdfcfee276580d4e25b6fc615538661bf6f4a7789d3c57c1cf`.
+Both retain the exact compiled Source208 revision; this documentation revision
+is not a newly compiled candidate.
+
+Q qualifies compilation, the 172 owned-memory fixture checks and ordinary owned
+closure only. Retail full-definition serialization, runtime ABI/lifetime,
+weapon grant/reload/projectile damage/physics, PAP transaction and owner gameplay
+acceptance remain unqualified. Next: Source review of a separate neutral export
+packet through existing OwnedH1/Stock35 and producer/manifest/readers. Candidate
+tuples may be declared without opening them; Analysis, CLI, Extract, stock alias,
+Native or game execution require their own exact review and GO.
