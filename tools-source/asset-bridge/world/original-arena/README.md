@@ -5,6 +5,10 @@ Owner: `x64-zt-extensions`. Native shape creation/query integration belongs to
 installation belongs to the server; creator distribution belongs to the SDK.
 This directory does not change those shared implementations.
 
+The separate [platform/contact source jointure](../platform-contact/README.md)
+uses one authored 256×256×16 mesh matching the fixed a572 fixture. It does not
+resize this seven-box arena, alter writer D or qualify a new runtime cohort.
+
 `arena.py` authors seven original axis-aligned boxes: a 512 × 384 floor, three
 closed sides, a south doorway, and an obstacle. Face-local geometry is derived
 from the existing original cube authoring function, yielding 168 vertices and
