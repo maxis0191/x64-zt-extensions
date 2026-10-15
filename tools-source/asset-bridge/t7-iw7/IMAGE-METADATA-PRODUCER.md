@@ -359,3 +359,34 @@ Path/Bytes/SHA256 object and scalar string/integer/string types before any pin
 comparison, contract read or binding match. Ninety malformed-pin causals cover
 all nine roles; valid Int64 sizes remain accepted. The rejected Source package
 and its before-runner CI audit are retained, with no PREP/CPP execution claimed.
+
+## First incoming CPP attempt: compile failed
+
+The actual incoming PREP from Source `2057a2c` completed prepare and ordinary
+DEFAULT with 187 bindings, 1146 inputs, 19 prepared files and no missing pins.
+DEFAULT kept all six effects false, candidate null and IncomingCPPQualified false.
+The later, separately authorized CPP A attempt failed in the first fixture
+compile: MSVC returned 2 with C2039/C2065 for std::cout/std::cerr. The fixture
+omitted its explicit iostream include. The generic successful-compiler guard
+then refused the nonzero exit; the recorded PID/image/creation matched, so this
+was not an original compiler identity mismatch.
+
+No fixture test, main, CLI or link stage ran, and no candidate was created. Both
+39/48 checks remain unexecuted for this cohort. The failed receipt keeps
+InputsReverified absent and compiler telemetry incomplete; actual original job
+closure, zero guards, null lease and same caller/PSVariable references were
+verified separately before controlled host exit. Source/plan/capsules and failed
+outputs are retained unchanged. Evidence pins: failed receipt 20200 bytes,
+SHA256 `28c4e9e29556b32ba12ea25ad0b8651156b101dc685e0df14ff634be2f046e94`;
+preexit 3134 bytes, `6d8814177f91d2f6d30c630b48eb3ce2ed110c220a3f63b21c6a5c86c071d1da`;
+closure 3790 bytes, `d531a459c1504cf2bc6a329783c639b6c61aaaf87de15055c45c28726fa3ac35`.
+True PTY 3186 exited 0 as controlled host closure, while the build remained Failed
+with compiler exit 2. Fresh parent/host/compiler identities and compiler/VCTIP
+processes were absent and the lease registry empty after exit.
+
+The correction adds the fixture's own iostream include and updates only that
+file's source-contract pin. IOSTREAM was already present in the actual plan's
+1146 input metadata; no SDK file was reopened to establish that fact. Generated
+main/CLI/capture/observer/baseline pins, report shape and claims remain unchanged.
+The correction is Source only until a new reviewed preparation and separate CPP
+GO execute the fixture39+48 and full CLI; the failed A is never relabelled passed.

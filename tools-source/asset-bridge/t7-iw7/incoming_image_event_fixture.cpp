@@ -1,5 +1,6 @@
 // The generated baseline differs only in its derived observer include and main name.
 // Its existing 39 checks run first; no historical result is relabelled.
+#include <iostream>
 #include "incoming_registration_baseline_fixture.cpp"
 
 namespace incoming = t7::incoming_image_event_observation;
