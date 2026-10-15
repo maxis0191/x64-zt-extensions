@@ -77,8 +77,10 @@ def consume(report):
         need(row["binding_rechecked"] is observed, "binding recheck differs from the owned snapshot")
         shot = row["snapshot"]
         if shot["header_copies"] or shot["copy_fault"]:
-            need(row["image_pointer_present"] and pointers["image_field_hex"] % 8 == 0,
-                 "copy/fault requires the producer's nonnull aligned image-field gate")
+            address = pointers["image_field_hex"]
+            need(row["image_pointer_present"] and address % 8 == 0 and
+                 address <= bounded.MAX64 - report["image_header_bytes"],
+                 "copy/fault requires the producer's nonnull aligned nonoverflowing image-field gate")
         if observed:
             name = row["raw_name"]  # The shared DTO validator requires bounded owned UTF-8, no NUL.
             need(not any(ord(char) < 0x20 for char in name), "C0 image name refused by registration profile")

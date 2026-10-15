@@ -30,11 +30,16 @@ them or treats numeric agreement as object/lifetime proof. Aliased names/image
 fields and repeated hashes/usages are allowed metadata. A leading comma labels
 a reference name; ordinary spelling is not evidence of a complete definition.
 Any completed copy or copy fault must imply the producer's nonnull, eight-byte
-aligned image-field gate. Null or misaligned fields remain valid refusal diagnostics
+aligned image-field gate and `address <= UINT64_MAX - 264`. Null, misaligned or
+overflowing fields remain valid refusal diagnostics
 when no copy/fault occurred. Peer Source review found the missing prerequisite in
 the initial consumer; its corrective commit retains both causal negatives and the
 positive misaligned pre-copy refusal. This is arithmetic on recorded metadata,
 not native pointer access, ABI qualification or memory admission.
+A second Source review found the omitted span-overflow prerequisite. Boundary
+tests retain `fffffffffffffef0` as the last permitted aligned copy start and refuse
+`fffffffffffffef8` and `fffffffffffffff8` for both complete copies and copy faults;
+the same extreme values remain valid diagnostics before any copy/fault.
 
 Snapshots require the same two complete 264-byte copies and internal header/name
 rechecks when observed. A refused row retains its reason and NULL image/name;

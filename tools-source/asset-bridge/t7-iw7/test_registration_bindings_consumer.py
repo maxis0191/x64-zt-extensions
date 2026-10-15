@@ -126,6 +126,25 @@ class RegistrationBindingsTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "RegistrationBindingsObserved")
         self.assertEqual((result["observed_snapshots"], result["refused_snapshots"]), (6, 1))
 
+    def test_uint64_span_boundaries_apply_to_copies_and_faults_not_precopy_diagnostics(self):
+        maximum = 2**64 - 1
+        last_aligned = (maximum - 264) & ~7
+        self.assertEqual(last_aligned, 0xfffffffffffffef0)
+        for fault in (False, True):
+            for address in (last_aligned, last_aligned + 8, maximum - 7):
+                value = report()
+                if fault: refuse_row(value, 0, copy_fault=True)
+                value["bindings"][0]["registration_chain"]["image_field_hex"] = f"{address:016x}"
+                with self.subTest(fault=fault,address=hex(address)):
+                    if address == last_aligned:
+                        self.assertEqual(c.classify(value, 0)["outcome"], "RegistrationBindingsObserved")
+                    else:
+                        with self.assertRaises(ValueError): c.classify(value, 0)
+        for address in (last_aligned + 8, maximum - 7, maximum):
+            value = report(); refuse_row(value, 0)
+            value["bindings"][0]["registration_chain"]["image_field_hex"] = f"{address:016x}"
+            self.assertEqual(c.classify(value, 0)["refused_snapshots"], 1)
+
     def test_changed_keys_chain_types_counts_copies_and_proof_promotions_refuse(self):
         mutations = [lambda v: v.update(schema=c.copied.SCHEMA),
                      lambda v: v.update(model_default=False), lambda v: v.update(qualified_object_mip_count=1),
