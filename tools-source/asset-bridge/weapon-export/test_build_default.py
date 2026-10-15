@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import prepare_definition_cohort as recipe
 
 RUNNER = Path(__file__).with_name('Run-PlayerTemplateBuild.ps1').resolve()
 
@@ -122,7 +123,7 @@ class DefaultTests(unittest.TestCase):
                 self.plan=json.loads(json.dumps(original));mutate(self.plan);result=self.invoke()
                 self.assertNotEqual(result.returncode,0);self.assertFalse(Path(self.plan['RunRoot']).exists())
 
-    def test_definition_cli_requires_ten_stages_28_argv_and_100_readset_checks(self):
+    def definition_plan(self):
         self.primary_plan()
         source=Path(self.plan['PreparedBindings'][0]['Path'])
         source.write_bytes(source.read_bytes()+b'// IW7_PLAYER_PAIR_PROFILE donor=cp_zmb iw7_player_template_cli::pair_selected(args)\n'
@@ -137,16 +138,57 @@ class DefaultTests(unittest.TestCase):
             dict(Name='definition-test',Stage='Probe',DeadlineSeconds=15,
                  Image=str(self.root/'not-created'/'definition-compile'/'definition.exe'),Arguments=[],Artifacts=[],
                  ExpectedChecks=100,ExpectedStdout='IW7_PLAYER_DEFINITION_READSET_CHECKS=100\n')]
+        self.plan.update(NativeSourcePin=recipe.support.SOURCE_PIN,CandidateBytes=None,CandidateSHA256=None)
+        native=self.root/'unopened-native'/'src'/'zonetool'/'zonetool'/'iw7'/'structs.hpp'
+        native_pin=dict(Path=str(native),Bytes=recipe.NATIVE_HEADER[0],SHA256=recipe.NATIVE_HEADER[1])
+        self.plan['RetainedInputPins']=[native_pin]
+        files=[];self.plan['OwnDirectIncludeCoverage']=[]
+        for name in recipe.FIXTURE_FILES:
+            target=self.root/'prepared'/name
+            target.write_bytes(Path(recipe.HERE/name).read_text().encode())
+            binding=dict(Path=str(target),Bytes=target.stat().st_size,SHA256=hashlib.sha256(target.read_bytes()).hexdigest(),IsText=True)
+            self.plan['PreparedBindings'].append(binding);files.append(binding)
+            self.plan['OwnDirectIncludeCoverage'].append(dict(Path=str(target),Pinned=True))
+        for name,text in (('native_definition_fixture_binding.hpp',recipe.binding_header(native)),
+                          ('definition.rsp',recipe.definition_response(self.root/'prepared',Path(self.plan['RunRoot'])))):
+            target=self.root/'prepared'/name;target.write_bytes(text.encode())
+            self.plan['PreparedBindings'].append(dict(Path=str(target),Bytes=target.stat().st_size,SHA256=hashlib.sha256(target.read_bytes()).hexdigest(),IsText=True))
+            if name.endswith('.hpp'):self.plan['OwnDirectIncludeCoverage'].append(dict(Path=str(target),Pinned=True))
+        self.plan['DefinitionFixture']=dict(Schema='iw7.player-definition-fixture-source/1',Files=files,NativeHeader=native_pin)
+
+    def test_definition_cli_requires_ten_stages_28_argv_and_100_real_source_checks(self):
+        self.definition_plan()
         good=json.loads(json.dumps(self.plan));result=self.invoke();self.assertEqual(result.returncode,0,result.stderr)
         report=json.loads(result.stdout);self.assertEqual((report['Stages'],report['ArgvChecksAuthored'],report['DefinitionChecksAuthored']),(10,28,100))
+        self.assertTrue(report['DefinitionFixtureSourceVerified']);self.assertTrue(report['ExpectedNoEffects'])
+        self.assertIsNone(report['CandidateBytes']);self.assertIsNone(report['CandidateSHA256'])
         for mutate in (lambda p:p.pop('PairDefinitionsCLI'),lambda p:p.update(PairDefinitionsCLI=False),
                        lambda p:p.update(PairDefinitionsCLI=[True]),lambda p:p.pop('PairProfileCLI'),
                        lambda p:p['Stages'][3].update(ExpectedChecks=18),lambda p:p['Stages'][7].update(ExpectedChecks='87'),
                        lambda p:p['Stages'][7].update(ExpectedChecks=86),lambda p:p['Stages'][7].update(ExpectedStdout='different\n'),
-                       lambda p:p['Stages'][6]['Artifacts'].append('extra'),lambda p:p.update(PreparedBindings=[])):
+                       lambda p:p['Stages'][6]['Artifacts'].append('extra'),lambda p:p.update(PreparedBindings=[]),
+                       lambda p:p.pop('DefinitionFixture'),lambda p:p.update(CandidateBytes=22029824),
+                       lambda p:p.update(CandidateSHA256='533c'+'0'*60),lambda p:p['DefinitionFixture']['NativeHeader'].update(Bytes='354227')):
             self.plan=json.loads(json.dumps(good));mutate(self.plan)
             self.assertNotEqual(self.invoke().returncode,0)
         self.assertFalse(Path(self.plan['RunRoot']).exists());self.assertFalse(Path(self.plan['Compiler']).exists())
+        self.assertFalse(Path(self.plan['DefinitionFixture']['NativeHeader']['Path']).exists())
+
+    def test_definition_metadata_stub_and_injected_response_refused_before_native(self):
+        self.definition_plan()
+        fixture=Path(self.plan['DefinitionFixture']['Files'][0]['Path']);original=fixture.read_bytes()
+        for raw,needle,path in ((b'// stub IW7_PLAYER_DEFINITION_READSET_CHECKS=100\n','metadata stubs refused',fixture),
+                (b'/nologo stub.cpp\n','compiler response',self.root/'prepared'/'definition.rsp')):
+            before=path.read_bytes();path.write_bytes(raw)
+            for group in (self.plan['PreparedBindings'],self.plan['DefinitionFixture']['Files']):
+                for binding in group:
+                    if binding['Path']==str(path):binding.update(Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest())
+            result=self.invoke();self.assertNotEqual(result.returncode,0);self.assertIn(needle,result.stderr)
+            path.write_bytes(before)
+            for group in (self.plan['PreparedBindings'],self.plan['DefinitionFixture']['Files']):
+                for binding in group:
+                    if binding['Path']==str(path):binding.update(Bytes=len(before),SHA256=hashlib.sha256(before).hexdigest())
+        self.assertFalse(Path(self.plan['RunRoot']).exists())
 
     def test_missing_own_header_coverage_refused(self):
         self.plan['OwnDirectIncludeCoverage'][0]['Pinned']=False
@@ -167,6 +209,13 @@ class DefaultTests(unittest.TestCase):
         Path(self.provider['Path']).write_bytes(b'# changed\n')
         result=self.invoke();self.assertNotEqual(result.returncode,0)
         self.assertIn('Source size differs',result.stderr)
+
+    def test_opaque_source_binding_suffix_refused_before_filesystem_io(self):
+        path=self.root/'unopened-candidate.exe'
+        self.plan['SourceBindings'].append(dict(Path=str(path),Bytes=1,SHA256='0'*64))
+        result=self.invoke();self.assertNotEqual(result.returncode,0)
+        self.assertIn('Source/metadata suffix required before filesystem IO',result.stderr)
+        self.assertFalse(path.exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
 
     def test_native_switch_refused_before_types_admission_or_creation(self):
         result=self.invoke(native=True);self.assertNotEqual(result.returncode,0)
