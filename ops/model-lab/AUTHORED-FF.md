@@ -2,10 +2,11 @@
 
 This connects the original authored project to the existing ModelFF entry,
 transaction and H1 original-job caller. The separate B2 standalone writer result
-remains its frozen producer/geometry evidence. D5 built an authored FF and
-verified its inventory, then failed before independent geometry/material
-readback. Recipient/normal/shader ABI, pixels, physics/contact and owner
-acceptance remain unqualified.
+remains its frozen producer/geometry evidence. D6 built an authored FF and
+verified inventory, geometry, material fields and serialized image bytes, then
+failed publication on undeclared output names. Its original failed operation
+closed. Recipient/normal/shader ABI, pixels, physics/contact and owner acceptance
+remain unqualified.
 
 The first admitted D3 attempt on 2026-10-15 refused in SDK29's Source-template
 check before any stock transaction or FF build. Its failed original job and host
@@ -23,6 +24,12 @@ A separate 64-entry publication failure followed restoration. Its original
 failed-operation closure and true host exit were corroborated. The long-path
 hypothesis and complete-namespace publication correction remain separate Source
 work requiring a fresh package and a distinct GO.
+
+The [D6 checkpoint](../../docs/AUTHORED-PLATFORM-FF-D6-2026-10-15.md) records seven
+original phases with exit zero and confirmed closure, including both independent
+readers. Its eight-name publication failure remains failed after independently
+corroborated original-host closure. The finite Source correction below does not
+modify that frozen capsule or authorize another run.
 
 ## One admission, including input staging
 
@@ -85,6 +92,28 @@ No historical Doom receipt, hash, file ID or provider directory supplies this
 profile. Current identity, metadata and content are measured under admission.
 Read-only stock hardlinks are refused before staging; no source attribute is
 cleared to unlink a borrowed alias. Legacy 72-input behavior stays separate.
+
+## Finite owned engine output baseline
+
+`New-ModelFFOutputNamespace` declares these eight additional files before Run:
+
+| Fixed names | Provenance and limit |
+| --- | --- |
+| `owned-hud-build/zt-tlsdll.dll`, `owned-hud-offline/zt-tlsdll.dll`, `owned-hud-roundtrip/zt-tlsdll.dll` | Native `fab935826c898806855376662a8a03317b3ad8f1`, `src/zonetool/loader/tls.cpp:11-26`, extracts that literal resource. `src/common/utils/binary_resource.cpp:11-36,61-65` writes it under `GetTempPathA`. `OriginalArena.Process.ps1:6-17` sets TEMP/TMP to each exact owned phase directory. Only these three native phases receive this file declaration. |
+| `work/__iw7_ship` | The same native revision's `src/zonetool/main.cpp:121-123` names it for removal; the caller's default working directory is `work`. Actual presence/length are authenticated D6 metadata. Creation timing and why it remains are unproven. |
+| `work/main/data0.dcache`, `work/main/data1.dcache`, `work/main/toc0.dcache`, `work/main/toc1.dcache` | Authenticated D6 metadata-only observation under the original admission and fixed native candidate. The available Source does not establish their internal producer, format or creation cause. These four explicit observed names are a limited owned baseline, not a Source-proven cache recipe or allowance for arbitrary caches. |
+
+The dated D6 measurement pins its pre-exit and closure publications. No cache,
+TLS DLL, stock provider or FF is reopened to construct this declaration. The
+constructor uses literals, never an observed tree. It derives parent directories
+and seals the same immutable file/directory profile and counter as before Run.
+All eight files count toward the unchanged global 256 MiB limit and derived
+entry limit; the metadata reserve remains one MiB. Additional cache indices,
+other DLL names, other phase TLS paths and nested directories remain refused.
+
+Source fixtures use synthetic text under the eight names, then call the actual
+publisher. They verify accounting and rejection of adjacent unexpected names.
+They do not validate cache contents, native ABI, stock, game or a new FF run.
 
 ## Restoration, unknown state and publication
 
