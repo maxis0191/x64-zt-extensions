@@ -470,7 +470,7 @@ void dump_iw7_player_pair_definitions(const std::string& donor_zone, const std::
             !data.contains("papAttachment") || !data["papAttachment"].is_boolean() || data["papAttachment"] != true))
             throw std::runtime_error("Neutral PAP scalars changed during serialization");
         manifest["files"].push_back({{"path", files[i]}, {"bytes", bytes.size()},
-            {"sha256", utils::cryptography::sha256::compute(reinterpret_cast<const uint8_t*>(bytes.data()), bytes.size(), true)}});
+            {"sha256", utils::string::to_lower(utils::cryptography::sha256::compute(reinterpret_cast<const uint8_t*>(bytes.data()), bytes.size(), true))}});
     }
     const auto receipt = manifest.dump(2) + "\n";
     if (receipt.size() > 16384) throw std::runtime_error("Neutral definition manifest bound exceeded");

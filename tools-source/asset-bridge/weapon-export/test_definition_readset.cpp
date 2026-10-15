@@ -77,8 +77,8 @@ namespace
         WeaponDef definition{};
         WeaponAttachment pap{}, other{};
         WeaponAttachment* associations[2]{};
-        char weapon_name[15] = "iw7_shredder_zm";
-        char pap_name[12] = "shredderpap1";
+        char weapon_name[sizeof("iw7_shredder_zm")] = "iw7_shredder_zm";
+        char pap_name[sizeof("shredderpap1")] = "shredderpap1";
         char other_name[6] = "other";
         char text[Reader::string_limit] = "owned";
         vec2_t original_curve[2]{}, current_curve[2]{};

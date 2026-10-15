@@ -93,6 +93,13 @@ ATTACHMENT_DUMP_SCRIPT_STRING(attachPoint);
 }''','owned-fixture.cpp')
         self.assertEqual(generator.MACRO.findall(functions[0][2]),[('ATTACHMENT_DUMP_SCRIPT_STRING','attachPoint')])
 
+    def test_fixture_names_include_nul_and_new_manifest_canonicalizes_native_uppercase_hash(self):
+        fixture=support.read_source(support.HERE/'test_definition_readset.cpp')
+        self.assertIn('char weapon_name[sizeof("iw7_shredder_zm")] = "iw7_shredder_zm";',fixture)
+        self.assertIn('char pap_name[sizeof("shredderpap1")] = "shredderpap1";',fixture)
+        module=support.read_source(support.HERE/'native_player_templates.inc').split('void dump_iw7_player_pair_definitions(',1)[1]
+        self.assertIn('utils::string::to_lower(utils::cryptography::sha256::compute(',module)
+
     def test_generation_mismatch_refuses_before_staging_output(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);source=root/'native'/support.NATIVE_PATH;source.parent.mkdir(parents=True)

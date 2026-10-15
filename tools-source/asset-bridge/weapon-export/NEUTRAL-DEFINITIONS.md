@@ -134,6 +134,14 @@ serializer comments out. The correction dispatches the actual inline types and
 uses the dumped `attachPoint` field, checking the real resolver call count/ID.
 The original77 Source tests were not proof of C++ typing or fixture execution.
 
+Review also rejected head3be7ff3's fixture name buffers: the weapon/PAP names
+need16/13 bytes including NUL. The corrected owned arrays use `sizeof(literal)`.
+Source auto-review found that native `sha256::compute(...,true)` emits uppercase
+hex (`dump_hex` uses `%02X`); the neutral producer now applies the existing
+`to_lower` utility before writing the manifest's canonical lowercase hashes.
+The closed reader and legacy producer remain unchanged. These were Source
+corrections before any compilation or extraction of this mode.
+
 `test_definition_readset.cpp` authors88 checks using the real pinned structures
 and production `with_pair` gate. It covers unchanged values, missing copy,
 integer-copy refusal, unreadable spans, count/overflow/string/UTF8/bool/float
