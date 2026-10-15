@@ -70,7 +70,8 @@ $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards;W
 $state=[ordered]@{Schema='iw7.player-template-export/1';Status='Pending';PlanSHA256=$PlanSHA256;CanExit=$false;Ready=$false;
  Host=[ordered]@{PID=$PID;Image=$physical.ExecutablePath;CreatedUtc=$physicalCreated;CimCreatedUtc=$physical.CreationDate.ToUniversalTime().ToString('o')};
  Inputs=[Collections.Generic.List[object]]::new();ContentPins=[Collections.Generic.List[object]]::new();
- CreatedCopies=[Collections.Generic.List[object]]::new();UnknownCopyCreation=$false;LeaseReleased=$false;GuardsDisposed=$false;CandidateExecuted=$false}
+ CreatedCopies=[Collections.Generic.List[object]]::new();UnknownCopyCreation=$false;LeaseReleased=$false;GuardsDisposed=$false;
+ CandidateStarted=$false;NativeExportComplete=$false;CandidateExecuted=$false}
 $root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new();ContentGuards=@{}}
 $global:IW7PlayerTemplateExport=$root;[AppDomain]::CurrentDomain.SetData($root.Key,$root)
 $script:PlayerTemplateExportOriginalRoot=$root
@@ -103,6 +104,16 @@ function Get-PlayerSourceHandle($Source){
     if(!$held -or $held.Identity -cne $Source.Before.Identity -or !$held.Stream -or
        $held.Stream.SafeFileHandle.IsClosed -or $held.Stream.SafeFileHandle.IsInvalid){throw 'Original held content guard required after stock apply.'}
     $held.Stream.SafeFileHandle
+}
+function Record-PlayerCandidateStart($Ctx,$Current){
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot
+    if(![object]::ReferenceEquals($Ctx,$playerRoot.Context) -or !$Ctx.Owner -or !$Current.Identity -or $Ctx.Owner.PID -le 0 -or $Ctx.Owner.CreationFileTime -le 0 -or
+       $Current.Identity.PID -ne $Ctx.Owner.PID -or $Current.Identity.Image -cne $Ctx.Owner.Image -or
+       $Current.Identity.CreatedUtc -cne [datetime]::FromFileTimeUtc($Ctx.Owner.CreationFileTime).ToString('o') -or
+       $Ctx.Owner.Image -cne (Join-Path $playerRoot.Plan.WorkRoot 'zonetool-iw7-player.exe')){throw 'Original started candidate identity required.'}
+    # H1 publishes Identity only after its original Start returned successfully.
+    # Record that fact before the output observer can throw; completion is separate.
+    $playerRoot.State.CandidateStarted=$true;$playerRoot.State.CandidateIdentity=$Current.Identity
 }
 function Copy-PlayerOwned($Pin,[string]$Target,[switch]$Mutable){
     $root=$script:PlayerTemplateExportOriginalRoot;$state=$root.State
@@ -151,7 +162,7 @@ function Test-PlayerGenerated($Current,[long]$Limit=$script:PlayerTemplateExport
     while($queue.Count){
         $directory=$queue.Dequeue();Assert-H1Path $directory
         foreach($path in [IO.Directory]::EnumerateFileSystemEntries($directory)){
-            Assert-H1Path $path;$item=Get-Item -LiteralPath $path;$items.Add($item)
+            Assert-H1Path $path;$item=Get-Item -LiteralPath $path -Force;$items.Add($item)
             if($items.Count -gt 256){throw 'Finite export path count exceeded.'}
             if($item.PSIsContainer){$queue.Enqueue($path)}
         }
@@ -268,8 +279,10 @@ try{
     $tool=Join-Path $plan.WorkRoot 'zonetool-iw7-player.exe'
     $arguments=@('-headless','-iw7-player-weapon-templates','cp_zmb',$plan.Request.Path,$plan.Pack)
     Test-PlayerGenerated $state # Reject redirects before the existing profile's enumeration.
-    $state.CandidateInvocationAttempted=$true
-    $state.Tool=Invoke-OriginalArenaTool $context $tool $plan.Candidate.SHA256 $arguments $plan.WorkRoot $plan.RunRoot 'player-template' $state.Inputs $plan.ToolSeconds {param($Ctx,$Current,$Logs) Test-PlayerGenerated $Current}
+    # Until H1's successful Start identity reaches our poll, startup is unknown.
+    # An Invoke exception must not turn an attempted/partial launch into false.
+    $state.CandidateInvocationAttempted=$true;$state.CandidateStarted=$null
+    $state.Tool=Invoke-OriginalArenaTool $context $tool $plan.Candidate.SHA256 $arguments $plan.WorkRoot $plan.RunRoot 'player-template' $state.Inputs $plan.ToolSeconds {param($Ctx,$Current,$Logs) Record-PlayerCandidateStart $Ctx $Current;Test-PlayerGenerated $Current}
     $state.CandidateExecuted=$true
     Test-PlayerGenerated $state.Tool
     $stdout=Read-PlayerOutput $state.Tool.Stdout 2MB
@@ -297,7 +310,7 @@ try{
     }
     foreach($entry in $state.NativeManifest.files){$pin=@($state.Artifacts|Where-Object Path -CEQ (Join-Path $output $entry.path))[0];if(!$pin -or $pin.Bytes -ne $entry.bytes -or $pin.SHA256 -cne $entry.sha256.ToLowerInvariant()){throw 'Native manifest file binding differs.'}}
     if((@($state.NativeManifest.files.path|Sort-Object)-join '|') -cne 'attachments/shredderpap1.json|weapons/iw7_shredder_zm.json'){throw 'Native manifest must bind both unique files.'}
-    Confirm-PlayerStock;$state.Status='MeasuredPassed';$state.StockContentQualified=$true
+    Confirm-PlayerStock;$state.Status='MeasuredPassed';$state.StockContentQualified=$true;$state.NativeExportComplete=$true
 }catch{$failure=$_;$state.Status='Failed';$state.Error=$_.Exception.Message}
 finally{
     if(!$context.Closed -and $context.Owner){try{$context.Owner.StopAndConfirm(5000);$context.Closed=$context.Owner.Closed}catch{$state.ClosureError=$_.Exception.Message}}
