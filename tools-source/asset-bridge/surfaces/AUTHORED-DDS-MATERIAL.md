@@ -83,7 +83,7 @@ reports material/render false.
 ## Acquired proof and next proof
 
 Material C already demonstrated a real native six-phase FF build/readback of an
-original 32x32 diffuse, as recorded in [CONTENT-SURFACES-BRIDGE](../../../../docs/CONTENT-SURFACES-BRIDGE.md#material-c-complete-native-pipeline-and-restoration-confirmed).
+original 32x32 diffuse, as recorded in [CONTENT-SURFACES-BRIDGE](../../../docs/CONTENT-SURFACES-BRIDGE.md#material-c-complete-native-pipeline-and-restoration-confirmed).
 Its preserved generator and 32x32 oracle remain frozen. This new pure seam tests
 two distinct names, dimensions, formats and original byte patterns through the
 same API, but has not built an FF or rendered either project. The next separately
