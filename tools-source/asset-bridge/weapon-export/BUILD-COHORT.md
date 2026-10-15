@@ -96,9 +96,10 @@ and game acceptance remain false and need their separate current-stock GO.
 
 ## Optional first-refusal fixture profile
 
-The next instrumented module adds a pure primary-guard helper and authored native
-fixture as two explicitly exported Source files. Its build-extension receipt binds
-all nine input sources and declares 36 primary checks authored, never executed.
+The instrumented module adds a pure primary-guard helper and authored native
+fixture as two explicitly exported Source files. Its Source preparation receipt
+binds all nine input sources and declares 36 primary checks authored, not executed
+by that preparation. The separate actual I checkpoint below records native execution.
 It preserves the existing CLI, native source pin, retained 412 objects and 413-object
 link. The shared T7 builder/adapters are not modified or claimed compatible by this
 Player contract.
@@ -119,3 +120,52 @@ SDK, candidate, retail or tool binaries. A future CPP cohort must freshly pin th
 two added sources and all actual compiler dependencies; a new binary/hash and
 its original closure proof precede any distinct admitted export. The J failure
 and original G_A84 tool remain immutable and are not retroactively instrumented.
+
+## Actual instrumented CPP I checkpoint, 2026-10-15
+
+After independent exact-packet reviews and a distinct Root CPP GO, I compiled
+source from PR175 merge `d284f05388c0c2f660c6878c369ab9179edebc34`, native
+`fab935826c898806855376662a8a03317b3ad8f1` and retained texture `1ad68ee` inputs.
+This identifies the compiled Source; a later documentation merge does not qualify
+its own revision or rebuild unrelated product changes. The prepared IW7 TU is
+SHA256 `84d7cad4b6b0201ccafa41f729bc6a971eb3bda1bb73d87f239f646646b85a99`.
+
+The eight stages each exited zero with original tree closure confirmed. The three
+native probes emitted exactly the 8/10/36 markers with empty stderr: 54 actual
+checks, including all primary first-refusal/read-prefix checks. The fresh IW7 TU
+compiled its Source offset assertions; the dependency guard accepted all 722
+includes. Link retained 412 objects and replaced only the fresh IW7 object.
+
+The linked executable is 22,017,024 bytes, SHA256
+`75835fe4a3dae627e97e794c00840cb2a6f5c1e7a085af50d3024c04503322d7`;
+its PDB is 139,784,192 bytes, SHA256
+`7306490288fabd907300b8bcba98069c589fadd1c11650bc7f3f0e2f8176df5f`.
+These tuples came from the measured receipt captured and read back under the
+original lease, with native/Source input guards held. No opaque artifact was
+reopened or rehashed after release.
+
+The unexecuted H proposal remains unchanged: final Source review found its loose
+host check insufficient. Sibling I changed only the outer capsule host guard and
+necessary path/response bindings. Before dot runner/import/admission it required
+the exact bundled physical image, managed entry/argv0, six CLR arguments, literal
+capsule/dot command, CIM PID/image and creation equality at integral UTC
+microseconds. Its retained witness kept kernel100ns separate from six-digit CIM.
+The shared H1/T7 runner, 83 Source/13 prepared bindings, 171 parent declarations,
+1151 retained inputs, budgets and strict policy stayed unchanged.
+
+All actual compiler/VCTIP jobs closed, with final original owner root exit zero,
+Active0 and closed job/process handles. Same-host preexit checks verified the
+original context/state/plan/guards and host witness, zero guards/leases and both
+publication readbacks. The first metadata publisher refused because Probe stages
+do not expose the compiler-only snapshot field. The corrected publisher retained
+all eight actual closure results, checked compiler/link snapshots separately and
+read the three exact probe markers; no Probe snapshot was invented or owner rebuilt.
+The qualification publisher also corrected a shared-list readback comparison and
+recovered only identical already-published bytes; neither correction reran CPP.
+
+The physical NoExit host then explicitly exited; true PTY exit zero and fresh
+06:21:00 UTC absence of all 15 observed host/parent/stage/member IDs plus an empty
+authoritative registry completed teardown. Root independently corroborated fresh
+absence and released its heavy ledger at 06:24:52 UTC. This is a PassedClosed CPP
+checkpoint only. The candidate CLI has not run; retail first-refusal values,
+template JSON, runtime ABI, weapon/PAP/physics and owner gameplay remain unqualified.
