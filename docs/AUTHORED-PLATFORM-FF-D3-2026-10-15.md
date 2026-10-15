@@ -60,9 +60,10 @@ not B2's generated/adapted `writer.cpp` or its measured PE/XMB/XSB outputs.
 
 The exporter used `git cat-file --filters` in a sparse checkout where physical
 attributes were absent and system `core.autocrlf=true` applied. A commit/blob pin
-therefore did not alone determine the exported bytes. The required correction is
-deterministic export based on the pinned commit's attributes, tracked separately
-in the SDK repository.
+therefore did not alone determine the exported bytes. The shared exporter fix
+merged in [native PR48](https://github.com/maxis0191/iw7-mod-components/pull/48).
+SDK adoption of its reviewed dependency/export pin is separate and pending at
+this checkpoint.
 No generated SDK package, B2 recipe/hash, verification gate or failed D3 package
 was patched to accept the mismatch.
 
