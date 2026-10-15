@@ -220,8 +220,8 @@ Independent closure 1,939 / 743a0a861a3227b6493d19e2f02eeade7f90b0b7555e6610de77
 records parent31044/host18360/native32908 absent, games/compilers empty and registry
 version 1 with no leases at 03:52:19.5291225Z. Main stayed on its stopped baseline.
 
-Next: interpret this exact closed record and investigate the ordinary-definition
-materialization/reference path through bounded Source/RE work. Do not repeat A
+Next: investigate the ordinary-definition materialization/reference path through
+bounded Source/RE work. Do not repeat A
 unchanged or invent a descriptor/mip fact to pass selection. Any different native
 observation needs its separately qualified inputs and Root GO. Pending Source
 proposals keep their NULL fields; this result does not admit extraction or pixels.
