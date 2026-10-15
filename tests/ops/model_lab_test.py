@@ -921,6 +921,81 @@ if(!$refused){throw 'Changed source interface accepted'}
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
 
+class WriterExecutionSourceTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh') and (ROOT/'ops/Lab-Paths.ps1').is_file(),
+                         'Composed source ordinary-path helper required')
+    def test_actual_writer_dry_run_cannot_probe_sdk_hash_pe_or_admit(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder)
+            package=base/'package'
+            lab=package/'ops/model-lab'
+            lab.mkdir(parents=True)
+            for name in ('Build-Writer.ps1','prepare_writer.py','geometry.py','writer.cpp'):
+                shutil.copyfile(ROOT/'ops/model-lab'/name,lab/name)
+            shutil.copyfile(ROOT/'ops/Lab-Paths.ps1',package/'ops/Lab-Paths.ps1')
+            (package/'ops/Resource-Scheduler.Core.ps1').write_text(
+                "function Enter-IW7ResourceLease {throw 'TEST: admission forbidden'}\n"
+                "function Invoke-IW7ResourceJob {throw 'TEST: nested admission forbidden'}\n")
+            source=AuthoredRigidSourceTests.interfaces(base)
+            path=base/'mesh.json';path.write_text(json.dumps(AuthoredRigidSourceTests.prism()))
+            prepared=package/'runtime/prepared'
+            prepare_writer.prepare_authored(prepared,source,path,namespace='project',zone='project',mesh_name='mesh',
+                material_reference='second_diffuse',check_pin=False)
+            script=base/'dry-run.ps1'
+            script.write_text(r'''
+param($Package,$Prepared,$Tool,$Fixture)
+$ErrorActionPreference='Stop'
+function global:git {
+    $global:LASTEXITCODE=0
+    if($args -contains 'rev-parse'){'fab935826c898806855376662a8a03317b3ad8f1'}
+}
+function global:Get-ItemProperty {throw 'TEST: SDK probe forbidden'}
+function global:Get-FileHash {
+    param($LiteralPath,$Algorithm='SHA256')
+    if(![IO.Path]::GetFullPath($LiteralPath).StartsWith($Fixture+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'TEST: foreign/opaque hash forbidden'}
+    Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $LiteralPath -Algorithm $Algorithm
+}
+$rows=@(& "$Package/ops/model-lab/Build-Writer.ps1" -PreparedRoot $Prepared -ToolSource $Tool -Python python -DryRun)
+$result=($rows -join [Environment]::NewLine)|ConvertFrom-Json
+if($result.Schema -cne 'iw7.model-writer-admission/1' -or !$result.SDKDiscoveryDeferred -or
+    $result.LeaseAcquired -or $result.NativeTypesLoaded -or $result.BinaryInputsHashed -or $null -ne $result.Compiler){throw 'Source-only preview contract differs'}
+if(Test-Path -LiteralPath (Join-Path $Prepared 'writer-native-run.json')){throw 'Preview created native run state'}
+$result|ConvertTo-Json
+''',encoding='utf-8')
+            result=subprocess.run(['pwsh','-NoLogo','-NoProfile','-File',str(script),str(package),str(prepared),str(source),str(base)],
+                                  capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertTrue(json.loads(result.stdout)['SDKDiscoveryDeferred'])
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell source AST required')
+    def test_single_admission_precedes_discovery_and_h1_owns_all_phases(self):
+        script=r'''
+param($Entry)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Entry,[ref]$tokens,[ref]$errors)
+if($errors){throw 'Writer parse failed'}
+$calls=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.CommandAst]},$true))
+$admit=@($calls|Where-Object {$_.GetCommandName() -ceq 'Enter-IW7ResourceLease'})
+if($admit.Count -ne 1 -or @($calls|Where-Object {$_.GetCommandName() -ceq 'Invoke-IW7ResourceJob'}).Count){throw 'One admission and no nested wrapper required'}
+$preview=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$DryRun'},$true))
+if($preview.Count -ne 1 -or $preview[0].Extent.EndOffset -ge $admit[0].Extent.StartOffset){throw 'Preview must return before admission'}
+foreach($call in @($calls|Where-Object {$_.GetCommandName() -cin @('Get-ItemProperty','Add-Type','Invoke-ModelWriterPhase')})){
+    if($call.Extent.StartOffset -le $admit[0].Extent.EndOffset){throw 'SDK/native phase before admission'}
+}
+$phases=@($calls|Where-Object {$_.GetCommandName() -ceq 'Invoke-ModelWriterPhase'})
+if($phases.Count -ne 3){throw 'Discovery, compiler and writer must use the same H1 path'}
+if(@($calls|Where-Object {$_.GetCommandName() -ceq 'Invoke-T7OwnedStage'}).Count -ne 1){throw 'Existing H1 stage dispatcher required'}
+$complete=@($calls|Where-Object {$_.GetCommandName() -ceq 'Complete-H1Stage'})
+if($complete.Count -ne 1 -or !$complete[0].Extent.Text.Contains('-BeforeReleaseCheck')){throw 'Guard closure must precede the one release'}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'source-order.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run(['pwsh','-NoLogo','-NoProfile','-File',str(path),str(ROOT/'ops/model-lab/Build-Writer.ps1')],
+                                  capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+
 class AuthoredFFSourceTests(unittest.TestCase):
     @staticmethod
     def fixture(folder, *, prism=False):

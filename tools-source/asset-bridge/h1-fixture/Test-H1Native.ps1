@@ -152,6 +152,17 @@ try {
     }
     [IO.Directory]::Delete($temp,$false)
 }
+$context=New-Case;$state=New-State $context
+$saved=$context.Lease
+Complete-H1Stage $context $state {throw 'Final bound-input/guard check failed'}
+Check ($context.Closed -and [object]::ReferenceEquals($context.Lease,$saved) -and !$state.LeaseReleased -and $state.Quarantined) 'Failed before-release check must retain the same original lease.'
+$context=New-Case;$state=New-State $context;$script:beforeRelease=$false
+Complete-H1Stage $context $state {$script:beforeRelease=$true;Check ($context.Lease -ne $null) 'Before-release check must still hold admission.'}
+Check ($script:beforeRelease -and $state.LeaseReleased -and $null -eq $context.Lease) 'Successful before-release check must precede ordinary release.'
+$context=New-Case;$state=New-State $context;$context.Owner=New-FakeOwner $false $true;$context.Closed=$false
+$saved=$context.Lease;$script:beforeRelease=$false
+Complete-H1Stage $context $state {$script:beforeRelease=$true}
+Check (!$script:beforeRelease -and [object]::ReferenceEquals($saved,$context.Lease) -and !$state.LeaseReleased) 'Unknown original closure must retain admission without running guard-release callback.'
 Check (!(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]))) 'Light tests loaded native providers.'
 [ordered]@{Schema='iw7.h1-native-runner-source-tests/1';Assertions=$passed;NativeTypesLoaded=$false;
     RealJobsTested=$false;LeaseAcquired=$false;CompilerLaunched=$false}|ConvertTo-Json

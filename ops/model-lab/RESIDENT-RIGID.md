@@ -286,9 +286,37 @@ default. The override rejects redirected ancestry and non-directories; the
 existing exact Git pin, clean checkout and ten source-interface hashes still
 apply before compilation. It does not clone/copy a tool tree or change the
 source checkout. The preview/build provenance records `ToolSource`.
-Preparing a Source capsule does not invoke the build entry or its SDK/compiler
-discovery; actual compile and opaque input inspection still need their own
-reviewed resource admission and GO.
+`-DryRun` now returns only the validated Source admission preview, with compiler
+and arguments null. It does not discover VS/SDK, hash opaque binaries, load
+native types, acquire a lease or create a native-run receipt.
+
+Actual execution additionally requires `-NativeJobAssembly` pointing to the
+retained H1 original owner (SHA256 `5f613ebb83019dbf4bfa4f6a93c5329098343729b70acc2cfa70aa8b64f195f8`)
+and a fresh persistent PS7 `-NoExit` host. The writer obtains **one** existing
+Build reservation before any native import, VS discovery, SDK query or compiler
+argument preparation. Discovery (`vswhere`), compilation and the writer itself
+use the existing H1 owner through `T7Build.Profile.ps1`; no shell compiler or
+second reservation is used. Exact compiler/VCTIP policy, original handles,
+deadlines, sampled output bounds and ordinary zero-active closure remain H1
+checks. Compiler artifacts are retained in `compile/`, with byte-checked copies
+at the historical `model-writer.exe` / `writer.obj` locations. The existing
+native serializer/reader and its report gate remain unchanged.
+
+The same context, original PSVariable, lease and guard list are retained if
+creation/closure or final input validation is unknown. `Complete-H1Stage` has an
+optional typed `BeforeReleaseCheck` callback; the default behavior is unchanged.
+The writer rechecks bound inputs and closes its guards inside that callback
+before releasing the original lease. Callback failure or unknown job closure
+retains the original lease and objects in AppDomain quarantine. A native-run
+receipt records failure/closure; `writer-provenance.json` is published only after
+all jobs, guards and the one lease are confirmed closed. Source/compiled output
+bindings are guarded; full SDK/DLL hermeticity is not claimed
+(`ToolchainFullyHermetic=false`).
+
+Preparing a Source capsule does not invoke this execution route. CPP, opaque
+input inspection and FF still require their separate reviewed GO. Tests here
+are Source/mocked lifecycle tests; they do not qualify the real compiler,
+discovery executable, NativeJob DLL or native geometry.
 
 The zone CSV declares the authored material as a **local payload dependency**,
 not an ignored retail reference. This producer supplies no material/image bytes:

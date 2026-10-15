@@ -124,7 +124,7 @@ function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,[string]$ImageSHA256,[
         Assert-H1Deadline $started $State.DeadlineSeconds
     }
 }
-function Complete-H1Stage($Context,$State) {
+function Complete-H1Stage($Context,$State,[scriptblock]$BeforeReleaseCheck=$null) {
     if(!$Context.Closed) {
         try {
             if(!$Context.Owner){throw 'Owner unavailable after creation attempt; closure unknown.'}
@@ -137,7 +137,10 @@ function Complete-H1Stage($Context,$State) {
     $State.TreeClosureConfirmed=$Context.Closed
     if($Context.Owner -and $Context.Closed){$State.ExitCode=$Context.Owner.ExitCode}
     if($Context.Closed -and $Context.Lease) {
-        try {Exit-IW7ResourceLease -Token $Context.Lease.Token;$Context.Lease=$null;$State.LeaseReleased=$true}
+        try {
+            if($BeforeReleaseCheck){& $BeforeReleaseCheck}
+            Exit-IW7ResourceLease -Token $Context.Lease.Token;$Context.Lease=$null;$State.LeaseReleased=$true
+        }
         catch {$State.CleanupError=$_.Exception.Message}
     }
     if(!$Context.Closed -or $Context.Lease) {
