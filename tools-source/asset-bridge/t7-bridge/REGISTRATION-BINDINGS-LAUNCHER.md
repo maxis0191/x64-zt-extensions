@@ -101,6 +101,56 @@ the existing reader. Descriptor/mip/payload/association/lifetime/ABI/renderer/
 pixels/Ready remain unqualified. The build owner's REGISTRATION-BINDINGS-BUILD.md
 records actual CPP80 D and earlier failed OS/wiring attempts.
 
+## Actual Analysis B: failed closed before DEFAULT
+
+The first admitted preparation on merged Source
+`063b7aeeb0118ef86f043b4793a7f32608164ac7` failed in the factory before
+reference/handoff decoding, plan derivation or ordinary DEFAULT. The helper
+`image_metadata_consumer.strict_json` is a runtime metadata reader whose allowed
+limits are only 32/64 KiB. The factory mistakenly used its default 32-KiB limit
+for the 386,862-byte Source workspace manifest, producing
+`ValueError: bounded JSON report required` at its first decode.
+
+The same role error affected all four Source decode sites: workspace,
+70,998-byte reference, 37,937-byte handoff and the plan/receipt loop
+(406,073/50,715 bytes). Source file reads already cap these immutable inputs at
+1 MiB and verify their pins. The finite local `read_source_metadata_json`
+decoder now uses that Source bound, strict UTF-8, recursive duplicate-field
+rejection, nonfinite-constant rejection and an object root. Existing downstream
+Source schemas/tuples still apply. The shared runtime reader, enum32/64 limits,
+snapshots, native 32-KiB bindings report and all opaque guards remain unchanged.
+
+The Source regression calls the actual factory `main`, strict decoder and
+derivation with authored large Source buffers at the five measured lengths;
+only Source input pin readers/snapshots are faked. It writes only synthetic
+control JSON and empty temporary directories, while any opaque metadata query
+raises. Substituting the old runtime reader reproduces the manifest failure.
+Further controls refuse Source input above 1 MiB, invalid byte/root/schema
+types, invalid UTF-8, duplicate nested fields and NaN/Infinity. Runtime32/64
+boundary acceptance and above-bound refusal stay independently checked.
+
+Analysis B remains frozen and failed. Factory exit1 and true managed PTY exit1
+(chunk64f9e4) closed; DEFAULT/native/CPP never ran. Original context/owners,
+publication, 36 Source guards and lease closed, with independent Root absence/
+empty-registry corroboration. Candidate metadata and Main/bank metadata were
+observed only under the admitted lease; no candidate/PDB content was opened or
+hashed, and no after-failure Main/bank comparison is claimed. No output plan,
+run root or capture packet was created.
+
+Retained bounded proof pins: preexit2047/SHA
+`27deb6076e481a7b34a0b168328c57552cd40b8239fa4f038c828982163f054b`,
+pre-release receipt1999/SHA
+`b80ddd068409955f0fd0690af184325213e9d6bfe82495daf678531d3d3b868e`,
+stderr1209/SHA
+`7d30b6f477698a3ec9b59eae646092f2221fc247afb3b861e21df159885716b3`,
+postexit3646/SHA
+`85994d452e5084961af469b1dbb3be3dcddb24e07f121c7ef9f1cb40d595464b`.
+The pre-release receipt honestly retains LeaseReleased=false/ReleasePending=true;
+the actual caller/postexit records supply the later release evidence. Do not
+rewrite it, poll the closed PTY or patch the failed generated package. After
+Source review/CI/merge, prepare a fresh C sibling and obtain another distinct
+Analysis GO; Native still needs its own GO.
+
 ## Historical PR170 Source-only seam (superseded for the compiled route)
 
 The seven material0 bindings have a distinct Source proposal in the existing
