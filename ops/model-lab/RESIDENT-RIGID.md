@@ -321,6 +321,9 @@ the joined recipe, rechecks the writer evidence/artifact hashes, source flags,
 material/DDS metadata, CSV/NCS and complete local payloads. Replacing a payload
 and updating only its staged hash cannot qualify the recipe. The source plan
 retains `material_closure_verified=false`, `ff_built=false`, `ready=false`.
+These DEFAULT source checks do read/hash the bounded, isolated original
+DDS/XMB/XSB/sidecar bytes supplied by the author. They do not read retail/stock,
+banks, a native FF, executable or symbols, or launch a game/process fixture.
 
 `Build-ModelFF.ps1` dispatches this explicit profile through its existing stock
 transaction, shared admission, strict community-candidate qualification, native
@@ -338,6 +341,13 @@ single mip, semantic and every serialized pixel/block byte. Material JSON fields
 and conditional state/CBI sidecars are compared; CBT is required nonempty when
 present, with `native_cbt_semantics_verified=false` because pointers/layout are
 not proven by equality. `surface-roundtrip.json` binds source-plan and FF hashes.
+The authored `geometry-roundtrip.json` retains the native
+`iw7.model-roundtrip/1` report and adds `source_plan_sha256`, `ff` and the two
+`dumped_artifacts` path/length/SHA256 records after successful native comparison.
+The build state records `GeometryReader`, `SurfaceReader`,
+`GeometryEvidenceSHA256` and `SurfaceEvidenceSHA256`; there is no separate
+`NativeGeometryReader` field. The prior standalone writer proof remains
+`writer_run/writer-provenance.json`.
 Rendered pixels, recipient resolution, player contact, shader ABI and owner
 acceptance remain false/unmeasured even when those offline byte checks succeed.
 

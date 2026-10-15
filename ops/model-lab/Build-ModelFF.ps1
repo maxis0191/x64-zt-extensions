@@ -249,8 +249,16 @@ try{
                 if($verified.$field -cne $plan.$field){throw 'Authored FF geometry readback identity differs.'}
             }
             if($verified.vertices -ne $plan.selected_counts.vertices -or $verified.triangles -ne $plan.selected_counts.triangles){throw 'Authored FF geometry readback counts differ.'}
+            $verified | Add-Member NoteProperty source_plan_sha256 $state.SourcePlanSHA256
+            $verified | Add-Member NoteProperty ff ([pscustomobject]@{bytes=$state.FF.Bytes;sha256=$state.FF.SHA256})
+            $dumpedArtifacts=@(foreach($name in $artifactNames){
+                $path=Resolve-IW7BasePath (Join-Path $RunRoot 'roundtrip') $name
+                [pscustomobject]@{path=$name;bytes=(Get-Item -LiteralPath $path).Length;sha256=(Get-FileHash -LiteralPath $path).Hash}
+            })
+            $verified | Add-Member NoteProperty dumped_artifacts $dumpedArtifacts
         }
-        $verified|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $RunRoot 'geometry-roundtrip.json');$state.GeometryRoundtripVerified=$true}
+        $verified|ConvertTo-Json -Depth 8|Set-Content -LiteralPath (Join-Path $RunRoot 'geometry-roundtrip.json');$state.GeometryRoundtripVerified=$true
+        if($authored){$state.GeometryEvidenceSHA256=(Get-FileHash -LiteralPath (Join-Path $RunRoot 'geometry-roundtrip.json')).Hash}}
     if($authored){
         $argsSurface=@('-B','-S',"$PSScriptRoot/prepare_ff.py",'--verify-authored-dump',$source,'--dump',(Join-Path $RunRoot 'roundtrip'),'--ff',(Join-Path $RunRoot 'mod.ff'))
         $state.SurfaceReader=Invoke-IW7LabAssetProcess -Executable $Python -ToolArguments $argsSurface -WorkingDirectory $repo -LogDirectory $RunRoot -Phase model-authored-material -LeaseToken $lease.Token -CleanupState $cleanup -TimeoutSeconds 30
@@ -260,6 +268,7 @@ try{
             $surface.ff.sha256 -ine $state.FF.SHA256 -or $surface.image.serialized_pixel_bytes_verified -isnot [bool] -or !$surface.image.serialized_pixel_bytes_verified -or
             $surface.material_fields_verified -isnot [bool] -or !$surface.material_fields_verified -or $surface.ready -isnot [bool] -or $surface.ready){throw 'Authored surface readback receipt differs.'}
         Copy-Item -LiteralPath $state.SurfaceReader.Stdout -Destination (Join-Path $RunRoot 'surface-roundtrip.json')
+        $state.SurfaceEvidenceSHA256=(Get-FileHash -LiteralPath (Join-Path $RunRoot 'surface-roundtrip.json')).Hash
         $state.MaterialFieldsVerified=$true;$state.SerializedImageBytesVerified=$true
         $state.NativeCBTSemanticsVerified=$false;$state.PixelsRenderedVerified=$false
     }

@@ -1009,8 +1009,13 @@ class AuthoredFFSourceTests(unittest.TestCase):
         script = r'''
 param($Repo,$PlanPath)
 $ErrorActionPreference='Stop'
+Set-StrictMode -Version Latest
 . "$Repo/ops/model-lab/ModelFF.Core.ps1"
 $plan=Get-Content -LiteralPath $PlanPath -Raw|ConvertFrom-Json
+# Actual caller strict mode: the legacy plan has NO geometry_profile property.
+$legacyPlan=[pscustomobject]@{schema='iw7.model-ff-plan/1'}
+$legacyNames=@(Get-ModelFFSourceNames $legacyPlan)
+if($legacyNames.Count -ne 5 -or $legacyNames[0] -cne 'xmodel/paris_model_probe.xmb' -or $legacyNames[4] -cne 'netconststrings/ncs_mdl_paris_model_probe.json'){throw 'Strict legacy source inventory changed'}
 $names=@(Get-ModelFFSourceNames $plan)
 if($names.Count -ne 9 -or $names[0] -cne $plan.artifact_paths[0]){throw 'Authored exact input closure not selected'}
 $lines=@('Loading zone "'+$plan.zone+'"')+@($plan.expected_inventory|ForEach-Object {'Loading asset "'+$_.name+'" of type '+$_.type+'.'})
@@ -1032,6 +1037,22 @@ if($errors){throw 'Build-ModelFF parse failed'}
 $admission=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Enter-IW7ResourceLease'},$true))[0]
 $reader=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Admitted authored native reader changed.'")},$true))
 if($reader.Count -ne 1 -or $reader[0].Extent.StartOffset -le $admission.Extent.EndOffset){throw 'Authored PE verification must remain under lease'}
+$receipt=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$authored' -and $n.Extent.Text.Contains('Add-Member NoteProperty dumped_artifacts')},$true))
+if($receipt.Count -ne 1){throw 'One authored native receipt binding required'}
+$authored=$true;$RunRoot=Join-Path (Split-Path $PlanPath) 'receipt-fixture'
+function Resolve-IW7BasePath($Base,$Relative){Join-Path $Base $Relative}
+$artifactNames=@($plan.artifact_paths)
+foreach($name in $artifactNames){
+    $path=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $path))|Out-Null
+    [IO.File]::WriteAllText($path,'Authored synthetic dumped geometry only')
+}
+$state=@{SourcePlanSHA256='1'*64;FF=@{Bytes=29;SHA256='2'*64}}
+$values=@{schema='iw7.model-roundtrip/1';geometry_roundtrip_verified=$true;physics_serialized=$false;iw7_normal_encoding_verified=$false;vertices=$plan.selected_counts.vertices;triangles=$plan.selected_counts.triangles}
+foreach($field in @('geometry_profile','namespace','zone','model_name','mesh_name','material_reference')){$values[$field]=$plan.$field}
+$verified=[pscustomobject]$values
+. ([scriptblock]::Create($receipt[0].Extent.Text))
+if($verified.source_plan_sha256 -cne $state.SourcePlanSHA256 -or $verified.ff.sha256 -cne $state.FF.SHA256 -or
+    $verified.dumped_artifacts.Count -ne 2 -or $verified.dumped_artifacts[0].path -cne $artifactNames[0]){throw 'Authored geometry evidence not bound to this FF and source'}
 '''
         with tempfile.TemporaryDirectory() as folder:
             writer,material=self.fixture(folder)

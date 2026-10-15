@@ -89,7 +89,7 @@ function Assert-ModelFFRigidPlan($Plan) {
         throw 'LOD distance insufficient for this scene; review explicit --lod-distance 1000000. Export validity and visibility are separate.'}
 }
 function Get-ModelFFSourceNames($Plan) {
-    if($Plan.geometry_profile -ceq 'iw7-authored-rigid-v1'){
+    if('geometry_profile' -cin $Plan.PSObject.Properties.Name -and $Plan.geometry_profile -ceq 'iw7-authored-rigid-v1'){
         Assert-ModelFFAuthoredPlan $Plan
         $Plan.artifact_paths
         @($Plan.source_files.PSObject.Properties.Name | Where-Object {$_ -cnotin $Plan.artifact_paths} | Sort-Object)
