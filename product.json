@@ -853,6 +853,8 @@
     "tools-source/asset-bridge/t7-bridge/T7RegistrationImage.Profile.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationImage.ps1",
     "tools-source/asset-bridge/t7-bridge/prepare_registration_image_probe.py",
+    "tools-source/asset-bridge/t7-bridge/prepare_incoming_image_probe.py",
+    "tools-source/asset-bridge/t7-bridge/test_incoming_image_probe.py",
     "tools-source/asset-bridge/t7-bridge/test_registration_image_probe.py",
     "tools-source/asset-bridge/t7-bridge/REGISTRATION-IMAGE-LAUNCHER.md",
     "tools-source/asset-bridge/t7-iw7/incoming-image-source-contract.json",
