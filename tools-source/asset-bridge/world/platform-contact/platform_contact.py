@@ -115,6 +115,12 @@ def contact_contract(mesh, anchor):
     hi = offset([128, 128, 112], 'absolute maximum')
     center = offset([0, 0, 104], 'native center')
     start = offset([0, 0, 208], 'player start')
+    # The Python float64 addition can itself lose small offsets at huge P,
+    # before exact_vector sees the value. Endpoint self-equality cannot prove
+    # that the requested platform still has its original nonzero dimensions.
+    require([hi[i]-lo[i] for i in range(3)] == [256, 256, 16],
+            'Absolute box must preserve exact 256 by 256 by 16 dimensions')
+    require(all(abs(v) <= 30000 for v in anchor), 'a572 source anchor must remain within +/-30000')
     require(all(origin[i]+MINIMUM[i] == lo[i] and origin[i]+MAXIMUM[i] == hi[i] and
                 center[i]-[128, 128, 8][i] == lo[i] and center[i]+[128, 128, 8][i] == hi[i]
                 for i in range(3)), 'Render and native endpoints must be identical exact float32')

@@ -25,7 +25,10 @@ Given the same player anchor **P** frozen after protected readiness/ground check
 | Native center C / half size | P + (0,0,104) / (128,128,8) |
 | Player test start | P + (0,0,208) |
 
-All anchor/offset/endpoints must remain exact float32. Rendering and the native
+Anchor P must stay within a572's existing ±30000 envelope on every axis.
+All anchor/offset/endpoints must remain exact float32, with absolute box widths
+exactly (256,256,16) so an earlier float64 addition cannot hide collapsed bounds.
+Rendering and the native
 midpoint/half-size reconstruction must yield identical endpoints. The native
 provider already applies its internal 1/32 conversion; callers pass absolute
 IW7 coordinates once. The collision owner is a distinct `script_model`, solid
@@ -73,3 +76,9 @@ remain separate. This platform is a prop/floor augmentation in a retail map;
 it does not qualify an authored GfxWorld, clipmap, navigation, lights, visibility,
 map spawns or a complete new map. No BO3 donor/extraction is needed for the
 authored source correspondence, and no deleted stock/lab is restored.
+
+Source review corrected two initial omissions: an exact float32 anchor such as
+2**100 could lose offsets during the earlier float64 addition, and32768 was
+outside a572's anchor envelope despite preserving the box dimensions. The reader
+now checks exact absolute dimensions and the existing ±30000 limit independently;
+targeted negatives exercise both refusals, with both boundary signs accepted.

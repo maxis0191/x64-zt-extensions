@@ -88,6 +88,17 @@ class PlatformContactTests(unittest.TestCase):
         for anchor in ([0.1, 0, 0], [True, 0, 0], [0, 0, float('inf')], [0, 0, 2**30]):
             with self.subTest(anchor=anchor), self.assertRaises(ValueError):
                 contact.contact_contract(platform(), anchor)
+        # This value is exact float32, but float64 already loses +/-128. The
+        # dimensions guard must reject it independently of the a572 envelope.
+        with self.assertRaisesRegex(ValueError, 'Absolute box must preserve'):
+            contact.contact_contract(platform(), [2**100, 0, 0])
+
+    def test_a572_anchor_envelope_accepts_boundary_and_refuses_exact_f32_outside(self):
+        for anchor in ([30000, -30000, 30000], [-30000, 30000, -30000]):
+            self.assertEqual(contact.contact_contract(platform(), anchor)['source_anchor'], anchor)
+        for anchor in ([30001, 0, 0], [32768, 0, 0], [0, -30001, 0], [0, 0, 32768]):
+            with self.subTest(anchor=anchor), self.assertRaisesRegex(ValueError, 'a572 source anchor'):
+                contact.contact_contract(platform(), anchor)
 
     def test_cli_binds_actual_source_bytes_and_never_overwrites(self):
         with tempfile.TemporaryDirectory() as temp:

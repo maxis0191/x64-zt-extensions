@@ -1738,7 +1738,7 @@ The World-owned [correspondence reader](../tools-source/asset-bridge/world/platf
 checks actual six-face geometry and exact float32 endpoints for the fixed a572
 fixture. It consumes the existing original-mesh-source format; SDK/serializer
 owners still own authoring, and caller55 still owns future loading/session work.
-Seven targeted source tests cover real geometry mismatches, rounding and bounded
+Eight targeted source tests cover real geometry mismatches, rounding and bounded
 fresh-file publication. No build, FF, actual pose, render or player-contact result
 is inferred. SDK/caller binding flags stay false; frozen original-arena D remains
 unchanged. Next: review/pin the source join, then bind the exact authoring cohort
