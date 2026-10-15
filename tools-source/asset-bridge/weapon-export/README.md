@@ -1,18 +1,21 @@
 # Bounded IW7 player/PAP source export support
 
-2026-10-14: inactive source support. No native compilation or export has run.
+2026-10-14 initial checkpoint: inactive source support before native compilation.
 
-Current 2026-10-15 checkpoint: BUILD-COHORT.md records actual CPP I (54 checks)
+Current 2026-10-15 checkpoint: BUILD-COHORT.md records actual CPP J (62 checks),
+with the earlier instrumented CPP I (54 checks),
 and EXPORT-COHORT.md records actual refused K (`weapType=1` at Source offset0x22C).
 These dated initial-support notes do not replace those receipts. The separate
-pair-profile option below is new Source-only code, not a compiled/runtime result.
+pair-profile option is compiled in J; its candidate CLI has not run and no
+runtime pair-profile result is claimed.
 
 `-iw7-player-weapon-pair-profile` and caller `PairProfile=true` select one explicit
 metadata-only diagnostic for the same exact pair. Its closed small JSON preserves
 observed enums/raw PAP flag and bounded/readable association facts, with no full
 templates or authoring eligibility. The existing projectile export/author still
-requires PROJECTILE3/3 and its original mechanics invariants. New argv18 is authored
-only; neither the new mode nor any new C++ candidate has run. See EXPORT-COHORT.md
+requires PROJECTILE3/3 and its original mechanics invariants. J executed argv18,
+name8 and primary36, then compiled the IW7 TU and linked the candidate. This does
+not execute the new diagnostic mode. See EXPORT-COHORT.md
 for partial results, strict-reader boundaries and the separate future GO gates.
 
 `native_player_templates.inc` adds one support function to the IW7 owner-fork
