@@ -1,9 +1,9 @@
 # Neutral registered player definitions: Source contract
 
-2026-10-15: Q is a qualified 172-check CPP build with ordinary closure, compiled
+2026-10-15 CPP Q checkpoint, before T2: Q is a qualified 172-check build with ordinary closure, compiled
 at merge `e2c96b6a97db2f4874ae9eafec5e19bf7e72c57b`. Root independently verified
 closure and released its slot at 16:13:59 UTC. No candidate CLI, retail serializer,
-extraction or game run has executed. BUILD-COHORT.md records its exact plan,
+extraction or game ran in that CPP Q checkpoint. BUILD-COHORT.md records its exact plan,
 artifact declarations and original/additive qualification receipts.
 
 The subsequent R attempt refused stale stock link-count metadata before candidate
@@ -19,7 +19,7 @@ BOM correction and real positive reader/parser causal then enabled a distinct
 metadata-only run: 71 files/33 PAKs, exact root7/main31/zone64 layouts and 71 observed
 baselines, no content or candidate read and no aliases created. Ordinary closure
 and Root corroboration at 17:53:44 UTC qualified only this metadata snapshot.
-EXPORT-COHORT.md preserves both outcomes; full definitions remain unobserved.
+EXPORT-COHORT.md preserves both outcomes; S3 did not observe full definitions.
 
 N/O2 failures and P's execution/finalization facts remain separate.
 N failed definition compilation with C4702; O2 reached compiler exit0 but its
