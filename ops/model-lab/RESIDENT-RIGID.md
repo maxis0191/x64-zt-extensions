@@ -279,6 +279,17 @@ roundtrip gates. Its resulting artifact paths and report identities come from
 the authored contract. This wrapper change has source validation only; no new
 native writer build or XMB/XSB roundtrip has been measured.
 
+`Build-Writer.ps1 -ToolSource <existing-pinned-checkout>` explicitly reuses an
+ordinary Native source directory when the composed package has no
+`tools/x64-zt-enemy` checkout. Omitting the option keeps that exact legacy
+default. The override rejects redirected ancestry and non-directories; the
+existing exact Git pin, clean checkout and ten source-interface hashes still
+apply before compilation. It does not clone/copy a tool tree or change the
+source checkout. The preview/build provenance records `ToolSource`.
+Preparing a Source capsule does not invoke the build entry or its SDK/compiler
+discovery; actual compile and opaque input inspection still need their own
+reviewed resource admission and GO.
+
 The zone CSV declares the authored material as a **local payload dependency**,
 not an ignored retail reference. This producer supplies no material/image bytes:
 `material_payload_present=false`, `material_closure_required=true`. The separate

@@ -869,6 +869,57 @@ if(($artifactNames -join '|') -cne 'xmodel/prism.xmb|xsurface/mesh2.xsb'){throw 
                                     capture_output=True, text=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
 
+    @unittest.skipUnless(shutil.which('pwsh') and (ROOT/'ops/Lab-Paths.ps1').is_file(),
+                         'Composed source with ordinary-path helper required')
+    def test_writer_tool_source_override_keeps_legacy_pin_and_ordinary_path_gates(self):
+        script = r'''
+param($Repo,$Fixture,$ManifestPath)
+$ErrorActionPreference='Stop'
+Set-StrictMode -Version Latest
+. "$Repo/ops/Lab-Paths.ps1"
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/model-lab/Build-Writer.ps1",[ref]$tokens,[ref]$errors)
+if($errors){throw 'Writer entry parse failed'}
+$selectors=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.Extent.Text -ceq '$source'},$true))
+if($selectors.Count -ne 1){throw 'One source directory selection required'}
+$selector=[scriptblock]::Create($selectors[0].Extent.Text)
+$repo=Join-Path $Fixture 'package'
+$ToolSource=$null;. $selector
+if($source -cne (Join-Path $repo 'tools/x64-zt-enemy')){throw 'Legacy default changed'}
+$ToolSource=Join-Path $Fixture 'source';. $selector
+if($source -cne [IO.Path]::GetFullPath($ToolSource)){throw 'Explicit source override not selected exactly'}
+foreach($bad in @((Join-Path $Fixture 'missing'),$ManifestPath)){
+    $ToolSource=$bad;$refused=$false;try{. $selector}catch{$refused=$true}
+    if(!$refused){throw 'Missing/file source path accepted'}
+}
+$ToolSource=Join-Path $Fixture 'source';. $selector
+$manifest=Get-Content -LiteralPath $ManifestPath -Raw|ConvertFrom-Json
+$pin=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Exact pinned tool source required.'")},$true))
+$hashes=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.ForEachStatementAst] -and $n.Condition.Extent.Text -ceq '$manifest.source_hashes.PSObject.Properties'},$true))
+if($pin.Count -ne 1 -or $hashes.Count -ne 1){throw 'Actual pin and ten-interface gates required'}
+# Exercise the actual production pin gate; no native Git/SDK/compiler probing.
+$LASTEXITCODE=0;$head=$manifest.source_pin
+. ([scriptblock]::Create($pin[0].Extent.Text))
+$head='0'*40;$refused=$false;try{. ([scriptblock]::Create($pin[0].Extent.Text))}catch{$refused=$true}
+if(!$refused){throw 'Wrong source pin accepted'}
+. ([scriptblock]::Create($hashes[0].Extent.Text))
+$first=@($manifest.source_hashes.PSObject.Properties)[0]
+[IO.File]::AppendAllText((Join-Path $source $first.Name),' changed')
+$refused=$false;try{. ([scriptblock]::Create($hashes[0].Extent.Text))}catch{$refused=$true}
+if(!$refused){throw 'Changed source interface accepted'}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            source = self.interfaces(folder)
+            manifest = dict(source_pin=prepare_writer.PIN,
+                            source_hashes=prepare_writer.source_hashes(source, check_pin=False))
+            path = Path(folder)/'manifest.json'
+            path.write_text(json.dumps(manifest))
+            entry = Path(folder)/'source-root-gates.ps1'
+            entry.write_text(script, encoding='utf-8')
+            result = subprocess.run(['pwsh','-NoLogo','-NoProfile','-File',str(entry),str(ROOT),folder,str(path)],
+                                    capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
 
 class AuthoredFFSourceTests(unittest.TestCase):
     @staticmethod
