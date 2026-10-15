@@ -603,7 +603,6 @@ foreach($bad in @($log+'Loading asset "foreign" of type rawfile.',$log.Replace('
         base = geometry.original_cube()
         for change in (
             lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, float('nan')),
-            lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, 10**1000),
             lambda d: d['surfaces'][0]['triangles'][0].reverse(),
             lambda d: d['surfaces'][0]['triangles'][0].__setitem__(0, 24),
             lambda d: d['surfaces'][0]['vertices'][0].__setitem__('weight', .5),
@@ -710,6 +709,7 @@ class AuthoredRigidSourceTests(unittest.TestCase):
             lambda d: d['surfaces'][0].__setitem__('material_reference', None),
             lambda d: d['surfaces'][0]['vertices'][0].__setitem__('bone', False),
             lambda d: d['surfaces'][0]['vertices'][0].__setitem__('weight', True),
+            lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, 10**1000),
             lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, float('nan')),
             lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, 32769),
             lambda d: d['surfaces'][0]['vertices'][0]['normal'].__setitem__(0, .5),
