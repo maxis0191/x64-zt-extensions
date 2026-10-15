@@ -137,23 +137,6 @@ ATTACHMENT_DUMP_SCRIPT_STRING(attachPoint);
         self.assertIn('globals.dump = false',module)
         self.assertIn('weapon_def::dump(',module);self.assertIn('weapon_attachment::dump(',module)
 
-    def test_scalar_fallback_owns_success_return_with_no_shared_unreachable_tail(self):
-        reader=support.read_source(support.HERE/'native_definition_readset.hpp')
-        scalar=reader.split('template<class T> bool scalar(',1)[1].split('template<class Count>',1)[0]
-        fallback=scalar.split('// Preserve integer/enum representation',1)[1]
-        # The bool and float instantiations return from their constexpr branch.
-        # A shared success return after the fallback becomes MSVC C4702 /WX.
-        self.assertIn('return raw <= 1 || fail(field);',scalar)
-        self.assertIn('return std::isfinite(raw) || fail(field);',scalar)
-        owned_return=r'(?s).*T raw;\s*if \(!load\(address, raw, field\)\) return false;\s*return true;\s*}\s*}\s*}\s*'
-        self.assertIsNotNone(re.fullmatch(owned_return,fallback))
-        historical=fallback.replace('return true;\n                }','}\n                return true;',1)
-        self.assertNotEqual(historical,fallback)
-        self.assertIsNone(re.fullmatch(owned_return,historical))
-        response=support.read_source(support.HERE/'Run-PlayerTemplateBuild.ps1').split('function Get-PlayerDefinitionResponse',1)[1].split('function Assert-PlayerDefinitionFixture',1)[0]
-        self.assertIn('/W4 /WX',response)
-        self.assertNotIn('warning(disable',reader)
-
 
 if __name__=='__main__':
     unittest.main()

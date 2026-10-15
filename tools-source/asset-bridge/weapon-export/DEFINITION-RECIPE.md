@@ -113,4 +113,4 @@ bool and finite-float validation, `/W4 /WX`, and the fixed 100-case fixture.
 The runner's exact normalized readset hash changes with that reviewed Source.
 The generated N package, plan, responses and failed receipts remain immutable.
 A new package/PREP/CPP sibling and distinct admission are required to validate
-the correction in MSVC; Source regression checks alone do not do so.
+the correction in MSVC; existing Source checks alone do not do so.

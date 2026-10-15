@@ -163,8 +163,8 @@ the new module. Old modules retain their existing6/8-stage contracts.
 
 The C4702 correction moves the success return into the integer/enum fallback;
 bool and floating-point branches retain their validation returns. `/W4 /WX`
-remain enabled. Source regression checks reject the earlier shared-return
-layout, but cannot establish successful MSVC compilation.
+remain enabled. Existing Source checks cannot establish successful MSVC
+compilation; the unchanged 100-case fixture needs a new admitted compiler run.
 
 Next: finish exact Source review/CI/private merge, then a new Source package,
 PREP sibling and separately admitted CPP capsule. Only its actual closed candidate may feed a
