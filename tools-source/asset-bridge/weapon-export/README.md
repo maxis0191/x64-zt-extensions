@@ -8,8 +8,11 @@ Failed C/D attempts remain recorded. Full CLI, FF, runtime roundtrip and gamepla
 remain unqualified; the readback leaf is still unimplemented.
 It does not change the historical module or CPP Q qualification below.
 
-The next [descriptive inventory lot](NEUTRAL-INVENTORY.md) changes the pure
-header and authors a separate fixture; it still requires its own CPP gate.
+The [descriptive inventory lot](NEUTRAL-INVENTORY.md) completed its distinct
+CPP F gate at Source `a97bfc9`: original 16 plus 12 new real PASS, both native TUs,
+complete dependency/input checks and Root-verified ordinary closure. It still
+activates no CLI, builder or runtime route; later doc/merge heads are not newly
+compiled.
 
 The neutral full-definition route completed CPP Q and its distinct admitted T2
 capture of the full Shredder/PAP definitions. See

@@ -6,12 +6,14 @@ module. No CLI, native builder, input parser/routing, serialized manifest,
 readback transaction or runtime caller is activated. No clone/T2, stock,
 opaque tool/SDK artifact, FF or game input was opened for this Source work.
 
-The previously merged PR213 foundation passed sixteen actual C++ fixtures and
-both native TU compiles at Source `05c28704ff0af07ab08b5b35681356999d96b26a`.
-Its result does not qualify this changed header or the new fixture. This lot
-requires independent Source review, then a separately reviewed/admitted CPP
-recipe and distinct GO before actual compilation/execution. No new C++ PASS
-is claimed by the Python checks or authored cases below.
+Actual CPP F at Source `a97bfc9f248c0c4e522175cb3a28261df714ca9d` passed the
+original sixteen cases, all twelve new inventory cases and both patched native
+TU compiles. Root independently verified ordinary closure and released its
+slot. This qualifies the bounded owned-memory production-code checks and TU
+compilation; full CLI, FF/readback, engine ABI/lifetime and gameplay remain
+unqualified. Later documentation/merge revisions are not newly compiled.
+PR213/E3 at `05c28704ff0af07ab08b5b35681356999d96b26a` remains a separate
+earlier foundation result. Python Source checks do not stand in for either CPP.
 
 ## Complete description and unchanged strict policy
 
@@ -85,11 +87,10 @@ compile-time API separation, canonical collisions in both orders, native typed
 aliases, malformed claims and preserved private owned edges. A poisoned FX
 payload ensures the visitor does not recursively inspect an external body.
 
-These twelve cases are authored, not run. The old sixteen-case fixture remains
-unchanged. The future CPP gate must run both fixtures and compile the two
-patched native TUs, with exact Source pins, dependency guards, inherited-input
-verification and the existing H1 lifecycle. A full CLI link, FF/readback and
-gameplay require still later distinct gates.
+CPP F actually compiled and ran these twelve cases and the unchanged original
+sixteen-case fixture, then compiled both patched native TUs. All six phases
+closed with exit 0; all four compiler dependency reports passed. A full CLI
+link, FF/readback and gameplay require later distinct gates.
 
 Six new Python Source checks examine the actual production surfaces, mechanical
 recognition coverage (including the shared FX helper), strict constructor/policy,
@@ -105,6 +106,54 @@ Run the relevant light Source checks from this directory:
 python -B -m unittest -v test_neutral_dependencies_source test_neutral_dependency_inputs test_neutral_inventory_source
 ```
 
-Next action: approve the exact Source head, then review the dedicated CPP recipe
-and obtain its distinct admission/GO. Keep this PR unmerged until the new actual
-production-code compilation/fixtures and exact-head CI disposition are reviewed.
+## Actual CPP F and closure
+
+The separate reviewed F packet uses the exact native pin and Source head above.
+Its plan is 428,468 bytes / SHA256
+`4dbb04269578159740b8dad5fb0a9728a7083180a97991173ff894e2f8829282`;
+capsule 4,099 bytes / `a77e4b9218911a6962c17be44430902053281c8547e17f2b55fd3c5dcef7f0b1`;
+runner 21,980 bytes / `18ed52a799e34f8d1abed80d434b3b205641cec0a2bcc4f46065de5689466935`.
+The same 600-second group/120-second compile/15-second probe limits, 256 MiB
+output bound and 1 MiB metadata reserve remain in force. Memory telemetry has
+no RAM/commit minimum or percentage ceiling.
+
+Eleven current Source parents were snapshotted from explicit canonical exports
+at asset Source `a97bfc9` and native-core `698f3e8`, held before any imports and
+rechecked before release. The current scheduler adds the eleventh immediate
+transitive `Resource-OwnedProcess.Core.ps1`; its top-level statements are only
+function declarations, and this route never invokes its deferred SkinWriter
+provider. The H1 factory/stage controller and the runtime/closure tail preserve
+E3's reviewed behavior. The newer inherited Run-T7Build text is held but is not
+imported on this route. No frozen E3 or earlier generated input was modified.
+
+All 682 inherited compiler inputs were held and reverified under F's own lease.
+The native output measured under the lease totaled 41,756,777 bytes; the three
+Source receipts totaled 32,225 bytes. All three preopened publication streams
+were flushed/read back through their original handles, retained with every
+input through lease release and the last deadline. The original in-memory
+context then verified all 1,559 actual FileStream/SafeFileHandle references
+closed before `CanExit`. The disk final snapshot honestly records released
+lease/guards held at publication; it is not rewritten to claim later disposal.
+
+The same physical NoExit host's preexit witness is 5,379 bytes / SHA256
+`c0228234805d5896f1c34ccbb6e13d19b19243981d7c0581771a9aa16111838d`.
+It retains kernel creation `2026-10-15T22:47:18.4525389Z` separately from the
+CIM microsecond value, original context/state/guard aliases, actual closed
+references and all completion flags. The true terminal exited 0; fresh snapshots
+found all twelve captured identities, games/compilers/debuggers and leases
+absent. Root independently read the original completed execution and Source
+chain before qualification/release. No native artifact/input was reopened,
+statted or hashed after release.
+
+Both fixture rows preserve the CIM registration error together with the native
+original-job-already-empty marker, actual root exit 0 and confirmed tree closure. No
+cause is inferred. The initial postflight diagnostic filter `cod.*` also matched
+unrelated Codex app names; the retained original snapshot and additive precise
+snapshot record that correction. No process was stopped by either observation.
+
+The complete module Source suite also passed 110 tests with one explicit
+composed-package-only dependency skip (111 total); the 22 targeted Source checks
+and product boundary passed. Next action: review the final documentation-only
+head/diff and exact-head CI disposition before merging. The input manifest,
+bounded parser/routing, actual zone inventory and private readback gates above
+remain unimplemented and require separate Source work and runtime authorization.

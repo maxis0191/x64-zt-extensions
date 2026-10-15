@@ -2,8 +2,9 @@
 
 The next bounded Source lot is documented in [NEUTRAL-INVENTORY.md](NEUTRAL-INVENTORY.md).
 It adds a distinct descriptive inventory and pure identity contract; the strict
-policy remains FX/VFX/RETICLE. The E3 result below qualifies the previous Source
-only, not the changed header or new authored inventory fixture.
+policy remains FX/VFX/RETICLE. Actual CPP F at Source `a97bfc9` passed the original
+16 cases, 12 new cases and both native TUs, with independently verified closure. The E3 result
+below qualifies only its earlier Source; F's exact pins/limits are in that note.
 
 This opt-in Source implementation owns two typed pure walkers, one local bounded
 collector, a public-parse seam and an in-memory native Source patch renderer.
