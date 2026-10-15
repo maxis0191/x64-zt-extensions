@@ -474,6 +474,27 @@ function Import-T7BindingsBuildSource($Plan,[string]$SourceRoot) {
     $null=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256
     . $pin.Path # Both original Source guards stay held; no helper runs before sub-pin checks.
 }
+function Assert-T7ImageCallerFixtureResponse($Plan,[string]$SourceRoot) {
+    $root=Join-Path $Plan.RunRoot 'caller-fixture-compile'
+    $response=Join-Path (Split-Path $Plan.PreparedRoot -Parent) 'caller-fixture.rsp'
+    $pin=$Plan.BuildProfile.FixtureResponse
+    if($pin -isnot [pscustomobject] -or $pin.Path -isnot [string] -or $pin.Path -cne $response -or
+       ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 16KB -or
+       $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){
+        throw 'Pinned finite image-caller fixture response required.'
+    }
+    # Read the exact held Source stream, not an unguarded second open. The
+    # original bootstrap guard remains in the runner's context through closure.
+    $stream=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256
+    $reader=[IO.StreamReader]::new($stream,[Text.UTF8Encoding]::new($false,$true),$false,4096,$true)
+    try{$text=$reader.ReadToEnd()}finally{$reader.Dispose();$stream.Position=0}
+    $arguments=@('/nologo','/std:c++20','/EHsc','/W4','/WX','/MT','/Od','/Z7',('/I'+$SourceRoot),
+        '/sourceDependencies',(Join-Path $root 'dependencies.json'),
+        ('/Fo'+(Join-Path $root 'caller-fixture.obj')),('/Fe'+(Join-Path $root 'caller-fixture.exe')),
+        (Join-Path $SourceRoot 'prepatch_image_caller_fixture.cpp'),'/link','/INCREMENTAL:NO','/DEBUG',('/PDB:'+(Join-Path $root 'caller-fixture.pdb')))
+    $actual=Split-T7ResponseArguments $text
+    if(($actual -join "`0") -cne ($arguments -join "`0")){throw 'Exact image-caller fixture compile arguments required.'}
+}
 function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $profile=if($Plan.PSObject.Properties.Name -contains 'BuildProfile'){$Plan.BuildProfile}else{$null}
     $recompiled=$Plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $Plan.ReuseCompile -and
@@ -487,6 +508,10 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $link=$null -ne $profile -and $profile.Name -ceq 't7-prepatch-link-v3'
     $linkMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['PrepatchLinkV3']
     if($link -ne $linkMarker){throw 'Prepatch V3 profile and marker must be paired.'}
+    $caller=$null -ne $profile -and $profile.Name -ceq 't7-prepatch-image-caller-v1'
+    $callerMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['PrepatchImageCallerV1']
+    if($caller -ne $callerMarker){throw 'Image-caller profile and marker must be paired.'}
+    if(($caller -or $callerMarker) -and $Plan.BuildProfile -isnot [pscustomobject]){throw 'Image-caller input profile must be an object, never an enumerated array.'}
     $parts=$null -ne $profile -and $profile.Name -ceq 't7-material-parts-v1'
     $partsMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['MaterialParts']
     if($parts -ne $partsMarker){throw 'Parts profile and finite transition must be paired.'}
@@ -528,6 +553,93 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             Helper=(Join-Path $Plan.PreparedRoot 'native_prepatch_probe.inc')
             Wiring=(Join-Path $SourceRoot 'prepare_prepatch.py')
             PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+        }
+    } elseif($caller) {
+        if($profile -isnot [pscustomobject] -or $Plan.ReuseCompile -isnot [pscustomobject] -or
+           (@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'ArgumentCount,BaseBuildPlan,BaseBuildReceipt,BaseHelper,BaseV3BuildPlan,BaseV3Main,BaseWiring,BoundaryFixture,FixtureResponse,Helper,Name,ObservationSchema,Option,PreparedMain,RangeGuard,RangeGuardSource,Report,Wiring' -or
+           (@($Plan.ReuseCompile.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Checks,OriginalStatus,PrepatchImageCallerV1,Receipt,ReceiptSHA256,RecompiledMain,SourcePlan,SourcePlanSHA256,StageRoots'){
+            throw 'Closed image-caller profile and reuse fields required.'
+        }
+        foreach($row in @(@('Name','t7-prepatch-image-caller-v1'),@('Option','-t7-prepatch-image-caller-v1'),
+                          @('Report','t7-prepatch-image-caller-v1.local.json'),@('ObservationSchema','iw7.t7-prepatch-image-caller-observation/1'))){
+            if($profile.($row[0]) -isnot [string] -or $profile.($row[0]) -cne $row[1]){throw 'Exact image-caller scalar identity required.'}
+        }
+        if(($profile.ArgumentCount -isnot [int] -and $profile.ArgumentCount -isnot [long]) -or $profile.ArgumentCount -ne 2 -or
+           $Plan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+           (@($Plan.Stages.Name)-join ',') -cne 'caller-fixture-compile,caller-fixture-test,main,link'){
+            throw 'Exact fixture-first image-caller profile required.'
+        }
+        foreach($name in 'SourcePlan','Receipt','SourcePlanSHA256','ReceiptSHA256'){
+            if($Plan.ReuseCompile.$name -isnot [string]){throw 'Typed image-caller retained identity required.'}
+        }
+        if($Plan.ReuseCompile.OriginalStatus -isnot [string] -or $Plan.ReuseCompile.OriginalStatus -cne 'Failed' -or
+           ($Plan.ReuseCompile.Checks -isnot [int] -and $Plan.ReuseCompile.Checks -isnot [long]) -or $Plan.ReuseCompile.Checks -ne 51 -or
+           $Plan.ReuseCompile.StageRoots -isnot [array] -or $Plan.ReuseCompile.StageRoots.Count -ne 2 -or
+           @($Plan.ReuseCompile.StageRoots|Where-Object {$_ -isnot [string]}).Count){throw 'Exact image-caller retained C metadata required.'}
+        if($Plan.Compiler -isnot [string] -or $Plan.RunRoot -isnot [string] -or $Plan.PreparedRoot -isnot [string] -or
+           $Plan.Stages -isnot [array] -or $Plan.Stages.Count -ne 4){throw 'Typed image-caller build paths/stages required.'}
+        $planDirectory=Split-Path $Plan.PreparedRoot -Parent
+        $stageNames=@('caller-fixture-compile','caller-fixture-test','main','link')
+        $stageKinds=@('Compile','Probe','Compile','Link')
+        $stageImages=@($Plan.Compiler,(Join-Path $Plan.RunRoot 'caller-fixture-compile/caller-fixture.exe'),$Plan.Compiler,(Join-Path (Split-Path $Plan.Compiler -Parent) 'link.exe'))
+        $stageResponses=@((Join-Path $planDirectory 'caller-fixture.rsp'),'',(Join-Path $planDirectory 'main.obj.rsp'),(Join-Path $planDirectory 'link.rsp'))
+        $stageArtifacts=@('caller-fixture.obj|caller-fixture.exe|caller-fixture.pdb|dependencies.json','','main.obj|compile.pdb|dependencies.json','zonetool-t7.exe|zonetool-t7.pdb|zonetool-t7.lib|zonetool-t7.exp')
+        for($i=0;$i -lt 4;$i++){
+            $stage=$Plan.Stages[$i]
+            if($stage -isnot [pscustomobject] -or (@($stage.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Arguments,Artifacts,DeadlineSeconds,Image,Name,Stage' -or
+               $stage.Name -isnot [string] -or $stage.Name -cne $stageNames[$i] -or $stage.Stage -isnot [string] -or $stage.Stage -cne $stageKinds[$i] -or
+               $stage.Image -isnot [string] -or $stage.Image -cne $stageImages[$i] -or
+               ($stage.DeadlineSeconds -isnot [int] -and $stage.DeadlineSeconds -isnot [long]) -or $stage.DeadlineSeconds -ne $(if($i -eq 1){15}else{120}) -or
+               $stage.Arguments -isnot [array] -or $stage.Artifacts -isnot [array] -or
+               @($stage.Arguments|Where-Object {$_ -isnot [string]}).Count -or @($stage.Artifacts|Where-Object {$_ -isnot [string]}).Count -or
+               ($stage.Artifacts -join '|') -cne $stageArtifacts[$i] -or
+               $stage.Arguments.Count -ne $(if($i -eq 1){0}else{1}) -or ($i -ne 1 -and $stage.Arguments[0] -cne ('@'+$stageResponses[$i]))){
+                throw 'Fixed image-caller fixture-first stage contract differs.'
+            }
+        }
+        $marker=$Plan.ReuseCompile.PrepatchImageCallerV1
+        if($marker -isnot [pscustomobject] -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseMainBytes,BaseMainSHA256,HelperBytes,HelperSHA256,MainBytes,MainSHA256,RetainedMainBytes,RetainedMainSHA256,Schema,SourceProfile'){
+            throw 'Closed image-caller transition required.'
+        }
+        foreach($row in @(@('Schema','iw7.t7-prepatch-image-caller-build/1'),@('SourceProfile','t7-prepatch-image-caller-v1'),
+            @('RetainedMainSHA256','40de5fda829cec32a5d75359f58e69c84db7d8ee54f198cf6befa2a6ebe6f86e'),
+            @('BaseMainSHA256','84cde2924df0a0553dd2cddb0ca173aed54af43d6874b06718c01d1a6cec4989'),
+            @('MainSHA256','2ff1c104f8dfc99432179b289a0453aa1a81b8a99703803fcede1869fae61133'),
+            @('HelperSHA256','39fd69039d16285ca574f73a768130e294c618a089ba365bacdf84fd2cfa0019'))){
+            if($marker.($row[0]) -isnot [string] -or $marker.($row[0]) -cne $row[1]){throw 'Exact image-caller transition identity required.'}
+        }
+        foreach($row in @(@('RetainedMainBytes',12854),@('BaseMainBytes',14469),@('MainBytes',14557),@('HelperBytes',16778))){
+            if(($marker.($row[0]) -isnot [int] -and $marker.($row[0]) -isnot [long]) -or $marker.($row[0]) -ne $row[1]){throw 'Exact image-caller transition length required.'}
+        }
+        $paths=@{
+            Helper=(Join-Path $Plan.PreparedRoot 'native_prepatch_image_caller_v1.inc');Wiring=(Join-Path $SourceRoot 'prepare_prepatch_image_caller.py')
+            RangeGuard=(Join-Path $Plan.PreparedRoot 'prepatch_image_caller_range.hpp');RangeGuardSource=(Join-Path $SourceRoot 'prepatch_image_caller_range.hpp')
+            BoundaryFixture=(Join-Path $SourceRoot 'prepatch_image_caller_fixture.cpp');FixtureResponse=(Join-Path (Split-Path $Plan.PreparedRoot -Parent) 'caller-fixture.rsp')
+            BaseHelper=(Join-Path $SourceRoot 'native_prepatch_link_v3.inc');BaseWiring=(Join-Path $SourceRoot 'prepare_prepatch_link_v3.py')
+            BaseBuildPlan=$Plan.ReuseCompile.SourcePlan;BaseBuildReceipt=$Plan.ReuseCompile.Receipt
+            BaseV3BuildPlan=$profile.BaseV3BuildPlan.Path;BaseV3Main=(Join-Path (Split-Path $profile.BaseV3BuildPlan.Path -Parent) 'prepared/main.cpp')
+            PreparedMain=(Join-Path $Plan.PreparedRoot 'main.cpp')
+        }
+        $expected=@{
+            Helper=@(16778,'39fd69039d16285ca574f73a768130e294c618a089ba365bacdf84fd2cfa0019')
+            Wiring=@(2749,'8e6edee60d06dda0c77f8f2cf73bd39677523f0ba046ced2046218cc7eb7d7a2')
+            RangeGuard=@(3117,'0a633964ed558de91bae621b51b28d5e8e0eab20ab790fc000b1b3c6978aa38a')
+            RangeGuardSource=@(3117,'0a633964ed558de91bae621b51b28d5e8e0eab20ab790fc000b1b3c6978aa38a')
+            BoundaryFixture=@(3828,'a2471c937e91191fca49820a50ac15091832eaa54bb993c639671e490dd9ade4')
+            BaseHelper=@(15827,'cf839e18a68adb4ed3aae82d683ef110ab595fa8c172584e47ca4d11bb8db48d')
+            BaseWiring=@(2236,'66f70ca5a979745288232d76496a339e08d639ddf34560aada6e6b63c5bcffa1')
+            BaseBuildPlan=@(292575,'422e79898fa2b16defc8193182fe146e2db5d73aeb4516c2bd2aaf87c409c4de')
+            BaseBuildReceipt=@(26199,'af6beecf7a8892e16266a7641d2799f665f86fa8ad7c40c61561b782534f7897')
+            BaseV3BuildPlan=@(305621,'e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530')
+            BaseV3Main=@(14469,'84cde2924df0a0553dd2cddb0ca173aed54af43d6874b06718c01d1a6cec4989')
+            PreparedMain=@(14557,'2ff1c104f8dfc99432179b289a0453aa1a81b8a99703803fcede1869fae61133')
+        }
+        if($Plan.ReuseCompile.SourcePlanSHA256 -cne $expected.BaseBuildPlan[1] -or $Plan.ReuseCompile.ReceiptSHA256 -cne $expected.BaseBuildReceipt[1]){throw 'Frozen C retained proof required for image-caller.'}
+        foreach($name in $paths.Keys){
+            $pin=$profile.$name
+            if($pin -isnot [pscustomobject] -or (@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+               $pin.Path -isnot [string] -or $pin.SHA256 -isnot [string] -or ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long])){throw 'Typed non-NULL image-caller source pin required.'}
+            if($name -cne 'FixtureResponse' -and ($pin.Bytes -ne $expected[$name][0] -or $pin.SHA256 -cne $expected[$name][1])){throw 'Fixed image-caller source pin differs.'}
         }
     } elseif($link) {
         foreach($name in 'Name','Option','Report','ObservationSchema') {
@@ -817,7 +929,7 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     }
     foreach($name in $paths.Keys) {
         $pin=$profile.$name
-        $limit=if($name -ceq 'BaseBuildPlan' -or ($link -and $name -ceq 'BaseV2BuildPlan')){2MB}elseif($name -ceq 'BaseBuildReceipt'){128KB}
+        $limit=if($name -ceq 'BaseBuildPlan' -or ($link -and $name -ceq 'BaseV2BuildPlan') -or ($caller -and $name -ceq 'BaseV3BuildPlan')){2MB}elseif($name -ceq 'BaseBuildReceipt'){128KB}
                elseif($name -ceq 'LinkResponse'){256KB}elseif($name -ceq 'PublicationSource'){16KB}
                elseif($name -ceq 'PreparedCLI' -and $registration){192KB}
                elseif($name -ceq 'PreparedCLI' -and $metadata){160KB}
@@ -834,6 +946,7 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256})
         if($match.Count -ne 1){throw 'Diagnostic source pin is not guarded by the build.'}
     }
+    if($caller){Assert-T7ImageCallerFixtureResponse $Plan $SourceRoot}
     return $true
 }
 function Assert-T7OSResourceContext($Plan) {
@@ -848,7 +961,7 @@ function Assert-T7OSResourceContext($Plan) {
         return $null
     }
     $context=$Plan.OSResourceContext
-    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1') -or
+    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3','t7-prepatch-image-caller-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1') -or
        (@($context.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'After,Before,Evidence,KBFileAttributionVerified,Name,ProductVersion,Schema,SignatureStatus,SignatureType,SignerThumbprint,SourceOSDate'){
         throw 'Exact opt-in OS context fields/profile required.'
     }
@@ -910,6 +1023,9 @@ function Assert-T7InputBindings($Plan) {
     $link=$null -ne $reuse -and $null -ne $reuse.PSObject.Properties['PrepatchLinkV3']
     $linkProfile=$null -ne $Plan.PSObject.Properties['BuildProfile'] -and $null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -ceq 't7-prepatch-link-v3'
     if($link -or $linkProfile){$null=Assert-T7BuildProfile $Plan ([IO.Path]::GetDirectoryName($Plan.Runner))}
+    $caller=$null -ne $reuse -and $null -ne $reuse.PSObject.Properties['PrepatchImageCallerV1']
+    $callerProfile=$null -ne $Plan.PSObject.Properties['BuildProfile'] -and $null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -ceq 't7-prepatch-image-caller-v1'
+    if($caller -or $callerProfile){$null=Assert-T7BuildProfile $Plan ([IO.Path]::GetDirectoryName($Plan.Runner))}
     $zombies=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ZombiesObservationC'
     $add=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ZombiesAddObservationC2'
     $parts=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'MaterialParts'
@@ -1246,8 +1362,10 @@ try {
     $incoming=$null -ne $buildProfile -and $buildProfile.Name -ceq 't7-incoming-image-header-observation-v1'
     $registrationBindings=$null -ne $buildProfile -and $buildProfile.Name -ceq 't7-registration-material-bindings-v1'
     $registration=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1')
+    $imageCaller=$null -ne $buildProfile -and $buildProfile.Name -ceq 't7-prepatch-image-caller-v1'
     $publication=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1')
     $names=@(if($publication){'main','zonetool11','link'}elseif($recompiled){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
+    if($imageCaller){$names=@('caller-fixture-compile','caller-fixture-test')+$names}
     if($registration){
         $names=@('registration-fixture-compile','registration-fixture-test')+$names
     }elseif($null -ne $buildProfile -and $buildProfile.PSObject.Properties['MetadataSchema']){
@@ -1296,7 +1414,7 @@ try {
     Assert-H1Path $plan.RunRoot
     if([IO.Path]::GetDirectoryName($plan.RunRoot) -cne $runtime -or (Test-Path -LiteralPath $plan.RunRoot)){throw 'Fresh output directly under owned runtime required.'}
     foreach($stage in $plan.Stages) {
-        $expectedType=if($stage.Name -cin @('probe','metadata-fixture-test','registration-fixture-test')){'Probe'}elseif($stage.Name -ceq 'link'){'Link'}else{'Compile'}
+        $expectedType=if($stage.Name -cin @('probe','metadata-fixture-test','registration-fixture-test','caller-fixture-test')){'Probe'}elseif($stage.Name -ceq 'link'){'Link'}else{'Compile'}
         $expectedSeconds=if($expectedType -ceq 'Probe'){15}else{120}
         if($stage.Stage -cne $expectedType -or $stage.DeadlineSeconds -ne $expectedSeconds){throw 'Fixed stage profile differs.'}
         Assert-H1Path $stage.Image
@@ -1326,6 +1444,12 @@ try {
         if((@($plan.ReuseCompile.StageRoots)-join '|') -cne ($retainedRoots-join '|')){throw 'Exact retained dependency roots required.'}
     }
     if(!$Run) {
+        if($imageCaller){
+            [ordered]@{SourceProfile=$buildProfile.Name;SourceOnlyPending=$true;CPPEnabled=$false;CPPRecipeNeedsQualification=$true;
+                ImageCallerCPPQualified=$false;CallerFixtureRequired=25;FixtureFirstEnforced=$true;CandidateBytes=$null;CandidateSHA256=$null;
+                NativeTypesLoaded=$false;BinaryInputsHashed=$false;LeaseAcquired=$false;FilesCreated=$false;Ready=$false}|ConvertTo-Json -Compress
+            return
+        }
         [ordered]@{Schema='iw7.t7-minimal-build-check/1';PlanSHA256=$PlanSHA256;Stages=@($plan.Stages).Count;ReusedCompilation=$reuse;BuildProfile=$buildProfile;
             ExpectedInputs=@($plan.Inputs).Count;MissingExpectedPins=@($plan.MissingExpectedPins).Count;
             NativeTypesLoaded=$false;BinaryInputsHashed=$false;LeaseAcquired=$false;RunRootCreated=$false;Ready=$false}|ConvertTo-Json
@@ -1339,6 +1463,7 @@ try {
         MaxObservedOutputBytes=0L;CompilerTelemetry=[ordered]@{Completed=$false};Stages=[Collections.Generic.List[object]]::new()}
     if($registration){$state.RegistrationFixturePassed=$false;$state.RegistrationCPPQualified=$false}
     if($incoming){$state.IncomingFixturePassed=$false;$state.IncomingCPPQualified=$false}
+    if($imageCaller){$state.ImageCallerFixturePassed=$false}
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes $plan.PhysicalBytes -CommitBytes $plan.CommitBytes -Owner 'T7 three TU build and name helper'
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     if(Test-Path -LiteralPath $plan.RunRoot){throw 'Output appeared during admission.'}
@@ -1399,7 +1524,10 @@ try {
             $limit=if($stage.Name -ceq 'metadata-fixture-test'){256}else{128}
             if((Get-Item -LiteralPath $stdout).Length -gt $limit -or (Get-Item -LiteralPath $stderr).Length -ne 0){throw 'Fixture output differs.'}
             $observed=[IO.File]::ReadAllText($stdout)
-            if($stage.Name -ceq 'registration-fixture-test'){
+            if($stage.Name -ceq 'caller-fixture-test'){
+                if($observed.Replace("`r`n","`n") -cne "IW7_T7_PREPATCH_IMAGE_CALLER_CHECKS=25`n"){throw 'Exactly 25 image-caller boundary checks required before main compilation.'}
+                $stageState.Checks=25;$stageState.EngineInvoked=$false;$state.ImageCallerFixturePassed=$true
+            }elseif($stage.Name -ceq 'registration-fixture-test'){
                 if($registrationBindings){Assert-T7BindingsFixtureOutput $stageRoot $stageState;$state.RegistrationBindingsFixturePassed=$true}
                 elseif($incoming){Assert-T7IncomingFixtureOutput $stageRoot $stageState;$state.IncomingFixturePassed=$true}
                 else{Assert-T7RegistrationFixtureOutput $stageRoot $stageState}
