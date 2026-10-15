@@ -48,8 +48,8 @@
   },
   "source_pins": {
     "prepare_registration_bindings_build.py": {
-      "bytes": 9398,
-      "sha256": "fc2c590967156ddacafa598ed4b576e052ff4788828d135a542a28dd38ec6e80"
+      "bytes": 9397,
+      "sha256": "df69b993c452e85b1910c7d550e9b62d04cdd62b0c57e9602c921979fc07a79e"
     },
     "prepare_registration_material_bindings.py": {
       "bytes": 10618,

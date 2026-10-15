@@ -143,4 +143,3 @@ def extend_profile(profile,prepared,pin):
         'BindingsObserver':prepared/producer.OBSERVER_NAME,'BindingsBaselineFixture':prepared/BASELINE,
         'BindingsCombinedFixture':prepared/COMBINED,'BindingsResponse':prepared.parent/'registration-fixture.rsp'}
     for role,path in paths.items(): profile[role] = pin(path)
-
