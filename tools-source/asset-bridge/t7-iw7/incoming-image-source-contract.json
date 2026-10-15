@@ -1,0 +1,159 @@
+{
+  "schema": "iw7.t7-incoming-image-source/1",
+  "source_profile": "t7-incoming-image-header-observation-v1",
+  "native_option": "-t7-iw7-incoming-image-header-v1",
+  "report_schema": "iw7.t7-incoming-image-header-observation/1",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "target_name": "$camo_base_normal",
+  "source_only_pending": true,
+  "cpp_qualified": false,
+  "native_observed": false,
+  "ready": false,
+  "arm_phase": "before_db_add_hook_create",
+  "capture_phase": "before_image_bypass",
+  "name_rule": "strip_one_leading_comma_then_exact_case_and_dollar",
+  "full_gfximage_parser_proven": false,
+  "runtime_abi_proven": false,
+  "qualified_object_mip_count": null,
+  "callback_limit": 65536,
+  "case_count_limit_per_phase": 16,
+  "read_limit_bytes": 2097152,
+  "image_header_bytes": 264,
+  "completed_header_copies": 2,
+  "fixture_legacy_checks": 39,
+  "fixture_incoming_checks": 48,
+  "fixture_stdout": "IW7_T7_REGISTRATION_HEADER_CHECKS=39\nIW7_T7_INCOMING_IMAGE_CHECKS=48\n",
+  "slot_order": [
+    "bootstrap/reference",
+    "bootstrap/ordinary",
+    "map_load/reference",
+    "map_load/ordinary"
+  ],
+  "outer_keys": [
+    "allocation_retained",
+    "arm_generation",
+    "arm_phase",
+    "atomic_snapshot_proven",
+    "bootstrap_complete",
+    "callback_limit",
+    "cap_refused",
+    "capture_phase",
+    "cases",
+    "descriptor_admissible",
+    "exact_argv_validated_before_arm",
+    "image_callbacks",
+    "lifetime_proven",
+    "map_complete",
+    "model_binding_correlated",
+    "name_comparison_rule",
+    "native_source_commit",
+    "non_target_callbacks",
+    "ordinary_absence_scope",
+    "ordinary_name_events",
+    "ordinary_name_observed",
+    "payload_bytes_read",
+    "pixels_copied",
+    "qualified_object_mip_count",
+    "read_bytes",
+    "read_limit",
+    "ready",
+    "reason",
+    "reference_events",
+    "reference_name_observed",
+    "refused",
+    "renderer_binding_proven",
+    "runtime_abi_proven",
+    "same_object_proven",
+    "same_pointer_proven",
+    "schema",
+    "source_asset_name_association_proven",
+    "source_profile",
+    "target_case_limit_per_phase",
+    "target_name",
+    "window_complete",
+    "zone"
+  ],
+  "case_keys": [
+    "callback_ordinal",
+    "conflict_absence_proven",
+    "descriptor_admissible",
+    "effective_name",
+    "leading_comma_reference",
+    "matching_events_in_phase",
+    "name_category",
+    "nonzero_descriptor_scalar_fields",
+    "phase",
+    "raw_name",
+    "repeated_headers_compared",
+    "single_event_observed_in_phase",
+    "snapshot",
+    "state",
+    "unique_in_phase"
+  ],
+  "snapshot_keys": [
+    "callback_header_name_rechecked",
+    "completed_header_bytes",
+    "copy_fault",
+    "header_copies",
+    "header_observed",
+    "header_rechecked",
+    "image",
+    "name_rechecked",
+    "reason",
+    "refused"
+  ],
+  "base_main": {
+    "bytes": 43620,
+    "sha256": "05f601ffdeff533809acb023e53b850570f08f79594d5954232338f3a1b597b8"
+  },
+  "base_cli": {
+    "bytes": 175031,
+    "sha256": "26e9ae7ff1a3f016130b57cea265a73a8ecbcdb6bed20b3bc39a4c7f51742967"
+  },
+  "base_capture": {
+    "bytes": 16485,
+    "sha256": "edf7bec2865e2098782bb4b31e58a48508c83bcbdf35d190affa7b451f0e6345"
+  },
+  "base_observer": {
+    "bytes": 16575,
+    "sha256": "9c82b0969e3d44c9dbafb5fa4d6cf0b60fce450d60a77291342e97518c365380"
+  },
+  "files": {
+    "incoming_image_capture_members.inc": {
+      "bytes": 2791,
+      "sha256": "ddb287aa8efa02a8ba6201403bc2cadd716c14a881d188a244099d93a729dc76"
+    },
+    "incoming_image_event_observation.hpp": {
+      "bytes": 12251,
+      "sha256": "ecb9dc17aa28dfba50bf834fd1a1ec36f3c802310c910c728347bc0004bc7f11"
+    },
+    "native_incoming_image_metadata.inc": {
+      "bytes": 1088,
+      "sha256": "11d9621b45fa4203130f5c3e4c54ce74762422946e11e4bf1d39fd0cbadaaa76"
+    },
+    "incoming_image_event_fixture.cpp": {
+      "bytes": 9845,
+      "sha256": "855bc329ce35821986470ac952cfb2c388c464d0a242864b515b83e412083bf1"
+    }
+  },
+  "derived_capture": {
+    "bytes": 19676,
+    "sha256": "dfe17a262a49d373a7f549273045da227a7cb4ff890fb2985eb1f93a51a9bedf"
+  },
+  "derived_observer": {
+    "bytes": 17989,
+    "sha256": "36c2cd5eab9e1f6f26c3b25d805f9ef69a5d1e7c8e284a0b004f36e28d59481f"
+  },
+  "derived_baseline_fixture": {
+    "bytes": 12067,
+    "sha256": "76a096aad5015a1f417b5d6d213605ea20274443790a7bdfdac0d11112900378"
+  },
+  "main": {
+    "bytes": 43746,
+    "sha256": "f0192bf8618977608366dc3a31fd468ce15876860000a87cff266583b5689ff7"
+  },
+  "cli": {
+    "bytes": 193592,
+    "sha256": "efe61f3f3d9e5924fce44240581c2ded3bd63ac53c709a64de0a6fb080dd39f9"
+  }
+}

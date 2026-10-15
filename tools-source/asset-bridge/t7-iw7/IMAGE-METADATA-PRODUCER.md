@@ -275,6 +275,51 @@ The text handoff is 9556 bytes /
 066aa9e359a6b2232e9920b82404f3652c09d9b3f97a75f1588ed38becf62ebc. It binds
 the exact source/plan/receipt/preexit/closure, fixture stdout and recorded link
 artifacts. Next: review a separate native registration-metadata plan/capsule
-against this new tuple. The candidate has never run; engine header/name capture,
-runtime ABI, in-page fault behavior, pixels, rendering and owner gameplay remain
+against this new tuple. At this CPP checkpoint the candidate had never run;
+runtime ABI, in-page fault behavior, pixels, rendering and owner gameplay were
 unqualified. Historical D/F2, Main, stock and banks remain preserved.
+
+## Incoming IMAGE source observation, pending execution
+
+Subsequent admitted Native A produced the closed 4435-byte record
+2c7ebbab72c420262be5e213e44e7befcacb9f819e7fcd1395fe34599dca66ef. Its two
+complete owned headers and names were rechecked at original MODEL registration:
+raw name `,$camo_base_normal`, all published descriptor scalars/parts/keys zero.
+The lookup 250 ms later was nonreadable MEM_RESERVE. This is a successful copy
+observation, not an admissible streamed image, all-zero 264-byte proof, lifetime
+or runtime ABI proof. The copier/mapper does not synthesize these zeros. The
+strict consumer refuses before part/mip/key selection; no default mip or pixels.
+
+Native source fab9358 classifies a leading comma as a reference. Its existing
+IMAGE branch returns the incoming header before original Add, while the patched
+loader uses the 30-byte link-only SimpleAsset path. A full GfxImage parser before
+this seam is not established. A name without comma is therefore called ordinary
+name, never a full definition by implication.
+
+The additive source profile `t7-incoming-image-header-observation-v1`, option
+`-t7-iw7-incoming-image-header-v1`, observes that existing IMAGE branch only.
+Exact exclusive five-token OS argv is validated on post_unpack before arm/hook
+creation/ComInit; no callback parses flags, and CLI never resets the collector.
+It matches only `$camo_base_normal` or one leading comma plus that exact name,
+with original case/dollar/raw name preserved. Four fixed slots separate
+bootstrap/map-load and reference/ordinary. Only the first sample per slot is
+copied; repeats are counted and explicitly ambiguous, never silently compared.
+Name-filter reads, callbacks, repeated matches and output have finite caps.
+
+The same fixed SEH leaves and owned-copy/name/query primitives are reused in a
+new derived cache, leaving frozen capture/observer files and the 33-key MODEL
+report unchanged. The distinct 42-key report publishes scalar DTO124 only from
+complete twice-copied/rechecked headers. It distinguishes absent, refused/fault,
+first-complete and repeated samples; zero scalars remain zero. Descriptor
+admission, mip fact, SourceAssetName association, model/renderer binding, pointer
+or object identity, lifetime, ABI, atomicity, retention, pixels and Ready remain
+unqualified. Absence is scoped to this bounded incoming-event window only.
+
+Seven Python source checks pass. The authored native fixture preserves the
+original 39 checks and adds 48 incoming checks, including malformed/mixed argv
+no-arm/no-read, prefix filtering, owned finalization, ambiguity/caps and faults.
+These new fixtures are not compiled/executed. The pending contract pins generated
+main/CLI and derived inputs within the existing source caps; no operational build recipe, host,
+provider or Native execution is enabled by this source seam. Existing H1/T7
+recipe integration, Source review, exact-head CI/merge and separate admitted
+PREP/CPP/Native gates remain required.
