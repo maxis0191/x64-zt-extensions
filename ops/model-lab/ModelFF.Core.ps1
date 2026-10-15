@@ -308,3 +308,109 @@ function Get-ModelFFInventory([string]$Log,[string]$ModelName='paris_model_probe
     if($rows.Count -ne $expected.Count -or @($rows | Sort-Object -Unique).Count -ne $expected.Count -or @($expected | Where-Object {$_ -cnotin $rows}).Count){throw 'Expected exact assets including unique recipient references.'}
     $rows
 }
+
+function Get-ModelFFOutputRelative($Value) {
+    if($Value -isnot [string] -or !$Value -or $Value.Length -gt 1024 -or
+       [IO.Path]::IsPathRooted($Value) -or $Value -match '[\\:<>"|?*\x00-\x1f]' -or
+       ($Value.Split('/')).Count -gt 16){throw 'Literal relative ModelFF output path required.'}
+    foreach($part in $Value.Split('/')){
+        if(!$part -or $part -in @('.','..') -or $part.TrimEnd(' ','.') -cne $part -or
+           $part -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'){
+            throw 'Canonical ModelFF output path components required.'
+        }
+    }
+    $Value
+}
+
+function New-ModelFFOutputNamespace([string]$RunRoot,[string]$SourceRoot,[string]$Zone,
+    [object[]]$DeclaredFiles) {
+    # This constructor consumes reviewed Source declarations only. It never
+    # discovers files, reads payloads or derives a limit from an observed run.
+    if(![IO.Path]::IsPathFullyQualified($RunRoot) -or ![IO.Path]::IsPathFullyQualified($SourceRoot) -or
+       $Zone -cnotmatch '^[A-Za-z0-9_]{1,63}$' -or !$DeclaredFiles.Count -or $DeclaredFiles.Count -gt 1024){throw 'Bounded pre-run ModelFF namespace declarations required.'}
+    $root=[IO.Path]::GetFullPath($RunRoot).TrimEnd('\','/')
+    $source=[IO.Path]::GetFullPath($SourceRoot).TrimEnd('\','/')
+    if(![IO.Path]::IsPathFullyQualified($root)){throw 'ModelFF RunRoot must be an operation directory, not a volume root.'}
+    if(!$source.StartsWith($root+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){
+        throw 'Deferred ModelFF Source must remain inside the globally counted RunRoot.'
+    }
+    $sourceRelative=Get-ModelFFOutputRelative ([IO.Path]::GetRelativePath($root,$source).Replace('\','/'))
+    if($sourceRelative.Split('/')[0] -in @('work','author-project','roundtrip','backup') -or
+       $sourceRelative.Split('/')[0] -like 'owned-*'){throw 'ModelFF Source scope overlaps another output role.'}
+    $files=[Collections.Generic.Dictionary[string,bool]]::new([StringComparer]::OrdinalIgnoreCase)
+    $dirs=[Collections.Generic.Dictionary[string,bool]]::new([StringComparer]::OrdinalIgnoreCase)
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($raw in $DeclaredFiles){
+        $path=Get-ModelFFOutputRelative $raw
+        if(!$seen.Add($path)){throw 'Duplicate ModelFF namespace declaration.'}
+        if(!$path.StartsWith($sourceRelative+'/',[StringComparison]::OrdinalIgnoreCase) -and
+           $path -notmatch '^(author-project|work|roundtrip|backup)/'){
+            throw 'Declared ModelFF file is outside its known operation scopes.'
+        }
+        $files.Add($path,$true)
+    }
+    $receipts=@('authored-native-run.json','authored-closure.json')
+    $known=@('state.local.json','mod.ff','assets.csv','geometry-roundtrip.json','surface-roundtrip.json',
+        'backup/recovery.local.json',($sourceRelative+'/model-ff-plan.json'),('work/zone/'+$Zone+'.ff'))
+    foreach($phase in @('authored-stage','authored-source','hud-build','hud-offline','hud-roundtrip','model-geometry','model-authored-material')){
+        foreach($stream in @('stdout.log','stderr.log')){$known+=('owned-'+$phase+'/'+$stream)}
+    }
+    foreach($name in $receipts){$known+=$name;$known+=$name.Replace('.json','.pending.json')}
+    foreach($path in $known){if(!$files.ContainsKey($path)){$files.Add($path,$true)}}
+    foreach($leaf in @($files.Keys)){
+        $parent=$leaf
+        while($parent.Contains('/')){
+            $parent=$parent.Substring(0,$parent.LastIndexOf('/'))
+            if(!$dirs.ContainsKey($parent)){$dirs.Add($parent,$true)}
+        }
+    }
+    foreach($path in $dirs.Keys){if($files.ContainsKey($path)){throw 'ModelFF path cannot be both a file and a directory.'}}
+    $values=[Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+    $values.Add('Schema','iw7.model-ff-output-namespace/1');$values.Add('RunRoot',$root)
+    $values.Add('SourceRelative',$sourceRelative)
+    $values.Add('Files',[Collections.ObjectModel.ReadOnlyDictionary[string,bool]]::new($files))
+    $values.Add('Directories',[Collections.ObjectModel.ReadOnlyDictionary[string,bool]]::new($dirs))
+    $values.Add('EntryLimit',($files.Count+$dirs.Count))
+    $values.Add('ReceiptNames',[Collections.ObjectModel.ReadOnlyCollection[string]]::new([string[]]$receipts))
+    [Collections.ObjectModel.ReadOnlyDictionary[string,object]]::new($values)
+}
+
+function Measure-ModelFFOutputNamespace($Namespace,[string]$Root,[long]$MaximumBytes=268435456) {
+    if($Namespace -isnot [Collections.ObjectModel.ReadOnlyDictionary[string,object]] -or
+       $Namespace.Schema -cne 'iw7.model-ff-output-namespace/1' -or $MaximumBytes -lt 1 -or $MaximumBytes -gt 256MB -or
+       ![IO.Path]::IsPathFullyQualified($Root) -or
+       [IO.Path]::GetFullPath($Root).TrimEnd('\','/') -ine $Namespace.RunRoot){throw 'Exact sealed global ModelFF output scope required.'}
+    for($part=$Namespace.RunRoot;$part;$part=[IO.Path]::GetDirectoryName($part)){
+        if(([IO.File]::GetAttributes($part) -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'ModelFF output reparse ancestry refused.'}
+    }
+    $pending=[Collections.Generic.Stack[string]]::new();$pending.Push($Namespace.RunRoot)
+    $bytes=0L;$count=0;$fileCount=0;$dirCount=0
+    while($pending.Count){
+        foreach($entry in [IO.Directory]::EnumerateFileSystemEntries($pending.Pop())){
+            if(++$count -gt $Namespace.EntryLimit){throw 'ModelFF output entry count exceeds its declared namespace.'}
+            $attributes=[IO.File]::GetAttributes($entry)
+            if($attributes -band [IO.FileAttributes]::ReparsePoint){throw 'ModelFF output reparse entry refused before descent.'}
+            $relative=[IO.Path]::GetRelativePath($Namespace.RunRoot,$entry).Replace('\','/')
+            if($attributes -band [IO.FileAttributes]::Directory){
+                if(!$Namespace.Directories.ContainsKey($relative)){throw 'Unexpected ModelFF output directory.'}
+                $dirCount++;$pending.Push($entry)
+            }else{
+                if(!$Namespace.Files.ContainsKey($relative)){throw 'Unexpected ModelFF output file.'}
+                $length=([IO.FileInfo]$entry).Length
+                if($length -lt 0 -or $length -gt $MaximumBytes-$bytes){throw 'Global ModelFF output byte allowance exceeded.'}
+                $bytes+=$length;$fileCount++
+            }
+        }
+    }
+    [pscustomobject]@{Bytes=$bytes;Entries=$count;Files=$fileCount;Directories=$dirCount;EntryLimit=$Namespace.EntryLimit}
+}
+
+function New-ModelFFOutputNamespaceCounter($Namespace) {
+    if($Namespace -isnot [Collections.ObjectModel.ReadOnlyDictionary[string,object]] -or
+       $Namespace.Schema -cne 'iw7.model-ff-output-namespace/1'){throw 'Pre-run sealed ModelFF namespace required for counter closure.'}
+    $sealedModelFFNamespace=$Namespace
+    $modelFFMeasureImplementation=(Get-Command Measure-ModelFFOutputNamespace).ScriptBlock
+    {param([string]$Root,[long]$MaximumBytes=268435456)
+        (& $modelFFMeasureImplementation $sealedModelFFNamespace $Root $MaximumBytes).Bytes
+    }.GetNewClosure()
+}
