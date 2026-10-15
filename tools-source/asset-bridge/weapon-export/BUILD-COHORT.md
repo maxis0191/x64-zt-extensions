@@ -311,3 +311,44 @@ strict, not that a future lean compilation succeeds. Unknown SDK pins remain
 null. A new prepared sibling and distinct Root CPP GO must measure actual
 dependency closure and run the fixture. No retry, extraction or gameplay is
 authorized by this Source correction.
+
+## Actual CPP P:172 checks, finalization incomplete, safety exit
+
+P compiled Source206 merge `acb608cc98bde80e27cce37b925da36729aa0ef3`, not the
+later documentation merge207. Its exact419,865-byte plan SHA256 was
+`aa9bd36c5c67bbddb107e07f3c8c25fb4bb6e36df049e2838e7f67568b8133de`.
+All ten stages exited0 with original tree closure: name8, argv28, primary36,
+definition100, fresh IW7 TU and link. The unchanged strict dependency checks
+accepted all compile reports. Native inputs and Source were reverified under
+the original lease before the measured receipt was published/read back.
+
+The under-lease recorded executable tuple is22,161,408 bytes / SHA256
+`15dd79df4318a5b27608959646a9d43b5cab673cecb4a98853516dcc362dc23c`;
+PDB140,808,192 bytes / SHA256
+`82afef8a88deb5102648a6a6a52864fa87a587326dea77c932cf6e4c15aefb03`.
+These tuples are read from original memory/receipts, never rehashed after
+release. The candidate has not executed a CLI, serializer, extraction or game.
+
+After lease release/guard disposal, final publication hit the shared64-entry
+counter. Original status stayed ClosedFinalizationIncomplete, FinalReadback
+false and CanExit false. All native jobs and the final linker's five retained
+job/process/IO handles were closed, but individual original Source handles had
+not been retained; that inspection was explicitly unavailable. No context or
+handle evidence was reconstructed.
+
+Root and independent review authorized only a bounded Source safety cleanup in
+the same physical host. It preserved original status/error/FinalReadback false,
+the unchanged original clock and honest expiry flag. A separate short cleanup
+window allowed only same-reference/owner closure checks, its own Source JSON
+flush/readback and safety-only CanExit. The host exited1. All18 captured
+identities were absent in fresh postflight; Root read/hash-checked the safety
+and postflight receipts, corroborated again at15:36 UTC and released the slot.
+P's172 executed checks and TU/link exit0 remain facts, while CPPQualified stays
+false. Safety cleanup is not a Passed finalization or runtime qualification.
+
+The canonical runner correction prebounds the three metadata receipts under
+lease and avoids rescanning native outputs after release. It retains the shared
+Core cap64,1-MiB metadata reserve and256-MiB total limit. The owned63-entry causal
+and overflow/deadline cases are described in DEFINITION-RECIPE.md. A fresh
+prepared revision and distinct Root CPP GO must validate the complete corrected
+flow. No automatic retry, candidate execution or extraction is authorized.

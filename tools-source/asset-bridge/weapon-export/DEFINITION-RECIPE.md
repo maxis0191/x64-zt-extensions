@@ -42,8 +42,9 @@ Source preparation. The ten stages are:
 5. IW7 TU;
 6. link.
 
-These are172 **authored** checks, not172 executed checks. A new C++ candidate,
-then a separately admitted extraction, still require their own Root decisions.
+Preparation only authors172 checks. P later executed172 at its exact revision
+(BUILD-COHORT.md); a new prepared revision cannot inherit that result. CPP and
+any later extraction still require their own distinct Root decisions.
 
 ## Ordinary CPP DEFAULT checks actual fixture wiring
 
@@ -154,3 +155,44 @@ already-declared include occurrences in a bounded owned report:25 checks.
 That accepted subset is not a compiler report for the lean correction. No SDK
 IO, native compilation or new lease occurs in this audit. The unchanged strict
 guard must still accept the future measured report before fixture execution.
+
+## P execution and bookkeeping correction
+
+PREP P prepared `acb608cc98bde80e27cce37b925da36729aa0ef3` with corrected current
+manifest arguments. Its admitted Python/DEFAULT phases and original closure
+passed. A distinct CPP P GO then executed8/28/36/100 checks and compiled/linked
+all ten stages with exit0 and original job-tree closure. The lean fixture's
+actual dependency report passed the unchanged strict guard. These are P facts,
+not proof that a later Source package has compiled.
+
+P failed administrative finalization after release: `Measure-H1Output` counts
+directories and files, including the receipts the caller had just published.
+Its64-entry cap was reached by that bookkeeping growth. P retained the same
+original context with NativeInputsReverified/MeasuredReadback true but
+ClosedFinalizationIncomplete/FinalReadback false/CanExit false. Reviewed
+safety-only cleanup checked those actual references and closed owner handles,
+wrote/read back only its own bounded Source receipt and allowed nonzero exit.
+It preserved the original failure, recorded unavailable individual Source-handle
+references honestly, and left CPPQualified false. It did not reopen artifacts,
+reset the original clock, acquire a lease or rerun compilation.
+
+The runner now takes one native-output snapshot under the original lease before
+publishing metadata. It preconstructs exactly three Source JSON receipts and
+checks their total against the existing1-MiB reserve and256-MiB output bound
+before any publication or release. The measured and before-release receipts
+are flushed/read back while the lease and guards remain held. Only after actual
+release/disposal flags are checked is the final prebounded Source receipt
+published/read back. No native-output rescan follows release. Shared Core,
+cap64, providers, compiler response, warning policy and SDK declarations are
+unchanged; the native entry bound is not widened.
+
+The Source causal executes the real runner finally block and shared reader/
+measurement functions on ten owned stage directories with53 tiny text files:
+63 native-shape entries. The shared function still accepts64 and refuses65
+after two small owned receipts. Corrected finalization completes its three
+receipts despite that unchanged native cap. Separate metadata-reserve and
+native-byte overflow cases refuse before publication/release, retaining the
+same owned guard and fixture lease. Existing pre/post-release deadline cases
+remain. These tests load no native owner and acquire no actual reservation;
+they do not qualify a fresh native build. A new package/PREP/CPP decision remains
+necessary before any runtime/extraction decision.
