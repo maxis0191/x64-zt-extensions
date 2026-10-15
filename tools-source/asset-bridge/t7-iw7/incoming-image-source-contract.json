@@ -132,8 +132,8 @@
       "sha256": "11d9621b45fa4203130f5c3e4c54ce74762422946e11e4bf1d39fd0cbadaaa76"
     },
     "incoming_image_event_fixture.cpp": {
-      "bytes": 9845,
-      "sha256": "855bc329ce35821986470ac952cfb2c388c464d0a242864b515b83e412083bf1"
+      "bytes": 9865,
+      "sha256": "30a010171628ce7c64562d613dc445cb392c18da7ad2cbd78a7eb56aafc4b4b1"
     }
   },
   "derived_capture": {
