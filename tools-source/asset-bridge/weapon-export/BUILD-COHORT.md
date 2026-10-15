@@ -6,6 +6,12 @@ argv28 and a new production-readset fixture100. Name8 and primary36 remain.
 See NEUTRAL-DEFINITIONS.md. Historical CPP J's62 results and candidate533c
 remain unchanged and do not qualify this new source or its fixtures.
 
+DEFINITION-RECIPE.md defines the tracked Source builder and real fixture/RSP
+contract for that future Analysis/PREP. DEFAULT verifies the actual100-case
+fixture and all owned readset headers, refusing marker-only stubs and altered
+compiler responses before any native type/input/admission. No actual PREP/CPP
+result follows from the recipe or its small Source unit fixtures.
+
 2026-10-15: a specialized caller reuses the existing H1 original owner and the
 T7 profile's artifact, dependency, deadline and linker/VCTIP primitives. It does
 not widen `Run-T7Build`'s finite T7 profile or edit the frozen texture D cohort.
