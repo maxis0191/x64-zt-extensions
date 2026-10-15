@@ -1730,3 +1730,16 @@ were absent. Overall C remains Failed; its successful independent Check is a
 separate fact. B/C packages, tuples, logs, proof and outcomes are preserved.
 Next: reviewed private source/Git completion, then additive D source tuple with
 a distinct heavy GO. No stock/FF/Game/Main or runtime/physics/render acceptance.
+# 2026-10-15: authored platform/contact SOURCE jointure
+
+The minimal transversal witness is an authored 256×256×16 platform, one matching
+absolute native AABB, an asymmetric author material, and coordinated Use behavior.
+The World-owned [correspondence reader](../tools-source/asset-bridge/world/platform-contact/README.md)
+checks actual six-face geometry and exact float32 endpoints for the fixed a572
+fixture. It consumes the existing original-mesh-source format; SDK/serializer
+owners still own authoring, and caller55 still owns future loading/session work.
+Seven targeted source tests cover real geometry mismatches, rounding and bounded
+fresh-file publication. No build, FF, actual pose, render or player-contact result
+is inferred. SDK/caller binding flags stay false; frozen original-arena D remains
+unchanged. Next: review/pin the source join, then bind the exact authoring cohort
+and shared audited pose in the caller under a distinct review and eventual GO.
