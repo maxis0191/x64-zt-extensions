@@ -6,6 +6,11 @@ back by this change. The separate B2 standalone writer result remains its frozen
 producer/geometry evidence. Material, FF, recipient/normal/shader ABI, pixels,
 physics/contact and owner acceptance remain unqualified.
 
+The first admitted D3 attempt on 2026-10-15 refused in SDK29's Source-template
+check before any stock transaction or FF build. Its failed original job and host
+were closed. See the [dated failure checkpoint](../../docs/AUTHORED-PLATFORM-FF-D3-2026-10-15.md)
+for the LF/CRLF export cause, exact evidence and the separately gated next step.
+
 ## One admission, including input staging
 
 `Build-ModelFF.ps1` accepts the existing prepared `SourceRoot`. Its optional

@@ -1,0 +1,140 @@
+{
+  "schema": "iw7.authored-model-ff-failed-checkpoint/1",
+  "date_utc": "2026-10-15",
+  "scope": "Admitted SDK stage refusal and same-original known-failed closure; no FF qualification",
+  "assets_revision": "6c1736ddf3720e9913c5281ce0af1a9a31acac8d",
+  "native_source_revision": "fab935826c898806855376662a8a03317b3ad8f1",
+  "writer_producer_revision": "8f55ac7819d93f5bcede273aea3e478ae9438a12",
+  "stage_sdk_revision": "2f9f584549ba7b009b35699a59582f4390102994",
+  "consumer_sdk_revision_not_executed": "62cf38834a0cbcd7243a3d52ce6100c1edbd9cdc",
+  "sdk_runtime_revision": "6dcfc719e0535509f109c593fa4342ce201b5523",
+  "caller_source_assertions_passed": 156,
+  "admission_count": 1,
+  "actual_phase": {
+    "name": "authored-stage",
+    "image": "python.exe",
+    "created_utc": "2026-10-15T07:05:03.3763378Z",
+    "exit_code": 1,
+    "original_tree_closure_confirmed": true,
+    "elapsed_ms": 337.13740000128746,
+    "max_observed_output_bytes": 24678,
+    "max_observed_stream_bytes": 1342
+  },
+  "entry_failure": "Original stage process failed.",
+  "sdk_failure": "Authored source contract/template changed",
+  "source_cause": {
+    "verified_by": "SDK owner Source diagnosis and independent Root confirmation",
+    "field": "writer_template_sha256",
+    "same_git_blob": "61a7d3aa9b12ed567634e8bebd2dd0a1577d3052",
+    "b2_original_template": {
+      "bytes": 13833,
+      "sha256": "3494bbacda6964c5b6966673698851ffe083341f2dabed3cd48de99559021b38",
+      "line_endings": "LF"
+    },
+    "sdk29_exported_template": {
+      "bytes": 13991,
+      "sha256": "d614f6057422e416c9d12df5bbc37d66c2cbd5e8f05093789aebdbe1fc74c210",
+      "line_endings": "CRLF"
+    },
+    "memory_only_crlf_to_lf_matches_b2": true,
+    "nine_authored_name_count_bounds_fields_agree": true,
+    "generated_package_recipe_or_gate_patched": false
+  },
+  "evidence": {
+    "capsule.source.json": {
+      "bytes": 3303,
+      "sha256": "72cd49cb3bac5e120a4a827df8a0968d0e81fbf8b854e65e5401e0c36911b06e"
+    },
+    "ff-plan.local.json": {
+      "bytes": 364055,
+      "sha256": "4672a05a4c56414434392ea97b7c8edb42332a46b367c48ef736386c6a9de10e"
+    },
+    "authored-ff-d3.outer.ps1": {
+      "bytes": 13495,
+      "sha256": "0013a75ffa36c3ce9d8fb39e663bdb391784422168f9dfbe98c33283b144d376"
+    },
+    "author-inputs.local.json": {
+      "bytes": 3563,
+      "sha256": "dfe7e3c7fef768e618c432720976810692c963f6f578335a7276038affcd4ee2"
+    },
+    "main-stock-source.local.json": {
+      "bytes": 606,
+      "sha256": "ae3cb170120f3f4cece1cc683c28b65b6da35d08a66bb9a0e6e7312822a1b711"
+    },
+    "authored-native-run.json": {
+      "bytes": 1419,
+      "sha256": "19bb1e610d5b4b02e5f9e9d859ac3f1a78eecd0c03c02037e009782e5c67310c"
+    },
+    "d3-original-phase.local.json": {
+      "bytes": 988,
+      "sha256": "918d0b80959da6354f2358b3e00c90bddc8d68e7b664efe22359a32385aa8480"
+    },
+    "owned-authored-stage/stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "owned-authored-stage/stderr.log": {
+      "bytes": 1342,
+      "sha256": "6f670cfc5fc185821478e0d4d963ebea4b893f723b5a8c764bee1111d3b37e1e"
+    },
+    "d3-failure-preexit.local.json": {
+      "bytes": 3529,
+      "sha256": "d260b037e985783c4979a9fa23f58c2fafb1a56fef7df577f623270e4ea2c2b5"
+    },
+    "d3-failure-closure.local.json": {
+      "bytes": 1202,
+      "sha256": "5c1cb0666628a492cb1c5e6c04cd4946730aeee612236f8665f430b6d2263fc1"
+    },
+    "d3-postexit.local.json": {
+      "bytes": 832,
+      "sha256": "94288486f585bc12632f4975a82fb1846aedea2fd8b409b1f548e1c2a6a86dc4"
+    },
+    "Close-AuthoredFFD3Failure-R1.Source.local.ps1": {
+      "bytes": 11381,
+      "sha256": "e002a868ee80dc4a2b877ab23b02486b1512605ceae7ef040dfd238c0768c815"
+    },
+    "Resume-AuthoredFFD3Failure-R2a.Source.local.ps1": {
+      "bytes": 5640,
+      "sha256": "1f4cd122a90bac8255030fe49196a7972fcb8a97a2a59e46bca3c64c55baadc2"
+    }
+  },
+  "planned_unreached_phases": [
+    "SourceValidation",
+    "Build",
+    "Offline",
+    "Dump",
+    "GeometryReader",
+    "SurfaceReader"
+  ],
+  "actual_plan_accepted": false,
+  "candidate_qualified": false,
+  "retail_stock_transaction_started": false,
+  "stock_restoration_exercised": false,
+  "entry_restored_flag": false,
+  "entry_stock_preserved_flag": false,
+  "known_failed_closed": true,
+  "same_original_final_references_verified": true,
+  "original_input_and_publication_guards_closed": true,
+  "lease_released_by_original_entry": true,
+  "manual_lease_release_or_job_kill": false,
+  "python_environment_restored": true,
+  "recovery_first_refusal": "Copied expected native SHA literal had 65 characters; same original producer record and held stream agreed at 64",
+  "recovery_resumed_same_rooted_objects": true,
+  "recovery_publication_flush_true_and_same_guard_json_readback": true,
+  "recovery_first_refusal_preserved": "Same original failed native publication required.",
+  "true_pty_exit_code": 1,
+  "postexit_captured_utc": "2026-10-15T07:20:51.5526706Z",
+  "fresh_original_identities_game_compiler_and_lease_inventory_empty": true,
+  "root_independently_confirmed_closure_before_slot_release": true,
+  "bind_materialize_run": false,
+  "ff_built": false,
+  "ff_inventory_verified": false,
+  "ff_geometry_readback_verified": false,
+  "ff_material_and_serialized_image_bytes_verified": false,
+  "recipient_shader_normal_abi_verified": false,
+  "rendered_pixels_verified": false,
+  "collision_or_player_contact_verified": false,
+  "game_run": false,
+  "owner_gameplay_accepted": false,
+  "ready": false
+}
