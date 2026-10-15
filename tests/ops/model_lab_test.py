@@ -50,7 +50,7 @@ $ErrorActionPreference='Stop'
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($Entry,[ref]$tokens,[ref]$errors)
 if($errors){throw 'Entry parse failed'}
-$gates=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Observed stock metadata/mode changed.'") -and $n.Clauses[0].Item1.Extent.Text.Trim() -cne '$StockBindingPlan'},$true))
+$gates=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Observed stock metadata/mode changed.'") -and $n.Clauses[0].Item1.Extent.Text.Contains('$f.Length -ne $entry.Bytes')},$true))
 if($gates.Count -ne 1){throw 'Unique actual stock metadata gate required'}
 $gate=[scriptblock]::Create($gates[0].Extent.Text)
 $path=Join-Path $Root 'authored-stock.bin'
@@ -1901,6 +1901,21 @@ if(!$http.Stopped){throw 'Synthetic HTTP worker remains active'}
 ''')
             result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), folder], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+class AuthoredModelFFLifecycleTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh') and sys.platform == 'win32', 'Windows Source path/owner fixtures require pwsh')
+    def test_actual_authored_entry_metadata_deadlines_and_restore_callback(self):
+        result = subprocess.run(['pwsh', '-NoLogo', '-NoProfile', '-File',
+                                 str(ROOT / 'tests/ops/Test-AuthoredModelFF.Source.ps1'), '-Repo', str(ROOT)],
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        report = json.loads(result.stdout.strip())
+        self.assertEqual(report['Result'], 'PASS')
+        self.assertGreaterEqual(report['Assertions'], 40)
+        self.assertFalse(report['NativeProcessStarted'])
+        self.assertFalse(report['StockRead'])
+        self.assertFalse(report['LeaseAcquired'])
 
 
 if __name__ == '__main__':

@@ -154,6 +154,93 @@ function Assert-ModelFFAuthoredPlan($Plan) {
     if(@($rows | Sort-Object -Unique).Count -ne $rows.Count -or ('material,'+$Plan.material_reference) -cnotin $rows -or ('material,,'+$Plan.material_reference) -cin $rows){throw 'Local authored material inventory required.'}
 }
 function Write-ModelFFState($State,[string]$Path) { $State | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $Path }
+function Assert-ModelFFAuthorInputs($Inputs,[string]$ProjectSource) {
+    if((@($Inputs.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'ProjectFiles,ProjectSource,Schema,SDKSourceWorkspace,Templates' -or
+        $Inputs.Schema -cne 'iw7.authored-model-ff-author-inputs/1' -or $Inputs.ProjectSource -cne $ProjectSource){throw 'Explicit original Source project input metadata required.'}
+    $files=@($Inputs.ProjectFiles.PSObject.Properties.Name)
+    $scripts=@($files|Where-Object {$_ -cmatch '^[A-Za-z0-9_]+\.gsc$'})
+    if($files.Count -ne 6 -or $scripts.Count -ne 1 -or
+        @('README.md','authoring.json','color.rgba8.json','geometry.source.json','manifest.json'|Where-Object {$_ -cnotin $files}).Count){throw 'Six reviewed original project Source files required.'}
+    if((@($Inputs.Templates.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'cbi,cbt,material,statebits,statebitsmap,stateinfo'){throw 'Six explicit Material C roles required.'}
+    foreach($pin in @($Inputs.ProjectFiles.PSObject.Properties.Value)){
+        if((@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,SHA256' -or
+            ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -lt 1 -or $pin.Bytes -gt 64KB -or
+            $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[a-f0-9]{64}$'){throw 'Bounded original Source file pin required.'}
+    }
+    foreach($pin in @($Inputs.Templates.PSObject.Properties.Value)+@($Inputs.SDKSourceWorkspace)){
+        if((@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+            $pin.Path -isnot [string] -or ![IO.Path]::IsPathFullyQualified($pin.Path) -or [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or
+            ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -lt 1 -or $pin.Bytes -gt 1MB -or
+            $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[a-f0-9]{64}$'){throw 'Finite template/SDK metadata without historical identities required.'}
+    }
+    if([IO.Path]::GetFileName($Inputs.SDKSourceWorkspace.Path) -cne 'source-workspace.json'){throw 'Existing SDK Source workspace receipt required.'}
+}
+function Get-ModelFFAuthorStageArguments([string]$ToolsRoot,[string]$Project,[string]$Writer,[string]$Output) {
+    # Direct call to SDK29's existing API. No new serializer, script file or CLI.
+    $code=@'
+import hashlib, importlib.util, json, sys
+from pathlib import Path
+tools, project, writer, output = map(Path, sys.argv[1:])
+spec = importlib.util.spec_from_file_location('sdk_author_stage', tools / 'sdk/modding/creator_authoring.py')
+author = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(author)
+sdk = author.module(tools / 'sdk/modding/manifest.py', 'sdk_stage_manifest')
+manifest = sdk.load_manifest(project / 'manifest.json')
+contract = sdk.validate(manifest, stage='plan')
+if not contract['valid']: raise ValueError(json.dumps(contract['errors']))
+report = author.stage_ff_inputs(project, writer, output, tools, manifest=manifest)
+plan_path = output / 'model-ff-plan.json'
+plan_bytes = plan_path.read_bytes()
+report['source_plan_file'] = {'path': str(plan_path), 'bytes': len(plan_bytes), 'sha256': hashlib.sha256(plan_bytes).hexdigest()}
+print(json.dumps(report, sort_keys=True, allow_nan=False), flush=True)
+'@
+    @('-B','-S','-c',$code,$ToolsRoot,$Project,$Writer,$Output)
+}
+function Get-ModelFFAuthoredStockInputs($Descriptor,[string]$StockRoot) {
+    # Names and declared tool/sentinel digests only. The caller obtains all
+    # current retail identities/content under its one original admission.
+    if((@($Descriptor.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Schema,Sentinel,SourceRoot,TLS' -or
+        $Descriptor.Schema -cne 'iw7.authored-model-ff-main-stock/1' -or $Descriptor.SourceRoot -cne $StockRoot){
+        throw 'Explicit current Main authored stock descriptor required.'
+    }
+    if(![IO.Path]::IsPathFullyQualified($StockRoot) -or [IO.Path]::GetFullPath($StockRoot) -cne $StockRoot){throw 'Canonical Main source root required.'}
+    foreach($role in 'TLS','Sentinel'){
+        $pin=$Descriptor.$role
+        if((@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+            $pin.Path -isnot [string] -or ![IO.Path]::IsPathFullyQualified($pin.Path) -or [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or
+            ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -lt 1 -or
+            $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[a-f0-9]{64}$'){
+            throw 'Explicit tool/sentinel metadata without historical file identities required.'
+        }
+    }
+    if($Descriptor.TLS.Bytes -gt 16MB -or $Descriptor.Sentinel.Bytes -gt 4096 -or
+        [IO.Path]::GetFileName($Descriptor.TLS.Path) -cne 'tlsdll.dll' -or
+        [IO.Path]::GetFileName($Descriptor.Sentinel.Path) -cne 'fileSysCheck.cfg'){throw 'Finite TLS and independent copied sentinel required.'}
+    $ff=@('code_post_gfx','code_pre_gfx','common_core_mp','common_cp','common_mp','common','cp_zmb',
+        'global_core_mp','global_cp','global_mp','global',
+        'patch_code_post_gfx','patch_code_pre_gfx','patch_common_core_mp','patch_common_cp','patch_common_mp','patch_common','patch_cp_zmb',
+        'patch_global_core_mp','patch_global_cp','patch_global_mp','patch_global',
+        'techsets_common_core_mp','techsets_common_cp','techsets_common_mp','techsets_common','techsets_cp_zmb',
+        'techsets_global_core_mp','techsets_global_cp','techsets_global_mp','techsets_global')
+    $rows=[Collections.Generic.List[object]]::new()
+    foreach($name in $ff){foreach($folder in 'main','zone'){
+        $rows.Add([pscustomobject]@{Relative=($folder+'/'+$name+'.ff');Source=(Join-Path $StockRoot ($name+'.ff'));Mode='HardLink'})
+    }}
+    foreach($index in @(1,17,19,21,25,26,36,37,52,53,68,69,84,85,100,101,116,117,132,133,148,149,164,165,180,181,196,197,212,213,228,229,244)){
+        $name='assetfile'+$index+'.pak'
+        $rows.Add([pscustomobject]@{Relative=('zone/'+$name);Source=(Join-Path $StockRoot $name);Mode='HardLink'})
+    }
+    foreach($name in @('iw7_ship.exe','amd_ags_x64.dll','bink2w64.dll','d3dcompiler_46.dll','steam_api.dll','steam_api64.dll','Steam.dll')){
+        $rows.Add([pscustomobject]@{Relative=$name;Source=(Join-Path $StockRoot $name);Mode='Copy'})
+    }
+    foreach($role in 'TLS','Sentinel'){
+        $pin=$Descriptor.$role;$relative=if($role -ceq 'TLS'){'tlsdll.dll'}else{'main/fileSysCheck.cfg'}
+        $rows.Add([pscustomobject]@{Relative=$relative;Source=$pin.Path;Mode='Copy';DeclaredBytes=$pin.Bytes;DeclaredSHA256=$pin.SHA256})
+    }
+    if($rows.Count -ne 104 -or @($rows|Where-Object Mode -CEQ HardLink).Count -ne 95 -or
+        @($rows|Where-Object Mode -CEQ Copy).Count -ne 9){throw 'Exact authored 104-alias Main/fixed33 profile required.'}
+    $rows.ToArray()
+}
 function Assert-ModelFFVacant([string]$Work) {
     foreach($p in @(Get-CimInstance Win32_Process | Where-Object {$_.Name -match '^(iw7|zonetool).*\.exe$'})) {
         if($p.ExecutablePath -and ([IO.Path]::GetFullPath($p.ExecutablePath)).StartsWith($Work+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Model tool work directory remains occupied; retain inputs and reservation.'}
@@ -172,7 +259,7 @@ function Assert-ModelFFInputs($Inputs,[string]$Work,[switch]$SourceOnly) {
         }
     }
 }
-function Complete-ModelFFRestore($State,[string]$StatePath,[string]$LeaseToken) {
+function Complete-ModelFFRestore($State,[string]$StatePath,[string]$LeaseToken,[scriptblock]$BeforeReleaseCheck=$null) {
     try {
         Assert-ModelFFVacant $State.Work
         Assert-ModelFFInputs $State.Inputs $State.Work
@@ -180,6 +267,7 @@ function Complete-ModelFFRestore($State,[string]$StatePath,[string]$LeaseToken) 
         Assert-ModelFFInputs $State.Inputs $State.Work -SourceOnly
         $State.Restored=$true;$State.StockPreserved=$true;$State.RestorationStatus='Confirmed'
         Write-ModelFFState $State $StatePath
+        if($BeforeReleaseCheck){& $BeforeReleaseCheck}
     } catch {
         $State.RestorationStatus='Refused';$State.CleanupError=$_.Exception.Message
         Write-ModelFFState $State $StatePath
