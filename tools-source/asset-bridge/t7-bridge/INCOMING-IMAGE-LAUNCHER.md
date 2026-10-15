@@ -5,8 +5,9 @@ The Source147 contract is pinned at reviewed extension source
 Its exact contract text is 4,613 bytes /
 `1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f`.
 This finite interface uses the existing Catalogue/H1 entry points and names a
-future IncomingObservationOutcome. It introduces no host, framework, runtime
-record parser, preparation factory, native invocation or payload path.
+future IncomingObservationOutcome. The Source shell capture seam uses that same
+host and its retained stdout guard. It introduces no preparation factory, native
+invocation, Python runtime import or payload path.
 
 The Source plan selects IncomingImageObservationV1 and
 `t7-incoming-image-header-observation-v1`, with arguments exactly
@@ -27,13 +28,42 @@ first-complete and repeated-ambiguous cases are observational states. None prove
 descriptor admissibility, source/model/renderer association, pointer/object
 identity, ABI, lifetime, retained allocation, pixels, mips or Ready.
 
-Consumer5d owns deep 42/15/10 record interpretation. This launcher currently pins
-only the finite Source descriptor and refuses operational routes. Source tests
-cover typed scalar/slot/argv validation, old candidate contamination, seven NULL
-fields, proof promotion, ordinary contract paths and actual plan/build/start
-gates. No game, stock, PE, SDK or opaque content is read by this Source work.
+Consumer150, reviewed at 04fe053c377e562d78a03e556a974db9209bf0c6 and merged by
+b1790c0, owns deep record interpretation. The Source shell seam extracts exactly
+one `T7_INCOMING_IMAGE_METADATA` JSON object of at most 32 KiB from bounded closed
+stdout. A malformed marker, duplicate JSON property (including nested/escaped or
+case-colliding names), nonstandard JSON, extra/missing keys, untyped flags, proof
+promotion, changed identity or slot order refuses capture. It checks the 42/15/10
+envelope and typed bounded fields; detailed counters, names, copies and DTO124
+semantics remain the consumer's responsibility. A captured envelope is not a
+deeply validated observation.
 
-Next: review/merge this pending interface, then await the new producer recipe and
-actual original-job/fixture/host/terminal closure. A qualified CPP tuple, separately
+The caller retains the original native exit and reads only after normal original
+job/tree closure with its original owner, guards and lease retained. Missing
+markers yield IncomingNoReport; a complete envelope with exit zero yields
+IncomingRecordCaptured; a nonzero exit preserves IncomingRecordFromFailedProcess
+or IncomingRecordRefused. Refused plus exit zero is a contradiction. Existing H1
+input/output rechecks, normal closure, successful release and deadline-checked
+receipt publication precede IncomingRecordCapturedPendingReview. Forced closure,
+quarantine, unclosed jobs and failed rechecks/release/publication cannot promote
+that status. DeepMetadataOutcome remains NULL and InterpretationPending true.
+
+The separate Source consumer accepts a closed ordinary JSON file bounded to
+32 KiB with its original native exit. Its deep outcomes are IncomingMetadataObserved
+(complete/zero), ValidIncomingMetadataFromFailedProcess (complete/nonzero), and
+IncomingMetadataRefused (refused/nonzero). NoReport is explicit API absence only;
+an existing JSON null or malformed file is an error. A complete window containing
+zero matching names remains an observation of that bounded window. These outcomes
+never select an image/provider, qualify mips or admit pixels. The launcher never
+imports or executes this consumer and never labels shell capture with its deep
+outcomes. No new JSON publication mechanism is introduced.
+
+Source tests cover the pending plan/build/start gates and the new envelope,
+absence/refusal/nonzero boundaries, four slots, typed fields, duplicate properties,
+UTF-8 byte cap and mocked guarded-read seam. The mock is not live job evidence.
+No game, stock, PE, SDK or opaque content is read by this Source work.
+
+Next: await the new recipe's actual original-job/fixture/host/terminal closure.
+A qualified CPP tuple, separately
 reviewed preparation/ordinary DEFAULT and distinct Root Native GO are required
 before any future observation. Never fill these NULLs from old eeeca or F2 proof.
