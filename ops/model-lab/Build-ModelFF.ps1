@@ -2,7 +2,8 @@ param([ValidateSet('Build','Restore')][string]$Action='Build',[Parameter(Mandato
     [string]$StockToolRoot,[string]$SourceRoot,[string]$ToolProvenance,[string]$ReaderRun,[string]$Python='python',
     [string]$CandidateRoot,[string]$CandidateArtifactSHA256,[string]$NativeJobAssembly,
     [string]$StockBindingPlan,[string]$StockBindingPlanSHA256,
-    [string]$AuthorProjectSource,[string]$AuthoringPlan,[string]$AuthoringPlanSHA256,[switch]$DryRun)
+    [string]$AuthorProjectSource,[string]$AuthoringPlan,[string]$AuthoringPlanSHA256,
+    [string]$OutputNamespacePlan,[string]$OutputNamespacePlanSHA256,[switch]$DryRun)
 $ErrorActionPreference='Stop'
 $ops=Split-Path $PSScriptRoot -Parent;$repo=Split-Path $ops -Parent
 . "$ops/Base-Client.Core.ps1"
@@ -10,6 +11,7 @@ $ops=Split-Path $PSScriptRoot -Parent;$repo=Split-Path $ops -Parent
 . "$ops/Resource-Scheduler.Core.ps1"
 . "$ops/Memory-Budget.ps1"
 . "$PSScriptRoot/ModelFF.Core.ps1"
+. "$PSScriptRoot/ModelFF.PathPreflight.ps1"
 $RunRoot=Assert-IW7LabPath ([IO.Path]::GetFullPath($RunRoot)) (Join-Path $repo 'runtime')
 $statePath=Join-Path $RunRoot 'state.local.json';$work=Join-Path $RunRoot 'work'
 if($Action -eq 'Restore'){
@@ -64,10 +66,22 @@ $artifactNames=@($sourceNames[0],$sourceNames[1])
 if($plan.schema -cne "iw7.model-ff-plan/$planVersion" -or $plan.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or $plan.ff_built -or $plan.ready -or
     (!$authored -and @($plan.source_files.PSObject.Properties).Count -ne 5) -or @($sourceNames | Where-Object {$_ -cnotin $plan.source_files.PSObject.Properties.Name}).Count){throw 'Pinned exact original FF source preparation required.'}
 }
+$namespaceDeclaration=$null;$namespaceProfile=$null;$namespaceCounter=$null
+if($authored){
+    if(!$deferredAuthored -or !$OutputNamespacePlan -or !$OutputNamespacePlanSHA256){
+        throw 'Authored ModelFF requires deferred staging and its explicit hash-bound output namespace Source sidecar.'
+    }
+    $namespaceDeclaration=Read-ModelFFOutputNamespacePlan $OutputNamespacePlan $OutputNamespacePlanSHA256 $RunRoot
+    Assert-ModelFFNamespaceAuthorProject $namespaceDeclaration $authorInputs.ProjectFiles $authorDescriptor
+    $namespaceProfile=New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot $source -Zone $zoneName -DeclaredFiles ([object[]]$namespaceDeclaration.Files)
+    Assert-ModelFFNativePathBudget $RunRoot ([object[]]$namespaceProfile.Files.Keys)
+    $namespaceCounter=New-ModelFFOutputNamespaceCounter -Namespace $namespaceProfile
+}elseif($OutputNamespacePlan -or $OutputNamespacePlanSHA256){throw 'Output namespace Source sidecar is limited to the deferred authored ModelFF route.'}
 if($DryRun){
     [ordered]@{Schema='iw7.model-ff-admission/1';RunRoot=$RunRoot;OriginalInputs=$sourceNames;
         PhysicalBytes=8GB;CommitBytes=11GB;StockDiscoveryDeferred=$true;OpaqueInputsRead=$false;
-        NativeTypesLoaded=$false;LeaseAcquired=$false;SourcePlanDeferred=$deferredAuthored;Reader=$null;Ready=$false}|ConvertTo-Json -Depth 8
+        NativeTypesLoaded=$false;LeaseAcquired=$false;SourcePlanDeferred=$deferredAuthored;
+        OutputNamespaceSealed=!!$namespaceProfile;Reader=$null;Ready=$false}|ConvertTo-Json -Depth 8
     return
 }
 $lease=$null;$inputs=@();$originalContext=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Work=$work;
@@ -90,6 +104,7 @@ if($authored){
         Publications=[Collections.Generic.List[object]]::new();
         PublicationGuards=[Collections.Generic.List[IDisposable]]::new();
         Plan=[pscustomobject]@{RunRoot=$RunRoot;OutputLimitBytes=256MB;MetadataReserveBytes=1MB};
+        OutputNamespace=$namespaceProfile;OutputNamespaceCounter=$namespaceCounter;
         GroupStarted=$null;GroupDeadlineSeconds=600;PhaseStarted=$null;PhaseSeconds=0;LastPhaseStarted=$null;
         OriginalPhases=[Collections.Generic.List[object]]::new();
         CanExit=$false;Failure=$null;FinalClosureVerified=$false}
@@ -167,11 +182,13 @@ try{
             $null=Add-ModelFFHeldInput $planPath
             foreach($name in $sourceNames){$null=Add-ModelFFHeldInput (Join-Path $source $name) $plan.source_files.$name}
         }
-        foreach($name in @('ops/model-lab/Build-ModelFF.ps1','ops/model-lab/ModelFF.Core.ps1',
+        foreach($name in @('ops/model-lab/Build-ModelFF.ps1','ops/model-lab/ModelFF.Core.ps1','ops/model-lab/ModelFF.PathPreflight.ps1',
             'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1','tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1',
             'tools-source/asset-bridge/world/original-arena/OriginalArena.Process.ps1','ops/hud-lab/HudFileIdentity.cs')){
             $null=Add-ModelFFHeldInput (Join-Path $repo $name)
         }
+        $null=Add-ModelFFHeldInput $namespaceDeclaration.Path $namespaceDeclaration.SHA256
+        $state.OutputNamespaceSource=[ordered]@{Bytes=$namespaceDeclaration.Bytes;SHA256=$namespaceDeclaration.SHA256;EntryLimit=$namespaceProfile.EntryLimit}
     }
 function Invoke-ModelFFTool([string]$Phase,[string[]]$Arguments,[string]$Executable,[string]$SHA256,[string]$WorkingDirectory,[int]$Seconds=240) {
     if($authored){$modelFFRoot.PhaseStarted=Get-H1Clock;$modelFFRoot.PhaseSeconds=$Seconds;Assert-ModelFFGroupDeadline}
@@ -318,6 +335,8 @@ function Invoke-ModelFFTool([string]$Phase,[string[]]$Arguments,[string]$Executa
         if($plan.namespace -cne $authorDescriptor.namespace -or $plan.zone -cne $zoneName -or
             $plan.model_name -cne $modelName -or $plan.mesh_name -cne $meshName -or $plan.material_reference -cne $authorDescriptor.material_name){throw 'Actual staged author identity differs.'}
         $sourceNames=@(Get-ModelFFSourceNames $plan);$artifactNames=@($sourceNames[0],$sourceNames[1]);$state.SourcePlan=$plan
+        Assert-ModelFFNamespaceStage $namespaceDeclaration $RunRoot $source $plan $writerRecipe ('NativeReleasePending' -cin $writerPrepublication.PSObject.Properties.Name)
+        Assert-ModelFFNamespaceRequiredFFPaths $namespaceProfile $plan
         foreach($name in $sourceNames){$null=Add-ModelFFHeldInput (Resolve-IW7BasePath $source $name) $plan.source_files.$name}
         foreach($file in @(Get-ChildItem -LiteralPath (Join-Path $source 'evidence') -File -Recurse)){$null=Add-ModelFFHeldInput $file.FullName}
     }
@@ -401,6 +420,7 @@ foreach($name in @('iw7_ship.exe','amd_ags_x64.dll','bink2w64.dll','d3dcompiler_
     if(Test-Path -LiteralPath $p){$inputs+=[pscustomobject]@{Relative=$name;Source=$p;Mode='Copy'}}elseif($name -in @('iw7_ship.exe','bink2w64.dll','steam_api64.dll','main/fileSysCheck.cfg')){throw 'Required bootstrap engine/sentinel missing.'}
 }
 }
+if($authored){Assert-ModelFFNamespaceStockInputs $namespaceDeclaration $inputs}
 foreach($entry in $inputs){$f=Get-Item -LiteralPath $entry.Source;$null=Resolve-IW7BasePath $stock $entry.Relative
     if($StockBindingPlan -and !$authored){
         if($f.Length -ne $entry.Bytes -or $f.LastWriteTimeUtc.Ticks -ne ([datetimeoffset]$entry.ModifiedUtc).UtcDateTime.Ticks -or [int]$f.Attributes -ne $entry.Attributes -or $entry.Mode -cnotin @('Copy','HardLink')){throw 'Observed stock metadata/mode changed.'}
@@ -498,6 +518,18 @@ if(!$authored -and !$arena){$originalContext=$null}
     if($state.Dump.ExitCode){throw 'Bootstrap model re-dump failed.'}
     $dump=Join-Path $work ('dump/'+$zoneName)
     $dumpNames=if($authored){@($plan.dump_files)}else{$artifactNames}
+    if($authored){
+        $materialRelative='materials/'+$plan.material_reference+'.json'
+        $sourceMaterial=Resolve-IW7BasePath $source $materialRelative;$dumpMaterial=Resolve-IW7BasePath $dump $materialRelative
+        foreach($path in @($sourceMaterial,$dumpMaterial)){
+            if((Get-Item -LiteralPath $path).Length -gt 256KB){throw 'Authored material JSON exceeds the existing bounded metadata reader.'}
+        }
+        $null=Add-ModelFFHeldInput $sourceMaterial $plan.source_files.$materialRelative
+        $sourceMaterialGuard=$originalContext.Guards[$originalContext.Guards.Count-1]
+        $null=Add-ModelFFHeldInput $dumpMaterial
+        $dumpMaterialGuard=$originalContext.Guards[$originalContext.Guards.Count-1]
+        $state.MaterialJsonPreflight=Assert-ModelFFDumpMaterialJson $sourceMaterialGuard $dumpMaterialGuard
+    }
     foreach($name in $dumpNames){$p=Resolve-IW7BasePath $dump $name;$target=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $target))|Out-Null;Copy-Item -LiteralPath $p -Destination $target}
     if($rigid -or $arena){
         $geometryReader=if($arena){$arenaReader}else{"$PSScriptRoot/rigid_export.py"}
