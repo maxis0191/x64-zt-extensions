@@ -34,9 +34,13 @@ function New-CallerFixture {
         BaseMainBytes=14469;BaseMainSHA256='84cde2924df0a0553dd2cddb0ca173aed54af43d6874b06718c01d1a6cec4989';
         MainBytes=14557;MainSHA256='2ff1c104f8dfc99432179b289a0453aa1a81b8a99703803fcede1869fae61133';
         HelperBytes=16778;HelperSHA256='39fd69039d16285ca574f73a768130e294c618a089ba365bacdf84fd2cfa0019'}
-    [ordered]@{BuildProfile=$profile;PreparedRoot=$prepared;Runner=(Join-Path $PSScriptRoot 'Run-T7Build.ps1');SourceCommit='fab935826c898806855376662a8a03317b3ad8f1';
+    [ordered]@{BuildProfile=$profile;PreparedRoot=$prepared;RunRoot='C:\authored-caller-run';Compiler='C:\authored-compiler\cl.exe';Runner=(Join-Path $PSScriptRoot 'Run-T7Build.ps1');SourceCommit='fab935826c898806855376662a8a03317b3ad8f1';
         Bindings=$bindings;Inputs=@(@{Path='C:\retained-C\input.obj';Bytes=1024;SHA256=('1'*64)});
-        Stages=@(@{Name='caller-fixture-compile'},@{Name='caller-fixture-test'},@{Name='main'},@{Name='link'});
+        Stages=@(
+            @{Name='caller-fixture-compile';Stage='Compile';Image='C:\authored-compiler\cl.exe';DeadlineSeconds=120;Arguments=@('@C:\authored-caller\caller-fixture.rsp');Artifacts=@('caller-fixture.obj','caller-fixture.exe','caller-fixture.pdb','dependencies.json')},
+            @{Name='caller-fixture-test';Stage='Probe';Image='C:\authored-caller-run\caller-fixture-compile\caller-fixture.exe';DeadlineSeconds=15;Arguments=@();Artifacts=@()},
+            @{Name='main';Stage='Compile';Image='C:\authored-compiler\cl.exe';DeadlineSeconds=120;Arguments=@('@C:\authored-caller\main.obj.rsp');Artifacts=@('main.obj','compile.pdb','dependencies.json')},
+            @{Name='link';Stage='Link';Image='C:\authored-compiler\link.exe';DeadlineSeconds=120;Arguments=@('@C:\authored-caller\link.rsp');Artifacts=@('zonetool-t7.exe','zonetool-t7.pdb','zonetool-t7.lib','zonetool-t7.exp')});
         ReuseCompile=@{RecompiledMain=$true;PrepatchImageCallerV1=$marker;SourcePlan=$profile.BaseBuildPlan.Path;Receipt=$profile.BaseBuildReceipt.Path;
             OriginalStatus='Failed';Checks=51;StageRoots=@('C:\retained-C\zonetool11','C:\retained-C\xpak');
             SourcePlanSHA256=$profile.BaseBuildPlan.SHA256;ReceiptSHA256=$profile.BaseBuildReceipt.SHA256}}|ConvertTo-Json -Depth 12|ConvertFrom-Json
@@ -58,6 +62,9 @@ foreach($change in @(
     {param($f)$f.ReuseCompile|Add-Member NoteProperty ImageProvenance @{}},
     {param($f)$f.ReuseCompile|Add-Member NoteProperty RecompiledZonetool $false},
     {param($f)$f.ReuseCompile.RecompiledMain=$false},
+    {param($f)$f.ReuseCompile.OriginalStatus='Passed'},
+    {param($f)$f.ReuseCompile.Checks='51'},
+    {param($f)$f.ReuseCompile.StageRoots='C:\retained-C'},
     {param($f)$f.ReuseCompile.PrepatchImageCallerV1.Schema=@($f.ReuseCompile.PrepatchImageCallerV1.Schema)},
     {param($f)$f.ReuseCompile.PrepatchImageCallerV1=@($f.ReuseCompile.PrepatchImageCallerV1)},
     {param($f)$f.ReuseCompile.PrepatchImageCallerV1|Add-Member NoteProperty Extra $true},
@@ -77,6 +84,11 @@ foreach($change in @(
     {param($f)$f.BuildProfile.BaseV3Main.PSObject.Properties.Remove('SHA256')},
     {param($f)$f.Bindings[0].IsText=$false},
     {param($f)$f.Bindings+=@($f.Bindings[0])},
+    {param($f)$f.Stages[1].Arguments=@('extra')},
+    {param($f)$f.Stages[1].Image='C:\other.exe'},
+    {param($f)$f.Stages[0].DeadlineSeconds=121},
+    {param($f)$f.Stages[0].Artifacts=@('other.exe')},
+    {param($f)$f.Stages[0].Arguments=@('@C:\other.rsp')},
     {param($f)$f.Stages=@($f.Stages[2],$f.Stages[3])}
 )){
     foreach($validator in 'profile','bindings'){
@@ -84,6 +96,20 @@ foreach($change in @(
         try{if($validator -ceq 'profile'){$null=Assert-T7BuildProfile $fixture $PSScriptRoot}else{Assert-T7InputBindings $fixture}}catch{$refused=$true}
         if(!$refused){throw "Image-caller invalid $validator accepted: $change"};$checks++
     }
+}
+$probe=$ast.Find({param($n)$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.StartsWith("if(`$stage.Name -ceq 'caller-fixture-test')")},$true)
+if(!$probe){throw 'Actual image-caller fixture gate missing.'}
+$probeText=$probe.Clauses[0].Item2.Extent.Text
+$probeBody=[scriptblock]::Create($probeText.Substring(1,$probeText.Length-2))
+foreach($probeCase in 'lf','crlf','wrong-count','prefix','suffix','empty'){
+    $observed="IW7_T7_PREPATCH_IMAGE_CALLER_CHECKS=25`n"
+    switch($probeCase){crlf {$observed=$observed.Replace("`n","`r`n")};wrong-count {$observed=$observed.Replace('25','24')};prefix {$observed='extra'+$observed};suffix {$observed+='extra'};empty {$observed=''}}
+    $stageState=[ordered]@{};$state=[ordered]@{ImageCallerFixturePassed=$false};$probeRefused=$false
+    try{. $probeBody}catch{$probeRefused=$true}
+    if($probeCase -cin @('lf','crlf')){
+        if($probeRefused -or !$state.ImageCallerFixturePassed -or $stageState.Checks -ne 25 -or $stageState.EngineInvoked){throw 'Actual valid caller fixture output refused.'}
+    }elseif(!$probeRefused -or $state.ImageCallerFixturePassed){throw 'Actual caller fixture gate accepted wrong marker.'}
+    $checks++
 }
 if('IW7.AnimationProbe.NativeJob' -as [type]){throw 'Source tests imported a native job type.'}
 [ordered]@{Schema='iw7.t7-prepatch-image-caller-source-tests/1';Checks=$checks;Status='Passed';NativeExecuted=$false;CPPFixtureExecuted=$false;

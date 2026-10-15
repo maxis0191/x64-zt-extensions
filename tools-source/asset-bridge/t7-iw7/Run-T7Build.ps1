@@ -490,6 +490,7 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $caller=$null -ne $profile -and $profile.Name -ceq 't7-prepatch-image-caller-v1'
     $callerMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['PrepatchImageCallerV1']
     if($caller -ne $callerMarker){throw 'Image-caller profile and marker must be paired.'}
+    if(($caller -or $callerMarker) -and $Plan.BuildProfile -isnot [pscustomobject]){throw 'Image-caller input profile must be an object, never an enumerated array.'}
     $parts=$null -ne $profile -and $profile.Name -ceq 't7-material-parts-v1'
     $partsMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['MaterialParts']
     if($parts -ne $partsMarker){throw 'Parts profile and finite transition must be paired.'}
@@ -549,6 +550,31 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
         }
         foreach($name in 'SourcePlan','Receipt','SourcePlanSHA256','ReceiptSHA256'){
             if($Plan.ReuseCompile.$name -isnot [string]){throw 'Typed image-caller retained identity required.'}
+        }
+        if($Plan.ReuseCompile.OriginalStatus -isnot [string] -or $Plan.ReuseCompile.OriginalStatus -cne 'Failed' -or
+           ($Plan.ReuseCompile.Checks -isnot [int] -and $Plan.ReuseCompile.Checks -isnot [long]) -or $Plan.ReuseCompile.Checks -ne 51 -or
+           $Plan.ReuseCompile.StageRoots -isnot [array] -or $Plan.ReuseCompile.StageRoots.Count -ne 2 -or
+           @($Plan.ReuseCompile.StageRoots|Where-Object {$_ -isnot [string]}).Count){throw 'Exact image-caller retained C metadata required.'}
+        if($Plan.Compiler -isnot [string] -or $Plan.RunRoot -isnot [string] -or $Plan.PreparedRoot -isnot [string] -or
+           $Plan.Stages -isnot [array] -or $Plan.Stages.Count -ne 4){throw 'Typed image-caller build paths/stages required.'}
+        $planDirectory=Split-Path $Plan.PreparedRoot -Parent
+        $stageNames=@('caller-fixture-compile','caller-fixture-test','main','link')
+        $stageKinds=@('Compile','Probe','Compile','Link')
+        $stageImages=@($Plan.Compiler,(Join-Path $Plan.RunRoot 'caller-fixture-compile/caller-fixture.exe'),$Plan.Compiler,(Join-Path (Split-Path $Plan.Compiler -Parent) 'link.exe'))
+        $stageResponses=@((Join-Path $planDirectory 'caller-fixture.rsp'),'',(Join-Path $planDirectory 'main.obj.rsp'),(Join-Path $planDirectory 'link.rsp'))
+        $stageArtifacts=@('caller-fixture.obj|caller-fixture.exe|caller-fixture.pdb|dependencies.json','','main.obj|compile.pdb|dependencies.json','zonetool-t7.exe|zonetool-t7.pdb|zonetool-t7.lib|zonetool-t7.exp')
+        for($i=0;$i -lt 4;$i++){
+            $stage=$Plan.Stages[$i]
+            if($stage -isnot [pscustomobject] -or (@($stage.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Arguments,Artifacts,DeadlineSeconds,Image,Name,Stage' -or
+               $stage.Name -isnot [string] -or $stage.Name -cne $stageNames[$i] -or $stage.Stage -isnot [string] -or $stage.Stage -cne $stageKinds[$i] -or
+               $stage.Image -isnot [string] -or $stage.Image -cne $stageImages[$i] -or
+               ($stage.DeadlineSeconds -isnot [int] -and $stage.DeadlineSeconds -isnot [long]) -or $stage.DeadlineSeconds -ne $(if($i -eq 1){15}else{120}) -or
+               $stage.Arguments -isnot [array] -or $stage.Artifacts -isnot [array] -or
+               @($stage.Arguments|Where-Object {$_ -isnot [string]}).Count -or @($stage.Artifacts|Where-Object {$_ -isnot [string]}).Count -or
+               ($stage.Artifacts -join '|') -cne $stageArtifacts[$i] -or
+               $stage.Arguments.Count -ne $(if($i -eq 1){0}else{1}) -or ($i -ne 1 -and $stage.Arguments[0] -cne ('@'+$stageResponses[$i]))){
+                throw 'Fixed image-caller fixture-first stage contract differs.'
+            }
         }
         $marker=$Plan.ReuseCompile.PrepatchImageCallerV1
         if($marker -isnot [pscustomobject] -or (@($marker.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseMainBytes,BaseMainSHA256,HelperBytes,HelperSHA256,MainBytes,MainSHA256,RetainedMainBytes,RetainedMainSHA256,Schema,SourceProfile'){

@@ -44,17 +44,17 @@ fixtures or their contract pins.
 `--prepatch-image-caller-v1-base-plan`, the immutable 305621-byte V3 Source plan
 `e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530`.
 Only its exact 14469-byte wired main is imported; namespace/include rebinding
-produces main14557/SHA256
+produces main 14557/SHA256
 `2ff1c104f8dfc99432179b289a0453aa1a81b8a99703803fcede1869fae61133`.
 The retained failed C group keeps its failure status and supplies only the same
 previously successful CLI/xpak sub-stages. No old runtime qualification is moved
 onto a new input path.
 
 The recipe uses the existing runner/H1 host, original-job and VCTIP policies:
-caller fixture Compile120 s, fixture Probe15 s, main Compile120 s, link Link120 s.
+caller fixture Compile 120 s, fixture Probe 15 s, main Compile 120 s, link Link 120 s.
 The Probe must exit zero with exactly
 `IW7_T7_PREPATCH_IMAGE_CALLER_CHECKS=25` plus LF/CRLF and empty stderr before main
-can compile. Group600 s, output256 MiB and metadata reserve1 MiB stay unchanged.
+can compile. Group 600 s, output 256 MiB and metadata reserve 1 MiB stay unchanged.
 The closed profile has 18 fields, including typed Source/response pins; the new
 transition has 10 fields. Mixed V2/V3, catalogue, export or provenance selections
 refuse. DEFAULT reports Source pending, CPP unqualified, null candidate and false
@@ -75,3 +75,16 @@ package, actual preparation and full pre-admission Source audit precede a distin
 CPP GO. A closed successful CPP tuple then precedes consumer adoption and a
 separate native-capture GO. No PE/retail read, lease, game or deployment is
 authorized by this document or the Source capsule.
+
+The first Source candidate's negative controls exposed PowerShell's pipeline
+enumeration of a singleton profile array before the local object check. The
+correction checks the original plan property itself before accepting this mode;
+the original failing candidate and correction remain separate commits. No
+preparation, compiler or capture ran from that candidate.
+
+Source validation after correction passes 11 targeted Python tests and 90 actual
+PowerShell profile/input/fixture-output controls. Retained V3/V2 controls pass
+48/100, OS controls39, input-binding controls132, deadline controls3 and the
+registration-bindings controls144. Shared build/registration Python checks ran
+43 cases:35 passed and8 integrations were skipped because their separate retained
+inputs were not supplied. This does not credit a compiled fixture or native test.

@@ -103,5 +103,81 @@
     "A writer outside the captured function remains unknown; no automatic expansion or callee following.",
     "No GfxImage payload, XPAK, pixels, asset lookup, Link activation, zone, boot or game operation.",
     "Authored C++ fixture is uncompiled until a distinct reviewed CPP GO; Source tests cannot promote it."
-  ]
+  ],
+  "report_contract": {
+    "required_success_top_fields": [
+      "schema",
+      "phase",
+      "source_base",
+      "read_limit",
+      "report_limit",
+      "window_count",
+      "window_observations",
+      "requested_bytes",
+      "returned_bytes",
+      "pid",
+      "thread_id",
+      "capture_complete",
+      "boot_authorized",
+      "abi_proven",
+      "runtime_compatibility_proven",
+      "writer_proven",
+      "gfximage_payload_read",
+      "outside_interval_followed",
+      "windows",
+      "creation_filetime",
+      "module_base",
+      "base_matches_source",
+      "module_path",
+      "pe",
+      "pdata_records",
+      "status"
+    ],
+    "optional_error_fields": [
+      "metadata_error",
+      "capture_error"
+    ],
+    "required_success_window_fields": [
+      "site",
+      "rva",
+      "window_rva",
+      "window_bytes",
+      "code_limit",
+      "runtime_function",
+      "callsite_validated",
+      "known_target_rva",
+      "callee_read",
+      "regions",
+      "bytes_hex"
+    ],
+    "optional_window_error_fields": [
+      "error"
+    ],
+    "runtime_function_fields": [
+      "begin_rva",
+      "end_rva",
+      "unwind_rva",
+      "unwind_header_hex",
+      "unwind_format_validated"
+    ],
+    "success_status": "captured_for_offline_review",
+    "refused_status": "incomplete_stop",
+    "success_exit": 0,
+    "refused_exit": 2,
+    "window_count": 1,
+    "captured_code_range": "window_rva == runtime_function.begin_rva; window_bytes == end_rva-begin_rva; 5 <= window_bytes <= 8192",
+    "code_hex": "Exactly 2*window_bytes lowercase hex digits; no pixel or image body",
+    "required_false": [
+      "boot_authorized",
+      "abi_proven",
+      "runtime_compatibility_proven",
+      "writer_proven",
+      "gfximage_payload_read",
+      "outside_interval_followed"
+    ],
+    "required_window_false": [
+      "callee_read"
+    ],
+    "unwind_format_validated": false
+  }
 }

@@ -28,7 +28,7 @@ $plan=[ordered]@{BuildProfile=@{Name='t7-material-parts-v1'};Inputs=@(@{Path=$tz
         Evidence=@{Path=$proofPath;Bytes=8907;SHA256=$sha};ProductVersion='10.0.26100.9711';
         SignatureStatus='Valid';SignatureType='Catalog';SignerThumbprint='667BBA1E1F478221AA65DE4F75187A751B03A453';KBFileAttributionVerified=$false}}
 $raw=$plan|ConvertTo-Json -Depth 8;$checks=0
-foreach($family in 't7-material-parts-v1','t7-prepatch-link-v3','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1'){
+foreach($family in 't7-material-parts-v1','t7-prepatch-link-v3','t7-prepatch-image-caller-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1'){
     $p=$raw|ConvertFrom-Json;$p.BuildProfile.Name=$family
     if((Assert-T7OSResourceContext $p) -cne $proofPath){throw 'Positive fixed context refused'};$checks++
 }

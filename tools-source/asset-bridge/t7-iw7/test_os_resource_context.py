@@ -38,7 +38,7 @@ class OSResourceTests(unittest.TestCase):
 
     def test_default_and_explicit_paired_selection(self):
         self.assertFalse(build.os_resource_selected(SimpleNamespace()))
-        for family in ('material_parts_v1','prepatch_link_v3'):
+        for family in ('material_parts_v1','prepatch_link_v3','prepatch_image_caller_v1'):
             args=SimpleNamespace(os_context_tzres_20261014=True,os_context_proof=Path('proof'))
             setattr(args,family,True)
             self.assertTrue(build.os_resource_selected(args))

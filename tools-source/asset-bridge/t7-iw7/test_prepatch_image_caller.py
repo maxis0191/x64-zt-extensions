@@ -3,7 +3,7 @@ import ast
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import re
 import unittest
 import prepare_build as build
@@ -86,6 +86,27 @@ class CallerSourceTests(unittest.TestCase):
             self.assertIn("parser.add_argument('"+flag+"'",text)
         self.assertNotIn('--prepatch-image-caller-address',text)
         self.assertNotIn('--prepatch-image-caller-limit',text)
+
+    def test_actual_fixture_recipe_ast_precedes_only_main_and_link(self):
+        tree=ast.parse((HERE/'prepare_build.py').read_text())
+        prepare=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='prepare')
+        node=next(n for n in prepare.body if isinstance(n,ast.If) and isinstance(n.test,ast.Name) and
+            n.test.id=='prepatch_image_caller_v1' and any(isinstance(s,ast.Assign) and
+                any(isinstance(t,ast.Name) and t.id=='fixture_root' for t in s.targets) for s in n.body))
+        env=dict(prepatch_image_caller_v1=True,run=PureWindowsPath(r'C:\authored run'),
+            compiler_dir=PureWindowsPath(r'C:\authored compiler'),HERE=PureWindowsPath(r'C:\Source'),
+            output=PureWindowsPath(r'C:\authored plan'),caller_probe=caller,quote=build.quote,payloads={},
+            stages=[dict(Name='main'),dict(Name='link')])
+        exec(compile(ast.Module(body=[node],type_ignores=[]),'<actual Source fixture recipe>','exec'),env)
+        self.assertEqual([x['Name'] for x in env['stages']],['caller-fixture-compile','caller-fixture-test','main','link'])
+        self.assertEqual(env['stages'][0]['DeadlineSeconds'],120)
+        self.assertEqual(env['stages'][1]['DeadlineSeconds'],15)
+        self.assertEqual(env['stages'][1]['Arguments'],[])
+        self.assertEqual(env['stages'][1]['Artifacts'],[])
+        response=env['payloads']['caller-fixture.rsp'].decode()
+        self.assertIn('prepatch_image_caller_fixture.cpp',response)
+        self.assertIn('/WX',response)
+        self.assertNotIn('BlackOps3',response)
 
 
 @unittest.skipUnless(os.environ.get('IW7_T7_V3_PLAN'),'Immutable V3 Source plan not supplied')
