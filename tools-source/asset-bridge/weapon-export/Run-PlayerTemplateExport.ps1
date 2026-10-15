@@ -39,7 +39,7 @@ function Test-PlayerModalPlan($Plan){
     if(!$Plan.PSObject.Properties['ModalDiagnostic']){return $false}
     $modal=$Plan.ModalDiagnostic
     if(!$modal -or $modal.Mode -isnot [string] -or $modal.Mode -cne 'global-mp-modal-only' -or
-       (@($modal.PSObject.Properties.Name|Sort-Object)-join '|') -cne 'HelperSeconds|ModalSource|Mode|Python|WindowRecordBytes' -or
+       (@($modal.PSObject.Properties.Name|Sort-Object)-join '|') -cne 'HelperSeconds|ModalSource|Mode|Python|RunRoot|WindowRecordBytes' -or
        $modal.HelperSeconds -isnot [long] -or $modal.HelperSeconds -ne 10 -or
        $modal.WindowRecordBytes -isnot [long] -or $modal.WindowRecordBytes -ne 65536 -or $Plan.ToolSeconds -ne 120){throw 'Exact existing one-modal diagnostic contract required.'}
     if($modal.Python.Path -isnot [string] -or $modal.Python.Path -cnotmatch '^[A-Za-z]:\\' -or
@@ -49,6 +49,10 @@ function Test-PlayerModalPlan($Plan){
        $modal.Python.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or (@($modal.Python.PSObject.Properties.Name|Sort-Object)-join '|') -cne 'Bytes|Path|SHA256'){throw 'Declared original Python binding required without DEFAULT opaque open.'}
     if($modal.ModalSource -isnot [string] -or [IO.Path]::GetFileName($modal.ModalSource) -cne 'modal_window.py'){throw 'Exact existing modal adapter required.'}
     $package=$modal.ModalSource;for($i=0;$i -lt 5;$i++){$package=[IO.Path]::GetDirectoryName($package)}
+    # The existing Python local_output validator only permits this package's
+    # runtime. Keep its rule and declare a separate, fresh owned output subtree.
+    if($modal.RunRoot -isnot [string] -or $modal.RunRoot -cne (Join-Path $package 'runtime/player-template-modal')){throw 'Exact package-owned modal runtime required.'}
+    if(Test-Path -LiteralPath $modal.RunRoot){throw 'Fresh package-owned modal runtime required.'}
     $closure=@{
         H1Compiler='tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1';LoadDiagnostic='tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1';
         Modal='tools-source/asset-bridge/world/original-arena/modal_window.py';Recipient='tools-source/asset-bridge/recipient/recipient_dialog.py';
@@ -157,6 +161,13 @@ function Invoke-PlayerOriginalPoll($Ctx,$Current,$Logs){
         Test-PlayerGenerated $Current
     }
 }
+function Read-PlayerModalRecord([string]$Path){
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot
+    if(!$playerRoot.ModalOptions -or $Path -cne (Join-Path $playerRoot.ModalOptions.RunRoot 'load-diagnostic/modal-window.json')){throw 'Exact original modal output required.'}
+    $read=Read-PlayerOutput $Path 65536
+    $playerRoot.State.ModalRecord=[ordered]@{Path=$read.Path;Bytes=$read.Bytes;SHA256=$read.SHA256}
+    $read.Text # Its actual read-only stream stays in the main context's guards.
+}
 function Close-PlayerOriginalJobs{
     $playerRoot=$script:PlayerTemplateExportOriginalRoot;$main=$playerRoot.Context
     $jobs=@($main)
@@ -217,6 +228,10 @@ function Test-PlayerGenerated($Current,[long]$Limit=$script:PlayerTemplateExport
     $root=$script:PlayerTemplateExportOriginalRoot;$plan=$root.Plan;$state=$root.State
     Assert-PlayerExportClock
     $items=[Collections.Generic.List[object]]::new();$queue=[Collections.Generic.Queue[string]]::new();$queue.Enqueue($plan.RunRoot)
+    if($plan.PSObject.Properties['ModalDiagnostic']){
+        Assert-H1Path $plan.ModalDiagnostic.RunRoot
+        if(Test-Path -LiteralPath $plan.ModalDiagnostic.RunRoot){$queue.Enqueue($plan.ModalDiagnostic.RunRoot)}
+    }
     while($queue.Count){
         $directory=$queue.Dequeue();Assert-H1Path $directory
         foreach($path in [IO.Directory]::EnumerateFileSystemEntries($directory)){
@@ -237,9 +252,12 @@ function Test-PlayerGenerated($Current,[long]$Limit=$script:PlayerTemplateExport
     }
     $state.GeneratedObservedBytes=$bytes
     if($bytes -gt $Limit){throw 'Sampled generated output allowance exceeded.'}
-    foreach($name in 'stdout.log','stderr.log'){
-        $path=Join-Path (Join-Path $plan.RunRoot 'owned-player-template') $name
-        if((Test-Path $path) -and (Get-Item $path).Length -gt 2MB){throw 'Sampled stream threshold exceeded.'}
+    $logRoots=@((Join-Path $plan.RunRoot 'owned-player-template'))
+    if($plan.PSObject.Properties['ModalDiagnostic']){$logRoots+=@(Join-Path $plan.ModalDiagnostic.RunRoot 'owned-load-modal')}
+    foreach($logRoot in $logRoots){foreach($name in 'stdout.log','stderr.log'){
+        $path=Join-Path $logRoot $name
+        if((Test-Path $path) -and (Get-Item -LiteralPath $path -Force).Length -gt 2MB){throw 'Sampled stream threshold exceeded.'}
+    }
     }
     Assert-PlayerExportClock
 }
@@ -304,7 +322,13 @@ try{
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 8GB -CommitBytes 12GB -Owner 'One Shredder/PAP native template export'
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     . $plan.Providers.Profile;. $plan.Providers.StockCore;. $plan.Providers.BeaconCore;. $plan.Providers.ArenaProcess
-    if($modalSelected){. $plan.Providers.H1Compiler;. $plan.Providers.LoadDiagnostic;Pin-PlayerOpaque $plan.ModalDiagnostic.Python}
+    if($modalSelected){
+        . $plan.Providers.H1Compiler;. $plan.Providers.LoadDiagnostic
+        Assert-H1Path $plan.ModalDiagnostic.RunRoot
+        if(Test-Path -LiteralPath $plan.ModalDiagnostic.RunRoot){throw 'Fresh package-owned modal runtime required under admission.'}
+        $state.ModalRunRoot=$plan.ModalDiagnostic.RunRoot
+        Pin-PlayerOpaque $plan.ModalDiagnostic.Python
+    }
     Pin-PlayerOpaque $plan.JobAssembly
     [Reflection.Assembly]::LoadFrom($plan.JobAssembly.Path)|Out-Null
     [IO.Directory]::CreateDirectory($plan.RunRoot)|Out-Null;$created=$true
@@ -338,9 +362,9 @@ try{
     $tool=Join-Path $plan.WorkRoot 'zonetool-iw7-player.exe'
     $arguments=@('-headless','-iw7-player-weapon-templates','cp_zmb',$plan.Request.Path,$plan.Pack)
     if($modalSelected){
-        $root.ModalOptions=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$plan.RunRoot;DiagnosticZone='global_mp';ModalTextOnly=$true;
+        $root.ModalOptions=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$plan.ModalDiagnostic.RunRoot;DiagnosticZone='global_mp';ModalTextOnly=$true;
             ModalSource=$plan.ModalDiagnostic.ModalSource;Python=$plan.ModalDiagnostic.Python.Path;PythonSHA256=$plan.ModalDiagnostic.Python.SHA256;
-            ToolSHA256=$plan.Candidate.SHA256;Inputs=$state.Inputs}
+            ToolSHA256=$plan.Candidate.SHA256;Inputs=$state.Inputs;ModalRecordReader={param($Path) Read-PlayerModalRecord $Path}}
         $root.ModalEvidence=[ordered]@{Attempted=$false;LastBytes=-1L;LastProgressMs=0L;Outcome='NotTriggered';SymbolsVerified=$false}
         $state.ModalDiagnostic=$root.ModalEvidence
     }

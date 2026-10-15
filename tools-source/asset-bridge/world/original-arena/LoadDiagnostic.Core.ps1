@@ -45,6 +45,7 @@ function Invoke-ArenaLoadDiagnostic($Target,$State,[string]$Logs,$Options,$Evide
     $cpu=Join-Path $dir 'cpu-threads.jsonl';$dump=Join-Path $dir 'load.dmp'
     try {
         if($Options.PSObject.Properties['ModalTextOnly'] -and $Options.ModalTextOnly){
+            if($Options.PSObject.Properties['ModalRecordReader'] -and $Options.ModalRecordReader -isnot [scriptblock]){throw 'Modal record reader must be an explicit caller callback.'}
             $window=Join-Path $dir 'modal-window.json'
             $createdFiletime=([datetimeoffset]$State.Identity.CreatedUtc).UtcDateTime.ToFileTimeUtc()
             $args=@('-B','-S',$Options.ModalSource,'--pid',[string]$State.Identity.PID,'--parent-pid',[string]$PID,
@@ -52,7 +53,9 @@ function Invoke-ArenaLoadDiagnostic($Target,$State,[string]$Logs,$Options,$Evide
                 '--sha256',$Options.ToolSHA256,'--output',$window)
             $Evidence.Window=Invoke-OriginalArenaTool $diag $Options.Python $Options.PythonSHA256 $args $Target.Work $Options.RunRoot load-modal $Options.Inputs (Get-ArenaDiagnosticSeconds $Options 10)
             if((Get-Item -LiteralPath $window).Length -gt 64KB){throw 'Modal window record exceeds 64 KiB.'}
-            $record=Get-Content -LiteralPath $window -Raw|ConvertFrom-Json
+            if($Options.PSObject.Properties['ModalRecordReader']){
+                $record=(& $Options.ModalRecordReader $window)|ConvertFrom-Json
+            }else{$record=Get-Content -LiteralPath $window -Raw|ConvertFrom-Json}
             if($reference -and ($record.schema -isnot [string] -or $record.identity_verified_after -isnot [bool] -or
                $record.modal_window_observed -isnot [bool] -or ($record.modal_window_observed -and $record.title -isnot [string]))){throw 'Scalar original modal record fields required.'}
             if($record.schema -cne 'iw7.world-modal-window/1' -or $record.identity_verified_after -ne $true){throw 'Modal target/window identity not confirmed.'}
