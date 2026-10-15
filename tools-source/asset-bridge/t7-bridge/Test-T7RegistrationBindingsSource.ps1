@@ -14,7 +14,7 @@ function New-BindingsSourcePlan {
         Arguments=@('-t7-iw7-registration-material-bindings-v1','mp_freerun_04','p7_fre_platform_cap_02','0');
         CandidateSource=$null;CandidateBytes=$null;CandidateSHA256=$null;BuildPlan=$null;BuildReceipt=$null;ExpectedBuildPlanSHA256=$null;ExpectedBuildReceiptSHA256=$null;
         SelectedRegistrationMaterialBindingsV1=[pscustomobject]@{Schema='iw7.t7-registration-bindings-proposal/1';
-            SourceRevision='92118595079b86d66c340c22b299de90c49a2b6a';ReaderRevision='9eba3c7189fae12e218eadd8f56a7ddda834b1b4';
+            SourceRevision='92118595079b86d66c340c22b299de90c49a2b6a';ReaderRevision='6d16303437f706df4037c636b3ee9f8a5da00aaf';
             Contract=[pscustomobject]@{Path='C:\authored\registration-material-bindings-source-contract.json';Bytes=5391;SHA256='d60f0e33d9dddb69656744f6481ba32ced1a7a040d75ff913908192297e3c9a6'};
             Reader=[pscustomobject]@{Path='C:\authored\registration_bindings_consumer.py';Bytes=9687;SHA256='8e1d464c6467492b65e102b784aa9f265723560b9b486499e3a49cb4073f5c81'};
             NativeSchema='iw7.t7-registration-material-bindings/1';BindingCount=7;ReportLimitBytes=32768;
@@ -24,6 +24,12 @@ function New-BindingsSourcePlan {
 $plan=New-BindingsSourcePlan
 Assert-T7RegistrationBindingsSourcePlan $plan;Check $true 'Reviewed Source descriptor refused.'
 Check (Test-T7RegistrationBindingsIntent $plan) 'Source intent missed.'
+# These are small tracked Source texts, never generated/native inputs.
+foreach($pin in $plan.SelectedRegistrationMaterialBindingsV1.Contract,$plan.SelectedRegistrationMaterialBindingsV1.Reader){
+    $path=Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 't7-iw7') ([IO.Path]::GetFileName($pin.Path))
+    Check ((Get-Item -LiteralPath $path).Length -eq $pin.Bytes) 'Merged Source text length differs.'
+    Check ((Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant() -ceq $pin.SHA256) 'Merged Source text hash differs.'
+}
 foreach($bad in @($false,'true',1)){
     $p=New-BindingsSourcePlan;$p.SelectedRegistrationMaterialBindingsV1.SourceOnlyPending=$bad
     Refuses {Assert-T7RegistrationBindingsSourcePlan $p} 'must remain Source pending'

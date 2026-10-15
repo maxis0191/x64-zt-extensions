@@ -16,12 +16,12 @@ cannot declare this seam. Its operational allowlists remain unchanged.
 The `SelectedRegistrationMaterialBindingsV1` descriptor pins producer merge
 `92118595079b86d66c340c22b299de90c49a2b6a`, the 5,391-byte contract
 `d60f0e33d9dddb69656744f6481ba32ced1a7a040d75ff913908192297e3c9a6`, and
-the independent reader code reviewed at
-`9eba3c7189fae12e218eadd8f56a7ddda834b1b4`: 9,687 bytes,
+the independent reader merged as
+`6d16303437f706df4037c636b3ee9f8a5da00aaf`: 9,687 bytes,
 `8e1d464c6467492b65e102b784aa9f265723560b9b486499e3a49cb4073f5c81`.
-Reader PR168 merged as `6d16303437f706df4037c636b3ee9f8a5da00aaf`;
-its final head `4b23e971ac434f22437d099fb9ed22cba8a842a6` changes only
-documentation after that reviewed reader code, whose byte pin is unchanged.
+Reader PR168's final head `4b23e971ac434f22437d099fb9ed22cba8a842a6`
+changes only documentation after reviewed code
+`9eba3c7189fae12e218eadd8f56a7ddda834b1b4`; its byte pin is unchanged.
 Both Source text pins must use their exact names in one package directory.
 Validation uses declared data only; it does not open or import the reader.
 
@@ -53,3 +53,9 @@ bounded pins. It exercises the actual existing host entry in DEFAULT and Run
 with nonexistent opaque declarations, confirming refusal without runtime,
 evidence, native types or consumed-host state. These Source controls acquire
 no resource lease and perform no preparation, CPP, stock or native operation.
+
+Local Source validation: 160 new refusal/pin/host checks passed, Catalogue313,
+Host216 and historical Incoming319 passed; the tracked ownership check passed
+with 902 files, 884 exports and three explicit dependencies. No native fixture,
+CPP, extraction or game operation was performed by these checks. Hosted CI
+status is recorded separately on the exact PR head.

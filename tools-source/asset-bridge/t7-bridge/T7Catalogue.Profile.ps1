@@ -17,7 +17,7 @@ function Assert-T7RegistrationBindingsSourcePlan($Plan) {
         'NativeObserved','DeepMetadataOutcome','QualifiedObjectMipCount','Ready')
     foreach($pair in @(@('Schema','iw7.t7-registration-bindings-proposal/1'),
         @('SourceRevision','92118595079b86d66c340c22b299de90c49a2b6a'),
-        @('ReaderRevision','9eba3c7189fae12e218eadd8f56a7ddda834b1b4'),
+        @('ReaderRevision','6d16303437f706df4037c636b3ee9f8a5da00aaf'),
         @('NativeSchema','iw7.t7-registration-material-bindings/1'))){
         if($marker.($pair[0]) -isnot [string] -or $marker.($pair[0]) -cne $pair[1]){throw 'Exact reviewed registration bindings Source basis required.'}
     }
