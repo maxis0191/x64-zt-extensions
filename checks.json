@@ -1259,6 +1259,16 @@
       ]
     },
     {
+      "id": "registration-bindings-build-source",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-RegistrationBindingsBuild.ps1"
+      ]
+    },
+    {
       "id": "raygun-source-handoff",
       "command": [
         "python",

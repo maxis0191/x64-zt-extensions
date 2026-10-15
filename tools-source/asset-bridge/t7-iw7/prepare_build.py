@@ -18,6 +18,7 @@ import prepare_image_provenance as image_provenance
 import prepare_image_metadata as image_metadata
 import prepare_image_registration_metadata as registration_metadata
 import prepare_incoming_image_metadata as incoming_metadata
+import prepare_registration_bindings_build as bindings_build
 
 IMAGE_FIXTURE_SOURCE = '678bf7dde6a99207654256c1e53ebaaec286ffe1'
 IMAGE_FIXTURE_API_PINS = {
@@ -643,7 +644,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
-def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False, metadata_profile=False, registration_profile=False, incoming_profile=False):
+def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False, metadata_profile=False, registration_profile=False, incoming_profile=False, bindings_profile=False):
     require(type(parts_profile) is bool, 'Explicit parts preparation profile required')
     require(type(provenance_profile) is bool and not (parts_profile and provenance_profile),
             'Exclusive explicit provenance preparation profile required')
@@ -655,7 +656,9 @@ def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance
             'Registration payload requires its exact metadata base')
     require(type(incoming_profile) is bool and (not incoming_profile or registration_profile),
             'Incoming payload requires its exact registration base')
-    payload_limit = (448 if incoming_profile else 384 if registration_profile else 320 if metadata_profile else 288 if parts_profile or provenance_profile else 256) * 1024
+    require(type(bindings_profile) is bool and (not bindings_profile or (registration_profile and not incoming_profile)),
+            'Bindings payload requires its exclusive registration base')
+    payload_limit = (448 if incoming_profile or bindings_profile else 384 if registration_profile else 320 if metadata_profile else 288 if parts_profile or provenance_profile else 256) * 1024
     require(len(raw) <= 2*1024**2 and sum(map(len,payloads.values())) <= payload_limit,
             'Preparation bound exceeded')
 
@@ -740,6 +743,7 @@ def prepare(args):
     image_metadata_enabled = image_metadata.selected(args)
     registration_enabled = registration_metadata.selected(args)
     incoming_enabled = incoming_metadata.selected(args)
+    bindings_enabled = bindings_build.selected(args)
     fixture_proof_root = image_fixture_proof_requested(args)
     os_context_enabled = os_resource_selected(args)
     parts_observation = material_parts.selected(args)
@@ -1062,6 +1066,12 @@ def prepare(args):
                     payloads['prepared/main.cpp'],payloads['prepared/zonetool.cpp']=main.encode(),cli.encode()
                     payloads.update(generated)
                     payloads['registration-fixture.rsp']=' '.join(map(quote,incoming_args)).encode()
+                if bindings_enabled:
+                    main,cli,reuse['RegistrationBindingsObservation'],generated,bindings_args=bindings_build.transition(
+                        main,cli,payloads['prepared/selected_image_registration_observer.hpp'],registration_args,read,output/'prepared')
+                    payloads['prepared/main.cpp'],payloads['prepared/zonetool.cpp']=main.encode(),cli.encode()
+                    payloads.update(generated)
+                    payloads['registration-fixture.rsp']=' '.join(map(quote,bindings_args)).encode()
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -1177,6 +1187,9 @@ def prepare(args):
                                           ('IncomingObserver',output/'prepared/selected_image_incoming_observer.hpp'),
                                           ('IncomingBaselineFixture',output/'prepared/incoming_registration_baseline_fixture.cpp')]:
                             profile[name]={k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+                    if bindings_enabled:
+                        bindings_build.extend_profile(profile,output/'prepared',
+                            lambda path:{k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')})
         if zombies_observation:
             profile['Name'] = zombies_observer.SOURCE_PROFILE
             profile['ObservationSchema'] = zombies_observer.SCHEMA
@@ -1211,7 +1224,8 @@ def prepare(args):
     if os_context is not None: plan['OSResourceContext'] = os_context
     raw = (json.dumps(plan,indent=2)+'\n').encode()
     require_preparation_bounds(raw, payloads, parts_profile=parts_observation, provenance_profile=image_observation,
-                               metadata_profile=image_metadata_enabled, registration_profile=registration_enabled, incoming_profile=incoming_enabled)
+                               metadata_profile=image_metadata_enabled, registration_profile=registration_enabled,
+                               incoming_profile=incoming_enabled, bindings_profile=bindings_enabled)
     payloads['build-plan.local.json'] = raw
     output.mkdir()
     for name, data in payloads.items():
@@ -1248,6 +1262,7 @@ if __name__ == '__main__':
     parser.add_argument('--image-metadata-v1',action='store_true')
     parser.add_argument('--image-registration-metadata-v1',action='store_true')
     parser.add_argument('--image-incoming-header-v1',action='store_true')
+    parser.add_argument('--image-registration-bindings-v1',action='store_true')
     parser.add_argument('--image-provenance-fixture-proof-root',type=Path)
     parser.add_argument('--os-context-tzres-20261014',action='store_true')
     parser.add_argument('--os-context-proof',type=Path)
