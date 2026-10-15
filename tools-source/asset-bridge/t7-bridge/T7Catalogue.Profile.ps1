@@ -56,6 +56,120 @@ function Assert-T7RegistrationBindingsSourcePlan($Plan) {
 function Assert-T7RegistrationBindingsOperationalGate {
     throw 'Registration bindings Source only: actual closed CPP qualification and a separately reviewed operational plan are required; DEFAULT and Run remain unavailable.'
 }
+function Assert-T7RegistrationBindingsCpp80Shape($Build,$Receipt,$PlanSHA256,$FixtureStdout,$FixtureStderr) {
+    # Declared metadata only. This does not establish a measured cohort, original
+    # host/PTY closure or guarded input identity, and never opens the gate above.
+    if($PlanSHA256 -isnot [string] -or $PlanSHA256 -cnotmatch '^[0-9a-f]{64}$' -or
+       $Build.Schema -isnot [string] -or $Build.Schema -cne 'iw7.t7-minimal-build-plan/1' -or
+       $Build.SourceCommit -isnot [string] -or $Build.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+       $Receipt.Schema -isnot [string] -or $Receipt.Schema -cne 'iw7.t7-minimal-build/1' -or
+       $Receipt.Status -isnot [string] -or $Receipt.Status -cne 'Passed' -or
+       $Receipt.PlanSHA256 -isnot [string] -or $Receipt.PlanSHA256 -cne $PlanSHA256){throw 'Exact typed CPP80 metadata identity required.'}
+    foreach($row in @(@('GroupDeadlineSeconds',600),@('OutputLimitBytes',268435456),@('MetadataReserveBytes',1048576))){
+        if(!(Test-T7CatalogueInteger $Build.($row[0]) $row[1]) -or $Build.($row[0]) -ne $row[1]){throw 'Exact CPP80 declared group/output bounds required.'}
+    }
+    foreach($name in 'RunRoot','PreparedRoot'){
+        $path=$Build.$name
+        if($path -isnot [string] -or $path -cnotmatch '^[A-Za-z]:\\' -or [IO.Path]::GetFullPath($path) -cne $path -or
+           $path.Substring(2).Contains(':') -or $path -match '["\x00-\x1f]'){throw 'Declared canonical CPP80 roots required.'}
+    }
+    $p=$Build.BuildProfile;$rp=$Receipt.BuildProfile
+    if($p -isnot [pscustomobject] -or $rp -isnot [pscustomobject]){throw 'Typed CPP80 recipe and receipt profile objects required.'}
+    foreach($profile in @($p,$rp)){
+        foreach($row in @(@('Name','t7-registration-material-bindings-v1'),@('Option','-t7-iw7-registration-material-bindings-v1'),
+            @('ObservationSchema','iw7.t7-registration-material-bindings/1'),@('BindingsSchema','iw7.t7-registration-material-bindings/1'),
+            @('RegistrationSchema','iw7.t7-registration-image-header-metadata/1'))){
+            if($profile.($row[0]) -isnot [string] -or $profile.($row[0]) -cne $row[1]){throw 'Exact CPP80 recipe profile required.'}
+        }
+        foreach($row in @(@('ArgumentCount',5),@('RegistrationFixtureChecks',39),@('BindingsLegacyChecks',39),@('BindingsFixtureChecks',41),@('BindingsTotalChecks',80))){
+            if(!(Test-T7CatalogueInteger $profile.($row[0]) $row[1]) -or $profile.($row[0]) -ne $row[1]){throw 'Typed CPP80 recipe counts required.'}
+        }
+        foreach($name in 'SourceOnlyPending','RegistrationCPPQualified','BindingsCPPQualified'){
+            if($profile.$name -isnot [bool] -or $profile.$name){throw 'CPP80 recipe must retain its base-qualified and new-unqualified input flags.'}
+        }
+        foreach($row in @(@('BindingsBuildContract','registration-bindings-build-source-contract.json',3052,'0724e666f9d07d9523e292ce71f412e338b129c14f6262209f6a6cac11ab2e33'),
+            @('BindingsBuildValidator','RegistrationBindingsBuild.Source.ps1',11140,'95581e3c4a236e661fc712487dba552f9623b3661531cf207167c053342cfc20'),
+            @('BindingsContract','registration-material-bindings-source-contract.json',5391,'d60f0e33d9dddb69656744f6481ba32ced1a7a040d75ff913908192297e3c9a6'),
+            @('PreparedMain','main.cpp',43764,'970fe08a0ff0a1b0ce19c48f240a8fa361870d94349c5a1ed926db2ad321df49'),
+            @('PreparedCLI','zonetool.cpp',190891,'d732c8e33cc6b15ee912443dc5cd043b95122f095cec7ec5cd1be1a8e46304ec'))){
+            $pin=$profile.($row[0]);Assert-T7CatalogueFields $pin @('Path','Bytes','SHA256')
+            if($pin.Path -isnot [string] -or $pin.Path -cnotmatch '^[A-Za-z]:\\' -or
+               [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or $pin.Path.Substring(2).Contains(':') -or $pin.Path -match '["\x00-\x1f]' -or
+               [IO.Path]::GetFileName($pin.Path) -cne $row[1] -or !(Test-T7CatalogueInteger $pin.Bytes 192KB) -or $pin.Bytes -ne $row[2] -or
+               $pin.SHA256 -isnot [string] -or $pin.SHA256 -cne $row[3]){throw 'Exact CPP80 declared Source pin required.'}
+            $original=$p.($row[0])
+            if($pin.Path -cne $original.Path){throw 'Receipt and recipe Source paths differ.'}
+        }
+    }
+    $sourceDirectory=[IO.Path]::GetDirectoryName($p.BindingsBuildContract.Path)
+    if([IO.Path]::GetDirectoryName($p.BindingsBuildValidator.Path) -cne $sourceDirectory -or
+       [IO.Path]::GetDirectoryName($p.BindingsContract.Path) -cne $sourceDirectory -or
+       $p.PreparedMain.Path -cne (Join-Path $Build.PreparedRoot 'main.cpp') -or $p.PreparedCLI.Path -cne (Join-Path $Build.PreparedRoot 'zonetool.cpp')){throw 'CPP80 declared Source/prepared paths differ.'}
+    $m=$Build.ReuseCompile.RegistrationBindingsObservation
+    Assert-T7CatalogueFields $m @('Schema','SourceProfile','SourceOnlyPending','CPPQualified','NativeObserved','Ready',
+        'LegacyFixtureChecks','BindingsFixtureChecks','TotalFixtureChecks','ExpectedFixtureStdout',
+        'BaseMainBytes','BaseMainSHA256','BaseCLIBytes','BaseCLISHA256','MainBytes','MainSHA256','CLIBytes','CLISHA256')
+    foreach($row in @(@('Schema','iw7.t7-registration-bindings-build/1'),@('SourceProfile','t7-registration-material-bindings-v1'))){
+        if($m.($row[0]) -isnot [string] -or $m.($row[0]) -cne $row[1]){throw 'Exact CPP80 pending transition required.'}
+    }
+    if($Build.ReuseCompile.PSObject.Properties['IncomingObservation'] -or $m.SourceOnlyPending -isnot [bool] -or !$m.SourceOnlyPending){throw 'Exclusive pending CPP80 transition required.'}
+    foreach($name in 'CPPQualified','NativeObserved','Ready'){if($m.$name -isnot [bool] -or $m.$name){throw 'CPP80 Source transition cannot promote proof.'}}
+    foreach($row in @(@('LegacyFixtureChecks',39),@('BindingsFixtureChecks',41),@('TotalFixtureChecks',80),
+        @('BaseMainBytes',43620),@('BaseCLIBytes',175031),@('MainBytes',43764),@('CLIBytes',190891))){
+        if(!(Test-T7CatalogueInteger $m.($row[0]) $row[1]) -or $m.($row[0]) -ne $row[1]){throw 'Exact CPP80 Source counts/bytes required.'}
+    }
+    foreach($row in @(@('BaseMainSHA256','05f601ffdeff533809acb023e53b850570f08f79594d5954232338f3a1b597b8'),
+        @('BaseCLISHA256','26e9ae7ff1a3f016130b57cea265a73a8ecbcdb6bed20b3bc39a4c7f51742967'),
+        @('MainSHA256','970fe08a0ff0a1b0ce19c48f240a8fa361870d94349c5a1ed926db2ad321df49'),
+        @('CLISHA256','d732c8e33cc6b15ee912443dc5cd043b95122f095cec7ec5cd1be1a8e46304ec'))){
+        if($m.($row[0]) -isnot [string] -or $m.($row[0]) -cne $row[1]){throw 'Exact CPP80 Source hash required.'}
+    }
+    $stdout="IW7_T7_REGISTRATION_HEADER_CHECKS=39`nIW7_T7_REGISTRATION_BINDINGS_CHECKS=41`n"
+    if($m.ExpectedFixtureStdout -isnot [string] -or $m.ExpectedFixtureStdout -cne $stdout -or
+       $FixtureStdout -isnot [string] -or $FixtureStdout.Length -gt 128 -or $FixtureStdout.Replace("`r`n","`n") -cne $stdout){throw 'Exact CPP80 two-marker fixture text required.'}
+    if($FixtureStderr -isnot [string] -or $FixtureStderr.Length){throw 'Explicit empty CPP80 fixture stderr required.'}
+    foreach($name in 'InputsReverified','TreeClosureConfirmed','LeaseReleased','RegistrationFixturePassed','RegistrationCPPQualified','RegistrationBindingsFixturePassed'){
+        if($Receipt.$name -isnot [bool] -or !$Receipt.$name){throw 'CPP80 declared receipt closure/fixture proof missing.'}
+    }
+    foreach($name in 'Quarantined','CandidateExecuted','Ready'){if($Receipt.$name -isnot [bool] -or $Receipt.$name){throw 'CPP80 receipt must remain closed and candidate-unexecuted.'}}
+    if($Receipt.PSObject.Properties['RegistrationBindingsCPPQualified']){throw 'CPP80 runner does not emit a new top-level qualification flag.'}
+    if($Receipt.CompilerTelemetry.Completed -isnot [bool] -or $Receipt.CompilerTelemetry.Completed){throw 'CPP80 top-level compiler placeholder must remain false.'}
+    if($Build.Stages -isnot [array] -or $Build.Stages.Count -ne 5 -or $Receipt.Stages -isnot [array] -or $Receipt.Stages.Count -ne 5){throw 'Exactly five CPP80 phases required.'}
+    $names=@('registration-fixture-compile','registration-fixture-test','main','zonetool11','link');$kinds=@('Compile','Probe','Compile','Compile','Link')
+    $artifacts=@('registration-fixture.obj|registration-fixture.exe|registration-fixture.pdb|dependencies.json','','main.obj|compile.pdb|dependencies.json',
+        'zonetool11.obj|compile.pdb|dependencies.json','zonetool-t7.exe|zonetool-t7.pdb|zonetool-t7.lib|zonetool-t7.exp')
+    for($i=0;$i -lt 5;$i++){
+        $declared=$Build.Stages[$i];$stage=$Receipt.Stages[$i]
+        foreach($item in @($declared,$stage)){
+            if($item.Name -isnot [string] -or $item.Name -cne $names[$i] -or $item.Stage -isnot [string] -or $item.Stage -cne $kinds[$i] -or
+               !(Test-T7CatalogueInteger $item.DeadlineSeconds 120) -or $item.DeadlineSeconds -ne $(if($i -eq 1){15}else{120})){throw 'Exact CPP80 phase order/kind/deadline required.'}
+        }
+        if($stage.PlanSHA256 -isnot [string] -or $stage.PlanSHA256 -cne $PlanSHA256 -or !(Test-T7CatalogueInteger $stage.ExitCode 0) -or
+           $stage.TreeClosureConfirmed -isnot [bool] -or !$stage.TreeClosureConfirmed){throw 'CPP80 phase failed, unclosed or from another plan.'}
+        $t=$stage.CompilerTelemetry
+        if($t.Completed -isnot [bool] -or $t.Completed -ne ($i -ne 1)){throw 'CPP80 compiler/Probe telemetry differs.'}
+        if($i -ne 1 -and ($t.AfterStop.RootExited -isnot [bool] -or !$t.AfterStop.RootExited -or
+           !(Test-T7CatalogueInteger $t.AfterStop.RootExitCode 0) -or !(Test-T7CatalogueInteger $t.AfterStop.ActiveProcesses 0) -or
+           $t.AfterStopMembers.Members -isnot [array] -or $t.AfterStopMembers.Members.Count)){throw 'CPP80 compiler job is not declared empty.'}
+        if($declared.Artifacts -isnot [array] -or ($declared.Artifacts -join '|') -cne $artifacts[$i] -or
+           $stage.Artifacts -isnot [array] -or $stage.Artifacts.Count -ne $declared.Artifacts.Count){throw 'CPP80 phase artifact collection differs.'}
+        $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach($name in $declared.Artifacts){
+            if($name -isnot [string] -or $name -cnotmatch '^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$' -or !$seen.Add($name)){throw 'Finite CPP80 artifact names required.'}
+            $path=Join-Path (Join-Path $Build.RunRoot $names[$i]) $name
+            $matches=@($stage.Artifacts|Where-Object {$_.Path -is [string] -and $_.Path -ceq $path})
+            if($matches.Count -ne 1){throw 'CPP80 declared artifact path differs.'}
+            $pin=$matches[0];Assert-T7CatalogueFields $pin @('Path','Bytes','SHA256')
+            if(!(Test-T7CatalogueInteger $pin.Bytes $(if($i -eq 4){192MB}else{32MB})) -or $pin.Bytes -eq 0 -or
+               $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Bounded CPP80 artifact metadata required.'}
+        }
+    }
+    $probe=$Receipt.Stages[1]
+    if($Build.Stages[1].Artifacts.Count -or $Build.Stages[1].Arguments -isnot [array] -or $Build.Stages[1].Arguments.Count -or
+       !(Test-T7CatalogueInteger $probe.LegacyRegistrationChecks 39) -or $probe.LegacyRegistrationChecks -ne 39 -or
+       !(Test-T7CatalogueInteger $probe.BindingsChecks 41) -or $probe.BindingsChecks -ne 41 -or
+       $probe.EngineInvoked -isnot [bool] -or $probe.EngineInvoked){throw 'CPP80 Probe must report only 39 plus 41 authored checks.'}
+}
 function Test-T7IncomingImageIntent($Plan) {
     [bool]($Plan.PSObject.Properties['SelectedIncomingImageObservationV1'] -or
         ($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'IncomingImageObservationV1') -or

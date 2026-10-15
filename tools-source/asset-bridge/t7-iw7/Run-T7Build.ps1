@@ -925,7 +925,7 @@ function Assert-T7InputBindings($Plan) {
     if($parts -and ($zombies -or $add -or $reuse.PSObject.Properties['PrepatchReferenceV2'])){throw 'Parts transition cannot mix with other diagnostic markers.'}
     if($zombies -and $add){throw 'C and C2 observation markers are exclusive.'}
     $observed=$zombies -or $add
-    if($bindings.Count -gt $(if($incoming){182}elseif($registration){173}elseif($metadata){166}elseif($provenance){155}elseif($parts){154}elseif($observed){151}else{149}) -or $inputs.Count -gt 2048 -or
+    if($bindings.Count -gt $(if($registrationBindings){187}elseif($incoming){182}elseif($registration){173}elseif($metadata){166}elseif($provenance){155}elseif($parts){154}elseif($observed){151}else{149}) -or $inputs.Count -gt 2048 -or
         @($bindings.Path|Sort-Object -Unique).Count -ne $bindings.Count -or
         @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
     if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}

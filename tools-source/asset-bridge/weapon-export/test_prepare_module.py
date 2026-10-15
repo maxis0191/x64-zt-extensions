@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import re
+import math
 import unittest
 from unittest.mock import patch
 
@@ -18,6 +19,70 @@ FIXTURE_SHA = hashlib.sha256(FIXTURE.encode()).hexdigest()
 
 
 class PreparationTests(unittest.TestCase):
+    def primary_source_policy(self, changes=None, lifetimes=None):
+        # Source causal over the actual finite C++ helper; not native execution.
+        text=support.read_source(support.HERE/'native_primary_guard.hpp')
+        body=text.split('Failure first_failure(Reader& source)\n    {',1)[1].split('return {Check::none',1)[0]
+        body=re.sub(r'//[^\n]*','',body)
+        pattern=re.compile(r'const auto (\w+) = source\.(\w+)\(\);|if \((.*?)\) return (integer|real)\(Check::(\w+), (\w+)\);|if \(!source\.(\w+)\(\)\) return absent\(Check::(\w+)\);')
+        self.assertFalse(pattern.sub('',body).strip(),'Uninterpreted Source decision operation')
+        data=dict(classification=5,type=3,inventory=0,clip=8,max_ammo=80,ammo_used=1,damage=100,speed=4000,
+            gun_model=True,world_model=True,animations=True);data.update(changes or {})
+        lifetime=iter(lifetimes or (60.0,60.0));trace=[];values={}
+        for operation in pattern.finditer(body):
+            variable,getter,condition,maker,key,value,pointer,pointer_key=operation.groups()
+            if variable:
+                trace.append(getter);values[variable]=next(lifetime) if getter=='lifetime' else data[getter]
+            elif condition:
+                predicate=condition.replace('!std::isfinite','not math.isfinite')
+                if eval(predicate,{'__builtins__':{},'math':math},values):return key,values[value],trace
+            else:
+                trace.append(pointer)
+                if not data[pointer]:return pointer_key,False,trace
+        return None,None,trace
+
+    def test_actual_primary_source_first_failure_and_unread_pointer_causals(self):
+        complete=['classification','type','inventory','clip','max_ammo','ammo_used','damage','speed',
+            'lifetime','lifetime','gun_model','world_model','animations']
+        cases=[({'type':1,'inventory':1,'gun_model':False},None,'type',1,2),
+            ({'inventory':1},None,'inventory',1,3),({'classification':-1},None,'class_min',-1,3),
+            ({'classification':14},None,'class_max',14,3),({'classification':10},None,'class_non_player',10,3),
+            ({'classification':11},None,'class_item',11,3),({'clip':0},None,'clip',0,4),
+            ({'max_ammo':0},None,'max_ammo',0,5),({'ammo_used':0},None,'ammo_used',0,6),
+            ({'damage':0},None,'damage',0,7),({'speed':0},None,'speed',0,8),
+            ({},(float('nan'),),'lifetime_finite',float('nan'),9),
+            ({},(60.0,0.0),'lifetime_positive',0.0,10),({'gun_model':False},None,'gun_model',False,11),
+            ({'world_model':False},None,'world_model',False,12),({'animations':False},None,'animations',False,13)]
+        for changes,lifetimes,key,wanted,reads in cases:
+            with self.subTest(key=key):
+                actual,value,trace=self.primary_source_policy(changes,lifetimes)
+                self.assertEqual(actual,key);self.assertEqual(trace,complete[:reads])
+                self.assertTrue(math.isnan(value)) if isinstance(wanted,float) and math.isnan(wanted) else self.assertEqual(value,wanted)
+        for classification in (0,5,12,13):
+            self.assertEqual(self.primary_source_policy({'classification':classification}),(None,None,complete))
+        self.assertEqual(self.primary_source_policy(lifetimes=(1.0,-1.0)),('lifetime_positive',-1.0,complete[:10]))
+
+    def test_primary_witness_is_bound_to_actual_offset_and_leaves_later_guards(self):
+        source=support.read_source(support.HERE/'native_player_templates.inc')
+        self.assertEqual(source.count('report_primary_failure(failure);'),1)
+        self.assertLess(source.index('if (!weapon || !weapon->weapDef || !pap)'),source.index('first_failure(reader)'))
+        self.assertLess(source.index('first_failure(reader)'),source.index('if (!pap->papAttachment'))
+        self.assertIn('PrimaryReader reader{weapon, def}',source);self.assertIn('char line[256]',source)
+        self.assertIn('kind=float32_bits value_bits=0x%08X',source)
+        self.assertIn('throw std::runtime_error("Reloadable player primary projectile fields not established")',source)
+        self.assertNotIn('"%p"',source);self.assertNotIn('source.classification()',source)
+
+    def test_actual_witness_formats_fit_the_declared_buffer_for_all_fixed_keys(self):
+        source=support.read_source(support.HERE/'native_player_templates.inc')
+        capacity=int(re.search(r'char line\[(\d+)\]',source).group(1))
+        formats=re.findall(r'"(IW7_PLAYER_TEMPLATE_PRIMARY_REFUSAL[^"\n]+)"',source)
+        keys=re.findall(r'return \{"([^"]+)", "([^"]+)", offsetof\(',source)
+        self.assertEqual((capacity,len(formats),len(keys)),(256,2,16))
+        for key,container in keys:
+            for literal in formats:
+                fmt=literal.replace('%zX','%X').replace('\\n','\n')
+                arguments=(key,0xffffffff,container,0x1418) if 'value_bits=' in fmt else (key,'presence',-2147483648,container,0x1418)
+                self.assertLess(len((fmt%arguments).encode('ascii')),capacity)
     def test_inactive_support_preserves_source_and_entry(self):
         result, module = support.wire_module(FIXTURE, FIXTURE_SHA)
         addition = '\n'.join('\t' + line if line else '' for line in module.splitlines()) + '\n\n'
@@ -25,6 +90,8 @@ class PreparationTests(unittest.TestCase):
             '#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n', '', 1)
         name_header = support.read_source(support.HERE / 'native_bounded_name.hpp').removeprefix('#pragma once\n')
         without_module = without_module.replace(name_header + '\n', '', 1)
+        primary_header = support.read_source(support.HERE / 'native_primary_guard.hpp').removeprefix('#pragma once\n')
+        without_module = without_module.replace(primary_header + '\n', '', 1)
         self.assertEqual(without_module, FIXTURE)
         self.assertEqual(result.count('void ' + support.FUNCTION + '('), 1)
         self.assertEqual(result.count(support.FUNCTION), 1)  # no call-site introduced

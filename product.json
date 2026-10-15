@@ -11,7 +11,9 @@
     "tools-source/asset-bridge/weapon-export/test_build_default.py",
     "tools-source/asset-bridge/weapon-export/native_player_templates.inc",
     "tools-source/asset-bridge/weapon-export/native_bounded_name.hpp",
+    "tools-source/asset-bridge/weapon-export/native_primary_guard.hpp",
     "tools-source/asset-bridge/weapon-export/test_bounded_name.cpp",
+    "tools-source/asset-bridge/weapon-export/test_primary_guard.cpp",
     "tools-source/asset-bridge/weapon-export/prepare_module.py",
     "tools-source/asset-bridge/weapon-export/test_prepare_module.py",
     "tools-source/asset-bridge/weapon-export/README.md",
@@ -895,7 +897,8 @@
     "tools-source/asset-bridge/t7-bridge/Test-T7IncomingImageSource.ps1",
     "tools-source/asset-bridge/t7-bridge/INCOMING-IMAGE-LAUNCHER.md",
     "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationBindingsSource.ps1",
-    "tools-source/asset-bridge/t7-bridge/REGISTRATION-BINDINGS-LAUNCHER.md"
+    "tools-source/asset-bridge/t7-bridge/REGISTRATION-BINDINGS-LAUNCHER.md",
+    "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationBindingsCppSource.ps1"
   ],
   "dependencies": [
     {
