@@ -68,6 +68,7 @@ foreach($side in 'Build','Receipt'){
     $f=New-DeclaredFixture;$f.$side.BuildProfile=@($f.$side.BuildProfile)
     Refuses {Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $hash $stdout $stderr}
 }
+$f=New-DeclaredFixture # Later argument refusals must start from a valid body.
 foreach($bad in @($null,@($hash),'old')){Refuses {Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $bad $stdout $stderr}}
 foreach($bad in @($null,@($stdout),($stdout+'extra'),"IW7_T7_REGISTRATION_HEADER_CHECKS=39`nIW7_T7_INCOMING_IMAGE_CHECKS=48`n")){
     Refuses {Assert-T7RegistrationBindingsCpp80Shape $f.Build $f.Receipt $hash $bad $stderr}
