@@ -44,7 +44,7 @@ definition body and returns `None` on success. Arbitrary owned bytes can pass
 these byte checks if their trusted report pins match; native JSON validity and
 native parser eligibility do not follow.
 
-The caller owns acquisition and authorization. It must close the report before
+The caller owns acquisition and authorization. It must validate the report before
 acquiring real payloads, retain original file/byte guards, and separately prove
 four distinct ordinary file identities/ancestry and closed bundle inventory.
 After byte checks, a complete native body key/shape/count/range/allocation gate
