@@ -75,6 +75,12 @@ class RegistrationBindingsBuildTests(unittest.TestCase):
         for bad in (True,40,'39'):
             altered=copy.deepcopy(c);altered['legacy_checks']=bad
             with self.assertRaises(ValueError):recipe.source_contract(lambda *args:json.dumps(altered).encode())
+        for role in ('validator','source','generated'):
+            altered=copy.deepcopy(c)
+            if role=='validator':altered['validator']=None
+            elif role=='source':altered['source_pins'][recipe.producer.MODULE]=None
+            else:altered['generated']['prepared/'+recipe.producer.CAPTURE_NAME]=None
+            with self.assertRaises(ValueError):recipe.source_contract(lambda *args:json.dumps(altered).encode())
 
     @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'),'Exact pinned native SOURCE not supplied')
     def test_actual_source_transition_changes_one_rsp_token_and_preserves_parent_api(self):

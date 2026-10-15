@@ -5,11 +5,12 @@ function script:Get-T7BindingsBuildFields {
       'BindingsEntry','BindingsFixture','BindingsLegacyFixture','BindingsCapture','BindingsObserver',
       'BindingsBaselineFixture','BindingsCombinedFixture','BindingsResponse')
 }
-function script:Assert-T7BindingsBuildPin($Plan,$Pin,[string]$Path,$Expected,[long]$Cap=32768) {
+function script:Assert-T7BindingsBuildPin($Plan,$Pin,[string]$Path,$Expected,[long]$Cap=32768,[switch]$AllowUnspecified) {
     if($Pin -isnot [pscustomobject] -or (@($Pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
        $Pin.Path -isnot [string] -or $Pin.Path -cne $Path -or
        ($Pin.Bytes -isnot [int] -and $Pin.Bytes -isnot [long]) -or $Pin.Bytes -le 0 -or $Pin.Bytes -gt $Cap -or
        $Pin.SHA256 -isnot [string] -or $Pin.SHA256 -cnotmatch '^[0-9a-f]{64}$') {throw 'Closed typed bindings build Source pin required.'}
+    if($null -eq $Expected -and !$AllowUnspecified){throw 'Required bindings expected Source pin cannot be NULL.'}
     if($null -ne $Expected){
         if($Expected -isnot [pscustomobject] -or (@($Expected.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'bytes,sha256' -or
            ($Expected.bytes -isnot [int] -and $Expected.bytes -isnot [long]) -or $Expected.bytes -le 0 -or $Expected.bytes -gt $Cap -or
@@ -48,7 +49,7 @@ function script:Assert-T7BindingsBuildTransition($Plan,[string]$SourceRoot) {
         if($m.($row[0]) -cne $base.($row[1])){throw 'Bindings must extend the exact CPP39 source pair.'}
     }
     $contractPath=Join-Path $SourceRoot 'registration-bindings-build-source-contract.json'
-    Assert-T7BindingsBuildPin $Plan $p.BindingsBuildContract $contractPath $null 16384
+    Assert-T7BindingsBuildPin $Plan $p.BindingsBuildContract $contractPath $null 16384 -AllowUnspecified
     for($part=$contractPath;$part;$part=[IO.Path]::GetDirectoryName($part)){
         if(([IO.File]::GetAttributes($part) -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Bindings Source contract reparse refused.'}
     }
@@ -99,7 +100,7 @@ function script:Assert-T7BindingsBuildTransition($Plan,[string]$SourceRoot) {
         @('BindingsBaselineFixture','bindings_registration_baseline_fixture.cpp'),@('BindingsCombinedFixture','registration_bindings_combined_fixture.cpp'))){
         Assert-T7BindingsBuildPin $Plan $p.($row[0]) (Join-Path $Plan.PreparedRoot $row[1]) $c.generated.('prepared/'+$row[1])
     }
-    Assert-T7BindingsBuildPin $Plan $p.BindingsResponse (Join-Path (Split-Path $Plan.PreparedRoot -Parent) 'registration-fixture.rsp') $null 16384
+    Assert-T7BindingsBuildPin $Plan $p.BindingsResponse (Join-Path (Split-Path $Plan.PreparedRoot -Parent) 'registration-fixture.rsp') $null 16384 -AllowUnspecified
 }
 function script:Assert-T7BindingsFixtureOutput([string]$StageRoot,$StageState) {
     $stdout=Join-Path $StageRoot 'stdout.log';$stderr=Join-Path $StageRoot 'stderr.log'

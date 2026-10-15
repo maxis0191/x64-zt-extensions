@@ -68,7 +68,7 @@ no invented compiler, SDK, candidate or runtime identity.
 
 ## Source evidence and authoring corrections
 
-Source validation passed25 targeted Python checks,114 new PowerShell controls
+Source validation passed25 targeted Python checks,125 new PowerShell controls
 and117 retained incoming Source controls. The new80-check C++ cohort is authored
 only: it has not compiled or executed and no candidate/native result is claimed.
 
@@ -80,3 +80,12 @@ name. An unparenthesized authored negative-output array accidentally included
 the valid output; the test grouping was corrected. The base H-proof flag is
 preserved explicitly rather than overwritten by the new pending marker. These
 corrections occurred before any native build or operational preparation.
+
+Peer review of979 found that a null expected sub-pin could bypass byte/hash
+comparison. The validator now requires a typed non-null expected pin by default;
+only the contract's own pin and RSP explicitly opt into unspecified expectations.
+Real-function Source causals refuse null validator/source/generated sub-pins
+before helper bootstrap/import, then also through the transition function;
+wrong hashes refuse while the complete synthetic contract passes. The Python
+contract reader also refuses null/coerced sub-pins. The failed Source candidate
+and correction remain separate commits; no native input was prepared from it.

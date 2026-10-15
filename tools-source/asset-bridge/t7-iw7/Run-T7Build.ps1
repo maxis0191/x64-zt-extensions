@@ -445,17 +445,32 @@ function Assert-T7ImageFixtureProof($Profile,$Bindings) {
     return @($rows|ForEach-Object {$proof.($_[0]).Path})
 }
 function Import-T7BindingsBuildSource($Plan,[string]$SourceRoot) {
+    foreach($row in @(@('BindingsBuildContract','registration-bindings-build-source-contract.json',16384),@('BindingsBuildValidator','RegistrationBindingsBuild.Source.ps1',32768))){
+        $pin=$Plan.BuildProfile.($row[0])
+        if($pin -isnot [pscustomobject] -or (@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+           $pin.Path -isnot [string] -or $pin.Path -cne (Join-Path $SourceRoot $row[1]) -or
+           ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt $row[2] -or
+           $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Typed fixed bindings Source bootstrap pin required.'}
+        $sealed=@($Plan.Bindings|Where-Object {$_.Path -is [string] -and $_.Path -ceq $pin.Path})
+        if($sealed.Count -ne 1 -or ($sealed[0].Bytes -isnot [int] -and $sealed[0].Bytes -isnot [long]) -or
+           $sealed[0].SHA256 -isnot [string] -or $sealed[0].Bytes -ne $pin.Bytes -or $sealed[0].SHA256 -cne $pin.SHA256 -or
+           $sealed[0].IsText -isnot [bool] -or !$sealed[0].IsText){throw 'Bindings bootstrap must be sealed once as Source text before import.'}
+    }
+    $contractPin=$Plan.BuildProfile.BindingsBuildContract
+    $null=Open-T7Bootstrap $contractPin.Path $contractPin.Bytes $contractPin.SHA256
+    $c=Get-Content -LiteralPath $contractPin.Path -Raw|ConvertFrom-Json
+    foreach($name in 'producer','source_pins','generated'){if($c.$name -isnot [pscustomobject]){throw 'Non-NULL Source sub-pin group required before helper import.'}}
+    $wanted=[Collections.Generic.List[object]]::new();$wanted.Add($c.validator)
+    foreach($name in 'producer','source_pins','generated'){foreach($property in $c.$name.PSObject.Properties){$wanted.Add($property.Value)}}
+    foreach($expected in $wanted){
+        if($expected -isnot [pscustomobject] -or (@($expected.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'bytes,sha256' -or
+           ($expected.bytes -isnot [int] -and $expected.bytes -isnot [long]) -or $expected.bytes -le 0 -or $expected.bytes -gt 192KB -or
+           $expected.sha256 -isnot [string] -or $expected.sha256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Required typed non-NULL Source sub-pin before helper import.'}
+    }
     $pin=$Plan.BuildProfile.BindingsBuildValidator
-    if($pin -isnot [pscustomobject] -or (@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
-       $pin.Path -isnot [string] -or $pin.Path -cne (Join-Path $SourceRoot 'RegistrationBindingsBuild.Source.ps1') -or
-       ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 32KB -or
-       $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Typed fixed bindings Source validator required.'}
-    $sealed=@($Plan.Bindings|Where-Object {$_.Path -is [string] -and $_.Path -ceq $pin.Path})
-    if($sealed.Count -ne 1 -or ($sealed[0].Bytes -isnot [int] -and $sealed[0].Bytes -isnot [long]) -or
-       $sealed[0].SHA256 -isnot [string] -or $sealed[0].Bytes -ne $pin.Bytes -or $sealed[0].SHA256 -cne $pin.SHA256 -or
-       $sealed[0].IsText -isnot [bool] -or !$sealed[0].IsText){throw 'Bindings validator must be sealed once as Source text before import.'}
+    if($pin.Bytes -ne $c.validator.bytes -or $pin.SHA256 -cne $c.validator.sha256){throw 'Helper Source pin differs before import.'}
     $null=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256
-    . $pin.Path # Verified Source-only definitions; its original bootstrap guard stays held.
+    . $pin.Path # Both original Source guards stay held; no helper runs before sub-pin checks.
 }
 function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $profile=if($Plan.PSObject.Properties.Name -contains 'BuildProfile'){$Plan.BuildProfile}else{$null}

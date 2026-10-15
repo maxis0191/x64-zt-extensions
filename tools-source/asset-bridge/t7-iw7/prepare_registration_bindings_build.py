@@ -75,6 +75,10 @@ def source_contract(read):
         set(c['source_pins']) == set(SOURCE_PINS)|{'prepare_registration_bindings_build.py',producer.MODULE,producer.ENTRY,registration.FIXTURE} and
         type(c.get('producer')) is dict and set(c['producer']) == {'main','cli'} and c.get('stage_names') == STAGE_NAMES,
         'Closed generated source and existing five-stage order required')
+    for pin in (*c['source_pins'].values(),c['validator'],*c['producer'].values(),*c['generated'].values()):
+        parts.require(type(pin) is dict and set(pin) == {'bytes','sha256'} and type(pin['bytes']) is int and
+            0 < pin['bytes'] <= 192*1024 and type(pin['sha256']) is str and len(pin['sha256']) == 64,
+            'Required typed Source sub-pin cannot be NULL or coerced')
     return c
 
 

@@ -94,6 +94,39 @@ try{
         $beforeGuards=$guards.Count;Refuses {Assert-T7BuildProfile $bad $PSScriptRoot}
         Check ($guards.Count -eq $beforeGuards) 'Invalid Source binding reached bootstrap import'
     }
+    # Real transition validator, synthetic contract file only; no fake asset/tool is opened.
+    foreach($kind in 'baseline','wrong-hash','validator-null','source-null','generated-null'){
+        $syntheticRoot=Join-Path $temp ('synthetic-source-'+$kind);[IO.Directory]::CreateDirectory($syntheticRoot)|Out-Null
+        $caseContext='expected-subpin/'+$kind
+        $synthetic=$bp|ConvertTo-Json -Depth 30|ConvertFrom-Json
+        $contract=$c|ConvertTo-Json -Depth 30|ConvertFrom-Json
+        switch($kind){wrong-hash {$contract.generated.'prepared/selected_image_material_bindings_capture.hpp'.sha256='0'*64};
+            validator-null {$contract.validator=$null};source-null {$contract.source_pins.'registration_material_bindings.hpp'=$null};
+            generated-null {$contract.generated.'prepared/selected_image_material_bindings_capture.hpp'=$null}}
+        foreach($prop in $synthetic.BuildProfile.PSObject.Properties){
+            if($prop.Name.StartsWith('Bindings',[StringComparison]::Ordinal) -and $prop.Value -is [pscustomobject] -and
+               $prop.Value.PSObject.Properties['Path'] -and [IO.Path]::GetDirectoryName($prop.Value.Path) -ceq $PSScriptRoot){
+                $oldPath=$prop.Value.Path;$prop.Value.Path=Join-Path $syntheticRoot ([IO.Path]::GetFileName($oldPath))
+                $synthetic.Bindings=@($synthetic.Bindings|Where-Object Path -CNE $oldPath)
+                $synthetic.Bindings+=@([pscustomobject]@{Path=$prop.Value.Path;Bytes=$prop.Value.Bytes;SHA256=$prop.Value.SHA256;IsText=$true})
+            }
+        }
+        $contractPath=$synthetic.BuildProfile.BindingsBuildContract.Path
+        [IO.File]::WriteAllText($contractPath,($contract|ConvertTo-Json -Depth 30),[Text.UTF8Encoding]::new($false))
+        $contractPin=$synthetic.BuildProfile.BindingsBuildContract
+        $contractPin.Bytes=(Get-Item $contractPath).Length;$contractPin.SHA256=(Get-FileHash $contractPath).Hash.ToLowerInvariant()
+        @($synthetic.Bindings|Where-Object Path -CEQ $contractPath)[0].Bytes=$contractPin.Bytes
+        @($synthetic.Bindings|Where-Object Path -CEQ $contractPath)[0].SHA256=$contractPin.SHA256
+        [IO.File]::WriteAllBytes($synthetic.BuildProfile.BindingsBuildValidator.Path,[IO.File]::ReadAllBytes($bp.BuildProfile.BindingsBuildValidator.Path))
+        if($kind -ceq 'baseline'){Import-T7BindingsBuildSource $synthetic $syntheticRoot;Assert-T7BindingsBuildTransition $synthetic $syntheticRoot;Check $true 'Synthetic baseline refused'}
+        else{
+            if($kind.EndsWith('-null',[StringComparison]::Ordinal)){
+                $beforeGuards=$guards.Count;Refuses {Import-T7BindingsBuildSource $synthetic $syntheticRoot}
+                Check ($guards.Count -eq $beforeGuards+1) 'NULL sub-pin reached helper bootstrap/import'
+            }
+            Refuses {Assert-T7BindingsBuildTransition $synthetic $syntheticRoot}
+        }
+    }
     foreach($case in 'counts','base','marker-missing','paired','stages','fixture-token'){
         $caseContext=$case
         $bad=$bp|ConvertTo-Json -Depth 30|ConvertFrom-Json
