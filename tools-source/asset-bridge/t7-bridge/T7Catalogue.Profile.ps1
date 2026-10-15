@@ -56,6 +56,188 @@ function Assert-T7RegistrationBindingsSourcePlan($Plan) {
 function Assert-T7RegistrationBindingsOperationalGate {
     throw 'Registration bindings Source only: actual closed CPP qualification and a separately reviewed operational plan are required; DEFAULT and Run remain unavailable.'
 }
+function Test-T7RegistrationBindingsCompiledPlan($Plan) {
+    [bool]($Plan.PSObject.Properties['Schema'] -and $Plan.Schema -is [string] -and $Plan.Schema -ceq 'iw7.t7-registration-bindings-plan/1' -and
+        $Plan.PSObject.Properties['Operation'] -and $Plan.Operation -is [string] -and $Plan.Operation -ceq 'RegistrationMaterialBindingsV1' -and
+        $Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -is [string] -and $Plan.CandidateProfile -ceq 't7-registration-material-bindings-v1' -and
+        $Plan.PSObject.Properties['SelectedRegistrationMaterialBindingsV1'] -and $Plan.SelectedRegistrationMaterialBindingsV1 -is [pscustomobject] -and
+        $Plan.SelectedRegistrationMaterialBindingsV1.PSObject.Properties['Schema'] -and
+        $Plan.SelectedRegistrationMaterialBindingsV1.Schema -is [string] -and $Plan.SelectedRegistrationMaterialBindingsV1.Schema -ceq 'iw7.t7-registration-bindings-cpp80/1')
+}
+function Get-T7RegistrationBindingsCpp80Cohort {
+    [ordered]@{Source='0f669b58f7a962cb5f5c01af252ce05d8bdbbc3b';NativeSource='fab935826c898806855376662a8a03317b3ad8f1';
+        EXEBytes=22054400;EXESHA256='f14a0af9c8e7a0a58e7f1331fa996806139356c6063e47fc6325f2ad423c8f40';
+        Plan=@(406073,'11544206c4a723722696e35ef869bc8ad9c713a8ada212811deae8bb7b5dc092');
+        Receipt=@(50715,'320bcfc68b205eee81b00e0b5e0fa50e391523db15737ff6670ad2d0e5944b8d');
+        Handoff=@(37937,'d1c06527a7e149111efc593b6c09d9ce5cbcbc92ef3b0218e2ac836039dad7a1');
+        SourceManifest=@(385050,'fe60a6ed7eb0a912e399251c358ff48798bc705a8c079b9d1884f6f49505a272');
+        PreExit=@(58054,'599382303342137f09729487463c9f8db0c1e63cb68c9a0ceb933a7b22da129e');
+        PostExit=@(35547,'40b59ede7f671d9d7e6d534ec923eba5d9f58b13475975c0d13f520e7880740d');
+        PreReleaseReceipt=@(50674,'78fe9943e7163e43a7b22064f4df98a3ad48070a40bda0e0d28107d96be44e68');
+        FixtureStdout=@(78,'a7956d2cf5c0a8daca4f9969315067999151c992d4742ab52f7fa7efceea1a2a')}
+}
+function Assert-T7RegistrationBindingsCohortPin($Pin,[string]$Name,$Bindings) {
+    $c=Get-T7RegistrationBindingsCpp80Cohort
+    Assert-T7CatalogueFields $Pin @('Path','Bytes','SHA256')
+    if($Pin.Path -isnot [string] -or !(Test-T7CatalogueInteger $Pin.Bytes 1MB) -or $Pin.Bytes -ne $c[$Name][0] -or
+       $Pin.SHA256 -isnot [string] -or $Pin.SHA256 -cne $c[$Name][1]){throw 'Exact measured CPP80 text pin required.'}
+    Assert-T7CatalogueTextPin $Pin $Bindings
+}
+function Assert-T7RegistrationBindingsPlan($Plan) {
+    if(!(Test-T7RegistrationBindingsCompiledPlan $Plan)){throw 'Exact compiled bindings selectors required.'}
+    $c=Get-T7RegistrationBindingsCpp80Cohort;$m=$Plan.SelectedRegistrationMaterialBindingsV1
+    if($m -isnot [pscustomobject]){throw 'Typed compiled bindings marker required.'}
+    # Reuse the unchanged Source descriptor checks without letting its pending
+    # shape authorize execution. Only the finite measured tuple below can do so.
+    $pending=$Plan.PSObject.Copy();$pending.Schema='iw7.t7-registration-bindings-source-plan/1'
+    $pending.SelectedRegistrationMaterialBindingsV1=$m.PSObject.Copy()
+    $p=$pending.SelectedRegistrationMaterialBindingsV1;$p.Schema='iw7.t7-registration-bindings-proposal/1'
+    $p.SourceOnlyPending=$true;$p.BuildRecipeWired=$false;$p.CompiledExtensionSource=$null;$p.CPPQualification=$null;$p.CPPQualified=$false
+    foreach($name in 'CandidateSource','CandidateBytes','CandidateSHA256','BuildPlan','BuildReceipt','ExpectedBuildPlanSHA256','ExpectedBuildReceiptSHA256'){$pending.$name=$null}
+    Assert-T7RegistrationBindingsSourcePlan $pending
+    if($m.Schema -isnot [string] -or $m.Schema -cne 'iw7.t7-registration-bindings-cpp80/1' -or
+       $m.CompiledExtensionSource -isnot [string] -or $m.CompiledExtensionSource -cne $c.Source -or
+       $m.SourceOnlyPending -isnot [bool] -or $m.SourceOnlyPending -or
+       $m.BuildRecipeWired -isnot [bool] -or !$m.BuildRecipeWired -or $m.CPPQualified -isnot [bool] -or !$m.CPPQualified -or
+       $Plan.CandidateSource -isnot [string] -or !(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -ne $c.EXEBytes -or
+       $Plan.CandidateSHA256 -isnot [string] -or $Plan.CandidateSHA256 -cne $c.EXESHA256 -or
+       $Plan.ExpectedBuildPlanSHA256 -isnot [string] -or $Plan.ExpectedBuildPlanSHA256 -cne $c.Plan[1] -or
+       $Plan.ExpectedBuildReceiptSHA256 -isnot [string] -or $Plan.ExpectedBuildReceiptSHA256 -cne $c.Receipt[1] -or
+       $Plan.OutputKey -isnot [string] -or $Plan.OutputKey -cne 't7_iw7_registration_material_bindings_v1' -or
+       !(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes 16384) -or $Plan.TraceStderrLimitBytes -ne 16384){throw 'Exact actual CPP80 candidate and pending Native plan required.'}
+    Assert-T7RegistrationBindingsCohortPin $m.CPPQualification 'Handoff' $Plan.Bindings
+    Assert-T7CatalogueTextPin $m.Contract $Plan.Bindings
+    Assert-T7CatalogueTextPin $m.Reader $Plan.Bindings
+}
+function Assert-T7RegistrationBindingsCpp80($Plan,$Build,$Receipt,$Handoff,$Manifest,$Pre,$Post,$FixtureStdout) {
+    foreach($value in @($Plan,$Build,$Receipt,$Handoff,$Manifest,$Pre,$Post)){
+        if($value -isnot [pscustomobject]){throw 'Typed actual CPP80 proof containers required.'}
+    }
+    $c=Get-T7RegistrationBindingsCpp80Cohort
+    Assert-T7RegistrationBindingsCpp80Shape $Build $Receipt $Plan.ExpectedBuildPlanSHA256 $FixtureStdout ''
+    foreach($entry in @(@($Handoff,@('Schema','SourceCommit','NativeSourceCommit','Status','OriginalRootKey')),
+        @($Pre,@('Schema')),@($Post,@('Schema','SourceCommit','NativeSourceCommit','Status')))){
+        foreach($name in $entry[1]){if($entry[0].$name -isnot [string]){throw 'Typed actual CPP80 closure strings required.'}}
+    }
+    foreach($value in @($Manifest.revisions,$Handoff.FixtureStderr,$Handoff.Candidate,$Post.FreshLive)){
+        if($value -isnot [pscustomobject]){throw 'Typed actual CPP80 nested proof containers required.'}
+    }
+    if($Manifest.revisions.'x64-zt-extensions' -isnot [string] -or $Manifest.revisions.'x64-zt-extensions' -cne $c.Source -or
+       $Handoff.Schema -cne 'iw7.t7-registration-bindings-cpp-actual-handoff/1' -or $Handoff.SourceCommit -cne $c.Source -or
+       $Handoff.NativeSourceCommit -cne $c.NativeSource -or $Handoff.Status -cne 'Passed' -or
+       $Handoff.OriginalRootKey -cne 'IW7.RegistrationBindingsCPP.Original.D' -or
+       $Pre.Schema -cne 'iw7.t7-registration-bindings-cpp-pre-exit/1' -or $Post.Schema -cne 'iw7.t7-registration-bindings-cpp-post-exit/1' -or
+       $Post.SourceCommit -cne $c.Source -or $Post.NativeSourceCommit -cne $c.NativeSource -or $Post.Status -cne 'Passed'){throw 'Exact actual CPP80 Source/closure cohort required.'}
+    foreach($entry in @(@($Handoff,@('OriginalContextGuardsStatePSVariableValuesSame','OriginalReferencesVerified','OriginalOwnerClosed','OriginalLeaseNull','PreReleasePublished','CompletionPublished','ContextCanExit','CallerCanExit','ReceiptTextPinsUnchanged','ArtifactPinsCapturedReverifiedUnderCPPLease','CPPExecuted','CPP80ObservedClosed','OperationalGate170Closed')),
+        @($Pre,@('OriginalAppDomainRootSame','OriginalContextGuardsStatePSVariableValuesSame','OriginalReferencesVerified','CallerCanExit','ContextClosed','OwnerClosed','LeaseNull','PreReleasePublished','CompletionPublished','ContextCanExit')),
+        @($Post,@('OriginalHostParentStagesAbsent','ReceiptTextPinsUnchanged','CPPExecuted','OperationalGate170Closed')))){
+        foreach($name in $entry[1]){if($entry[0].$name -isnot [bool] -or !$entry[0].$name){throw 'Actual CPP80 original closure proof required.'}}
+    }
+    foreach($entry in @(@($Handoff,@('OriginalInputGuards','OriginalPublicationGuards','CallerSourceGuards')),@($Pre,@('CallerSourceGuards','InputGuards','PublicationGuards')))){
+        foreach($name in $entry[1]){if(!(Test-T7CatalogueInteger $entry[0].$name 0)){throw 'Actual CPP80 retained guards/lease must be zero.'}}
+    }
+    foreach($name in 'CandidateExecuted','StockRead','NativeObserved','Ready','CandidateOrSymbolsReadAfterRelease'){
+        if($Handoff.$name -isnot [bool] -or $Handoff.$name){throw 'CPP80 cannot promote Native/ABI/Ready facts.'}
+    }
+    if(!(Test-T7CatalogueInteger $Handoff.TotalChecks 80) -or $Handoff.TotalChecks -ne 80 -or
+       !(Test-T7CatalogueInteger $Handoff.ActualPTYAggregateExitCode 0) -or !(Test-T7CatalogueInteger $Post.ActualPTYAggregateExitCode 0) -or
+       $Handoff.OriginalIdentitiesAbsent -isnot [array] -or $Handoff.OriginalIdentitiesAbsent.Count -ne 7 -or
+       $Post.AbsentPIDs -isnot [array] -or ($Handoff.OriginalIdentitiesAbsent -join '|') -cne ($Post.AbsentPIDs -join '|') -or
+       $Handoff.FreshHeavyProcesses -isnot [array] -or $Handoff.FreshHeavyProcesses.Count -or
+       $Handoff.FreshLeases -isnot [array] -or $Handoff.FreshLeases.Count -or
+       $Post.FreshHeavyProcesses -isnot [array] -or $Post.FreshHeavyProcesses.Count -or $Post.FreshLive.Leases -isnot [array] -or $Post.FreshLive.Leases.Count -or
+       !(Test-T7CatalogueInteger $Handoff.FixtureStderr.Bytes 0) -or $Handoff.FixtureStderr.SHA256 -isnot [string] -or
+       $Handoff.FixtureStderr.SHA256 -cne 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'){
+        throw 'Actual CPP80 fixture/true-terminal/fresh absence metadata required.'
+    }
+    foreach($ids in @($Handoff.OriginalIdentitiesAbsent,$Post.AbsentPIDs)){
+        foreach($id in $ids){if(!(Test-T7CatalogueInteger $id ([int]::MaxValue)) -or !$id){throw 'Typed positive absent identities required.'}}
+        if(@($ids|Sort-Object -Unique).Count -ne 7){throw 'Distinct original absent identities required.'}
+    }
+    $exe=@($Receipt.Stages[-1].Artifacts|Where-Object {$_.Path -ceq $Plan.CandidateSource})
+    if($exe.Count -ne 1 -or $exe[0].Bytes -ne $c.EXEBytes -or $exe[0].SHA256 -cne $c.EXESHA256 -or
+       $Handoff.Candidate.Path -isnot [string] -or $Handoff.Candidate.Path -cne $Plan.CandidateSource -or
+       !(Test-T7CatalogueInteger $Handoff.Candidate.Bytes 64MB) -or $Handoff.Candidate.Bytes -ne $c.EXEBytes -or
+       $Handoff.Candidate.SHA256 -isnot [string] -or $Handoff.Candidate.SHA256 -cne $c.EXESHA256 -or
+       $Plan.CandidateSource -cne (Join-Path $Build.RunRoot 'link/zonetool-t7.exe') -or $Plan.BuildReceipt -cne (Join-Path $Build.RunRoot 'receipt.json')){
+        throw 'CPP80 candidate must be the same original under-lease link artifact.'
+    }
+}
+function Assert-T7RegistrationBindingsBuild($Plan,$Receipt) {
+    Assert-T7RegistrationBindingsPlan $Plan
+    $handoff=Read-H1SmallJson $Plan.SelectedRegistrationMaterialBindingsV1.CPPQualification.Path 64KB
+    foreach($name in 'Plan','Receipt','SourceManifest','PreExit','PostExit','PreReleaseReceipt','FixtureStdout'){
+        Assert-T7RegistrationBindingsCohortPin $handoff.$name $name $Plan.Bindings
+    }
+    if($handoff.Plan.Path -cne $Plan.BuildPlan -or $handoff.Receipt.Path -cne $Plan.BuildReceipt){throw 'CPP80 handoff and plan paths differ.'}
+    $build=Read-H1SmallJson $Plan.BuildPlan 1MB
+    foreach($name in @('Wiring','PreparedMain','PreparedCLI','BaseBuildPlan','BaseBuildReceipt','LinkResponse',
+        'RegistrationWiring','RegistrationContract','RegistrationCapture','RegistrationEntry','RegistrationFixture','RegistrationObserver','RegistrationResponse',
+        'BindingsBuildWiring','BindingsIncomingWiring','BindingsBuildValidator','BindingsBuildContract','BindingsWiring','BindingsContract','BindingsModule',
+        'BindingsEntry','BindingsFixture','BindingsLegacyFixture','BindingsCapture','BindingsObserver','BindingsBaselineFixture','BindingsCombinedFixture','BindingsResponse')){
+        Assert-T7CatalogueTextPin $build.BuildProfile.$name $Plan.Bindings
+    }
+    $dependencies=@($Receipt.Stages[2].Artifacts|Where-Object {[IO.Path]::GetFileName($_.Path) -ceq 'dependencies.json'})
+    if($dependencies.Count -ne 1){throw 'One original CPP80 dependency text required.'}
+    Assert-T7CatalogueTextPin $dependencies[0] $Plan.Bindings
+    $stdout=[IO.File]::ReadAllText($handoff.FixtureStdout.Path)
+    Assert-T7RegistrationBindingsCpp80 $Plan $build $Receipt $handoff (Read-H1SmallJson $handoff.SourceManifest.Path 1MB) `
+        (Read-H1SmallJson $handoff.PreExit.Path 64KB) (Read-H1SmallJson $handoff.PostExit.Path 64KB) $stdout
+}
+function ConvertFrom-T7RegistrationBindingsRecord($Text,$ExitCode) {
+    # Shell capture only. The pinned Python reader owns all 41/9/10 DTO rules.
+    if($Text -isnot [string] -or [Text.Encoding]::UTF8.GetByteCount($Text) -gt 1MB -or
+       ($ExitCode -isnot [int] -and $ExitCode -isnot [long]) -or $ExitCode -lt -2147483648L -or $ExitCode -gt 4294967295L){throw 'Bounded bindings stdout and original exit required.'}
+    $markers=[regex]::Matches($Text,'T7_REGISTRATION_MATERIAL_BINDINGS')
+    if(!$markers.Count){return [pscustomobject]@{Outcome='RegistrationBindingsNoReport';Record=$null}}
+    $records=[regex]::Matches($Text,'(?m)^[^\r\n]*?T7_REGISTRATION_MATERIAL_BINDINGS (\{[^\r\n]*\})\r?$')
+    if($markers.Count -ne 1 -or $records.Count -ne 1 -or [Text.Encoding]::UTF8.GetByteCount($records[0].Groups[1].Value) -gt 32KB){throw 'One bounded bindings JSON object required.'}
+    $json=$records[0].Groups[1].Value
+    $options=[Text.Json.JsonDocumentOptions]::new();$options.MaxDepth=25
+    $document=[Text.Json.JsonDocument]::Parse($json,$options)
+    try{
+        $r=$document.RootElement
+        if($r.ValueKind -ne [Text.Json.JsonValueKind]::Object){throw 'Bindings JSON object required.'}
+        foreach($row in @(@('schema','iw7.t7-registration-material-bindings/1'),@('source_profile','t7-registration-material-bindings-v1'),
+            @('native_source_commit','fab935826c898806855376662a8a03317b3ad8f1'))){
+            $p=$r.GetProperty($row[0]);if($p.ValueKind -ne [Text.Json.JsonValueKind]::String -or $p.GetString() -cne $row[1]){throw 'Bindings record identity differs.'}
+        }
+    }finally{$document.Dispose()}
+    [pscustomobject]@{Outcome=$(if($ExitCode -eq 0){'RegistrationBindingsRecordCaptured'}else{'RegistrationBindingsRecordFromFailedProcess'});Record=$json}
+}
+function Read-T7RegistrationBindingsRecord($Plan,$State,$Context) {
+    if($Context.Closed -isnot [bool] -or !$Context.Closed -or !$Context.Owner -or !$Context.Lease -or
+       $State.TreeClosureConfirmed -isnot [bool] -or !$State.TreeClosureConfirmed -or
+       $State.TerminationRequested -isnot [bool] -or $State.TerminationRequested -or $State.Quarantined -isnot [bool] -or $State.Quarantined){
+        throw 'Original bindings job must close normally with admission retained.'
+    }
+    $result=ConvertFrom-T7RegistrationBindingsRecord (Read-T7ImageMetadataStdout $Plan $State $Context) $State.ExitCode
+    $State.SelectedRegistrationBindings=[ordered]@{Schema='iw7.t7-registration-material-bindings/1';RecordPresent=($null -ne $result.Record);
+        ConsumerSchema='iw7.t7-registration-bindings-consumer/1';InterpretationPending=$true;DeepMetadataOutcome=$null;
+        NativeExitCode=$State.ExitCode;NativeObserved=$false;DescriptorAdmissible=$false;QualifiedObjectMipCount=$null;PayloadBytesRead=0;Ready=$false}
+    # Raw JSON stays in the already pinned stdout (State.Report), as in incoming.
+    # Do not duplicate a 32-KiB DTO string into Catalogue's 64-KiB receipt reserve.
+    $result.Outcome
+}
+function Publish-T7RegistrationBindingsBeforeRelease($Plan,$State,$Context) {
+    if(!$Context.Closed -or !$Context.Lease -or !$State.InputsReverified -or !$State.EngineOutputsValidated){
+        throw 'Bindings original closure and reverified inputs required before publication/release.'
+    }
+    $State.MainAfter=Assert-T7CatalogueMain $Plan
+    Assert-H1Deadline $script:T7CatalogueGroupStarted 200
+    Test-H1Budget $Plan $State
+    $pin=Write-H1Receipt $Plan $State $Plan.StageRoot -Name 'receipt-before-release.json' -PassThru
+    $Context.PublicationGuards.Add((Open-H1Pin $pin))
+    $Context.Publications.Add($pin)
+    $Context.PreReleasePublished=$true
+}
+function Complete-T7RegistrationBindingsPublication($Pin,$Context) {
+    if(!$Pin -or !$Context.Closed -or $Context.Lease -or !$Context.PreReleasePublished){throw 'Bindings publication closure remains unknown.'}
+    $Context.PublicationGuards.Add((Open-H1Pin $Pin));$Context.Publications.Add($Pin)
+    foreach($publication in $Context.Publications){$verified=Open-H1Pin $publication;$verified.Dispose()}
+    $Context.CompletionPublished=$true
+    foreach($guard in $Context.PublicationGuards){$guard.Dispose()};$Context.PublicationGuards.Clear()
+}
 function Assert-T7RegistrationBindingsCpp80Shape($Build,$Receipt,$PlanSHA256,$FixtureStdout,$FixtureStderr) {
     # Declared metadata only. This does not establish a measured cohort, original
     # host/PTY closure or guarded input identity, and never opens the gate above.
@@ -216,14 +398,14 @@ function Get-T7CataloguePlanZoneSpec($Plan) {
         if($name -cne $selected.FileName){throw 'Exact catalogue zone filename required.'}
         $selected
     }else{Get-T7CatalogueZoneSpec}
-    if((Get-T7CatalogueOperation $Plan) -cin @('ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1') -and $spec.Name -cne 'mp_freerun_04'){
+    if((Get-T7CatalogueOperation $Plan) -cin @('ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1','RegistrationMaterialBindingsV1') -and $spec.Name -cne 'mp_freerun_04'){
         throw 'Resident export retains only the observed platform donor zone.'
     }
     $spec
 }
 function Get-T7CatalogueCandidateProfile($Plan) {
     if(!$Plan.PSObject.Properties['CandidateProfile']){return 'ordinary-d2'}
-    if($Plan.CandidateProfile -isnot [string] -or $Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')){throw 'Unknown catalogue candidate profile.'}
+    if($Plan.CandidateProfile -isnot [string] -or $Plan.CandidateProfile -cnotin @('ordinary-d2','t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1')){throw 'Unknown catalogue candidate profile.'}
     $Plan.CandidateProfile
 }
 function Assert-T7CatalogueZombiesObservationPlan($Plan) {
@@ -333,7 +515,7 @@ function Get-T7CatalogueBootstraps($Plan) {
         if($Plan.Bootstraps -isnot [array] -or $Plan.Bootstraps.Count -lt 1 -or $Plan.Bootstraps.Count -gt $limits.ItemCount){
             throw ('Qualified collection requires one through '+$limits.ItemCount+' explicit items.')
         }
-        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')){throw 'Qualified collection requires an explicit supported profile.'}
+        if((Get-T7CatalogueCandidateProfile $Plan) -cnotin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1')){throw 'Qualified collection requires an explicit supported profile.'}
         $items=@($Plan.Bootstraps);$total=0L
         $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -555,11 +737,15 @@ function Assert-T7CatalogueDistinctInputIds($Plan,$InputFileIds) {
 }
 function Get-T7CatalogueOperation($Plan) {
     if(!$Plan.PSObject.Properties['Operation']){return 'Catalogue'}
-    if($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1')){throw 'Unknown T7 operation.'}
+    if($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1','RegistrationMaterialBindingsV1')){throw 'Unknown T7 operation.'}
     $Plan.Operation
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
-    if(Test-T7RegistrationBindingsIntent $Plan){Assert-T7RegistrationBindingsSourcePlan $Plan;Assert-T7RegistrationBindingsOperationalGate}
+    $registrationBindings=Test-T7RegistrationBindingsIntent $Plan
+    if($registrationBindings){
+        if(!(Test-T7RegistrationBindingsCompiledPlan $Plan)){Assert-T7RegistrationBindingsSourcePlan $Plan;Assert-T7RegistrationBindingsOperationalGate}
+        Assert-T7RegistrationBindingsPlan $Plan
+    }
     $incoming=Test-T7IncomingImageIntent $Plan
     if($incoming){
         if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageSourcePlan $Plan;Assert-T7IncomingImageOperationalGate}
@@ -586,8 +772,8 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($Plan.PSObject.Properties['SelectedStreamedStaticV1'] -and !$export){throw 'Selected-streamed E3 is restricted to the export operation.'}
     if($Plan.PSObject.Properties['SelectedStreamedRenderOnlyV2'] -and !$export){throw 'Render-only E5 is restricted to the export operation.'}
     $streamed=$export -and [bool](Get-T7SelectedStreamedExport $Plan)
-    $schema=if($incoming){'iw7.t7-incoming-image-plan/1'}elseif($registration){'iw7.t7-registration-image-plan/1'}elseif($provenance){'iw7.t7-image-provenance-plan/1'}elseif($parts){'iw7.t7-material-parts-plan/1'}elseif($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
-    $reportLimit=if($incoming){32KB}elseif($parts -or $provenance -or $registration){64KB}elseif($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
+    $schema=if($registrationBindings){'iw7.t7-registration-bindings-plan/1'}elseif($incoming){'iw7.t7-incoming-image-plan/1'}elseif($registration){'iw7.t7-registration-image-plan/1'}elseif($provenance){'iw7.t7-image-provenance-plan/1'}elseif($parts){'iw7.t7-material-parts-plan/1'}elseif($export){'iw7.t7-resident-export-plan/1'}else{'iw7.t7-catalogue-plan/1'}
+    $reportLimit=if($incoming -or $registrationBindings){32KB}elseif($parts -or $provenance -or $registration){64KB}elseif($export){Get-T7ResidentExportReportLimit $Plan}else{512KB}
     if($export){Assert-T7ResidentExportPlan $Plan $Repo}
     $candidateProfile=Get-T7CatalogueCandidateProfile $Plan
     Assert-T7CatalogueZombiesObservationPlan $Plan
@@ -595,6 +781,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     $null=Get-T7CatalogueMainBaseline $Plan
     $bootstraps=@(Get-T7CatalogueBootstraps $Plan)
     $qualified=(Get-T7CatalogueBootstrapPolicy $Plan) -cne 'Legacy'
+    if($registrationBindings -and (Get-T7CatalogueBootstrapPolicy $Plan) -cne 'QualifiedCollectionV3'){throw 'Bindings requires the retained qualified V3 collection.'}
     if(!(Test-T7CatalogueInteger $Plan.CandidateBytes 64MB) -or $Plan.CandidateBytes -le 0){throw 'Exact bounded candidate identity required.'}
     $bootstrapBytes=0L
     foreach($bootstrap in $bootstraps){
@@ -609,6 +796,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($qualified){
         $limits=Get-T7CatalogueBootstrapLimits $Plan
         $shared=Get-T7CatalogueSharedQualification $Plan
+        if($registrationBindings -and (!$shared -or $bootstraps.Count -ne 23 -or
+           @($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count -ne 12 -or @($Plan.Bindings).Count -ne 112)){
+            throw 'Bindings requires the retained 23-item shared collection and exact 112 bindings.'
+        }
         $bindingCount=22+3*$bootstraps.Count
         if($shared){$bindingCount=24+2*$bootstraps.Count+@($bootstraps.QualificationScript.Path|Sort-Object -Unique).Count}
         # Five new profile text pins (link.rsp already exists), plus CLI dependencies.
@@ -618,6 +809,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
         if($parts){$bindingCount+=7} # One adapter plus six exact E source/closure texts.
         if($registration){$bindingCount+=14}
         if($incoming){$bindingCount+=24} # Registration-sized source closure plus nine incoming pins and fresh witness.
+        if($registrationBindings){$bindingCount+=30} # CPP80 proof/reader and 28 build fields with two shared pins; 112 including the retained collection.
         if($provenance){$bindingCount+=6} # Adapter + four closure texts + prepared CLI beyond base build texts.
         if($export){$bindingCount+=9}
         if($diagnostic){$bindingCount++} # Exactly one additional guarded prepared header.
@@ -642,17 +834,17 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($candidateProfile -ceq 'ordinary-d2' -and ($Plan.CandidateBytes -ne 21740032 -or
        $Plan.CandidateSHA256 -cne '94dd29a9cb538504ddeb3545483e43a5dfea195aaca155db5bf147f1c6334c15')){throw 'Ordinary D2 candidate differs.'}
     if($candidateProfile -cne 'ordinary-d2') {
-        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192};'t7-zombies-catalogue-observation-c'{16384};'t7-zombies-catalogue-observation-c2'{16384};'t7-material-parts-v1'{16384};'t7-image-provenance-v1'{16384};'t7-registration-image-header-metadata-v1'{16384};'t7-incoming-image-header-observation-v1'{16384}}
+        $limit=switch($candidateProfile){'t7-catalog-trace'{1536};'t7-catalog-exit-context'{4096};'t7-catalog-callers'{8192};'t7-catalog-message'{8192};'t7-catalog-message-publication'{8192};'t7-zombies-catalogue-observation-c'{16384};'t7-zombies-catalogue-observation-c2'{16384};'t7-material-parts-v1'{16384};'t7-image-provenance-v1'{16384};'t7-registration-image-header-metadata-v1'{16384};'t7-incoming-image-header-observation-v1'{16384};'t7-registration-material-bindings-v1'{16384}}
         if(!(Test-T7CatalogueInteger $Plan.TraceStderrLimitBytes $limit) -or $Plan.TraceStderrLimitBytes -ne $limit){throw 'Exact trace stderr bound required.'}
     }
     Assert-H1Path $Plan.RunRoot
-    $rootPattern=if($incoming){'^t7-incoming-image-[a-z][a-z0-9-]*$'}elseif($registration){'^t7-registration-image-[a-z][a-z0-9-]*$'}elseif($provenance){'^t7-image-provenance-[a-z][a-z0-9-]*$'}elseif($parts){'^t7-material-parts-[a-z][a-z0-9-]*$'}elseif($export){'^t7-export-[a-z][a-z0-9-]*$'}else{'^t7-catalog-[a-z][a-z0-9-]*$'}
+    $rootPattern=if($registrationBindings){'^t7-registration-bindings-[a-z][a-z0-9-]*$'}elseif($incoming){'^t7-incoming-image-[a-z][a-z0-9-]*$'}elseif($registration){'^t7-registration-image-[a-z][a-z0-9-]*$'}elseif($provenance){'^t7-image-provenance-[a-z][a-z0-9-]*$'}elseif($parts){'^t7-material-parts-[a-z][a-z0-9-]*$'}elseif($export){'^t7-export-[a-z][a-z0-9-]*$'}else{'^t7-catalog-[a-z][a-z0-9-]*$'}
     if([IO.Path]::GetDirectoryName($Plan.RunRoot) -cne (Join-Path $Repo 'runtime') -or
        [IO.Path]::GetFileName($Plan.RunRoot) -cnotmatch $rootPattern -or
        $Plan.WorkingDirectory -cne (Join-Path $Plan.RunRoot 'work') -or
        $Plan.StageRoot -cne (Join-Path $Plan.RunRoot 'evidence') -or
        $Plan.Image -cne (Join-Path $Plan.WorkingDirectory 't7-zonetool-candidate.exe')){throw 'Exact catalogue command/root required.'}
-    if(!$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and (@($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -isnot [string] -or
+    if(!$export -and !$parts -and !$provenance -and !$registration -and !$incoming -and !$registrationBindings -and (@($Plan.Arguments).Count -ne 2 -or $Plan.Arguments[0] -isnot [string] -or
        $Plan.Arguments[0] -cne '-t7-iw7-catalog' -or $Plan.Arguments[1] -isnot [string] -or
        $Plan.Arguments[1] -cne $zoneSpec.Name -or $Plan.OutputKey -isnot [string] -or
        $Plan.OutputKey -cne $zoneSpec.OutputKey)){throw 'Exact catalogue command/root required.'}
@@ -672,6 +864,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     if($parts){$bindingLimit+=7}
     if($registration){$bindingLimit+=14}
     if($incoming){$bindingLimit+=24}
+    if($registrationBindings){$bindingLimit+=30}
     if($provenance){$bindingLimit+=6}
     if($export){$bindingLimit+=9}
     if($diagnostic){$bindingLimit++}
@@ -717,7 +910,10 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     Assert-T7CatalogueBootstrapBindings $Plan
 }
 function Assert-T7CatalogueBuild($Plan,$Receipt) {
-    if(Test-T7RegistrationBindingsIntent $Plan){Assert-T7RegistrationBindingsOperationalGate}
+    if(Test-T7RegistrationBindingsIntent $Plan){
+        if(!(Test-T7RegistrationBindingsCompiledPlan $Plan)){Assert-T7RegistrationBindingsOperationalGate}
+        Assert-T7RegistrationBindingsBuild $Plan $Receipt;return
+    }
     if(Test-T7IncomingImageIntent $Plan){
         if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageOperationalGate}
         Assert-T7IncomingImageBuild $Plan $Receipt;return
@@ -1156,7 +1352,10 @@ function New-T7CatalogueAlias($Pin,[string]$Destination,$Context) {
     [pscustomobject]@{Path=$Destination;Source=$Pin.Path;Bytes=$Pin.Bytes;SHA256=$Pin.SHA256;FileId=$aliasId}
 }
 function New-T7CatalogueStart($Plan) {
-    if(Test-T7RegistrationBindingsIntent $Plan){Assert-T7RegistrationBindingsOperationalGate}
+    if(Test-T7RegistrationBindingsIntent $Plan){
+        if(!(Test-T7RegistrationBindingsCompiledPlan $Plan)){Assert-T7RegistrationBindingsOperationalGate}
+        Assert-T7RegistrationBindingsPlan $Plan
+    }
     if(Test-T7IncomingImageIntent $Plan){
         if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageOperationalGate}
         Assert-T7IncomingImagePlan $Plan
@@ -1166,7 +1365,7 @@ function New-T7CatalogueStart($Plan) {
     $start=New-T7PrepatchStart $Plan # Environment setup only; diagnostic is not invoked.
     $zoneSpec=Get-T7CataloguePlanZoneSpec $Plan
     $start.ArgumentList.Clear();$start.ArgumentList.Add('-t7-iw7-catalog');$start.ArgumentList.Add($zoneSpec.Name)
-    if((Test-T7IncomingImageCompiledPlan $Plan) -or (Test-T7RegistrationImagePlan $Plan)){$start.ArgumentList.Clear();foreach($argument in $Plan.Arguments){$start.ArgumentList.Add($argument)}}
+    if((Test-T7RegistrationBindingsCompiledPlan $Plan) -or (Test-T7IncomingImageCompiledPlan $Plan) -or (Test-T7RegistrationImagePlan $Plan)){$start.ArgumentList.Clear();foreach($argument in $Plan.Arguments){$start.ArgumentList.Add($argument)}}
     if(Test-T7ImageProvenanceCompiledPlan $Plan){
         Assert-T7ImageProvenanceCompiledPlan $Plan;$start.ArgumentList.Clear()
         foreach($argument in $Plan.Arguments){$start.ArgumentList.Add($argument)}

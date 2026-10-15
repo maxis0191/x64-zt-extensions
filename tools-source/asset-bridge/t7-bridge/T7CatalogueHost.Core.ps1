@@ -1,5 +1,13 @@
 # Functions only. The existing runner/H1 primitives retain native ownership.
 Set-StrictMode -Version Latest
+function Test-T7CatalogueHostBindingsCompiledSelector($Plan) {
+    [bool]($Plan.PSObject.Properties['Schema'] -and $Plan.Schema -is [string] -and $Plan.Schema -ceq 'iw7.t7-registration-bindings-plan/1' -and
+        $Plan.PSObject.Properties['Operation'] -and $Plan.Operation -is [string] -and $Plan.Operation -ceq 'RegistrationMaterialBindingsV1' -and
+        $Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -is [string] -and $Plan.CandidateProfile -ceq 't7-registration-material-bindings-v1' -and
+        $Plan.PSObject.Properties['SelectedRegistrationMaterialBindingsV1'] -and $Plan.SelectedRegistrationMaterialBindingsV1 -is [pscustomobject] -and
+        $Plan.SelectedRegistrationMaterialBindingsV1.PSObject.Properties['Schema'] -and
+        $Plan.SelectedRegistrationMaterialBindingsV1.Schema -is [string] -and $Plan.SelectedRegistrationMaterialBindingsV1.Schema -ceq 'iw7.t7-registration-bindings-cpp80/1')
+}
 function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
     # Source-only selectors must refuse before OpenInputs opens extra bindings.
     if($Plan.PSObject.Properties['SelectedRegistrationMaterialBindingsV1'] -or
@@ -7,16 +15,22 @@ function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
        ($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationMaterialBindingsV1') -or
        ($Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -ceq 't7-registration-material-bindings-v1') -or
        ($Plan.PSObject.Properties['Arguments'] -and $Plan.Arguments -ccontains '-t7-iw7-registration-material-bindings-v1')){
-        throw 'Registration bindings Source only: host DEFAULT and Run remain unavailable pending actual closed CPP qualification.'
+        if(!(Test-T7CatalogueHostBindingsCompiledSelector $Plan)){
+            throw 'Registration bindings Source only: host DEFAULT and Run remain unavailable pending actual closed CPP qualification.'
+        }
+        # OpenInputs pins this one existing functions-only profile before calling
+        # the shared typed validator, still before HostImage or extra bindings.
+        if(!(Get-Command Assert-T7RegistrationBindingsPlan -ErrorAction SilentlyContinue)){throw 'Pinned compiled bindings validator required.'}
+        Assert-T7RegistrationBindingsPlan $Plan
     }
     $export=[bool]($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ResidentExportV1')
-    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1'))){throw 'Unknown T7 host operation.'}
-    $prefix=if($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'IncomingImageObservationV1'){'iw7.t7-incoming-image-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationImageMetadataV1'){'iw7.t7-registration-image-'}elseif($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ImageProvenanceV1'){'iw7.t7-image-provenance-'}else{'iw7.t7-catalogue-'}
+    if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1','RegistrationMaterialBindingsV1'))){throw 'Unknown T7 host operation.'}
+    $prefix=if($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationMaterialBindingsV1'){'iw7.t7-registration-bindings-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'IncomingImageObservationV1'){'iw7.t7-incoming-image-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationImageMetadataV1'){'iw7.t7-registration-image-'}elseif($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ImageProvenanceV1'){'iw7.t7-image-provenance-'}else{'iw7.t7-catalogue-'}
     $prefix+$Kind+'/1'
 }
 function Get-T7CatalogueHostOutcomeName($Plan) {
     $schema=Get-T7CatalogueHostSchema $Plan 'run'
-    if($schema -ceq 'iw7.t7-incoming-image-run/1'){'IncomingObservationOutcome'}elseif($schema -ceq 'iw7.t7-registration-image-run/1'){'RegistrationOutcome'}elseif($schema -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}elseif($schema -ceq 'iw7.t7-material-parts-run/1'){'PartsOutcome'}elseif($schema -ceq 'iw7.t7-image-provenance-run/1'){'ProvenanceOutcome'}else{'CatalogueOutcome'}
+    if($schema -ceq 'iw7.t7-registration-bindings-run/1'){'RegistrationBindingsOutcome'}elseif($schema -ceq 'iw7.t7-incoming-image-run/1'){'IncomingObservationOutcome'}elseif($schema -ceq 'iw7.t7-registration-image-run/1'){'RegistrationOutcome'}elseif($schema -ceq 'iw7.t7-resident-export-run/1'){'ExportOutcome'}elseif($schema -ceq 'iw7.t7-material-parts-run/1'){'PartsOutcome'}elseif($schema -ceq 'iw7.t7-image-provenance-run/1'){'ProvenanceOutcome'}else{'CatalogueOutcome'}
 }
 function Get-T7CatalogueHostIdentity {
     $process=[Diagnostics.Process]::GetCurrentProcess()
@@ -49,6 +63,12 @@ function Open-T7CatalogueHostInputs([string]$PlanPath,[string]$PlanSHA256,[strin
             $guards.Add((Open-H1Pin ([pscustomobject]@{Path=$pair[0];Bytes=$file.Length;SHA256=$pair[1]})))
         }
         $contract=Read-H1SmallJson $HostContractPath 32KB;$plan=Read-H1SmallJson $PlanPath
+        if(Test-T7CatalogueHostBindingsCompiledSelector $plan){
+            $profile=Join-Path (Split-Path $EntryPath -Parent) 'T7Catalogue.Profile.ps1'
+            $pins=@($plan.Bindings|Where-Object {$_.Path -ceq $profile -and $_.IsText -is [bool] -and $_.IsText})
+            if($pins.Count -ne 1 -or $pins[0].Bytes -le 0 -or $pins[0].Bytes -gt 1MB){throw 'Exact bounded compiled bindings profile pin required.'}
+            $guards.Add((Open-H1Pin $pins[0]));. $profile
+        }
         $hostSchema=Get-T7CatalogueHostSchema $plan 'host'
         $runner=Join-Path (Split-Path $EntryPath -Parent) 'Run-T7Catalogue.ps1'
         $core=Join-Path (Split-Path $EntryPath -Parent) 'T7CatalogueHost.Core.ps1'
@@ -176,6 +196,16 @@ function Assert-T7CatalogueHostReturn($State) {
 }
 function Get-T7CatalogueHostClosureObservation($State,$Receipt) {
     if($null -ne [AppDomain]::CurrentDomain.GetData('IW7.H1.Quarantine.'+$Receipt.LeaseToken)){throw 'Native quarantine remains; retain host.'}
+    if(Test-T7CatalogueHostBindingsCompiledSelector $State.Plan){
+        $original=[AppDomain]::CurrentDomain.GetData('IW7.T7RegistrationBindings.Run')
+        if(!$original -or ![object]::ReferenceEquals($original.Context.Guards,$original.Guards) -or
+           $original.State.PlanSHA256 -cne $State.PlanSHA256 -or !$original.Context.Owner -or
+           $original.Context.Closed -isnot [bool] -or !$original.Context.Closed -or !$original.Context.Owner.Closed -or
+           $original.Context.Lease -or $original.Context.Guards.Count -or $original.Context.PublicationGuards.Count -or
+           $original.Context.PreReleasePublished -isnot [bool] -or !$original.Context.PreReleasePublished -or
+           $original.Context.CompletionPublished -isnot [bool] -or !$original.Context.CompletionPublished -or
+           $original.Context.CanExit -isnot [bool] -or !$original.Context.CanExit){throw 'Same original bindings context/publication/guards must close before host exit.'}
+    }
     $attempt=Read-H1SmallJson (Join-Path $State.RunRoot 'attempt.json')
     if($attempt.Schema -cne (Get-T7CatalogueHostSchema $State.Plan 'attempt') -or $attempt.PlanSHA256 -cne $State.PlanSHA256 -or
        ([datetimeoffset]$attempt.StartedUtc).UtcTicks -lt ([datetimeoffset]$State.Host.CreatedUtc).UtcTicks -or

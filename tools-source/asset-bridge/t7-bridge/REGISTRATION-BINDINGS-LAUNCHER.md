@@ -1,4 +1,98 @@
-# Registration bindings: Source-only Catalogue seam
+# Registration bindings: actual CPP80 Catalogue adoption
+
+## Current Source route after actual CPP80 D
+
+The existing Catalogue host/runner now has a finite compiled route for the seven
+material0 bindings. This change does not run its factory, ordinary DEFAULT,
+candidate CLI or game. Fresh admitted preparation/DEFAULT and a distinct Native
+GO remain required. Older CPP39/87 candidates and incoming evidence stay separate.
+
+The compiled plan is `iw7.t7-registration-bindings-plan/1`, operation
+`RegistrationMaterialBindingsV1`, profile `t7-registration-material-bindings-v1`,
+with marker `iw7.t7-registration-bindings-cpp80/1`. It retains the four literal
+arguments shown below. Pending/partial Source selectors still refuse DEFAULT
+and Run. Compiled host selection pins the existing functions-only Catalogue
+profile and uses its shared typed validator before HostImage/extra bindings.
+
+The finite qualifier pins compiled Source
+`0f669b58f7a962cb5f5c01af252ce05d8bdbbc3b` and native Source
+`fab935826c898806855376662a8a03317b3ad8f1`. Later documentation/launcher merges
+do not relabel the compilation. EXE22054400/SHA
+`f14a0af9c8e7a0a58e7f1331fa996806139356c6063e47fc6325f2ad423c8f40`
+was captured/reverified under the original CPP lease. This Source adoption never
+stats, reads or hashes that EXE or PDB.
+
+| Immutable text | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Actual handoff D | 37937 | `d1c06527a7e149111efc593b6c09d9ce5cbcbc92ef3b0218e2ac836039dad7a1` |
+| Plan F | 406073 | `11544206c4a723722696e35ef869bc8ad9c713a8ada212811deae8bb7b5dc092` |
+| Final CPP receipt | 50715 | `320bcfc68b205eee81b00e0b5e0fa50e391523db15737ff6670ad2d0e5944b8d` |
+| Compiled Source manifest | 385050 | `fe60a6ed7eb0a912e399251c358ff48798bc705a8c079b9d1884f6f49505a272` |
+| Original pre-exit | 58054 | `599382303342137f09729487463c9f8db0c1e63cb68c9a0ceb933a7b22da129e` |
+| Post-exit | 35547 | `40b59ede7f671d9d7e6d534ec923eba5d9f58b13475975c0d13f520e7880740d` |
+| Pre-release receipt | 50674 | `78fe9943e7163e43a7b22064f4df98a3ad48070a40bda0e0d28107d96be44e68` |
+| Fixture stdout | 78 | `a7956d2cf5c0a8daca4f9969315067999151c992d4742ab52f7fa7efceea1a2a` |
+
+These exact texts must be guarded plan bindings. Empty fixture stderr is checked
+from its immutable handoff metadata; Catalogue's positive-size binding rule is
+unchanged. The earlier shape helper remains necessary but insufficient by itself.
+The actual new receipt field is RegistrationBindingsFixturePassed; inherited
+RegistrationCPPQualified remains base39. No new top-level qualification flag or
+rewritten pending recipe flags are accepted.
+
+Original root `IW7.RegistrationBindingsCPP.Original.D`, original reference/guard/
+lease/publication proof, true managed PTY81080 exit0/chunk889002, seven absent
+identities and fresh empty process/lease lists are sealed into the tuple. Root
+independently corroborated actual closure before authorizing Source adoption.
+That PTY is closed and must never be polled again.
+
+`prepare_registration_bindings_probe.py` reduces the same exact E5 reference
+metadata, preserves the shared 23-item V3 bootstrap collection, and substitutes
+only the measured CPP80 candidate/build tuple. It produces 112 unique bindings
+and 27 metadata rows. The 28 build field references contain two real aliases:
+RegistrationFixture/BindingsLegacyFixture and
+RegistrationResponse/BindingsResponse. Each shared pin is included once;
+conflicting aliases or other duplicate paths refuse.
+
+Candidate/Main/process snapshots belong to future admitted preparation. The
+adapter reads bounded Source/JSON and the exact 78-byte fixture only; opaque,
+device and ADS selectors refuse before metadata access. When invoked, it creates
+fresh control files and empty runtime directories. It never runs DEFAULT,
+acquires admission, links retail files or launches the candidate.
+
+Run reuses Catalogue/H1 ownership, aliases, environment, deadlines, preservation
+and guarded stdout. It captures one JSON object at most 32 KiB from stdout at
+most 1 MiB, preserves raw JSON in the guarded stdout and retains the original
+exit, and checks record identity. The DTO is not duplicated into the existing
+64-KiB receipt reserve; State.Report pins its original text.
+The existing Python reader owns the 41 outer/9 row/10 snapshot semantics.
+Shell outcomes are RegistrationBindingsNoReport,
+RegistrationBindingsRecordCaptured or RegistrationBindingsRecordFromFailedProcess.
+A successful capture remains RegistrationBindingsCapturedPendingReview with
+deep outcome NULL, NativeObserved/descriptor/Ready=false and payload bytes zero.
+
+For this mode only, existing H1 BeforeReleaseCheck publishes and pins a
+pre-release receipt before lease release. Final publication is rechecked before
+input guards close. `IW7.T7RegistrationBindings.Run` retains the same context,
+state and guards; the host verifies their closure/CanExit before disposing its
+guards. Unknown pre-publication retains the original lease; unknown final
+publication retains the original references/guards. Existing modes retain
+their earlier finalization path. There is no new host or lifecycle framework.
+
+Source tests exercise the complete common plan with invented metadata, alias/
+tuple/type mutants, bounded raw capture and the actual runner finally body with
+I/O/admission fakes. Failed publication, final guard, input disposal and unclosed
+jobs prevent exit. A separate local replay read/hashed only actual bounded
+Source proofs and exercised the full build qualifier, without operational entry
+or opaque access. Exact-head CI/review evidence belongs to the adoption PR.
+
+Next: merge reviewed Source, compose fresh receiver Source, then obtain a distinct
+admitted preparation/DEFAULT GO. A later Native GO may capture seven bindings for
+the existing reader. Descriptor/mip/payload/association/lifetime/ABI/renderer/
+pixels/Ready remain unqualified. The build owner's REGISTRATION-BINDINGS-BUILD.md
+records actual CPP80 D and earlier failed OS/wiring attempts.
+
+## Historical PR170 Source-only seam (superseded for the compiled route)
 
 The seven material0 bindings have a distinct Source proposal in the existing
 Catalogue profile. The old incoming42/CPP87 candidate, Source plans, factory B
