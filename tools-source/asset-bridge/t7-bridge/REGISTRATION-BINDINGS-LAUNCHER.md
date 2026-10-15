@@ -197,8 +197,13 @@ log path/Bytes/SHA, marker, marker/record offsets in UTF-8 bytes, record length/
 SHA, extractor Source path/Bytes/SHA and original native exit. Both outputs must
 be fresh ordinary absolute `.json` paths with existing parents. Device, ADS,
 reserved, reparse, opaque suffix, overlap and overwrite paths refuse. CreateNew,
-flush/fsync and readback apply to each new file; the same held original log is
-read and identity checked again before completion. On failure, any new partial
+flush/fsync and readback apply to each new file. Both same original output
+streams stay open through provenance publication and final path/identity/bytes
+checks; the same held original log is read and identity checked again before
+completion. Independent review reproduced an earlier candidate returning success
+after the JSON changed during provenance publication. That candidate is retained
+in history; final held-output checks and mutation/reparse/identity causals now
+refuse this case. On failure, any new partial
 artifact remains for diagnosis and must not be interpreted as successful output.
 This is a bounded local integrity check, not a claim of protection from every
 concurrent adversarial filesystem change.

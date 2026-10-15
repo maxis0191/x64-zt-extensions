@@ -4,6 +4,7 @@ The original log and receipts remain immutable. The unchanged consumer CLI reads
 the new .json artifact separately with the original native exit code.
 """
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -72,12 +73,28 @@ def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def verify_new_output(path, stream, opened, raw):
+    ordinary_path(path, ".json")
+    stream.seek(0)
+    need(stream.read(len(raw)+1) == raw, "new output readback differs")
+    current = os.fstat(stream.fileno()); leaf = path.lstat()
+    need(stat.S_ISREG(current.st_mode) and stat.S_ISREG(leaf.st_mode) and
+         (current.st_dev, current.st_ino, current.st_size) == (opened.st_dev, opened.st_ino, len(raw)) and
+         (leaf.st_dev, leaf.st_ino, leaf.st_size) == (opened.st_dev, opened.st_ino, len(raw)),
+         "new output path identity/size differs")
+
+
+@contextmanager
 def write_new_verified(path, raw):
-    # Retain this same original output stream through flush and byte readback.
+    # Hold both original output streams throughout provenance publication.
     with path.open("x+b") as stream:
-        stream.write(raw); stream.flush(); os.fsync(stream.fileno())
-        stream.seek(0)
-        need(stream.read(len(raw)+1) == raw, "new output readback differs")
+        opened = os.fstat(stream.fileno())
+        need(stat.S_ISREG(opened.st_mode) and opened.st_size == 0, "new regular empty output required")
+        need(stream.write(raw) == len(raw), "short new output write")
+        stream.flush(); os.fsync(stream.fileno())
+        verify_new_output(path, stream, opened, raw)
+        yield stream, opened
+        verify_new_output(path, stream, opened, raw)
 
 
 def materialize(log, log_bytes, log_sha256, output, manifest, native_exit_code):
@@ -108,11 +125,15 @@ def materialize(log, log_bytes, log_sha256, output, manifest, native_exit_code):
             native_exit_code=native_exit_code, transport_only=True, semantic_validation_performed=False, ready=False)
         encoded = (json.dumps(provenance, indent=2)+"\n").encode("utf-8")
         need(len(encoded) <= MANIFEST_LIMIT, "transport provenance exceeds 16 KiB")
-        write_new_verified(output, record)
-        # Verify the original held log before and after provenance publication.
-        stream.seek(0)
-        need(stream.read(LOG_LIMIT+1) == raw, "original stdout changed during extraction")
-        write_new_verified(manifest, encoded)
+        with write_new_verified(output, record) as record_output:
+            # Verify the original held log before and after provenance publication.
+            stream.seek(0)
+            need(stream.read(LOG_LIMIT+1) == raw, "original stdout changed during extraction")
+            with write_new_verified(manifest, encoded) as provenance_output:
+                verify_new_output(output, *record_output, record)
+                verify_new_output(manifest, *provenance_output, encoded)
+                stream.seek(0)
+                need(stream.read(LOG_LIMIT+1) == raw, "original stdout changed during publication")
         stream.seek(0)
         after = os.fstat(stream.fileno()); leaf = log.lstat()
         need(stream.read(LOG_LIMIT+1) == raw and (after.st_dev, after.st_ino, after.st_size) ==

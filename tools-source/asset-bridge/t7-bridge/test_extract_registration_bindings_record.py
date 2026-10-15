@@ -1,5 +1,5 @@
 """Authored text transport fixtures; no real capture, native or opaque IO."""
-import io
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import subprocess
@@ -155,8 +155,10 @@ class RecordTransportTests(unittest.TestCase):
     def test_create_new_race_and_flush_failure_preserve_existing_or_partial_output(self):
         with tempfile.TemporaryDirectory() as folder:
             paths = self.paths(Path(folder)); write = transport.write_new_verified
+            @contextmanager
             def race(path, raw):
-                path.write_bytes(b"racing-owner"); write(path, raw)
+                path.write_bytes(b"racing-owner")
+                with write(path, raw) as held: yield held
             with patch.object(transport, "write_new_verified", side_effect=race), self.assertRaises(FileExistsError): self.run_transport(paths)
             self.assertEqual(paths[1].read_bytes(), b"racing-owner"); self.assertFalse(paths[2].exists())
             paths[1].unlink()
@@ -164,11 +166,14 @@ class RecordTransportTests(unittest.TestCase):
             self.assertEqual(paths[1].read_bytes(), record()); self.assertFalse(paths[2].exists())
 
     def test_readback_mismatch_refuses(self):
-        stream = io.BytesIO()
-        stream.fileno = lambda: 123
-        stream.read = lambda *_: b"different"
-        with patch.object(Path, "open", return_value=stream), patch.object(transport.os, "fsync"), self.assertRaises(ValueError):
-            transport.write_new_verified(Path("authored.json"), b"original")
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/"authored.json"
+            with patch.object(transport, "verify_new_output", side_effect=ValueError("authored readback mismatch")), self.assertRaises(ValueError):
+                with transport.write_new_verified(path, b"original"): self.fail("yielded before readback")
+            self.assertEqual(path.read_bytes(), b"original")
+            # Exercise the real readback mismatch, using an existing held stream.
+            with path.open("r+b") as stream, self.assertRaisesRegex(ValueError, "readback"):
+                transport.verify_new_output(path, stream, transport.os.fstat(stream.fileno()), b"different")
 
     def test_input_mutation_or_leaf_identity_change_never_reports_success(self):
         for replace in (False, True):
@@ -180,16 +185,49 @@ class RecordTransportTests(unittest.TestCase):
                     if changed and path == paths[0]:
                         return SimpleNamespace(st_dev=info.st_dev, st_ino=info.st_ino+1, st_size=info.st_size)
                     return info
+                @contextmanager
                 def mutate(path, raw):
                     nonlocal changed
-                    write(path, raw)
-                    if path == paths[1]:
-                        if replace: changed = True
-                        else: paths[0].write_bytes(original.replace(b"finished", b"modified"))
+                    with write(path, raw) as held:
+                        if path == paths[1]:
+                            if replace: changed = True
+                            else: paths[0].write_bytes(original.replace(b"finished", b"modified"))
+                        yield held
                 with patch.object(Path, "lstat", lstat), patch.object(transport, "write_new_verified", side_effect=mutate), self.assertRaises(ValueError): self.run_transport(paths)
                 self.assertEqual(paths[1].read_bytes(), record())
                 if not replace: self.assertFalse(paths[2].exists())
                 else: self.assertEqual(paths[0].read_bytes(), original)
+
+    def test_output_or_provenance_mutated_during_publication_refuses(self):
+        for index in (1, 2):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as folder:
+                paths = self.paths(Path(folder)); original = paths[0].read_bytes(); write = transport.write_new_verified
+                @contextmanager
+                def mutate(path, raw):
+                    with write(path, raw) as held:
+                        if path == paths[2]:
+                            target = paths[index]; existing = target.read_bytes()
+                            target.write_bytes(b"x"+existing[1:])  # Same length; after manifest initial readback.
+                        yield held
+                with patch.object(transport, "write_new_verified", side_effect=mutate), self.assertRaisesRegex(ValueError, "readback"):
+                    self.run_transport(paths)
+                self.assertEqual(paths[0].read_bytes(), original)
+                self.assertTrue(paths[1].exists()); self.assertTrue(paths[2].exists())
+
+    def test_new_output_leaf_identity_and_reparse_change_refuse(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/"authored.json"
+            with path.open("x+b") as stream:
+                stream.write(b"original"); stream.flush(); opened = transport.os.fstat(stream.fileno())
+                changed = SimpleNamespace(st_mode=opened.st_mode, st_dev=opened.st_dev, st_ino=opened.st_ino+1,
+                    st_size=opened.st_size, st_file_attributes=0)
+                real_lstat = Path.lstat
+                def lstat(entry, *args, **kwargs): return changed if entry == path else real_lstat(entry, *args, **kwargs)
+                with patch.object(Path, "lstat", lstat), self.assertRaisesRegex(ValueError, "identity"):
+                    transport.verify_new_output(path, stream, opened, b"original")
+                changed.st_file_attributes = 0x400
+                with patch.object(Path, "lstat", lstat), self.assertRaisesRegex(ValueError, "reparse"):
+                    transport.verify_new_output(path, stream, opened, b"original")
 
     def test_cli_authored_record_then_unchanged_consumer(self):
         import test_registration_bindings_consumer as authored
