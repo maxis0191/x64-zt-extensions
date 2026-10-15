@@ -1,3 +1,21 @@
+// Separate neutral mode before the unchanged profile/PROJECTILE routes below.
+if (iw7_player_template_cli::definitions_selected(args))
+{
+    try
+    {
+        if (!iw7_player_template_cli::definitions_exact(args))
+            throw std::runtime_error("usage: -headless -iw7-player-weapon-pair-definitions cp_zmb <two-row.csv> <fixed-pack> (one operation)");
+        dump_iw7_player_pair_definitions(args[3], args[4], args[5]);
+        fflush(nullptr);
+        std::quick_exit(EXIT_SUCCESS);
+    }
+    catch (const std::exception& error)
+    {
+        ZONETOOL_ERROR("IW7 neutral player definitions failed: %s", error.what());
+    }
+    fflush(nullptr);
+    std::quick_exit(EXIT_FAILURE);
+}
 // Before the existing command loop: one bounded operation, no mixed/trailing effects.
 if (iw7_player_template_cli::pair_selected(args))
 {

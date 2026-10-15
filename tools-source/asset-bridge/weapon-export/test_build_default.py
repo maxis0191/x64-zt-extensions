@@ -122,6 +122,32 @@ class DefaultTests(unittest.TestCase):
                 self.plan=json.loads(json.dumps(original));mutate(self.plan);result=self.invoke()
                 self.assertNotEqual(result.returncode,0);self.assertFalse(Path(self.plan['RunRoot']).exists())
 
+    def test_definition_cli_requires_ten_stages_28_argv_and_100_readset_checks(self):
+        self.primary_plan()
+        source=Path(self.plan['PreparedBindings'][0]['Path'])
+        source.write_bytes(source.read_bytes()+b'// IW7_PLAYER_PAIR_PROFILE donor=cp_zmb iw7_player_template_cli::pair_selected(args)\n'
+            b'// IW7_PLAYER_PAIR_DEFINITIONS donor=cp_zmb iw7_player_template_cli::definitions_selected(args) player_definition_readset::with_pair(\n')
+        self.plan['PreparedBindings'][0].update(Bytes=source.stat().st_size,SHA256=hashlib.sha256(source.read_bytes()).hexdigest())
+        self.plan.update(PairProfileCLI=True,PairDefinitionsCLI=True)
+        self.plan['Stages'][3].update(ExpectedChecks=28,ExpectedStdout='IW7_PLAYER_TEMPLATE_ARGV_CHECKS=28\n')
+        self.plan['Stages'][6:6]=[
+            dict(Name='definition-compile',Stage='Compile',DeadlineSeconds=120,Image=self.plan['Compiler'],
+                 Arguments=['@'+str(self.root/'prepared'/'definition.rsp')],
+                 Artifacts=['definition.obj','definition.exe','definition.pdb','compile.pdb','dependencies.json']),
+            dict(Name='definition-test',Stage='Probe',DeadlineSeconds=15,
+                 Image=str(self.root/'not-created'/'definition-compile'/'definition.exe'),Arguments=[],Artifacts=[],
+                 ExpectedChecks=100,ExpectedStdout='IW7_PLAYER_DEFINITION_READSET_CHECKS=100\n')]
+        good=json.loads(json.dumps(self.plan));result=self.invoke();self.assertEqual(result.returncode,0,result.stderr)
+        report=json.loads(result.stdout);self.assertEqual((report['Stages'],report['ArgvChecksAuthored'],report['DefinitionChecksAuthored']),(10,28,100))
+        for mutate in (lambda p:p.pop('PairDefinitionsCLI'),lambda p:p.update(PairDefinitionsCLI=False),
+                       lambda p:p.update(PairDefinitionsCLI=[True]),lambda p:p.pop('PairProfileCLI'),
+                       lambda p:p['Stages'][3].update(ExpectedChecks=18),lambda p:p['Stages'][7].update(ExpectedChecks='87'),
+                       lambda p:p['Stages'][7].update(ExpectedChecks=86),lambda p:p['Stages'][7].update(ExpectedStdout='different\n'),
+                       lambda p:p['Stages'][6]['Artifacts'].append('extra'),lambda p:p.update(PreparedBindings=[])):
+            self.plan=json.loads(json.dumps(good));mutate(self.plan)
+            self.assertNotEqual(self.invoke().returncode,0)
+        self.assertFalse(Path(self.plan['RunRoot']).exists());self.assertFalse(Path(self.plan['Compiler']).exists())
+
     def test_missing_own_header_coverage_refused(self):
         self.plan['OwnDirectIncludeCoverage'][0]['Pinned']=False
         result=self.invoke();self.assertNotEqual(result.returncode,0)
