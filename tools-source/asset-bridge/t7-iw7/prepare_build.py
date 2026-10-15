@@ -17,6 +17,7 @@ import prepare_material_parts as material_parts
 import prepare_image_provenance as image_provenance
 import prepare_image_metadata as image_metadata
 import prepare_image_registration_metadata as registration_metadata
+import prepare_incoming_image_metadata as incoming_metadata
 
 IMAGE_FIXTURE_SOURCE = '678bf7dde6a99207654256c1e53ebaaec286ffe1'
 IMAGE_FIXTURE_API_PINS = {
@@ -642,7 +643,7 @@ def reuse_compilation(prior_plan_raw, receipt_raw, payloads, run, *, recompile_m
             'StageRoots':[str(old_root/obj[:-4]) for _,obj,_ in reused_units]}, inputs, old_text
 
 
-def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False, metadata_profile=False, registration_profile=False):
+def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance_profile=False, metadata_profile=False, registration_profile=False, incoming_profile=False):
     require(type(parts_profile) is bool, 'Explicit parts preparation profile required')
     require(type(provenance_profile) is bool and not (parts_profile and provenance_profile),
             'Exclusive explicit provenance preparation profile required')
@@ -652,7 +653,9 @@ def require_preparation_bounds(raw, payloads, *, parts_profile=False, provenance
     # This bounds authored output bytes, not RAM/commit admission or asset reads.
     require(type(registration_profile) is bool and (not registration_profile or metadata_profile),
             'Registration payload requires its exact metadata base')
-    payload_limit = (384 if registration_profile else 320 if metadata_profile else 288 if parts_profile or provenance_profile else 256) * 1024
+    require(type(incoming_profile) is bool and (not incoming_profile or registration_profile),
+            'Incoming payload requires its exact registration base')
+    payload_limit = (448 if incoming_profile else 384 if registration_profile else 320 if metadata_profile else 288 if parts_profile or provenance_profile else 256) * 1024
     require(len(raw) <= 2*1024**2 and sum(map(len,payloads.values())) <= payload_limit,
             'Preparation bound exceeded')
 
@@ -707,10 +710,36 @@ def os_resource_context(path, read, expected):
         SignerThumbprint=required['SignerThumbprint'], KBFileAttributionVerified=False)
 
 
+def incoming_build_transition(main, cli, registration_observer, registration_args, read):
+    """Bounded authored-source/RSP transition, usable without prepare()/SDK/tlogs."""
+    read(HERE/'prepare_incoming_image_metadata.py',32*1024)
+    base_main,base_cli=main,cli
+    main,cli=incoming_metadata.overlay(main,cli,read)
+    marker={'Schema':'iw7.t7-incoming-image-build/1','SourceProfile':incoming_metadata.NAME,
+        'SourceOnlyPending':True,'CPPQualified':False,'Ready':False,
+        'BaseMainBytes':len(base_main.encode()),'BaseMainSHA256':hashlib.sha256(base_main.encode()).hexdigest(),
+        'BaseCLIBytes':len(base_cli.encode()),'BaseCLISHA256':hashlib.sha256(base_cli.encode()).hexdigest(),
+        'MainBytes':len(main.encode()),'MainSHA256':hashlib.sha256(main.encode()).hexdigest(),
+        'CLIBytes':len(cli.encode()),'CLISHA256':hashlib.sha256(cli.encode()).hexdigest()}
+    capture=read(HERE/registration_metadata.CAPTURE,32*1024,incoming_metadata.BASE_CAPTURE[1]).replace(b'\r\n',b'\n')
+    members=read(HERE/incoming_metadata.MEMBERS,16*1024).replace(b'\r\n',b'\n')
+    fixture=read(HERE/registration_metadata.FIXTURE,32*1024,incoming_metadata.BASE_FIXTURE[1]).replace(b'\r\n',b'\n')
+    generated={
+        'prepared/selected_image_incoming_capture.hpp':incoming_metadata.capture_source(capture,members).encode(),
+        'prepared/selected_image_incoming_observer.hpp':incoming_metadata.observer_source(registration_observer).encode(),
+        'prepared/incoming_registration_baseline_fixture.cpp':incoming_metadata.fixture_source(fixture).encode()}
+    incoming_args=registration_args.copy()
+    old_fixture=str(HERE/registration_metadata.FIXTURE)
+    require(incoming_args.count(old_fixture)==1,'Exact one baseline registration fixture argument required')
+    incoming_args[incoming_args.index(old_fixture)]=str(HERE/incoming_metadata.FIXTURE)
+    return main,cli,marker,generated,incoming_args
+
+
 def prepare(args):
     image_observation = image_provenance_selected(args)
     image_metadata_enabled = image_metadata.selected(args)
     registration_enabled = registration_metadata.selected(args)
+    incoming_enabled = incoming_metadata.selected(args)
     fixture_proof_root = image_fixture_proof_requested(args)
     os_context_enabled = os_resource_selected(args)
     parts_observation = material_parts.selected(args)
@@ -1027,6 +1056,12 @@ def prepare(args):
                                Artifacts=['registration-fixture.obj','registration-fixture.exe','registration-fixture.pdb','dependencies.json']),
                           dict(Name='registration-fixture-test', Stage='Probe', Image=str(registration_root/'registration-fixture.exe'),
                                Arguments=[], DeadlineSeconds=15, Artifacts=[])] + stages[2:]
+                if incoming_enabled:
+                    main,cli,reuse['IncomingObservation'],generated,incoming_args=incoming_build_transition(
+                        main,cli,payloads['prepared/selected_image_registration_observer.hpp'],registration_args,read)
+                    payloads['prepared/main.cpp'],payloads['prepared/zonetool.cpp']=main.encode(),cli.encode()
+                    payloads.update(generated)
+                    payloads['registration-fixture.rsp']=' '.join(map(quote,incoming_args)).encode()
     environment = {'SystemRoot':r'C:\Windows','WINDIR':r'C:\Windows','SystemDrive':'C:',
         'COMSPEC':r'C:\Windows\System32\cmd.exe', 'PATH':str(compiler_dir)+';'+str(sdkbin)+r';C:\Windows\System32',
         'INCLUDE':';'.join(map(str,[vc/'include']+[sdk/'Include/10.0.26100.0'/n for n in ('ucrt','shared','um','winrt','cppwinrt')])),
@@ -1130,6 +1165,18 @@ def prepare(args):
                                        ('RegistrationObserver', output/'prepared/selected_image_registration_observer.hpp'),
                                        ('RegistrationResponse', output/'registration-fixture.rsp')]:
                         profile[name] = {k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
+                    if incoming_enabled:
+                        profile.update(Name=incoming_metadata.NAME,Option=incoming_metadata.OPTION,
+                            ObservationSchema=incoming_metadata.SCHEMA,IncomingSchema=incoming_metadata.SCHEMA,
+                            IncomingFixtureChecks=48,IncomingCPPQualified=False)
+                        for name,path in [('IncomingWiring',HERE/'prepare_incoming_image_metadata.py'),
+                                          ('IncomingContract',HERE/incoming_metadata.CONTRACT),('IncomingMembers',HERE/incoming_metadata.MEMBERS),
+                                          ('IncomingModule',HERE/incoming_metadata.MODULE),('IncomingEntry',HERE/incoming_metadata.ENTRY),
+                                          ('IncomingFixture',HERE/incoming_metadata.FIXTURE),
+                                          ('IncomingCapture',output/'prepared/selected_image_incoming_capture.hpp'),
+                                          ('IncomingObserver',output/'prepared/selected_image_incoming_observer.hpp'),
+                                          ('IncomingBaselineFixture',output/'prepared/incoming_registration_baseline_fixture.cpp')]:
+                            profile[name]={k:bindings[key(path)][k] for k in ('Path','Bytes','SHA256')}
         if zombies_observation:
             profile['Name'] = zombies_observer.SOURCE_PROFILE
             profile['ObservationSchema'] = zombies_observer.SCHEMA
@@ -1164,7 +1211,7 @@ def prepare(args):
     if os_context is not None: plan['OSResourceContext'] = os_context
     raw = (json.dumps(plan,indent=2)+'\n').encode()
     require_preparation_bounds(raw, payloads, parts_profile=parts_observation, provenance_profile=image_observation,
-                               metadata_profile=image_metadata_enabled, registration_profile=registration_enabled)
+                               metadata_profile=image_metadata_enabled, registration_profile=registration_enabled, incoming_profile=incoming_enabled)
     payloads['build-plan.local.json'] = raw
     output.mkdir()
     for name, data in payloads.items():
@@ -1200,6 +1247,7 @@ if __name__ == '__main__':
     parser.add_argument('--image-provenance-v1',action='store_true')
     parser.add_argument('--image-metadata-v1',action='store_true')
     parser.add_argument('--image-registration-metadata-v1',action='store_true')
+    parser.add_argument('--image-incoming-header-v1',action='store_true')
     parser.add_argument('--image-provenance-fixture-proof-root',type=Path)
     parser.add_argument('--os-context-tzres-20261014',action='store_true')
     parser.add_argument('--os-context-proof',type=Path)

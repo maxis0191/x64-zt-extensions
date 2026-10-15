@@ -6,6 +6,8 @@ from pathlib import Path
 import re
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
+import prepare_build as build
 import prepare_incoming_image_metadata as incoming
 import prepare_image_registration_metadata as registration
 import prepare_image_metadata as metadata
@@ -26,6 +28,18 @@ class IncomingSourceTests(unittest.TestCase):
         for values in ({'image_incoming_header_v1':1},{'image_incoming_header_v1':True},
                        {'image_incoming_header_v1':True,'image_registration_metadata_v1':1}):
             with self.assertRaises(ValueError):incoming.selected(SimpleNamespace(**values))
+
+    def test_prepare_selection_and_dedicated_payload_cap_preserve_old_limits(self):
+        with patch.object(build,'path_checked',side_effect=AssertionError('Preparation IO reached')) as io:
+            with self.assertRaises(ValueError):build.prepare(SimpleNamespace(image_incoming_header_v1=True))
+            io.assert_not_called()
+        base=dict(provenance_profile=True,metadata_profile=True,registration_profile=True)
+        payload={'source':b'x'*(384*1024+1)}
+        with self.assertRaises(ValueError):build.require_preparation_bounds(b'{}',payload,**base)
+        build.require_preparation_bounds(b'{}',payload,incoming_profile=True,**base)
+        for invalid in ({'incoming_profile':True},{'incoming_profile':1,**base}):
+            with self.assertRaises(ValueError):build.require_preparation_bounds(b'{}',payload,**invalid)
+        with self.assertRaises(ValueError):build.require_preparation_bounds(b'{}',{'source':b'x'*(448*1024+1)},incoming_profile=True,**base)
 
     def test_actual_early_exact_native_predicate_refuses_all_extra_or_mixed_tokens(self):
         source=(incoming.HERE/incoming.MODULE).read_text()
@@ -96,6 +110,26 @@ class IncomingSourceTests(unittest.TestCase):
         self.assertIn('incoming_checks!=48',fixture)
         self.assertIn('IW7_T7_INCOMING_IMAGE_CHECKS=48',fixture)
         self.assertIn('reads==0 && !probe.incoming_selected()',fixture)
+
+    @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'),'Pinned native SOURCE not supplied')
+    def test_actual_build_source_transition_changes_only_fixture_token_and_adds_pinned_sources(self):
+        base=BaseRenderer();main,cli=base.base()
+        main,cli,_=provenance.overlay(main,cli,base.read)
+        main,cli,_=metadata.overlay(main,cli,base.read)
+        main,cli,_=registration.overlay(main,cli,base.read)
+        observer=registration.observer_source(base.read(incoming.HERE/'selected_image_provenance.hpp',32*1024)).encode()
+        args=['/nologo',str(incoming.HERE/registration.FIXTURE),'/link'];before=args.copy()
+        m,c,marker,generated,new_args=build.incoming_build_transition(main,cli,observer,args,self.read)
+        contract=json.loads((incoming.HERE/incoming.CONTRACT).read_text())
+        self.assertEqual(args,before)
+        self.assertEqual(new_args,['/nologo',str(incoming.HERE/incoming.FIXTURE),'/link'])
+        self.assertEqual(set(generated),{'prepared/selected_image_incoming_capture.hpp','prepared/selected_image_incoming_observer.hpp','prepared/incoming_registration_baseline_fixture.cpp'})
+        for path,role in (('prepared/selected_image_incoming_capture.hpp','derived_capture'),('prepared/selected_image_incoming_observer.hpp','derived_observer'),('prepared/incoming_registration_baseline_fixture.cpp','derived_baseline_fixture')):
+            self.assertEqual((len(generated[path]),hashlib.sha256(generated[path]).hexdigest()),(contract[role]['bytes'],contract[role]['sha256']))
+        self.assertTrue(marker['SourceOnlyPending']);self.assertFalse(marker['CPPQualified']);self.assertFalse(marker['Ready'])
+        self.assertEqual(marker['BaseCLISHA256'],incoming.BASE_PAIR['cli'][1])
+        self.assertEqual((len(m.encode()),len(c.encode())),(contract['main']['bytes'],contract['cli']['bytes']))
+        with self.assertRaises(ValueError):build.incoming_build_transition(main,cli,observer,[],self.read)
 
     @unittest.skipUnless(os.environ.get('IW7_T7_SOURCE'),'Pinned native SOURCE not supplied')
     def test_actual_renderer_arms_before_hook_cominit_and_keeps_image_bypass(self):
