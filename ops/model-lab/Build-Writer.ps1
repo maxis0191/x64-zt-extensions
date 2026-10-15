@@ -1,11 +1,21 @@
-param([Parameter(Mandatory)][string]$PreparedRoot,[switch]$DryRun)
+param([Parameter(Mandatory)][string]$PreparedRoot,[switch]$DryRun,[string]$Python='python')
 $ErrorActionPreference='Stop'
 $ops=Split-Path $PSScriptRoot -Parent;$repo=Split-Path $ops -Parent
 . "$ops/Lab-Paths.ps1"
 . "$ops/Resource-Scheduler.Core.ps1"
 $source=Join-Path $repo 'tools/x64-zt-enemy'
 $prepared=Assert-IW7LabPath ([IO.Path]::GetFullPath($PreparedRoot)) (Join-Path $repo 'runtime')
-$manifest=Get-Content -LiteralPath (Join-Path $prepared 'writer-source.json') -Raw | ConvertFrom-Json
+$manifestPath=Join-Path $prepared 'writer-source.json'
+if((Get-Item -LiteralPath $manifestPath).Length -gt 512KB){throw 'Bounded writer source manifest required.'}
+$manifest=Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+$authored='geometry_profile' -cin $manifest.PSObject.Properties.Name
+if($authored){
+    if($manifest.geometry_profile -cne 'iw7-authored-rigid-v1'){throw 'Unknown original writer profile.'}
+    $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+    & $Python -B -S "$PSScriptRoot/prepare_writer.py" --verify-authored $prepared | Out-Null
+    if($LASTEXITCODE -ne 0){throw 'Authored writer source recipe differs.'}
+}
+$artifactNames=if($authored){@($manifest.artifact_paths)}else{@('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.xsb')}
 $head=& git -C $source rev-parse HEAD
 if($LASTEXITCODE -or $head -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or $manifest.source_pin -cne $head){throw 'Exact pinned tool source required.'}
 $dirty=@(& git -C $source status --porcelain --untracked-files=all)
@@ -51,11 +61,22 @@ Invoke-IW7ResourceJob -Scope $prepared -Kind Build -PhysicalBytes 2GB -CommitByt
         if($LASTEXITCODE){throw 'Original geometry roundtrip failed.'}
         $roundtrip=($rows -join "`n") | ConvertFrom-Json
         if($roundtrip.schema -cne 'iw7.model-roundtrip/1' -or !$roundtrip.geometry_roundtrip_verified -or $roundtrip.ready -or $roundtrip.ff_built -or $roundtrip.pixels_verified){throw 'Roundtrip status contradiction.'}
+        if($authored){
+            foreach($field in @('geometry_profile','namespace','zone','model_name','mesh_name','material_reference','vertices','triangles')){
+                if($field -cin @('vertices','triangles') -and $roundtrip.$field -isnot [int] -and $roundtrip.$field -isnot [long]){throw 'Integer authored roundtrip counts required.'}
+                if($roundtrip.$field -cne $manifest.$field){throw "Authored roundtrip $field differs from source."}
+            }
+            if($roundtrip.bones -ne 1 -or $roundtrip.surfaces -ne 1 -or $roundtrip.lods -ne 1 -or
+                $roundtrip.physics_serialized -isnot [bool] -or $roundtrip.physics_serialized){throw 'Authored rigid profile roundtrip differs.'}
+            if($roundtrip.geometry_roundtrip_verified -isnot [bool] -or !$roundtrip.geometry_roundtrip_verified -or
+                $roundtrip.read_existing_supported -isnot [bool] -or !$roundtrip.read_existing_supported -or
+                $roundtrip.iw7_normal_encoding_verified -isnot [bool] -or $roundtrip.iw7_normal_encoding_verified){throw 'Authored reader/normal qualification differs.'}
+        }
         if($roundtrip.shadow_cutoff_lod -ne 6 -or $roundtrip.collision_lod -ne 255){throw 'Measured shadow/collision sentinel roundtrip differs.'}
         if(($roundtrip.lod0_dist -isnot [long] -and $roundtrip.lod0_dist -isnot [int] -and $roundtrip.lod0_dist -isnot [double]) -or
             $roundtrip.lod0_dist -ne 1000000 -or $roundtrip.has_lods -isnot [bool] -or !$roundtrip.has_lods){throw 'Measured single-LOD distance or unchanged hasLods differs.'}
         $roundtrip | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $prepared 'geometry-roundtrip.json')
-        $assets=@(foreach($name in @('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.xsb')){
+        $assets=@(foreach($name in $artifactNames){
             $path=Assert-IW7LabPath (Join-Path $prepared "artifacts/$name") $prepared
             [ordered]@{Path=$name;Bytes=(Get-Item -LiteralPath $path).Length;SHA256=(Get-FileHash -LiteralPath $path).Hash}
         })

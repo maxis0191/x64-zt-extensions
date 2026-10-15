@@ -219,3 +219,80 @@ hashing, link creation and final source proof belong to the admitted FF run.
 A source-only selector fixture checks this exact profile, missing-candidate,
 wrong-profile, changed-plan and hardlinked-sentinel refusals, plus unchanged
 World selection. The frozen source stage remains separate from a future FF.
+
+## Authored rigid source seam - 2026-10-15
+
+`geometry.py::validate_authored(data, *, model_name=None,
+material_reference=None)` accepts the existing `iw7.original-mesh-source/1`
+document independently of the fixed cube. It returns a new document with
+float32 positions, normals and UVs, and conservative float32 local bounds.
+The supplied bounds must agree with those derived positions. The source and
+readiness flags stay false. The input is never modified.
+
+The profile `iw7-authored-rigid-v1` supports one identity `tag_origin` root,
+one surface/material and one LOD, 3..192 vertices and 1..96 triangles. These
+limits retain the existing native reader's 8192-byte owned-file ceiling.
+Positions are finite within +/-32768; normals are unit vectors pointing with
+the triangle winding. UVs range from 0 to 1, including fractional coordinates.
+Prepared UV words use the existing IEEE binary16 nearest-even, U-low/V-high
+convention. Tangents derive from the actual half-precision UVs. Mirrored or
+degenerate UV triangles, unused vertices and conflicting tangents are refused.
+This profile does not establish the IW7 shader normal/tangent ABI.
+
+Namespace, zone, model and mesh names are portable flat identifiers
+`[A-Za-z0-9_]+`, at most 63 characters, excluding Windows device names.
+Material names additionally allow slash-separated portable segments, at most
+127 characters. Names are data; no per-model hook or allowlist is added.
+
+```python
+# Pure source validation; safe to use from Creator Plan.
+mesh = geometry.validate_authored(document, model_name=model_name,
+                                  material_reference=material_name)
+
+# Existing pinned writer preparation; no compiler, stock or game operation.
+manifest = prepare_writer.prepare_authored(
+    fresh_output, pinned_tool_source, geometry_source_path,
+    namespace=namespace, zone=zone, mesh_name=mesh_name,
+    material_reference=material_name)
+```
+
+The CLI adds `--geometry-source`, `--namespace`, `--zone`, `--mesh-name` and
+`--material-reference` to the existing `prepare_writer.py --output --source`
+entry. All five authored options are required together. Retail recipient
+options cannot be combined with this route. Tool interface hashes retain
+the exact `fab935826c898806855376662a8a03317b3ad8f1` pin.
+
+Preparation writes `geometry.source.json`, `probe_geometry.hpp`, `writer.cpp`,
+`writer-source.json`, `zone_source/<zone>.csv` and
+`netconststrings/ncs_mdl_<zone>.json`. The model is `document.name`; the mesh
+name is explicit. The future owned outputs are `xmodel/<model>.xmb` and
+`xsurface/<mesh>.xsb`. Bounds, counts, names and packed UV data adapt the same
+native writer AND its existing-dump reader. No stream layout or serializer is
+invented. Exact replacement checks refuse a changed serializer seam. The
+legacy writer template, original cube preparation and World adapters are kept.
+
+`verify_authored_preparation(prepared)` (CLI `--verify-authored`) reconstructs
+that source recipe and rejects changed source even if its declared hash was
+updated. `Build-Writer.ps1` accepts this explicit profile only after that check,
+then retains its pinned interface, fresh outputs, resource admission and native
+roundtrip gates. Its resulting artifact paths and report identities come from
+the authored contract. This wrapper change has source validation only; no new
+native writer build or XMB/XSB roundtrip has been measured.
+
+The zone CSV declares the authored material as a **local payload dependency**,
+not an ignored retail reference. This producer supplies no material/image bytes:
+`material_payload_present=false`, `material_closure_required=true`. The separate
+surfaces producer must provide that closure before an FF can be prepared.
+The current `prepare_ff.stage` / `Build-ModelFF.ps1` route still requires five
+inputs, fixed `paris_model_probe` zone/NCS, and the measured M7 recipient
+material; `Get-ModelFFInventory` enforces that inventory. These gates reject an
+authored FF today. They need an explicit combined material-closure integration,
+not a false recipient flag or a per-asset tool patch. Creator must report the
+FF build as blocked until that source integration is reviewed.
+
+Source tests cover two distinct geometries/names, fractional positions/UVs,
+derived bounds, serializer and reader adaptation, updated-hash tampering,
+invalid source/claims and the preserved strict legacy cube contract. No
+CPP/FF/Native/PE/stock/lease/game operation is part of this checkpoint. Player
+contact/collision, rendered diffuse/orientation/alpha, ABI and owner acceptance
+remain unmeasured; `collLod=255` and null physics do not prove collision.

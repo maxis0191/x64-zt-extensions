@@ -603,6 +603,7 @@ foreach($bad in @($log+'Loading asset "foreign" of type rawfile.',$log.Replace('
         base = geometry.original_cube()
         for change in (
             lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, float('nan')),
+            lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, 10**1000),
             lambda d: d['surfaces'][0]['triangles'][0].reverse(),
             lambda d: d['surfaces'][0]['triangles'][0].__setitem__(0, 24),
             lambda d: d['surfaces'][0]['vertices'][0].__setitem__('weight', .5),
@@ -614,6 +615,259 @@ foreach($bad in @($log+'Loading asset "foreign" of type rawfile.',$log.Replace('
                 change(data)
                 with self.assertRaises(ValueError):
                     geometry.validate(data)
+
+
+class AuthoredRigidSourceTests(unittest.TestCase):
+    @staticmethod
+    def platform(name='creator_floor', material='creator/floor_material'):
+        data = geometry.original_cube()
+        data['name'] = name
+        surface = data['surfaces'][0]
+        surface['material_reference'] = material
+        for vertex in surface['vertices']:
+            x, y, z = vertex['position']
+            vertex['position'] = [16*x, 16*y, z+8]
+        data['bounds'] = {'midpoint': [0, 0, 8], 'half_size': [128, 128, 8]}
+        return data
+
+    @staticmethod
+    def prism():
+        data = geometry.original_cube()
+        data['name'] = 'second_prism'
+        points = [(-24, -16), (24, -16), (0, 24)]
+        vertices, triangles = [], []
+        for z, order, normal in ((0, (0, 2, 1), [0, 0, -1]), (48, (0, 1, 2), [0, 0, 1])):
+            start = len(vertices)
+            for index, uv in zip(order, ([0, 0], [1, 0], [.5, 1])):
+                vertices.append(dict(position=[*points[index], z], normal=normal, uv=uv, bone=0, weight=1))
+            triangles.append([start, start+1, start+2])
+        import math
+        for i, j in ((0, 1), (1, 2), (2, 0)):
+            a, b = points[i], points[j]
+            dx, dy = b[0]-a[0], b[1]-a[1]
+            length = math.hypot(dx, dy)
+            normal = [dy/length, -dx/length, 0]
+            start = len(vertices)
+            for position, uv in zip(([*a, 0], [*b, 0], [*b, 48], [*a, 48]),
+                                    ([0, 0], [1, 0], [1, 1], [0, 1])):
+                vertices.append(dict(position=position, normal=normal, uv=uv, bone=0, weight=1))
+            triangles.extend(([start, start+1, start+2], [start, start+2, start+3]))
+        data['surfaces'] = [dict(material_reference='second_diffuse', vertices=vertices, triangles=triangles)]
+        data['bounds'] = {'midpoint': [0, 4, 24], 'half_size': [24, 20, 24]}
+        return data
+
+    @staticmethod
+    def interfaces(folder):
+        source = Path(folder)/'source'
+        for name in prepare_writer.INTERFACES:
+            path = source/name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('Authored text interface fixture: '+name)
+        return source
+
+    def test_authored_platform_and_non_cube_prism_derive_bounds_and_half_uvs(self):
+        for data, counts, bounds in ((self.platform(), (24, 12), ([0, 0, 8], [128, 128, 8])),
+                                     (self.prism(), (18, 8), ([0, 4, 24], [24, 20, 24]))):
+            before = copy.deepcopy(data)
+            result = geometry.validate_authored(data, model_name=data['name'],
+                                                material_reference=data['surfaces'][0]['material_reference'])
+            self.assertEqual(data, before)
+            surface = result['surfaces'][0]
+            self.assertEqual((len(surface['vertices']), len(surface['triangles'])), counts)
+            self.assertEqual(result['bounds'], dict(zip(('midpoint', 'half_size'), bounds)))
+            self.assertEqual(len(geometry.authored_tangents(result)), counts[0])
+            self.assertIs(result['ready'], False)
+        self.assertEqual(geometry.packed_uv([.5, .25]), 0x34003800)
+        self.assertEqual(geometry.packed_uv([1, 1]), 0x3c003c00)
+        self.assertEqual(geometry.packed_uv([2**-24, 0]), 1)
+        self.assertEqual(geometry.packed_uv([2**-25, 0]), 0)
+        # Off-center fractional positions survive source generation, not one-decimal truncation.
+        data = self.platform()
+        for vertex in data['surfaces'][0]['vertices']:
+            vertex['position'][0] += .125
+        data['bounds']['midpoint'][0] = .125
+        header = prepare_writer.authored_header(data, mesh_name='different_mesh')
+        self.assertIn('128.125f', header)
+        self.assertIn('probe_bounds_mid[3] = {0.125f, 0.0f, 8.0f}', header)
+
+    def test_authored_bounds_enclose_serialized_float32_positions(self):
+        vertices = [dict(position=[10.000001, -4, 0]), dict(position=[10.000002, 7, 3])]
+        bounds = geometry.derived_bounds(vertices)
+        for vertex in vertices:
+            for axis, value in enumerate(vertex['position']):
+                self.assertLessEqual(abs(geometry.float32(value)-bounds['midpoint'][axis]), bounds['half_size'][axis])
+
+    def test_authored_rejects_invalid_data_and_claims_without_relaxing_legacy(self):
+        mutations = (
+            lambda d: d.__setitem__('name', '../model'),
+            lambda d: d.__setitem__('name', 'CON'),
+            lambda d: d.__setitem__('lods', True),
+            lambda d: d.__setitem__('ready', True),
+            lambda d: d.__setitem__('iw7_serialized', True),
+            lambda d: d.__setitem__('extra', 'silently ignored input'),
+            lambda d: d['bones'][0]['translation'].__setitem__(0, True),
+            lambda d: d['bounds']['half_size'].__setitem__(0, 127),
+            lambda d: d['surfaces'][0].__setitem__('material_reference', None),
+            lambda d: d['surfaces'][0]['vertices'][0].__setitem__('bone', False),
+            lambda d: d['surfaces'][0]['vertices'][0].__setitem__('weight', True),
+            lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, float('nan')),
+            lambda d: d['surfaces'][0]['vertices'][0]['position'].__setitem__(0, 32769),
+            lambda d: d['surfaces'][0]['vertices'][0]['normal'].__setitem__(0, .5),
+            lambda d: d['surfaces'][0]['vertices'][0]['uv'].__setitem__(0, -.1),
+            lambda d: d['surfaces'][0]['triangles'][0].reverse(),
+            lambda d: d['surfaces'][0]['triangles'][0].__setitem__(0, True),
+            lambda d: d['surfaces'][0]['triangles'][0].__setitem__(0, 24),
+            lambda d: d['surfaces'][0]['vertices'].append(copy.deepcopy(d['surfaces'][0]['vertices'][0])),
+            lambda d: d['surfaces'][0].__setitem__('vertices', d['surfaces'][0]['vertices']*9),
+            lambda d: d['surfaces'][0].__setitem__('triangles', d['surfaces'][0]['triangles']*9),
+            lambda d: d['surfaces'][0]['vertices'][1]['uv'].__setitem__(0, 1e-9),
+            lambda d: [v['uv'].__setitem__(0, 1-v['uv'][0]) for v in d['surfaces'][0]['vertices']],
+        )
+        for mutation in mutations:
+            data = self.platform()
+            mutation(data)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                geometry.validate_authored(data)
+        with self.assertRaises(ValueError):
+            geometry.validate_authored(self.platform(), model_name='different')
+        with self.assertRaises(ValueError):
+            geometry.validate_authored(self.platform(), material_reference='different')
+        geometry.validate(geometry.original_cube())
+        with self.assertRaises(ValueError):
+            geometry.validate(self.platform())
+
+    def test_authored_preparation_adapts_existing_serializer_and_reader_for_two_projects(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = self.interfaces(folder)
+            for number, data in enumerate((self.platform(), self.prism())):
+                with self.subTest(model=data['name']):
+                    input_path = Path(folder)/f'input{number}.json'
+                    input_path.write_text(json.dumps(data))
+                    output = Path(folder)/f'prepared{number}'
+                    zone, mesh = f'zone_{number}', f'mesh_{number}'
+                    material = data['surfaces'][0]['material_reference']
+                    manifest = prepare_writer.prepare_authored(output, source, input_path, namespace=f'project_{number}',
+                        zone=zone, mesh_name=mesh, material_reference=material, check_pin=False)
+                    self.assertEqual(prepare_writer.verify_authored_preparation(output), manifest)
+                    checked = subprocess.run([sys.executable, '-B', '-S', str(ROOT/'ops/model-lab/prepare_writer.py'),
+                                              '--verify-authored', str(output)], capture_output=True, text=True, timeout=10)
+                    self.assertEqual(checked.returncode, 0, checked.stderr)
+                    self.assertEqual(json.loads(checked.stdout), manifest)
+                    self.assertEqual(manifest['artifact_paths'], ['xmodel/'+data['name']+'.xmb', 'xsurface/'+mesh+'.xsb'])
+                    self.assertEqual(manifest['bounds'], data['bounds'])
+                    self.assertFalse(manifest['compiled'])
+                    self.assertTrue(manifest['material_closure_required'])
+                    self.assertFalse(manifest['material_payload_present'])
+                    self.assertEqual((output/f'zone_source/{zone}.csv').read_text(),
+                                     f'material,{material}\nxmodel,{data["name"]}\nnetconststrings,ncs_mdl_{zone}\n')
+                    self.assertEqual(json.loads((output/f'netconststrings/ncs_mdl_{zone}.json').read_bytes())['stringList'], [data['name']])
+                    writer = (output/'writer.cpp').read_text()
+                    self.assertNotIn('paris_model_probe', writer)
+                    self.assertIn('r.open(probe_mesh_path,false)', writer)
+                    self.assertIn('d.open(probe_model_path,false)', writer)
+                    self.assertIn('s.vertCount==probe_vertex_count && s.triCount==probe_triangle_count', writer)
+                    self.assertIn('s.verts0.packedVerts0,probe_vertex_count', writer)
+                    self.assertIn('v.texCoord.packed=probe_packed_uvs[i]', writer)
+                    self.assertIn('Every position/packed UV/normal/tangent/color differs', writer)
+                    with self.assertRaises(ValueError):
+                        prepare_writer.prepare_authored(output, source, input_path, namespace='other',
+                            zone=zone, mesh_name=mesh, material_reference=material, check_pin=False)
+
+    def test_authored_recipe_refuses_source_tampering_even_with_updated_hash(self):
+        with tempfile.TemporaryDirectory() as folder:
+            source = self.interfaces(folder)
+            path = Path(folder)/'input.json'
+            path.write_text(json.dumps(self.prism()))
+            output = Path(folder)/'prepared'
+            manifest = prepare_writer.prepare_authored(output, source, path, namespace='project', zone='zone',
+                mesh_name='mesh', material_reference='second_diffuse', check_pin=False)
+            original = (output/'writer.cpp').read_bytes()
+            changed = original.replace(b'probe_vertex_count', b'wrong_count', 1)
+            (output/'writer.cpp').write_bytes(changed)
+            altered = copy.deepcopy(manifest)
+            altered['writer_sha256'] = altered['source_files']['writer.cpp'] = hashlib.sha256(changed).hexdigest()
+            (output/'writer-source.json').write_text(json.dumps(altered))
+            with self.assertRaises(ValueError):
+                prepare_writer.verify_authored_preparation(output)
+            (output/'writer.cpp').write_bytes(original)
+            for field in ('ready', 'compiled', 'material_payload_present', 'physics_serialized', 'geometry_roundtrip_verified'):
+                altered = copy.deepcopy(manifest)
+                altered[field] = True
+                (output/'writer-source.json').write_text(json.dumps(altered))
+                with self.subTest(field=field), self.assertRaises(ValueError):
+                    prepare_writer.verify_authored_preparation(output)
+            (output/'writer-source.json').write_text(json.dumps(manifest))
+            self.assertEqual(prepare_writer.verify_authored_preparation(output), manifest)
+
+    def test_authored_refuses_template_drift_and_bad_inputs_before_output(self):
+        template = (ROOT/'ops/model-lab/writer.cpp').read_text()
+        with self.assertRaises(ValueError):
+            prepare_writer.adapt_authored_writer(template.replace('s.vertCount==24', 's.vertCount==25'), {})
+        with tempfile.TemporaryDirectory() as folder:
+            source = self.interfaces(folder)
+            path = Path(folder)/'input.json'
+            path.write_text(json.dumps(self.platform()))
+            for namespace in ('../escape', 'x'*64, 'COM1', ''):
+                output = Path(folder)/'refused'
+                with self.subTest(namespace=namespace), self.assertRaises(ValueError):
+                    prepare_writer.prepare_authored(output, source, path, namespace=namespace,
+                        zone='zone', mesh_name='mesh', material_reference='creator/floor_material', check_pin=False)
+                self.assertFalse(output.exists())
+            path.write_bytes(b' '* (512*1024+1))
+            with self.assertRaises(ValueError):
+                prepare_writer.prepare_authored(Path(folder)/'oversized', source, path, namespace='project',
+                    zone='zone', mesh_name='mesh', material_reference='creator/floor_material', check_pin=False)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell source-block fixture requires pwsh')
+    def test_existing_build_wrapper_keeps_profile_and_native_report_gates(self):
+        script = r'''
+param($Entry)
+$ErrorActionPreference='Stop'
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile($Entry,[ref]$tokens,[ref]$errors)
+if($errors){throw 'Build-Writer parse failed'}
+$blocks=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$authored' -and ($n.Extent.Text.Contains('Authored writer source recipe differs.') -or $n.Extent.Text.Contains('Authored roundtrip $field differs from source.'))},$true))
+if($blocks.Count -ne 2){throw 'Expected source recipe and native report gates'}
+# Execute the actual native-report gate with authored metadata only. No native invocation.
+$gate=[scriptblock]::Create($blocks[1].Extent.Text)
+$authored=$true
+$manifest=[pscustomobject]@{geometry_profile='iw7-authored-rigid-v1';namespace='second';zone='zone2';model_name='prism';mesh_name='mesh2';material_reference='author/material';vertices=18;triangles=8}
+function New-Report {
+    $row=@{};foreach($p in $manifest.PSObject.Properties){$row[$p.Name]=$p.Value}
+    $row.bones=1;$row.surfaces=1;$row.lods=1;$row.physics_serialized=$false
+    $row.geometry_roundtrip_verified=$true;$row.read_existing_supported=$true;$row.iw7_normal_encoding_verified=$false
+    [pscustomobject]$row
+}
+$roundtrip=New-Report;. $gate
+foreach($field in @('geometry_profile','namespace','zone','model_name','mesh_name','material_reference','vertices','triangles','physics_serialized','read_existing_supported','iw7_normal_encoding_verified')){
+    $roundtrip=New-Report
+    switch($field){
+        vertices {$roundtrip.$field='18'}
+        triangles {$roundtrip.$field=$true}
+        physics_serialized {$roundtrip.$field=0}
+        read_existing_supported {$roundtrip.$field='true'}
+        iw7_normal_encoding_verified {$roundtrip.$field=$true}
+        default {$roundtrip.$field='different'}
+    }
+    $refused=$false;try{. $gate}catch{$refused=$true}
+    if(!$refused){throw "Changed authored $field accepted"}
+}
+$roundtrip=$null;$authored=$false;. $gate
+$assignment=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.AssignmentStatementAst] -and $n.Left.Extent.Text -ceq '$artifactNames'},$true))
+if($assignment.Count -ne 1){throw 'One artifact path selection required'}
+. ([scriptblock]::Create($assignment[0].Extent.Text))
+if(($artifactNames -join '|') -cne 'xmodel/paris_model_probe.xmb|xsurface/paris_model_probe_lod0.xsb'){throw 'Legacy paths changed'}
+$authored=$true;$manifest|Add-Member NoteProperty artifact_paths @('xmodel/prism.xmb','xsurface/mesh2.xsb')
+. ([scriptblock]::Create($assignment[0].Extent.Text))
+if(($artifactNames -join '|') -cne 'xmodel/prism.xmb|xsurface/mesh2.xsb'){throw 'Authored paths not propagated'}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'source-gates.ps1'
+            path.write_text(script, encoding='utf-8')
+            result = subprocess.run(['pwsh', '-NoLogo', '-NoProfile', '-File', str(path),
+                                     str(ROOT/'ops/model-lab/Build-Writer.ps1')],
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
 
 
 class ResidentRigidTests(unittest.TestCase):
