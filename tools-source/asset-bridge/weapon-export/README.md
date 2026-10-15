@@ -14,6 +14,11 @@ complete dependency/input checks and Root-verified ordinary closure. It still
 activates no CLI, builder or runtime route; later doc/merge heads are not newly
 compiled.
 
+The separate [generated report/raw-byte helpers](NEUTRAL-PAIR-INPUTS.md) close
+Native60's existing thirty-key report and exact three payload pins without I/O
+or native parsing. Full native body shape/allocation, actual-file routing and
+durable parser/arena ownership remain blocking gates; no CLI/builder is wired.
+
 The neutral full-definition route completed CPP Q and its distinct admitted T2
 capture of the full Shredder/PAP definitions. See
 [NEUTRAL-DEFINITIONS.md](NEUTRAL-DEFINITIONS.md) and

@@ -71,7 +71,9 @@ identities only: it does not admit arbitrary owned assets, require a complete
 private-pair plan or grant support to a recognized reference family. Its views
 must refer to ordinary caller-owned readable storage for the entire call.
 
-Input report hash/bytes/closed schema, bounded preparse allocation/shape checks,
+Separate pure [generated-report/raw-byte checks](NEUTRAL-PAIR-INPUTS.md) now
+cover the existing report schema and byte pins without I/O or parse authority.
+Bounded native preparse allocation/shape checks,
 same-file lifetime/readback, sealed search routing, generated branding rawfile,
 actual zone inventory verification and the private readback leaf are deliberately
 unimplemented. These require the next separate Source composition. No general
