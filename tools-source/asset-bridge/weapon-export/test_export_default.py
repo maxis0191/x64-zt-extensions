@@ -1,5 +1,5 @@
 """Finite export Source preflight/refusal and bounded-reader/budget causals."""
-import ast,hashlib,json,shutil,subprocess,tempfile,unittest
+import ast,hashlib,json,re,shutil,subprocess,tempfile,unittest
 from pathlib import Path
 RUNNER=Path(__file__).with_name('Run-PlayerTemplateExport.ps1').resolve()
 def pin(path):return dict(Path=str(path),Bytes=path.stat().st_size,SHA256=hashlib.sha256(path.read_bytes()).hexdigest())
@@ -32,6 +32,49 @@ class ExportDefaultTests(unittest.TestCase):
   r=self.invoke(True);self.assertNotEqual(r.returncode,0);self.assertIn('NoExit/dot',r.stderr);self.assertFalse(Path(self.plan['RunRoot']).exists())
  def test_request_drift_refused(self):
   Path(self.plan['Request']['Path']).write_bytes(b'weapon,other\n');self.assertNotEqual(self.invoke().returncode,0)
+ def coverage_plan(self):
+  world=RUNNER.parent.parent/'world'/'original-arena'/'AssetfileCoverage.Core.ps1'
+  numbers=[int(n) for n in re.search(r'\$numbers=@\(([^)]+)\)',world.read_text(encoding='utf-8-sig')).group(1).split(',')]
+  self.plan.update(RetailProfile='fixed33-pak',RetailAliasCount=102,UniqueRetailSources=71,
+   WorkRoot=str(Path(self.plan['RunRoot'])/'work'),StockSourceRoot=str(self.root/'unopened-stock'),
+   SourceBaselines=[dict(Identity='historical-'+str(i),Links=1) for i in range(71)])
+  for pin_row in self.plan['StockManifests']:
+   group=pin_row['Name'];names=([f'root{i}.bin' for i in range(7)] if group=='root' else [f'common{i}.ff' for i in range(31)])
+   if group=='zone':names += [f'assetfile{n}.pak' for n in numbers]
+   target=Path(self.plan['WorkRoot'])/group if group!='root' else Path(self.plan['WorkRoot'])
+   value=dict(source=self.plan['StockSourceRoot'],target=str(target),planned_files=len(names),files=[dict(relative=n,bytes=1) for n in names])
+   path=Path(pin_row['Path']);path.write_text(json.dumps(value),encoding='utf-8')
+   pin_row.update(pin(path),Target=str(target),Count=len(names))
+ def mutate_manifest(self,group,change):
+  entry=next(p for p in self.plan['StockManifests'] if p['Name']==group);path=Path(entry['Path'])
+  value=json.loads(path.read_text());change(value);path.write_text(json.dumps(value),encoding='utf-8');entry.update(pin(path))
+ def test_fixed33_world_namespace_default_is_pure_and_explicit(self):
+  self.coverage_plan();r=self.invoke();self.assertEqual(r.returncode,0,r.stderr);value=json.loads(r.stdout)
+  self.assertEqual((value['RetailAliases'],value['UniqueRetailSources']),(102,71))
+  self.assertFalse(any(value[k] for k in ('NativeTypesLoaded','OpaqueInputsRead','LeaseAcquired','RuntimeCreated','CandidateExecuted','Ready')))
+  self.assertFalse(Path(self.plan['RunRoot']).exists());self.assertFalse(Path(self.plan['StockSourceRoot']).exists())
+  del self.plan['RetailProfile'];self.assertNotEqual(self.invoke().returncode,0)
+ def test_fixed33_refuses_profile_count_baseline_and_path_mutants_before_effects(self):
+  for key,value in [('RetailProfile',['fixed33-pak']),('RetailProfile','all-paks'),('RetailAliasCount',70),('RetailAliasCount','102'),('UniqueRetailSources',39),('UniqueRetailSources',[71]),('SourceBaselines',[])]:
+   with self.subTest(key=key):
+    self.coverage_plan();self.plan[key]=value;r=self.invoke();self.assertNotEqual(r.returncode,0);self.assertFalse(Path(self.plan['RunRoot']).exists())
+  self.coverage_plan();self.plan['SourceBaselines'][1]['Identity']=self.plan['SourceBaselines'][0]['Identity'];self.assertNotEqual(self.invoke().returncode,0)
+  self.coverage_plan();self.plan['StockSourceRoot']=[self.plan['StockSourceRoot']];self.assertNotEqual(self.invoke().returncode,0)
+ def test_fixed33_refuses_extra_missing_duplicate_external_and_oversize_manifest_rows(self):
+  cases=[lambda m:m['files'][-1].update(relative='assetfile999.pak'),
+   lambda m:m['files'][-1].update(relative=m['files'][-2]['relative']),
+   lambda m:m['files'][-1].update(relative='../assetfile244.pak'),
+   lambda m:m['files'][-1].update(relative=['assetfile244.pak']),
+   lambda m:m['files'][-1].update(bytes=1073741825),
+   lambda m:m['files'][-1].update(bytes=1.0),
+   lambda m:m['files'][0].update(bytes=268435457),
+   lambda m:m.update(source=[m['source']]),lambda m:m.update(target=m['target']+'-foreign'),
+   lambda m:m.update(planned_files=[64]),lambda m:m['files'].pop()]
+  for i,change in enumerate(cases):
+   with self.subTest(case=i):
+    self.coverage_plan();self.mutate_manifest('zone',change);r=self.invoke();self.assertNotEqual(r.returncode,0);self.assertFalse(Path(self.plan['RunRoot']).exists())
+  self.coverage_plan();self.mutate_manifest('main',lambda m:m['files'][-1].update(relative='assetfile244.pak'))
+  self.assertNotEqual(self.invoke().returncode,0)
  def modal_plan(self):
   closure={'H1Compiler':'tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1','LoadDiagnostic':'tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1',
    'Modal':'tools-source/asset-bridge/world/original-arena/modal_window.py','Recipient':'tools-source/asset-bridge/recipient/recipient_dialog.py','Capture':'ops/iw7_capture.py','Debugger':'ops/iw7_debugger.py'}
@@ -94,6 +137,49 @@ $refused=$false;try{$null=Read-PlayerOutput $path 16}catch{$refused=$true}
 if(!$refused){throw 'Oversized output accepted'}
 Write-Output 'bounded-output-pass'
 ''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('bounded-output-pass',r.stdout)
+ def test_fixed33_large_input_limit_is_only_for_named_main_paks(self):
+  r=self.fragment(('Get-PlayerRetailProfile','Get-PlayerRetailByteLimit'),'''
+$plan=[pscustomobject]@{RetailProfile='fixed33-pak';StockSourceRoot=$Directory}
+if((Get-PlayerRetailByteLimit $plan (Join-Path $Directory 'assetfile21.pak')) -ne 1GB){throw 'Large named retail file refused by legacy cap'}
+foreach($path in @((Join-Path $Directory 'assetfile999.pak'),(Join-Path $Directory 'zonetool.exe'),(Join-Path $Directory 'foreign/assetfile21.pak'))){
+ if((Get-PlayerRetailByteLimit $plan $path) -ne 256MB){throw 'Unbound input inherited large retail limit'}
+}
+$legacy=[pscustomobject]@{}
+if((Get-PlayerRetailByteLimit $legacy (Join-Path $Directory 'assetfile21.pak')) -ne 256MB){throw 'Legacy cap changed'}
+Write-Output 'finite-large-retail-limit-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('finite-large-retail-limit-pass',r.stdout)
+ def test_fixed33_rehash_uses_original_stream_and_keeps_its_guard(self):
+  r=self.fragment(('Get-PlayerRetailProfile','Get-PlayerRetailByteLimit','Get-PlayerRetailStreamSHA','Confirm-PlayerRetailContent'),'''
+$path=Join-Path $Directory 'assetfile21.pak';$raw=[byte[]]@(1,2,3,4);[IO.File]::WriteAllBytes($path,$raw)
+$stream=[IO.FileStream]::new($path,'Open','Read','Read');$guards.Add($stream)
+$script:PlayerTemplateExportOriginalRoot.Plan=[pscustomobject]@{RetailProfile='fixed33-pak';StockSourceRoot=$Directory}
+$script:PlayerTemplateExportOriginalRoot.ContentGuards=@{};$script:PlayerTemplateExportOriginalRoot.ContentGuards[$path]=[pscustomobject]@{Identity='source-only';Stream=$stream}
+$pin=[pscustomobject]@{Path=$path;Bytes=4;SHA256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($raw)).ToLowerInvariant()}
+Confirm-PlayerRetailContent $pin;Confirm-PlayerRetailContent $pin
+if($guards.Count -ne 1 -or $stream.Position -ne 0 -or ![object]::ReferenceEquals($stream,$script:PlayerTemplateExportOriginalRoot.ContentGuards[$path].Stream)){throw 'Original retail stream was replaced or not rewound'}
+$blocked=$false;try{$writer=[IO.File]::Open($path,'Open','Write','None');$writer.Dispose()}catch{$blocked=$true};if(!$blocked){throw 'Original retail content guard lost'}
+$pin.SHA256='0'*64;$refused=$false;try{Confirm-PlayerRetailContent $pin}catch{$refused=$_.Exception.Message -ceq 'Original retail content hash differs.'};if(!$refused){throw 'Changed expected retail hash accepted'}
+$refused=$false;try{$null=Get-PlayerRetailStreamSHA $stream 4 3}catch{$refused=$true};if(!$refused -or $stream.Position -ne 0){throw 'Declared read bound ignored'}
+$stream.Dispose();$refused=$false;try{Confirm-PlayerRetailContent $pin}catch{$refused=$true};if(!$refused){throw 'Closed original stream accepted'}
+$guards.Clear();Write-Output 'original-retail-stream-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('original-retail-stream-pass',r.stdout)
+ def test_fixed33_actual_stock_confirmation_routes_only_retail_to_retained_stream(self):
+  r=self.fragment(('Get-PlayerRetailProfile','Get-PlayerRetailByteLimit','Get-PlayerRetailStreamSHA','Confirm-PlayerRetailContent','Pin-PlayerOpaque','Confirm-PlayerStock'),'''
+$path=Join-Path $Directory 'assetfile21.pak';$raw=[byte[]]@(1,2,3,4);[IO.File]::WriteAllBytes($path,$raw)
+$stream=[IO.FileStream]::new($path,'Open','Read','Read');$guards.Add($stream)
+$content=[pscustomobject]@{Path=$path;Bytes=4;SHA256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($raw)).ToLowerInvariant()}
+$code=[pscustomobject]@{Role='SourceOnlyCodePin'}
+$root=$script:PlayerTemplateExportOriginalRoot;$root.Plan=[pscustomobject]@{RetailProfile='fixed33-pak';StockSourceRoot=$Directory;Candidate=$code;TLS=$code;Sentinel=$code}
+$root.StockContexts=@();$root.State=@{ContentPins=@($content);CreatedCopies=@()};$root.ContentGuards=@{}
+$root.ContentGuards[$path]=[pscustomobject]@{Identity='source-only';Stream=$stream};$script:codeCalls=0
+function Open-T7Pin($Pin,$Context){
+ if($Pin.Role -cne 'SourceOnlyCodePin' -or ![object]::ReferenceEquals($Context,$script:PlayerTemplateExportOriginalRoot.Context)){throw 'Retail was sent through the code-input pin API'}
+ $script:codeCalls++
+}
+Confirm-PlayerStock
+if($script:codeCalls -ne 3 -or $guards.Count -ne 1 -or $stream.Position -ne 0){throw 'Actual stock confirmation lost its retail/code split'}
+$stream.Dispose();$guards.Clear();Write-Output 'actual-retail-confirmation-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('actual-retail-confirmation-pass',r.stdout)
  def test_actual_budget_counts_small_copies_and_refuses_alias_identity_drift(self):
   r=self.fragment('Test-PlayerGenerated','''
 $work=Join-Path $Directory 'work';[IO.Directory]::CreateDirectory($work)|Out-Null

@@ -70,10 +70,65 @@ function Test-PlayerModalPlan($Plan){
     if($modal.ModalSource -cne (Join-Path $package $closure.Modal)){throw 'Exact existing modal adapter required.'}
     $true
 }
+function Get-PlayerRetailProfile($Plan){
+    if(!$Plan.PSObject.Properties['RetailProfile']){
+        return [pscustomobject]@{Name='legacy70';Aliases=70;Sources=39;Counts='7|31|32';PakNames=@('assetfile1.pak')}
+    }
+    if($Plan.RetailProfile -isnot [string] -or $Plan.RetailProfile -cne 'fixed33-pak'){throw 'Exact explicit fixed33-pak retail profile required.'}
+    # Names only from World M7's fixed namespace. No historical retail IDs/hashes
+    # or World 104-input qualifier are reused by this Stock35 caller.
+    $numbers=@(1,17,19,21,25,26,36,37,52,53,68,69,84,85,100,101,116,117,132,133,148,149,164,165,180,181,196,197,212,213,228,229,244)
+    [pscustomobject]@{Name='fixed33-pak';Aliases=102;Sources=71;Counts='7|31|64';PakNames=@($numbers|ForEach-Object {'assetfile'+$_+'.pak'})}
+}
+function Get-PlayerRetailByteLimit($Plan,[string]$Path){
+    $profile=Get-PlayerRetailProfile $Plan
+    $name=[IO.Path]::GetFileName($Path)
+    if($profile.Name -ceq 'fixed33-pak' -and $name -cin $profile.PakNames -and
+       $Path -ceq (Join-Path $Plan.StockSourceRoot $name)){return [long]1GB}
+    [long]256MB # Existing code/TLS/sentinel pins and legacy retail remain unchanged.
+}
+function Test-PlayerRetailManifests($Plan,$Profile){
+    if($Profile.Name -cne 'fixed33-pak'){return}
+    if(($Plan.RetailAliasCount -isnot [int] -and $Plan.RetailAliasCount -isnot [long]) -or
+       ($Plan.UniqueRetailSources -isnot [int] -and $Plan.UniqueRetailSources -isnot [long]) -or
+       $Plan.RunRoot -isnot [string] -or $Plan.WorkRoot -isnot [string] -or $Plan.StockSourceRoot -isnot [string] -or
+       $Plan.WorkRoot -cne (Join-Path $Plan.RunRoot 'work') -or $Plan.SourceBaselines -isnot [array] -or $Plan.SourceBaselines.Count -ne 71){throw 'Exact owned fixed33 layout and 71 baseline declarations required.'}
+    $identities=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach($baseline in $Plan.SourceBaselines){
+        if($baseline.Identity -isnot [string] -or !$baseline.Identity -or !$identities.Add($baseline.Identity) -or
+           ($baseline.Links -isnot [int] -and $baseline.Links -isnot [long]) -or $baseline.Links -lt 1){throw 'Distinct scalar historical baseline declarations required.'}
+    }
+    $sources=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $targets=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $paks=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach($pin in $Plan.StockManifests){
+        $manifest=Read-PlayerExportSource $pin.Path $pin.SHA256 $pin.Bytes -Role StockManifest|ConvertFrom-Json -Depth 20
+        if($pin.Name -isnot [string] -or $pin.Name -cnotin @('root','main','zone') -or $pin.Target -isnot [string] -or
+           ($pin.Count -isnot [int] -and $pin.Count -isnot [long])){throw 'Scalar fixed33 manifest declaration required.'}
+        $target=if($pin.Name -ceq 'root'){$Plan.WorkRoot}else{Join-Path $Plan.WorkRoot $pin.Name}
+        if($manifest.target -isnot [string] -or $manifest.source -isnot [string] -or $pin.Target -cne $target -or
+           $manifest.target -cne $target -or $manifest.source -cne $Plan.StockSourceRoot -or
+           ($manifest.planned_files -isnot [int] -and $manifest.planned_files -isnot [long]) -or
+           $manifest.files -isnot [array] -or $manifest.files.Count -ne $pin.Count -or $manifest.planned_files -ne $pin.Count){throw 'Exact fixed33 manifest source/target/count required.'}
+        foreach($row in $manifest.files){
+            if($row.relative -isnot [string] -or !$row.relative -or [IO.Path]::GetFileName($row.relative) -cne $row.relative -or $row.relative -match '[\\/:]' -or
+               $row.relative -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)' -or
+               $row.relative.TrimEnd(' ','.') -cne $row.relative -or !$targets.Add($pin.Name+'/'+$row.relative) -or
+               ($row.bytes -isnot [int] -and $row.bytes -isnot [long]) -or $row.bytes -le 0 -or
+               $row.bytes -gt (Get-PlayerRetailByteLimit $Plan (Join-Path $Plan.StockSourceRoot $row.relative))){throw 'Finite fixed33 row path/size/uniqueness required.'}
+            $null=$sources.Add($row.relative)
+            if($row.relative -match '(?i)\.pak$'){
+                if($pin.Name -cne 'zone' -or $row.relative -cnotin $Profile.PakNames -or !$paks.Add($row.relative)){throw 'Only the exact 33 zone assetfiles are allowed.'}
+            }
+        }
+    }
+    if($targets.Count -ne 102 -or $sources.Count -ne 71 -or $paks.Count -ne 33){throw 'Exact fixed33 102-alias/71-source closure required.'}
+}
 $plan=Read-PlayerExportSource $PlanPath $PlanSHA256 -Role Plan|ConvertFrom-Json -Depth 30
 $modalSelected=Test-PlayerModalPlan $plan
+$retailProfile=Get-PlayerRetailProfile $plan
 if($plan.Schema -cne 'iw7.player-template-export-source/1' -or $plan.Ready -or $plan.CandidateExecuted -or
- $plan.StockContentQualified -or $plan.RetailAliasCount -ne 70 -or $plan.UniqueRetailSources -ne 39 -or
+ $plan.StockContentQualified -or $plan.RetailAliasCount -ne $retailProfile.Aliases -or $plan.UniqueRetailSources -ne $retailProfile.Sources -or
  $plan.RunnerBinding.Path -cne $PSCommandPath -or $plan.GroupSeconds -ne 600 -or $plan.ToolSeconds -ne $(if($modalSelected){120}else{240}) -or
  $plan.GeneratedLimitBytes -ne 16777216 -or $plan.MetadataReserveBytes -ne 1048576){throw 'Exact unexecuted finite export plan required.'}
 $null=Read-PlayerExportSource $plan.RunnerBinding.Path $plan.RunnerBinding.SHA256 $plan.RunnerBinding.Bytes -Role Runner
@@ -84,10 +139,11 @@ foreach($name in 'Core','Scheduler','Profile','StockCore','BeaconCore','ArenaPro
 $request=Read-PlayerExportSource $plan.Request.Path $plan.Request.SHA256 $plan.Request.Bytes -Role Request
 if($request -cne "weapon,iw7_shredder_zm`nattachment,shredderpap1`n" -or $plan.Request.Bytes -ne 47){throw 'Exact two-row request required.'}
 if($plan.Pack -cne 'paris_enemy_cp_zmb_raygun_template_a_player_weapon_source' -or
- (@($plan.StockManifests.Name)-join '|') -cne 'root|main|zone' -or (@($plan.StockManifests|ForEach-Object {$_.Count})-join '|') -cne '7|31|32'){throw 'Fixed pair/layout required.'}
+ (@($plan.StockManifests.Name)-join '|') -cne 'root|main|zone' -or (@($plan.StockManifests|ForEach-Object {$_.Count})-join '|') -cne $retailProfile.Counts){throw 'Fixed pair/layout required.'}
 foreach($manifest in $plan.StockManifests){$null=Read-PlayerExportSource $manifest.Path $manifest.SHA256 $manifest.Bytes -Role StockManifest}
+Test-PlayerRetailManifests $plan $retailProfile
 if(Test-Path $plan.RunRoot){throw 'Fresh owned runtime required.'}
-if(!$Run){[ordered]@{Schema='iw7.player-export-default/1';PlanSHA256=$PlanSHA256;RetailAliases=70;UniqueRetailSources=39;
+if(!$Run){[ordered]@{Schema='iw7.player-export-default/1';PlanSHA256=$PlanSHA256;RetailAliases=$retailProfile.Aliases;UniqueRetailSources=$retailProfile.Sources;
  NativeTypesLoaded=$false;OpaqueInputsRead=$false;LeaseAcquired=$false;RuntimeCreated=$false;CandidateExecuted=$false;Ready=$false}|ConvertTo-Json;return}
 $hostArgs=[Environment]::GetCommandLineArgs();$commandIndex=[Array]::IndexOf($hostArgs,'-Command')
 $bundled='C:\Users\ezvalo\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe'
@@ -136,6 +192,28 @@ function New-PlayerStockTransaction($Manifest,$LinkPlan){
     }
 }
 function Pin-PlayerOpaque($Pin){Open-T7Pin $Pin $script:PlayerTemplateExportOriginalRoot.Context}
+function Get-PlayerRetailStreamSHA($Stream,[long]$Bytes,[long]$Limit){
+    Assert-PlayerExportClock
+    if(!$Stream.CanRead -or !$Stream.CanSeek -or $Bytes -lt 1 -or $Bytes -gt $Limit -or $Stream.Length -ne $Bytes){throw 'Bounded original retail stream required.'}
+    $Stream.Position=0;$used=0L
+    $hash=[Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
+    try{
+        $buffer=[byte[]]::new(1MB)
+        while(($n=$Stream.Read($buffer,0,$buffer.Length)) -gt 0){
+            $used+=$n;if($used -gt $Bytes){throw 'Retail stream grew beyond its declared bound.'}
+            $hash.AppendData($buffer,0,$n);Assert-PlayerExportClock
+        }
+        if($used -ne $Bytes -or $Stream.Length -ne $Bytes){throw 'Original retail stream length changed.'}
+        [Convert]::ToHexString($hash.GetHashAndReset()).ToLowerInvariant()
+    }finally{$hash.Dispose();$Stream.Position=0}
+}
+function Confirm-PlayerRetailContent($Pin){
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot
+    $held=$playerRoot.ContentGuards[$Pin.Path]
+    if(!$held -or !$held.Stream -or $held.Stream.SafeFileHandle.IsClosed -or $held.Stream.SafeFileHandle.IsInvalid){throw 'Actual retained retail content stream required.'}
+    $sha=Get-PlayerRetailStreamSHA $held.Stream $Pin.Bytes (Get-PlayerRetailByteLimit $playerRoot.Plan $Pin.Path)
+    if($sha -cne $Pin.SHA256){throw 'Original retail content hash differs.'}
+}
 function Get-PlayerSourceHandle($Source){
     $held=$script:PlayerTemplateExportOriginalRoot.ContentGuards[$Source.Path]
     if(!$held -or $held.Identity -cne $Source.Before.Identity -or !$held.Stream -or
@@ -216,7 +294,9 @@ function Confirm-PlayerStock{
         Assert-IW7StockStableMetadata (Get-IW7StockLinkMetadata $source.Path) $source.Before ($base.Links+$totals[$source.Before.Identity])
         Assert-IW7StockStableMetadata (Get-IW7StockLinkMetadata $source.Target) $source.Before ($base.Links+$totals[$source.Before.Identity])
     }}
-    foreach($pin in $state.ContentPins){Pin-PlayerOpaque $pin}
+    foreach($pin in $state.ContentPins){
+        if($plan.PSObject.Properties['RetailProfile']){Confirm-PlayerRetailContent $pin}else{Pin-PlayerOpaque $pin}
+    }
     foreach($pin in @($plan.Candidate,$plan.TLS,$plan.Sentinel)){Pin-PlayerOpaque $pin}
     foreach($copy in $state.CreatedCopies){
         if((Get-IW7StockLinkMetadata $copy.Path).Identity -cne $copy.Identity){throw 'Original owned-copy identity differs.'}
@@ -341,9 +421,12 @@ try{
                 # Fresh content evidence now, never a relabelled historical SHA.
                 $stream=[IO.FileStream]::new($source.Path,'Open','Read','Read');$guards.Add($stream)
                 $root.ContentGuards[$source.Path]=[pscustomobject]@{Stream=$stream;Identity=$source.Before.Identity}
-                if($stream.Length -ne $source.Before.Bytes -or $stream.Length -gt 256MB){throw 'Finite source length differs.'}
-                $hash=[Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
-                try{$buffer=[byte[]]::new(1MB);while(($n=$stream.Read($buffer)) -gt 0){$hash.AppendData($buffer,0,$n);Assert-PlayerExportClock};$sha=[Convert]::ToHexString($hash.GetHashAndReset()).ToLowerInvariant()}finally{$hash.Dispose()}
+                $limit=Get-PlayerRetailByteLimit $plan $source.Path
+                if($stream.Length -ne $source.Before.Bytes -or $stream.Length -gt $limit){throw 'Finite source length differs.'}
+                if($retailProfile.Name -ceq 'fixed33-pak'){$sha=Get-PlayerRetailStreamSHA $stream $source.Before.Bytes $limit}else{
+                    $hash=[Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
+                    try{$buffer=[byte[]]::new(1MB);while(($n=$stream.Read($buffer)) -gt 0){$hash.AppendData($buffer,0,$n);Assert-PlayerExportClock};$sha=[Convert]::ToHexString($hash.GetHashAndReset()).ToLowerInvariant()}finally{$hash.Dispose()}
+                }
                 $stream.Position=0;$state.ContentPins.Add([pscustomobject]@{Path=$source.Path;Bytes=$stream.Length;SHA256=$sha})
             }
         }
