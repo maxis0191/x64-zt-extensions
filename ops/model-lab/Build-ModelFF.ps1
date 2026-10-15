@@ -28,15 +28,22 @@ $plan=Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
 $sourceNames=@(Get-ModelFFSourceNames $plan)
 $profile='geometry_profile' -cin $plan.PSObject.Properties.Name
 $arena=$profile -and $plan.geometry_profile -ceq 'iw7-original-arena-rigid-v1'
-$rigid=$profile -and !$arena
-$planVersion=if($rigid){Get-ModelFFRigidVersion $plan}else{1}
+$authored=$profile -and $plan.geometry_profile -ceq 'iw7-authored-rigid-v1'
+$rigid=$profile -and !$arena -and !$authored
+$planVersion=if($authored){3}elseif($rigid){Get-ModelFFRigidVersion $plan}else{1}
 if($planVersion -ne 2 -and (Get-Item -LiteralPath $planPath).Length -gt 64KB){throw 'Legacy model FF preparation exceeds bound.'}
-$modelName=if($rigid -or $arena){$plan.model_name}else{'paris_model_probe'}
-$meshName=if($rigid -or $arena){$plan.mesh_name}else{'paris_model_probe_lod0'}
+$modelName=if($rigid -or $arena -or $authored){$plan.model_name}else{'paris_model_probe'}
+$meshName=if($rigid -or $arena -or $authored){$plan.mesh_name}else{'paris_model_probe_lod0'}
+$zoneName=if($authored){$plan.zone}else{'paris_model_probe'}
 $artifactNames=@($sourceNames[0],$sourceNames[1])
 if($plan.schema -cne "iw7.model-ff-plan/$planVersion" -or $plan.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or $plan.ff_built -or $plan.ready -or
-    @($plan.source_files.PSObject.Properties).Count -ne 5 -or @($sourceNames | Where-Object {$_ -cnotin $plan.source_files.PSObject.Properties.Name}).Count){throw 'Pinned five-input original FF preparation required.'}
-if($arena){
+    (!$authored -and @($plan.source_files.PSObject.Properties).Count -ne 5) -or @($sourceNames | Where-Object {$_ -cnotin $plan.source_files.PSObject.Properties.Name}).Count){throw 'Pinned exact original FF source preparation required.'}
+if($authored){
+    if(!$ReaderRun -or !$CandidateRoot){throw 'Authored FF requires its measured native reader and strict community candidate.'}
+    $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source
+    & $Python -B -S "$PSScriptRoot/prepare_ff.py" --verify-authored-stage $source | Out-Null
+    if($LASTEXITCODE -ne 0){throw 'Authored source/material closure differs.'}
+}elseif($arena){
     if($ReaderRun){throw 'Original arena uses its independent arena reader, not the cube native reader.'}
     $Python=(Get-Command $Python -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source
     $arenaReader=Join-Path $repo 'tools-source/asset-bridge/world/original-arena/model_lab.py'
@@ -71,9 +78,9 @@ if($CandidateRoot){
     }
     $provenance=[pscustomobject]@{BinarySHA256=$candidateArtifact.executable.sha256}
     $symbols=Join-Path $CandidateRoot 'bin'
-    $buildArguments=@('-headless','-unbuffered-io','-strict-content-sources','-buildzone','paris_model_probe')
-    $offlineArguments=@('-headless','-unbuffered-io','-strict-content-sources','-verifyzone','paris_model_probe')
-    $dumpArguments=@('-headless','-unbuffered-io','-strict-content-sources','-dumpzone','paris_model_probe')
+    $buildArguments=@('-headless','-unbuffered-io','-strict-content-sources','-buildzone',$zoneName)
+    $offlineArguments=@('-headless','-unbuffered-io','-strict-content-sources','-verifyzone',$zoneName)
+    $dumpArguments=@('-headless','-unbuffered-io','-strict-content-sources','-dumpzone',$zoneName)
     if($arena -and !$NativeJobAssembly){throw 'Original arena candidate requires the retained original NativeJob assembly.'}
 }else{
     if(!$ToolProvenance -or $CandidateArtifactSHA256){throw 'Existing tool provenance or explicit community candidate required.'}
@@ -130,15 +137,20 @@ if(!$CandidateRoot -or !$arena){
        (!$CandidateRoot -and (Get-FileHash -LiteralPath $cdb).Hash -cne '5F54ABAFCA3AE5638BBF807D402FABB350A64575C1DFA9FBFC7F5732DF5BEE67')){throw 'Known bounded offline diagnostics required.'}
 }
 $reader=$null
-if($ReaderRun){$readerRoot=Assert-IW7LabPath ((Resolve-Path -LiteralPath $ReaderRun).Path) (Join-Path $repo 'runtime');$r=Get-Content -LiteralPath (Join-Path $readerRoot 'writer-provenance.json') -Raw | ConvertFrom-Json
-    $reader=Join-Path $readerRoot 'model-writer.exe';if($r.SourcePin -cne $plan.source_pin -or !$r.Roundtrip.read_existing_supported -or (Get-FileHash -LiteralPath $reader).Hash -ine $r.WriterSHA256){throw 'Measured original reader with existing-dump mode required.'}
+if($ReaderRun){$readerRoot=Assert-IW7LabPath ((Resolve-Path -LiteralPath $ReaderRun).Path) (Join-Path $repo 'runtime');$readerProvenance=Join-Path $readerRoot 'writer-provenance.json'
+    if((Get-Item -LiteralPath $readerProvenance).Length -gt 512KB){throw 'Bounded native reader provenance required.'}
+    $r=Get-Content -LiteralPath $readerProvenance -Raw | ConvertFrom-Json
+    $reader=Join-Path $readerRoot 'model-writer.exe';if($r.SourcePin -cne $plan.source_pin -or !$r.Roundtrip.read_existing_supported -or (!$authored -and (Get-FileHash -LiteralPath $reader).Hash -ine $r.WriterSHA256)){throw 'Measured original reader with existing-dump mode required.'}
+    if($authored -and ((Get-FileHash -LiteralPath $readerProvenance).Hash -ine $plan.writer_provenance_sha256 -or
+        $r.WriterSHA256 -ine $plan.writer_sha256 -or $r.Source.geometry_profile -cne 'iw7-authored-rigid-v1' -or
+        $r.Source.geometry_source_sha256 -ine $plan.geometry_source_sha256)){throw 'Authored native reader is not bound to source geometry.'}
     if($r.Source.candidate_variable -cne 'lodInfo[0].dist'){throw 'Exact distance candidate reader required.'}
     Assert-ModelFFDistanceCandidate $r.Source
     Assert-ModelFFDistanceCandidate $r.Roundtrip}
 if($DryRun){[ordered]@{Schema='iw7.model-ff-admission/1';RunRoot=$RunRoot;Inputs=$inputs.Relative;OriginalInputs=$sourceNames;PhysicalBytes=8GB;CommitBytes=11GB;PAKs=@('zone/assetfile1.pak');CPPreload=$false;MaterialRuntimeBound=$false;Reader=$reader;Ready=$false}|ConvertTo-Json -Depth 8;return}
 $lease=Enter-IW7ResourceLease -Scope $work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Original model FF bootstrap/inventory/roundtrip'
 $state=[ordered]@{Schema='iw7.model-ff-build/1';Work=$work;Inputs=$inputs;RetainedLeaseToken=$lease.Token;Restored=$false;StockPreserved=$false;RestorationStatus='Pending';CleanupError=$null;Status='Preparing';SourcePlan=$plan;ToolSHA256=$provenance.BinarySHA256;InventoryVerified=$false;GeometryRoundtripVerified=$false;RecipientReferenceResolved=$false;SymbolsVerified=$false;Ready=$false}
-if($rigid -or $arena){$state.SourcePlanSHA256=(Get-FileHash -LiteralPath (Join-Path $source 'model-ff-plan.json')).Hash}
+if($rigid -or $arena -or $authored){$state.SourcePlanSHA256=(Get-FileHash -LiteralPath (Join-Path $source 'model-ff-plan.json')).Hash}
 $cleanup=[pscustomobject]@{Confirmed=$true};$transactionSaved=$false
 $originalContext=$null
 $stockGuards=[Collections.Generic.List[IDisposable]]::new()
@@ -150,6 +162,7 @@ function Invoke-ModelFFTool([string]$Phase,[string[]]$Arguments) {
     Invoke-HudBuildProcess -Work $work -RunRoot $RunRoot -LeaseToken $lease.Token -CleanupState $cleanup -Cdb $cdb -Symbols $symbols -Phase $Phase -ToolArguments $Arguments
 }
 try{
+    if($authored -and (Get-FileHash -LiteralPath $reader).Hash -ine $plan.writer_sha256){throw 'Admitted authored native reader changed.'}
     if($CandidateRoot){
         $candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256
         if($candidate.Path -ine $tool -or $candidate.SHA256 -ine $provenance.BinarySHA256){throw 'Admitted candidate differs from planned producer metadata.'}
@@ -179,7 +192,7 @@ try{
         $state.OriginalOwner=[ordered]@{AssemblySHA256=$ownerSHA;SourceWorkspaceSHA256=(Get-FileHash -LiteralPath (Join-Path $repo 'source-workspace.json')).Hash;NativePolicyRevision=$package.revisions.'iw7-mod-components';Policy='H1 original root/job, TelemetryOnly'}
     }
     [IO.Directory]::CreateDirectory($work)|Out-Null
-    $mutable=@($inputs.Relative)+$sourceNames+@('zonetool.exe','zone/paris_model_probe.ff')
+    $mutable=@($inputs.Relative)+$sourceNames+@('zonetool.exe',('zone/'+$zoneName+'.ff'))
     $state.Transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$work;MutableFiles=$mutable;ProfileDirectory='model-unused-profile';ProfileDirectories=@()}) (Join-Path $RunRoot 'backup');$transactionSaved=$true
     Write-ModelFFState $state $statePath
     foreach($entry in $inputs){$target=Resolve-IW7BasePath $work $entry.Relative;[IO.Directory]::CreateDirectory((Split-Path $target))|Out-Null
@@ -192,17 +205,19 @@ try{
     $state.Status='Building';Write-ModelFFState $state $statePath
     $state.Build=Invoke-ModelFFTool hud-build $buildArguments
     if($state.Build.ExitCode){throw 'Model FF build failed.'}
-    $ff=Resolve-IW7BasePath $work 'zone/paris_model_probe.ff';Copy-Item -LiteralPath $ff -Destination (Join-Path $RunRoot 'mod.ff')
+    $ff=Resolve-IW7BasePath $work ('zone/'+$zoneName+'.ff');Copy-Item -LiteralPath $ff -Destination (Join-Path $RunRoot 'mod.ff')
     $state.FF=[ordered]@{Path='mod.ff';Bytes=(Get-Item -LiteralPath $ff).Length;SHA256=(Get-FileHash -LiteralPath $ff).Hash};$state.Status='CompiledRetained';Write-ModelFFState $state $statePath
     $state.Offline=Invoke-ModelFFTool hud-offline $offlineArguments
     if($state.Offline.ExitCode){$state.Status='OfflineUnresolved';throw 'Bootstrap reference/inventory load failed; retained FF is not recipient-linked.'}
-    $materials=if($rigid -or $arena){@(Get-ModelFFMaterials $plan)}else{@('mopw/character_park_clown_zombie_shoes')}
-    $rows=@(Get-ModelFFInventory ([IO.File]::ReadAllText($state.Offline.Stdout)) $modelName $meshName $materials);[IO.File]::WriteAllLines((Join-Path $RunRoot 'assets.csv'),[string[]]$rows)
+    $materials=if($rigid -or $arena -or $authored){@(Get-ModelFFMaterials $plan)}else{@('mopw/character_park_clown_zombie_shoes')}
+    $inventoryPlan=if($authored){$plan}else{$null}
+    $rows=@(Get-ModelFFInventory ([IO.File]::ReadAllText($state.Offline.Stdout)) $modelName $meshName $materials -AuthoredPlan $inventoryPlan);[IO.File]::WriteAllLines((Join-Path $RunRoot 'assets.csv'),[string[]]$rows)
     $state.InventoryVerified=$true;$state.Status='BootstrapInventoryVerified';Write-ModelFFState $state $statePath
     $state.Dump=Invoke-ModelFFTool hud-roundtrip $dumpArguments
     if($state.Dump.ExitCode){throw 'Bootstrap model re-dump failed.'}
-    $dump=Join-Path $work 'dump/paris_model_probe'
-    foreach($name in $artifactNames){$p=Resolve-IW7BasePath $dump $name;$target=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $target))|Out-Null;Copy-Item -LiteralPath $p -Destination $target}
+    $dump=Join-Path $work ('dump/'+$zoneName)
+    $dumpNames=if($authored){@($plan.dump_files)}else{$artifactNames}
+    foreach($name in $dumpNames){$p=Resolve-IW7BasePath $dump $name;$target=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $target))|Out-Null;Copy-Item -LiteralPath $p -Destination $target}
     if($rigid -or $arena){
         $geometryReader=if($arena){$arenaReader}else{"$PSScriptRoot/rigid_export.py"}
         $readerArguments=@('-B','-S',$geometryReader,'verify-dump','--source',$source,'--dump',(Join-Path $RunRoot 'roundtrip'),'--ff',(Join-Path $RunRoot 'mod.ff'))
@@ -227,7 +242,27 @@ try{
         if($state.GeometryReader.ExitCode -or (Get-Item -LiteralPath $state.GeometryReader.Stdout).Length -gt 1MB){throw 'FF re-dump differs from original geometry/reference.'}
         $verified=[IO.File]::ReadAllText($state.GeometryReader.Stdout)|ConvertFrom-Json;if(!$verified.geometry_roundtrip_verified -or $verified.ready){throw 'Original geometry reader gate failed.'}
         Assert-ModelFFDistanceCandidate $verified
+        if($authored){
+            if($verified.schema -cne 'iw7.model-roundtrip/1' -or $verified.geometry_roundtrip_verified -isnot [bool] -or !$verified.geometry_roundtrip_verified -or
+                $verified.physics_serialized -isnot [bool] -or $verified.physics_serialized -or $verified.iw7_normal_encoding_verified -isnot [bool] -or $verified.iw7_normal_encoding_verified){throw 'Authored FF native reader qualification differs.'}
+            foreach($field in @('geometry_profile','namespace','zone','model_name','mesh_name','material_reference')){
+                if($verified.$field -cne $plan.$field){throw 'Authored FF geometry readback identity differs.'}
+            }
+            if($verified.vertices -ne $plan.selected_counts.vertices -or $verified.triangles -ne $plan.selected_counts.triangles){throw 'Authored FF geometry readback counts differ.'}
+        }
         $verified|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $RunRoot 'geometry-roundtrip.json');$state.GeometryRoundtripVerified=$true}
+    if($authored){
+        $argsSurface=@('-B','-S',"$PSScriptRoot/prepare_ff.py",'--verify-authored-dump',$source,'--dump',(Join-Path $RunRoot 'roundtrip'),'--ff',(Join-Path $RunRoot 'mod.ff'))
+        $state.SurfaceReader=Invoke-IW7LabAssetProcess -Executable $Python -ToolArguments $argsSurface -WorkingDirectory $repo -LogDirectory $RunRoot -Phase model-authored-material -LeaseToken $lease.Token -CleanupState $cleanup -TimeoutSeconds 30
+        if($state.SurfaceReader.ExitCode -ne 0 -or (Get-Item -LiteralPath $state.SurfaceReader.Stdout).Length -gt 64KB){throw 'Authored material/image FF readback failed.'}
+        $surface=[IO.File]::ReadAllText($state.SurfaceReader.Stdout)|ConvertFrom-Json
+        if($surface.schema -cne 'iw7.authored-material-roundtrip/1' -or $surface.source_plan_sha256 -ine $state.SourcePlanSHA256 -or
+            $surface.ff.sha256 -ine $state.FF.SHA256 -or $surface.image.serialized_pixel_bytes_verified -isnot [bool] -or !$surface.image.serialized_pixel_bytes_verified -or
+            $surface.material_fields_verified -isnot [bool] -or !$surface.material_fields_verified -or $surface.ready -isnot [bool] -or $surface.ready){throw 'Authored surface readback receipt differs.'}
+        Copy-Item -LiteralPath $state.SurfaceReader.Stdout -Destination (Join-Path $RunRoot 'surface-roundtrip.json')
+        $state.MaterialFieldsVerified=$true;$state.SerializedImageBytesVerified=$true
+        $state.NativeCBTSemanticsVerified=$false;$state.PixelsRenderedVerified=$false
+    }
 }catch{
     $state.Failure=$_.Exception.Message
     if($state.Status -eq 'CompiledRetained' -and $state.Failure -match 'recipient reference unresolved|referenced asset'){$state.Status='BootstrapRecipientReferenceUnresolved'}

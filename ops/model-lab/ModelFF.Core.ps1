@@ -20,6 +20,7 @@ function Get-ModelFFRigidVersion($Metadata) {
     }
 }
 function Get-ModelFFMaterials($Metadata) {
+    if($Metadata.geometry_profile -ceq 'iw7-authored-rigid-v1'){return $Metadata.material_reference}
     if($Metadata.geometry_profile -ceq 'iw7-original-arena-rigid-v1'){return $Metadata.material_reference}
     if((Get-ModelFFRigidVersion $Metadata) -eq 2){$Metadata.material_references}else{$Metadata.material_reference}
 }
@@ -88,12 +89,69 @@ function Assert-ModelFFRigidPlan($Plan) {
         throw 'LOD distance insufficient for this scene; review explicit --lod-distance 1000000. Export validity and visibility are separate.'}
 }
 function Get-ModelFFSourceNames($Plan) {
+    if($Plan.geometry_profile -ceq 'iw7-authored-rigid-v1'){
+        Assert-ModelFFAuthoredPlan $Plan
+        $Plan.artifact_paths
+        @($Plan.source_files.PSObject.Properties.Name | Where-Object {$_ -cnotin $Plan.artifact_paths} | Sort-Object)
+        return
+    }
     if('geometry_profile' -cin $Plan.PSObject.Properties.Name){
         if($Plan.geometry_profile -ceq 'iw7-original-arena-rigid-v1'){Assert-ModelFFOriginalArenaPlan $Plan}
         else{Assert-ModelFFRigidPlan $Plan}
         "xmodel/$($Plan.model_name).xmb";"xsurface/$($Plan.mesh_name).xsb"
     }else{'xmodel/paris_model_probe.xmb';'xsurface/paris_model_probe_lod0.xsb'}
     'zone_source/paris_model_probe.csv';'zone_source/paris_model_probe_recipient.csv';'netconststrings/ncs_mdl_paris_model_probe.json'
+}
+function Assert-ModelFFAuthoredPlan($Plan) {
+    Assert-ModelFFDistanceCandidate $Plan
+    if($Plan.schema -cne 'iw7.model-ff-plan/3' -or $Plan.geometry_profile -cne 'iw7-authored-rigid-v1' -or
+        $Plan.origin -cne 'authored-rigid' -or $Plan.recipient -cne 'cp_zmb' -or
+        $Plan.material_payload_copied -isnot [bool] -or !$Plan.material_payload_copied -or
+        $Plan.material_closure_verified -isnot [bool] -or $Plan.material_closure_verified -or
+        $Plan.physics_serialized -isnot [bool] -or $Plan.physics_serialized){throw 'Explicit authored local-payload FF profile required.'}
+    foreach($field in @('ff_built','pixels_verified','ready')){
+        if($Plan.$field -isnot [bool] -or $Plan.$field){throw 'Authored preparation cannot claim FF/runtime qualification.'}
+    }
+    foreach($field in @('namespace','zone','model_name','mesh_name')){
+        $value=$Plan.$field
+        if($value -isnot [string] -or $value -cnotmatch '^[A-Za-z0-9_]{1,63}$'){throw 'Flat authored project identifiers required.'}
+        Assert-ModelFFAssetName $value
+    }
+    if($Plan.ncs_name -cne ('ncs_mdl_'+$Plan.zone)){throw 'Authored NCS/zone identity differs.'}
+    foreach($name in @($Plan.material_reference,$Plan.image.name,$Plan.ncs_name)){Assert-ModelFFAssetName $name}
+    $counts=$Plan.selected_counts
+    if((@($counts.PSObject.Properties.Name | Sort-Object) -join ',') -cne 'bones,roots,surfaces,triangles,vertices'){throw 'Exact authored geometry counts required.'}
+    foreach($entry in @(@('bones',1,1),@('roots',1,1),@('surfaces',1,1),@('vertices',3,192),@('triangles',1,96))){
+        $value=$counts.($entry[0])
+        if(($value -isnot [int] -and $value -isnot [long]) -or $value -lt $entry[1] -or $value -gt $entry[2]){throw 'Authored geometry exceeds native reader envelope.'}
+    }
+    $paths=@("xmodel/$($Plan.model_name).xmb","xsurface/$($Plan.mesh_name).xsb")
+    if($Plan.artifact_paths -isnot [array] -or $Plan.artifact_paths.Count -ne 2 -or ($Plan.artifact_paths -join '|') -cne ($paths -join '|')){throw 'Exact authored artifact paths required.'}
+    $files=@($Plan.source_files.PSObject.Properties)
+    if($files.Count -lt 8 -or $files.Count -gt 20){throw 'Bounded authored geometry/material source closure required.'}
+    foreach($entry in $files){
+        Assert-ModelFFAssetName $entry.Name
+        if($entry.Value -isnot [string] -or $entry.Value -cnotmatch '^[a-f0-9]{64}$'){throw 'Authored source SHA256 required.'}
+    }
+    foreach($name in $paths+@("zone_source/$($Plan.zone).csv","zone_source/$($Plan.zone)_recipient.csv","netconststrings/$($Plan.ncs_name).json")){
+        if($name -cnotin $files.Name){throw 'Authored source inventory incomplete.'}
+    }
+    foreach($field in @('writer_provenance_sha256','writer_sha256','geometry_source_sha256')){
+        if($Plan.$field -isnot [string] -or $Plan.$field -cnotmatch '^[a-fA-F0-9]{64}$'){throw 'Bound authored writer/source hashes required.'}
+    }
+    if($Plan.dump_files -isnot [array] -or $Plan.dump_files.Count -lt 4 -or $Plan.dump_files.Count -gt 12 -or
+        @($Plan.dump_files | Sort-Object -Unique).Count -ne $Plan.dump_files.Count){throw 'Exact bounded authored dump paths required.'}
+    foreach($name in $Plan.dump_files){Assert-ModelFFAssetName $name}
+    foreach($name in $paths+@("images/$($Plan.image.name).iw7Image","materials/$($Plan.material_reference).json")){
+        if($name -cnotin $Plan.dump_files){throw 'Authored dump closure incomplete.'}
+    }
+    if($Plan.expected_inventory -isnot [array] -or $Plan.expected_inventory.Count -lt 7 -or $Plan.expected_inventory.Count -gt 262){throw 'Bounded authored inventory required.'}
+    $rows=@(foreach($row in $Plan.expected_inventory){
+        if($row.type -cnotin @('techset','image','material','xmodelsurfs','xmodel','netconststrings','rawfile') -or $row.name -isnot [string]){throw 'Authored inventory kind/name required.'}
+        Assert-ModelFFAssetName $row.name.TrimStart(',')
+        $row.type+','+$row.name
+    })
+    if(@($rows | Sort-Object -Unique).Count -ne $rows.Count -or ('material,'+$Plan.material_reference) -cnotin $rows -or ('material,,'+$Plan.material_reference) -cin $rows){throw 'Local authored material inventory required.'}
 }
 function Write-ModelFFState($State,[string]$Path) { $State | ConvertTo-Json -Depth 15 | Set-Content -LiteralPath $Path }
 function Assert-ModelFFVacant([string]$Work) {
@@ -131,15 +189,19 @@ function Complete-ModelFFRestore($State,[string]$StatePath,[string]$LeaseToken) 
     Exit-IW7ResourceLease -Token $LeaseToken
     $State.RetainedLeaseToken=$null;Write-ModelFFState $State $StatePath
 }
-function Get-ModelFFInventory([string]$Log,[string]$ModelName='paris_model_probe',[string]$MeshName='paris_model_probe_lod0',[string[]]$Materials=@('mopw/character_park_clown_zombie_shoes')) {
+function Get-ModelFFInventory([string]$Log,[string]$ModelName='paris_model_probe',[string]$MeshName='paris_model_probe_lod0',[string[]]$Materials=@('mopw/character_park_clown_zombie_shoes'),$AuthoredPlan=$null) {
     Assert-ModelFFAssetName $ModelName;Assert-ModelFFAssetName $MeshName
-    if(!$Log.Contains('Loading zone "paris_model_probe"') -or $Log -match 'could not be found|Could not find referenced|\[ ERROR \]|\[ FATAL \]'){throw 'Bootstrap inventory unavailable/recipient reference unresolved.'}
+    $zone=if($null -ne $AuthoredPlan){Assert-ModelFFAuthoredPlan $AuthoredPlan;$AuthoredPlan.zone}else{'paris_model_probe'}
+    if(!$Log.Contains('Loading zone "'+$zone+'"') -or $Log -match 'could not be found|Could not find referenced|\[ ERROR \]|\[ FATAL \]'){throw 'Bootstrap inventory unavailable/recipient reference unresolved.'}
     $rows=@(foreach($line in @($Log -split '\r?\n' | Where-Object {$_ -match 'Loading asset '})){
         if($line -notmatch 'Loading asset "([^"\r\n]+)" of type ([a-z0-9]+)\.$'){throw 'Malformed model inventory callback.'}
         $Matches[2]+','+$Matches[1]
     })
-    if(!$Materials.Count -or $Materials.Count -gt 255 -or @($Materials | Where-Object {$_ -cne 'mopw/character_park_clown_zombie_shoes'}).Count){throw 'Explicit reviewed material inventory required.'}
-    $expected=@(@($Materials | Select-Object -Unique | ForEach-Object {'material,,'+$_}) + @("xmodelsurfs,$MeshName","xmodel,$ModelName",'netconststrings,ncs_mdl_paris_model_probe','rawfile,paris_model_probe'))
+    if($null -ne $AuthoredPlan){$expected=@($AuthoredPlan.expected_inventory | ForEach-Object {$_.type+','+$_.name})}
+    else{
+        if(!$Materials.Count -or $Materials.Count -gt 255 -or @($Materials | Where-Object {$_ -cne 'mopw/character_park_clown_zombie_shoes'}).Count){throw 'Explicit reviewed material inventory required.'}
+        $expected=@(@($Materials | Select-Object -Unique | ForEach-Object {'material,,'+$_}) + @("xmodelsurfs,$MeshName","xmodel,$ModelName",'netconststrings,ncs_mdl_paris_model_probe','rawfile,paris_model_probe'))
+    }
     if($rows.Count -ne $expected.Count -or @($rows | Sort-Object -Unique).Count -ne $expected.Count -or @($expected | Where-Object {$_ -cnotin $rows}).Count){throw 'Expected exact assets including unique recipient references.'}
     $rows
 }

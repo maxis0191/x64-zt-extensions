@@ -283,12 +283,10 @@ The zone CSV declares the authored material as a **local payload dependency**,
 not an ignored retail reference. This producer supplies no material/image bytes:
 `material_payload_present=false`, `material_closure_required=true`. The separate
 surfaces producer must provide that closure before an FF can be prepared.
-The current `prepare_ff.stage` / `Build-ModelFF.ps1` route still requires five
-inputs, fixed `paris_model_probe` zone/NCS, and the measured M7 recipient
-material; `Get-ModelFFInventory` enforces that inventory. These gates reject an
-authored FF today. They need an explicit combined material-closure integration,
-not a false recipient flag or a per-asset tool patch. Creator must report the
-FF build as blocked until that source integration is reviewed.
+The historical `prepare_ff.stage` route still requires five inputs, fixed
+`paris_model_probe` zone/NCS, and the measured M7 recipient material. Those
+legacy gates remain strict. The explicit authored FF connection below joins
+the owned material closure in the same ModelFF path.
 
 Source tests cover two distinct geometries/names, fractional positions/UVs,
 derived bounds, serializer and reader adaptation, updated-hash tampering,
@@ -296,3 +294,57 @@ invalid source/claims and the preserved strict legacy cube contract. No
 CPP/FF/Native/PE/stock/lease/game operation is part of this checkpoint. Player
 contact/collision, rendered diffuse/orientation/alpha, ABI and owner acceptance
 remain unmeasured; `collLod=255` and null physics do not prove collision.
+
+## Authored material connection in existing ModelFF - SOURCE ONLY
+
+`prepare_ff.stage_authored(writer_run, fresh_output, *, material_inputs)` takes
+the existing `surfaces/authored_dds_material.py::prepare_material(...)` result
+directly. The writer run must contain its reviewed authored source recipe plus
+the actual future `Build-Writer` provenance, native roundtrip and two measured
+XMB/XSB files. Source tests use explicitly synthetic receipts/bytes instead;
+they do not supply native evidence for a creator project.
+
+The same surfaces producer reconstructs the owned DDS/material/sidecar recipe.
+Its selected diffuse is local; its techset and remaining images alone become
+explicit recipient references. ModelFF joins its CSV with XModel and NCS rows,
+keeps the complete writer source/provenance under `evidence/writer`, and emits
+`iw7.model-ff-plan/3` with the existing `iw7-authored-rigid-v1` profile. Names,
+zone, NCS, selected counts, exact source hashes and expected inventory derive
+from that project. The existing content Inspector checks material/state fields
+and references; its 8 MiB per-image preflight ceiling also applies to this
+connection. No additional compiler, FF builder, image decoder or asset serializer
+is introduced. Python callers can use the API; no new SDK orchestration is owned
+here.
+
+`verify_authored_stage(source)` (CLI `--verify-authored-stage`) reconstructs
+the joined recipe, rechecks the writer evidence/artifact hashes, source flags,
+material/DDS metadata, CSV/NCS and complete local payloads. Replacing a payload
+and updating only its staged hash cannot qualify the recipe. The source plan
+retains `material_closure_verified=false`, `ff_built=false`, `ready=false`.
+
+`Build-ModelFF.ps1` dispatches this explicit profile through its existing stock
+transaction, shared admission, strict community-candidate qualification, native
+process runner, build/verify/dump commands and restoration. It requires both
+`-CandidateRoot` with its producer digest and `-ReaderRun` bound to this stage's
+writer provenance/hash/geometry. The native reader executable is rehashed under
+the existing lease. Zone arguments, mutable FF path, dump path, input count and
+inventory vary by project; the old cube/resident/World paths remain separate
+strict branches. No per-model binary allowlist or hook is added.
+
+After a future admitted FF dump, the **same** compiled native writer executes
+`--verify-existing` against the two dumped geometry files. The existing surfaces
+`verify_image` compares the authored DDS's typed format, dimensions, explicit
+single mip, semantic and every serialized pixel/block byte. Material JSON fields
+and conditional state/CBI sidecars are compared; CBT is required nonempty when
+present, with `native_cbt_semantics_verified=false` because pointers/layout are
+not proven by equality. `surface-roundtrip.json` binds source-plan and FF hashes.
+Rendered pixels, recipient resolution, player contact, shader ABI and owner
+acceptance remain false/unmeasured even when those offline byte checks succeed.
+
+Validation here consists only of synthetic source/receipt/owned-byte fixtures:
+two independent mesh/name/material projects, complete local DDS/state closure,
+recipient versus local inventory, tampering and false provenance refusal,
+existing PowerShell input/inventory/admission gates, image/material readback
+comparisons and unchanged legacy inventory. No actual CPP, FF, PE, stock, lease,
+native process or game run has occurred. The source route is connected;
+Creator must keep native build/readback/runtime qualification pending.
