@@ -31,7 +31,7 @@ $arena=$profile -and $plan.geometry_profile -ceq 'iw7-original-arena-rigid-v1'
 $authored=$profile -and $plan.geometry_profile -ceq 'iw7-authored-rigid-v1'
 $rigid=$profile -and !$arena -and !$authored
 $planVersion=if($authored){3}elseif($rigid){Get-ModelFFRigidVersion $plan}else{1}
-if($planVersion -ne 2 -and (Get-Item -LiteralPath $planPath).Length -gt 64KB){throw 'Legacy model FF preparation exceeds bound.'}
+if($planVersion -eq 1 -and (Get-Item -LiteralPath $planPath).Length -gt 64KB){throw 'Legacy model FF preparation exceeds bound.'}
 $modelName=if($rigid -or $arena -or $authored){$plan.model_name}else{'paris_model_probe'}
 $meshName=if($rigid -or $arena -or $authored){$plan.mesh_name}else{'paris_model_probe_lod0'}
 $zoneName=if($authored){$plan.zone}else{'paris_model_probe'}

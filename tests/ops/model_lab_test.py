@@ -1034,6 +1034,16 @@ if(!$refused){throw 'Recipient authored material accepted'}
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/model-lab/Build-ModelFF.ps1",[ref]$tokens,[ref]$errors)
 if($errors){throw 'Build-ModelFF parse failed'}
+# Execute the actual metadata dispatcher on a legal authored document >64 KiB.
+# v3 retains the existing 1 MiB plan ceiling; only legacy v1 is limited to64 KiB.
+$entryText=[IO.File]::ReadAllText("$Repo/ops/model-lab/Build-ModelFF.ps1")
+$start=$entryText.IndexOf('if((Get-Item -LiteralPath $planPath).Length -gt 1MB)')
+$stop=$entryText.IndexOf('$modelName=',$start)
+$authoredPlanText=[IO.File]::ReadAllText($PlanPath)
+$planPath=Join-Path (Split-Path $PlanPath) 'large-authored-plan.json'
+[IO.File]::WriteAllText($planPath,($authoredPlanText+(' '*65537)))
+. ([scriptblock]::Create($entryText.Substring($start,$stop-$start)))
+if($planVersion -ne 3 -or !$authored -or $rigid){throw 'Large authored metadata dispatch differs'}
 $admission=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Enter-IW7ResourceLease'},$true))[0]
 $reader=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Admitted authored native reader changed.'")},$true))
 if($reader.Count -ne 1 -or $reader[0].Extent.StartOffset -le $admission.Extent.EndOffset){throw 'Authored PE verification must remain under lease'}
