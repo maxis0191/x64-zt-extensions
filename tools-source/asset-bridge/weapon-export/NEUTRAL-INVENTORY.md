@@ -137,7 +137,7 @@ lease/guards held at publication; it is not rewritten to claim later disposal.
 
 The same physical NoExit host's preexit witness is 5,379 bytes / SHA256
 `c0228234805d5896f1c34ccbb6e13d19b19243981d7c0581771a9aa16111838d`.
-It retains kernel creation `2026-10-15T22:47:18.4525389Z` separately from the
+It retains full kernel creation precision separately from the
 CIM microsecond value, original context/state/guard aliases, actual closed
 references and all completion flags. The true terminal exited 0; fresh snapshots
 found all twelve captured identities, games/compilers/debuggers and leases
