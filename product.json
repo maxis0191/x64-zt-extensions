@@ -848,7 +848,14 @@
     "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationImage.ps1",
     "tools-source/asset-bridge/t7-bridge/prepare_registration_image_probe.py",
     "tools-source/asset-bridge/t7-bridge/test_registration_image_probe.py",
-    "tools-source/asset-bridge/t7-bridge/REGISTRATION-IMAGE-LAUNCHER.md"
+    "tools-source/asset-bridge/t7-bridge/REGISTRATION-IMAGE-LAUNCHER.md",
+    "tools-source/asset-bridge/t7-iw7/incoming-image-source-contract.json",
+    "tools-source/asset-bridge/t7-iw7/incoming_image_capture_members.inc",
+    "tools-source/asset-bridge/t7-iw7/incoming_image_event_fixture.cpp",
+    "tools-source/asset-bridge/t7-iw7/incoming_image_event_observation.hpp",
+    "tools-source/asset-bridge/t7-iw7/native_incoming_image_metadata.inc",
+    "tools-source/asset-bridge/t7-iw7/prepare_incoming_image_metadata.py",
+    "tools-source/asset-bridge/t7-iw7/test_incoming_image_metadata.py"
   ],
   "dependencies": [
     {
