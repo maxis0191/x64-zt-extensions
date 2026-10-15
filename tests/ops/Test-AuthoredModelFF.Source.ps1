@@ -186,9 +186,12 @@ foreach($case in @(
         $originalContext=[pscustomobject]@{Closed=$true;Lease=$null;Guards=[Collections.Generic.List[IDisposable]]::new()}
         if(!$case.Final){$originalContext.Lease='synthetic-original'}
         $script:modelFFClock=599999.0;$openCalls=0
+        $namespace=New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot (Join-Path $RunRoot 'source') -Zone source_test -DeclaredFiles @('source/model-ff-plan.json')
         $modelFFRoot=[pscustomobject]@{Key='synthetic-original';Publications=[Collections.Generic.List[object]]::new();
             PublicationGuards=[Collections.Generic.List[IDisposable]]::new();FinalClosureVerified=$false;CanExit=$false;
-            Plan=$null;GroupStarted=0.0;GroupDeadlineSeconds=600;PhaseStarted=$null;PhaseSeconds=0}
+            Plan=[pscustomobject]@{RunRoot=$RunRoot;OutputLimitBytes=256MB;MetadataReserveBytes=1MB};
+            OutputNamespace=$namespace;OutputNamespaceCounter=(New-ModelFFOutputNamespaceCounter $namespace);
+            GroupStarted=0.0;GroupDeadlineSeconds=600;PhaseStarted=$null;PhaseSeconds=0}
         $originalRoot=$modelFFRoot
         if($case.Final){$modelFFRoot.Publications.Add([pscustomobject]@{Path=(Join-Path $RunRoot 'authored-native-run.json');Bytes=1;SHA256=('a'*64)})}
         $state=@{Restored=$true;StockPreserved=$true}

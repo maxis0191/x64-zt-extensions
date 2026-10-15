@@ -157,6 +157,22 @@ try{
         }
         function Publish-ModelFFReceipt($Value,[string]$Name) {
             Assert-ModelFFGroupDeadline
+            if(!$modelFFRoot.PSObject.Properties['OutputNamespace'] -or
+               !$modelFFRoot.PSObject.Properties['OutputNamespaceCounter'] -or
+               $modelFFRoot.OutputNamespaceCounter -isnot [scriptblock] -or
+               $Name -cnotin $modelFFRoot.OutputNamespace.ReceiptNames){throw 'Pre-run sealed ModelFF output namespace/counter and literal publication required.'}
+            if(!$modelFFRoot.OutputNamespaceCounter.Module -or
+               ![object]::ReferenceEquals($modelFFRoot.OutputNamespaceCounter.Module.SessionState.PSVariable.GetValue('sealedModelFFNamespace'),$modelFFRoot.OutputNamespace) -or
+               $modelFFRoot.Plan.OutputLimitBytes -ne 256MB -or $modelFFRoot.Plan.MetadataReserveBytes -ne 1MB){
+                throw 'Original sealed ModelFF counter and unchanged global publication budgets required.'
+            }
+            $modelFFPublicationCounter=$modelFFRoot.OutputNamespaceCounter
+            $modelFFPublicationPlan=$modelFFRoot.Plan
+            # Caller-local full-tree accounting; the original H1 fixture's
+            # global 64-entry function and the atomic receipt writer stay intact.
+            function Measure-H1Output([string]$Root) {
+                & $modelFFPublicationCounter $Root $modelFFPublicationPlan.OutputLimitBytes
+            }
             $record=Write-H1Receipt $modelFFRoot.Plan $Value $RunRoot -Name $Name -PassThru
             $modelFFRoot.PublicationGuards.Add((Open-H1Pin $record));$modelFFRoot.Publications.Add($record)
             Assert-ModelFFGroupDeadline

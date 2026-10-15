@@ -1918,5 +1918,116 @@ class AuthoredModelFFLifecycleTests(unittest.TestCase):
         self.assertFalse(report['LeaseAcquired'])
 
 
+class ModelFFOutputNamespaceTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell Source namespace checks require pwsh')
+    def test_global_declared_tree_and_actual_scoped_h1_publication(self):
+        script = r'''
+param($Core,$H1,$Build,$TempRoot)
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+. $Core
+. $H1
+$checks=0
+function Check($Value,[string]$Message){if(!$Value){throw $Message};$script:checks++}
+function Refuse([scriptblock]$Action,[string]$Cause){
+    $message=$null;try{& $Action|Out-Null}catch{$message=$_.Exception.Message}
+    Check ($message -and $message -match $Cause) ('Wrong namespace refusal, expected '+$Cause+'; got '+$message)
+}
+function Put([string]$Root,[string]$Relative,[string]$Text='x'){
+    $path=Join-Path $Root $Relative;[IO.Directory]::CreateDirectory((Split-Path $path))|Out-Null
+    [IO.File]::WriteAllText($path,$Text,[Text.UTF8Encoding]::new($false))
+}
+$RunRoot=Join-Path $TempRoot 'global-run';[IO.Directory]::CreateDirectory($RunRoot)|Out-Null
+# A small declared metadata tree with exactly the 127/69/58 shape that exposed
+# the fixture/publication mismatch. No real D5 filenames or bytes are copied.
+$declared=@(0..54|ForEach-Object {'source/evidence/group'+$_+'/record.json'})
+$declared+=@(0..13|ForEach-Object {'author-project/field'+$_+'.json'})
+$profile=New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot (Join-Path $RunRoot 'source') -Zone source_test -DeclaredFiles $declared
+$counter=New-ModelFFOutputNamespaceCounter $profile # Frozen before the first tree write.
+foreach($name in $declared){Put $RunRoot $name}
+$snapshot=Measure-ModelFFOutputNamespace $profile $RunRoot
+Check ($snapshot.Entries -eq 127 -and $snapshot.Files -eq 69 -and $snapshot.Directories -eq 58 -and $snapshot.Bytes -eq 69) 'Full global tree was not counted.'
+Refuse {Measure-H1Output $RunRoot} 'Output entry count exceeded 64'
+Check ((& $counter $RunRoot) -eq 69) 'Closed pre-run counter did not count Source/project bytes.'
+Check ([object]::ReferenceEquals($counter.Module.SessionState.PSVariable.GetValue('sealedModelFFNamespace'),$profile)) 'Counter lost the sealed declaration instance.'
+Refuse {$profile.Files.Add('source/foreign.json',$true)} 'read.only|read-only|Add'
+Refuse {$profile['EntryLimit']=100000} 'read.only|read-only|Unable to index'
+Check ($profile.EntryLimit -eq $snapshot.EntryLimit) 'Readonly namespace limit changed.'
+Refuse {& $counter (Join-Path $TempRoot 'other')} 'Exact sealed global'
+Refuse {& $counter $RunRoot 68} 'Global ModelFF output byte allowance'
+Refuse {& $counter $RunRoot (256MB+1)} 'Exact sealed global'
+Put $RunRoot 'source/evidence/foreign.json'
+Refuse {& $counter $RunRoot} 'Unexpected ModelFF output file|entry count'
+[IO.File]::Delete((Join-Path $RunRoot 'source/evidence/foreign.json'))
+[IO.Directory]::CreateDirectory((Join-Path $RunRoot 'source/foreign'))|Out-Null
+Refuse {& $counter $RunRoot} 'Unexpected ModelFF output directory|entry count'
+[IO.Directory]::Delete((Join-Path $RunRoot 'source/foreign'))
+$typedPath=Join-Path $RunRoot $declared[0]
+[IO.File]::Delete($typedPath);[IO.Directory]::CreateDirectory($typedPath)|Out-Null
+Refuse {& $counter $RunRoot} 'Unexpected ModelFF output directory'
+[IO.Directory]::Delete($typedPath);Put $RunRoot $declared[0]
+# Reparse refusal uses a real owned junction/symlink, before descent.
+$link=Join-Path $RunRoot 'source/evidence/link';$outside=Join-Path $TempRoot 'outside'
+[IO.Directory]::CreateDirectory($outside)|Out-Null;Put $outside 'sentinel.json'
+if($IsWindows){New-Item -ItemType Junction -Path $link -Target $outside|Out-Null}
+else{New-Item -ItemType SymbolicLink -Path $link -Target $outside|Out-Null}
+try{Refuse {& $counter $RunRoot} 'reparse entry refused'}finally{[IO.Directory]::Delete($link)}
+Check ([IO.File]::ReadAllText((Join-Path $outside 'sentinel.json')) -ceq 'x') 'Reparse traversal changed the outside sentinel.'
+foreach($bad in @(@('source/../escape.json'),@('source/a*.json'),@('source/NUL.json'),@('source/a.'),@('source/a\\b'),@('foreign/a.json'),@('source/a.json','SOURCE/a.json'),@('source/a','source/a/b'))){
+    Refuse {New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot (Join-Path $RunRoot 'source') -Zone source_test -DeclaredFiles $bad} 'path|Duplicate|outside|both a file'
+}
+Refuse {New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot $outside -Zone source_test -DeclaredFiles @('source/a.json')} 'inside the globally counted'
+Refuse {New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot (Join-Path $RunRoot 'source') -Zone source_test -DeclaredFiles @(1)} 'Literal relative'
+Refuse {New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot (Join-Path $RunRoot 'source') -Zone source_test -DeclaredFiles @(0..1024|ForEach-Object {'source/file'+$_+'.json'})} 'Bounded pre-run'
+# Exercise the actual caller publication block and original atomic H1 writer.
+$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile($Build,[ref]$null,[ref]$errors)
+Check (!$errors) 'ModelFF entry parse failed.'
+$publisher=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Publish-ModelFFReceipt'},$true))
+Check ($publisher.Count -eq 1) 'One actual ModelFF publisher required.'
+. ([scriptblock]::Create($publisher[0].Extent.Text))
+function Assert-ModelFFGroupDeadline {}
+$originalPlan=[pscustomobject]@{RunRoot=$RunRoot;OutputLimitBytes=256MB;MetadataReserveBytes=1MB}
+$modelFFRoot=[pscustomobject]@{Plan=$originalPlan;OutputNamespace=$profile;OutputNamespaceCounter=$counter;
+    Publications=[Collections.Generic.List[object]]::new();PublicationGuards=[Collections.Generic.List[IDisposable]]::new()}
+try{
+    $record=Publish-ModelFFReceipt ([ordered]@{Schema='synthetic-source-native';Ready=$false}) 'authored-native-run.json'
+    Check ([IO.File]::Exists($record.Path) -and $modelFFRoot.Publications.Count -eq 1 -and $modelFFRoot.PublicationGuards.Count -eq 1) 'Actual atomic publication/guard was bypassed.'
+    Check (![IO.File]::Exists((Join-Path $RunRoot 'authored-native-run.pending.json'))) 'Pending publication was not moved atomically.'
+    Check ([object]::ReferenceEquals($modelFFRoot.Plan,$originalPlan) -and $modelFFRoot.Plan.RunRoot -ceq $RunRoot) 'Publication redirected/mutated global Plan.RunRoot.'
+    Refuse {Measure-H1Output $RunRoot} 'Output entry count exceeded 64' # Local override did not leak.
+    Refuse {Publish-ModelFFReceipt ([ordered]@{Payload=('x'*1MB)}) 'authored-closure.json'} 'Final receipt exceeds reserved output budget'
+    Check ($modelFFRoot.PublicationGuards.Count -eq 1 -and ![IO.File]::Exists((Join-Path $RunRoot 'authored-closure.pending.json'))) 'Reserve refusal wrote a receipt or dropped a guard.'
+    $originalPlan.OutputLimitBytes=256MB-1
+    Refuse {Publish-ModelFFReceipt @{} 'authored-closure.json'} 'unchanged global publication budgets'
+    $originalPlan.OutputLimitBytes=256MB;$originalPlan.MetadataReserveBytes=1MB+1
+    Refuse {Publish-ModelFFReceipt @{} 'authored-closure.json'} 'unchanged global publication budgets'
+    $originalPlan.MetadataReserveBytes=1MB
+    Put $RunRoot 'work/foreign.json'
+    Refuse {Publish-ModelFFReceipt ([ordered]@{Ready=$false}) 'authored-closure.json'} 'Unexpected ModelFF output file|directory|entry count'
+    Check ($modelFFRoot.PublicationGuards.Count -eq 1 -and ![IO.File]::Exists((Join-Path $RunRoot 'authored-closure.json'))) 'Refused publication dropped guards or wrote a receipt.'
+    [IO.File]::Delete((Join-Path $RunRoot 'work/foreign.json'));[IO.Directory]::Delete((Join-Path $RunRoot 'work'))
+    Refuse {Publish-ModelFFReceipt @{} 'foreign.json'} 'literal publication'
+    $otherProfile=New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot (Join-Path $RunRoot 'source') -Zone source_test -DeclaredFiles @('source/other.json')
+    $modelFFRoot.OutputNamespaceCounter=New-ModelFFOutputNamespaceCounter $otherProfile
+    Refuse {Publish-ModelFFReceipt @{} 'authored-closure.json'} 'Original sealed ModelFF counter'
+    $modelFFRoot.OutputNamespaceCounter=$counter
+    $record=Publish-ModelFFReceipt ([ordered]@{Schema='synthetic-source-closure';Ready=$false}) 'authored-closure.json'
+    Check ($modelFFRoot.Publications.Count -eq 2 -and $modelFFRoot.PublicationGuards.Count -eq 2) 'Final publication did not preserve both guards.'
+}finally{foreach($guard in $modelFFRoot.PublicationGuards){$guard.Dispose()};$modelFFRoot.PublicationGuards.Clear()}
+[ordered]@{Result='PASS';Checks=$checks;OriginalEntries=127;OriginalFiles=69;OriginalDirectories=58;NativeProcessStarted=$false;LeaseAcquired=$false}|ConvertTo-Json -Compress
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'namespace.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(ROOT/'ops/model-lab/ModelFF.Core.ps1'),
+                str(ROOT/'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'),
+                str(ROOT/'ops/model-lab/Build-ModelFF.ps1'),temp],capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            report=json.loads(result.stdout.strip())
+            self.assertEqual(report['Result'],'PASS')
+            self.assertGreaterEqual(report['Checks'],25)
+            self.assertFalse(report['NativeProcessStarted'])
+            self.assertFalse(report['LeaseAcquired'])
+
+
 if __name__ == '__main__':
     unittest.main()
