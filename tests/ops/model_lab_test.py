@@ -26,6 +26,21 @@ finally:
     sys.path.pop(0)
 
 
+def synthetic_native_run(provenance):
+    """Mock of the existing writer receipt, never actual native evidence."""
+    stages=[]
+    for index,(name,kind,image,duration) in enumerate((('discovery','Fixture','vswhere.exe',15),
+            ('compile','Compile','cl.exe',120),('fixture','Fixture','model-writer.exe',30))):
+        image_hash=provenance['CompilerSHA256'] if name=='compile' else provenance['WriterSHA256'] if name=='fixture' else '7'*64
+        stages.append(dict(Name=name,Stage=kind,ExitCode=0,TreeClosureConfirmed=True,ImageSHA256=image_hash,
+            PlanSHA256='8'*64,DeadlineSeconds=duration,Identity=dict(PID=1001+index,Image='C:\\synthetic\\'+image,
+            CreatedUtc='2026-10-15T00:00:00.0000000Z')))
+    return dict(Schema='iw7.model-writer-native-run/1',Status='NativeRoundtripPassed',
+        NativeRootKey=provenance['NativeRootKey'],SourcePin=provenance['SourcePin'],Source=copy.deepcopy(provenance['Source']),
+        WriterSHA256=provenance['WriterSHA256'],CompilerSHA256=provenance['CompilerSHA256'],
+        ReleasePending=True,LeaseReleased=False,TreeClosureConfirmed=True,Quarantined=False,Ready=False,Stages=stages)
+
+
 class ModelSourceTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell stock metadata fixture requires pwsh')
     def test_selected_stock_metadata_compares_exact_utc_instants(self):
@@ -594,6 +609,25 @@ foreach($bad in @($log+'Loading asset "foreign" of type rawfile.',$log.Replace('
             self.assertEqual(plan['candidate_variable'],'lodInfo[0].dist')
             self.assertIn('ignore,paris_model_probe_recipient',(target/'zone_source/paris_model_probe.csv').read_text())
             with self.assertRaises(ValueError):prepare_ff.stage(run,target)
+            # New pending writer snapshots require final closure even on legacy route.
+            data.update(NativeReleasePending=True,NativeRootKey='IW7.ModelWriter.Root.'+'b'*32,
+                        NativeClosureEvidence='writer-closure.json',WriterSHA256='5'*64,CompilerSHA256='6'*64)
+            provenance.write_text(json.dumps(data))
+            pending=Path(folder)/'pending-no-closure'
+            with self.assertRaises((FileNotFoundError,ValueError)):prepare_ff.stage(run,pending)
+            self.assertFalse(pending.exists())
+            native=json.dumps(synthetic_native_run(data)).encode()
+            (run/'writer-native-run.json').write_bytes(native)
+            closure=dict(Schema='iw7.model-writer-closure/1',NativeRootKey='IW7.ModelWriter.Root.'+'c'*32,
+                JobClosureVerified=True,LeaseReleased=True,InputGuardsClosed=True,PreReleasePublicationsVerified=True,
+                WriterProvenanceSHA256=hashlib.sha256(provenance.read_bytes()).hexdigest(),NativeRunSHA256=hashlib.sha256(native).hexdigest(),Ready=False)
+            (run/'writer-closure.json').write_text(json.dumps(closure))
+            with self.assertRaises(ValueError):prepare_ff.stage(run,pending)
+            self.assertFalse(pending.exists())
+            closure['NativeRootKey']=data['NativeRootKey']
+            (run/'writer-closure.json').write_text(json.dumps(closure))
+            closed_plan=prepare_ff.stage(run,Path(folder)/'pending-closed')
+            self.assertEqual(len(closed_plan['source_files']),5)
             (run/'artifacts'/entries[0]['Path']).write_bytes(b'changed')
             changed=Path(folder)/'changed'
             with self.assertRaises(ValueError):prepare_ff.stage(run,changed)
@@ -1072,7 +1106,7 @@ class AuthoredFFSourceTests(unittest.TestCase):
             read_existing_supported=True, iw7_normal_encoding_verified=False, physics_serialized=False,
             ff_built=False, pixels_verified=False, ready=False)
         provenance = dict(Schema='iw7.model-writer-build/1',SourcePin=prepare_writer.PIN,Source=manifest,
-            WriterSHA256='5'*64, Artifacts=entries, Roundtrip=report, FFBuilt=False, PixelsVerified=False, Ready=False)
+            WriterSHA256='5'*64, CompilerSHA256='6'*64, Artifacts=entries, Roundtrip=report, FFBuilt=False, PixelsVerified=False, Ready=False)
         (writer/'writer-provenance.json').write_text(json.dumps(provenance))
         material = {key: 0 for key in inspector.BYTE_FIELDS}
         texture = dict(firstCharacter=0,lastCharacter=0,semantic=14,samplerState=0,typeHash=0,image='old_diffuse')
@@ -1148,7 +1182,7 @@ class AuthoredFFSourceTests(unittest.TestCase):
             path.write_text(json.dumps(provenance))
             with self.assertRaises((FileNotFoundError,ValueError)):
                 prepare_ff.stage_authored(writer,Path(folder)/'missing-closure',material_inputs=material)
-            native=json.dumps(dict(ReleasePending=True,LeaseReleased=False)).encode()
+            native=json.dumps(synthetic_native_run(provenance)).encode()
             (writer/'writer-native-run.json').write_bytes(native)
             closure=dict(Schema='iw7.model-writer-closure/1',NativeRootKey=provenance['NativeRootKey'],
                 JobClosureVerified=True,LeaseReleased=True,InputGuardsClosed=True,PreReleasePublicationsVerified=True,
@@ -1157,6 +1191,23 @@ class AuthoredFFSourceTests(unittest.TestCase):
             output=Path(folder)/'ff-source-two-phase'
             plan=prepare_ff.stage_authored(writer,output,material_inputs=material)
             self.assertEqual(prepare_ff.verify_authored_stage(output),plan)
+            good_native=json.loads(native)
+            changes=(lambda d:d.pop('Schema'),lambda d:d.__setitem__('NativeRootKey','IW7.ModelWriter.Root.'+'f'*32),
+                lambda d:d.__setitem__('Status','Failed'),lambda d:d['Source'].__setitem__('name','foreign_model'),
+                lambda d:d.__setitem__('WriterSHA256','9'*64),lambda d:d['Stages'].reverse(),
+                lambda d:d['Stages'].pop(),lambda d:d['Stages'][0]['Identity'].__setitem__('PID',True))
+            invalid_bytes=[b'not JSON',b'{"ReleasePending":true,"LeaseReleased":false}']
+            for change in changes:
+                invalid=copy.deepcopy(good_native);change(invalid);invalid_bytes.append(json.dumps(invalid).encode())
+            for index,raw in enumerate(invalid_bytes):
+                (writer/'writer-native-run.json').write_bytes(raw)
+                closure['NativeRunSHA256']=hashlib.sha256(raw).hexdigest();closure_path.write_text(json.dumps(closure))
+                refused=Path(folder)/f'invalid-native-{index}'
+                with self.subTest(index=index),self.assertRaises(ValueError):
+                    prepare_ff.stage_authored(writer,refused,material_inputs=material)
+                self.assertFalse(refused.exists())
+            (writer/'writer-native-run.json').write_bytes(native)
+            closure['NativeRunSHA256']=hashlib.sha256(native).hexdigest()
             closure['LeaseReleased']=False;closure_path.write_text(json.dumps(closure))
             with self.assertRaises(ValueError):
                 prepare_ff.stage_authored(writer,Path(folder)/'false-closure',material_inputs=material)

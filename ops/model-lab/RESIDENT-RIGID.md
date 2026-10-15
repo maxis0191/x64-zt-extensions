@@ -318,8 +318,13 @@ the original lease and objects in AppDomain quarantine. After release, a separat
 bounded `writer-closure.json` binds both snapshot hashes to confirmed job/lease/
 input-guard closure. The original root, publication guards and persistent host
 remain until final validation; only then can the actual root set `CanExit=true`.
-Authored FF staging requires this linked closure for the new pending snapshots;
-legacy provenance remains its original profile. Source/compiled output
+Both legacy and authored FF staging require this linked closure for **new**
+pending snapshots. The shared gate also parses the existing native-run schema:
+same source/root/compiler/writer, successful status, typed original identities,
+and the three closed exit-zero discovery/compile/fixture stages in order. A
+recomputed JSON hash cannot turn a failed, foreign or incomplete native run into
+success. Historical nonpending provenance remains its original compatible
+profile. Source/compiled output
 bindings are guarded; full SDK/DLL hermeticity is not claimed
 (`ToolchainFullyHermetic=false`).
 

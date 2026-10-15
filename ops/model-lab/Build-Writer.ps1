@@ -62,7 +62,7 @@ $originalContextVariable=Get-Variable writerContext
 $bindings=[Collections.Generic.List[object]]::new()
 $state=[ordered]@{Schema='iw7.model-writer-native-run/1';Status='Pending';LeaseToken=$null;LeaseReleased=$false;
     TreeClosureConfirmed=$true;Quarantined=$false;CleanupError=$null;Stages=[Collections.Generic.List[object]]::new();
-    ToolchainFullyHermetic=$false;Ready=$false}
+    SourcePin=$head;Source=$manifest;WriterSHA256=$null;CompilerSHA256=$null;ToolchainFullyHermetic=$false;Ready=$false}
 $plan=[pscustomobject]@{Schema='iw7.model-writer-native-plan/1';RunRoot=$prepared;Compiler=$null;Bindings=@();Inputs=@();
     Environment=$null;OutputLimitBytes=64MB;MetadataReserveBytes=1MB;GroupDeadlineSeconds=180}
 $provenance=$null;$failure=$null
@@ -103,7 +103,7 @@ function Invoke-ModelWriterPhase([string]$Name,[string]$Kind,[string]$Image,[str
     if(!$writerContext.Closed -or !$writerContext.Lease){throw 'Previous original job closure and the same admission required.'}
     $dir=Join-Path $prepared $Name;[IO.Directory]::CreateDirectory($dir)|Out-Null
     $script:T7CurrentStage=[pscustomobject]@{Name=$Name;Stage=$Kind;Image=$Image;Arguments=$Arguments;Artifacts=$Artifacts}
-    $current=[ordered]@{Name=$Name;Stage=$Kind;PlanSHA256=([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData(
+    $current=[ordered]@{Name=$Name;Stage=$Kind;ImageSHA256=$SHA;PlanSHA256=([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData(
         [Text.Encoding]::UTF8.GetBytes(($plan|ConvertTo-Json -Depth 12 -Compress))))).ToLowerInvariant();
         DeadlineSeconds=$Seconds;MaxObservedOutputBytes=0L;CompilerTelemetry=[ordered]@{Completed=$false;Action=$null}}
     $state.Stages.Add($current)
@@ -146,6 +146,7 @@ try {
     $compiler=Join-Path $vc 'bin/Hostx64/x64/cl.exe';$plan.Compiler=$compiler
     $policy=Get-MaterialV2CompilerPolicy $compiler
     $clPin=Add-ModelWriterPin $compiler $policy.CompilerSHA256
+    $state.CompilerSHA256=$clPin.SHA256
     $null=Add-ModelWriterPin $policy.Telemetry $policy.TelemetrySHA256
     $plan.Environment.PATH=(Split-Path $compiler)+';'+[Environment]::SystemDirectory
     $include=@((Join-Path $vc 'include'),(Join-Path $sdk "Include/$sdkVersion/ucrt"),(Join-Path $sdk "Include/$sdkVersion/shared"),(Join-Path $sdk "Include/$sdkVersion/um"),(Join-Path $source 'src/zonetool'),$prepared)
@@ -159,6 +160,7 @@ try {
     $compiledExecutable=@($compiled.Artifacts|Where-Object {$_.Path -eq (Join-Path $prepared 'compile/model-writer.exe')})
     if($compiledExecutable.Count -ne 1){throw 'One measured original compiler executable artifact required.'}
     $writerPin=Add-ModelWriterPin $exe $compiledExecutable[0].SHA256
+    $state.WriterSHA256=$writerPin.SHA256
     $fixture=Invoke-ModelWriterPhase 'fixture' 'Fixture' $exe $writerPin.SHA256 @((Join-Path $prepared 'artifacts')) @() 30
     $roundtrip=Read-H1SmallJson (Join-Path $prepared 'fixture/stdout.log') 1MB
         if($roundtrip.schema -cne 'iw7.model-roundtrip/1' -or !$roundtrip.geometry_roundtrip_verified -or $roundtrip.ready -or $roundtrip.ff_built -or $roundtrip.pixels_verified){throw 'Roundtrip status contradiction.'}
