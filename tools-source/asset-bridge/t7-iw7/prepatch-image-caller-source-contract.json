@@ -179,5 +179,37 @@
       "callee_read"
     ],
     "unwind_format_validated": false
+  },
+  "fixture_response": {
+    "max_bytes": 16384,
+    "source_read": "exact held Open-T7Bootstrap stream",
+    "tokenizer": "existing Split-T7ResponseArguments",
+    "argument_count": 18,
+    "comparison": "entire ordinal token vector, before admission",
+    "fixed_source": "prepatch_image_caller_fixture.cpp under the pinned Source root",
+    "fixed_includes": "Source root only",
+    "fixed_flags": [
+      "/nologo",
+      "/std:c++20",
+      "/EHsc",
+      "/W4",
+      "/WX",
+      "/MT",
+      "/Od",
+      "/Z7",
+      "/sourceDependencies",
+      "/link",
+      "/INCREMENTAL:NO",
+      "/DEBUG"
+    ],
+    "fixed_outputs": [
+      "dependencies.json",
+      "caller-fixture.obj",
+      "caller-fixture.exe",
+      "caller-fixture.pdb"
+    ],
+    "indirect_or_nested_rsp": false,
+    "extra_arguments": false,
+    "rehashed_mutant_accepted": false
   }
 }

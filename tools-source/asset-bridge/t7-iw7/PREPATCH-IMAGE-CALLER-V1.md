@@ -61,6 +61,13 @@ refuse. DEFAULT reports Source pending, CPP unqualified, null candidate and fals
 execution/hash/admission/readiness flags. An eventual real receipt records its
 fixture pass separately; it does not rewrite the input plan or Source marker.
 
+The fixture response is capped at 16 KiB and read from the actual held bootstrap
+Source stream. Before admission, the existing response tokenizer compares the
+whole 18-argument vector with the producer's fixed source, include, flags and
+output paths. A response with the right path and a matching updated hash is not
+sufficient. Extra or nested responses, changed source/flags/includes/outputs,
+malformed quoting and an oversized response refuse before compiler creation.
+
 ## Interpretation and execution limits
 
 Function bytes can support instruction-level provenance and stores within this
@@ -82,9 +89,16 @@ correction checks the original plan property itself before accepting this mode;
 the original failing candidate and correction remain separate commits. No
 preparation, compiler or capture ran from that candidate.
 
-Source validation after correction passes 11 targeted Python tests and 90 actual
+Source validation after correction passes 11 targeted Python tests and 150 actual
 PowerShell profile/input/fixture-output controls. Retained V3/V2 controls pass
-48/100, OS controls39, input-binding controls132, deadline controls3 and the
-registration-bindings controls144. Shared build/registration Python checks ran
-43 cases:35 passed and8 integrations were skipped because their separate retained
+48/100, OS controls 39, input-binding controls 132, deadline controls 3 and the
+registration-bindings controls 144. Shared build/registration Python checks ran
+43 cases: 35 passed and 8 integrations were skipped because their separate retained
 inputs were not supplied. This does not credit a compiled fixture or native test.
+
+Review of the second Source candidate found that a self-repinned response could
+change the compiled fixture despite its fixed filename. The correction above
+keeps that candidate in history and adds 15 real authored-response mutations.
+Each retains correct metadata/path/pins, reproduces acceptance without the new
+guard, then requires the actual held-stream/token refusal through both profile
+and input validation. No compiler or capture ran from the reviewed candidate.

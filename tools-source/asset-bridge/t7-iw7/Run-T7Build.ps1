@@ -474,6 +474,27 @@ function Import-T7BindingsBuildSource($Plan,[string]$SourceRoot) {
     $null=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256
     . $pin.Path # Both original Source guards stay held; no helper runs before sub-pin checks.
 }
+function Assert-T7ImageCallerFixtureResponse($Plan,[string]$SourceRoot) {
+    $root=Join-Path $Plan.RunRoot 'caller-fixture-compile'
+    $response=Join-Path (Split-Path $Plan.PreparedRoot -Parent) 'caller-fixture.rsp'
+    $pin=$Plan.BuildProfile.FixtureResponse
+    if($pin -isnot [pscustomobject] -or $pin.Path -isnot [string] -or $pin.Path -cne $response -or
+       ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 16KB -or
+       $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){
+        throw 'Pinned finite image-caller fixture response required.'
+    }
+    # Read the exact held Source stream, not an unguarded second open. The
+    # original bootstrap guard remains in the runner's context through closure.
+    $stream=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256
+    $reader=[IO.StreamReader]::new($stream,[Text.UTF8Encoding]::new($false,$true),$true,4096,$true)
+    try{$text=$reader.ReadToEnd()}finally{$reader.Dispose();$stream.Position=0}
+    $arguments=@('/nologo','/std:c++20','/EHsc','/W4','/WX','/MT','/Od','/Z7',('/I'+$SourceRoot),
+        '/sourceDependencies',(Join-Path $root 'dependencies.json'),
+        ('/Fo'+(Join-Path $root 'caller-fixture.obj')),('/Fe'+(Join-Path $root 'caller-fixture.exe')),
+        (Join-Path $SourceRoot 'prepatch_image_caller_fixture.cpp'),'/link','/INCREMENTAL:NO','/DEBUG',('/PDB:'+(Join-Path $root 'caller-fixture.pdb')))
+    $actual=Split-T7ResponseArguments $text
+    if(($actual -join "`0") -cne ($arguments -join "`0")){throw 'Exact image-caller fixture compile arguments required.'}
+}
 function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $profile=if($Plan.PSObject.Properties.Name -contains 'BuildProfile'){$Plan.BuildProfile}else{$null}
     $recompiled=$Plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $Plan.ReuseCompile -and
@@ -925,6 +946,7 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256})
         if($match.Count -ne 1){throw 'Diagnostic source pin is not guarded by the build.'}
     }
+    if($caller){Assert-T7ImageCallerFixtureResponse $Plan $SourceRoot}
     return $true
 }
 function Assert-T7OSResourceContext($Plan) {
