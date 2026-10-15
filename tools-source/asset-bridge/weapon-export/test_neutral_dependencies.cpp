@@ -250,12 +250,24 @@ namespace
         pair.fields.camoWorldModelMaterialOverride[3] = &material;
         XModel model{}; model.name = "fixture_model"; XModel* models[]{nullptr, &model};
         pair.fields.complexWorldModel = models; pair.fields.numComplexModels = 2;
-        SpyZone zone; nd::LegacyAdapter<SpyZone> legacy{&zone}; RecordingSink recording;
-        check(nd::visit_weapon(&pair.weapon, legacy) && nd::visit_weapon(&pair.weapon, recording));
         const std::vector<std::pair<int, std::string>> expected{
             {ASSET_TYPE_ATTACHMENT, pair.attachment.name}, {ASSET_TYPE_MATERIAL, material.name},
             {ASSET_TYPE_XMODEL, model.name}, {ASSET_TYPE_MATERIAL, material.name},
             {ASSET_TYPE_VFX, pair.vfx.name}, {ASSET_TYPE_FX, pair.fx.name}};
+        // Legacy still skips the five NULL optional arrays in the sparse layout.
+        SpyZone sparse_zone; nd::LegacyAdapter<SpyZone> sparse{&sparse_zone};
+        if (!nd::visit_weapon(&pair.weapon, sparse) || sparse_zone.calls != expected)
+            throw std::runtime_error("legacy sparse NULL-array sequence differs");
+        // The recording sink is strict: every counted array needs owned storage.
+        XModel* empty_models[2]{};
+        pair.fields.complexWorldModelLeftHand = empty_models;
+        pair.fields.complexWorldModelRightHand = empty_models;
+        pair.fields.complexGunXModel = empty_models;
+        pair.fields.complexGunXModelLeftHand = empty_models;
+        pair.fields.complexGunXModelRightHand = empty_models;
+        SpyZone zone; nd::LegacyAdapter<SpyZone> legacy{&zone}; RecordingSink recording;
+        if (!nd::visit_weapon(&pair.weapon, legacy)) throw std::runtime_error("legacy weapon traversal refused");
+        if (!nd::visit_weapon(&pair.weapon, recording)) throw std::runtime_error("recording weapon traversal refused");
         check(zone.calls == expected && recording.calls == expected);
         std::remove_pointer_t<decltype(pair.attachment.projectile)> projectile{};
         pair.attachment.projectile = &projectile; projectile.projectileModel = &model;

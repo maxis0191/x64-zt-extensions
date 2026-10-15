@@ -139,6 +139,21 @@ void weapon_attachment::untouched() { original_write(); }
         self.assertIn('#include "native_neutral_dependencies.hpp"', fixture)
         self.assertIn('IW7_NATIVE_STRUCTS_HEADER', fixture)
 
+    def test_parity_fixture_has_storage_for_all_counted_model_arrays(self):
+        walker = self.source('native_weapon_dependencies.inc')
+        fields = set(re.findall(r'sink.required\(!\(asset->numComplexModels\) \|\| asset->(\w+) != nullptr\)', walker))
+        self.assertEqual(len(fields), 6)
+        fixture = self.source('test_neutral_dependencies.cpp')
+        _, opening, end = production.body(fixture, 'void legacy_parity()')
+        parity = fixture[opening:end]
+        supplied = set(re.findall(r'pair.fields\.(\w+) = (?:models|empty_models);', parity))
+        self.assertEqual(fields - supplied, set())
+        # Before-control: the real failed layout supplied only one of six arrays.
+        original_partial = 'pair.fields.complexWorldModel = models; pair.fields.numComplexModels = 2;'
+        partial_fields = set(re.findall(r'pair.fields\.(\w+) = (?:models|empty_models);', original_partial))
+        self.assertEqual(len(fields - partial_fields), 5)
+        self.assertIn('legacy sparse NULL-array sequence differs', parity)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,8 +3,10 @@
 This opt-in Source implementation owns two typed pure walkers, one local bounded
 collector, a public-parse seam and an in-memory native Source patch renderer.
 It does not change the historical CPP Q module or activate a native command.
-The sixteen C++ fixtures are authored, **not compiled or executed**. The Python
-Source checks do not establish C++ syntax, ABI, runtime or roundtrip acceptance.
+The corrected sixteen-case C++ fixture is authored, **not recompiled or rerun**.
+Actual CPP C on the earlier head compiled the fixture, passed fifteen cases and
+failed `legacy_parity`; both native TUs remained unexecuted. The Python Source
+checks do not establish C++ syntax, ABI, runtime or roundtrip acceptance.
 
 The corrected gates are sequential: author and approve this exact Source; review
 a dedicated CPP recipe and obtain its distinct admission/GO; compile the actual
@@ -110,7 +112,7 @@ This does not invent a reachable graph at every simultaneous maximum.
 
 ## Validation and next action
 
-Seven Python Source tests exercise the real patch renderer with owned Source
+Eight Python Source tests exercise the real patch renderer with owned Source
 fixtures, reject pin/statement/reviewed-walker drift, verify API separation,
 preserve historical activation and inventory sixteen C++ cases. A separate
 Source-only render against the four exact pinned native texts verifies byte
@@ -124,6 +126,27 @@ fixed-capacity pointer array and charges its capacity only when present; a
 dynamic counted array still refuses a nonzero count without storage. The
 authored positive fixtures explicitly retain the NULL pointer, and a negative
 fixture covers missing counted storage. No failed C++ run is invented.
+
+Actual distinct CPP C compiled Source head
+`126404525068b8b65660a7c4893708dffafc8d41` with the exact native pin. The compiler
+and its witnessed VCTIP child closed through existing H1; the fixture process
+then printed fifteen PASS and `FAIL legacy_parity: fixture check failed`, exit 1.
+The native TUs did not run. Source inspection finds the fixture set
+`numComplexModels=2` with only `complexWorldModel` storage, while its recording
+sink requires storage for all six counted arrays. The legacy adapter correctly
+skips the other NULL arrays. The corrected fixture preserves a sparse legacy
+sequence check and supplies five owned arrays of NULL entries for the strict
+recording check. Production visitors, collector and legacy adapter are unchanged.
+
+C remains failed and unqualified. Its original context closed, all 828 retained
+FileStream/SafeFileHandle references closed, three same-stream publication
+readbacks and the last deadline passed, and the original physical terminal exited
+1. A fresh snapshot found the four captured identities and leases absent. The
+on-disk final snapshot honestly records guards held at publication; the original
+in-memory witness subsequently verified their disposal. A new reviewed exact
+Source head/capsule and distinct CPP GO are required to rerun the corrected
+fixture and compile the two TUs. The local failure cannot use a CI billing
+exception or count as sixteen PASS.
 
 The next concrete gate is review of the corrected exact Source PR and a distinct bounded
 CPP recipe/GO. That recipe must compile this header/walkers with the exact pinned
