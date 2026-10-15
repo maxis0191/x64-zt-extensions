@@ -12,7 +12,6 @@ import re
 from pathlib import Path, PureWindowsPath
 from prepare_material_parts_probe import EXPORT_FIELDS, REFERENCE_PIN, key, require, read_text_pin
 from prepare_image_provenance_probe import CONTROLLERS, read_snapshot, apply_preservation
-from image_metadata_consumer import strict_json
 
 SOURCE = "0f669b58f7a962cb5f5c01af252ce05d8bdbbc3b"
 NATIVE = "fab935826c898806855376662a8a03317b3ad8f1"
@@ -37,6 +36,23 @@ BUILD_FIELDS = (
 )
 CONTRACT = (5391, "d60f0e33d9dddb69656744f6481ba32ced1a7a040d75ff913908192297e3c9a6")
 READER = (9687, "8e1d464c6467492b65e102b784aa9f265723560b9b486499e3a49cb4073f5c81")
+
+
+def read_source_metadata_json(raw):
+    # Immutable Source manifests/plans/proofs use the existing text-input bound.
+    # Runtime reports/snapshots keep their independent 32/64-KiB decoder.
+    require(type(raw) is bytes and 0 < len(raw) <= 1024*1024, "bounded Source JSON required")
+    def pairs(items):
+        result = {}
+        for name, value in items:
+            require(name not in result, "duplicate Source JSON field")
+            result[name] = value
+        return result
+    def constant(_):
+        raise ValueError("nonfinite Source JSON number")
+    value = json.loads(raw.decode("utf-8", errors="strict"), object_pairs_hook=pairs, parse_constant=constant)
+    require(type(value) is dict, "Source JSON object required")
+    return value
 
 
 def exact_pin(pin, expected):
@@ -138,11 +154,11 @@ def main(argv=None):
         parser.add_argument("--"+name, type=Path, required=True)
     args = parser.parse_args(argv)
     source = args.source.resolve(strict=True)
-    source_pin, raw = read_text_pin(source/"source-workspace.json"); workspace = strict_json(raw)
+    source_pin, raw = read_text_pin(source/"source-workspace.json"); workspace = read_source_metadata_json(raw)
     require(workspace["schema"] == "iw7.source-workspace/1" and workspace["product"] == "x64-zt-extensions" and
             workspace["revisions"]["x64-zt-extensions"] and workspace["files"], "Composed receiver Source required")
-    reference_pin, raw = read_source_text(args.reference, REFERENCE_PIN); reference = strict_json(raw)
-    handoff_pin, raw = read_source_text(args.handoff, PINS["Handoff"]); handoff = strict_json(raw)
+    reference_pin, raw = read_source_text(args.reference, REFERENCE_PIN); reference = read_source_metadata_json(raw)
+    handoff_pin, raw = read_source_text(args.handoff, PINS["Handoff"]); handoff = read_source_metadata_json(raw)
     require(handoff["Schema"] == "iw7.t7-registration-bindings-cpp-actual-handoff/1" and handoff["Status"] == "Passed" and
             handoff["SourceCommit"] == SOURCE and handoff["NativeSourceCommit"] == NATIVE and handoff["CPP80ObservedClosed"] is True and
             handoff["CandidateExecuted"] is False and handoff["CandidateOrSymbolsReadAfterRelease"] is False,
@@ -155,7 +171,7 @@ def main(argv=None):
         pin, raw = read_source_text(handoff[name]["Path"], expected)
         proofs[name] = pin
         if name in ("Plan", "Receipt"):
-            values[name] = strict_json(raw)
+            values[name] = read_source_metadata_json(raw)
     metadata_pin, metadata = read_snapshot(args.candidate_metadata)
     require(metadata["Path"] == handoff["Candidate"]["Path"], "Admitted candidate path differs")
     controllers = [read_text_pin(source/name)[0] for name in CONTROLLERS]

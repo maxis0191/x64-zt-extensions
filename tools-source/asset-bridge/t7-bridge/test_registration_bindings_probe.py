@@ -1,11 +1,15 @@
 """Finite CPP80 plan authoring only; no factory, DEFAULT or binary metadata access."""
 import copy
+import io
+import json
 from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import test_material_parts_probe as parts
 import prepare_registration_bindings_probe as probe
+import image_metadata_consumer as bounded
 
 
 class BindingsPlanTests(unittest.TestCase):
@@ -86,6 +90,123 @@ class BindingsPlanTests(unittest.TestCase):
             self.assertIn(str(size), source); self.assertIn(sha, source)
         self.assertIn(probe.SOURCE, source); self.assertIn(probe.NATIVE, source)
         self.assertIn("iw7.t7-registration-bindings-consumer/1", source)
+
+    def run_authored_main(self, root, *, manifest_size=386862, duplicate_manifest=False, manifest_schema="iw7.source-workspace/1"):
+        """Real main/strict JSON/derive/output with fake input pin readers only.
+
+        The immutable-cohort reader layer is mocked; this is invented Source
+        authoring, never an operational factory or a claim of cryptographic proof.
+        """
+        reference, controllers, build, receipt, proofs, contract, reader, metadata, _ = self.fixture()
+        source = root/"source"; source.mkdir()
+        run = source/"runtime/t7-registration-bindings-authored"
+        output = source/"runtime/registration-bindings-plan-authored"
+        (source/"runtime").mkdir()
+        workspace = dict(schema=manifest_schema, product="x64-zt-extensions", revisions={"x64-zt-extensions": "a"*40},
+            files=[dict(path=name, bytes=1, sha256="a"*64) for name in probe.CONTROLLERS])
+        handoff = dict(Schema="iw7.t7-registration-bindings-cpp-actual-handoff/1", Status="Passed", SourceCommit=probe.SOURCE,
+            NativeSourceCommit=probe.NATIVE, CPP80ObservedClosed=True, CandidateExecuted=False,
+            CandidateOrSymbolsReadAfterRelease=False, Candidate=copy.deepcopy(receipt["Stages"][-1]["Artifacts"][0]))
+        handoff.update({name: value for name, value in proofs.items() if name != "Handoff"})
+
+        def padded(value, size):
+            raw = json.dumps(value).encode()
+            self.assertLessEqual(len(raw), size)
+            return raw+b" "*(size-len(raw))
+
+        manifest_raw = padded(workspace, manifest_size)
+        if duplicate_manifest:
+            # Exercise the shared strict duplicate-key check on a large Source input.
+            manifest_raw = b'{"schema":0,"schema":1}'+b" "*(manifest_size-23)
+        source_payloads = {
+            str(source/"source-workspace.json"): manifest_raw,
+            str(root/"reference.json"): padded(reference, probe.REFERENCE_PIN[0]),
+            str(root/"handoff.json"): padded(handoff, probe.PINS["Handoff"][0]),
+            proofs["Plan"]["Path"]: padded(build, probe.PINS["Plan"][0]),
+            proofs["Receipt"]["Path"]: padded(receipt, probe.PINS["Receipt"][0]),
+        }
+        calls = []
+
+        def source_reader(path, expected=None):
+            path = str(path); calls.append(path)
+            raw = source_payloads.get(path, b"authored Source")
+            size, sha = expected or (1, "a"*64)
+            if path == str(source/"source-workspace.json"):
+                size = len(raw)
+            return dict(Path=path, Bytes=size, SHA256=sha), raw
+
+        preservation = dict(Schema="iw7.t7-preservation-metadata/1", MainBaseline="Stopped",
+            PreservedMain=dict(PID=1234, CreatedUtc="2026-10-15T00:00:00Z", Image=r"C:\authored\main.exe"), PreservedProcesses=[])
+        def snapshot(path):
+            return parts.pin(str(path)), copy.deepcopy(metadata if Path(path).name == "candidate.json" else preservation)
+
+        real_stat = Path.stat
+        def guard_stat(path, *args, **kwargs):
+            if path.suffix.lower() in (".exe", ".dll", ".pdb", ".ff", ".xpak"):
+                raise AssertionError("Source test queried opaque metadata")
+            return real_stat(path, *args, **kwargs)
+
+        argv = ["--source", str(source), "--reference", str(root/"reference.json"), "--handoff", str(root/"handoff.json"),
+            "--candidate-metadata", str(root/"candidate.json"), "--preservation-metadata", str(root/"preservation.json"),
+            "--run-root", str(run), "--output", str(output)]
+        stdout = io.StringIO()
+        with patch.object(probe, "read_text_pin", side_effect=source_reader), patch.object(probe, "read_source_text", side_effect=source_reader), \
+             patch.object(probe, "read_snapshot", side_effect=snapshot), patch.object(Path, "stat", guard_stat), patch("sys.stdout", stdout):
+            probe.main(argv)
+        return json.loads(stdout.getvalue()), json.loads((output/"plan.local.json").read_text(encoding="utf-8")), calls, source_payloads
+
+    def test_actual_main_accepts_large_source_metadata_without_opaque_queries(self):
+        with tempfile.TemporaryDirectory() as temp:
+            result, plan, calls, payloads = self.run_authored_main(Path(temp).resolve())
+        # Manifest386862, reference70998, handoff37937, plan406073 and receipt50715
+        # all exceed the DTO's 32-KiB default. Exercise every real Source decode site.
+        self.assertEqual(len(payloads), 5)
+        for path, raw in payloads.items():
+            self.assertGreater(len(raw), 32768)
+            self.assertIn(path, calls)
+            with self.assertRaises(ValueError): bounded.strict_json(raw)
+        self.assertEqual((result["Bindings"], result["InputMetadata"]), (112, 27))
+        self.assertFalse(result["NativeExecuted"]); self.assertFalse(result["LeaseAcquired"])
+        self.assertEqual(plan["CandidateSHA256"], probe.CANDIDATE[1])
+
+    def test_actual_main_refuses_source_over_one_mib_before_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            with self.assertRaisesRegex(ValueError, "bounded Source JSON"):
+                self.run_authored_main(root, manifest_size=1024*1024+1)
+            self.assertFalse((root/"source/runtime/registration-bindings-plan-authored").exists())
+
+    def test_actual_main_reproduces_old_report_cap_role_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            with patch.object(probe, "read_source_metadata_json", side_effect=bounded.strict_json), self.assertRaisesRegex(ValueError, "bounded JSON report"):
+                self.run_authored_main(root)
+            self.assertFalse((root/"source/runtime/registration-bindings-plan-authored").exists())
+
+    def test_actual_main_keeps_strict_duplicate_key_rejection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                self.run_authored_main(root, duplicate_manifest=True)
+            self.assertFalse((root/"source/runtime/registration-bindings-plan-authored").exists())
+
+    def test_source_decoder_keeps_types_utf8_and_finite_numbers_strict(self):
+        for raw in (None, "{}", bytearray(b"{}"), b"", b"[]", b"false", b"null", b'{"v":NaN}', b'{"v":Infinity}', b'{"v":"\xff"}', b'{"nested":{"x":1,"x":2}}'):
+            with self.subTest(raw=repr(raw)), self.assertRaises(ValueError): probe.read_source_metadata_json(raw)
+        self.assertEqual(probe.read_source_metadata_json(b'{}'+b' '*(1024*1024-2)), {})
+        for limit in (32768, 65536):
+            self.assertEqual(bounded.strict_json(b'{}'+b' '*(limit-2), limit=limit), {})
+            with self.assertRaises(ValueError): bounded.strict_json(b'{}'+b' '*(limit-1), limit=limit)
+        with self.assertRaisesRegex(ValueError, "explicit 32 or 64"):
+            bounded.strict_json(b'{}', limit=1024*1024)
+
+    def test_actual_main_refuses_source_manifest_schema_type_forgery(self):
+        for schema in (None, False, ["iw7.source-workspace/1"], "iw7.t7-registration-material-bindings/1"):
+            with self.subTest(schema=schema), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp).resolve()
+                with self.assertRaisesRegex(ValueError, "Composed receiver Source"):
+                    self.run_authored_main(root, manifest_schema=schema)
+                self.assertFalse((root/"source/runtime/registration-bindings-plan-authored").exists())
 
 
 if __name__ == "__main__":
