@@ -5,6 +5,7 @@
     "tools-source/asset-bridge/weapon-export/Run-PlayerTemplateExport.ps1",
     "tools-source/asset-bridge/weapon-export/EXPORT-COHORT.md",
     "tools-source/asset-bridge/weapon-export/test_export_default.py",
+    "tools-source/asset-bridge/weapon-export/Test-PlayerExportStockSource.ps1",
     "tools-source/asset-bridge/weapon-export/Run-PlayerTemplateBuild.ps1",
     "tools-source/asset-bridge/weapon-export/BUILD-COHORT.md",
     "tools-source/asset-bridge/weapon-export/test_build_default.py",

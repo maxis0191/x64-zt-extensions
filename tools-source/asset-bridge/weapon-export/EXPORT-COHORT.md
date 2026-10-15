@@ -31,9 +31,16 @@ volatile. Small copied tool/TLS dependencies and the owned 77-byte mutable
 sentinel remain separate from retail aliases. No writer targets Main, its bank,
 the base installation or the existing private-test-server.
 
-The three Stock35 contexts retain their exact creator/journal/source handles.
-After native closure, source content/metadata and target identities are checked
-again under those guards. Prepared aliases remain explicitly owned for evidence
+The three Stock35 contexts are retained as the original published objects, even
+when their constructor callback throws before returning. Callbacks and the clock
+use the explicitly scoped original export root; helper-local Context/Plan/State
+variables cannot replace its admission or deadline. A published unprepared
+transaction qualifies for closure only with no unknown creation, guard, source,
+link, directory or journal effect. Other unprepared states retain the host/lease.
+Stock35 normally closes its own handles after successful Apply. The caller keeps
+its original content streams from before Apply separately and uses those live
+handles for subsequent source metadata checks. After native closure, source
+content/metadata and target identities are checked again. Prepared aliases remain explicitly owned for evidence
 and later reuse. They are not silently deleted or adopted as a different stock.
 
 The declared group clock is 600 seconds, native phase 240, sampled generated
@@ -54,7 +61,7 @@ projectile type, literal false scope flags, two unique typed file entries and
 bounded integer byte counts. Singleton arrays, numeric strings, duplicate or
 extra/missing fields are rejected before PowerShell comparisons.
 
-33 Source/refusal/causal controls cover the build and preparation modules plus
+35 Source/refusal/causal controls cover the build and preparation modules plus
 this caller's pure DEFAULT, wrong layout/provider/request, before-native host
 refusal, actual bounded output-reader guard and small-copy/alias-budget behavior.
 Targeted mutations additionally cover the strict JSON fields and before-open
@@ -64,3 +71,26 @@ CIM observation and rejects a different microsecond without losing kernel data.
 No real stock preparation, native export, full template observation, BO3 asset
 authentication, weapon grant/reload/projectile/physics/PAP transaction or game
 acceptance is established by these controls. Ready stays false.
+
+2026-10-15 actual attempt E failed before Stock35 preflight, aliases or CLI:
+the helper's Context parameter shadowed the caller's context in its callback.
+The original root contained Stock_root in PublishedBeforePreflight, while the
+old returned-context list was empty. Same-host inspection proved no stock
+guard/source/link/directory/journal, no content pin and no candidate execution.
+Actual H1 root/job closed, guards disposed and lease released; original NoExit
+host exited 0. Fresh process/registry checks confirmed absence and zero leases.
+Its three diagnostic receipts and preexit/postexit evidence remain immutable;
+they establish FailedClosed only, never a successful export. A new reviewed
+Source capsule and a separate Root GO are required before another attempt.
+
+Test-PlayerExportStockSource.ps1 additionally runs a Source-only integration
+causal against the hash-bound existing Stock35/Lab-Paths providers, held during
+import. It invokes the real New/Assert/preflight helpers and actual runner
+functions with original in-memory Source fixtures. Native preflight and real
+admission are deliberately refused; opaque pinning is a no-read substitute.
+It covers helper Context plus stock Plan shadow, callback failure after actual
+publication, known uneffected closure, and refusal of unknown/unprepared effects.
+It creates only a temporary empty fixture directory. No stock link, native type,
+real lease or tool is exercised. The post-Apply handle causal separately proves
+selection of the same retained content handle and rejection of closed/wrong-ID
+guards without calling the native NTFS inspector.
