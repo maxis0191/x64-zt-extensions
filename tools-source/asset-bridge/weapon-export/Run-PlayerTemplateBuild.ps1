@@ -36,7 +36,7 @@ function Assert-PlayerDefinitionFixture($Plan){
     if(!$Plan.PSObject.Properties['CandidateBytes'] -or !$Plan.PSObject.Properties['CandidateSHA256'] -or
         $null -ne $Plan.CandidateBytes -or $null -ne $Plan.CandidateSHA256){throw 'Future neutral candidate bytes/hash must remain null.'}
     $expected=@{
-        'test_definition_readset.cpp'='e003afa43e469ffb651f047135c596d0710dca75b81290d2717759dc4aa65542'
+        'test_definition_readset.cpp'='ca53ca9baf8a5924692d303fba580d5632b4a07aee7533fdecf9fe5c3f3422c3'
         'native_definition_access.hpp'='92eb62fd94a18397ea09de034330009aaa17d16abaf037d98e041412f4ce1890'
         'native_definition_readset.hpp'='eb6957a20506e87f75f056a040c8213d979fbd64a79765700593e9f78ff6bcb6'
         'native_definition_fields.inc'='302e324b98175981ba8ae3e071a23e125ed83353d8319ca60a9c0390f47db7e3'
