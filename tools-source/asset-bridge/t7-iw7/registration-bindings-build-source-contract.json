@@ -1,0 +1,87 @@
+{
+  "schema": "iw7.t7-registration-bindings-build-source/1",
+  "source_profile": "t7-registration-material-bindings-v1",
+  "native_source_commit": "fab935826c898806855376662a8a03317b3ad8f1",
+  "source_only_pending": true,
+  "cpp_qualified": false,
+  "native_observed": false,
+  "ready": false,
+  "legacy_checks": 39,
+  "new_checks": 41,
+  "total_checks": 80,
+  "payload_limit_bytes": 458752,
+  "fixture_stdout": "IW7_T7_REGISTRATION_HEADER_CHECKS=39\nIW7_T7_REGISTRATION_BINDINGS_CHECKS=41\n",
+  "stage_names": [
+    "registration-fixture-compile",
+    "registration-fixture-test",
+    "main",
+    "zonetool11",
+    "link"
+  ],
+  "producer": {
+    "main": {
+      "bytes": 43764,
+      "sha256": "970fe08a0ff0a1b0ce19c48f240a8fa361870d94349c5a1ed926db2ad321df49"
+    },
+    "cli": {
+      "bytes": 190891,
+      "sha256": "d732c8e33cc6b15ee912443dc5cd043b95122f095cec7ec5cd1be1a8e46304ec"
+    }
+  },
+  "generated": {
+    "prepared/selected_image_material_bindings_capture.hpp": {
+      "bytes": 19790,
+      "sha256": "775567e57593dff9985ed4f7f648a2b433245046bcfb4196faa15fece91deb9b"
+    },
+    "prepared/selected_image_material_bindings_observer.hpp": {
+      "bytes": 17722,
+      "sha256": "c71bece4148970b8cd268bc44e7b8327af77fabfc39034df87493e9c2ee4abab"
+    },
+    "prepared/bindings_registration_baseline_fixture.cpp": {
+      "bytes": 12076,
+      "sha256": "271655de53dba31165e0a68838bef8c5b6ba4223d97dd954a27a1d2009d9a730"
+    },
+    "prepared/registration_bindings_combined_fixture.cpp": {
+      "bytes": 7636,
+      "sha256": "19b8f51da85210278783023ac1b83227e63046a6d2e5aad93f7324a3108acce7"
+    }
+  },
+  "source_pins": {
+    "prepare_registration_bindings_build.py": {
+      "bytes": 9398,
+      "sha256": "fc2c590967156ddacafa598ed4b576e052ff4788828d135a542a28dd38ec6e80"
+    },
+    "prepare_registration_material_bindings.py": {
+      "bytes": 10618,
+      "sha256": "87b6e3d033cbb9e68ad9a59b25d2548adce1295b84b0ea9877eef5d68126384b"
+    },
+    "registration-material-bindings-source-contract.json": {
+      "bytes": 5391,
+      "sha256": "d60f0e33d9dddb69656744f6481ba32ced1a7a040d75ff913908192297e3c9a6"
+    },
+    "registration_material_bindings.hpp": {
+      "bytes": 8907,
+      "sha256": "d171f28ae818ad5506d18dbbc4d5d5cf85ad4a1f1e656c00fca4c5575770db0d"
+    },
+    "native_registration_material_bindings.inc": {
+      "bytes": 985,
+      "sha256": "d47924a7028a8299099aa1c29bf445e0ca52ab401671c3148273f665d74301d3"
+    },
+    "registration_material_bindings_fixture.cpp": {
+      "bytes": 7594,
+      "sha256": "51ec0ec81c65e7f3a602e00b094ef87c74fda255aa32f54d0331c8fa697f9fd9"
+    },
+    "registration_image_header_fixture.cpp": {
+      "bytes": 12041,
+      "sha256": "fb067267b3b7ecd7081a2d72ecd7add7bbdf468d13085dd75a85c498eb4a59fa"
+    },
+    "prepare_incoming_image_metadata.py": {
+      "bytes": 10046,
+      "sha256": "3daefdb75f16ecc951a467df91e5b4b5b51c54916f2f2e9c2b9f692485b09ed3"
+    }
+  },
+  "validator": {
+    "bytes": 10963,
+    "sha256": "727bb72c816cad8ffbe7af6f7e8c2958669796e5542ee6769032c96196b34ec9"
+  }
+}
