@@ -151,6 +151,73 @@ rewrite it, poll the closed PTY or patch the failed generated package. After
 Source review/CI/merge, prepare a fresh C sibling and obtain another distinct
 Analysis GO; Native still needs its own GO.
 
+## Closed Native B capture and JSON transport adapter
+
+Analysis C on Source `8ef3440ff35c34cb3ef3a857ebccabb544d8fc15`
+completed factory and ordinary DEFAULT with 112 bindings, 27 metadata inputs and
+23 bootstraps. Its six execution/Ready flags remained false. A separately
+authorized Native B then exited 0 and captured the marked bindings record.
+This later launcher Source is distinct from compiled CPP Source `0f669b58`.
+
+Native B is closed: true PTY52255 exit0/chunk91a0ab must never be polled again.
+Root independently corroborated absence of its original three process identities,
+games/CPP helpers and leases at 2026-10-15T10:45:41.2265033Z. The original H1
+context and guards closed, lease was released and CanExit was true. No rerun is
+needed to address this text transport problem.
+
+The immutable captured `stdout.log` is 13,829 bytes/SHA-256
+`930a2e3b3b15e421424176be26c9312be685d420474d8731e271e28dfa52408a`.
+The final receipt is 36,384 bytes/SHA-256
+`33cb7e53e938b2688d395fd5c6f5f78d28929841620d4a7088b23592f6ddc1a4`.
+Both remain in the original Source8ef package's
+`runtime/t7-registration-bindings-c/evidence`. Neither contains a standalone
+producer JSON artifact. The unchanged consumer CLI rejected `.log` before open
+with `existing .json report required before open`; this was a role refusal, not
+an interpretation of the seven rows.
+
+`extract_registration_bindings_record.py` supplies only the missing transport
+artifact. Its required arguments are `--log`, `--log-bytes`, `--log-sha256`,
+`--output-json`, `--provenance-json` and the independently supplied original
+`--native-exit-code`. Run it from a fresh reviewed Source package only after the
+Source PR/review/exact-head CI/merge and separate application authorization.
+There is no implicit Native, factory, DEFAULT or consumer invocation.
+
+The adapter requires strict UTF-8 log bytes <=1 MiB, their exact Bytes/SHA pin,
+the globally unique literal `T7_REGISTRATION_MATERIAL_BINDINGS` marker and the
+existing H1 single-line JSON framing. Prefix diagnostics and CRLF/LF are allowed;
+multiline records, trailing material and ambiguous selection refuse. The object
+is <=32 KiB, uses the unchanged bounded strict JSON decoder (recursive duplicate
+fields/nonfinite constants refuse), depth <=25 and exact schema/profile/native
+Source identities. These are transport checks; the adapter does not interpret
+the 41/9/10 DTO fields.
+
+The new `.json` contains the exact original `{...}` byte slice, with no BOM,
+newline or reserialization. Its separate <=16-KiB provenance records the origin
+log path/Bytes/SHA, marker, marker/record offsets in UTF-8 bytes, record length/
+SHA, extractor Source path/Bytes/SHA and original native exit. Both outputs must
+be fresh ordinary absolute `.json` paths with existing parents. Device, ADS,
+reserved, reparse, opaque suffix, overlap and overwrite paths refuse. CreateNew,
+flush/fsync and readback apply to each new file; the same held original log is
+read and identity checked again before completion. On failure, any new partial
+artifact remains for diagnosis and must not be interpreted as successful output.
+This is a bounded local integrity check, not a claim of protection from every
+concurrent adversarial filesystem change.
+
+Authored tests cover non-ASCII byte offsets, braces/quotes inside strings,
+CRLF/LF, exact size/depth boundaries, duplicate/embedded markers, bad UTF-8,
+garbage/duplicate fields, path and pin refusals, CreateNew races, flush/readback
+failures and changed input bytes/leaf identity. An authored full DTO passes from
+the adapter into the unchanged reader CLI; an incomplete DTO can pass transport
+and still fails that reader. No actual capture is parsed by these tests.
+
+The current result remains RecordCapturedPendingReview: deep metadata NULL,
+NativeObserved/DescriptorAdmissible/Ready=false, qualified mips NULL and payload
+bytes zero. After authorized materialization, the unchanged consumer CLI must
+validate the real standalone JSON with actual native exit0. Descriptor/mip,
+association, lifetime, ABI, providers, DDS, FF, renderer and pixels remain
+unqualified by capture or transport alone. Original packages, receipts and logs
+remain immutable; no PE/PDB/SDK/retail reopening is part of this adapter.
+
 ## Historical PR170 Source-only seam (superseded for the compiled route)
 
 The seven material0 bindings have a distinct Source proposal in the existing
