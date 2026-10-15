@@ -4,6 +4,7 @@
 param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 function Read-PlayerSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$KeepGuards=$null) {
+    if([IO.Path]::GetExtension($Path).ToLowerInvariant() -cnotin @('.json','.py','.ps1','.cs','.hpp','.cpp','.inc','.rsp','.h','.hh','.inl','.vcxproj','.txt')){throw 'Source/metadata suffix required before filesystem IO.'}
     if($SHA256 -cnotmatch '^[0-9a-f]{64}$' -or ![IO.Path]::IsPathFullyQualified($Path)){throw 'Exact source binding required.'}
     for($part=$Path;$part;$part=[IO.Path]::GetDirectoryName($part)){
         if((Get-Item -LiteralPath $part).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked source ancestry refused.'}
@@ -20,6 +21,59 @@ function Read-PlayerSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collec
         if($null -ne $KeepGuards){$stream.Position=0;$KeepGuards.Add($stream);$stream=$null}
         $decoded
     }finally{if($null -ne $stream){$stream.Dispose()}}
+}
+function Get-PlayerDefinitionResponse([string]$Prepared,[string]$Run){
+    $stage=Join-Path $Run 'definition-compile'
+    '/nologo /std:c++17 /EHsc /MT /DNDEBUG /W4 /WX /Zi /Od /Y- /I"'+$Prepared+'" /FI"'+(Join-Path $Prepared 'native_definition_fixture_binding.hpp')+
+        '" /Fo"'+(Join-Path $stage 'definition.obj')+'" /Fe"'+(Join-Path $stage 'definition.exe')+'" /Fd"'+(Join-Path $stage 'compile.pdb')+
+        '" /sourceDependencies "'+(Join-Path $stage 'dependencies.json')+'" "'+(Join-Path $Prepared 'test_definition_readset.cpp')+
+        '" /link /INCREMENTAL:NO /DEBUG /PDB:"'+(Join-Path $stage 'definition.pdb')+'"'+"`n"
+}
+function Assert-PlayerDefinitionFixture($Plan){
+    if(!$Plan.PSObject.Properties['DefinitionFixture'] -or $Plan.DefinitionFixture.Schema -cne 'iw7.player-definition-fixture-source/1' -or
+        $Plan.NativeSourcePin -cne 'fab935826c898806855376662a8a03317b3ad8f1'){throw 'Exact real definition fixture Source contract required.'}
+    $contract=$Plan.DefinitionFixture
+    if(!$Plan.PSObject.Properties['CandidateBytes'] -or !$Plan.PSObject.Properties['CandidateSHA256'] -or
+        $null -ne $Plan.CandidateBytes -or $null -ne $Plan.CandidateSHA256){throw 'Future neutral candidate bytes/hash must remain null.'}
+    $expected=@{
+        'test_definition_readset.cpp'='e003afa43e469ffb651f047135c596d0710dca75b81290d2717759dc4aa65542'
+        'native_definition_access.hpp'='92eb62fd94a18397ea09de034330009aaa17d16abaf037d98e041412f4ce1890'
+        'native_definition_readset.hpp'='6242ee9fb76e5881aa28224138f36543250066f5254ea455332c68670967f84d'
+        'native_definition_fields.inc'='302e324b98175981ba8ae3e071a23e125ed83353d8319ca60a9c0390f47db7e3'
+        'native_definition_gate.hpp'='314667bfc966bd38ba8040a9a3b12f7cef513819659ce170f05547bd0b0e409f'
+    }
+    if($contract.Files -isnot [array] -or $contract.Files.Count -ne $expected.Count){throw 'All five real readset fixture Source files required.'}
+    foreach($name in $expected.Keys){
+        $path=Join-Path $Plan.PreparedRoot $name
+        $pins=@($contract.Files|Where-Object {$_.Path -is [string] -and $_.Path -ceq $path})
+        $prepared=@($Plan.PreparedBindings|Where-Object Path -CEQ $path)
+        if($pins.Count -ne 1 -or $prepared.Count -ne 1 -or $pins[0].SHA256 -cne $prepared[0].SHA256 -or $pins[0].Bytes -ne $prepared[0].Bytes){throw 'Unique prepared fixture Source binding required.'}
+        $text=Read-PlayerSource $pins[0].Path $pins[0].SHA256 $pins[0].Bytes
+        $raw=[Text.Encoding]::UTF8.GetBytes($text.Replace("`r`n","`n"))
+        if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($raw)).ToLowerInvariant() -cne $expected[$name]){throw 'Real pinned 100-check fixture/readset required; metadata stubs refused.'}
+    }
+    # The native declaration is an EXPECTED retained input here. Do not open,
+    # stat or hash it in DEFAULT. Its actual read remains behind admission.
+    $native=$contract.NativeHeader
+    if($native.Path -isnot [string] -or ![IO.Path]::IsPathFullyQualified($native.Path) -or $native.Path -match '["\x00-\x1f]' -or
+        ($native.Bytes -isnot [int] -and $native.Bytes -isnot [long]) -or $native.Bytes -ne 354227 -or
+        $native.SHA256 -isnot [string] -or $native.SHA256 -cne 'adb62e481a533d27f97829e64d9038b13c5e9cd88e6b4aee8cac339b9492921a' -or
+        $native.Path.Replace('\','/') -cnotmatch '/src/zonetool/zonetool/iw7/structs\.hpp$'){throw 'Exact declared native structs input required.'}
+    $retained=@($Plan.RetainedInputPins|Where-Object {[IO.Path]::GetFullPath($_.Path) -ieq [IO.Path]::GetFullPath($native.Path)})
+    if($retained.Count -ne 1 -or $retained[0].Bytes -ne $native.Bytes -or $retained[0].SHA256 -cne $native.SHA256){throw 'Native fixture header must be the original retained input declaration.'}
+    $bindingPath=Join-Path $Plan.PreparedRoot 'native_definition_fixture_binding.hpp'
+    $binding=@($Plan.PreparedBindings|Where-Object Path -CEQ $bindingPath)
+    $response=@($Plan.PreparedBindings|Where-Object Path -CEQ (Join-Path $Plan.PreparedRoot 'definition.rsp'))
+    if($binding.Count -ne 1 -or $response.Count -ne 1){throw 'Pinned forced-include binding and definition response required.'}
+    $expectedBinding="#pragma once`n#define IW7_NATIVE_STRUCTS_HEADER `""+$native.Path.Replace('\','/')+"`"`n"
+    if((Read-PlayerSource $binding[0].Path $binding[0].SHA256 $binding[0].Bytes).Replace("`r`n","`n") -cne $expectedBinding -or
+        (Read-PlayerSource $response[0].Path $response[0].SHA256 $response[0].Bytes).Replace("`r`n","`n") -cne (Get-PlayerDefinitionResponse $Plan.PreparedRoot $Plan.RunRoot)){
+        throw 'Exact real fixture100 source/forced include/compiler response required.'
+    }
+    foreach($name in @($expected.Keys)+@('native_definition_fixture_binding.hpp')){
+        $path=Join-Path $Plan.PreparedRoot $name
+        if(@($Plan.OwnDirectIncludeCoverage|Where-Object {$_.Path -ceq $path -and $_.Pinned -is [bool] -and $_.Pinned}).Count -ne 1){throw 'Exact guarded fixture Source include coverage required.'}
+    }
 }
 $plan=Read-PlayerSource $PlanPath $PlanSHA256 | ConvertFrom-Json -Depth 30
 if(!$plan.PSObject.Properties['RunnerBinding'] -or $plan.RunnerBinding.Path -cne $PSCommandPath){throw 'Exact specialized runner binding required.'}
@@ -87,6 +141,7 @@ foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)){
 if($primaryFixture -ne $primaryModule){throw 'Exact primary module/fixture profile pairing required.'}
 if($pairCLI -ne $pairModule){throw 'Exact pair profile CLI/18-check fixture pairing required.'}
 if($definitionCLI -ne $definitionModule){throw 'Exact neutral definition CLI/28-argv/100-readset fixture pairing required.'}
+if($definitionCLI){Assert-PlayerDefinitionFixture $plan}
 $providers=$plan.Providers
 $providerPins=@(foreach($name in 'Core','CompilerCore','ObserverSource','CompilerPolicySource','Scheduler','Profile'){
     $pin=@($plan.ParentBindings|Where-Object {$_.Path -ieq $providers.$name -and $_.IsText})
@@ -96,6 +151,7 @@ $providerPins=@(foreach($name in 'Core','CompilerCore','ObserverSource','Compile
 if(Test-Path -LiteralPath $plan.RunRoot){throw 'Fresh owned runtime output required.'}
 if(!$Run){
     [ordered]@{Schema='iw7.player-template-build-default/1';PlanSHA256=$PlanSHA256;Stages=$names.Count;NameChecksAuthored=8;ArgvChecksAuthored=$argvChecks;PrimaryChecksAuthored=$(if($primaryFixture){36}else{0});DefinitionChecksAuthored=$(if($definitionCLI){100}else{0});
+        DefinitionFixtureSourceVerified=$definitionCLI;ExpectedNoEffects=$true;CandidateBytes=$null;CandidateSHA256=$null;
         NativeTypesLoaded=$false;NativeInputsHashed=$false;RunRootCreated=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json
     return
 }
