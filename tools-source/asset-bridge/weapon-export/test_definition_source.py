@@ -65,6 +65,34 @@ class DefinitionSourceTests(unittest.TestCase):
         files=self.corpus();files[name]=files[name].replace('WEAPON_DUMP_FIELD(field0);','',1)
         with self.assertRaisesRegex(ValueError,'macro coverage'):self.render_fixture(files)
 
+    def test_array_dispatch_preserves_pinned_inline_camos_and_real_pointer_fields(self):
+        for field in ('camoWorldModelMaterialOverride','camoViewModelMaterialOverride'):
+            call=generator.field_call('WeaponDef','WEAPON_DUMP_ASSET_ARR',field+', 16')
+            self.assertIn('r.inline_objects(&asset->'+field,call)
+            self.assertIn('r.asset_field(value,',call)
+            with self.assertRaisesRegex(ValueError,'inline asset-array extent'):
+                generator.field_call('WeaponDef','WEAPON_DUMP_ASSET_ARR',field+', 15')
+        for native,macro,args in (('WeaponDef','WEAPON_DUMP_ASSET_ARR','complexWorldModel, asset->numComplexModels'),
+            ('WeaponAttachment','ATTACHMENT_DUMP_ASSET_ARR','worldModelVariations, asset->numModelVariations'),
+            ('WeaponAttachment','ATTACHMENT_DUMP_ASSET_ARR','worldModelCamoMaterials, asset->numWorldModelCamoMaterials'),
+            ('WeaponDef','WEAPON_DUMP_FIELD_ALLOC_ARR','parallelBounce, 64'),
+            ('WeaponAttachment','ATTACHMENT_DUMP_FIELD_ALLOC_ARR','locationDamage, 22')):
+            call=generator.field_call(native,macro,args)
+            self.assertNotIn('inline_objects',call)
+            self.assertTrue(call.startswith(('r.counted_array(', 'r.pointer_array(')))
+
+    def test_script_fixture_uses_dumped_field_and_observes_real_resolver_calls(self):
+        fixture=support.read_source(support.HERE/'test_definition_readset.cpp')
+        self.assertNotIn('pap.internalName',fixture)
+        self.assertIn('pap.attachPoint = 70001',fixture)
+        self.assertIn('context.calls == expected_calls',fixture)
+        self.assertIn('context.seen == source.pap.attachPoint',fixture)
+        functions=generator.functions('''void weapon_attachment::dump(WeaponAttachment* asset) {
+// ATTACHMENT_DUMP_SCRIPT_STRING(internalName);
+ATTACHMENT_DUMP_SCRIPT_STRING(attachPoint);
+}''','owned-fixture.cpp')
+        self.assertEqual(generator.MACRO.findall(functions[0][2]),[('ATTACHMENT_DUMP_SCRIPT_STRING','attachPoint')])
+
     def test_generation_mismatch_refuses_before_staging_output(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);source=root/'native'/support.NATIVE_PATH;source.parent.mkdir(parents=True)

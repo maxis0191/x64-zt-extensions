@@ -147,8 +147,8 @@ namespace player_definition_readset
         if (!r.counted_array(&asset->complexGunXModel, &asset->numComplexModels, "WeaponDef.complexGunXModel", [&](const auto* value) { return r.asset_field(value, "WeaponDef.complexGunXModel"); })) return false;
         if (!r.counted_array(&asset->complexGunXModelLeftHand, &asset->numComplexModels, "WeaponDef.complexGunXModelLeftHand", [&](const auto* value) { return r.asset_field(value, "WeaponDef.complexGunXModelLeftHand"); })) return false;
         if (!r.counted_array(&asset->complexGunXModelRightHand, &asset->numComplexModels, "WeaponDef.complexGunXModelRightHand", [&](const auto* value) { return r.asset_field(value, "WeaponDef.complexGunXModelRightHand"); })) return false;
-        if (!r.pointer_array(&asset->camoWorldModelMaterialOverride, 16, "WeaponDef.camoWorldModelMaterialOverride", [&](const auto* value) { return r.asset_field(value, "WeaponDef.camoWorldModelMaterialOverride"); })) return false;
-        if (!r.pointer_array(&asset->camoViewModelMaterialOverride, 16, "WeaponDef.camoViewModelMaterialOverride", [&](const auto* value) { return r.asset_field(value, "WeaponDef.camoViewModelMaterialOverride"); })) return false;
+        if (!r.inline_objects(&asset->camoWorldModelMaterialOverride, "WeaponDef.camoWorldModelMaterialOverride", [&](const auto* value) { return r.asset_field(value, "WeaponDef.camoWorldModelMaterialOverride"); })) return false;
+        if (!r.inline_objects(&asset->camoViewModelMaterialOverride, "WeaponDef.camoViewModelMaterialOverride", [&](const auto* value) { return r.asset_field(value, "WeaponDef.camoViewModelMaterialOverride"); })) return false;
         if (!r.asset_field(&asset->szXAnims, "WeaponDef.szXAnims")) return false;
         if (!r.asset_field(&asset->szXAnimsRightHanded, "WeaponDef.szXAnimsRightHanded")) return false;
         if (!r.asset_field(&asset->szXAnimsLeftHanded, "WeaponDef.szXAnimsLeftHanded")) return false;

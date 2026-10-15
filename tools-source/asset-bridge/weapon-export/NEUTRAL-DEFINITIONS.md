@@ -67,6 +67,12 @@ fields. Nested notetrack/suit mappings, attachment subblocks, fixed arrays and
 accuracy curves are covered separately. Original knots use the native loop's
 parent count, with the declared original capacity also required to cover it.
 
+The two camo material tables are also inline: `Material*[16]`. Generation
+explicitly dispatches these declarations through the typed inline helper and
+visits all sixteen pointer fields/names. Complex-model and attachment variation/
+material fields remain true pointer fields. The exact native declarations for
+all macro array families were checked before this distinction was corrected.
+
 Native turret STRING_ARR has an existing unusual conversion: four null pointers
 produce four empty strings, while four nonnull pointers produce a repeated4x4
 matrix. Mixed null/non-null arrays refuse before serializer entry. Nonnull
@@ -121,6 +127,13 @@ statements on small owned files. Hash failure, missing output or stock failure
 cannot promote completion. Generator tests cover exact-pin drift, finite set,
 unknown operations and before-output refusal. These are Source causals.
 
+Review rejected initial head88370ea for two Source defects before any native
+execution: the two inline camo tables were sent to a pointer-field helper, and
+script-conversion fixture mutations used `internalName`, which the pinned
+serializer comments out. The correction dispatches the actual inline types and
+uses the dumped `attachPoint` field, checking the real resolver call count/ID.
+The original77 Source tests were not proof of C++ typing or fixture execution.
+
 `test_definition_readset.cpp` authors88 checks using the real pinned structures
 and production `with_pair` gate. It covers unchanged values, missing copy,
 integer-copy refusal, unreadable spans, count/overflow/string/UTF8/bool/float
@@ -131,7 +144,7 @@ primary36 fixtures are likewise only authored at this new revision.
 
 The build plan's explicit `PairDefinitionsCLI=true` requires both existing
 fixture profiles and the fixed ten-stage sequence: name compile/test8, argv
-compile/test28, primary compile/test36, definition compile/test88, one IW7 TU,
+compile/test28, primary compile/test36, definition compile/test100, one IW7 TU,
 link. The definition compile must bind the exact native structs header via
 `IW7_NATIVE_STRUCTS_HEADER`, all readset sources and compiler dependencies under
 the ordinary source guard policy. Incomplete older6/8-stage plans cannot build

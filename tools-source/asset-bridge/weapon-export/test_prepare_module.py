@@ -244,7 +244,7 @@ class PreparationTests(unittest.TestCase):
             self.assertEqual(report['build_extension']['translation_unit'], support.NATIVE_PATH)
             self.assertEqual(report['build_extension']['argv_count_including_executable'], 6)
             self.assertEqual(report['build_extension']['argv_fixture_checks_authored'], 28)
-            self.assertEqual(report['build_extension']['definition_fixture_checks_authored'],88)
+            self.assertEqual(report['build_extension']['definition_fixture_checks_authored'],100)
             self.assertEqual(report['build_extension']['pair_profile_option'],'-iw7-player-weapon-pair-profile')
             self.assertFalse(report['compiled'] or report['native_export_executed'] or report['ready'])
         with self.assertRaisesRegex(ValueError, 'Explicit source CLI boolean'):

@@ -98,7 +98,7 @@ def stage(source_root, output, *, player_cli=False):
             ordering='pristine pinned IW7 -> reviewed support127 -> exact CLI -> separately reviewed compatible overlays',
             inputs={name: hashlib.sha256(read_source(HERE/name).encode()).hexdigest() for name in names},
             name_fixture_checks_authored=8, argv_fixture_checks_authored=28, primary_fixture_checks_authored=36,
-            definition_fixture_checks_authored=88, cpp_executed=False, ready=False)
+            definition_fixture_checks_authored=100, cpp_executed=False, ready=False)
     target.parent.mkdir(parents=True, exist_ok=False)
     with target.open("x", encoding="utf-8", newline="\n") as stream:
         stream.write(patched)

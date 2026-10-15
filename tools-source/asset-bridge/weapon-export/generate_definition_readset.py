@@ -20,6 +20,12 @@ HEADERS = {
 }
 NATIVE = Path('src/zonetool/zonetool/iw7')
 CAP = 2 * 1024 * 1024
+# Pinned native declarations are Material* [16], unlike complex-model and
+# attachment variation/material fields, which are true pointer fields.
+INLINE_ASSET_ARRAYS = {
+    ('WeaponDef', 'camoWorldModelMaterialOverride'): 16,
+    ('WeaponDef', 'camoViewModelMaterialOverride'): 16,
+}
 MACRO = re.compile(r'\b((?:WEAPON|ATTACHMENT)_DUMP_[A-Z_]+|DUMP_UNK0|DUMP_ATT)\(([^;\n]*)\)\s*;')
 
 
@@ -92,6 +98,10 @@ def field_call(native_type, macro, arguments):
         raise ValueError('Uncovered serializer macro: ' + macro)
     visit = visitors[kind].format(label=label)
     callback = f'[&](const auto* value) {{ return {visit}; }}'
+    if kind == 'ASSET_ARR' and (native_type, field) in INLINE_ASSET_ARRAYS:
+        if size != str(INLINE_ASSET_ARRAYS[(native_type, field)]):
+            raise ValueError('Pinned inline asset-array extent changed')
+        return f'r.inline_objects({address}, {label}, {callback})'
     if size.isdecimal():
         return f'r.pointer_array({address}, {size}, {label}, {callback})'
     if re.fullmatch(r'asset->\w+', size):
@@ -184,7 +194,7 @@ def render(native_root):
         raise ValueError('Complete pinned serializer macro coverage changed')
     output.extend(['}', ''])
     return '\n'.join(output), dict(functions=len(types), macro_fields=total_macros, serializer_sources=SERIALIZERS,
-                                   declaration_sources=HEADERS)
+        declaration_sources=HEADERS, inline_asset_arrays={native+'.'+field:count for (native,field),count in INLINE_ASSET_ARRAYS.items()})
 
 
 if __name__ == '__main__':

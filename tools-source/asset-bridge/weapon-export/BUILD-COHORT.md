@@ -2,7 +2,7 @@
 
 The new neutral mode has a separate **unexecuted** ten-stage Source contract:
 `PairDefinitionsCLI=true` requires the existing primary/profile selections,
-argv28 and a new production-readset fixture88. Name8 and primary36 remain.
+argv28 and a new production-readset fixture100. Name8 and primary36 remain.
 See NEUTRAL-DEFINITIONS.md. Historical CPP J's62 results and candidate533c
 remain unchanged and do not qualify this new source or its fixtures.
 

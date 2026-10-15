@@ -122,7 +122,7 @@ class DefaultTests(unittest.TestCase):
                 self.plan=json.loads(json.dumps(original));mutate(self.plan);result=self.invoke()
                 self.assertNotEqual(result.returncode,0);self.assertFalse(Path(self.plan['RunRoot']).exists())
 
-    def test_definition_cli_requires_ten_stages_28_argv_and_88_readset_checks(self):
+    def test_definition_cli_requires_ten_stages_28_argv_and_100_readset_checks(self):
         self.primary_plan()
         source=Path(self.plan['PreparedBindings'][0]['Path'])
         source.write_bytes(source.read_bytes()+b'// IW7_PLAYER_PAIR_PROFILE donor=cp_zmb iw7_player_template_cli::pair_selected(args)\n'
@@ -136,9 +136,9 @@ class DefaultTests(unittest.TestCase):
                  Artifacts=['definition.obj','definition.exe','definition.pdb','compile.pdb','dependencies.json']),
             dict(Name='definition-test',Stage='Probe',DeadlineSeconds=15,
                  Image=str(self.root/'not-created'/'definition-compile'/'definition.exe'),Arguments=[],Artifacts=[],
-                 ExpectedChecks=88,ExpectedStdout='IW7_PLAYER_DEFINITION_READSET_CHECKS=88\n')]
+                 ExpectedChecks=100,ExpectedStdout='IW7_PLAYER_DEFINITION_READSET_CHECKS=100\n')]
         good=json.loads(json.dumps(self.plan));result=self.invoke();self.assertEqual(result.returncode,0,result.stderr)
-        report=json.loads(result.stdout);self.assertEqual((report['Stages'],report['ArgvChecksAuthored'],report['DefinitionChecksAuthored']),(10,28,88))
+        report=json.loads(result.stdout);self.assertEqual((report['Stages'],report['ArgvChecksAuthored'],report['DefinitionChecksAuthored']),(10,28,100))
         for mutate in (lambda p:p.pop('PairDefinitionsCLI'),lambda p:p.update(PairDefinitionsCLI=False),
                        lambda p:p.update(PairDefinitionsCLI=[True]),lambda p:p.pop('PairProfileCLI'),
                        lambda p:p['Stages'][3].update(ExpectedChecks=18),lambda p:p['Stages'][7].update(ExpectedChecks='87'),

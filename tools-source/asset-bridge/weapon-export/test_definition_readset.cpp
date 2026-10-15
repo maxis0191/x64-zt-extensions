@@ -87,6 +87,8 @@ namespace
         scr_string_t script_ids[64]{};
         AttDamage damage{};
         XModel model{};
+        Material material{};
+        XModel* model_references[1]{};
         Fixture()
         {
             weapon.name = weapon_name; weapon.weapDef = &definition;
@@ -96,6 +98,7 @@ namespace
             other.name = other_name;
             associations[0] = &pap; associations[1] = &other;
             weapon.numAttachments6 = 2; weapon.attachments6 = associations;
+            model_references[0] = &model;
         }
         Context context()
         {
@@ -120,7 +123,7 @@ int main()
     const auto check = [&](bool pass) { ++checks; if (!pass) throw std::runtime_error("Definition readset causal failed"); };
     try
     {
-        const auto expect = [&](auto mutate, bool expected)
+        const auto expect = [&](auto mutate, bool expected, unsigned expected_calls = 0)
         {
             Fixture source;
             Context context = source.context();
@@ -136,6 +139,7 @@ int main()
             const bool result = player_definition_readset::with_pair(reader, &source.weapon, &source.pap,
                 [&](const auto*, const auto*) { serialized += 2; });
             check(result == expected && serialized == (expected ? 2u : 0u) &&
+                context.calls == expected_calls && (!expected_calls || context.seen == source.pap.attachPoint) &&
                 (expected ? reader.refusal == nullptr : reader.refusal != nullptr) &&
                 std::memcmp(&source.weapon, weapon_before.data(), weapon_before.size()) == 0 &&
                 std::memcmp(&source.definition, definition_before.data(), definition_before.size()) == 0 &&
@@ -166,6 +170,37 @@ int main()
         expect([](auto&, auto& c, auto&) { c.copy_fault = true; }, false);
         expect([](auto&, auto&, auto& r) { r.copy = nullptr; }, false);
         expect([](auto& f, auto& c, auto&) { c.fail_copy_at = &f.weapon.iClipSize; }, false);
+        for (unsigned which = 0; which < 2; ++which)
+        {
+            expect([&](auto& f, auto&, auto&) {
+                auto& values = which ? f.definition.camoViewModelMaterialOverride : f.definition.camoWorldModelMaterialOverride;
+                f.material.name = f.text; values[0] = values[15] = &f.material;
+            }, true);
+            expect([&](auto& f, auto&, auto&) {
+                auto& values = which ? f.definition.camoViewModelMaterialOverride : f.definition.camoWorldModelMaterialOverride;
+                values[15] = reinterpret_cast<Material*>(std::uintptr_t{1});
+            }, false);
+            expect([&](auto& f, auto& c, auto&) {
+                auto& values = which ? f.definition.camoViewModelMaterialOverride : f.definition.camoWorldModelMaterialOverride;
+                c.denied.push_back({reinterpret_cast<std::uintptr_t>(&values[15]), sizeof(values[15])});
+            }, false);
+            expect([&](auto& f, auto&, auto&) {
+                auto& values = which ? f.definition.camoViewModelMaterialOverride : f.definition.camoWorldModelMaterialOverride;
+                values[15] = &f.material; // Native material header has a null name.
+            }, false);
+        }
+        expect([](auto& f, auto&, auto&) {
+            f.model.name = f.text; f.definition.numComplexModels = 1; f.definition.complexWorldModel = f.model_references;
+        }, true);
+        expect([](auto& f, auto&, auto&) {
+            f.definition.numComplexModels = 1; f.definition.complexWorldModel = reinterpret_cast<XModel**>(std::uintptr_t{1});
+        }, false);
+        expect([](auto& f, auto&, auto&) {
+            f.model.name = f.text; f.pap.numModelVariations = 1; f.pap.worldModelVariations = f.model_references;
+        }, true);
+        expect([](auto& f, auto&, auto&) {
+            f.pap.numModelVariations = 1; f.pap.worldModelVariations = reinterpret_cast<XModel**>(std::uintptr_t{1});
+        }, false);
         for (const auto index : {0u, 1u, 2u})
             expect([&](auto& f, auto& c, auto&) {
                 const void* address = index == 0 ? static_cast<void*>(&f.definition.animOverrides[20]) :
@@ -196,18 +231,18 @@ int main()
             f.text[0] = 0; for (auto& value : f.definition.turretBarrelSpinUpSnd) value = f.text;
         }, true);
         expect([](auto& f, auto& c, auto&) {
-            f.pap.internalName = 70001; c.text = nullptr;
-        }, false);
-        expect([](auto& f, auto& c, auto&) { f.pap.internalName = 70001; c.conversion_fault = true; }, false);
-        expect([](auto& f, auto&, auto&) { f.pap.internalName = 70001; std::fill(std::begin(f.text), std::end(f.text), 'a'); }, false);
-        expect([](auto& f, auto& c, auto&) { f.pap.internalName = 70001; c.text = reinterpret_cast<const char*>(std::uintptr_t{1}); }, false);
-        expect([](auto& f, auto&, auto&) { f.pap.internalName = -1; }, false);
-        expect([](auto& f, auto&, auto&) { f.pap.internalName = 70001; }, true);
+            f.pap.attachPoint = 70001; c.text = nullptr;
+        }, false, 1);
+        expect([](auto& f, auto& c, auto&) { f.pap.attachPoint = 70001; c.conversion_fault = true; }, false, 1);
+        expect([](auto& f, auto&, auto&) { f.pap.attachPoint = 70001; std::fill(std::begin(f.text), std::end(f.text), 'a'); }, false, 1);
+        expect([](auto& f, auto& c, auto&) { f.pap.attachPoint = 70001; c.text = reinterpret_cast<const char*>(std::uintptr_t{1}); }, false, 1);
+        expect([](auto& f, auto&, auto&) { f.pap.attachPoint = -1; }, false);
+        expect([](auto& f, auto&, auto&) { f.pap.attachPoint = 70001; }, true, 1);
         expect([](auto&, auto&, auto& r) { r.bytes = Reader::byte_limit; }, false);
         expect([](auto&, auto&, auto& r) { r.elements = Reader::element_limit; }, false);
         expect([](auto&, auto&, auto& r) { r.json_bytes = Reader::json_limit; }, false);
         expect([](auto&, auto&, auto& r) { r.allocation_bytes = Reader::allocation_limit; }, false);
-        expect([](auto& f, auto&, auto& r) { f.pap.internalName = 1; r.script_calls = Reader::script_call_limit; }, false);
+        expect([](auto& f, auto&, auto& r) { f.pap.attachPoint = 1; r.script_calls = Reader::script_call_limit; }, false);
         {
             Fixture f; auto context = f.context(); Reader r{readable, copy, script, &context};
             check(r.script(0, "zero") && context.calls == 0 && r.script_calls == 0);
@@ -232,9 +267,9 @@ int main()
                 player_definition_access::av_filter(EXCEPTION_ILLEGAL_INSTRUCTION) == EXCEPTION_CONTINUE_SEARCH &&
                 player_definition_access::av_filter(0xE06D7363u) == EXCEPTION_CONTINUE_SEARCH);
         }
-        constexpr unsigned expected_checks = 88;
+        constexpr unsigned expected_checks = 100;
         if (checks != expected_checks) throw std::runtime_error("Exact authored definition check count differs");
-        std::printf("IW7_PLAYER_DEFINITION_READSET_CHECKS=88\n");
+        std::printf("IW7_PLAYER_DEFINITION_READSET_CHECKS=100\n");
         return 0;
     }
     catch (const std::exception& error) { std::fprintf(stderr, "%s\n", error.what()); return 1; }
