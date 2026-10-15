@@ -16,9 +16,10 @@ function Read-PlayerExportSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[
        $Path.Substring(2).Contains(':') -or $Path -match '[\x00-\x1f]' -or
        @($Path.Substring(3) -split '[\\/]'|Where-Object {$_ -in @('.','..') -or $_.TrimEnd(' ','.') -cne $_ -or $_ -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'}).Count){throw 'Ordinary role-bound Source path required before open.'}
     $extension=[IO.Path]::GetExtension($Path).ToLowerInvariant();$name=[IO.Path]::GetFileName($Path)
-    $allowed=if($Role -in @('Plan','StockManifest','Receipt')){@('.json')}elseif($Role -eq 'Request'){@('.csv')}elseif($Role -in @('Runner','Provider')){@('.ps1','.cs')}else{@('.json','.jsonl')}
+    $allowed=if($Role -in @('Plan','StockManifest','Receipt')){@('.json')}elseif($Role -eq 'Request'){@('.csv')}elseif($Role -eq 'Provider'){@('.ps1','.cs','.py')}elseif($Role -eq 'Runner'){@('.ps1')}else{@('.json','.jsonl')}
     $providers=@('H1Native.Core.ps1','Resource-Scheduler.Core.ps1','T7Build.Profile.ps1','Stock-Links.Core.ps1','BeaconFF.Core.ps1','OriginalArena.Process.ps1',
-        'Lab-Paths.ps1','StockLinks.cs','Resource-Memory.ps1','Resource-RecorderOwnedProcess.Core.ps1','ResourceMemory.cs')
+        'Lab-Paths.ps1','StockLinks.cs','Resource-Memory.ps1','Resource-RecorderOwnedProcess.Core.ps1','ResourceMemory.cs',
+        'H1Native.Compiler.ps1','LoadDiagnostic.Core.ps1','modal_window.py','recipient_dialog.py','iw7_capture.py','iw7_debugger.py')
     if($extension -cnotin $allowed -or ($Role -eq 'Runner' -and $name -cne 'Run-PlayerTemplateExport.ps1') -or
        ($Role -eq 'Provider' -and $name -cnotin $providers)){throw 'Text Source role/suffix/name refused before open.'}
     for($part=$Path;$part;$part=[IO.Path]::GetDirectoryName($part)){if((Get-Item $part).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Source redirect refused.'}}
@@ -34,10 +35,42 @@ function Read-PlayerExportSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[
         if($null -ne $Keep){$stream.Position=0;$Keep.Add($stream);$stream=$null};$text
     }finally{if($stream){$stream.Dispose()}}
 }
+function Test-PlayerModalPlan($Plan){
+    if(!$Plan.PSObject.Properties['ModalDiagnostic']){return $false}
+    $modal=$Plan.ModalDiagnostic
+    if(!$modal -or $modal.Mode -isnot [string] -or $modal.Mode -cne 'global-mp-modal-only' -or
+       (@($modal.PSObject.Properties.Name|Sort-Object)-join '|') -cne 'HelperSeconds|ModalSource|Mode|Python|WindowRecordBytes' -or
+       $modal.HelperSeconds -isnot [long] -or $modal.HelperSeconds -ne 10 -or
+       $modal.WindowRecordBytes -isnot [long] -or $modal.WindowRecordBytes -ne 65536 -or $Plan.ToolSeconds -ne 120){throw 'Exact existing one-modal diagnostic contract required.'}
+    if($modal.Python.Path -isnot [string] -or $modal.Python.Path -cnotmatch '^[A-Za-z]:\\' -or
+       [IO.Path]::GetFullPath($modal.Python.Path) -cne $modal.Python.Path -or $modal.Python.Path.Substring(2).Contains(':') -or
+       [IO.Path]::GetFileName($modal.Python.Path) -cne 'python.exe' -or $modal.Python.Bytes -isnot [long] -or
+       $modal.Python.Bytes -lt 1 -or $modal.Python.Bytes -gt 64MB -or $modal.Python.SHA256 -isnot [string] -or
+       $modal.Python.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or (@($modal.Python.PSObject.Properties.Name|Sort-Object)-join '|') -cne 'Bytes|Path|SHA256'){throw 'Declared original Python binding required without DEFAULT opaque open.'}
+    if($modal.ModalSource -isnot [string] -or [IO.Path]::GetFileName($modal.ModalSource) -cne 'modal_window.py'){throw 'Exact existing modal adapter required.'}
+    $package=$modal.ModalSource;for($i=0;$i -lt 5;$i++){$package=[IO.Path]::GetDirectoryName($package)}
+    $closure=@{
+        H1Compiler='tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1';LoadDiagnostic='tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1';
+        Modal='tools-source/asset-bridge/world/original-arena/modal_window.py';Recipient='tools-source/asset-bridge/recipient/recipient_dialog.py';
+        Capture='ops/iw7_capture.py';Debugger='ops/iw7_debugger.py'}
+    foreach($name in $closure.Keys){
+        $expected=Join-Path $package $closure[$name]
+        if(@($Plan.SourceBindings|Where-Object {$_.Path -ceq $expected -and $_.Role -ceq 'Provider'}).Count -ne 1){throw 'Exact imported modal Source package layout required.'}
+        if($name -in @('H1Compiler','LoadDiagnostic') -and $Plan.Providers.$name -cne $expected){throw 'Exact modal provider path required.'}
+    }
+    foreach($name in @('H1Compiler','LoadDiagnostic')){
+        if(@($Plan.SourceBindings|Where-Object {$_.Path -ceq $Plan.Providers.$name -and $_.Role -ceq 'Provider'}).Count -ne 1){throw 'Exact existing modal provider Source pin required.'}
+    }
+    $names=@('H1Native.Compiler.ps1','LoadDiagnostic.Core.ps1','modal_window.py','recipient_dialog.py','iw7_capture.py','iw7_debugger.py')
+    foreach($name in $names){if(@($Plan.SourceBindings|Where-Object {$_.Role -ceq 'Provider' -and [IO.Path]::GetFileName($_.Path) -ceq $name}).Count -ne 1){throw 'Complete fixed modal Source closure required.'}}
+    if($modal.ModalSource -cne (Join-Path $package $closure.Modal)){throw 'Exact existing modal adapter required.'}
+    $true
+}
 $plan=Read-PlayerExportSource $PlanPath $PlanSHA256 -Role Plan|ConvertFrom-Json -Depth 30
+$modalSelected=Test-PlayerModalPlan $plan
 if($plan.Schema -cne 'iw7.player-template-export-source/1' -or $plan.Ready -or $plan.CandidateExecuted -or
  $plan.StockContentQualified -or $plan.RetailAliasCount -ne 70 -or $plan.UniqueRetailSources -ne 39 -or
- $plan.RunnerBinding.Path -cne $PSCommandPath -or $plan.GroupSeconds -ne 600 -or $plan.ToolSeconds -ne 240 -or
+ $plan.RunnerBinding.Path -cne $PSCommandPath -or $plan.GroupSeconds -ne 600 -or $plan.ToolSeconds -ne $(if($modalSelected){120}else{240}) -or
  $plan.GeneratedLimitBytes -ne 16777216 -or $plan.MetadataReserveBytes -ne 1048576){throw 'Exact unexecuted finite export plan required.'}
 $null=Read-PlayerExportSource $plan.RunnerBinding.Path $plan.RunnerBinding.SHA256 $plan.RunnerBinding.Bytes -Role Runner
 foreach($pin in $plan.SourceBindings){$null=Read-PlayerExportSource $pin.Path $pin.SHA256 $pin.Bytes -Role $pin.Role}
@@ -72,7 +105,7 @@ $state=[ordered]@{Schema='iw7.player-template-export/1';Status='Pending';PlanSHA
  Inputs=[Collections.Generic.List[object]]::new();ContentPins=[Collections.Generic.List[object]]::new();
  CreatedCopies=[Collections.Generic.List[object]]::new();UnknownCopyCreation=$false;LeaseReleased=$false;GuardsDisposed=$false;
  CandidateStarted=$false;NativeExportComplete=$false;CandidateExecuted=$false}
-$root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new();ContentGuards=@{}}
+$root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new();ContentGuards=@{};ModalOptions=$null;ModalEvidence=$null}
 $global:IW7PlayerTemplateExport=$root;[AppDomain]::CurrentDomain.SetData($root.Key,$root)
 $script:PlayerTemplateExportOriginalRoot=$root
 $failure=$null;$created=$false
@@ -114,6 +147,31 @@ function Record-PlayerCandidateStart($Ctx,$Current){
     # H1 publishes Identity only after its original Start returned successfully.
     # Record that fact before the output observer can throw; completion is separate.
     $playerRoot.State.CandidateStarted=$true;$playerRoot.State.CandidateIdentity=$Current.Identity
+}
+function Invoke-PlayerOriginalPoll($Ctx,$Current,$Logs){
+    Record-PlayerCandidateStart $Ctx $Current
+    Test-PlayerGenerated $Current
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot
+    if($playerRoot.ModalOptions){
+        Invoke-ArenaLoadDiagnostic $Ctx $Current $Logs $playerRoot.ModalOptions $playerRoot.ModalEvidence
+        Test-PlayerGenerated $Current
+    }
+}
+function Close-PlayerOriginalJobs{
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot;$main=$playerRoot.Context
+    $jobs=@($main)
+    if($main.PSObject.Properties['DiagnosticContext']){$jobs+=@($main.DiagnosticContext)}
+    $allClosed=$true
+    foreach($jobContext in $jobs){
+        if($jobContext.Owner -and !$jobContext.Owner.Closed){$jobContext.Closed=$false}
+        if(!$jobContext.Closed){
+            if(!$jobContext.Owner){$allClosed=$false;continue}
+            try{$jobContext.Owner.StopAndConfirm(5000);$jobContext.Closed=$jobContext.Owner.Closed}catch{$playerRoot.State.ClosureError=$_.Exception.Message}
+        }
+        if(!$jobContext.Closed){$allClosed=$false}
+    }
+    # Closing the main owner cannot attest an unknown diagnostic child.
+    $main.Closed=$allClosed;$playerRoot.State.OriginalJobsClosed=$allClosed
 }
 function Copy-PlayerOwned($Pin,[string]$Target,[switch]$Mutable){
     $root=$script:PlayerTemplateExportOriginalRoot;$state=$root.State
@@ -246,6 +304,7 @@ try{
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Extract -PhysicalBytes 8GB -CommitBytes 12GB -Owner 'One Shredder/PAP native template export'
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     . $plan.Providers.Profile;. $plan.Providers.StockCore;. $plan.Providers.BeaconCore;. $plan.Providers.ArenaProcess
+    if($modalSelected){. $plan.Providers.H1Compiler;. $plan.Providers.LoadDiagnostic;Pin-PlayerOpaque $plan.ModalDiagnostic.Python}
     Pin-PlayerOpaque $plan.JobAssembly
     [Reflection.Assembly]::LoadFrom($plan.JobAssembly.Path)|Out-Null
     [IO.Directory]::CreateDirectory($plan.RunRoot)|Out-Null;$created=$true
@@ -278,11 +337,18 @@ try{
     Confirm-PlayerStock
     $tool=Join-Path $plan.WorkRoot 'zonetool-iw7-player.exe'
     $arguments=@('-headless','-iw7-player-weapon-templates','cp_zmb',$plan.Request.Path,$plan.Pack)
+    if($modalSelected){
+        $root.ModalOptions=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$plan.RunRoot;DiagnosticZone='global_mp';ModalTextOnly=$true;
+            ModalSource=$plan.ModalDiagnostic.ModalSource;Python=$plan.ModalDiagnostic.Python.Path;PythonSHA256=$plan.ModalDiagnostic.Python.SHA256;
+            ToolSHA256=$plan.Candidate.SHA256;Inputs=$state.Inputs}
+        $root.ModalEvidence=[ordered]@{Attempted=$false;LastBytes=-1L;LastProgressMs=0L;Outcome='NotTriggered';SymbolsVerified=$false}
+        $state.ModalDiagnostic=$root.ModalEvidence
+    }
     Test-PlayerGenerated $state # Reject redirects before the existing profile's enumeration.
     # Until H1's successful Start identity reaches our poll, startup is unknown.
     # An Invoke exception must not turn an attempted/partial launch into false.
     $state.CandidateInvocationAttempted=$true;$state.CandidateStarted=$null
-    $state.Tool=Invoke-OriginalArenaTool $context $tool $plan.Candidate.SHA256 $arguments $plan.WorkRoot $plan.RunRoot 'player-template' $state.Inputs $plan.ToolSeconds {param($Ctx,$Current,$Logs) Record-PlayerCandidateStart $Ctx $Current;Test-PlayerGenerated $Current}
+    $state.Tool=Invoke-OriginalArenaTool $context $tool $plan.Candidate.SHA256 $arguments $plan.WorkRoot $plan.RunRoot 'player-template' $state.Inputs $plan.ToolSeconds {param($Ctx,$Current,$Logs) Invoke-PlayerOriginalPoll $Ctx $Current $Logs}
     $state.CandidateExecuted=$true
     Test-PlayerGenerated $state.Tool
     $stdout=Read-PlayerOutput $state.Tool.Stdout 2MB
@@ -313,7 +379,7 @@ try{
     Confirm-PlayerStock;$state.Status='MeasuredPassed';$state.StockContentQualified=$true;$state.NativeExportComplete=$true
 }catch{$failure=$_;$state.Status='Failed';$state.Error=$_.Exception.Message}
 finally{
-    if(!$context.Closed -and $context.Owner){try{$context.Owner.StopAndConfirm(5000);$context.Closed=$context.Owner.Closed}catch{$state.ClosureError=$_.Exception.Message}}
+    Close-PlayerOriginalJobs
     if($created -and $context.Closed -and $context.Lease -and !$state.UnknownCopyCreation){
         try{
             Confirm-PlayerStock;Test-PlayerGenerated $state
@@ -338,6 +404,7 @@ finally{
             # Immutable aliases remain owned/prepared for evidence and later reuse.
             # No base/private-test-server file, metadata or bank is restored/written.
             Exit-IW7ResourceLease -Token $context.Lease.Token;$context.Lease=$null;$state.LeaseReleased=$true
+            if($context.PSObject.Properties['DiagnosticContext']){$context.DiagnosticContext.Lease=$null}
             foreach($guard in $guards){$guard.Dispose()};$guards.Clear();$state.GuardsDisposed=$true
             Assert-PlayerExportClock
             $final=[ordered]@{Schema='iw7.player-export-closure/1';Status='ClosedReleasedPendingPostflight';PlanSHA256=$PlanSHA256;MeasuredSHA256=$sha;
