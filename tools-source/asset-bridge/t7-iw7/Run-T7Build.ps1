@@ -6,7 +6,9 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 if(!$IsWindows -or [IntPtr]::Size -ne 8 -or $PSVersionTable.PSVersion.Major -lt 7){throw 'Windows x64 PowerShell 7 required.'}
 if($PlanSHA256 -cnotmatch '^[0-9a-f]{64}$'){throw 'Exact reviewed plan SHA256 required.'}
 $guards=[Collections.Generic.List[object]]::new()
-$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards}
+$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards;
+    PublicationGuards=[Collections.Generic.List[object]]::new();Publications=[Collections.Generic.List[object]]::new();
+    PreReleasePublished=$false;CompletionPublished=$false;CanExit=$false}
 $state=$null;$failure=$null;$created=$false;$launcher=$null;$priority=$null
 function Open-T7Bootstrap($Path,[long]$Bytes,[string]$SHA256) {
     if(![IO.Path]::IsPathFullyQualified($Path) -or [IO.Path]::GetFullPath($Path) -cne $Path){throw 'Canonical bootstrap path required.'}
@@ -1346,6 +1348,17 @@ try {
     . $plan.CompilerPolicySource
     . $plan.CompilerCore
     . $plan.Profile
+    # Local to this runner: retain the ACTUAL factory result before a deadline
+    # check can throw. Shared H1 and other consumers keep their existing policy.
+    $script:T7OriginalFactory=${function:New-H1Owner}
+    $t7OriginalContext=$context
+    function New-H1Owner {
+        Assert-H1Deadline $script:T7StageStarted $script:T7StageDeadlineSeconds
+        $originalOwner=& $script:T7OriginalFactory
+        $t7OriginalContext.Owner=$originalOwner
+        Assert-H1Deadline $script:T7StageStarted $script:T7StageDeadlineSeconds
+        $originalOwner
+    }
     $launcher=Get-Process -Id $PID;$priority=$launcher.PriorityClass;$launcher.PriorityClass='BelowNormal'
     # No binary contents are read until the one account-wide reservation exists.
     foreach($pin in @($plan.Inputs)+@($plan.Bindings|Where-Object {!$_.IsText})){Open-T7Pin $pin $context}
@@ -1355,6 +1368,8 @@ try {
     Add-Type -LiteralPath $plan.ObserverSource
     Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
     foreach($stage in $plan.Stages) {
+        $stageStarted=Get-H1Clock # Includes directory, identity and StartInfo setup.
+        $script:T7StageStarted=$stageStarted;$script:T7StageDeadlineSeconds=$stage.DeadlineSeconds
         Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
         if(!$context.Closed){throw 'Previous original job not closed.'}
         $script:T7CurrentStage=$stage
@@ -1364,7 +1379,6 @@ try {
             MaxObservedOutputBytes=$state.MaxObservedOutputBytes;TreeClosureConfirmed=$false;
             CompilerTelemetry=[ordered]@{Completed=$false;Action=$null}}
         $state.Stages.Add($stageState)
-        $stageStarted=Get-H1Clock
         $image=if($stage.Stage -ceq 'Probe'){@($state.Stages[0].Artifacts|Where-Object Path -CEQ $stage.Image)[0]}
                else{@($plan.Bindings|Where-Object Path -CEQ $stage.Image)[0]}
         $start=New-T7Start $plan $stage $stageRoot
@@ -1410,10 +1424,24 @@ try {
     $failure=$_
     if($state){$state.Status='Failed';$state.Error=$_.Exception.Message}
 }finally{
-    if($state){Complete-H1Stage $context $state}
+    if($state){
+        Complete-H1Stage $context $state -BeforeReleaseCheck {
+            if(!$created){
+                if($context.Owner -or !$context.Closed){throw 'No owned output root but original job may exist.'}
+                return # Admission failed before any owned output/job; never write into a foreign root.
+            }
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            if(!$failure){$state.Status='PendingRelease'}
+            $before=Write-H1Receipt $plan $state $plan.RunRoot -Name 'receipt-before-release.json' -PassThru
+            $context.PublicationGuards.Add((Open-H1Pin $before))
+            $context.Publications.Add($before)
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            $context.PreReleasePublished=$true
+        }
+    }
     if($launcher -and $null -ne $priority){try{$launcher.PriorityClass=$priority}catch{if(!$failure){$failure=$_};$state.Status='Failed'}}
-    if($context.Closed -and !$context.Lease){foreach($guard in $guards){$guard.Dispose()};$guards.Clear()}
     if($state -and $created) {
+        $finalReceipt=$null
         try {
             Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
             if(!$failure -and $context.Closed -and !$context.Lease){
@@ -1428,7 +1456,7 @@ try {
         }
         $state.ElapsedMs=(Get-H1Clock)-$script:T7GroupStarted
         $state.FinishedUtc=[datetime]::UtcNow.ToString('o')
-        try{Write-H1Receipt $plan $state $plan.RunRoot}catch{
+        try{$finalReceipt=Write-H1Receipt $plan $state $plan.RunRoot -PassThru}catch{
             if($registration){$state.RegistrationCPPQualified=$false;$state.Status='Failed'}
             if($incoming){$state.IncomingCPPQualified=$false}
             if(!$failure){$failure=$_};Write-Warning $_.Exception.Message
@@ -1437,6 +1465,7 @@ try {
             try{Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds}
             catch {
                 $failure=$_;$state.Status='Failed';$state.GroupDeadlineError=$_.Exception.Message
+                $finalReceipt=$null # The late Passed pin is invalid even if retirement/republication fails.
                 if($registration){$state.RegistrationCPPQualified=$false}
                 if($incoming){$state.IncomingCPPQualified=$false}
                 $state.ElapsedMs=(Get-H1Clock)-$script:T7GroupStarted
@@ -1447,12 +1476,34 @@ try {
                     $late=Join-Path $plan.RunRoot 'receipt.deadline-exceeded.json'
                     Assert-H1Path $receipt;Assert-H1Path $late
                     [IO.File]::Move($receipt,$late)
-                    Write-H1Receipt $plan $state $plan.RunRoot
+                    $finalReceipt=Write-H1Receipt $plan $state $plan.RunRoot -PassThru
                 }catch{Write-Warning ('Late receipt failure: '+$_.Exception.Message)}
             }
         }
+        if($finalReceipt -and $context.Closed -and !$context.Lease -and $context.PreReleasePublished){
+            try{
+                $context.PublicationGuards.Add((Open-H1Pin $finalReceipt))
+                $context.Publications.Add($finalReceipt)
+                foreach($publication in $context.Publications){$verified=Open-H1Pin $publication;$verified.Dispose()}
+                Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+                $context.CompletionPublished=$true
+            }catch{
+                if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message
+                if($registration){$state.RegistrationCPPQualified=$false}
+                if($incoming){$state.IncomingCPPQualified=$false}
+            }
+        }
+    }
+    # Keep the same input/publication guards and original context on any unknown
+    # publication. A released lease alone is never permission to drop the guards.
+    if($context.Closed -and !$context.Lease -and (!$created -or $context.CompletionPublished)){
+        try{
+            foreach($guard in $guards){$guard.Dispose()};$guards.Clear()
+            foreach($guard in $context.PublicationGuards){$guard.Dispose()};$context.PublicationGuards.Clear()
+            $context.CanExit=$true
+        }catch{if(!$failure){$failure=$_};if($state){$state.FinalizationError=$_.Exception.Message}}
     }
 }
 if($failure){throw $failure}
-if(!$state.LeaseReleased -or $state.Status -cne 'Passed'){throw 'Build did not close and release successfully.'}
+if(!$state.LeaseReleased -or $state.Status -cne 'Passed' -or !$context.CanExit){throw 'Build did not close, publish and release successfully; retain original context.'}
 [ordered]@{Status=$state.Status;Receipt=(Join-Path $plan.RunRoot 'receipt.json');CandidateExecuted=$false;Ready=$false}|ConvertTo-Json

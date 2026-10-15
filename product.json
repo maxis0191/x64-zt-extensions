@@ -655,6 +655,7 @@
     "tools-source/asset-bridge/t7-iw7/T7-READBACK.md",
     "tools-source/asset-bridge/t7-iw7/T7Build.Profile.ps1",
     "tools-source/asset-bridge/t7-iw7/Test-T7BuildDeadline.ps1",
+    "tools-source/asset-bridge/t7-iw7/Test-T7BuildOwnership.ps1",
     "tools-source/asset-bridge/t7-iw7/Test-T7BuildProfile.ps1",
     "tools-source/asset-bridge/t7-iw7/Test-T7InputBindings.ps1",
     "tools-source/asset-bridge/t7-iw7/Test-T7OSResourceContext.ps1",

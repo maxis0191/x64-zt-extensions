@@ -7,6 +7,7 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $script:TestClock=600001.0;$script:T7GroupStarted=0.0
 function Get-H1Clock { $script:TestClock }
 . (Join-Path $PSScriptRoot 'T7Build.Profile.ps1')
+$registration=$false;$incoming=$false # Explicit legacy selectors for the isolated real-finalizer harness.
 function Require-T7Test($Condition,[string]$Message){if(!$Condition){throw $Message}}
 $script:CreatedOwners=0
 function New-H1Owner {$script:CreatedOwners++;throw 'Regression: native owner creation reached after group expiry.'}
@@ -37,7 +38,7 @@ function Write-H1Receipt($Plan,$State,$Root){$script:Published.Add([string]$Stat
 $plan=[pscustomobject]@{GroupDeadlineSeconds=600;RunRoot='unused'}
 $state=[ordered]@{Status='Pending';InputsReverified=$true;LeaseReleased=$false}
 $guards=[Collections.Generic.List[object]]::new()
-$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease='simulated';Guards=$guards}
+$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease='simulated';Guards=$guards;PublicationGuards=[Collections.Generic.List[object]]::new();Publications=[Collections.Generic.List[object]]::new();PreReleasePublished=$false;CompletionPublished=$false;CanExit=$false}
 $failure=$null;$created=$true;$launcher=$null;$priority=$null
 . $finalize
 Require-T7Test ($script:CleanupCalls -eq 1 -and $state.LeaseReleased) 'Deadline prevented final cleanup.'
@@ -60,7 +61,7 @@ function Write-H1Receipt($Plan,$State,$Root) {
 $plan=[pscustomobject]@{GroupDeadlineSeconds=600;RunRoot=$root}
 $state=[ordered]@{Status='Pending';InputsReverified=$true;LeaseReleased=$false}
 $guards=[Collections.Generic.List[object]]::new()
-$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease='simulated';Guards=$guards}
+$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease='simulated';Guards=$guards;PublicationGuards=[Collections.Generic.List[object]]::new();Publications=[Collections.Generic.List[object]]::new();PreReleasePublished=$false;CompletionPublished=$false;CanExit=$false}
 $failure=$null;$created=$true;$launcher=$null;$priority=$null
 . $finalize
 $receipt=Get-Content -LiteralPath (Join-Path $root 'receipt.json') -Raw|ConvertFrom-Json
