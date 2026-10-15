@@ -203,12 +203,26 @@ its remaining bookkeeping failure is recorded separately. The current runner
 correction has Source-only owned-output tests and was subsequently validated by
 Q's distinct fresh admitted cycle; it does not retroactively qualify P.
 
-Next: review the new T2 neutral export packet using actual S3 baselines. Its
-manifest link counts include only earlier aliases planned within that same T
-group; observed global baselines stay unchanged and retained R aliases are not
-added again. Preserve R/S2 failures and unique evidence. Reuse Q unchanged with
-the existing OwnedH1/Stock35 caller, producer, manifest and independent readers.
-Source preparation opens neither candidate nor stock, creates no aliases or
-lease, and invokes no DEFAULT. A distinct exact review and Extract GO must precede
-fresh metadata/content/candidate qualification and CLI execution. PaP, RayGun,
-projectile and physics mechanics remain unqualified.
+T2 subsequently completed a distinct reviewed/admitted neutral export using Q
+unchanged, the existing OwnedH1/Stock35 caller and actual S3 baselines. Its
+transaction expectations included only earlier aliases created by that same T
+group; the observed baselines were unchanged and retained R aliases were not
+added again. All three stock transactions prepared and preserved their sources.
+The native CLI exited 0, and the independent closed readers accepted exactly
+the two full native definitions plus their size/hash-bound manifest. Base type1
+and PAP type0 stayed unchanged. `NeutralCaptureComplete` and
+`FullDefinitionsObserved` became true; legacy `NativeExportComplete` and Ready
+remain false. See EXPORT-COHORT.md for original-context closure and exact pins.
+
+The observed readset charged 45,165 bytes, 495 elements, 21 script-string calls
+and 1,753 copied text bytes. Its conservative JSON/allocation estimates were
+485,130/1,793,044 bytes. The actual shape counters recorded no nonnull turret
+string matrix and two flat empty-string arrays. Those are observations of this
+capture, not a proof of runtime ABI, stable conversion lifetime or roundtrip.
+
+Next: review a separate bounded Source proposal before any consumer/native
+artifact access or authoring step. Preserve R/S2 failures and the rejected,
+unexecuted first T packet. No reader or author guard is relaxed: Native49 still
+requires its valid3/3 route and refuses this unchanged1/0 pair. Dependency
+bodies, PaP, RayGun, projectile/physics, runtime ABI/lifetime, roundtrip, weapon
+grant and owner gameplay remain unqualified. No game or FF build ran in T2.
