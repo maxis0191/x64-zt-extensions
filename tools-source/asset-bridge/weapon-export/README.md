@@ -1,5 +1,13 @@
 # Bounded IW7 player/PAP source export support
 
+The separate [neutral dependency Source foundation](NEUTRAL-DEPENDENCIES.md)
+adds opt-in typed pure walkers and a local bounded collector. Actual CPP E3
+passed all sixteen fixtures and both native TU compiles, complete dependency
+guards, inherited-input revalidation and independently verified ordinary closure.
+Failed C/D attempts remain recorded. Full CLI, FF, runtime roundtrip and gameplay
+remain unqualified; the readback leaf is still unimplemented.
+It does not change the historical module or CPP Q qualification below.
+
 The neutral full-definition route completed CPP Q and its distinct admitted T2
 capture of the full Shredder/PAP definitions. See
 [NEUTRAL-DEFINITIONS.md](NEUTRAL-DEFINITIONS.md) and
