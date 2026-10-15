@@ -48,7 +48,11 @@ It requires the five original stages in order, zero original exits, closed trees
 four completed compiler telemetry records with empty original jobs, and exactly
 39 legacy plus 48 incoming authored checks before main/CLI/link. The inherited
 top-level compiler placeholder and the noncompiler Probe telemetry stay false;
-neither is used as completed compiler evidence. The exact recipe only records
+both must be typed booleans equal to false. They are not completed compiler
+evidence. Exact-head Source review caught the missing explicit false checks;
+counterexamples promote each to true or replace it with text and must refuse.
+The real 49,161-byte receipt retains its positive Source qualification.
+The exact recipe only records
 fixture success after both markers match and stderr is empty.
 
 The original preexit uses its actual SameOriginal* PSVariable/context/owner fields,

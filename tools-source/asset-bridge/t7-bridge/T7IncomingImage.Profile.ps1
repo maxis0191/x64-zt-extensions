@@ -163,6 +163,10 @@ function Assert-T7IncomingImageCpp87($Plan,$Build,$Receipt,$Manifest,$HostWitnes
         }
     }
     $probe=$Receipt.Stages[1]
+    if($Receipt.CompilerTelemetry.Completed -isnot [bool] -or $Receipt.CompilerTelemetry.Completed -or
+       $probe.CompilerTelemetry.Completed -isnot [bool] -or $probe.CompilerTelemetry.Completed){
+        throw 'CPP87 placeholder and noncompiler Probe telemetry must remain typed false.'
+    }
     if(!(Test-T7CatalogueInteger $probe.LegacyRegistrationChecks 39) -or $probe.LegacyRegistrationChecks -ne 39 -or
        !(Test-T7CatalogueInteger $probe.IncomingChecks 48) -or $probe.IncomingChecks -ne 48 -or
        $probe.EngineInvoked -isnot [bool] -or $probe.EngineInvoked){throw 'Actual 39+48 authored fixture required.'}

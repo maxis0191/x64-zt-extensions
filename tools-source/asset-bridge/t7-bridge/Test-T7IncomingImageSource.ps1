@@ -143,7 +143,8 @@ Check (($start.ArgumentList -join '|') -ceq ($compiled.Arguments -join '|')) 'In
 $f=New-IncomingCppFixture;Qualify-Incoming $f;Check $true 'Authored closed CPP87 refused.'
 foreach($case in 'candidate','old-plan','old-receipt','doc-source','old-source','native-source','profile-array','count','stage-order','stage-exit','stage-unclosed',
     'compiler-placeholder','active','members','probe39','probe48','probe-engine','inputs','receipt-qualified','context','guards','lease','host-generation','host-argv',
-    'pty','live','identity-generation','closure-qualified','reconstructed','fresh-lease','fresh-compiler','artifact','host-argument-array','closure-hash-array','fresh-pid-string'){
+    'pty','live','identity-generation','closure-qualified','reconstructed','fresh-lease','fresh-compiler','artifact','host-argument-array','closure-hash-array','fresh-pid-string',
+    'top-telemetry-promoted','probe-telemetry-promoted','top-telemetry-untyped','probe-telemetry-untyped'){
     $f=New-IncomingCppFixture
     switch($case){
         candidate {$f.Plan.CandidateSHA256='eeeca36f26ff2c76b98a608fe17a6b47259401b1cd800f73fe886bd099ac6dbc'} old-plan {$f.Plan.ExpectedBuildPlanSHA256='old'}
@@ -162,6 +163,8 @@ foreach($case in 'candidate','old-plan','old-receipt','doc-source','old-source',
         artifact {$f.Receipt.Stages[-1].Artifacts[0].SHA256='old'}
         host-argument-array {$f.Witness.Host.Arguments[5]=@('. authored.ps1')} closure-hash-array {$f.Closure.Receipt.SHA256=@($f.Closure.Receipt.SHA256)}
         fresh-pid-string {$f.Fresh.OriginalPIDs[0]=[string]$f.Fresh.OriginalPIDs[0]}
+        top-telemetry-promoted {$f.Receipt.CompilerTelemetry.Completed=$true} probe-telemetry-promoted {$f.Receipt.Stages[1].CompilerTelemetry.Completed=$true}
+        top-telemetry-untyped {$f.Receipt.CompilerTelemetry.Completed='false'} probe-telemetry-untyped {$f.Receipt.Stages[1].CompilerTelemetry.Completed='false'}
     }
     Refuses {Qualify-Incoming $f} ''
 }
