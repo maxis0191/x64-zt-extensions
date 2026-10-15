@@ -388,8 +388,8 @@ so their direct inspection was unavailable rather than reconstructed.
 
 The original host exited 0: true PTY83459, terminal chunk `b3bb2a`. Fresh postflight
 found all 18 captured identities absent, no compiler/client/VCTIP and no leases.
-Paris Main PID36644, created 16:08:59.790748 UTC, was preserved in that snapshot;
-this does not promise a fixed Main identity across later operations. Root
+The original Paris Main identity was preserved in that snapshot; this does not
+promise a fixed Main identity across later operations. Root
 independently verified receipt hashes and fresh absence/registry at 16:13:59 UTC,
 then released the heavy slot and qualified Q as PassedClosed. No safety recovery
 was needed. P remains ClosedFinalizationIncomplete and unqualified.
