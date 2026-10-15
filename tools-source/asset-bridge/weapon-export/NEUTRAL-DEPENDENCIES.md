@@ -3,11 +3,12 @@
 This opt-in Source implementation owns two typed pure walkers, one local bounded
 collector, a public-parse seam and an in-memory native Source patch renderer.
 It does not change the historical CPP Q module or activate a native command.
-Actual CPP D compiled the corrected fixture and passed **all sixteen cases**.
-It then compiled `weapondef.cpp` with exit 0, but the dependency guard refused an
-omitted extensionless GSL header; the attachment TU did not run. D remains failed
-and unqualified. Earlier C passed fifteen cases and failed `legacy_parity`.
-The Python Source checks do not establish ABI, runtime or roundtrip acceptance.
+Actual CPP E3 at Source head `05c28704ff0af07ab08b5b35681356999d96b26a` passed
+**all sixteen cases and both patched native TU compiles**, with complete
+dependency guards and inherited-input revalidation. Root independently verified
+ordinary closure. This qualifies the bounded compilation/owned-memory checks;
+runtime, FF, roundtrip, gameplay, physics and PAP transactions remain unqualified.
+Earlier C and D remain failed historical attempts, as recorded below.
 
 The corrected gates are sequential: author and approve this exact Source; review
 a dedicated CPP recipe and obtain its distinct admission/GO; compile the actual
@@ -185,15 +186,48 @@ The declaration-only profile selects 682 tuples: 585 includes, 70 runtime inputs
 and 27 fixture-link inputs. Compared with D's 668, this adds ten GSL headers,
 three installed MSVC library debug-symbol inputs and one declared Windows runtime
 resource. These are inherited metadata declarations, not newly inspected files.
-Their actual byte verification is still mandatory under the future CPP lease.
+Their actual byte verification remains mandatory under each distinct CPP lease.
 They are never `IsText` Source bindings, and DEFAULT does not query them. No
 post-compile additions, weakened dependency check, adopted C/D artifact or broader
 asset export is permitted. A separately reviewed CPP E packet must repeat all
 four phases under its own distinct GO before the merge gate can complete.
 
-The next concrete gate is review of the corrected exact Source PR and a distinct bounded
-CPP recipe/GO. That recipe must compile this header/walkers with the exact pinned
-native declarations and execute all sixteen cases with production code, then
-compile both patched native translation units. Until that succeeds, no new
-candidate executable, private readback CLI leaf, FF or runtime roundtrip is
-qualified. The proposed `-iw7-neutral-clone-readback` remains unimplemented.
+Actual CPP E3 completed those four phases on the exact Source head above and
+native fork pin `fab935826c898806855376662a8a03317b3ad8f1`. All four processes
+exited 0; the fixture printed the exact sixteen case markers and `16/16 PASS`.
+Both weapon and attachment TUs compiled with the existing warning/error policy.
+All three compiler dependency reports were accepted against the guarded set.
+The 682 inherited inputs were reverified under the original lease. Ten parent
+Source files, including the scheduler's transitive imports, were held before
+imports and rechecked in the final Source loop. Earlier C/D are not retrospectively
+credited with this additional transitive Source retention.
+
+The exact E3 plan is 423,333 bytes, SHA256
+`aa9d53ece2a4befa37ab09b342e629875647d0c12e019bda29fac0993e4e93dd`.
+Three preopened ReadWrite publication streams were written, flushed and read
+back through the same handles, retaining Source/opaque/publication guards through
+lease release and the last deadline. Their 23,503 bytes fit the unchanged 1 MiB
+metadata reserve; native outputs measured under the lease totaled 28,732,664
+bytes. The disk final snapshot honestly records released lease/guards held;
+the same original context then verified disposal of all 1,542 retained actual
+FileStream/SafeFileHandle references before `CanExit`. The physical NoExit host
+exited 0 and fresh postflight found all nine captured identities and leases
+absent. Root independently corroborated the Source receipt chain, original
+preexit witness, real terminal exit and fresh absence before qualification.
+
+The short fixture's CIM registration error remained recorded alongside the
+native original-job-already-empty marker and actual root exit 0; no cause is
+inferred from its duration. Full kernel creation and CIM microsecond timestamps
+remain separate in the original witness. No OBJ/EXE/PDB/SDK input was reopened,
+statted or rehashed after release; later checks read Source evidence only.
+
+The compiled Source revision is the exact head above. A later documentation-only
+head records this result and must not be described as newly compiled. No full
+ZoneTool CLI link/execution, FF, asset roundtrip, stock/clone/T2 body access or
+gameplay occurred. The private readback CLI leaf remains unimplemented.
+
+The next concrete gate is review of this documentation-only result and the final
+exact PR head before merge. Next Source work can specify the closed private-pair
+readback leaf and hash-bound inventory-before-builder transaction; activation,
+full CLI build, FF and runtime operations require their own review and distinct
+GO. The proposed `-iw7-neutral-clone-readback` remains unimplemented.
