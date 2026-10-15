@@ -1,10 +1,11 @@
 # Authored ModelFF admission and original-owner route - Source checkpoint
 
 This connects the original authored project to the existing ModelFF entry,
-transaction and H1 original-job caller. No authored FF has been built or read
-back by this change. The separate B2 standalone writer result remains its frozen
-producer/geometry evidence. Material, FF, recipient/normal/shader ABI, pixels,
-physics/contact and owner acceptance remain unqualified.
+transaction and H1 original-job caller. The separate B2 standalone writer result
+remains its frozen producer/geometry evidence. D5 built an authored FF and
+verified its inventory, then failed before independent geometry/material
+readback. Recipient/normal/shader ABI, pixels, physics/contact and owner
+acceptance remain unqualified.
 
 The first admitted D3 attempt on 2026-10-15 refused in SDK29's Source-template
 check before any stock transaction or FF build. Its failed original job and host
@@ -15,6 +16,13 @@ The subsequent [D4 checkpoint](../../docs/AUTHORED-PLATFORM-FF-D4-2026-10-15.md)
 passed the SDK31 stage and accepted plan/3, then refused on absent pre-alias
 `TargetId` before SourceValidation created an owner. Its failed-operation closure
 was corroborated; FF construction and stock restoration were not reached.
+
+The [D5 checkpoint](../../docs/AUTHORED-PLATFORM-FF-D5-2026-10-15.md) built a
+1904-byte FF and passed offline inventory; required native CBI readback failed.
+A separate 64-entry publication failure followed restoration. Its original
+failed-operation closure and true host exit were corroborated. The long-path
+hypothesis and complete-namespace publication correction remain separate Source
+work requiring a fresh package and a distinct GO.
 
 ## One admission, including input staging
 
