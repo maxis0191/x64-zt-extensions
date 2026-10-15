@@ -37,7 +37,7 @@ class ExportDefaultTests(unittest.TestCase):
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $t=$null;$e=$null;$a=[Management.Automation.Language.Parser]::ParseFile($Runner,[ref]$t,[ref]$e)
 function Assert-PlayerExportClock {}
-function Assert-H1Path($Path){if((Get-Item -LiteralPath $Path).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Redirect'}}
+function Assert-H1Path($Path){if([IO.File]::GetAttributes($Path) -band [IO.FileAttributes]::ReparsePoint){throw 'Redirect'}}
 $guards=[Collections.Generic.List[object]]::new()
 $script:PlayerTemplateExportOriginalRoot=@{Context=[pscustomobject]@{Guards=$guards}}
 '''+''.join(f"$f=$a.Find({{param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq '{n}'}},$true)\n. ([scriptblock]::Create($f.Extent.Text))\n" for n in ([name] if isinstance(name,str) else name))+body,encoding='utf-8')
@@ -149,4 +149,34 @@ $source.Before.Identity='same';$content.Dispose();$refused=$false;try{$null=Get-
 if(!$refused){throw 'Closed content handle accepted'}
 Write-Output 'after-apply-guard-pass'
 ''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('after-apply-guard-pass',r.stdout)
+ def test_hidden_marker_is_counted_and_limit_still_refuses(self):
+  r=self.fragment('Test-PlayerGenerated','''
+$work=Join-Path $Directory 'hidden-work';[IO.Directory]::CreateDirectory($work)|Out-Null
+$marker=Join-Path $work '__iw7_ship';[IO.File]::WriteAllBytes($marker,[byte[]]::new(4));[IO.File]::SetAttributes($marker,[IO.FileAttributes]34)
+$script:PlayerTemplateExportOriginalRoot.Plan=[pscustomobject]@{RunRoot=$work;WorkRoot=$work;GeneratedLimitBytes=4}
+$script:PlayerTemplateExportOriginalRoot.State=[ordered]@{Inputs=@()}
+Test-PlayerGenerated $null
+if($script:PlayerTemplateExportOriginalRoot.State.GeneratedObservedBytes -ne 4){throw 'Hidden marker escaped accounting'}
+$refused=$false;try{Test-PlayerGenerated $null 3}catch{$refused=$true}
+if(!$refused){throw 'Hidden output exceeds limit without refusal'}
+Write-Output 'hidden-budget-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('hidden-budget-pass',r.stdout)
+ def test_start_record_survives_failed_output_observation_without_claiming_completion(self):
+  r=self.fragment('Record-PlayerCandidateStart','''
+$image=Join-Path $Directory 'zonetool-iw7-player.exe';$created=[datetime]::Parse('2026-10-15T01:47:33.1885246Z').ToUniversalTime()
+$ctx=[pscustomobject]@{Owner=[pscustomobject]@{PID=42;Image=$image;CreationFileTime=$created.ToFileTimeUtc()}}
+$current=[pscustomobject]@{Identity=[ordered]@{PID=42;Image=$image;CreatedUtc=$created.ToString('o')}}
+$script:PlayerTemplateExportOriginalRoot=@{Context=$ctx;Plan=@{WorkRoot=$Directory};State=[ordered]@{CandidateStarted=$null;NativeExportComplete=$false;CandidateExecuted=$false}}
+$refused=$false;try{Record-PlayerCandidateStart $ctx ([pscustomobject]@{Identity=$null})}catch{$refused=$true}
+if(!$refused -or $null -ne $script:PlayerTemplateExportOriginalRoot.State.CandidateStarted){throw 'Unconfirmed startup became a fact'}
+Record-PlayerCandidateStart $ctx $current
+try{throw 'Output observation failure'}catch{}
+$state=$script:PlayerTemplateExportOriginalRoot.State
+if(!$state.CandidateStarted -or $state.NativeExportComplete -or $state.CandidateExecuted -or ![object]::ReferenceEquals($state.CandidateIdentity,$current.Identity)){throw 'Started/completed evidence conflated'}
+$other=[pscustomobject]@{Owner=$ctx.Owner};$refused=$false;try{Record-PlayerCandidateStart $other $current}catch{$refused=$true}
+if(!$refused){throw 'Different original context accepted'}
+$current.Identity.CreatedUtc='different';$refused=$false;try{Record-PlayerCandidateStart $ctx $current}catch{$refused=$true}
+if(!$refused){throw 'Different child creation accepted'}
+Write-Output 'started-failure-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('started-failure-pass',r.stdout)
 if __name__=='__main__':unittest.main()
