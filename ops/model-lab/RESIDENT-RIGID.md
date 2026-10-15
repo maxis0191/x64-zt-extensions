@@ -424,3 +424,39 @@ The authored branch now has a separate
 [Source checkpoint for one-admission staging and FF ownership](AUTHORED-FF.md).
 This changes only execution preparation/lifecycle; it supplies no actual FF or
 runtime evidence and does not relabel the frozen B2 CPP result.
+
+## ModelFF publication namespace - Source only
+
+The authored ModelFF publication path requires a sealed namespace and counter
+created before RunRoot creation or admission. `New-ModelFFOutputNamespace`
+accepts the reviewed Source file declarations, the global RunRoot, its nested
+SourceRoot and the literal zone. The Source-side manifest parser and actual
+stage/input equality checks are separate preflight responsibilities; publication
+refuses a missing profile or a counter bound to another profile. SourceRoot
+stays inside RunRoot and cannot be relocated to evade accounting.
+
+The namespace admits at most 1,024 literal declared files in the Source,
+author-project, work, roundtrip and backup scopes. It adds only the fixed
+ModelFF state, recovery, result, seven-phase stream and two atomic receipt paths.
+All directories derive from those file paths. Both maps and the profile are
+read-only; the entry ceiling is their declared combined cardinality, never an
+observed run size or a replacement constant of 128. Traversal, wildcards,
+reserved path components, duplicate names and file/directory collisions are
+refused while constructing the profile.
+
+At each H1 receipt accounting point, the ModelFF-local counter walks the whole
+original RunRoot, counting every file and directory and every file's bytes.
+There are no Source, author-project, work, stock or receipt exclusions. Unknown
+entries, type mismatches, reparse ancestry/entries, declaration overflow and
+byte overflow fail closed. The global 256 MiB allowance and 1 MiB receipt
+reserve remain unchanged. `Write-H1Receipt` still creates a fresh pending file,
+flushes and reads it back, checks the global output again, atomically moves it
+without replacement, then reads it back. The caller retains the resulting
+publication guards. The generic H1 fixture and its 64-entry limit are unchanged.
+
+The Source regression exercises the actual publisher and H1 writer on a small
+synthetic 127-entry tree, two guarded publications, invalid declarations,
+unexpected entries, a real owned junction/symlink, budget/reserve refusals and
+replacement-counter refusal. It starts no native process and acquires no lease.
+This does not qualify D5, create a D6 package or prove FF, ABI, rendered output,
+gameplay, stock restoration or owner acceptance.
