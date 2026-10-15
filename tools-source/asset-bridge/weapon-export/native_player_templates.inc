@@ -74,18 +74,77 @@ namespace player_weapon_templates
         return result;
     }
 
+    struct PrimaryReader
+    {
+        const WeaponCompleteDef* weapon;
+        const WeaponDef* def;
+        int classification() const { return static_cast<int>(def->weapClass); }
+        int type() const { return static_cast<int>(def->weapType); }
+        int inventory() const { return static_cast<int>(def->inventoryType); }
+        int clip() const { return weapon->iClipSize; }
+        int max_ammo() const { return def->iMaxAmmo; }
+        int ammo_used() const { return def->iAmmoUsedPerShot; }
+        int damage() const { return def->damage; }
+        int speed() const { return def->iProjectileSpeed; }
+        float lifetime() const { return def->projLifetime; }
+        bool gun_model() const { return def->gunXModel != nullptr; }
+        bool world_model() const { return def->worldModel != nullptr; }
+        bool animations() const { return def->szXAnims != nullptr; }
+    };
+    void report_primary_failure(const iw7_player_template_primary::Failure& failure)
+    {
+        using Check = iw7_player_template_primary::Check;
+        struct Spec { const char* key; const char* container; size_t offset; };
+        const auto spec = [&]() -> Spec
+        {
+            switch (failure.check)
+            {
+            case Check::type: return {"weapType", "WeaponDef", offsetof(WeaponDef, weapType)};
+            case Check::inventory: return {"inventoryType", "WeaponDef", offsetof(WeaponDef, inventoryType)};
+            case Check::class_min: return {"weapClass_min", "WeaponDef", offsetof(WeaponDef, weapClass)};
+            case Check::class_max: return {"weapClass_max", "WeaponDef", offsetof(WeaponDef, weapClass)};
+            case Check::class_non_player: return {"weapClass_non_player", "WeaponDef", offsetof(WeaponDef, weapClass)};
+            case Check::class_item: return {"weapClass_item", "WeaponDef", offsetof(WeaponDef, weapClass)};
+            case Check::clip: return {"iClipSize", "WeaponCompleteDef", offsetof(WeaponCompleteDef, iClipSize)};
+            case Check::max_ammo: return {"iMaxAmmo", "WeaponDef", offsetof(WeaponDef, iMaxAmmo)};
+            case Check::ammo_used: return {"iAmmoUsedPerShot", "WeaponDef", offsetof(WeaponDef, iAmmoUsedPerShot)};
+            case Check::damage: return {"damage", "WeaponDef", offsetof(WeaponDef, damage)};
+            case Check::speed: return {"iProjectileSpeed", "WeaponDef", offsetof(WeaponDef, iProjectileSpeed)};
+            case Check::lifetime_finite: return {"projLifetime_finite", "WeaponDef", offsetof(WeaponDef, projLifetime)};
+            case Check::lifetime_positive: return {"projLifetime_positive", "WeaponDef", offsetof(WeaponDef, projLifetime)};
+            case Check::gun_model: return {"gunXModel", "WeaponDef", offsetof(WeaponDef, gunXModel)};
+            case Check::world_model: return {"worldModel", "WeaponDef", offsetof(WeaponDef, worldModel)};
+            case Check::animations: return {"szXAnims", "WeaponDef", offsetof(WeaponDef, szXAnims)};
+            default: throw std::runtime_error("Primary refusal key unavailable");
+            }
+        }();
+        char line[256];
+        const auto count = failure.kind == iw7_player_template_primary::Kind::float32_bits
+            ? std::snprintf(line, sizeof(line), "IW7_PLAYER_TEMPLATE_PRIMARY_REFUSAL schema=1 predicate=%s kind=float32_bits value_bits=0x%08X container=%s source_offset=0x%zX\n",
+                spec.key, static_cast<unsigned>(failure.bits), spec.container, spec.offset)
+            : std::snprintf(line, sizeof(line), "IW7_PLAYER_TEMPLATE_PRIMARY_REFUSAL schema=1 predicate=%s kind=%s value=%d container=%s source_offset=0x%zX\n",
+                spec.key, failure.kind == iw7_player_template_primary::Kind::presence ? "presence" : "int32",
+                static_cast<int>(failure.integer), spec.container, spec.offset);
+        if (count > 0 && static_cast<size_t>(count) < sizeof(line)) std::printf("%s", line);
+        // No format failure, callback or diagnostic outcome permits the asset.
+    }
     void compatible_pair(WeaponCompleteDef* weapon, WeaponAttachment* pap)
     {
         if (!weapon || !weapon->weapDef || !pap)
             throw std::runtime_error("Complete player/PAP source pointers required");
         const auto* def = weapon->weapDef;
-        const auto classification = static_cast<int>(def->weapClass);
-        if (def->weapType != WEAPTYPE_PROJECTILE || def->inventoryType != WEAPINVENTORY_PRIMARY ||
-            classification < 0 || classification > 13 || classification == 10 || classification == 11 ||
-            weapon->iClipSize <= 0 || def->iMaxAmmo <= 0 || def->iAmmoUsedPerShot <= 0 || def->damage <= 0 ||
-            def->iProjectileSpeed <= 0 || !std::isfinite(def->projLifetime) || def->projLifetime <= 0 ||
-            !def->gunXModel || !def->worldModel || !def->szXAnims)
+        static_assert(static_cast<int>(WEAPTYPE_PROJECTILE) == 3 && static_cast<int>(WEAPINVENTORY_PRIMARY) == 0);
+        static_assert(offsetof(WeaponDef, weapType) == 0x22C && offsetof(WeaponDef, inventoryType) == 0x240 && offsetof(WeaponDef, weapClass) == 0x234);
+        static_assert(offsetof(WeaponCompleteDef, weapDef) == 0x08 && offsetof(WeaponCompleteDef, iClipSize) == 0xBC && offsetof(WeaponDef, iMaxAmmo) == 0x4A4 && offsetof(WeaponDef, iAmmoUsedPerShot) == 0x4C0);
+        static_assert(offsetof(WeaponDef, damage) == 0x4D0 && offsetof(WeaponDef, iProjectileSpeed) == 0x690 && offsetof(WeaponDef, projLifetime) == 0x6A4);
+        static_assert(offsetof(WeaponDef, gunXModel) == 0x08 && offsetof(WeaponDef, worldModel) == 0x38 && offsetof(WeaponDef, szXAnims) == 0x1C0);
+        PrimaryReader reader{weapon, def};
+        const auto failure = iw7_player_template_primary::first_failure(reader);
+        if (failure.check != iw7_player_template_primary::Check::none)
+        {
+            report_primary_failure(failure);
             throw std::runtime_error("Reloadable player primary projectile fields not established");
+        }
         if (!pap->papAttachment || pap->weaponType != WEAPTYPE_PROJECTILE)
             throw std::runtime_error("Native projectile PAP attachment fields not established");
         const std::array<unsigned int, 6> counts = {weapon->numAttachments, weapon->numAttachments2,
