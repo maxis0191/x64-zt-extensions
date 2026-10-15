@@ -67,8 +67,28 @@ The JSON is not claimed tamperproof without the existing H1 process/input proof.
 Authored tests cover bounded reports, interval/call/coverage mutations, false
 claims, strict JSON and wrong/incomplete/forged CPP metadata. A separate Source
 replay validated the three actual recipe/receipt/handoff JSON texts without
-creating a runtime plan or opening the candidate. No native report has been read
-or captured by this adoption. Fresh receiver Source, a separately reviewed
+creating a runtime plan or opening the candidate. These source-adoption checks
+did not capture or read a native report. Fresh receiver Source, a separately reviewed
 Analysis preparation/ordinary DEFAULT and a separate Root Native GO remain
 required before executing this mode. No zone, lookup, image body, XPAK, DDS,
 payload, game or deployment operation is authorized here.
+
+## Safety stop and closure — 2026-10-15
+
+An automatic cybersecurity control interrupted this path after one Native
+invocation had already run. The worker received no detailed rejection reason.
+The stop was respected: no replay, route/model substitution, further capture or
+report/image/stock/candidate/symbol readback followed. A Source pre-exit helper
+failed parsing before execution and was preserved without repair.
+
+Safety work used only the same original host's retained in-memory references and
+process/registry metadata. The worker confirmed the original owner and input/
+publication handles were closed, guard counts were zero and the lease was
+released, then performed the guarded exit of that original host. Actual terminal
+completion and an independent absence check confirmed safety closure.
+
+This checkpoint proves resource closure only. The report remains unqualified;
+no compatibility, writer/texture, payload or gameplay result is inferred. Frozen
+sources, artifacts and the rejected helper remain private and unchanged. This
+Native path remains stopped. Documentation review, CI or merge does not
+authorize resumption or an alternative route or model.
