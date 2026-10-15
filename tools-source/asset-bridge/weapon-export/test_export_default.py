@@ -32,6 +32,27 @@ class ExportDefaultTests(unittest.TestCase):
   r=self.invoke(True);self.assertNotEqual(r.returncode,0);self.assertIn('NoExit/dot',r.stderr);self.assertFalse(Path(self.plan['RunRoot']).exists())
  def test_request_drift_refused(self):
   Path(self.plan['Request']['Path']).write_bytes(b'weapon,other\n');self.assertNotEqual(self.invoke().returncode,0)
+ def modal_plan(self):
+  closure={'H1Compiler':'tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1','LoadDiagnostic':'tools-source/asset-bridge/world/original-arena/LoadDiagnostic.Core.ps1',
+   'Modal':'tools-source/asset-bridge/world/original-arena/modal_window.py','Recipient':'tools-source/asset-bridge/recipient/recipient_dialog.py','Capture':'ops/iw7_capture.py','Debugger':'ops/iw7_debugger.py'}
+  for name,relative in closure.items():
+   path=self.root/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'# Source-only must not import\n')
+   self.plan['SourceBindings'].append(dict(**pin(path),Role='Provider'))
+   if name in ('H1Compiler','LoadDiagnostic'):self.plan['Providers'][name]=str(path)
+  self.plan['ToolSeconds']=120
+  self.plan['ModalDiagnostic']=dict(Mode='global-mp-modal-only',HelperSeconds=10,WindowRecordBytes=65536,
+   ModalSource=str(self.root/closure['Modal']),Python=dict(Path=str(self.root/'absent'/'python.exe'),Bytes=1,SHA256='0'*64))
+ def test_modal_default_remains_pure_with_declared_unopened_python(self):
+  self.modal_plan();r=self.invoke();self.assertEqual(r.returncode,0,r.stderr);value=json.loads(r.stdout)
+  self.assertFalse(any(value[k] for k in ('NativeTypesLoaded','OpaqueInputsRead','LeaseAcquired','RuntimeCreated','CandidateExecuted','Ready')))
+  self.assertFalse(Path(self.plan['ModalDiagnostic']['Python']['Path']).exists())
+ def test_modal_mixed_modes_limits_and_source_import_layout_refused(self):
+  self.modal_plan();original=json.loads(json.dumps(self.plan))
+  for key,value in [('Mode',['global-mp-modal-only']),('HelperSeconds','10'),('WindowRecordBytes',65537),('ModalSource',str(self.root/'wrong'/'modal_window.py'))]:
+   with self.subTest(key=key):
+    self.plan=json.loads(json.dumps(original));self.plan['ModalDiagnostic'][key]=value;r=self.invoke();self.assertNotEqual(r.returncode,0);self.assertFalse(Path(self.plan['RunRoot']).exists())
+  self.plan=json.loads(json.dumps(original));self.plan['Providers']['H1Compiler']=self.plan['Providers']['Core'];self.assertNotEqual(self.invoke().returncode,0)
+  self.plan=json.loads(json.dumps(original));self.plan['SourceBindings']=[p for p in self.plan['SourceBindings'] if not p['Path'].endswith('iw7_capture.py')];self.assertNotEqual(self.invoke().returncode,0)
  def fragment(self,name,body):
   path=self.root/'fragment.ps1';path.write_text('''param($Runner,$Directory)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
@@ -179,4 +200,50 @@ $current.Identity.CreatedUtc='different';$refused=$false;try{Record-PlayerCandid
 if(!$refused){throw 'Different child creation accepted'}
 Write-Output 'started-failure-pass'
 ''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('started-failure-pass',r.stdout)
+ def test_unknown_diagnostic_retains_combined_original_jobs_until_both_close(self):
+  r=self.fragment('Close-PlayerOriginalJobs','''
+class SourceOwner { [bool]$Closed;[bool]$Refuse;[int]$Calls
+ [void]StopAndConfirm([int]$Ms){if($Ms -ne 5000){throw 'Wrong closure bound'};$this.Calls++;if($this.Refuse){throw 'Source unknown closure'};$this.Closed=$true}
+}
+$owner=[SourceOwner]::new();$owner.Closed=$true
+$diag=[pscustomobject]@{Owner=$null;Closed=$false;Lease='source-only'}
+$ctx=[pscustomobject]@{Owner=$owner;Closed=$true;Lease='source-only';DiagnosticContext=$diag}
+$script:PlayerTemplateExportOriginalRoot=@{Context=$ctx;State=[ordered]@{CanExit=$false}}
+Close-PlayerOriginalJobs
+if($ctx.Closed -or $script:PlayerTemplateExportOriginalRoot.State.OriginalJobsClosed -or $ctx.Lease -cne 'source-only'){throw 'Unknown diagnostic was released by closed main'}
+$diag.Owner=[SourceOwner]::new();$diag.Owner.Refuse=$true;Close-PlayerOriginalJobs
+if($ctx.Closed -or !$script:PlayerTemplateExportOriginalRoot.State.ClosureError){throw 'Refused diagnostic closure became complete'}
+$diag.Owner.Refuse=$false;Close-PlayerOriginalJobs
+if(!$ctx.Closed -or !$diag.Closed -or !$diag.Owner.Closed -or !$script:PlayerTemplateExportOriginalRoot.State.OriginalJobsClosed){throw 'Original combined closure missing'}
+Write-Output 'combined-source-closure-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('combined-source-closure-pass',r.stdout)
+ def test_poll_reuses_actual_world_modal_core_and_stops_after_one_owned_record(self):
+  world=RUNNER.parent.parent/'world'/'original-arena'/'LoadDiagnostic.Core.ps1'
+  r=self.fragment(('Record-PlayerCandidateStart','Invoke-PlayerOriginalPoll'),f". '{world}'\n"+'''
+$image=Join-Path $Directory 'zonetool-iw7-player.exe';$created=[datetime]::Parse('2026-10-15T02:47:39.1438992Z').ToUniversalTime()
+$owner=[pscustomobject]@{PID=42;Image=$image;CreationFileTime=$created.ToFileTimeUtc()}
+$ctx=[pscustomobject]@{Owner=$owner;Closed=$false;Lease='source-only';Work=$Directory}
+$current=[pscustomobject]@{Identity=[ordered]@{PID=42;Image=$image;CreatedUtc=$created.ToString('o')}}
+$logs=Join-Path $Directory 'source-logs';[IO.Directory]::CreateDirectory($logs)|Out-Null
+$line='[ INFO ][ zonetool::iw7::load_zone ]: Loading zone "global_mp"...';[IO.File]::WriteAllText((Join-Path $logs 'stdout.log'),$line+"`n")
+$evidence=[ordered]@{Attempted=$false;LastBytes=([IO.FileInfo]::new((Join-Path $logs 'stdout.log'))).Length;LastProgressMs=0L;Outcome='NotTriggered'}
+$options=[pscustomobject]@{StartedMs=0;RunRoot=$Directory;DiagnosticZone='global_mp';ModalTextOnly=$true;ModalSource='Source-only.py';Python='Source-only.exe';PythonSHA256=('0'*64);ToolSHA256=('0'*64);Inputs=@()}
+$script:PlayerTemplateExportOriginalRoot=@{Context=$ctx;Plan=@{WorkRoot=$Directory};State=[ordered]@{CandidateStarted=$null};ModalOptions=$options;ModalEvidence=$evidence}
+$script:calls=0;$script:budgets=0
+function Get-H1Clock {50000}
+function Test-PlayerGenerated($Current){$script:budgets++}
+function Get-H1OriginalState($Owner){[pscustomobject]@{RootExited=$false;PID=42;Image=$image;CreatedUtc=$created.ToString('o')}}
+function Register-H1Original($Lease,$Identity){if($Lease -cne 'source-only' -or $Identity.PID -ne 42){throw 'Wrong original registration'}}
+function Invoke-OriginalArenaTool($Diag,$Exe,$SHA,$Arguments,$Work,$Run,$Phase,$Inputs,$Seconds){
+ if($Phase -cne 'load-modal' -or $Seconds -ne 10 -or $Diag.Lease -cne $ctx.Lease -or !$ctx.PSObject.Properties['DiagnosticContext']){throw 'Wrong existing original helper dispatch'}
+ $script:calls++;$record=@{schema='iw7.world-modal-window/1';identity_verified_after=$true;modal_window_observed=$true;title='Source fixture';controls=@();interaction_performed=$false}
+ [IO.File]::WriteAllText((Join-Path $Run 'load-diagnostic/modal-window.json'),($record|ConvertTo-Json))
+ $Diag.Closed=$true;[pscustomobject]@{ExitCode=0;JobClosed=$true}
+}
+$refused=$false;try{Invoke-PlayerOriginalPoll $ctx $current $logs}catch{if($_.Exception.Message -cne 'Load diagnostic captured; material reference not measured.'){throw};$refused=$true}
+if(!$refused -or $script:calls -ne 1 -or !$evidence.Attempted -or $evidence.Outcome -cne 'Captured' -or !$ctx.DiagnosticContext.Closed -or !$script:PlayerTemplateExportOriginalRoot.State.CandidateStarted){throw 'One actual modal witness did not fail closed'}
+Invoke-PlayerOriginalPoll $ctx $current $logs
+if($script:calls -ne 1){throw 'Modal repeated'}
+Write-Output 'actual-world-core-reuse-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('actual-world-core-reuse-pass',r.stdout)
 if __name__=='__main__':unittest.main()

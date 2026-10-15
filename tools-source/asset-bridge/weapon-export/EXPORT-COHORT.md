@@ -62,7 +62,7 @@ projectile type, literal false scope flags, two unique typed file entries and
 bounded integer byte counts. Singleton arrays, numeric strings, duplicate or
 extra/missing fields are rejected before PowerShell comparisons.
 
-37 Source/refusal/causal controls cover the build and preparation modules plus
+41 Source/refusal/causal controls cover the build and preparation modules plus
 this caller's pure DEFAULT, wrong layout/provider/request, before-native host
 refusal, actual bounded output-reader guard and small-copy/alias-budget behavior.
 Targeted mutations additionally cover the strict JSON fields and before-open
@@ -167,3 +167,36 @@ The established [modal witness](../world/original-arena/MODAL-TEXT.md) is a poss
 next diagnosis using existing original-owner tools, with separately reviewed
 Source bindings, combined diagnostic/target closure, admission and GO. No extra
 pack, opaque read, diagnostic process or new export is authorized by this record.
+
+The optional global-mp-modal-only Source contract reuses the established World
+LoadDiagnostic.Core, modal_window, recipient_dialog, iw7_capture/iw7_debugger
+observer primitives and H1Native.Compiler original-handle snapshot. No shared
+provider changes. DEFAULT verifies only the exact six-file text closure, including
+the Python adapter's actual package-relative import paths. The declared Python
+executable stays unopened until an admitted Run. Missing/mixed modes, coercible
+limits, wrong provider/import layouts and unbound Source refuse before effects.
+
+This explicit diagnostic phase is 120 seconds; the ordinary export remains 240,
+group 600, sampled generated allowance 16 MiB plus 1 MiB metadata reserve. It
+does not skip any zone or add a PAK. The existing World trigger selects only the
+exact unchanged global_mp last line at 45-60 seconds with 15 seconds without log
+progress. One original-owned Python child gets at most 10 seconds, clamped to
+the original remaining time with closure reserve. It verifies target image/hash,
+100-nanosecond creation identity, creator/parent and owned dialog/control identities
+around bounded text reads; no interaction or general desktop scan is requested.
+The record cap is 64 KiB, text 16 KiB/eight controls with 200-ms message timeouts.
+Modal presence, missing text, truncation or no owned modal stay distinct evidence.
+The existing helper ends this diagnostic attempt by throwing after its one scan,
+so neither captured text nor absence can become a paired-export proof.
+
+Original target and diagnostic contexts stay attached as actual objects. Teardown
+closes both through their retained owners; an unknown diagnostic owner/closure
+keeps the main context unconfirmed, lease/guards and NoExit host retained. Only
+combined known closure permits normal stock/content reverification, publication,
+release and CanExit; terminal exit and fresh registry/process postflight follow.
+Source causals invoke the actual World Core with a no-native original-helper
+fixture and prove one-shot failure, plus pure DEFAULT, strict import closure,
+and retention until both original owners close. No modal, Python PE/runtime,
+window, new lease or native diagnostic has been exercised by these controls.
+The next operation still needs final code review/Git completion, a fresh reviewed
+capsule and distinct Root GO. Frozen F/G plans and failed runtimes are unchanged.
