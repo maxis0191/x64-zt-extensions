@@ -883,7 +883,9 @@
     "tools-source/asset-bridge/t7-iw7/Test-IncomingImageBuild.ps1",
     "tools-source/asset-bridge/t7-bridge/T7IncomingImage.Profile.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7IncomingImageSource.ps1",
-    "tools-source/asset-bridge/t7-bridge/INCOMING-IMAGE-LAUNCHER.md"
+    "tools-source/asset-bridge/t7-bridge/INCOMING-IMAGE-LAUNCHER.md",
+    "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationBindingsSource.ps1",
+    "tools-source/asset-bridge/t7-bridge/REGISTRATION-BINDINGS-LAUNCHER.md"
   ],
   "dependencies": [
     {

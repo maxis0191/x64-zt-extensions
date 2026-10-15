@@ -1,6 +1,14 @@
 # Functions only. The existing runner/H1 primitives retain native ownership.
 Set-StrictMode -Version Latest
 function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
+    # Source-only selectors must refuse before OpenInputs opens extra bindings.
+    if($Plan.PSObject.Properties['SelectedRegistrationMaterialBindingsV1'] -or
+       ($Plan.PSObject.Properties['Schema'] -and $Plan.Schema -cin @('iw7.t7-registration-bindings-source-plan/1','iw7.t7-registration-bindings-plan/1')) -or
+       ($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationMaterialBindingsV1') -or
+       ($Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -ceq 't7-registration-material-bindings-v1') -or
+       ($Plan.PSObject.Properties['Arguments'] -and $Plan.Arguments -ccontains '-t7-iw7-registration-material-bindings-v1')){
+        throw 'Registration bindings Source only: host DEFAULT and Run remain unavailable pending actual closed CPP qualification.'
+    }
     $export=[bool]($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ResidentExportV1')
     if($Plan.PSObject.Properties['Operation'] -and ($Plan.Operation -isnot [string] -or $Plan.Operation -cnotin @('Catalogue','ResidentExportV1','MaterialPartsV1','ImageProvenanceV1','RegistrationImageMetadataV1','IncomingImageObservationV1'))){throw 'Unknown T7 host operation.'}
     $prefix=if($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'IncomingImageObservationV1'){'iw7.t7-incoming-image-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationImageMetadataV1'){'iw7.t7-registration-image-'}elseif($export){'iw7.t7-resident-export-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'MaterialPartsV1'){'iw7.t7-material-parts-'}elseif($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'ImageProvenanceV1'){'iw7.t7-image-provenance-'}else{'iw7.t7-catalogue-'}
@@ -41,11 +49,12 @@ function Open-T7CatalogueHostInputs([string]$PlanPath,[string]$PlanSHA256,[strin
             $guards.Add((Open-H1Pin ([pscustomobject]@{Path=$pair[0];Bytes=$file.Length;SHA256=$pair[1]})))
         }
         $contract=Read-H1SmallJson $HostContractPath 32KB;$plan=Read-H1SmallJson $PlanPath
+        $hostSchema=Get-T7CatalogueHostSchema $plan 'host'
         $runner=Join-Path (Split-Path $EntryPath -Parent) 'Run-T7Catalogue.ps1'
         $core=Join-Path (Split-Path $EntryPath -Parent) 'T7CatalogueHost.Core.ps1'
         $h1=Join-Path $Repo 'tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1'
         Assert-H1Path $RunRoot;Assert-H1Path $contract.HostImage
-        if($contract.Schema -cne (Get-T7CatalogueHostSchema $plan 'host') -or $contract.PlanPath -cne $PlanPath -or
+        if($contract.Schema -cne $hostSchema -or $contract.PlanPath -cne $PlanPath -or
            $contract.PlanSHA256 -cne $PlanSHA256 -or $contract.RunRoot -cne $RunRoot -or
            $plan.RunRoot -cne $RunRoot -or $plan.Runner -cne $runner -or
            [IO.Path]::GetDirectoryName($RunRoot) -cne (Join-Path $Repo 'runtime') -or

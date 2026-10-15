@@ -1,4 +1,61 @@
 # Fixed catalogue adapter. Ownership, pin readers and closure stay in H1Native.Core.
+function Test-T7RegistrationBindingsIntent($Plan) {
+    [bool]($Plan.PSObject.Properties['SelectedRegistrationMaterialBindingsV1'] -or
+        ($Plan.PSObject.Properties['Schema'] -and $Plan.Schema -cin @('iw7.t7-registration-bindings-source-plan/1','iw7.t7-registration-bindings-plan/1')) -or
+        ($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'RegistrationMaterialBindingsV1') -or
+        ($Plan.PSObject.Properties['CandidateProfile'] -and $Plan.CandidateProfile -ceq 't7-registration-material-bindings-v1') -or
+        ($Plan.PSObject.Properties['Arguments'] -and $Plan.Arguments -ccontains '-t7-iw7-registration-material-bindings-v1'))
+}
+function Assert-T7RegistrationBindingsSourcePlan($Plan) {
+    foreach($pair in @(@('Schema','iw7.t7-registration-bindings-source-plan/1'),@('Operation','RegistrationMaterialBindingsV1'),
+        @('CandidateProfile','t7-registration-material-bindings-v1'))){
+        if(!$Plan.PSObject.Properties[$pair[0]] -or $Plan.($pair[0]) -isnot [string] -or $Plan.($pair[0]) -cne $pair[1]){throw 'Exact typed registration bindings Source selectors required.'}
+    }
+    $marker=$Plan.SelectedRegistrationMaterialBindingsV1
+    Assert-T7CatalogueFields $marker @('Schema','SourceRevision','ReaderRevision','Contract','Reader','NativeSchema','BindingCount',
+        'ReportLimitBytes','SourceOnlyPending','BuildRecipeWired','CompiledExtensionSource','CPPQualification','CPPQualified',
+        'NativeObserved','DeepMetadataOutcome','QualifiedObjectMipCount','Ready')
+    foreach($pair in @(@('Schema','iw7.t7-registration-bindings-proposal/1'),
+        @('SourceRevision','92118595079b86d66c340c22b299de90c49a2b6a'),
+        @('ReaderRevision','9eba3c7189fae12e218eadd8f56a7ddda834b1b4'),
+        @('NativeSchema','iw7.t7-registration-material-bindings/1'))){
+        if($marker.($pair[0]) -isnot [string] -or $marker.($pair[0]) -cne $pair[1]){throw 'Exact reviewed registration bindings Source basis required.'}
+    }
+    foreach($row in @(@('Contract','registration-material-bindings-source-contract.json',5391,'d60f0e33d9dddb69656744f6481ba32ced1a7a040d75ff913908192297e3c9a6'),
+        @('Reader','registration_bindings_consumer.py',9687,'8e1d464c6467492b65e102b784aa9f265723560b9b486499e3a49cb4073f5c81'))){
+        $pin=$marker.($row[0]);Assert-T7CatalogueFields $pin @('Path','Bytes','SHA256')
+        if($pin.Path -isnot [string] -or $pin.Path -cnotmatch '^[A-Za-z]:\\' -or
+           ![IO.Path]::IsPathFullyQualified($pin.Path) -or [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or
+           $pin.Path.Substring(2).Contains(':') -or $pin.Path -match '["\x00-\x1f]' -or
+           @($pin.Path.Substring(3) -split '[\\/]'|Where-Object {$_ -in @('.','..') -or $_.TrimEnd(' ','.') -cne $_ -or $_ -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)'}).Count -or
+           [IO.Path]::GetFileName($pin.Path) -cne $row[1] -or !(Test-T7CatalogueInteger $pin.Bytes 16KB) -or $pin.Bytes -ne $row[2] -or
+           $pin.SHA256 -isnot [string] -or $pin.SHA256 -cne $row[3]){throw 'Exact registration bindings Source text pin required.'}
+    }
+    if([IO.Path]::GetDirectoryName($marker.Contract.Path) -cne [IO.Path]::GetDirectoryName($marker.Reader.Path)){throw 'One registration bindings Source package required.'}
+    if(!(Test-T7CatalogueInteger $marker.BindingCount 7) -or $marker.BindingCount -ne 7 -or
+       !(Test-T7CatalogueInteger $marker.ReportLimitBytes 32768) -or $marker.ReportLimitBytes -ne 32768){throw 'Exact seven-row bounded Source proposal required.'}
+    if($marker.SourceOnlyPending -isnot [bool] -or !$marker.SourceOnlyPending){throw 'Registration bindings must remain Source pending.'}
+    foreach($name in 'BuildRecipeWired','CPPQualified','NativeObserved','Ready'){
+        if($marker.$name -isnot [bool] -or $marker.$name){throw 'Registration bindings Source cannot promote build/native/Ready proof.'}
+    }
+    foreach($name in 'CompiledExtensionSource','CPPQualification','DeepMetadataOutcome','QualifiedObjectMipCount'){
+        if(![object]::ReferenceEquals($null,$marker.$name)){throw 'Registration bindings Source facts must remain NULL.'}
+    }
+    foreach($name in 'CandidateSource','CandidateBytes','CandidateSHA256','BuildPlan','BuildReceipt','ExpectedBuildPlanSHA256','ExpectedBuildReceiptSHA256'){
+        if(!$Plan.PSObject.Properties[$name] -or ![object]::ReferenceEquals($null,$Plan.$name)){throw 'Registration bindings candidate/build fields must remain NULL.'}
+    }
+    foreach($name in 'SelectedIncomingImageObservationV1','SelectedImageProvenanceV1','SelectedRegistrationImageHeaderV1','SelectedMaterialPartsV1',
+        'SelectedXpakProvider','ExportRequest','ExportRequestFile','SelectedStreamedRenderOnlyV2','SelectedMeshMaterialObservation','ResidentMultiSurfaceV2',
+        'ResidentSurfaceCountDiagnostic','SelectedStreamedStaticV1','ZombiesObservationC','ZombiesAddObservationC2'){
+        if($Plan.PSObject.Properties[$name]){throw 'Registration bindings Source cannot select another operation/provider.'}
+    }
+    $expected=@('-t7-iw7-registration-material-bindings-v1','mp_freerun_04','p7_fre_platform_cap_02','0')
+    if($Plan.Arguments -isnot [array] -or $Plan.Arguments.Count -ne 4){throw 'Exact registration bindings Source arguments required.'}
+    for($i=0;$i -lt 4;$i++){if($Plan.Arguments[$i] -isnot [string] -or $Plan.Arguments[$i] -cne $expected[$i]){throw 'Exact registration bindings Source arguments required.'}}
+}
+function Assert-T7RegistrationBindingsOperationalGate {
+    throw 'Registration bindings Source only: actual closed CPP qualification and a separately reviewed operational plan are required; DEFAULT and Run remain unavailable.'
+}
 function Test-T7IncomingImageIntent($Plan) {
     [bool]($Plan.PSObject.Properties['SelectedIncomingImageObservationV1'] -or
         ($Plan.PSObject.Properties['Operation'] -and $Plan.Operation -ceq 'IncomingImageObservationV1') -or
@@ -388,6 +445,7 @@ function Get-T7CatalogueOperation($Plan) {
     $Plan.Operation
 }
 function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
+    if(Test-T7RegistrationBindingsIntent $Plan){Assert-T7RegistrationBindingsSourcePlan $Plan;Assert-T7RegistrationBindingsOperationalGate}
     $incoming=Test-T7IncomingImageIntent $Plan
     if($incoming){
         if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageSourcePlan $Plan;Assert-T7IncomingImageOperationalGate}
@@ -545,6 +603,7 @@ function Assert-T7CataloguePlan($Plan,[string]$Repo,[string]$Runner) {
     Assert-T7CatalogueBootstrapBindings $Plan
 }
 function Assert-T7CatalogueBuild($Plan,$Receipt) {
+    if(Test-T7RegistrationBindingsIntent $Plan){Assert-T7RegistrationBindingsOperationalGate}
     if(Test-T7IncomingImageIntent $Plan){
         if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageOperationalGate}
         Assert-T7IncomingImageBuild $Plan $Receipt;return
@@ -983,6 +1042,7 @@ function New-T7CatalogueAlias($Pin,[string]$Destination,$Context) {
     [pscustomobject]@{Path=$Destination;Source=$Pin.Path;Bytes=$Pin.Bytes;SHA256=$Pin.SHA256;FileId=$aliasId}
 }
 function New-T7CatalogueStart($Plan) {
+    if(Test-T7RegistrationBindingsIntent $Plan){Assert-T7RegistrationBindingsOperationalGate}
     if(Test-T7IncomingImageIntent $Plan){
         if(!(Test-T7IncomingImageCompiledPlan $Plan)){Assert-T7IncomingImageOperationalGate}
         Assert-T7IncomingImagePlan $Plan

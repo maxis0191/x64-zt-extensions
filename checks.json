@@ -463,6 +463,16 @@
       ]
     },
     {
+      "id": "Test-T7RegistrationBindingsSource",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationBindingsSource.ps1"
+      ]
+    },
+    {
       "id": "Test-T7IncomingImageSource",
       "command": [
         "pwsh",
