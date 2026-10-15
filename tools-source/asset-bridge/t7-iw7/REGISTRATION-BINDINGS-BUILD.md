@@ -1,4 +1,91 @@
-# Seven-binding build recipe: Source only
+# Seven-binding build recipe and CPP80 evidence
+
+## Actual CPP80 checkpoint, 2026-10-15
+
+The separately authorized CPP-D build on frozen PREP F passed all five phases
+and closed. The fixture actually printed39 legacy registration checks and41
+material-binding checks, for80 total; stderr was empty. Main, CLI and link then
+exited zero. This qualifies that exact compiled cohort. The candidate has not
+executed, no engine/retail observation was made, and Catalogue gate170 remains
+closed. No authentic BO3 image payload or playable material result is claimed.
+
+The compiled extension Source is
+`0f669b58f7a962cb5f5c01af252ce05d8bdbbc3b` (PR184 merge), with native base
+`fab935826c898806855376662a8a03317b3ad8f1`. Later documentation commits do not
+change those identities. The immutable source package has1088 files/10952791
+bytes; its385050-byte manifest SHA256 is
+`fe60a6ed7eb0a912e399251c358ff48798bc705a8c079b9d1884f6f49505a272`.
+Its actual406073-byte plan SHA256 is
+`11544206c4a723722696e35ef869bc8ad9c713a8ada212811deae8bb7b5dc092`.
+The recipe had192 raw bindings,187 after five declared historical proof texts,
+181 text/six binary-metadata bindings and1146 input pins. No incoming87 cohort
+entered it. The actual runner is132470 bytes/SHA256
+`e3fafcd757f86d9aee5d8b5f6cd8df3b0d05245b04e8c1d1686e6d5ef390dff5`.
+
+Before CPP GO, an independent replay used that actual F plan and actual runner
+Source through the entire pre-admission body, without code/path virtualization.
+It reached the lease boundary without executing it, hashed183 bounded Source
+files and used1163 frozen metadata declarations. Four altered plans were
+refused. Report7631 bytes/SHA256
+`0a79fedcb476a48db55f45fccc01c83c6db7d464740dc02f22cba33a2526f6bf`.
+That audit covers Source semantics; the later admitted build itself verified the
+held opaque inputs and compiled the candidate. Historical B/C refusals below
+remain failed pre-admission attempts.
+
+| Actual phase | Exit | Elapsed ms | Closure |
+| --- | ---: | ---: | --- |
+| registration-fixture-compile | 0 | 7225.4 | Original job closed, compiler telemetry completed |
+| registration-fixture-test | 0 | 246.4 | Original job closed,39+41,EngineInvoked=false |
+| main | 0 | 6097.5 | Original job closed, compiler telemetry completed |
+| zonetool11 | 0 | 17775.3 | Original job closed, compiler telemetry completed |
+| link | 0 | 5611.7 | Original job closed, compiler telemetry completed |
+
+All four compiler/link telemetry records confirmed root exit0 and empty jobs;
+the Probe and unused top-level placeholder retain Completed=false. The full
+group elapsed60627.9ms, below600s, and observed263165782 output bytes, below
+256MiB with the existing1MiB metadata reserve. Every phase met its fixed bound.
+The actual receipt has RegistrationFixturePassed=true,
+RegistrationBindingsFixturePassed=true and inherited RegistrationCPPQualified=true.
+It does **not** emit a new top-level RegistrationBindingsCPPQualified field.
+The frozen plan/profile and new Source marker remain pending/false; they are
+inputs and were not edited to promote proof.
+
+The admitted link artifact pins are22054400 bytes/SHA256
+`f14a0af9c8e7a0a58e7f1331fa996806139356c6063e47fc6325f2ad423c8f40`
+for zonetool-t7.exe and139907072 bytes/SHA256
+`6dfc51731823d5cb8883d5133438530566041a16453fde3f0749076a2379936b`
+for zonetool-t7.pdb. These were captured/reverified under the CPP lease; neither
+binary was reopened for a free hash after release. No binary or symbol is stored
+in Git.
+
+The same original physical NoExit host retained its actual AppDomain root and
+context/guards/state PSVariables. OriginalReferencesVerified, owner closure,
+zero input/publication/caller Source guards, null lease, pre-release publication,
+completion publication and both CanExit gates were checked in that host. Its
+literal guarded exit then produced actual aggregate PTY exit0. Fresh checks
+found the original host, parent and five stage identities absent, no compiler/
+VCTIP/game process and no heavy lease; bounded receipt/log pins were unchanged.
+No reconstructed host/context or stale PID was used to establish closure.
+
+| Retained private evidence | Bytes | SHA256 |
+| --- | ---: | --- |
+| F preparation receipt | 5504 | `1cd4a5a8d4fc030fd1cf0e992ad554b6b842876d994de670704f596c80b32402` |
+| F preparation pre-exit | 7728 | `b6530f3bb05c456f648289713fe22fd58d1a73b457b5909820885a6fd1eb3075` |
+| F preparation post-exit | 5715 | `ecd2049418eebf06580ba1fd9a0f2f1702da2ba9f37ded956769e96e6d1870da` |
+| CPP-D before-release receipt | 50674 | `78fe9943e7163e43a7b22064f4df98a3ad48070a40bda0e0d28107d96be44e68` |
+| CPP-D final receipt | 50715 | `320bcfc68b205eee81b00e0b5e0fa50e391523db15737ff6670ad2d0e5944b8d` |
+| Actual fixture stdout, CRLF | 78 | `a7956d2cf5c0a8daca4f9969315067999151c992d4742ab52f7fa7efceea1a2a` |
+| Actual fixture stderr | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| CPP-D original-host pre-exit | 58054 | `599382303342137f09729487463c9f8db0c1e63cb68c9a0ceb933a7b22da129e` |
+| CPP-D post-exit | 35547 | `40b59ede7f671d9d7e6d534ec923eba5d9f58b13475975c0d13f520e7880740d` |
+
+Receipts, logs, process identities, assets and tool/runtime files remain ignored
+local evidence. A copied or newly generated package cannot inherit these pins.
+The next step is explicit adoption of this closed CPP tuple by the existing
+Catalogue route, with Source review and a distinct native-observation GO. Neither
+this record nor a metadata shape check opens that route or launches the candidate.
+
+## Historical Source recipe
 
 The producer from PR166 has its own MODEL callback observation but originally
 had no build-recipe selection. This finite extension adds
@@ -68,9 +155,10 @@ no invented compiler, SDK, candidate or runtime identity.
 
 ## Source evidence and authoring corrections
 
-Source validation passed25 targeted Python checks,134 new PowerShell controls
-and117 retained incoming Source controls. The new80-check C++ cohort is authored
-only: it has not compiled or executed and no candidate/native result is claimed.
+At the original recipe checkpoint, Source validation passed25 targeted Python
+checks,134 new PowerShell controls and117 retained incoming Source controls.
+The80-check cohort was then authored only; the later measured CPP-D checkpoint
+above supersedes that build limitation without claiming a native observation.
 
 During authoring, an overbroad allowlist matcher extended an enclosing condition
 rather than just the flat list; the bounded matcher and legacy profile controls
