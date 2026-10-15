@@ -70,6 +70,27 @@ try{
         $bp.Bindings=@($bp.Bindings|Where-Object Path -CNE $pin.Path)+@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
     }
     Check (Assert-T7BuildProfile $bp $PSScriptRoot) 'Actual bindings Source profile refused'
+    # Execute the actual first bound expression; no full input/SDK walk is needed.
+    $boundNode=$ast.Find({param($n)$n -is [Management.Automation.Language.IfStatementAst] -and
+        $n.Extent.Text.Contains("throw 'Input set bound/uniqueness differs.'")},$true)
+    $boundText=$boundNode.Clauses[0].Item1.Extent.Text
+    $bound=[scriptblock]::Create($boundText)
+    function Test-InputBound($Expression,[string]$Mode,[int]$Rows,[bool]$Duplicate=$false,[int]$InputRows=1146){
+        $registrationBindings=$Mode -ceq 'bindings';$incoming=$Mode -ceq 'incoming';$registration=$true
+        $metadata=$true;$provenance=$true;$parts=$false;$observed=$false
+        $bindings=@(for($i=0;$i -lt $Rows;$i++){[pscustomobject]@{Path=('C:\authored\binding-'+$i)}})
+        $inputs=@(for($i=0;$i -lt $InputRows;$i++){[pscustomobject]@{Path=('C:\authored\input-'+$i)}})
+        if($Duplicate){$bindings[-1].Path=$bindings[0].Path}
+        & $Expression
+    }
+    foreach($row in @(@('bindings',187,$false),@('bindings',188,$true),@('registration',173,$false),
+        @('registration',174,$true),@('incoming',182,$false),@('incoming',183,$true))){
+        Check ((Test-InputBound $bound $row[0] $row[1]) -eq $row[2]) 'Actual input bound mode differs'
+    }
+    Check (Test-InputBound $bound 'bindings' 187 $true) 'Duplicate Source binding passed first bound'
+    Check (Test-InputBound $bound 'bindings' 187 $false 2049) 'Oversized input set passed first bound'
+    $beforeText=$boundText.Replace('if($registrationBindings){187}elseif($incoming)','if($incoming)')
+    Check ($beforeText -cne $boundText -and (Test-InputBound ([scriptblock]::Create($beforeText)) 'bindings' 187)) 'Original173-cap counterexample was not reproduced'
     foreach($role in @('BindingsBuildWiring','BindingsBuildValidator','BindingsBuildContract','BindingsWiring','BindingsContract','BindingsModule','BindingsEntry',
         'BindingsIncomingWiring','BindingsFixture','BindingsLegacyFixture','BindingsCapture','BindingsObserver','BindingsBaselineFixture','BindingsCombinedFixture','BindingsResponse')){
         foreach($kind in 'array','bytes-text','bytes-bool','path-array','hash-array','extra'){
