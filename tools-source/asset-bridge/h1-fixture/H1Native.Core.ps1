@@ -124,7 +124,7 @@ function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,[string]$ImageSHA256,[
         Assert-H1Deadline $started $State.DeadlineSeconds
     }
 }
-function Complete-H1Stage($Context,$State) {
+function Complete-H1Stage($Context,$State,[scriptblock]$BeforeReleaseCheck=$null) {
     if(!$Context.Closed) {
         try {
             if(!$Context.Owner){throw 'Owner unavailable after creation attempt; closure unknown.'}
@@ -137,7 +137,10 @@ function Complete-H1Stage($Context,$State) {
     $State.TreeClosureConfirmed=$Context.Closed
     if($Context.Owner -and $Context.Closed){$State.ExitCode=$Context.Owner.ExitCode}
     if($Context.Closed -and $Context.Lease) {
-        try {Exit-IW7ResourceLease -Token $Context.Lease.Token;$Context.Lease=$null;$State.LeaseReleased=$true}
+        try {
+            if($BeforeReleaseCheck){& $BeforeReleaseCheck}
+            Exit-IW7ResourceLease -Token $Context.Lease.Token;$Context.Lease=$null;$State.LeaseReleased=$true
+        }
         catch {$State.CleanupError=$_.Exception.Message}
     }
     if(!$Context.Closed -or $Context.Lease) {
@@ -145,16 +148,31 @@ function Complete-H1Stage($Context,$State) {
         [AppDomain]::CurrentDomain.SetData(('IW7.H1.Quarantine.'+$State.LeaseToken),$Context)
     }
 }
-function Write-H1Receipt($Plan,$State,[string]$StageRoot) {
+function Assert-H1ReceiptBytes([string]$Path,[byte[]]$Expected) {
+    Assert-H1Path $Path
+    $stream=[IO.FileStream]::new($Path,'Open','Read','Read')
+    try {
+        if($stream.Length -ne $Expected.Length){throw 'Published receipt length differs.'}
+        $actual=[byte[]]::new($Expected.Length+1);$used=0
+        do{$read=$stream.Read($actual,$used,$actual.Length-$used);$used+=$read}while($read -gt 0 -and $used -lt $actual.Length)
+        if($used -ne $Expected.Length){throw 'Published receipt changed during readback.'}
+        for($i=0;$i -lt $used;$i++){if($actual[$i] -ne $Expected[$i]){throw 'Published receipt bytes differ.'}}
+    }finally{$stream.Dispose()}
+}
+function Write-H1Receipt($Plan,$State,[string]$StageRoot,[string]$Name='receipt.json',[switch]$PassThru) {
+    if($Name -cnotmatch '^[A-Za-z0-9_-]+\.json$'){throw 'One literal receipt filename required.'}
     $total=Measure-H1Output $Plan.RunRoot
     $State.OutputBytesBeforeReceipt=$total
     $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($State|ConvertTo-Json -Depth 16)+"`n")
     if($bytes.Length -gt $Plan.MetadataReserveBytes -or $total+$bytes.Length -gt $Plan.OutputLimitBytes){throw 'Final receipt exceeds reserved output budget.'}
-    $pending=Join-Path $StageRoot 'receipt.pending.json';$final=Join-Path $StageRoot 'receipt.json'
+    $pending=Join-Path $StageRoot ($Name.Replace('.json','.pending.json'));$final=Join-Path $StageRoot $Name
     $stream=[IO.FileStream]::new($pending,'CreateNew','Write','Read')
-    try {$stream.Write($bytes,0,$bytes.Length)}finally{$stream.Dispose()}
+    try {$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)}finally{$stream.Dispose()}
+    Assert-H1ReceiptBytes $pending $bytes
     if((Measure-H1Output $Plan.RunRoot) -gt $Plan.OutputLimitBytes){throw 'Output changed before receipt publication.'}
     [IO.File]::Move($pending,$final) # No replacement; success is never published early.
+    Assert-H1ReceiptBytes $final $bytes
+    if($PassThru){[pscustomobject]@{Path=$final;Bytes=$bytes.Length;SHA256=([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))).ToLowerInvariant()}}
 }
 function Assert-H1Observation($Report,[switch]$Dump) {
     $schema=if($Dump){'iw7.h1-parser-converter-dump-observation/1'}else{'iw7.h1-parser-converter-observation/1'}

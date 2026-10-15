@@ -145,13 +145,30 @@ try {
     $outputPlan=[pscustomobject]@{RunRoot=$temp;OutputLimitBytes=132;MetadataReserveBytes=128}
     Refuses {Write-H1Receipt $outputPlan ([ordered]@{Status='Passed'}) $temp} 'Final receipt must count its own bytes.'
     Check (!(Test-Path -LiteralPath (Join-Path $temp 'receipt.json'))) 'Oversized success receipt was published.'
+    $publishPlan=[pscustomobject]@{RunRoot=$temp;OutputLimitBytes=1MB;MetadataReserveBytes=64KB}
+    $publication=Write-H1Receipt $publishPlan ([ordered]@{Status='MockReleasePending';LeaseReleased=$false}) $temp -Name 'verified.json' -PassThru
+    $expected=[IO.File]::ReadAllBytes($publication.Path)
+    Check ($publication.Bytes -eq $expected.Length -and $publication.SHA256 -ceq ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($expected))).ToLowerInvariant()) 'Flushed/read-back receipt hash differs.'
+    [IO.File]::WriteAllText($publication.Path,'changed')
+    Refuses {Assert-H1ReceiptBytes $publication.Path $expected} 'Changed receipt must fail readback validation.'
 }finally{
     # Only these exact test-created files; never recursive deletion.
-    foreach($name in 'bound.txt','receipt.pending.json','receipt.json') {
+    foreach($name in 'bound.txt','receipt.pending.json','receipt.json','verified.pending.json','verified.json') {
         $item=Join-Path $temp $name;if([IO.File]::Exists($item)){[IO.File]::Delete($item)}
     }
     [IO.Directory]::Delete($temp,$false)
 }
+$context=New-Case;$state=New-State $context
+$saved=$context.Lease
+Complete-H1Stage $context $state {throw 'Final bound-input/guard check failed'}
+Check ($context.Closed -and [object]::ReferenceEquals($context.Lease,$saved) -and !$state.LeaseReleased -and $state.Quarantined) 'Failed before-release check must retain the same original lease.'
+$context=New-Case;$state=New-State $context;$script:beforeRelease=$false
+Complete-H1Stage $context $state {$script:beforeRelease=$true;Check ($context.Lease -ne $null) 'Before-release check must still hold admission.'}
+Check ($script:beforeRelease -and $state.LeaseReleased -and $null -eq $context.Lease) 'Successful before-release check must precede ordinary release.'
+$context=New-Case;$state=New-State $context;$context.Owner=New-FakeOwner $false $true;$context.Closed=$false
+$saved=$context.Lease;$script:beforeRelease=$false
+Complete-H1Stage $context $state {$script:beforeRelease=$true}
+Check (!$script:beforeRelease -and [object]::ReferenceEquals($saved,$context.Lease) -and !$state.LeaseReleased) 'Unknown original closure must retain admission without running guard-release callback.'
 Check (!(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]))) 'Light tests loaded native providers.'
 [ordered]@{Schema='iw7.h1-native-runner-source-tests/1';Assertions=$passed;NativeTypesLoaded=$false;
     RealJobsTested=$false;LeaseAcquired=$false;CompilerLaunched=$false}|ConvertTo-Json

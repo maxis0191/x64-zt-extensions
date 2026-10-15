@@ -2,10 +2,11 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from prepare_writer import safe_path, PIN
 import importlib.util
 import sys
+import re
 
 MATERIAL='mopw/character_park_clown_zombie_shoes'
 ARTIFACTS=('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.xsb')
@@ -22,7 +23,9 @@ def stage(writer_run, output):
     provenance=run/'writer-provenance.json'
     if provenance.stat().st_size>1024**2:
         raise ValueError('Bounded writer provenance required')
-    data=json.loads(provenance.read_text(encoding='utf-8-sig'))
+    provenance_raw=bounded(provenance,1024**2)
+    data=json.loads(provenance_raw)
+    validate_native_closure(run,data,provenance_raw)
     roundtrip=data.get('Roundtrip',{})
     if (data.get('Schema')!='iw7.model-writer-build/1' or data.get('SourcePin')!=PIN or
         data.get('Source',{}).get('material_reference')!=MATERIAL or
@@ -91,6 +94,55 @@ def bounded(path, limit):
     return raw
 
 
+def validate_native_closure(root, provenance, provenance_raw):
+    """New pending receipts require closure in BOTH legacy and authored routes."""
+    if 'NativeReleasePending' not in provenance:
+        return None, None  # Historical nonpending receipt contract remains unchanged.
+    if (provenance['NativeReleasePending'] is not True or provenance.get('NativeClosureEvidence') != 'writer-closure.json' or
+        type(provenance.get('NativeRootKey')) is not str or not re.fullmatch(r'IW7\.ModelWriter\.Root\.[a-f0-9]{32}', provenance['NativeRootKey'])):
+        raise ValueError('Explicit two-phase native publication contract required')
+    _, inspector=authored_surfaces()
+    closure_raw=bounded(safe_path(root)/'writer-closure.json',65536)
+    closure=inspector.parse_json(closure_raw)
+    native_raw=bounded(safe_path(root)/'writer-native-run.json',1024**2)
+    native=inspector.parse_json(native_raw)
+    expected=dict(Schema='iw7.model-writer-native-run/1',Status='NativeRoundtripPassed',
+        NativeRootKey=provenance['NativeRootKey'],SourcePin=provenance.get('SourcePin'),Source=provenance.get('Source'),
+        WriterSHA256=provenance.get('WriterSHA256'),CompilerSHA256=provenance.get('CompilerSHA256'),
+        ReleasePending=True,LeaseReleased=False,TreeClosureConfirmed=True,Quarantined=False,Ready=False)
+    if type(native) is not dict or any(json.dumps(native.get(key),sort_keys=True,allow_nan=False) != json.dumps(value,sort_keys=True,allow_nan=False)
+                                       for key,value in expected.items()):
+        raise ValueError('Native run must be the same successful typed writer/source/root snapshot')
+    for field in ('WriterSHA256','CompilerSHA256'):
+        if type(native[field]) is not str or not re.fullmatch('[a-fA-F0-9]{64}',native[field]):
+            raise ValueError('Measured native writer/compiler hashes required')
+    stages=native.get('Stages')
+    if type(stages) is not list or len(stages) != 3:
+        raise ValueError('Three original native stages required')
+    for stage,(name,kind,image) in zip(stages,(('discovery','Fixture','vswhere.exe'),('compile','Compile','cl.exe'),('fixture','Fixture','model-writer.exe'))):
+        if (type(stage) is not dict or stage.get('Name') != name or stage.get('Stage') != kind or
+            type(stage.get('ExitCode')) is not int or stage['ExitCode'] != 0 or stage.get('TreeClosureConfirmed') is not True or
+            type(stage.get('ImageSHA256')) is not str or not re.fullmatch('[a-fA-F0-9]{64}',stage['ImageSHA256'])):
+            raise ValueError('Native stages must be ordered, successful and closed')
+        identity=stage.get('Identity')
+        if (type(identity) is not dict or type(identity.get('PID')) is not int or not 1 <= identity['PID'] <= 0xffffffff or
+            type(identity.get('Image')) is not str or not PureWindowsPath(identity['Image']).is_absolute() or
+            PureWindowsPath(identity['Image']).name.lower() != image or type(identity.get('CreatedUtc')) is not str or
+            not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z',identity['CreatedUtc'])):
+            raise ValueError('Original native stage identity required')
+        expected_hash=native['CompilerSHA256'] if name == 'compile' else native['WriterSHA256'] if name == 'fixture' else None
+        if expected_hash is not None and stage['ImageSHA256'].lower() != expected_hash.lower():
+            raise ValueError('Native stage image differs from measured compiler/writer')
+    if (closure.get('Schema') != 'iw7.model-writer-closure/1' or
+        closure.get('NativeRootKey') != provenance['NativeRootKey'] or
+        closure.get('WriterProvenanceSHA256') != hashlib.sha256(provenance_raw).hexdigest() or
+        closure.get('NativeRunSHA256') != hashlib.sha256(native_raw).hexdigest() or
+        any(closure.get(key) is not True for key in ('JobClosureVerified','LeaseReleased','InputGuardsClosed','PreReleasePublicationsVerified')) or
+        closure.get('Ready') is not False):
+        raise ValueError('Final original native closure does not bind the pre-release receipts')
+    return closure_raw,native_raw
+
+
 def authored_material_inputs(value, *, zone, material_reference):
     producer, inspector = authored_surfaces()
     if type(value) is not dict or type(value.get('files')) is not dict or not 1 <= len(value['files']) <= 12:
@@ -129,9 +181,9 @@ def _authored_stage_payloads(writer_root, material_inputs, *, artifacts_root=Non
         json.dumps(provenance.get('Source'), sort_keys=True) != json.dumps(manifest, sort_keys=True) or provenance.get('Ready') is not False or provenance.get('FFBuilt') is not False or
         provenance.get('PixelsVerified') is not False or type(provenance.get('WriterSHA256')) is not str):
         raise ValueError('Measured authored writer provenance required')
-    import re
     if not re.fullmatch('[a-fA-F0-9]{64}', provenance['WriterSHA256']):
         raise ValueError('Explicit measured native reader hash required')
+    closure_raw,native_raw=validate_native_closure(root,provenance,provenance_raw)
     for key in ('geometry_profile', 'namespace', 'zone', 'model_name', 'mesh_name', 'material_reference', 'vertices', 'triangles'):
         if type(report.get(key)) is not type(manifest[key]) or report[key] != manifest[key]:
             raise ValueError('Measured authored writer identity/counts differ')
@@ -184,6 +236,9 @@ def _authored_stage_payloads(writer_root, material_inputs, *, artifacts_root=Non
         for name in material['files'] if not name.startswith('zone_source/'))
     evidence = {'evidence/writer/'+name: bounded(root/name, 512*1024) for name in (
         'writer-source.json', 'writer-provenance.json', *manifest['source_files'])}
+    if closure_raw is not None:
+        evidence['evidence/writer/writer-closure.json'] = closure_raw
+        evidence['evidence/writer/writer-native-run.json'] = native_raw
     metadata = {key: value for key, value in material.items() if key != 'files'}
     metadata['files'] = {name: hashlib.sha256(raw).hexdigest() for name, raw in material['files'].items()}
     evidence['evidence/material-inputs.json'] = (json.dumps(metadata, indent=2)+'\n').encode()
