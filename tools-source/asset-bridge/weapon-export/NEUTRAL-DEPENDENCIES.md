@@ -3,10 +3,11 @@
 This opt-in Source implementation owns two typed pure walkers, one local bounded
 collector, a public-parse seam and an in-memory native Source patch renderer.
 It does not change the historical CPP Q module or activate a native command.
-The corrected sixteen-case C++ fixture is authored, **not recompiled or rerun**.
-Actual CPP C on the earlier head compiled the fixture, passed fifteen cases and
-failed `legacy_parity`; both native TUs remained unexecuted. The Python Source
-checks do not establish C++ syntax, ABI, runtime or roundtrip acceptance.
+Actual CPP D compiled the corrected fixture and passed **all sixteen cases**.
+It then compiled `weapondef.cpp` with exit 0, but the dependency guard refused an
+omitted extensionless GSL header; the attachment TU did not run. D remains failed
+and unqualified. Earlier C passed fifteen cases and failed `legacy_parity`.
+The Python Source checks do not establish ABI, runtime or roundtrip acceptance.
 
 The corrected gates are sequential: author and approve this exact Source; review
 a dedicated CPP recipe and obtain its distinct admission/GO; compile the actual
@@ -119,6 +120,10 @@ Source-only render against the four exact pinned native texts verifies byte
 preservation outside the dependency regions and the one header insertion.
 No C++ PASS is claimed from any Python check.
 
+Six additional declaration-only Python tests cover compiler input roles,
+extensionless headers, tuple preservation, search-root boundaries, malformed
+metadata and refusal of implicit roots. They do not open inherited inputs.
+
 The initial reviewed head `6bbb3960c9ca7073d7d981cbb106ae67bf3886dc` wrongly
 required the optional fixed-capacity `notetrackFXMapValues` pointer when NULL.
 Source review found this before CPP. The renderer now skips a NULL optional
@@ -155,6 +160,35 @@ in-memory witness subsequently verified their disposal. A new reviewed exact
 Source head/capsule and distinct CPP GO are required to rerun the corrected
 fixture and compile the two TUs. The local failure cannot use a CI billing
 exception or count as sixteen PASS.
+
+Actual CPP D at `d4aaf85d46ac7a7f7ac35e80c68a0351ade31256` recompiled and ran
+all sixteen fixtures successfully. The weapon TU compiler exited 0, with its
+witnessed VCTIP original job closed, but `Assert-T7Dependencies` then refused
+`deps/gsl/include/gsl/gsl` outside the guarded set. The attachment TU never
+started and final inherited-input revalidation did not run. All 834 original
+FileStream/SafeFileHandle references subsequently closed after the three
+same-stream publication readbacks and last deadline. The original terminal
+exited 1; Root verified the seven captured identities and leases absent.
+D remains failed and unqualified despite the real sixteen fixture PASS.
+
+The local recipe had selected native header declarations by `.h`/`.hpp`, losing
+ten extensionless GSL declarations already present in the hash-pinned historical
+Q Source plan. `neutral_dependency_inputs.py` replaces this suffix guess with
+finite roles from the pinned quoted `/I` roots and sealed INCLUDE/PATH/LIB roots:
+`CompilerInclude`, `CompilerRuntime` and `FixtureLinkInput`. Each selected row
+preserves its exact inherited path/length/SHA and records its role root and
+parent-plan SHA. Unknown roots, malformed tuples and duplicate identities refuse.
+Historical build artifacts outside those explicit roots remain excluded.
+
+The declaration-only profile selects 682 tuples: 585 includes, 70 runtime inputs
+and 27 fixture-link inputs. Compared with D's 668, this adds ten GSL headers,
+three installed MSVC library debug-symbol inputs and one declared Windows runtime
+resource. These are inherited metadata declarations, not newly inspected files.
+Their actual byte verification is still mandatory under the future CPP lease.
+They are never `IsText` Source bindings, and DEFAULT does not query them. No
+post-compile additions, weakened dependency check, adopted C/D artifact or broader
+asset export is permitted. A separately reviewed CPP E packet must repeat all
+four phases under its own distinct GO before the merge gate can complete.
 
 The next concrete gate is review of the corrected exact Source PR and a distinct bounded
 CPP recipe/GO. That recipe must compile this header/walkers with the exact pinned

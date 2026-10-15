@@ -15,6 +15,8 @@
     "tools-source/asset-bridge/weapon-export/native_weapon_dependencies.inc",
     "tools-source/asset-bridge/weapon-export/native_attachment_dependencies.inc",
     "tools-source/asset-bridge/weapon-export/prepare_dependency_visitors.py",
+    "tools-source/asset-bridge/weapon-export/neutral_dependency_inputs.py",
+    "tools-source/asset-bridge/weapon-export/test_neutral_dependency_inputs.py",
     "tools-source/asset-bridge/weapon-export/test_neutral_dependencies_source.py",
     "tools-source/asset-bridge/weapon-export/test_neutral_dependencies.cpp",
     "tools-source/asset-bridge/weapon-export/NEUTRAL-DEPENDENCIES.md",
