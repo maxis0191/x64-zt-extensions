@@ -210,6 +210,8 @@
     ],
     "indirect_or_nested_rsp": false,
     "extra_arguments": false,
-    "rehashed_mutant_accepted": false
+    "rehashed_mutant_accepted": false,
+    "encoding": "UTF-8 without BOM",
+    "bom_encoding_detection": false
   }
 }

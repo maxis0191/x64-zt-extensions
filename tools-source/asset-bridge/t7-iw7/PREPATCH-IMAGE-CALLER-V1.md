@@ -67,6 +67,8 @@ whole 18-argument vector with the producer's fixed source, include, flags and
 output paths. A response with the right path and a matching updated hash is not
 sufficient. Extra or nested responses, changed source/flags/includes/outputs,
 malformed quoting and an oversized response refuse before compiler creation.
+The producer emits UTF-8 without BOM. Strict UTF-8 decoding never switches
+encodings from a BOM; repinned UTF-16LE/BE and UTF-32LE/BE responses refuse.
 
 ## Interpretation and execution limits
 
@@ -89,7 +91,7 @@ correction checks the original plan property itself before accepting this mode;
 the original failing candidate and correction remain separate commits. No
 preparation, compiler or capture ran from that candidate.
 
-Source validation after correction passes 11 targeted Python tests and 153 actual
+Source validation after correction passes 11 targeted Python tests and 169 actual
 PowerShell profile/input/fixture-output controls. Retained V3/V2 controls pass
 48/100, OS controls 39, input-binding controls 132, deadline controls 3 and the
 registration-bindings controls 144. Shared build/registration Python checks ran
@@ -101,4 +103,8 @@ change the compiled fixture despite its fixed filename. The correction above
 keeps that candidate in history and adds 15 real authored-response mutations.
 Each retains correct metadata/path/pins, reproduces acceptance without the new
 guard, then requires the actual held-stream/token refusal through both profile
-and input validation. No compiler or capture ran from the reviewed candidate.
+and input validation. A further encoding check found that automatic BOM detection
+could override the stated UTF-8 decoder. Four additional encoded responses
+reproduce acceptance with only that old detection flag restored, then require
+the strict decoder's refusal through both validators. No compiler or capture ran
+from either reviewed candidate.

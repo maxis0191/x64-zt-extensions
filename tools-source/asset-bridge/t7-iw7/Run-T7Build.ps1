@@ -486,7 +486,7 @@ function Assert-T7ImageCallerFixtureResponse($Plan,[string]$SourceRoot) {
     # Read the exact held Source stream, not an unguarded second open. The
     # original bootstrap guard remains in the runner's context through closure.
     $stream=Open-T7Bootstrap $pin.Path $pin.Bytes $pin.SHA256
-    $reader=[IO.StreamReader]::new($stream,[Text.UTF8Encoding]::new($false,$true),$true,4096,$true)
+    $reader=[IO.StreamReader]::new($stream,[Text.UTF8Encoding]::new($false,$true),$false,4096,$true)
     try{$text=$reader.ReadToEnd()}finally{$reader.Dispose();$stream.Position=0}
     $arguments=@('/nologo','/std:c++20','/EHsc','/W4','/WX','/MT','/Od','/Z7',('/I'+$SourceRoot),
         '/sourceDependencies',(Join-Path $root 'dependencies.json'),

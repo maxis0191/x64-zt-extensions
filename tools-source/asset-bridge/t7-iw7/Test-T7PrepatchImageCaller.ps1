@@ -126,7 +126,11 @@ $profileFunction=$ast.Find({param($n)$n -is [Management.Automation.Language.Func
 $responseCall='if($caller){Assert-T7ImageCallerFixtureResponse $Plan $SourceRoot}'
 if(($profileFunction.Split($responseCall,[StringSplitOptions]::None)).Count -ne 2){throw 'One actual caller response guard required.'}
 . ([scriptblock]::Create($profileFunction.Replace('function Assert-T7BuildProfile(', 'function Assert-T7CallerBeforeRspFix(').Replace($responseCall,'')))
-$rspCases=@('source','runtime','optimization','warnings','warnings-as-errors','include','object','executable','symbols','dependencies','extra','nested','extra-source','unclosed-quote','size')
+$strictReader='[Text.UTF8Encoding]::new($false,$true),$false,4096,$true'
+if(($responseFunction.Split($strictReader,[StringSplitOptions]::None)).Count -ne 2){throw 'One strict UTF8 Source reader required.'}
+. ([scriptblock]::Create($responseFunction.Replace('function Assert-T7ImageCallerFixtureResponse(', 'function Assert-T7ImageCallerBeforeEncodingFix(').Replace($strictReader,'[Text.UTF8Encoding]::new($false,$true),$true,4096,$true')))
+. ([scriptblock]::Create($profileFunction.Replace('function Assert-T7BuildProfile(', 'function Assert-T7CallerBeforeEncodingFix(').Replace($responseCall,'if($caller){Assert-T7ImageCallerBeforeEncodingFix $Plan $SourceRoot}')))
+$rspCases=@('source','runtime','optimization','warnings','warnings-as-errors','include','object','executable','symbols','dependencies','extra','nested','extra-source','unclosed-quote','size','utf16-le','utf16-be','utf32-le','utf32-be')
 foreach($rspCase in $rspCases){
     foreach($validator in 'profile','bindings'){
         $fixture=New-CallerFixture;$response=$fixture.BuildProfile.FixtureResponse.Path
@@ -148,15 +152,25 @@ foreach($rspCase in $rspCases){
             unclosed-quote {$rsp+=' "'}
             size {$rsp+=(' '*16KB)}
         }
-        [IO.File]::WriteAllText($response,$rsp,[Text.UTF8Encoding]::new($false))
+        $encoding=switch($rspCase){utf16-le {[Text.UnicodeEncoding]::new($false,$true,$true)};utf16-be {[Text.UnicodeEncoding]::new($true,$true,$true)};utf32-le {[Text.UTF32Encoding]::new($false,$true,$true)};utf32-be {[Text.UTF32Encoding]::new($true,$true,$true)};default {$null}}
+        if($encoding){[IO.File]::WriteAllBytes($response,([byte[]]($encoding.GetPreamble()+$encoding.GetBytes($rsp))))}
+        else{[IO.File]::WriteAllText($response,$rsp,[Text.UTF8Encoding]::new($false))}
         $fixture.BuildProfile.FixtureResponse.Bytes=(Get-Item -LiteralPath $response).Length
         $fixture.BuildProfile.FixtureResponse.SHA256=(Get-FileHash -LiteralPath $response).Hash.ToLowerInvariant()
         $fixture.Bindings[5].Bytes=$fixture.BuildProfile.FixtureResponse.Bytes
         $fixture.Bindings[5].SHA256=$fixture.BuildProfile.FixtureResponse.SHA256
         if(!(Assert-T7CallerBeforeRspFix $fixture $PSScriptRoot)){throw "Original P2 acceptance not reproduced: $rspCase"};$checks++
-        $reason='';try{if($validator -ceq 'profile'){$null=Assert-T7BuildProfile $fixture $PSScriptRoot}else{Assert-T7InputBindings $fixture}}catch{$reason=$_.Exception.Message}
+        if($encoding){
+            if(!(Assert-T7CallerBeforeEncodingFix $fixture $PSScriptRoot)){throw "BOM encoding acceptance not reproduced: $rspCase"}
+            Clear-CallerSourceGuards
+        }
+        $reason='';$decoderRefused=$false
+        try{if($validator -ceq 'profile'){$null=Assert-T7BuildProfile $fixture $PSScriptRoot}else{Assert-T7InputBindings $fixture}}catch{
+            $reason=$_.Exception.Message
+            for($exception=$_.Exception;$exception;$exception=$exception.InnerException){if($exception -is [Text.DecoderFallbackException]){$decoderRefused=$true}}
+        }
         $expectedReason=switch($rspCase){nested {'Unsupported or indirect publication response syntax.'};unclosed-quote {'Unclosed publication response quote.'};size {'Pinned finite image-caller fixture response required.'};default {'Exact image-caller fixture compile arguments required.'}}
-        if($reason -cne $expectedReason -or ($rspCase -cne 'size' -and $guards.Count -ne 1)){
+        if(($encoding -and !$decoderRefused) -or (!$encoding -and $reason -cne $expectedReason) -or ($rspCase -cne 'size' -and $guards.Count -ne 1)){
             throw "Repinned caller RSP refusal masked/missing ($rspCase/$validator): $reason"
         };$checks++
         Clear-CallerSourceGuards
