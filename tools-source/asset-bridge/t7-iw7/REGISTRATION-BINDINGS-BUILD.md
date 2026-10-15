@@ -98,3 +98,36 @@ on synthetic metadata, including the original187-refused counterexample.
 The187/181/6 limits apply after the four H proof texts and one OS proof are
 removed, matching the existing normalization. Raw192 is a Source expectation
 with those five proof texts, not an observed preparation or relaxed validator.
+
+## Measured PREP80 and the separate CPP publication correction
+
+The later PREP80 C on frozen Source08820b8 completed Python preparation and
+ordinary DEFAULT, with both owned children exiting zero and original host/PTY
+closure independently confirmed. Its measured plan is406073 bytes,
+SHA256 b5fd90f2021258bb226293e43ed4d34e445574849775605ce79d1e74426c2a64.
+It has192 raw bindings, five filtered historical proof texts,187 validated
+bindings (181 text/six binary metadata),1146 inputs and no inactive incoming87
+cohort. DEFAULT kept its six execution/read flags false, candidate null and
+the new CPP80 qualification pending. PREP's own job assembly and finite opaque
+pin hashing occurred under its Analysis lease; those are distinct from DEFAULT's
+false native-type/binary-hash flags. This is preparation evidence, not CPP or
+gameplay acceptance. The measured package and plan remain frozen.
+
+Review before CPP found that the old runner released its input guards before
+receipt publication and did not check expiry after its owner factory returned.
+The correction uses the existing H1 BeforeReleaseCheck and receipt flush/readback
+API: publish and hold a pre-release receipt under the lease, retain the same
+input/publication guards through the verified final receipt, and set CanExit
+last. An unknown prepublication keeps the lease; an unknown postpublication keeps
+the original owner/context and guards even if release has occurred. Known failed
+builds can close honestly after their Failed receipt; no failed build is promoted.
+No shared H1 implementation or serializer changes.
+
+The local checked factory stores its actual result in the original context before
+its second group/phase check. Each phase clock starts before setup and H1 receives
+that original start. Source controls run the actual finalizer on nine publication
+and disposal outcomes and seven factory deadline cases; the original late-receipt
+tests remain separate. The isolated deadline harness now defines its legacy mode
+selectors explicitly, fixing its first standalone run's undefined-selector failure.
+The corrected runner needs a fresh reviewed package/plan and a distinct CPP GO;
+the successful PREP C plan must never be repinned in place.

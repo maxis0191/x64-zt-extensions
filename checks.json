@@ -965,6 +965,17 @@
       ]
     },
     {
+      "id": "Test-T7BuildOwnership",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-iw7/Test-T7BuildOwnership.ps1"
+      ]
+    },
+    {
       "id": "Test-T7BuildDeadline",
       "command": [
         "pwsh",
