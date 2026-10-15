@@ -266,7 +266,7 @@ function Measure-H1Output($Path){[long]$sum=0;foreach($item in Get-ChildItem -Li
 function Exit-IW7ResourceLease($Token){$script:Releases++}
 $guards=[Collections.Generic.List[object]]::new();$guards.Add([IO.MemoryStream]::new())
 $context=[pscustomobject]@{Closed=$true;Owner=$null;Lease=[pscustomobject]@{Token='synthetic-source-only'};Guards=$guards}
-$state=[ordered]@{Status='MeasuredPassed';Host=[ordered]@{SourceOnly=$true};MeasuredReadback=$false;FinalReadback=$false;LeaseReleased=$false;GuardsDisposed=$false;CanExit=$false;Ready=$false}
+$state=[ordered]@{Status='MeasuredPassed';Host=[ordered]@{SourceOnly=$true};MaxObservedOutputBytes=0L;MeasuredReadback=$false;FinalReadback=$false;LeaseReleased=$false;GuardsDisposed=$false;CanExit=$false;Ready=$false}
 $created=$true;$failure=$null
 $try=$ast.Find({param($n) $n -is [Management.Automation.Language.TryStatementAst] -and $null -ne $n.Finally -and $n.Finally.Extent.Text.Contains('$state.FinalReadback')},$true)
 $text=$try.Finally.Extent.Text
@@ -281,6 +281,81 @@ $null=. ([scriptblock]::Create($text.Substring(1,$text.Length-2)))
                     self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld']),('UnknownRetained',False,0,1,True))
                 else:
                     self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld'],report['FinalReadback']),('ClosedFinalizationIncomplete',False,1,0,False,False),report)
+
+
+    def test_real_finalizer_uses_reserve_for_three_receipts_after_native_63_shape(self):
+        for scenario in (0, 1, 2):
+            with self.subTest(scenario=scenario):
+                result=self.source_fragment(r'''
+# Real shared Core functions and real runner finally; no native types/entry.
+$core=Join-Path (Split-Path (Split-Path $Runner -Parent) -Parent) 'h1-fixture/H1Native.Core.ps1'
+$tokens=$null;$errors=$null
+$coreTree=[Management.Automation.Language.Parser]::ParseFile($core,[ref]$tokens,[ref]$errors)
+if($errors.Count){throw 'Shared Core Source parse failed'}
+foreach($name in 'Assert-H1Path','Measure-H1Output','Get-H1Clock','Assert-H1Deadline'){
+    $definition=$coreTree.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true)
+    . ([scriptblock]::Create($definition.Extent.Text))
+}
+$runRoot=Join-Path $Directory ('owned-shape-'+$FailAt)
+[IO.Directory]::CreateDirectory($runRoot)|Out-Null
+for($i=0;$i -lt 10;$i++){[IO.Directory]::CreateDirectory((Join-Path $runRoot ('stage-'+$i)))|Out-Null}
+for($i=0;$i -lt 53;$i++){[IO.File]::WriteAllText((Join-Path (Join-Path $runRoot ('stage-'+($i%10))) ('owned-'+$i+'.txt')),'x')}
+$nativeBytes=Measure-H1Output $runRoot
+$oldCapReproduced=$false
+if($FailAt -eq 0){
+    $first=Join-Path $runRoot 'owned-before.json';$second=Join-Path $runRoot 'owned-closure.json'
+    [IO.File]::WriteAllText($first,'{}');$null=Measure-H1Output $runRoot
+    [IO.File]::WriteAllText($second,'{}')
+    try{$null=Measure-H1Output $runRoot}catch{$oldCapReproduced=$_.Exception.Message -ceq 'Output entry count exceeded 64.'}
+    if(!$oldCapReproduced){throw 'Unchanged cap64 did not reproduce original metadata counterexample'}
+    Remove-Item -LiteralPath $first,$second
+}
+$plan=[pscustomobject]@{RunRoot=$runRoot;GroupDeadlineSeconds=600;MetadataReserveBytes=1MB;OutputLimitBytes=256MB}
+$PlanSHA256='0'*64;$script:T7GroupStarted=Get-H1Clock;$script:Releases=0
+function Exit-IW7ResourceLease($Token){
+    if($Token -cne 'owned-source-only'){throw 'Foreign lease reached an isolated Source fixture'}
+    if(!(Test-Path -LiteralPath (Join-Path $runRoot 'measured-before-release.json')) -or
+       !(Test-Path -LiteralPath (Join-Path $runRoot 'closure-before-release.json')) -or
+       (Test-Path -LiteralPath (Join-Path $runRoot 'final-closure.json'))){throw 'Actual Source publication/release order differs'}
+    $script:Releases++
+}
+$guards=[Collections.Generic.List[object]]::new()
+$sourceGuard=[IO.FileStream]::new((Join-Path (Join-Path $runRoot 'stage-0') 'owned-0.txt'),'Open','Read','Read')
+$sourceHandle=$sourceGuard.SafeFileHandle;$guards.Add($sourceGuard)
+$context=[pscustomobject]@{Closed=$true;Owner=$null;Lease=[pscustomobject]@{Token='owned-source-only'};Guards=$guards}
+$state=[ordered]@{Status='MeasuredPassed';Host=[ordered]@{SourceOnly=$true};MaxObservedOutputBytes=0L;
+    MeasuredReadback=$false;FinalReadback=$false;LeaseReleased=$false;GuardsDisposed=$false;CanExit=$false;Ready=$false}
+if($FailAt -eq 1){$state['OwnedPadding']='x'*(1MB)}
+if($FailAt -eq 2){$plan.OutputLimitBytes=$plan.MetadataReserveBytes+$nativeBytes-1}
+$created=$true;$failure=$null
+try{
+    $try=$ast.Find({param($n) $n -is [Management.Automation.Language.TryStatementAst] -and $null -ne $n.Finally -and $n.Finally.Extent.Text.Contains('$state.FinalReadback')},$true)
+    $text=$try.Finally.Extent.Text
+    $null=. ([scriptblock]::Create($text.Substring(1,$text.Length-2)))
+    $receipts=@('measured-before-release.json','closure-before-release.json','final-closure.json')
+    $published=@($receipts|Where-Object {Test-Path -LiteralPath (Join-Path $runRoot $_)})
+    $nativeCapStillStrict=$false
+    if($FailAt -eq 0){try{$null=Measure-H1Output $runRoot}catch{$nativeCapStillStrict=$_.Exception.Message -ceq 'Output entry count exceeded 64.'}}
+    [ordered]@{Status=$state.Status;CanExit=$state.CanExit;Releases=$script:Releases;Guards=$guards.Count;
+        OriginalGuardClosed=$sourceHandle.IsClosed;LeaseHeld=($null -ne $context.Lease);FinalReadback=$state.FinalReadback;
+        PublishedReceipts=$published.Count;OldCapReproduced=$oldCapReproduced;NativeCapStillStrict=$nativeCapStillStrict;
+        NativeTypeLoaded=[bool]('IW7.AnimationProbe.NativeJob' -as [type]);Error=$(if($state.Contains('FinalizationError')){$state.FinalizationError}else{''})}|ConvertTo-Json -Compress
+}finally{foreach($guard in $guards){$guard.Dispose()};$guards.Clear()}
+''',scenario)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                report=json.loads(result.stdout)
+                self.assertFalse(report['NativeTypeLoaded'])
+                if scenario==0:
+                    self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld'],report['FinalReadback'],report['PublishedReceipts']),
+                        ('Passed',True,1,0,False,True,3),report)
+                    self.assertTrue(report['OriginalGuardClosed'])
+                    self.assertTrue(report['OldCapReproduced'])
+                    self.assertTrue(report['NativeCapStillStrict'])
+                else:
+                    self.assertEqual((report['Status'],report['CanExit'],report['Releases'],report['Guards'],report['LeaseHeld'],report['FinalReadback'],report['PublishedReceipts']),
+                        ('UnknownRetained',False,0,1,True,False,0),report)
+                    self.assertFalse(report['OriginalGuardClosed'])
+                    self.assertIn('before',report['Error'])
 
 
 if __name__=='__main__': unittest.main()

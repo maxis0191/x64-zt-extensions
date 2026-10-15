@@ -241,38 +241,45 @@ finally{
     if($created -and $context.Closed -and $context.Lease){
         try{
             Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            # Observe native outputs once, with the original guards and lease.
+            # The three known Source receipts consume the existing reserve;
+            # counting them again against the native 64-entry tree cap can fail
+            # after release even though every native job already closed.
+            $nativeOutputBytes=Measure-H1Output $plan.RunRoot
+            if($nativeOutputBytes -gt $plan.OutputLimitBytes-$plan.MetadataReserveBytes){throw 'Native output exceeds reserved budget before publication.'}
+            $state.MaxObservedOutputBytes=[math]::Max($state.MaxObservedOutputBytes,$nativeOutputBytes)
             $measured=Join-Path $plan.RunRoot 'measured-before-release.json'
             $raw=[Text.UTF8Encoding]::new($false).GetBytes(($state|ConvertTo-Json -Depth 20)+"`n")
-            if($raw.Length -gt $plan.MetadataReserveBytes -or (Measure-H1Output $plan.RunRoot)+$raw.Length -gt $plan.OutputLimitBytes){throw 'Measured receipt exceeds reserved total output.'}
-            $stream=[IO.File]::Open($measured,'CreateNew','Write','Read')
-            try{$stream.Write($raw);$stream.Flush($true)}finally{$stream.Dispose()}
             $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($raw)).ToLowerInvariant()
-            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
-            $null=Read-PlayerSource $measured $hash $raw.Length
-            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
-            $state.MeasuredReadback=$true
-            # This verified closure tuple exists while the exact guards and lease
-            # are still retained. Failed publication/readback cannot release them.
             $before=[ordered]@{Schema='iw7.player-template-build-before-release/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$hash;
                 Host=$state.Host;Status=$state.Status;OriginalRootAndJobClosed=$true;LeaseToken=$context.Lease.Token;
                 GuardsHeld=$guards.Count;CandidateExecuted=$false;Ready=$false}
             $beforeFile=Join-Path $plan.RunRoot 'closure-before-release.json'
             $beforeBytes=[Text.UTF8Encoding]::new($false).GetBytes(($before|ConvertTo-Json -Depth 10)+"`n")
-            if((Measure-H1Output $plan.RunRoot)+$beforeBytes.Length -gt $plan.OutputLimitBytes){throw 'Closure output budget exceeded before release.'}
+            $beforeHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($beforeBytes)).ToLowerInvariant()
+            # Preconstruct the final receipt to bound ALL metadata before release.
+            # Its release/disposal claims are verified before publication below.
+            $closure=[ordered]@{Schema='iw7.player-template-build-closure/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$hash;
+                BeforeReleaseSHA256=$beforeHash;Host=$state.Host;Status='ClosedReleasedPendingPostflight';PostReadbackDeadlineRequired=$true;
+                OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$true;CandidateExecuted=$false;Ready=$false}
+            $final=Join-Path $plan.RunRoot 'final-closure.json';$bytes=[Text.UTF8Encoding]::new($false).GetBytes(($closure|ConvertTo-Json -Depth 10)+"`n")
+            $metadataBytes=[long]$raw.Length+$beforeBytes.Length+$bytes.Length
+            if($metadataBytes -gt $plan.MetadataReserveBytes -or $nativeOutputBytes+$metadataBytes -gt $plan.OutputLimitBytes){throw 'Three closure receipts exceed reserved output before release.'}
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            $stream=[IO.File]::Open($measured,'CreateNew','Write','Read')
+            try{$stream.Write($raw);$stream.Flush($true)}finally{$stream.Dispose()}
+            $null=Read-PlayerSource $measured $hash $raw.Length
+            Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+            $state.MeasuredReadback=$true
             $stream=[IO.File]::Open($beforeFile,'CreateNew','Write','Read')
             try{$stream.Write($beforeBytes);$stream.Flush($true)}finally{$stream.Dispose()}
-            $beforeHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($beforeBytes)).ToLowerInvariant()
             $null=Read-PlayerSource $beforeFile $beforeHash $beforeBytes.Length
             Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
             Exit-IW7ResourceLease -Token $context.Lease.Token;$context.Lease=$null;$state.LeaseReleased=$true
             foreach($guard in $guards){$guard.Dispose()};$guards.Clear();$state.GuardsDisposed=$true
             Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
-            $closure=[ordered]@{Schema='iw7.player-template-build-closure/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$hash;
-                BeforeReleaseSHA256=$beforeHash;Host=$state.Host;Status='ClosedReleasedPendingPostflight';PostReadbackDeadlineRequired=$true;
-                OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$true;CandidateExecuted=$false;Ready=$false}
-            $final=Join-Path $plan.RunRoot 'final-closure.json';$bytes=[Text.UTF8Encoding]::new($false).GetBytes(($closure|ConvertTo-Json -Depth 10)+"`n")
-            if($raw.Length+$beforeBytes.Length+$bytes.Length -gt $plan.MetadataReserveBytes -or
-               (Measure-H1Output $plan.RunRoot)+$bytes.Length -gt $plan.OutputLimitBytes){throw 'Final closure exceeds reserved output.'}
+            if(!$context.Closed -or $null -ne $context.Lease -or $guards.Count -or !$state.LeaseReleased -or !$state.GuardsDisposed){throw 'Actual release/disposal facts required before final Source publication.'}
+            # Only this prebounded Source JSON is opened after release.
             $stream=[IO.File]::Open($final,'CreateNew','Write','Read')
             try{$stream.Write($bytes);$stream.Flush($true)}finally{$stream.Dispose()}
             $finalHash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()

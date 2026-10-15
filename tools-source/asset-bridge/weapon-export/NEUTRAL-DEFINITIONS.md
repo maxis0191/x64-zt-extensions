@@ -1,11 +1,14 @@
 # Neutral registered player definitions: Source contract
 
-2026-10-15: Source implementation, admitted PREP N/O2 and failed CPP N/O2 are
-recorded separately. Both CPP attempts passed name8/argv28/primary36. N failed
-definition compilation with C4702 under `/WX`. O2's definition compiler exited0,
-then the strict dependency guard refused undeclared SDK input `shared/cderr.h`.
-Neither attempt ran the 100 definition checks, IW7 TU or link. No native
-serializer, extraction or game run executed. Actual M remains
+2026-10-15: N/O2 failures and P's execution/finalization facts are separate.
+N failed definition compilation with C4702; O2 reached compiler exit0 but its
+strict dependency guard refused `shared/cderr.h` before the100-case probe.
+P at merge `acb608cc98bde80e27cce37b925da36729aa0ef3` ran name8/argv28/
+primary36/definition100 successfully, compiled IW7 and linked. Its administrative
+finalization then failed on the64-entry output counter after lease release.
+Safety-only cleanup closed its original host with exit1; original FinalReadback
+remains false and CPPQualified remains false. No native serializer, extraction
+or game run executed. Actual M remains
 the closed metadata observation described in EXPORT-COHORT.md: base type1,
 PAP type0, raw PAP flag1/true, one association. Candidate J does not contain this
 new route. Source checks and authored C++ checks are different evidence.
@@ -151,10 +154,9 @@ and production `with_pair` gate. It covers unchanged values, missing copy,
 integer-copy refusal, unreadable spans, count/overflow/string/UTF8/bool/float
 refusals, inline21 arrays, curves, nested mappings/subblocks, all32 turret masks,
 script conversion failures/full32-bit IDs, aggregate budgets and the AV-only
-leaf. None of those 100 checks has executed. After the first compiler failure,
-O2 reached compiler exit0 but failed dependency qualification before that probe.
-The existing name8/argv28/primary36 probes passed at the exact N/O2 revisions
-recorded in BUILD-COHORT.md; this does not qualify a later correction.
+leaf. P executed all100 cases, and the earlier8/28/36 probes, at the exact Source
+revision recorded in BUILD-COHORT.md. These facts do not turn its incomplete
+administrative finalization into a qualified build or qualify a later revision.
 
 The build plan's explicit `PairDefinitionsCLI=true` requires both existing
 fixture profiles and the fixed ten-stage sequence: name compile/test8, argv
@@ -172,9 +174,12 @@ but its dependency refusal prevents treating it as a qualified fixture build.
 The fixture now defines `WIN32_LEAN_AND_MEAN` before `Windows.h`, matching the
 pinned native `std_include.hpp` policy. Its cases, guarded access and `/W4 /WX`
 response are unchanged. No SDK path is added to the allowed set. This is a
-Source hypothesis for the excessive header graph; a fresh admitted compilation
-must measure the actual dependencies and pass the existing strict guard before
-the 100-case probe can run.
+Source correction for the excessive header graph. P's definition compilation
+passed the unchanged strict dependency guard before its100-case probe ran.
+Native artifacts and inputs were measured/reverified under its original lease;
+its remaining bookkeeping failure is recorded separately. The current runner
+correction has Source-only owned-output tests and still needs a distinct fresh
+admitted cycle; it does not retroactively qualify P.
 
 Next: finish exact Source review/CI/private merge, then a new Source package,
 PREP sibling and separately admitted CPP capsule. Only its actual closed candidate may feed a
