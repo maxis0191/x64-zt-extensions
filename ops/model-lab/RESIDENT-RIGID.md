@@ -302,14 +302,24 @@ checks. Compiler artifacts are retained in `compile/`, with byte-checked copies
 at the historical `model-writer.exe` / `writer.obj` locations. The existing
 native serializer/reader and its report gate remain unchanged.
 
-The same context, original PSVariable, lease and guard list are retained if
-creation/closure or final input validation is unknown. `Complete-H1Stage` has an
+The actual context, original PSVariable, lease, state, plan and guard list are
+published in an AppDomain root **before** admission and the first factory.
+They remain retained if creation/closure or publication is unknown. The local
+180-second group check runs before each factory, after construction immediately
+before H1 Start, and before/after receipt publication; the shared dispatcher is
+unchanged. `Complete-H1Stage` has an
 optional typed `BeforeReleaseCheck` callback; the default behavior is unchanged.
-The writer rechecks bound inputs and closes its guards inside that callback
-before releasing the original lease. Callback failure or unknown job closure
-retains the original lease and objects in AppDomain quarantine. A native-run
-receipt records failure/closure; `writer-provenance.json` is published only after
-all jobs, guards and the one lease are confirmed closed. Source/compiled output
+The writer rechecks bound inputs, publishes bounded flushed/read-back/hashed
+native-run and writer-provenance snapshots, then closes input guards inside that
+callback before releasing the original lease. Those immutable snapshots honestly
+record `ReleasePending` / `NativeReleasePending`, with `LeaseReleased=false` in
+the native-run snapshot. Write/readback failure or unknown job closure retains
+the original lease and objects in AppDomain quarantine. After release, a separate
+bounded `writer-closure.json` binds both snapshot hashes to confirmed job/lease/
+input-guard closure. The original root, publication guards and persistent host
+remain until final validation; only then can the actual root set `CanExit=true`.
+Authored FF staging requires this linked closure for the new pending snapshots;
+legacy provenance remains its original profile. Source/compiled output
 bindings are guarded; full SDK/DLL hermeticity is not claimed
 (`ToolchainFullyHermetic=false`).
 

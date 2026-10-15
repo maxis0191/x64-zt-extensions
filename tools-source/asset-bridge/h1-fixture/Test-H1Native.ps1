@@ -145,9 +145,15 @@ try {
     $outputPlan=[pscustomobject]@{RunRoot=$temp;OutputLimitBytes=132;MetadataReserveBytes=128}
     Refuses {Write-H1Receipt $outputPlan ([ordered]@{Status='Passed'}) $temp} 'Final receipt must count its own bytes.'
     Check (!(Test-Path -LiteralPath (Join-Path $temp 'receipt.json'))) 'Oversized success receipt was published.'
+    $publishPlan=[pscustomobject]@{RunRoot=$temp;OutputLimitBytes=1MB;MetadataReserveBytes=64KB}
+    $publication=Write-H1Receipt $publishPlan ([ordered]@{Status='MockReleasePending';LeaseReleased=$false}) $temp -Name 'verified.json' -PassThru
+    $expected=[IO.File]::ReadAllBytes($publication.Path)
+    Check ($publication.Bytes -eq $expected.Length -and $publication.SHA256 -ceq ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($expected))).ToLowerInvariant()) 'Flushed/read-back receipt hash differs.'
+    [IO.File]::WriteAllText($publication.Path,'changed')
+    Refuses {Assert-H1ReceiptBytes $publication.Path $expected} 'Changed receipt must fail readback validation.'
 }finally{
     # Only these exact test-created files; never recursive deletion.
-    foreach($name in 'bound.txt','receipt.pending.json','receipt.json') {
+    foreach($name in 'bound.txt','receipt.pending.json','receipt.json','verified.pending.json','verified.json') {
         $item=Join-Path $temp $name;if([IO.File]::Exists($item)){[IO.File]::Delete($item)}
     }
     [IO.Directory]::Delete($temp,$false)

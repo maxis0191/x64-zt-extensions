@@ -978,6 +978,8 @@ if($errors){throw 'Writer parse failed'}
 $calls=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.CommandAst]},$true))
 $admit=@($calls|Where-Object {$_.GetCommandName() -ceq 'Enter-IW7ResourceLease'})
 if($admit.Count -ne 1 -or @($calls|Where-Object {$_.GetCommandName() -ceq 'Invoke-IW7ResourceJob'}).Count){throw 'One admission and no nested wrapper required'}
+$entryText=[IO.File]::ReadAllText($Entry)
+if($entryText.IndexOf('[AppDomain]::CurrentDomain.SetData($writerRoot.Key,$writerRoot)') -ge $admit[0].Extent.StartOffset){throw 'Actual root must be published before admission'}
 $preview=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$DryRun'},$true))
 if($preview.Count -ne 1 -or $preview[0].Extent.EndOffset -ge $admit[0].Extent.StartOffset){throw 'Preview must return before admission'}
 foreach($call in @($calls|Where-Object {$_.GetCommandName() -cin @('Get-ItemProperty','Add-Type','Invoke-ModelWriterPhase')})){
@@ -992,6 +994,53 @@ if($complete.Count -ne 1 -or !$complete[0].Extent.Text.Contains('-BeforeReleaseC
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'source-order.ps1';path.write_text(script,encoding='utf-8')
             result=subprocess.run(['pwsh','-NoLogo','-NoProfile','-File',str(path),str(ROOT/'ops/model-lab/Build-Writer.ps1')],
+                                  capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell source lifecycle fixture required')
+    def test_actual_root_survives_publication_refusal_and_group_deadline_prevents_factory(self):
+        script=r'''
+param($Repo,$Fixture)
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+. "$Repo/tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1"
+$realPublisher=${function:Write-H1Receipt};$realReadback=${function:Assert-H1ReceiptBytes}
+function Exit-IW7ResourceLease {throw 'Release must not run after refused publication'}
+function Get-H1Clock {$script:clock}
+$script:T7H1Deadline=${function:Assert-H1Deadline};$script:T7GroupStarted=0
+$text=[IO.File]::ReadAllText("$Repo/ops/model-lab/Build-Writer.ps1")
+$start=$text.IndexOf('$writerRoot=');$end=$text.IndexOf('function Add-ModelWriterPin',$start)
+$helpers=[scriptblock]::Create($text.Substring($start,$end-$start))
+foreach($mode in @('write','readback','expired','late-factory')){
+    $prepared=Join-Path $Fixture $mode;[IO.Directory]::CreateDirectory($prepared)|Out-Null
+    $writerContext=[pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token=$mode};Guards=[Collections.Generic.List[IDisposable]]::new()}
+    $originalContextVariable=Get-Variable writerContext;$bindings=[Collections.Generic.List[object]]::new()
+    $state=[ordered]@{LeaseToken=$mode;LeaseReleased=$false;Quarantined=$false;Status='Pending';TreeClosureConfirmed=$true}
+    $plan=[pscustomobject]@{RunRoot=$prepared;OutputLimitBytes=128KB;MetadataReserveBytes=64KB;GroupDeadlineSeconds=180}
+    $script:clock=0;$script:factories=0;$script:constructed=$null
+    function New-H1Owner {$script:factories++;$script:constructed=[pscustomobject]@{Original=$true};if($mode -ceq 'late-factory'){$script:clock=180001};$script:constructed}
+    . $helpers
+    $root=[AppDomain]::CurrentDomain.GetData($writerRoot.Key)
+    if(![object]::ReferenceEquals($root.Context,$writerContext) -or ![object]::ReferenceEquals($root.ContextVariable.Value,$writerContext)){throw 'Root/PSVariable are not the actual original references'}
+    $sameLease=$writerContext.Lease;$sameGuards=$writerContext.Guards
+    if($mode -cin @('write','readback')){
+        ${function:Write-H1Receipt}=$realPublisher;${function:Assert-H1ReceiptBytes}=$realReadback
+        if($mode -ceq 'write'){function Write-H1Receipt {throw 'Injected write refusal'}}
+        else{function Assert-H1ReceiptBytes {throw 'Injected readback refusal'}}
+        Complete-H1Stage $writerContext $state -BeforeReleaseCheck {$null=Publish-ModelWriterReceipt ([ordered]@{Status='ReleasePending'}) 'writer-native-run.json'}
+        if($state.LeaseReleased -or ![object]::ReferenceEquals($sameLease,$writerContext.Lease) -or
+            ![object]::ReferenceEquals($sameGuards,$root.Guards) -or $root.CanExit -or !$state.Quarantined){throw 'Publication failure lost original root/lease/guards'}
+    }else{
+        if($mode -ceq 'expired'){$script:clock=180001}
+        $refused=$false;try{New-H1Owner|Out-Null}catch{$refused=$true}
+        if(!$refused -or $writerRoot.CanExit){throw 'Expired group allowed a new native effect'}
+        if($mode -ceq 'expired' -and $script:factories -ne 0){throw 'Expired group called the factory'}
+        if($mode -ceq 'late-factory' -and ![object]::ReferenceEquals($writerContext.Owner,$script:constructed)){throw 'Late factory result was not retained before refusing Start'}
+    }
+}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'publication-lifecycle.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run(['pwsh','-NoLogo','-NoProfile','-File',str(path),str(ROOT),folder],
                                   capture_output=True,text=True,timeout=20)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
@@ -1089,6 +1138,28 @@ class AuthoredFFSourceTests(unittest.TestCase):
             (output/'model-ff-plan.json').write_text(json.dumps(plan))
             with self.assertRaises(ValueError):
                 prepare_ff.verify_authored_stage(output)
+
+    def test_new_pre_release_writer_receipts_require_hash_bound_final_closure(self):
+        with tempfile.TemporaryDirectory() as folder:
+            writer,material=self.fixture(folder)
+            path=writer/'writer-provenance.json';provenance=json.loads(path.read_bytes())
+            provenance.update(NativeReleasePending=True,NativeRootKey='IW7.ModelWriter.Root.'+'a'*32,
+                              NativeClosureEvidence='writer-closure.json')
+            path.write_text(json.dumps(provenance))
+            with self.assertRaises((FileNotFoundError,ValueError)):
+                prepare_ff.stage_authored(writer,Path(folder)/'missing-closure',material_inputs=material)
+            native=json.dumps(dict(ReleasePending=True,LeaseReleased=False)).encode()
+            (writer/'writer-native-run.json').write_bytes(native)
+            closure=dict(Schema='iw7.model-writer-closure/1',NativeRootKey=provenance['NativeRootKey'],
+                JobClosureVerified=True,LeaseReleased=True,InputGuardsClosed=True,PreReleasePublicationsVerified=True,
+                NativeRunSHA256=hashlib.sha256(native).hexdigest(),WriterProvenanceSHA256=hashlib.sha256(path.read_bytes()).hexdigest(),Ready=False)
+            closure_path=writer/'writer-closure.json';closure_path.write_text(json.dumps(closure))
+            output=Path(folder)/'ff-source-two-phase'
+            plan=prepare_ff.stage_authored(writer,output,material_inputs=material)
+            self.assertEqual(prepare_ff.verify_authored_stage(output),plan)
+            closure['LeaseReleased']=False;closure_path.write_text(json.dumps(closure))
+            with self.assertRaises(ValueError):
+                prepare_ff.stage_authored(writer,Path(folder)/'false-closure',material_inputs=material)
 
     def test_dump_verification_reuses_image_reader_and_rejects_material_or_pixels(self):
         with tempfile.TemporaryDirectory() as folder:

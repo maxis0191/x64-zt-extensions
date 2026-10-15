@@ -132,6 +132,21 @@ def _authored_stage_payloads(writer_root, material_inputs, *, artifacts_root=Non
     import re
     if not re.fullmatch('[a-fA-F0-9]{64}', provenance['WriterSHA256']):
         raise ValueError('Explicit measured native reader hash required')
+    closure_raw = None
+    if 'NativeReleasePending' in provenance:
+        if (provenance['NativeReleasePending'] is not True or provenance.get('NativeClosureEvidence') != 'writer-closure.json' or
+            type(provenance.get('NativeRootKey')) is not str or not re.fullmatch(r'IW7\.ModelWriter\.Root\.[a-f0-9]{32}', provenance['NativeRootKey'])):
+            raise ValueError('Explicit two-phase native publication contract required')
+        closure_raw = bounded(root/'writer-closure.json', 65536)
+        closure = inspector.parse_json(closure_raw)
+        native_raw = bounded(root/'writer-native-run.json', 1024**2)
+        if (closure.get('Schema') != 'iw7.model-writer-closure/1' or
+            closure.get('NativeRootKey') != provenance.get('NativeRootKey') or
+            closure.get('WriterProvenanceSHA256') != hashlib.sha256(provenance_raw).hexdigest() or
+            closure.get('NativeRunSHA256') != hashlib.sha256(native_raw).hexdigest() or
+            any(closure.get(key) is not True for key in ('JobClosureVerified','LeaseReleased','InputGuardsClosed','PreReleasePublicationsVerified')) or
+            closure.get('Ready') is not False):
+            raise ValueError('Final original native closure does not bind the pre-release receipts')
     for key in ('geometry_profile', 'namespace', 'zone', 'model_name', 'mesh_name', 'material_reference', 'vertices', 'triangles'):
         if type(report.get(key)) is not type(manifest[key]) or report[key] != manifest[key]:
             raise ValueError('Measured authored writer identity/counts differ')
@@ -184,6 +199,9 @@ def _authored_stage_payloads(writer_root, material_inputs, *, artifacts_root=Non
         for name in material['files'] if not name.startswith('zone_source/'))
     evidence = {'evidence/writer/'+name: bounded(root/name, 512*1024) for name in (
         'writer-source.json', 'writer-provenance.json', *manifest['source_files'])}
+    if closure_raw is not None:
+        evidence['evidence/writer/writer-closure.json'] = closure_raw
+        evidence['evidence/writer/writer-native-run.json'] = native_raw
     metadata = {key: value for key, value in material.items() if key != 'files'}
     metadata['files'] = {name: hashlib.sha256(raw).hexdigest() for name, raw in material['files'].items()}
     evidence['evidence/material-inputs.json'] = (json.dumps(metadata, indent=2)+'\n').encode()

@@ -66,6 +66,31 @@ $state=[ordered]@{Schema='iw7.model-writer-native-run/1';Status='Pending';LeaseT
 $plan=[pscustomobject]@{Schema='iw7.model-writer-native-plan/1';RunRoot=$prepared;Compiler=$null;Bindings=@();Inputs=@();
     Environment=$null;OutputLimitBytes=64MB;MetadataReserveBytes=1MB;GroupDeadlineSeconds=180}
 $provenance=$null;$failure=$null
+$writerRoot=[pscustomobject]@{Key=('IW7.ModelWriter.Root.'+[guid]::NewGuid().ToString('N'));Context=$writerContext;
+    ContextVariable=$originalContextVariable;Guards=$writerContext.Guards;State=$state;Plan=$plan;Bindings=$bindings;
+    PublicationGuards=[Collections.Generic.List[IDisposable]]::new();Publications=[Collections.Generic.List[object]]::new();
+    PreReleaseVerified=$false;FinalClosureVerified=$false;CanExit=$false}
+# Publish the ACTUAL objects before admission, factory creation or any native effect.
+[AppDomain]::CurrentDomain.SetData($writerRoot.Key,$writerRoot)
+function Assert-ModelWriterGroupDeadline {
+    & $script:T7H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+}
+$originalWriterFactory=${function:New-H1Owner}
+function New-H1Owner {
+    Assert-ModelWriterGroupDeadline
+    $originalOwner=& $originalWriterFactory
+    $writerContext.Owner=$originalOwner # Retain the real result even if the next check throws.
+    Assert-ModelWriterGroupDeadline # Immediately before H1's Start, not its shared 600s policy.
+    $originalOwner
+}
+function Publish-ModelWriterReceipt($Value,[string]$Name) {
+    Assert-ModelWriterGroupDeadline
+    $record=Write-H1Receipt $plan $Value $prepared -Name $Name -PassThru
+    $writerRoot.PublicationGuards.Add((Open-H1Pin $record))
+    $writerRoot.Publications.Add($record)
+    Assert-ModelWriterGroupDeadline
+    $record
+}
 function Add-ModelWriterPin([string]$Path,[string]$Expected='') {
     Assert-H1Path $Path
     $item=Get-Item -LiteralPath $Path
@@ -84,6 +109,7 @@ function Invoke-ModelWriterPhase([string]$Name,[string]$Kind,[string]$Image,[str
     $state.Stages.Add($current)
     $start=New-T7Start $plan $script:T7CurrentStage $dir
     $writerContext.Owner=$null # A closed prior owner cannot attest a failed new factory.
+    Assert-ModelWriterGroupDeadline
     Invoke-T7OwnedStage $plan $current $writerContext $start $SHA $dir (Get-H1Clock)
     if(!$writerContext.Closed -or !$current.TreeClosureConfirmed -or $current.ExitCode -ne 0){throw 'Model writer original job did not qualify.'}
     if($Kind -ceq 'Compile'){$current.Artifacts=@(Get-H1CompilerArtifacts $plan $writerContext)}
@@ -157,24 +183,39 @@ try {
         })
     foreach($asset in $assets){$null=Add-ModelWriterPin (Join-Path $prepared ('artifacts/'+$asset.Path)) $asset.SHA256}
     $provenance=[ordered]@{Schema='iw7.model-writer-build/1';SourcePin=$head;ToolSource=$source;Source=$manifest;
-        CompilerSHA256=$clPin.SHA256;WriterSHA256=$writerPin.SHA256;Artifacts=$assets;Roundtrip=$roundtrip;FFBuilt=$false;PixelsVerified=$false;Ready=$false}
+        CompilerSHA256=$clPin.SHA256;WriterSHA256=$writerPin.SHA256;Artifacts=$assets;Roundtrip=$roundtrip;
+        NativeReleasePending=$true;NativeRootKey=$writerRoot.Key;NativeClosureEvidence='writer-closure.json';
+        FFBuilt=$false;PixelsVerified=$false;Ready=$false}
     $state.Status='NativeRoundtripPassed'
 }catch{$failure=$_;$state.Status='Failed';$state.Failure=$_.Exception.Message}
 finally {
     if($writerContext.Lease){
         Complete-H1Stage $writerContext $state -BeforeReleaseCheck {
             Confirm-H1BoundInputs $plan
+            Assert-ModelWriterGroupDeadline
+            $snapshot=[ordered]@{}
+            foreach($key in $state.Keys){$snapshot[$key]=$state[$key]}
+            $snapshot.ReleasePending=$true;$snapshot.LeaseReleased=$false;$snapshot.NativeRootKey=$writerRoot.Key
+            $null=Publish-ModelWriterReceipt $snapshot 'writer-native-run.json'
+            if($provenance){$null=Publish-ModelWriterReceipt $provenance 'writer-provenance.json'}
+            $writerRoot.PreReleaseVerified=$true
             foreach($guard in $writerContext.Guards){$guard.Dispose()}
             $writerContext.Guards.Clear()
         }
     }
     $state.TreeClosureConfirmed=$writerContext.Closed
-    if($writerContext.Lease){
-        [AppDomain]::CurrentDomain.SetData(('IW7.ModelWriter.Quarantine.'+$writerContext.Lease.Token),
-            [pscustomobject]@{Context=$writerContext;ContextVariable=$originalContextVariable;Guards=$writerContext.Guards;State=$state;Plan=$plan})
-    }
-    $state|ConvertTo-Json -Depth 16|Set-Content -LiteralPath (Join-Path $prepared 'writer-native-run.json')
+    # The prepublished root stays reachable on every failure, including publication.
 }
 if($failure){throw $failure}
 if(!$state.LeaseReleased -or !$writerContext.Closed -or $writerContext.Lease -or $writerContext.Guards.Count){throw 'Original writer context has not fully closed; same host/context must be retained.'}
-$provenance|ConvertTo-Json -Depth 12|Set-Content -LiteralPath (Join-Path $prepared 'writer-provenance.json')
+Assert-ModelWriterGroupDeadline
+$nativeReceipt=@($writerRoot.Publications|Where-Object {$_.Path -eq (Join-Path $prepared 'writer-native-run.json')})
+$writerReceipt=@($writerRoot.Publications|Where-Object {$_.Path -eq (Join-Path $prepared 'writer-provenance.json')})
+if(!$writerRoot.PreReleaseVerified -or $nativeReceipt.Count -ne 1 -or $writerReceipt.Count -ne 1){throw 'Verified pre-release publications required.'}
+$closure=[ordered]@{Schema='iw7.model-writer-closure/1';NativeRootKey=$writerRoot.Key;JobClosureVerified=$true;
+    LeaseReleased=$true;InputGuardsClosed=$true;PreReleasePublicationsVerified=$true;
+    NativeRunSHA256=$nativeReceipt[0].SHA256;WriterProvenanceSHA256=$writerReceipt[0].SHA256;Ready=$false}
+$null=Publish-ModelWriterReceipt $closure 'writer-closure.json'
+foreach($record in $writerRoot.Publications){$guard=Open-H1Pin $record;$guard.Dispose()}
+foreach($guard in $writerRoot.PublicationGuards){$guard.Dispose()}
+$writerRoot.PublicationGuards.Clear();$writerRoot.FinalClosureVerified=$true;$writerRoot.CanExit=$true
