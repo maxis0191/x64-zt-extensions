@@ -24,6 +24,53 @@ class ExportDefaultTests(unittest.TestCase):
   self.assertFalse(Path(self.plan['RunRoot']).exists())
  def test_ready_refused(self):
   self.plan['Ready']=True;self.assertNotEqual(self.invoke().returncode,0)
+ def test_pair_profile_default_is_pure_and_selector_is_exact(self):
+  original=json.loads(json.dumps(self.plan))
+  self.plan.update(PairProfile=True,Pack='paris_enemy_cp_zmb_raygun_pair_profile_a')
+  r=self.invoke();self.assertEqual(r.returncode,0,r.stderr)
+  self.assertFalse(any(json.loads(r.stdout)[k] for k in ('NativeTypesLoaded','OpaqueInputsRead','LeaseAcquired','RuntimeCreated','CandidateExecuted','Ready')))
+  for value in (False,1,'true',[True],None):
+   self.plan=dict(original,PairProfile=value,Pack='paris_enemy_cp_zmb_raygun_pair_profile_a')
+   self.assertNotEqual(self.invoke().returncode,0)
+  self.plan=dict(original,PairProfile=True)
+  self.assertNotEqual(self.invoke().returncode,0)
+  self.assertFalse(Path(original['RunRoot']).exists())
+
+ def pair_profile(self):
+  return dict(schema='iw7.player-pair-profile/1',donor='cp_zmb',native_source_pin='fab935826c898806855376662a8a03317b3ad8f1',
+   weapon='iw7_shredder_zm',pap_attachment='shredderpap1',source_offsets=dict(base_type=556,pap_type=28,pap_flag=20),
+   observed=dict(base_type=1,pap_type=3,pap_flag_raw=1,pap_flag=True),
+   association=dict(status='bounded',counts=[0,1,0,0,0,0],readable=[True]*6,occurrences=1),source_layout_only=True,
+   templates_exported=False,projectile_author_eligible=False,runtime_abi_verified=False,weapon_granted=False,
+   projectile_damage_verified=False,physics_qualified=False,retail_pap_transaction_verified=False,gameplay_accepted=False)
+
+ def test_actual_pair_profile_reader_closed_typed_positive_and_partial_cases(self):
+  valid=self.pair_profile();cases=[('mixed-numbers-preserved',valid,False)]
+  partial=json.loads(json.dumps(valid));partial['association'].update(status='refused_bounds_or_readability',counts=[65,0,0,0,0,0],readable=[False,True,True,True,True,True],occurrences=None)
+  cases.append(('bounds-partial',partial,False))
+  partial=json.loads(json.dumps(valid));partial['observed'].update(pap_flag_raw=255,pap_flag=None);cases.append(('raw-bool-anomaly',partial,False))
+  partial=json.loads(json.dumps(valid));partial['association'].update(status='refused_bounds_or_readability',readable=[True,False,True,True,True,True],occurrences=None);cases.append(('unreadable-partial',partial,False))
+  changes=[lambda d:d.update(extra=False),lambda d:d.update(schema=['iw7.player-pair-profile/1']),
+   lambda d:d.update(projectile_author_eligible=True),lambda d:d.update(physics_qualified=0),
+   lambda d:d['observed'].update(base_type='1'),lambda d:d['observed'].update(pap_type=1.0),
+   lambda d:d['observed'].update(pap_flag=False),lambda d:d['observed'].update(pap_flag_raw=256),
+   lambda d:d['observed'].update(base_type=2147483648),lambda d:d['source_offsets'].update(base_type=557),
+   lambda d:d['association'].update(counts=[0]*5),lambda d:d['association'].update(occurrences=2),
+   lambda d:d['association'].update(readable=[0]*6),lambda d:d['association'].update(occurrences=None),
+   lambda d:d['association'].update(status='refused_bounds_or_readability'),
+   lambda d:d['association'].update(readable=[False,True,True,True,True,True]),
+   lambda d:d['association'].update(counts=[65,0,0,0,0,0],status='refused_bounds_or_readability',occurrences=None)]
+  for i,mutate in enumerate(changes):
+   d=json.loads(json.dumps(valid));mutate(d);cases.append((str(i),d,True))
+  for label,data,refused in cases:
+   with self.subTest(label=label):
+    (self.root/'data.json').write_text(json.dumps(data),encoding='utf-8')
+    r=self.fragment('Convert-PlayerPairProfileJson',f"$refused=$false;try{{$value=Convert-PlayerPairProfileJson ([IO.File]::ReadAllText((Join-Path $Directory 'data.json')))}}catch{{$refused=$true}};if($refused -ne ${str(refused).lower()}){{throw 'Profile shape causal mismatch'}}")
+    self.assertEqual(r.returncode,0,r.stderr)
+  raw=json.dumps(valid).replace('"base_type": 1,','"base_type":1,"base_type":1,')
+  (self.root/'data.json').write_text(raw,encoding='utf-8')
+  r=self.fragment('Convert-PlayerPairProfileJson',"$refused=$false;try{$null=Convert-PlayerPairProfileJson ([IO.File]::ReadAllText((Join-Path $Directory 'data.json')))}catch{$refused=$true};if(!$refused){throw 'Duplicate observed key accepted'}")
+  self.assertEqual(r.returncode,0,r.stderr)
  def test_missing_provider_pin_refused(self):
   self.plan['Providers']['StockCore']=str(self.root/'unbound.ps1');r=self.invoke();self.assertNotEqual(r.returncode,0);self.assertIn('provider Source binding',r.stderr)
  def test_single_layout_drift_refused(self):

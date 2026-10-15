@@ -83,10 +83,10 @@ def stage(source_root, output, *, player_cli=False):
                  'native_primary_guard.hpp','test_primary_guard.cpp')
         report['build_extension'] = dict(translation_unit=NATIVE_PATH, replace_retained_translation_unit=True,
             source_only=True, requires_fresh_native_compile=True, argv_count_including_executable=6,
-            option='-iw7-player-weapon-templates', other_overlays_preserved=False,
+            option='-iw7-player-weapon-templates', pair_profile_option='-iw7-player-weapon-pair-profile', pair_profile_metadata_only=True, other_overlays_preserved=False,
             ordering='pristine pinned IW7 -> reviewed support127 -> exact CLI -> separately reviewed compatible overlays',
             inputs={name: hashlib.sha256(read_source(HERE/name).encode()).hexdigest() for name in names},
-            name_fixture_checks_authored=8, argv_fixture_checks_authored=10, primary_fixture_checks_authored=36, cpp_executed=False, ready=False)
+            name_fixture_checks_authored=8, argv_fixture_checks_authored=18, primary_fixture_checks_authored=36, cpp_executed=False, ready=False)
     target.parent.mkdir(parents=True, exist_ok=False)
     with target.open("x", encoding="utf-8", newline="\n") as stream:
         stream.write(patched)

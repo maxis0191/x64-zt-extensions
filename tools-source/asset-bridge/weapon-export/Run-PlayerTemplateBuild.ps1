@@ -29,12 +29,16 @@ if($plan.Schema -cne 'iw7.player-template-cohort-source/1' -or $plan.Ready -or $
    $plan.RetainedObjects -ne 412 -or $plan.LinkedObjectCount -ne 413){throw 'Exact unqualified source cohort required.'}
 $names=@('name-compile','name-test','argv-compile','argv-test','iw7','link')
 $primaryFixture=($null -ne $plan.PSObject.Properties['PrimaryGuardFixture'])
+$pairCLI=($null -ne $plan.PSObject.Properties['PairProfileCLI'])
+if($pairCLI -and ($plan.PairProfileCLI -isnot [bool] -or !$plan.PairProfileCLI -or !$primaryFixture)){throw 'Explicit pair-profile CLI requires the primary fixture profile.'}
+$argvChecks=if($pairCLI){18}else{10}
+if($pairCLI -and ($plan.Stages[3].ExpectedChecks -isnot [int] -and $plan.Stages[3].ExpectedChecks -isnot [long])){throw 'Scalar integer pair argv fixture count required.'}
 if($primaryFixture){
     if($plan.PrimaryGuardFixture -isnot [bool] -or !$plan.PrimaryGuardFixture){throw 'Explicit true primary-guard fixture opt-in required.'}
     $names=@('name-compile','name-test','argv-compile','argv-test','primary-compile','primary-test','iw7','link')
 }
-if((@($plan.Stages.Name)-join '|') -cne ($names-join '|') -or $plan.Stages[1].ExpectedChecks -ne 8 -or $plan.Stages[3].ExpectedChecks -ne 10 -or
-   ($primaryFixture -and (($plan.Stages[5].ExpectedChecks -isnot [int] -and $plan.Stages[5].ExpectedChecks -isnot [long]) -or $plan.Stages[5].ExpectedChecks -ne 36))){throw 'Fixed source-selected 8+10/36 stage sequence required.'}
+if((@($plan.Stages.Name)-join '|') -cne ($names-join '|') -or $plan.Stages[1].ExpectedChecks -ne 8 -or $plan.Stages[3].ExpectedChecks -ne $argvChecks -or
+   ($primaryFixture -and (($plan.Stages[5].ExpectedChecks -isnot [int] -and $plan.Stages[5].ExpectedChecks -isnot [long]) -or $plan.Stages[5].ExpectedChecks -ne 36))){throw 'Fixed source-selected 8+10-or-18/36 stage sequence required.'}
 if($plan.GroupDeadlineSeconds -ne 600 -or $plan.OutputLimitBytes -ne 268435456 -or $plan.MetadataReserveBytes -ne 1048576){throw 'Fixed cohort deadline/output reserve required.'}
 $kinds=@('Compile','Probe','Compile','Probe','Compile','Link')
 $artifacts=@('name.obj|name.exe|name.pdb|compile.pdb|dependencies.json','','argv.obj|argv.exe|argv.pdb|compile.pdb|dependencies.json','','iw7-player-cli.obj|compile.pdb|dependencies.json','zonetool-iw7-player.exe|zonetool-iw7-player.pdb|zonetool-iw7-player.lib|zonetool-iw7-player.exp')
@@ -50,7 +54,7 @@ for($index=0;$index -lt $names.Count;$index++){
        (@($stage.Artifacts)-join '|') -cne $artifacts[$index]){throw 'Fixed cohort phase/artifacts required.'}
     if($probe){
         $fixture=if($index -eq 1){'name'}elseif($index -eq 3){'argv'}else{'primary'}
-        $expected=if($index -eq 1){"IW7_PLAYER_TEMPLATE_NAME_CHECKS=8`n"}elseif($index -eq 3){"IW7_PLAYER_TEMPLATE_ARGV_CHECKS=10`n"}else{"IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=36`n"}
+        $expected=if($index -eq 1){"IW7_PLAYER_TEMPLATE_NAME_CHECKS=8`n"}elseif($index -eq 3){"IW7_PLAYER_TEMPLATE_ARGV_CHECKS=$argvChecks`n"}else{"IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=36`n"}
         if($stage.Image -cne (Join-Path (Join-Path $plan.RunRoot "$fixture-compile") "$fixture.exe") -or @($stage.Arguments).Count -ne 0 -or
            $stage.ExpectedStdout -cne $expected){throw 'Fixed cohort probe image/marker required.'}
     }else{
@@ -62,13 +66,16 @@ for($index=0;$index -lt $names.Count;$index++){
 if(!$plan.PSObject.Properties['OwnDirectIncludeCoverage'] -or @($plan.OwnDirectIncludeCoverage).Count -lt 1 -or
    @($plan.OwnDirectIncludeCoverage|Where-Object {-not $_.Pinned}).Count -gt 0 -or !$plan.RequireActualDependenciesWithinGuardedSet){throw 'Own IW7 source coverage and future exact dependency guard required.'}
 $primaryModule=$false
+$pairModule=$false
 foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)){
     $text=Read-PlayerSource $pin.Path $pin.SHA256 $pin.Bytes
     if($pin.Path -ceq (Join-Path $plan.PreparedRoot 'src/zonetool/zonetool/iw7/zonetool.cpp')){
         $primaryModule=$text.Contains('IW7_PLAYER_TEMPLATE_PRIMARY_REFUSAL schema=1') -and $text.Contains('first_failure(reader)')
+        $pairModule=$text.Contains('IW7_PLAYER_PAIR_PROFILE donor=cp_zmb') -and $text.Contains('iw7_player_template_cli::pair_selected(args)')
     }
 }
 if($primaryFixture -ne $primaryModule){throw 'Exact primary module/fixture profile pairing required.'}
+if($pairCLI -ne $pairModule){throw 'Exact pair profile CLI/18-check fixture pairing required.'}
 $providers=$plan.Providers
 $providerPins=@(foreach($name in 'Core','CompilerCore','ObserverSource','CompilerPolicySource','Scheduler','Profile'){
     $pin=@($plan.ParentBindings|Where-Object {$_.Path -ieq $providers.$name -and $_.IsText})
@@ -77,7 +84,7 @@ $providerPins=@(foreach($name in 'Core','CompilerCore','ObserverSource','Compile
 })
 if(Test-Path -LiteralPath $plan.RunRoot){throw 'Fresh owned runtime output required.'}
 if(!$Run){
-    [ordered]@{Schema='iw7.player-template-build-default/1';PlanSHA256=$PlanSHA256;Stages=$names.Count;NameChecksAuthored=8;ArgvChecksAuthored=10;PrimaryChecksAuthored=$(if($primaryFixture){36}else{0});
+    [ordered]@{Schema='iw7.player-template-build-default/1';PlanSHA256=$PlanSHA256;Stages=$names.Count;NameChecksAuthored=8;ArgvChecksAuthored=$argvChecks;PrimaryChecksAuthored=$(if($primaryFixture){36}else{0});
         NativeTypesLoaded=$false;NativeInputsHashed=$false;RunRootCreated=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json
     return
 }
@@ -109,7 +116,7 @@ try{
     }
     . $providers.Core
     . $providers.Scheduler
-    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner $(if($primaryFixture){'IW7 one-TU player template CLI and 8+10+36 fixtures'}else{'IW7 one-TU player template CLI and 8+10 fixtures'})
+    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner $(if($pairCLI){'IW7 one-TU pair profile CLI and 8+18+36 fixtures'}elseif($primaryFixture){'IW7 one-TU player template CLI and 8+10+36 fixtures'}else{'IW7 one-TU player template CLI and 8+10 fixtures'})
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     # The source guards acquired before imports remain held through release.
     . $providers.CompilerCore
