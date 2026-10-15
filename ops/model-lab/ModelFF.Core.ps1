@@ -176,7 +176,7 @@ function Assert-ModelFFAuthorInputs($Inputs,[string]$ProjectSource) {
     if([IO.Path]::GetFileName($Inputs.SDKSourceWorkspace.Path) -cne 'source-workspace.json'){throw 'Existing SDK Source workspace receipt required.'}
 }
 function Get-ModelFFAuthorStageArguments([string]$ToolsRoot,[string]$Project,[string]$Writer,[string]$Output) {
-    # Direct call to SDK29's existing API. No new serializer, script file or CLI.
+    # Direct call to SDK31's existing API. No new serializer, script file or CLI.
     $code=@'
 import hashlib, importlib.util, json, sys
 from pathlib import Path

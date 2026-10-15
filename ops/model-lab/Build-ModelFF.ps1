@@ -224,9 +224,9 @@ function Invoke-ModelFFTool([string]$Phase,[string[]]$Arguments,[string]$Executa
         $sdkToolsRoot=Split-Path $sdkPin.Path -Parent
         $sdkSources=Read-H1SmallJson $sdkPin.Path 1MB
         if($sdkSources.schema -cne 'iw7.source-workspace/1' -or $sdkSources.product -cne 'iw7-creator-sdk' -or
-            $sdkSources.revisions.'iw7-creator-sdk' -cne '2f9f584549ba7b009b35699a59582f4390102994' -or
+            $sdkSources.revisions.'iw7-creator-sdk' -cne '24edc27ff7f379613d51ae9d91b3f10054d67b6a' -or
             $sdkSources.revisions.'x64-zt-extensions' -cne '8f55ac7819d93f5bcede273aea3e478ae9438a12'){
-            throw 'Exact SDK29/producer172 Source stage implementation required.'
+            throw 'Exact SDK31/producer172 Source stage implementation required.'
         }
         foreach($relative in @('sdk/modding/creator_authoring.py','sdk/modding/Finalize-BeaconProject.py','sdk/modding/manifest.py',
             'sdk/modding/manifest.schema.json','sdk/modding/capabilities.json','ops/Validate-ModPackage.py','ops/modding/Distribution-Compat.py',

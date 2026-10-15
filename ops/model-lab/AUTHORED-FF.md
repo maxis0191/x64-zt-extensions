@@ -26,9 +26,9 @@ and file-identity imports, candidate qualification, stock observations and nativ
 operations follow that admission. The Source project is copied into a fresh
 owned temporary directory; originals and copied inputs remain guarded.
 
-The fixed Python argument code calls SDK29's existing `stage_ff_inputs` API through
+The fixed Python argument code calls SDK31's existing `stage_ff_inputs` API through
 the same `Invoke-ModelFFTool` dispatcher and H1 owner. It uses `-B -S -c`, four
-separate path arguments and a cleared child environment. SDK29 and its fourteen
+separate path arguments and a cleared child environment. SDK31 and its fourteen
 transitive Source files are bound to its immutable Source workspace. The SDK
 package is not edited and its old Build-ModelFF entry is not invoked. The caller
 measures the actual plan file inside that original Python job, then compares the
@@ -54,7 +54,7 @@ post-construction deadline can throw.
 `iw7.authored-model-ff-author-inputs/1` contains exactly `Schema`, `ProjectSource`,
 `ProjectFiles`, `SDKSourceWorkspace` and `Templates`. The six original Source
 files have bounded length/hash pins; the script's name is project-defined.
-SDKSourceWorkspace is a path/length/hash record for SDK29 `2f9f584` with producer
+SDKSourceWorkspace is a path/length/hash record for SDK31 `24edc27` with producer
 `8f55ac7`. The six template roles are material, statebits, statebitsmap,
 stateinfo, cbi and cbt; each has only path/length/hash. No old NTFS identity is
 accepted as a new observation. The original descriptor fixes their project-local

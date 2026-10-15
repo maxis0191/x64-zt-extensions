@@ -45,6 +45,24 @@ try{& ([scriptblock]::Create($body.Substring(1,$body.Length-2)))}catch{$refused=
 Require ($refused -and ($entryEvents-join ',') -ceq 'admission') 'Actual admission refusal must prevent every downstream preflight effect'
 Remove-Item Function:Add-Type
 
+# Execute the actual SDK receipt predicate with Source metadata only. Keep the
+# corrected exporter adoption exact; older and unrelated revisions cannot pass.
+$sdkGate=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.IfStatementAst] -and
+    $node.Clauses[0].Item1.Extent.Text.Contains('$sdkSources.schema')},$true))
+Require ($sdkGate.Count -eq 1) 'One actual exact SDK Source gate required'
+$sdkGateBlock=[scriptblock]::Create($sdkGate[0].Extent.Text)
+foreach($case in @(
+    @{SDK='24edc27ff7f379613d51ae9d91b3f10054d67b6a';Assets='8f55ac7819d93f5bcede273aea3e478ae9438a12';Pass=$true},
+    @{SDK='2f9f584549ba7b009b35699a59582f4390102994';Assets='8f55ac7819d93f5bcede273aea3e478ae9438a12';Pass=$false},
+    @{SDK=('a'*40);Assets='8f55ac7819d93f5bcede273aea3e478ae9438a12';Pass=$false},
+    @{SDK='24edc27ff7f379613d51ae9d91b3f10054d67b6a';Assets=('a'*40);Pass=$false}
+)){
+    $sdkSources=[pscustomobject]@{schema='iw7.source-workspace/1';product='iw7-creator-sdk';
+        revisions=[pscustomobject]@{'iw7-creator-sdk'=$case.SDK;'x64-zt-extensions'=$case.Assets}}
+    $refused=$false;try{& $sdkGateBlock}catch{$refused=$true}
+    Require ($refused -ne $case.Pass) 'Actual SDK Source gate must accept only SDK31 with the original producer172 pin'
+}
+
 $projectFiles=[ordered]@{}
 foreach($name in 'README.md','authoring.json','color.rgba8.json','geometry.source.json','manifest.json','second_author_script.gsc'){
     $projectFiles[$name]=[pscustomobject]@{Bytes=10;SHA256=('c'*64)}
