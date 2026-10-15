@@ -11,6 +11,11 @@ check before any stock transaction or FF build. Its failed original job and host
 were closed. See the [dated failure checkpoint](../../docs/AUTHORED-PLATFORM-FF-D3-2026-10-15.md)
 for the LF/CRLF export cause, exact evidence and the separately gated next step.
 
+The subsequent [D4 checkpoint](../../docs/AUTHORED-PLATFORM-FF-D4-2026-10-15.md)
+passed the SDK31 stage and accepted plan/3, then refused on absent pre-alias
+`TargetId` before SourceValidation created an owner. Its failed-operation closure
+was corroborated; FF construction and stock restoration were not reached.
+
 ## One admission, including input staging
 
 `Build-ModelFF.ps1` accepts the existing prepared `SourceRoot`. Its optional
