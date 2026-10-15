@@ -3,8 +3,8 @@
 ## Actual CPP80 checkpoint, 2026-10-15
 
 The separately authorized CPP-D build on frozen PREP F passed all five phases
-and closed. The fixture actually printed39 legacy registration checks and41
-material-binding checks, for80 total; stderr was empty. Main, CLI and link then
+and closed. The fixture actually printed 39 legacy registration checks and 41
+material-binding checks, for 80 total; stderr was empty. Main, CLI and link then
 exited zero. This qualifies that exact compiled cohort. The candidate has not
 executed, no engine/retail observation was made, and Catalogue gate170 remains
 closed. No authentic BO3 image payload or playable material result is claimed.
@@ -12,21 +12,21 @@ closed. No authentic BO3 image payload or playable material result is claimed.
 The compiled extension Source is
 `0f669b58f7a962cb5f5c01af252ce05d8bdbbc3b` (PR184 merge), with native base
 `fab935826c898806855376662a8a03317b3ad8f1`. Later documentation commits do not
-change those identities. The immutable source package has1088 files/10952791
-bytes; its385050-byte manifest SHA256 is
+change those identities. The immutable source package has 1088 files/10952791
+bytes; its 385050-byte manifest SHA256 is
 `fe60a6ed7eb0a912e399251c358ff48798bc705a8c079b9d1884f6f49505a272`.
-Its actual406073-byte plan SHA256 is
+Its actual 406073-byte plan SHA256 is
 `11544206c4a723722696e35ef869bc8ad9c713a8ada212811deae8bb7b5dc092`.
-The recipe had192 raw bindings,187 after five declared historical proof texts,
-181 text/six binary-metadata bindings and1146 input pins. No incoming87 cohort
-entered it. The actual runner is132470 bytes/SHA256
+The recipe had 192 raw bindings, 187 after five declared historical proof texts,
+181 text/six binary-metadata bindings and 1146 input pins. No incoming 87-check cohort
+entered it. The actual runner is 132470 bytes/SHA256
 `e3fafcd757f86d9aee5d8b5f6cd8df3b0d05245b04e8c1d1686e6d5ef390dff5`.
 
 Before CPP GO, an independent replay used that actual F plan and actual runner
 Source through the entire pre-admission body, without code/path virtualization.
-It reached the lease boundary without executing it, hashed183 bounded Source
-files and used1163 frozen metadata declarations. Four altered plans were
-refused. Report7631 bytes/SHA256
+It reached the lease boundary without executing it, hashed 183 bounded Source
+files and used 1163 frozen metadata declarations. Four altered plans were
+refused. Report 7631 bytes/SHA256
 `0a79fedcb476a48db55f45fccc01c83c6db7d464740dc02f22cba33a2526f6bf`.
 That audit covers Source semantics; the later admitted build itself verified the
 held opaque inputs and compiled the candidate. Historical B/C refusals below
@@ -35,24 +35,24 @@ remain failed pre-admission attempts.
 | Actual phase | Exit | Elapsed ms | Closure |
 | --- | ---: | ---: | --- |
 | registration-fixture-compile | 0 | 7225.4 | Original job closed, compiler telemetry completed |
-| registration-fixture-test | 0 | 246.4 | Original job closed,39+41,EngineInvoked=false |
+| registration-fixture-test | 0 | 246.4 | Original job closed, 39+41, EngineInvoked=false |
 | main | 0 | 6097.5 | Original job closed, compiler telemetry completed |
 | zonetool11 | 0 | 17775.3 | Original job closed, compiler telemetry completed |
 | link | 0 | 5611.7 | Original job closed, compiler telemetry completed |
 
-All four compiler/link telemetry records confirmed root exit0 and empty jobs;
+All four compiler/link telemetry records confirmed root exit 0 and empty jobs;
 the Probe and unused top-level placeholder retain Completed=false. The full
-group elapsed60627.9ms, below600s, and observed263165782 output bytes, below
-256MiB with the existing1MiB metadata reserve. Every phase met its fixed bound.
+group elapsed 60627.9 ms, below 600 s, and observed 263165782 output bytes, below
+256 MiB with the existing 1 MiB metadata reserve. Every phase met its fixed bound.
 The actual receipt has RegistrationFixturePassed=true,
 RegistrationBindingsFixturePassed=true and inherited RegistrationCPPQualified=true.
 It does **not** emit a new top-level RegistrationBindingsCPPQualified field.
 The frozen plan/profile and new Source marker remain pending/false; they are
 inputs and were not edited to promote proof.
 
-The admitted link artifact pins are22054400 bytes/SHA256
+The admitted link artifact pins are 22054400 bytes/SHA256
 `f14a0af9c8e7a0a58e7f1331fa996806139356c6063e47fc6325f2ad423c8f40`
-for zonetool-t7.exe and139907072 bytes/SHA256
+for zonetool-t7.exe and 139907072 bytes/SHA256
 `6dfc51731823d5cb8883d5133438530566041a16453fde3f0749076a2379936b`
 for zonetool-t7.pdb. These were captured/reverified under the CPP lease; neither
 binary was reopened for a free hash after release. No binary or symbol is stored
@@ -62,7 +62,7 @@ The same original physical NoExit host retained its actual AppDomain root and
 context/guards/state PSVariables. OriginalReferencesVerified, owner closure,
 zero input/publication/caller Source guards, null lease, pre-release publication,
 completion publication and both CanExit gates were checked in that host. Its
-literal guarded exit then produced actual aggregate PTY exit0. Fresh checks
+literal guarded exit then produced actual aggregate PTY exit 0. Fresh checks
 found the original host, parent and five stage identities absent, no compiler/
 VCTIP/game process and no heavy lease; bounded receipt/log pins were unchanged.
 No reconstructed host/context or stale PID was used to establish closure.
@@ -155,9 +155,9 @@ no invented compiler, SDK, candidate or runtime identity.
 
 ## Source evidence and authoring corrections
 
-At the original recipe checkpoint, Source validation passed25 targeted Python
-checks,134 new PowerShell controls and117 retained incoming Source controls.
-The80-check cohort was then authored only; the later measured CPP-D checkpoint
+At the original recipe checkpoint, Source validation passed 25 targeted Python
+checks, 134 new PowerShell controls and 117 retained incoming Source controls.
+The 80-check cohort was then authored only; the later measured CPP-D checkpoint
 above supersedes that build limitation without claiming a native observation.
 
 During authoring, an overbroad allowlist matcher extended an enclosing condition
