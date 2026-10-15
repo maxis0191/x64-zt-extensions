@@ -914,7 +914,15 @@
     "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationBindingsCppSource.ps1",
     "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationBindingsAdoption.ps1",
     "tools-source/asset-bridge/t7-bridge/prepare_registration_bindings_probe.py",
-    "tools-source/asset-bridge/t7-bridge/test_registration_bindings_probe.py"
+    "tools-source/asset-bridge/t7-bridge/test_registration_bindings_probe.py",
+    "tools-source/asset-bridge/t7-iw7/native_prepatch_image_caller_v1.inc",
+    "tools-source/asset-bridge/t7-iw7/prepatch_image_caller_range.hpp",
+    "tools-source/asset-bridge/t7-iw7/prepatch_image_caller_fixture.cpp",
+    "tools-source/asset-bridge/t7-iw7/prepare_prepatch_image_caller.py",
+    "tools-source/asset-bridge/t7-iw7/prepatch-image-caller-source-contract.json",
+    "tools-source/asset-bridge/t7-iw7/PREPATCH-IMAGE-CALLER-V1.md",
+    "tools-source/asset-bridge/t7-iw7/test_prepatch_image_caller.py",
+    "tools-source/asset-bridge/t7-iw7/Test-T7PrepatchImageCaller.ps1"
   ],
   "dependencies": [
     {

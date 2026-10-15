@@ -1,0 +1,107 @@
+{
+  "schema": "iw7.t7-prepatch-image-caller-source-contract/1",
+  "mode": "t7-prepatch-image-caller-v1",
+  "option": "-t7-prepatch-image-caller-v1",
+  "observation_schema": "iw7.t7-prepatch-image-caller-observation/1",
+  "phase": "first_dpi_before_component_post_unpack",
+  "files": {
+    "native_prepatch_link_v3.inc": {
+      "lf_bytes": 15827,
+      "lf_sha256": "cf839e18a68adb4ed3aae82d683ef110ab595fa8c172584e47ca4d11bb8db48d"
+    },
+    "prepare_prepatch_link_v3.py": {
+      "lf_bytes": 2236,
+      "lf_sha256": "66f70ca5a979745288232d76496a339e08d639ddf34560aada6e6b63c5bcffa1"
+    },
+    "native_prepatch_image_caller_v1.inc": {
+      "lf_bytes": 16778,
+      "lf_sha256": "39fd69039d16285ca574f73a768130e294c618a089ba365bacdf84fd2cfa0019"
+    },
+    "prepatch_image_caller_range.hpp": {
+      "lf_bytes": 3117,
+      "lf_sha256": "0a633964ed558de91bae621b51b28d5e8e0eab20ab790fc000b1b3c6978aa38a"
+    },
+    "prepatch_image_caller_fixture.cpp": {
+      "lf_bytes": 3828,
+      "lf_sha256": "a2471c937e91191fca49820a50ac15091832eaa54bb993c639671e490dd9ade4"
+    },
+    "prepare_prepatch_image_caller.py": {
+      "lf_bytes": 2749,
+      "lf_sha256": "8e6edee60d06dda0c77f8f2cf73bd39677523f0ba046ced2046218cc7eb7d7a2"
+    }
+  },
+  "selection": {
+    "callsite_rva": "0x1B1E5D",
+    "known_target_rva": "0x7DB4C0",
+    "call_opcode": "E8 rel32",
+    "functions": 1,
+    "function_extent": "unique covering mapped runtime-function record; no nearest or fallback",
+    "code_limit_bytes": 8192,
+    "bound_checked_before_code_copy": true,
+    "whole_call_must_fit": true,
+    "callee_code_read": false,
+    "callee_follow": false,
+    "address_selector": false
+  },
+  "read_limits": {
+    "total": 4194304,
+    "pdata": 2097152,
+    "report": 262144,
+    "function_code": 8192,
+    "unwind_header": 4
+  },
+  "fixture": {
+    "file": "prepatch_image_caller_fixture.cpp",
+    "checks": 25,
+    "stdout": "IW7_T7_PREPATCH_IMAGE_CALLER_CHECKS=25\n",
+    "stderr": "",
+    "engine_invoked": false
+  },
+  "stages": [
+    {
+      "name": "caller-fixture-compile",
+      "stage": "Compile",
+      "seconds": 120
+    },
+    {
+      "name": "caller-fixture-test",
+      "stage": "Probe",
+      "seconds": 15
+    },
+    {
+      "name": "main",
+      "stage": "Compile",
+      "seconds": 120
+    },
+    {
+      "name": "link",
+      "stage": "Link",
+      "seconds": 120
+    }
+  ],
+  "group_seconds": 600,
+  "output_bytes": 268435456,
+  "metadata_reserve_bytes": 1048576,
+  "source_main": {
+    "base_bytes": 14469,
+    "base_sha256": "84cde2924df0a0553dd2cddb0ca173aed54af43d6874b06718c01d1a6cec4989",
+    "bytes": 14557,
+    "sha256": "2ff1c104f8dfc99432179b289a0453aa1a81b8a99703803fcede1869fae61133"
+  },
+  "base_plan": {
+    "bytes": 305621,
+    "sha256": "e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530"
+  },
+  "native_executed": false,
+  "cpp_qualified": false,
+  "writer_proven": false,
+  "abi_proven": false,
+  "ready": false,
+  "limitations": [
+    "The known target is a context check, never a second capture objective.",
+    "Code inside one function may establish instruction-level stores/provenance, not runtime values or scratch lifetime.",
+    "A writer outside the captured function remains unknown; no automatic expansion or callee following.",
+    "No GfxImage payload, XPAK, pixels, asset lookup, Link activation, zone, boot or game operation.",
+    "Authored C++ fixture is uncompiled until a distinct reviewed CPP GO; Source tests cannot promote it."
+  ]
+}

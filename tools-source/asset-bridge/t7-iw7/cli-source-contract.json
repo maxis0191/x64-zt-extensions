@@ -215,5 +215,35 @@
         "lf_sha256": "66f70ca5a979745288232d76496a339e08d639ddf34560aada6e6b63c5bcffa1"
       }
     }
+  },
+  "prepatch_image_caller_v1": {
+    "schema": "iw7.t7-prepatch-image-caller-build/1",
+    "source_profile": "t7-prepatch-image-caller-v1",
+    "files": {
+      "native_prepatch_link_v3.inc": {
+        "lf_bytes": 15827,
+        "lf_sha256": "cf839e18a68adb4ed3aae82d683ef110ab595fa8c172584e47ca4d11bb8db48d"
+      },
+      "prepare_prepatch_link_v3.py": {
+        "lf_bytes": 2236,
+        "lf_sha256": "66f70ca5a979745288232d76496a339e08d639ddf34560aada6e6b63c5bcffa1"
+      },
+      "native_prepatch_image_caller_v1.inc": {
+        "lf_bytes": 16778,
+        "lf_sha256": "39fd69039d16285ca574f73a768130e294c618a089ba365bacdf84fd2cfa0019"
+      },
+      "prepatch_image_caller_range.hpp": {
+        "lf_bytes": 3117,
+        "lf_sha256": "0a633964ed558de91bae621b51b28d5e8e0eab20ab790fc000b1b3c6978aa38a"
+      },
+      "prepatch_image_caller_fixture.cpp": {
+        "lf_bytes": 3828,
+        "lf_sha256": "a2471c937e91191fca49820a50ac15091832eaa54bb993c639671e490dd9ade4"
+      },
+      "prepare_prepatch_image_caller.py": {
+        "lf_bytes": 2749,
+        "lf_sha256": "8e6edee60d06dda0c77f8f2cf73bd39677523f0ba046ced2046218cc7eb7d7a2"
+      }
+    }
   }
 }
