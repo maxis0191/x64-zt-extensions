@@ -870,6 +870,210 @@ if(($artifactNames -join '|') -cne 'xmodel/prism.xmb|xsurface/mesh2.xsb'){throw 
             self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
 
 
+class AuthoredFFSourceTests(unittest.TestCase):
+    @staticmethod
+    def fixture(folder, *, prism=False):
+        producer, inspector = prepare_ff.authored_surfaces()
+        mesh = AuthoredRigidSourceTests.prism() if prism else AuthoredRigidSourceTests.platform()
+        zone = 'second_prism_zone' if prism else 'first_floor_zone'
+        model, material_name = mesh['name'], mesh['surfaces'][0]['material_reference']
+        source = AuthoredRigidSourceTests.interfaces(folder)
+        geometry_path = Path(folder)/'geometry.input.json'
+        geometry_path.write_text(json.dumps(mesh))
+        writer = Path(folder)/'writer'
+        manifest = prepare_writer.prepare_authored(writer, source, geometry_path, namespace=zone, zone=zone,
+            mesh_name=model+'_mesh', material_reference=material_name, check_pin=False)
+        # Authored source-only fixture receipts, not actual native build evidence.
+        entries = []
+        for path in manifest['artifact_paths']:
+            raw = ('Authored synthetic geometry fixture '+path).encode()
+            file = writer/'artifacts'/path
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_bytes(raw)
+            entries.append(dict(Path=path, Bytes=len(raw), SHA256=hashlib.sha256(raw).hexdigest()))
+        report = {key: manifest[key] for key in ('geometry_profile','namespace','zone','model_name','mesh_name','material_reference','vertices','triangles')}
+        report.update(schema='iw7.model-roundtrip/1', bones=1, surfaces=1, lods=1, shadow_cutoff_lod=6,
+            collision_lod=255, lod0_dist=1000000, has_lods=True, geometry_roundtrip_verified=True,
+            read_existing_supported=True, iw7_normal_encoding_verified=False, physics_serialized=False,
+            ff_built=False, pixels_verified=False, ready=False)
+        provenance = dict(Schema='iw7.model-writer-build/1',SourcePin=prepare_writer.PIN,Source=manifest,
+            WriterSHA256='5'*64, Artifacts=entries, Roundtrip=report, FFBuilt=False, PixelsVerified=False, Ready=False)
+        (writer/'writer-provenance.json').write_text(json.dumps(provenance))
+        material = {key: 0 for key in inspector.BYTE_FIELDS}
+        texture = dict(firstCharacter=0,lastCharacter=0,semantic=14,samplerState=0,typeHash=0,image='old_diffuse')
+        normal = dict(texture, semantic=15, image='recipient_normal')
+        material.update(surfaceTypeBits=0, stateFlags=0, **{'techniqueSet->name': 'recipient_technique'},
+            textureTable=[normal, texture], constantTable=None, subMaterials=None)
+        mapping = [dict(loadBits=[0]*6,depthStencilStateBits=[0]*14,blendStateBits=[0]*4,rasterizerState=0)]
+        template = dict(material=json.dumps(material).encode(), statebits=bytes(152), statebitsmap=json.dumps(mapping).encode())
+        image_name = 'prism_color' if prism else 'floor_color'
+        inputs = producer.prepare_material(zone=zone,image_name=image_name,material_name=material_name,
+            texture_slot=1,dds=producer.rgba8_dds(3,2,bytes(range(24))),template=template)
+        return writer, inputs
+
+    def test_two_projects_join_local_material_closure_and_parametric_inventory(self):
+        for prism in (False, True):
+            with self.subTest(prism=prism), tempfile.TemporaryDirectory() as folder:
+                writer, material = self.fixture(folder, prism=prism)
+                output = Path(folder)/'ff-source'
+                plan = prepare_ff.stage_authored(writer, output, material_inputs=material)
+                self.assertEqual(prepare_ff.verify_authored_stage(output), plan)
+                self.assertEqual(plan['schema'], 'iw7.model-ff-plan/3')
+                self.assertTrue(plan['material_payload_copied'])
+                self.assertFalse(plan['material_closure_verified'])
+                self.assertFalse(plan['ff_built'])
+                self.assertFalse(plan['ready'])
+                rows = (output/f'zone_source/{plan["zone"]}.csv').read_text()
+                self.assertIn('material,'+plan['material_reference']+'\n', rows)
+                self.assertIn('xmodel,'+plan['model_name']+'\n', rows)
+                recipient = (output/f'zone_source/{plan["zone"]}_recipient.csv').read_text()
+                self.assertEqual(recipient, 'techset,recipient_technique\nimage,recipient_normal\n')
+                self.assertNotIn(plan['material_reference'], recipient)
+                self.assertEqual((output/f'images/{plan["image"]["name"]}.dds').read_bytes(),
+                                 material['files'][f'images/{plan["image"]["name"]}.dds'])
+                self.assertEqual(len(plan['source_files']), 9)
+                self.assertEqual(len(plan['dump_files']), 6)
+                checked = subprocess.run([sys.executable,'-B','-S',str(ROOT/'ops/model-lab/prepare_ff.py'),
+                    '--verify-authored-stage',str(output)],capture_output=True,text=True,timeout=10)
+                self.assertEqual(checked.returncode,0,checked.stderr)
+                self.assertEqual(json.loads(checked.stdout),plan)
+
+    def test_join_refuses_false_writer_provenance_material_aliases_and_updated_hashes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            writer, material = self.fixture(folder)
+            original = (writer/'writer-provenance.json').read_bytes()
+            for field, value in (('geometry_roundtrip_verified',False),('vertices',18),('material_reference','different')):
+                report = json.loads(original)
+                report['Roundtrip'][field] = value
+                (writer/'writer-provenance.json').write_text(json.dumps(report))
+                with self.subTest(field=field), self.assertRaises(ValueError):
+                    prepare_ff.stage_authored(writer, Path(folder)/'refused',material_inputs=material)
+                self.assertFalse((Path(folder)/'refused').exists())
+            (writer/'writer-provenance.json').write_bytes(original)
+            bad = copy.deepcopy(material)
+            bad['recipient_references']['images'].append(bad['image']['name'])
+            with self.assertRaises(ValueError):
+                prepare_ff.stage_authored(writer,Path(folder)/'refused',material_inputs=bad)
+            output = Path(folder)/'ff-source'
+            plan = prepare_ff.stage_authored(writer,output,material_inputs=material)
+            image_path = f'images/{plan["image"]["name"]}.dds'
+            raw = (output/image_path).read_bytes()
+            (output/image_path).write_bytes(raw[:-1]+b'\xff')
+            plan['source_files'][image_path] = hashlib.sha256((output/image_path).read_bytes()).hexdigest()
+            (output/'model-ff-plan.json').write_text(json.dumps(plan))
+            with self.assertRaises(ValueError):
+                prepare_ff.verify_authored_stage(output)
+
+    def test_dump_verification_reuses_image_reader_and_rejects_material_or_pixels(self):
+        with tempfile.TemporaryDirectory() as folder:
+            writer, material = self.fixture(folder)
+            output = Path(folder)/'ff-source'
+            plan = prepare_ff.stage_authored(writer,output,material_inputs=material)
+            dumped = Path(folder)/'dump'
+            for name in plan['dump_files']:
+                if name.startswith('images/') or name in plan['artifact_paths']:
+                    continue
+                path = dumped/name
+                path.parent.mkdir(parents=True,exist_ok=True)
+                path.write_bytes((output/name).read_bytes())
+            # Reuse the existing surfaces fixture's known IW7 image-record builder.
+            spec = importlib.util.spec_from_file_location('_authored_ff_image_fixture',ROOT/'tools-source/asset-bridge/surfaces/test_authored_dds_material.py')
+            fixture = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(fixture)
+            image = plan['image']
+            raw = fixture.iw7_dump(3,2,28,bytes(range(24)),image['name'],image['iw7_semantic'])
+            image_path = dumped/f'images/{image["name"]}.iw7Image'
+            image_path.parent.mkdir(parents=True)
+            image_path.write_bytes(raw)
+            ff = Path(folder)/'fixture.ff'
+            ff.write_bytes(b'Authored FF fixture only; no engine build')
+            result = prepare_ff.verify_authored_dump(output,dumped,ff)
+            self.assertTrue(result['image']['serialized_pixel_bytes_verified'])
+            self.assertTrue(result['material_fields_verified'])
+            self.assertFalse(result['native_cbt_semantics_verified'])
+            self.assertFalse(result['pixels_rendered_verified'])
+            self.assertFalse(result['ready'])
+            image_path.write_bytes(raw[:-1]+b'\xff')
+            with self.assertRaises(ValueError):
+                prepare_ff.verify_authored_dump(output,dumped,ff)
+            image_path.write_bytes(raw)
+            path = dumped/f'materials/{plan["material_reference"]}.json'
+            data = json.loads(path.read_bytes())
+            data['textureTable'][1]['image'] = 'different_image'
+            path.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):
+                prepare_ff.verify_authored_dump(output,dumped,ff)
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell source fixture requires pwsh')
+    def test_existing_ff_plan_inventory_and_admission_dispatch_keep_legacy_strict(self):
+        script = r'''
+param($Repo,$PlanPath)
+$ErrorActionPreference='Stop'
+Set-StrictMode -Version Latest
+. "$Repo/ops/model-lab/ModelFF.Core.ps1"
+$plan=Get-Content -LiteralPath $PlanPath -Raw|ConvertFrom-Json
+# Actual caller strict mode: the legacy plan has NO geometry_profile property.
+$legacyPlan=[pscustomobject]@{schema='iw7.model-ff-plan/1'}
+$legacyNames=@(Get-ModelFFSourceNames $legacyPlan)
+if($legacyNames.Count -ne 5 -or $legacyNames[0] -cne 'xmodel/paris_model_probe.xmb' -or $legacyNames[4] -cne 'netconststrings/ncs_mdl_paris_model_probe.json'){throw 'Strict legacy source inventory changed'}
+$names=@(Get-ModelFFSourceNames $plan)
+if($names.Count -ne 9 -or $names[0] -cne $plan.artifact_paths[0]){throw 'Authored exact input closure not selected'}
+$lines=@('Loading zone "'+$plan.zone+'"')+@($plan.expected_inventory|ForEach-Object {'Loading asset "'+$_.name+'" of type '+$_.type+'.'})
+$log=$lines -join [Environment]::NewLine
+if(@(Get-ModelFFInventory $log -AuthoredPlan $plan).Count -ne 8){throw 'Authored inventory not accepted'}
+foreach($changed in @($log.Replace('material "','bad "'),$log.Replace('material.','image.'),$log.Replace('Loading zone','Wrong zone'),$log+[Environment]::NewLine+$lines[-1])){
+    if($changed -ceq $log){continue}
+    $refused=$false;try{Get-ModelFFInventory $changed -AuthoredPlan $plan|Out-Null}catch{$refused=$true}
+    if(!$refused){throw 'Changed or duplicate inventory accepted'}
+}
+$legacy=@('Loading zone "paris_model_probe"','Loading asset ",mopw/character_park_clown_zombie_shoes" of type material.','Loading asset "paris_model_probe_lod0" of type xmodelsurfs.','Loading asset "paris_model_probe" of type xmodel.','Loading asset "ncs_mdl_paris_model_probe" of type netconststrings.','Loading asset "paris_model_probe" of type rawfile.') -join [Environment]::NewLine
+if(@(Get-ModelFFInventory $legacy).Count -ne 5){throw 'Legacy inventory changed'}
+$bad=$plan|ConvertTo-Json -Depth 15|ConvertFrom-Json;$bad.expected_inventory[3].name=','+$bad.material_reference
+$refused=$false;try{Get-ModelFFSourceNames $bad|Out-Null}catch{$refused=$true}
+if(!$refused){throw 'Recipient authored material accepted'}
+$tokens=$null;$errors=$null
+$ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/model-lab/Build-ModelFF.ps1",[ref]$tokens,[ref]$errors)
+if($errors){throw 'Build-ModelFF parse failed'}
+# Execute the actual metadata dispatcher on a legal authored document >64 KiB.
+# v3 retains the existing 1 MiB plan ceiling; only legacy v1 is limited to64 KiB.
+$entryText=[IO.File]::ReadAllText("$Repo/ops/model-lab/Build-ModelFF.ps1")
+$start=$entryText.IndexOf('if((Get-Item -LiteralPath $planPath).Length -gt 1MB)')
+$stop=$entryText.IndexOf('$modelName=',$start)
+$authoredPlanText=[IO.File]::ReadAllText($PlanPath)
+$planPath=Join-Path (Split-Path $PlanPath) 'large-authored-plan.json'
+[IO.File]::WriteAllText($planPath,($authoredPlanText+(' '*65537)))
+. ([scriptblock]::Create($entryText.Substring($start,$stop-$start)))
+if($planVersion -ne 3 -or !$authored -or $rigid){throw 'Large authored metadata dispatch differs'}
+$admission=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Enter-IW7ResourceLease'},$true))[0]
+$reader=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Admitted authored native reader changed.'")},$true))
+if($reader.Count -ne 1 -or $reader[0].Extent.StartOffset -le $admission.Extent.EndOffset){throw 'Authored PE verification must remain under lease'}
+$receipt=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '$authored' -and $n.Extent.Text.Contains('Add-Member NoteProperty dumped_artifacts')},$true))
+if($receipt.Count -ne 1){throw 'One authored native receipt binding required'}
+$authored=$true;$RunRoot=Join-Path (Split-Path $PlanPath) 'receipt-fixture'
+function Resolve-IW7BasePath($Base,$Relative){Join-Path $Base $Relative}
+$artifactNames=@($plan.artifact_paths)
+foreach($name in $artifactNames){
+    $path=Join-Path $RunRoot ('roundtrip/'+$name);[IO.Directory]::CreateDirectory((Split-Path $path))|Out-Null
+    [IO.File]::WriteAllText($path,'Authored synthetic dumped geometry only')
+}
+$state=@{SourcePlanSHA256='1'*64;FF=@{Bytes=29;SHA256='2'*64}}
+$values=@{schema='iw7.model-roundtrip/1';geometry_roundtrip_verified=$true;physics_serialized=$false;iw7_normal_encoding_verified=$false;vertices=$plan.selected_counts.vertices;triangles=$plan.selected_counts.triangles}
+foreach($field in @('geometry_profile','namespace','zone','model_name','mesh_name','material_reference')){$values[$field]=$plan.$field}
+$verified=[pscustomobject]$values
+. ([scriptblock]::Create($receipt[0].Extent.Text))
+if($verified.source_plan_sha256 -cne $state.SourcePlanSHA256 -or $verified.ff.sha256 -cne $state.FF.SHA256 -or
+    $verified.dumped_artifacts.Count -ne 2 -or $verified.dumped_artifacts[0].path -cne $artifactNames[0]){throw 'Authored geometry evidence not bound to this FF and source'}
+'''
+        with tempfile.TemporaryDirectory() as folder:
+            writer,material=self.fixture(folder)
+            output=Path(folder)/'ff-source'
+            prepare_ff.stage_authored(writer,output,material_inputs=material)
+            path=Path(folder)/'source-gates.ps1'
+            path.write_text(script,encoding='utf-8')
+            result=subprocess.run(['pwsh','-NoLogo','-NoProfile','-File',str(path),str(ROOT),str(output/'model-ff-plan.json')],capture_output=True,text=True,timeout=20)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+
 class ResidentRigidTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1244,7 +1448,7 @@ if(!$refused){throw 'Changed retained readback accepted'}
             rigid_export.verify_stage(staged, scene=True)
             producer = (ROOT / 'ops/model-lab/Build-ModelFF.ps1').read_text()
             start = producer.index('if((Get-Item -LiteralPath $planPath).Length -gt 1MB)')
-            stop = producer.index('$modelName=if($rigid -or $arena)', start)
+            stop = producer.index('$modelName=', start)
             gate = producer[start:stop]
             script = base / 'metadata-bound.ps1'
             script.write_text(r'''param($Repo,$Root,$PlanPath)
@@ -1400,9 +1604,9 @@ foreach($profile in @('t7-iw7-resident-static-v1','t7-iw7-resident-static-v2','u
 # stock, admission or process body. This catches an accidentally v1-only gate.
 $ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/model-lab/Build-ModelFF.ps1",[ref]$tokens,[ref]$errors)
 if($errors){throw $errors}
-$gate=$ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Pinned five-input")},$true)
+$gate=$ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Pinned exact original FF source preparation required.'")},$true)
 if(@($gate).Count -ne 1){throw 'Ambiguous build source gate'}
-$plan=$valid;$planVersion=2;$sourceNames=@(Get-ModelFFSourceNames $plan)
+$plan=$valid;$planVersion=2;$authored=$false;$sourceNames=@(Get-ModelFFSourceNames $plan)
 Invoke-Expression $gate[0].Extent.Text
 $planVersion=1;$refused=$false;try{Invoke-Expression $gate[0].Extent.Text}catch{$refused=$true}
 if(!$refused){throw 'Crossed version accepted by actual build source gate'}
