@@ -79,6 +79,15 @@ guards. Unknown pre-publication retains the original lease; unknown final
 publication retains the original references/guards. Existing modes retain
 their earlier finalization path. There is no new host or lifecycle framework.
 
+Independent review of head50b6927 found a real deadline defect: publication
+readback could cross clock199 to201 after the last runner check yet set
+CompletionPublished/CanExit. That Source candidate remains frozen. Fresh checks
+now run after all pre-release publication/readback work before release, and
+after all final guarded rechecks before completion/disposal. Four actual-finally
+causals cover late pre-write, pre-guard, final guard and final recheck: original
+Source/publication guards remain, CanExit=false, and an already released lease
+is reported honestly rather than recreated.
+
 Source tests exercise the complete common plan with invented metadata, alias/
 tuple/type mutants, bounded raw capture and the actual runner finally body with
 I/O/admission fakes. Failed publication, final guard, input disposal and unclosed

@@ -154,21 +154,30 @@ function New-Guard {
     $g|Add-Member ScriptMethod Dispose {if($script:fault -ceq 'source-dispose' -and $this -eq $script:sourceGuard){throw 'injected input disposal unknown'};$this.Disposed=$true}
     $g
 }
-function Open-H1Pin($Pin){if($script:fault -ceq 'final-guard' -and $Pin.Path -ceq 'C:\authored\receipt.json'){throw 'injected final guard failure'};New-Guard}
+function Open-H1Pin($Pin){
+    if($Pin.Path -ceq 'C:\authored\receipt.json'){
+        $script:finalGuardReads++
+        if($script:fault -ceq 'final-guard'){throw 'injected final guard failure'}
+        if($script:fault -ceq 'final-guard-late' -or ($script:fault -ceq 'final-recheck-late' -and $script:finalGuardReads -eq 2)){$script:clock=201}
+    }
+    if($script:fault -ceq 'pre-guard-late' -and $Pin.Path -ceq 'C:\authored\receipt-before-release.json'){$script:clock=201}
+    New-Guard
+}
 function Write-H1Receipt($Plan,$State,$StageRoot,$Name='receipt.json',[switch]$PassThru){
     $script:events.Add('publish:'+ $Name)
     if(($script:fault -ceq 'pre-publish' -and $Name -ceq 'receipt-before-release.json') -or ($script:fault -ceq 'final-publish' -and $Name -ceq 'receipt.json')){throw 'injected publication failure'}
+    if($script:fault -ceq 'pre-write-late' -and $Name -ceq 'receipt-before-release.json'){$script:clock=201}
     if($PassThru){[pscustomobject]@{Path=('C:\authored\'+$Name);Bytes=1;SHA256=('a'*64)}}
 }
 function Exit-IW7ResourceLease($Token){$script:events.Add('release')}
 function Assert-T7CatalogueMain($Plan){[pscustomobject]@{Baseline='Stopped'}}
-function Assert-H1Deadline {}
+function Assert-H1Deadline {if($script:clock -gt 200){throw 'injected deadline crossed during publication readback'}}
 function Test-H1Budget {}
 function Assert-T7CatalogueEngineOutputs {}
 function Assert-T7CatalogueMetadata {}
 function Read-T7ImageMetadataStdout {$text}
-foreach($case in 'success','known-native-failure','pre-publish','final-publish','final-guard','unclosed','source-dispose'){
-    $script:fault=$case;$script:events=[Collections.Generic.List[string]]::new()
+foreach($case in 'success','known-native-failure','pre-publish','final-publish','final-guard','unclosed','source-dispose','pre-write-late','pre-guard-late','final-guard-late','final-recheck-late'){
+    $script:fault=$case;$script:events=[Collections.Generic.List[string]]::new();$script:clock=199;$script:finalGuardReads=0
     $guards=[Collections.Generic.List[object]]::new();$script:sourceGuard=New-Guard;$guards.Add($script:sourceGuard)
     $owner=[pscustomobject]@{Closed=($case -cne 'unclosed');ExitCode=$(if($case -ceq 'known-native-failure'){1}else{0})}
     $owner|Add-Member ScriptMethod StopAndConfirm {param($Timeout)}
@@ -189,8 +198,12 @@ foreach($case in 'success','known-native-failure','pre-publish','final-publish',
         else{Check ($state.RegistrationBindingsOutcome -ceq 'RegistrationBindingsRecordFromFailedProcess') 'Original failure/capture lost.'}
     }else{
         Check (!$context.CanExit -and $guards.Count -eq 1 -and !$script:sourceGuard.Disposed) 'Unknown path disposed original input guards or allowed exit.'
-        if($case -cin @('pre-publish','unclosed')){Check ($null -ne $context.Lease) 'Unknown before release lost original lease.'}
+        if($case -cin @('pre-publish','unclosed','pre-write-late','pre-guard-late')){Check ($null -ne $context.Lease -and !$context.PreReleasePublished) 'Unknown before release lost original lease or promoted pre-publication.'}
         else{Check ($context.PreReleasePublished -and !$context.Lease) 'Post-release failure rewrote historical release state.'}
+        if($case -cin @('pre-write-late','pre-guard-late','final-guard-late','final-recheck-late')){
+            Check ($script:clock -eq 201 -and !$context.CompletionPublished -and $state.Quarantined -and $null -ne $failure) 'Publication deadline crossing was accepted.'
+            Check ($context.PublicationGuards.Count -gt 0 -and @($context.PublicationGuards|Where-Object Disposed).Count -eq 0) 'Late publication disposed original publication guards.'
+        }
     }
     [AppDomain]::CurrentDomain.SetData(('IW7.H1.Quarantine.'+('c'*32)),$null)
 }

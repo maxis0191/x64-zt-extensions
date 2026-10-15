@@ -229,12 +229,14 @@ function Publish-T7RegistrationBindingsBeforeRelease($Plan,$State,$Context) {
     $pin=Write-H1Receipt $Plan $State $Plan.StageRoot -Name 'receipt-before-release.json' -PassThru
     $Context.PublicationGuards.Add((Open-H1Pin $pin))
     $Context.Publications.Add($pin)
+    Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     $Context.PreReleasePublished=$true
 }
 function Complete-T7RegistrationBindingsPublication($Pin,$Context) {
     if(!$Pin -or !$Context.Closed -or $Context.Lease -or !$Context.PreReleasePublished){throw 'Bindings publication closure remains unknown.'}
     $Context.PublicationGuards.Add((Open-H1Pin $Pin));$Context.Publications.Add($Pin)
     foreach($publication in $Context.Publications){$verified=Open-H1Pin $publication;$verified.Dispose()}
+    Assert-H1Deadline $script:T7CatalogueGroupStarted 200
     $Context.CompletionPublished=$true
     foreach($guard in $Context.PublicationGuards){$guard.Dispose()};$Context.PublicationGuards.Clear()
 }
