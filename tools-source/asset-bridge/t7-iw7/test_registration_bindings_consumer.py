@@ -111,6 +111,21 @@ class RegistrationBindingsTests(unittest.TestCase):
         self.assertEqual(c.classify(value, 2)["unpublished_bindings"], 7)
         self.assertEqual(c.classify(None, 2)["outcome"], "NoReport")
 
+    def test_copy_and_fault_require_the_original_pointer_gate_but_diagnostics_do_not(self):
+        value = report()
+        value["bindings"][0]["registration_chain"]["image_field_hex"] = "0000000000000001"
+        with self.assertRaises(ValueError): c.classify(value, 0)
+        value = report(); refuse_row(value, 0, copy_fault=True, null_pointer=True)
+        with self.assertRaises(ValueError): c.classify(value, 0)
+        value = report(); refuse_row(value, 0, copy_fault=True)
+        value["bindings"][0]["registration_chain"]["image_field_hex"] = "0000000000000001"
+        with self.assertRaises(ValueError): c.classify(value, 0)
+        value = report(); refuse_row(value, 0)
+        value["bindings"][0]["registration_chain"]["image_field_hex"] = "0000000000000001"
+        result = c.classify(value, 0)
+        self.assertEqual(result["outcome"], "RegistrationBindingsObserved")
+        self.assertEqual((result["observed_snapshots"], result["refused_snapshots"]), (6, 1))
+
     def test_changed_keys_chain_types_counts_copies_and_proof_promotions_refuse(self):
         mutations = [lambda v: v.update(schema=c.copied.SCHEMA),
                      lambda v: v.update(model_default=False), lambda v: v.update(qualified_object_mip_count=1),

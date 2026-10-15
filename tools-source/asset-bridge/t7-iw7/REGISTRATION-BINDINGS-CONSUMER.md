@@ -29,6 +29,12 @@ snapshot. Hex values are recorded numbers; the consumer never casts/dereferences
 them or treats numeric agreement as object/lifetime proof. Aliased names/image
 fields and repeated hashes/usages are allowed metadata. A leading comma labels
 a reference name; ordinary spelling is not evidence of a complete definition.
+Any completed copy or copy fault must imply the producer's nonnull, eight-byte
+aligned image-field gate. Null or misaligned fields remain valid refusal diagnostics
+when no copy/fault occurred. Peer Source review found the missing prerequisite in
+the initial consumer; its corrective commit retains both causal negatives and the
+positive misaligned pre-copy refusal. This is arithmetic on recorded metadata,
+not native pointer access, ABI qualification or memory admission.
 
 Snapshots require the same two complete 264-byte copies and internal header/name
 rechecks when observed. A refused row retains its reason and NULL image/name;
