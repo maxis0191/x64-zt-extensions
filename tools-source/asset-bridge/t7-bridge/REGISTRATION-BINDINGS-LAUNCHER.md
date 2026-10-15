@@ -257,6 +257,11 @@ Source6d/reader9687/SHA8e1 listed in the qualifier, with original native exit0.
 Python exited0: `RegistrationBindingsObserved`, complete, seven observed
 snapshots and zero refusals. The original shell receipt's deep outcome NULL is
 historical capture evidence and is not rewritten by this later interpretation.
+The CLI stdout was captured by the original exec call and interpreted in 5d's
+memory; no original result file or separate reader receipt was retained on disk.
+The report below is that analysis transcription, not a new authenticated receipt.
+No result-file Bytes/SHA is invented, and nothing is reconstructed from this
+transcription. The record/provenance/application pins authenticate those inputs.
 
 One MODEL registration matched among ten callbacks (capture ordinal1), with
 zone load complete, bindings enumerated, no duplicate/search refusal and capture/
