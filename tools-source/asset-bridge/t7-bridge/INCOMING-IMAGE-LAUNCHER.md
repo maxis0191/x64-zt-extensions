@@ -168,8 +168,52 @@ capture packet 3,631 / 405cf45422ba858f9f3acd5949e703148370ac5c4794e4f19be02bff6
 They remain in the immutable Source0bac preparation's runtime output. No PE/PDB
 hash, stock copy, candidate CLI, image lookup, payload or DDS operation occurred.
 
-Next: review the small Source capsule for the existing Catalogue/H1 native
-entry and obtain a distinct Root Native GO for the four incoming callback slots.
-Neither successful CPP87 nor DEFAULT admits descriptor, object mip count,
-pixels, ABI, lifetime or Ready. Pending Source proposals keep their NULL fields;
-only the distinct compiled plan names this exact closed CPP B tuple.
+Actual Native incoming A ran once on 2026-10-15 after its distinct Root GO,
+using the existing Catalogue/H1 entry and the exact prepared Source0bac/CPPbde/
+4fcb tuple. Source capsule 6,967 bytes / a2309b53... and same-host publisher
+4,677 / 30cb22e9... were separately reviewed. No lookup/scan, selected-image
+request, provider or payload operation was added. Source/Git advances after
+preparation did not repin the frozen native input.
+
+The native exit is zero and H1 records IncomingRecordCapturedPendingReview,
+with input rechecks, tree closure and release true, quarantine/termination false.
+Arming preceded the DB-add hook and capture preceded IMAGE bypass. The bounded
+bootstrap/map window completed without refusal or cap trigger: 23,769 image
+callbacks, 23,766 nontargets, three reference events, zero ordinary-name events,
+217,070 metadata read bytes and zero payload bytes.
+
+The four distinct slots are:
+
+| Slot | Count / first ordinal | Observed state |
+| --- | --- | --- |
+| bootstrap/reference | 2 / 2197 | repeated_target_ambiguous; first complete sample retained; uniqueness false |
+| bootstrap/ordinary | 0 / NULL | not_observed; raw name and snapshot NULL |
+| map_load/reference | 1 / 23613 | first_complete_sample; uniqueness true within this completed phase |
+| map_load/ordinary | 0 / NULL | not_observed; raw name and snapshot NULL |
+
+Both copied samples are named `,$camo_base_normal`, with two complete 264-byte
+copies and all rechecks true. All descriptor scalar fields and all four streamed
+part sizes/keys are zero; nonzero summaries are zero. Repeated headers were not
+compared and conflict absence is false. This is not proof of a stub's global
+identity or the global absence of an ordinary definition. Ordinary absence is
+limited to this bounded callback window. No descriptor, source/model/renderer
+association, lifetime, ABI, mip count, pixels or Ready is qualified.
+
+The closed JSON is 5,754 bytes /
+e62b417854e2b1dac1d42cb38b711ff751d33ccfaa414246bb4415d6c18ab882;
+receipt 35,028 / 73b8369bf04f8ec5adf01ef74ae9873d68cd163df515dcbb424a130065a407a0;
+stdout 6,215 / 906bc6a960ec56f83de5caa93b2b579bfe04c65abed1680c2cfe445e273fc879.
+Deep interpretation remains consumer150's responsibility, separate from capture.
+The publisher ran under its original Open-H1Pin source guard in the same closed
+NoExit host: preexit 1,104 / b8f3aa155d1397016f210c4f31042380163da29e98980e044bc2200877cf1296,
+same AppDomain, CanExit true, zero remaining guards, released lease. True PTY37536
+then exited zero, completion b38693; it is closed and must not be repolled.
+Independent closure 1,939 / 743a0a861a3227b6493d19e2f02eeade7f90b0b7555e6610de77004ce5b0d1d8
+records parent31044/host18360/native32908 absent, games/compilers empty and registry
+version 1 with no leases at 03:52:19.5291225Z. Main stayed on its stopped baseline.
+
+Next: interpret this exact closed record and investigate the ordinary-definition
+materialization/reference path through bounded Source/RE work. Do not repeat A
+unchanged or invent a descriptor/mip fact to pass selection. Any different native
+observation needs its separately qualified inputs and Root GO. Pending Source
+proposals keep their NULL fields; this result does not admit extraction or pixels.
