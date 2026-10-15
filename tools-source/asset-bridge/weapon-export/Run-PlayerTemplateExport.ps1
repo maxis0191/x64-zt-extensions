@@ -35,6 +35,25 @@ function Read-PlayerExportSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[
         if($null -ne $Keep){$stream.Position=0;$Keep.Add($stream);$stream=$null};$text
     }finally{if($stream){$stream.Dispose()}}
 }
+function New-PlayerPublicationStream([string]$Path){
+    [IO.File]::Open($Path,'CreateNew','ReadWrite','Read')
+}
+function Write-PlayerPublication([string]$Path,[byte[]]$Raw){
+    $playerRoot=$script:PlayerTemplateExportOriginalRoot
+    if($Raw.Length -gt $playerRoot.Plan.MetadataReserveBytes){throw 'Publication metadata reserve exceeded.'}
+    $stream=New-PlayerPublicationStream $Path
+    # Enrol the actual stream before any write/flush/readback can fail. Never
+    # dispose it here: the original root retains it through all final checks.
+    $playerRoot.PublicationGuards.Add($stream)
+    $stream.Write($Raw,0,$Raw.Length);$stream.Flush($true);$stream.Position=0
+    $buffer=[byte[]]::new($Raw.Length+1);$used=0
+    do{$count=$stream.Read($buffer,$used,$buffer.Length-$used);$used+=$count}while($count -gt 0 -and $used -lt $buffer.Length)
+    $expected=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Raw)).ToLowerInvariant()
+    if($used -ne $Raw.Length){throw 'Same-stream publication length differs.'}
+    $actual=[byte[]]::new($used);[Array]::Copy($buffer,$actual,$used)
+    if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($actual)).ToLowerInvariant() -cne $expected){throw 'Same-stream publication hash differs.'}
+    $expected
+}
 function Test-PlayerModalPlan($Plan){
     if(!$Plan.PSObject.Properties['ModalDiagnostic']){return $false}
     $modal=$Plan.ModalDiagnostic
@@ -168,8 +187,9 @@ $state=[ordered]@{Schema='iw7.player-template-export/1';Status='Pending';PlanSHA
  Host=[ordered]@{PID=$PID;Image=$physical.ExecutablePath;CreatedUtc=$physicalCreated;CimCreatedUtc=$physical.CreationDate.ToUniversalTime().ToString('o')};
  Inputs=[Collections.Generic.List[object]]::new();ContentPins=[Collections.Generic.List[object]]::new();
  CreatedCopies=[Collections.Generic.List[object]]::new();UnknownCopyCreation=$false;LeaseReleased=$false;GuardsDisposed=$false;
+ MeasuredReadback=$false;FinalReadback=$false;PublicationGuardsDisposed=$false;
  CandidateStarted=$false;NativeExportComplete=$false;CandidateExecuted=$false}
-$root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new();ContentGuards=@{};ModalOptions=$null;ModalEvidence=$null}
+$root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new();ContentGuards=@{};PublicationGuards=[Collections.Generic.List[object]]::new();ModalOptions=$null;ModalEvidence=$null}
 $global:IW7PlayerTemplateExport=$root;[AppDomain]::CurrentDomain.SetData($root.Key,$root)
 $script:PlayerTemplateExportOriginalRoot=$root
 $failure=$null;$created=$false
@@ -554,33 +574,37 @@ finally{
             $path=Join-Path $plan.RunRoot 'measured-before-release.json'
             $raw=[Text.UTF8Encoding]::new($false).GetBytes(($state|ConvertTo-Json -Depth 30)+"`n")
             if($raw.Length -gt $plan.MetadataReserveBytes){throw 'Metadata reserve exceeded.'}
-            $stream=[IO.File]::Open($path,'CreateNew','Write','Read');try{$stream.Write($raw);$stream.Flush($true)}finally{$stream.Dispose()}
-            $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($raw)).ToLowerInvariant()
-            $null=Read-PlayerExportSource $path $sha $raw.Length;Assert-PlayerExportClock
+            $sha=Write-PlayerPublication $path $raw;$state.MeasuredReadback=$true;Assert-PlayerExportClock
             Test-PlayerGenerated $state ($plan.GeneratedLimitBytes+$plan.MetadataReserveBytes)
             $before=[ordered]@{Schema='iw7.player-export-before-release/1';PlanSHA256=$PlanSHA256;MeasuredSHA256=$sha;OriginalRootAndJobClosed=$true;
                 StockPreparedAndPreserved=($root.StockContexts.Count -eq $plan.StockManifests.Count -and !@($root.StockContexts|Where-Object {!$_.Prepared}).Count);
                 StockClosureVerified=$true;OriginalLeaseToken=$context.Lease.Token;SourceGuardsHeld=$guards.Count;CandidateExecuted=$state.CandidateExecuted;Ready=$false}
             $beforeBytes=[Text.UTF8Encoding]::new($false).GetBytes(($before|ConvertTo-Json)+"`n")
             if($raw.Length+$beforeBytes.Length -gt $plan.MetadataReserveBytes){throw 'Reserved metadata exceeded.'}
-            $beforePath=Join-Path $plan.RunRoot 'closure-before-release.json';$stream=[IO.File]::Open($beforePath,'CreateNew','Write','Read');try{$stream.Write($beforeBytes);$stream.Flush($true)}finally{$stream.Dispose()}
-            $beforeSHA=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($beforeBytes)).ToLowerInvariant()
-            $null=Read-PlayerExportSource $beforePath $beforeSHA $beforeBytes.Length;Assert-PlayerExportClock
+            $beforePath=Join-Path $plan.RunRoot 'closure-before-release.json'
+            $beforeSHA=Write-PlayerPublication $beforePath $beforeBytes;Assert-PlayerExportClock
             foreach($tx in $root.StockContexts){Close-IW7StockLinkGuards $tx}
             # Immutable aliases remain owned/prepared for evidence and later reuse.
             # No base/private-test-server file, metadata or bank is restored/written.
             Exit-IW7ResourceLease -Token $context.Lease.Token;$context.Lease=$null;$state.LeaseReleased=$true
             if($context.PSObject.Properties['DiagnosticContext']){$context.DiagnosticContext.Lease=$null}
-            foreach($guard in $guards){$guard.Dispose()};$guards.Clear();$state.GuardsDisposed=$true
             Assert-PlayerExportClock
-            $final=[ordered]@{Schema='iw7.player-export-closure/1';Status='ClosedReleasedPendingPostflight';PlanSHA256=$PlanSHA256;MeasuredSHA256=$sha;
-                OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$true;CandidateExecuted=$state.CandidateExecuted;Ready=$false}
+            $final=[ordered]@{Schema='iw7.player-export-closure/2';Status='ClosedReleasedGuardsHeldPendingReadback';PlanSHA256=$PlanSHA256;MeasuredSHA256=$sha;BeforeReleaseSHA256=$beforeSHA;
+                OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$false;SourceGuardsHeld=$guards.Count;
+                PublicationGuardsHeld=($root.PublicationGuards.Count+1);CandidateExecuted=$state.CandidateExecuted;Ready=$false}
             $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($final|ConvertTo-Json)+"`n")
             if($raw.Length+$beforeBytes.Length+$bytes.Length -gt $plan.MetadataReserveBytes){throw 'Final metadata reserve exceeded.'}
-            $path=Join-Path $plan.RunRoot 'final-closure.json';$stream=[IO.File]::Open($path,'CreateNew','Write','Read');try{$stream.Write($bytes);$stream.Flush($true)}finally{$stream.Dispose()}
-            $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
-            $null=Read-PlayerExportSource $path $hash $bytes.Length;Assert-PlayerExportClock
+            $path=Join-Path $plan.RunRoot 'final-closure.json'
+            $hash=Write-PlayerPublication $path $bytes;$state.FinalReadback=$true;Assert-PlayerExportClock
             Test-PlayerGenerated $state ($plan.GeneratedLimitBytes+$plan.MetadataReserveBytes)
+            # Only known final publication/readback/clock/budget success permits
+            # disposal. Keep the same lists/references on any earlier failure.
+            $publicationHandles=@($root.PublicationGuards|ForEach-Object {$_.SafeFileHandle})
+            $sourceHandles=@($guards|ForEach-Object {$_.SafeFileHandle})
+            foreach($guard in $root.PublicationGuards){$guard.Dispose()}
+            foreach($guard in $guards){$guard.Dispose()}
+            if(@($publicationHandles+$sourceHandles|Where-Object {!$_.IsClosed}).Count){throw 'Original publication/source handles did not close.'}
+            $root.PublicationGuards.Clear();$guards.Clear();$state.PublicationGuardsDisposed=$true;$state.GuardsDisposed=$true
             $state.Status=if($failure){'FailedClosed'}else{'Passed'};$state.CanExit=$true
         }catch{$state.FinalizationError=$_.Exception.Message;if(!$failure){$failure=$_}}
     }

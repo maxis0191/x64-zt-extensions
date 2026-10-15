@@ -493,8 +493,46 @@ NativeExportComplete remains false. The native projectile author independently
 rejects this schema even if full-template fields are forged around it, and its
 valid PROJECTILE3/3 output behavior remains unchanged.
 
-This implementation has Source tests only. No new C++ compile, native profile,
-retail observation or donor qualification follows from it. No alternative retail
+The initial implementation above had Source tests only. CPP J later compiled the
+route and passed 62 native fixture checks, as recorded in BUILD-COHORT.md; it did
+not execute this profile CLI. No retail observation or donor qualification follows
+from compilation. No alternative retail
 PROJECTILE base/PAP pair was established by the bounded Source search; synthetic
-positive fixtures are not retail evidence. New CPP and diagnostic Extract work
-each require their own exact reviewed capsule and distinct Root GO.
+positive fixtures are not retail evidence. Diagnostic Extract work requires its
+own exact reviewed capsule and distinct Root GO.
+
+## Source correction: retain publication guards through final checks
+
+Review of the unexecuted L proposal found that the existing export finalizer
+disposed/cleared its Source guards before final CreateNew/Flush/readback, clock
+and generated-budget checks. Its receipt writers also closed each actual stream
+before a separate path reopen. A post-release publication failure could therefore
+leave CanExit false and the same context retained, with its guards already closed.
+A causal execution of the frozen old Source finally on tiny synthetic files
+reproduced this condition; no native tool, retail input or actual lease was used.
+L remains frozen and unexecuted; its previous lifecycle approval was withdrawn.
+
+The correction keeps publication streams in the same original root before the
+first write, flushes them and verifies bounded length/hash through the same actual
+stream. Source and publication guards remain open through all final readback,
+deadline and budget checks. Post-release failures retain those same lists/streams
+and NoExit/CanExit false while honestly keeping LeaseReleased true and the original
+lease null. They do not recreate an owner, stream, context or lease.
+
+The final receipt uses `iw7.player-export-closure/2` and truthfully records
+`ClosedReleasedGuardsHeldPendingReadback`, GuardsDisposed false and held guard
+counts. It binds both measured and before-release hashes. Only after final checks
+does the retained state dispose the original handles, verify they closed, clear
+the same lists and set GuardsDisposed/PublicationGuardsDisposed and CanExit true.
+The disk receipt describes its publication point; the final retained state and
+external true-terminal/fresh-absence postflight remain separate evidence.
+
+Source causals execute the actual finally/publication functions, with real tiny
+file streams and test-only IO faults. Final CreateNew/write/flush/readback/hash,
+clock and budget failures retain Source/publication guards after release; earlier
+receipt failures keep the original lease too. The successful path closes original
+handles only after final checks, and the unmocked writer verifies CreateNew and
+held-file mutation refusal. These tests do not qualify a native profile run.
+The C++ candidate from CPP J remains unchanged and needs no rebuild for this
+PowerShell-only correction. A new exact Source capsule and distinct Extract GO
+must follow the corrected Source merge; no L retry is authorized.
