@@ -657,7 +657,7 @@ verified closed. SafetyCleanupKnownComplete and safety-only CanExit became true;
 original Status/errors/MeasuredReadback false/FinalReadback false stayed intact.
 The helper completed at514,377 ms and same-context preexit at550,970 ms, within
 the unchanged600-second group clock. There was no retry, clock reset or extension.
-The original physical terminal exited1; fresh absence/empty registry and Root's
+The original physical terminal exited 1; fresh absence/empty registry and Root's
 independent corroboration at16:50:25 UTC completed safety closure and slot release.
 
 R remains FailedBeforeCLI with safety closure only. The immutable pre-Root
@@ -668,3 +668,81 @@ runtime ABI/lifetime, RayGun/PAP/projectile/physics and owner gameplay remain
 unqualified. Next: a separately reviewed bounded metadata-only observation of
 the same fixed stock, then a new exact manifest/export packet. R and its old
 manifests are not retried, relabelled or adopted as a successful extraction.
+
+## S2 pre-import failure and S3 metadata-only checkpoint, 2026-10-15
+
+The separate S2 Analysis entry passed the exact physical/managed host gate, then
+failed while decoding its bounded Source plan, before provider imports, native
+type initialization, admission or stock access. Culture-sensitive
+`StartsWith(U+FEFF)` treated the BOM prefix as ignorable under en-US and removed
+the first `{` from a valid JSON without a BOM. The raw bytes and SHA were valid;
+the decoded text was not. Earlier Source cases tested reader refusals and JSON
+parsing separately but missed this positive reader-to-parser composition.
+
+S2 retained its actual root/context/state/lists and one original Source handle.
+The reviewed 5,516-byte pre-admission safety script SHA256 is
+`e0df6ea93a4fdd17eed4b690db7f0adf786acdc390fdef1d09fd7808d37c7571`.
+It published/read back a bounded failure receipt while that handle stayed held,
+closed and verified the original input and actual receipt handles, then set
+safety-only CanExit. FailedRetained/error and false metadata/measured/final flags
+remain unchanged. No lease or group/phase clock ever started; no 180-second run
+qualification is inferred. The physical terminal exited 1; Root independently
+corroborated absence/empty registry at 17:38:57 UTC. The actual failure handoff is
+4,569 bytes / SHA256
+`7bf58ec3f01186d00d87ace789f061fd7512d3d1fcf2caf824b51d6cac70a088`.
+
+The new S3 sibling changes only the BOM prefix comparison to
+`StringComparison.Ordinal` before Substring. The original raw-byte SHA, UTF-8,
+Source roles/bounds, JSON checks and ownership lifecycle remain. Its 15 import-free
+Source cases include the actual S2 reader AST reproducing the lost brace, then
+the actual S3 Hold-SSource→Convert-SJson composition succeeding on owned plain
+and UTF-8-BOM JSON with real retained Source guards. S2 was never retried.
+
+After exact independent reviews and a distinct Analysis GO, S3 ran once with
+entry 27,236 bytes / SHA256
+`bf5f6c4b681d3c45236813de209e690f1817cabd0332dd3e5e5da863cd57ef88`
+and plan 52,978 bytes / SHA256
+`90a200fdf29747632f9abeba7dee82d6257d9aa55c362ad5c09e03e892cbd77e`.
+It observed exactly 71 fixed source files, including 33 PAKs, using the existing
+Stock35 metadata API. Full identity, volume, size, attributes, creation/write and
+current link counts matched their stable declarations and the original-handle/
+source-name rechecks. UInt64 volume and nanosecond values above 2^53 stayed exact:
+stable values use decimal strings; existing manifest rows use UInt64/Int64 JSON
+integer tokens. LastAccess remains a volatile observation.
+
+The five metadata JSON outputs total 71,901 bytes: a snapshot, root7/main31/zone64
+metadata manifests and 71 observed baselines. Three lifecycle receipts total 1,283
+bytes, for 73,184 bytes overall. No retail content was read/hashed, candidate
+opened, alias created or game/CLI run. These are current metadata snapshots only.
+`code_post_gfx.ff` was observed with 18 links, replacing the stale 38 expectation.
+The seven retained R aliases were already included in observed counts and were
+not added again or modified.
+
+Ordinary closure prebounded all buffers and held 10 Source, 143 metadata handles
+(one directory, 71 original files, 71 source-name rebinds), and eight actual
+publication streams through final readback and the last clock check before
+disposal. All those original handles were directly verified closed; lease null,
+owner null, empty lists and CanExit true were checked on the same references.
+The group clock was unchanged; same-context preexit recorded 80,329 ms within 180
+seconds. The 60-second metadata phase completed its checks; its exact duration
+was not retained. The final disk snapshot honestly remains
+ReleasedOriginalGuardsHeldPendingReadback; later preexit records actual closure.
+The physical terminal exited 0, and Root corroborated fresh absence/empty registry
+at 17:53:44 UTC. No safety recovery was needed for S3.
+
+The immutable pre-Root actual handoff is 7,233 bytes / SHA256
+`51282c3b2b406702f0a7f8f681d541da8988bcab765048577728a230bc153601`.
+Root qualification is additive and metadata-only. Q remains the compiled
+Source208 candidate; a later DOC merge does not rebuild or qualify its CLI.
+Retail content, neutral full definitions, runtime ABI/lifetime, RayGun/PAP/
+projectile/physics and owner gameplay remain unqualified.
+
+The next Source T2 plan derives per-transaction expectations from the untouched
+S3 baselines, accumulating only earlier aliases created by that same new T group.
+Thus main expects 18 for the example, then zone expects 19 after T's main link;
+its global baseline stays 18. Exactly 31 overlapping zone FF rows need that offset;
+PAKs without an earlier occurrence stay at baseline. An unshifted first T proposal
+is retained and unexecuted. Source causals exercise the actual Stock35 predicate
+on 102 projected rows, not newly created aliases. A future independently reviewed
+Extract admission must revalidate current metadata and qualify candidate/content
+before execution; snapshots can age and never justify forcing a manifest.
