@@ -347,7 +347,15 @@ reports that the recipe still needs qualification; no effects or opaque reads
 are enabled by DEFAULT. The Run path is only for a separately authorized actual
 qualification cohort. IncomingCPPQualified can become true only in its actual
 closed successful receipt after both fixture markers, all five phases and input
-rechecks; publication/deadline failure clears it. Twenty-six actual PowerShell
+rechecks; publication/deadline failure clears it. 117 actual PowerShell
 source-gate checks and 15 targeted Python source checks pass without prepare(),
 SDK/tlog/PE reads or native execution. Fresh admitted PREP, actual-plan review,
 CPP and subsequent Native remain separate pending gates.
+
+Review rejected Source head `acc46e44`: a singleton SHA256 array on
+IncomingWiring passed the real profile validator through PowerShell collection
+comparison/coercion. All nine Incoming pins now require a closed three-key
+Path/Bytes/SHA256 object and scalar string/integer/string types before any pin
+comparison, contract read or binding match. Ninety malformed-pin causals cover
+all nine roles; valid Int64 sizes remain accepted. The rejected Source package
+and its before-runner CI audit are retained, with no PREP/CPP execution claimed.

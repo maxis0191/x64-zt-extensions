@@ -309,6 +309,17 @@ function Assert-T7IncomingMetadataTransition($Plan,[string]$SourceRoot) {
        $p.Name -isnot [string] -or $p.Option -isnot [string] -or $p.ObservationSchema -isnot [string]){
         throw 'Incoming schema/profile text scalars required.'
     }
+    foreach($role in 'IncomingWiring','IncomingContract','IncomingMembers','IncomingModule','IncomingEntry','IncomingFixture',
+        'IncomingCapture','IncomingObserver','IncomingBaselineFixture'){
+        if(!$p.PSObject.Properties[$role]){throw "Closed scalar incoming source pin required: $role."}
+        $pin=$p.$role
+        if($pin -isnot [pscustomobject] -or (@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+           $pin.Path -isnot [string] -or [string]::IsNullOrWhiteSpace($pin.Path) -or
+           ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 64KB -or
+           $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){
+            throw "Closed scalar incoming source pin required: $role."
+        }
+    }
     if((@($m.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseCLIBytes,BaseCLISHA256,BaseMainBytes,BaseMainSHA256,CLIBytes,CLISHA256,CPPQualified,MainBytes,MainSHA256,Ready,Schema,SourceOnlyPending,SourceProfile' -or
        $m.Schema -cne 'iw7.t7-incoming-image-build/1' -or $m.SourceProfile -cne 't7-incoming-image-header-observation-v1' -or
        $p.IncomingSchema -cne 'iw7.t7-incoming-image-header-observation/1' -or

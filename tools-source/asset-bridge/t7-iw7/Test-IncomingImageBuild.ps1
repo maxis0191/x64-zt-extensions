@@ -60,6 +60,22 @@ try{
         $ip.Bindings=@($ip.Bindings|Where-Object Path -CNE $pin.Path)+@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
     }
     if(!(Assert-T7BuildProfile $ip $PSScriptRoot)){throw 'Authored incoming build profile refused'};$checks++
+    $incomingPins=@('IncomingWiring','IncomingContract','IncomingMembers','IncomingModule','IncomingEntry','IncomingFixture',
+        'IncomingCapture','IncomingObserver','IncomingBaselineFixture')
+    foreach($role in $incomingPins){
+        foreach($case in 'hash-array','path-array','bytes-array','pin-array','bytes-text','bytes-bool','path-bool','hash-bool','missing-key','extra-key'){
+            $bad=$ip|ConvertTo-Json -Depth 25|ConvertFrom-Json;$pin=$bad.BuildProfile.$role
+            switch($case){hash-array {$pin.SHA256=@($pin.SHA256)};path-array {$pin.Path=@($pin.Path)};
+                bytes-array {$pin.Bytes=@($pin.Bytes)};pin-array {$bad.BuildProfile.$role=@($pin)};
+                bytes-text {$pin.Bytes=[string]$pin.Bytes};bytes-bool {$pin.Bytes=$true};path-bool {$pin.Path=$true};hash-bool {$pin.SHA256=$true};
+                missing-key {$pin.PSObject.Properties.Remove('SHA256')};extra-key {$pin|Add-Member NoteProperty Extra $false}}
+            $why='';try{$null=Assert-T7BuildProfile $bad $PSScriptRoot}catch{$why=$_.Exception.Message}
+            if($why -cne "Closed scalar incoming source pin required: $role."){throw "Missing exact incoming pin refusal: $role/$case ($why)"};$checks++
+        }
+    }
+    $longPins=$ip|ConvertTo-Json -Depth 25|ConvertFrom-Json
+    foreach($role in $incomingPins){$longPins.BuildProfile.$role.Bytes=[long]$longPins.BuildProfile.$role.Bytes}
+    if(!(Assert-T7BuildProfile $longPins $PSScriptRoot)){throw 'Valid Int64 incoming source pins refused'};$checks++
     foreach($field in 'Schema','SourceProfile','IncomingSchema','Name','Option','ObservationSchema'){
         $bad=$ip|ConvertTo-Json -Depth 25|ConvertFrom-Json
         if($field -cin @('IncomingSchema','Name','Option','ObservationSchema')){$bad.BuildProfile.$field=@($bad.BuildProfile.$field)}else{$bad.ReuseCompile.IncomingObservation.$field=@($bad.ReuseCompile.IncomingObservation.$field)}
