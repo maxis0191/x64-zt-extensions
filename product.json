@@ -636,6 +636,8 @@
     "tools-source/asset-bridge/t7-iw7/test_selected_image_request.py",
     "tools-source/asset-bridge/t7-iw7/registration_image_request.py",
     "tools-source/asset-bridge/t7-iw7/test_registration_image_request.py",
+    "tools-source/asset-bridge/t7-iw7/incoming_image_consumer.py",
+    "tools-source/asset-bridge/t7-iw7/test_incoming_image_consumer.py",
     "tools-source/asset-bridge/t7-iw7/SOURCE-AUDIT.md",
     "tools-source/asset-bridge/t7-iw7/STREAMED-MESH-PAYLOAD.md",
     "tools-source/asset-bridge/t7-iw7/T7-IMAGES.md",

@@ -124,6 +124,33 @@ def select_copied_image(image, *, part_index, qualified_object_mip_count):
     The caller validates its distinct native capture envelope before this shared
     selection. Neither packed low4 nor byte equality qualifies the mip count.
     """
+    validate_copied_image_metadata(image)
+    count = image["streamed_part_count"]
+    need(1 <= count <= 4 and image["streaming"] != 0, "an observed streamed part is required")
+    need(uint(part_index, 3) < count, "exact active part index required")
+    need(type(qualified_object_mip_count) is int and qualified_object_mip_count == 1,
+         "separately qualified whole-object single-mip layout required")
+    previous, delta = 0, None
+    for index, part in enumerate(image["parts"]):
+        if index < count:
+            cumulative = part["packed_size_raw"] >> 4
+            need(cumulative > previous, "active cumulative sizes must increase")
+            if index == part_index:
+                delta = cumulative - previous
+            previous = cumulative
+    selected = image["parts"][part_index]
+    need(selected["key_hex"] != "0000000000000000" and 0 < delta <= 262144, "nonzero selected key/whole-object size within existing reader cap required")
+    view = CompleteImageObject(selected["width"], selected["height"], image["depth"], image["map_type"],
+                               qualified_object_mip_count, image["dxgi_format"], delta, image["format_namespace"])
+    object_layout(view)  # Whole delta only. Never slice, change format or clear native flags.
+    return SelectedImageRequest(image["image_name"], part_index, selected["key_hex"], delta, view, selected["packed_size_raw"])
+
+
+def validate_copied_image_metadata(image):
+    """Validate the raw owned DTO only, including zero/inactive descriptors.
+
+    This grants no stream, format, layout, mip, extraction or rendering proof.
+    """
     need(type(image) is dict and set(image) == IMAGE, "exact copied-header DTO required")
     need(image["schema"] == "iw7.t7-selected-image-header-metadata/1" and image["source_profile"] == PROFILE and
          uint(image["header_bytes"]) == 264 and image["format_namespace"] == "DXGI_FORMAT" and
@@ -143,28 +170,12 @@ def select_copied_image(image, *, part_index, qualified_object_mip_count):
     for name in ("fallback_pointer_present", "delay_load_pixels"):
         need(type(image[name]) is bool, "raw typed copied-header flag required")
     count = image["streamed_part_count"]
-    need(1 <= count <= 4 and image["streaming"] != 0, "an observed streamed part is required")
-    need(uint(part_index, 3) < count, "exact active part index required")
-    need(type(qualified_object_mip_count) is int and qualified_object_mip_count == 1,
-         "separately qualified whole-object single-mip layout required")
+    need(count <= 4, "physical image part count exceeds four")
     parts = image["parts"]
     need(type(parts) is list and len(parts) == 4, "four physical part descriptors required")
-    previous, delta = 0, None
     for index, part in enumerate(parts):
         need(type(part) is dict and set(part) == PART and uint(part["index"],3) == index and
              type(part["active"]) is bool and part["active"] == (index < count), "exact physical part/index/activity required")
         uint(part["width"],65535); uint(part["height"],65535)
-        packed = uint(part["packed_size_raw"])
+        uint(part["packed_size_raw"])
         need(type(part["key_hex"]) is str and re.fullmatch(r"[0-9a-f]{16}", part["key_hex"]), "observed lower-case key64 required")
-        if index < count:
-            cumulative = packed >> 4
-            need(cumulative > previous, "active cumulative sizes must increase")
-            if index == part_index:
-                delta = cumulative - previous
-            previous = cumulative
-    selected = parts[part_index]
-    need(selected["key_hex"] != "0000000000000000" and 0 < delta <= 262144, "nonzero selected key/whole-object size within existing reader cap required")
-    view = CompleteImageObject(selected["width"], selected["height"], image["depth"], image["map_type"],
-                               qualified_object_mip_count, image["dxgi_format"], delta, image["format_namespace"])
-    object_layout(view)  # Whole delta only. Never slice, change format or clear native flags.
-    return SelectedImageRequest(image["image_name"], part_index, selected["key_hex"], delta, view, selected["packed_size_raw"])
