@@ -84,6 +84,10 @@ Stdout: 4,903 bytes /
 The observed image name is `,$camo_base_normal`, but dimensions, level counts,
 DXGI format, total size and streamed-part count are zero; all four parts are
 inactive with zero sizes and keys. These observed values do not qualify a part,
-whole-object layout, mip fact, provider, pixels or DDS. Independent Source
-interpretation is pending. Next: inspect the closed DTO and pinned loader/selection
-source; do not guess a mip, transform a pointer or rerun this unchanged cohort.
+whole-object layout, mip fact, provider, pixels or DDS. The independent pure
+consumer validates the closed registration capture fields, then refuses with
+`an observed streamed part is required` before requiring a mip fact. No selection,
+provider argv or DDS was produced; mip count stayed unknown. A reference/stub is
+a Source hypothesis, not a proven root cause. Next: inspect the pinned name,
+selection and loader linkage; do not guess a mip, transform a pointer or rerun
+this unchanged cohort.
