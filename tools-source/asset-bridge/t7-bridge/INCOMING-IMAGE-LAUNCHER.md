@@ -129,8 +129,47 @@ absence/refusal/nonzero boundaries, four slots, typed fields, duplicate properti
 UTF-8 byte cap and mocked guarded-read seam. The mock is not live job evidence.
 No game, stock, PE, SDK or opaque content is read by this Source work.
 
-Next: obtain the separate Root factory GO, then the separate ordinary DEFAULT
-six-false check, then a distinct Root Native GO before any incoming observation.
-This Source PR executes none of those operations. Source proposals keep their
-NULL fields; only the distinct compiled plan may name this closed CPP B tuple.
-Never inherit old eeeca or F2 proof, or treat CPP checks as engine acceptance.
+Actual preparation B completed on 2026-10-15 with its separate Root Analysis GO.
+Capsule A remains immutable and unexecuted: its descriptive Admission.Phases
+still named registration-plan/default. B changes only those names to
+incoming-plan/default and its two control paths. Its capsule is 14,153 bytes /
+13dd2a1e..., operator 13,106 / bc893de9..., outer 8,613 / 677923de...; the
+already reviewed lifecycle and original-owner helper 3,619 / 79e00e09... are
+unchanged. Source package 0bacf90 was retained separately from the compiled bde117
+cohort and merged factory source e5d1fc9.
+
+The original bundled NoProfile/NoExit dot host ran incoming-plan and the existing
+ordinary DEFAULT, both exit zero, under its Analysis lease. Candidate stat and
+fresh Main/bank metadata occurred only after admission. The factory emitted
+106 unique bindings and 27 metadata rows. DEFAULT returned PlanCheckedPendingGO
+with NativeTypesLoaded, BinaryInputsHashed, ZoneHashObserved, LeaseAcquired,
+FilesCreated and Ready all false. Its stdout is 207 bytes /
+78219efce23c8f9daf9f1e4a4551d71cb32e2bbefe7e4029655f5430a5c2be7c.
+Python environment restoration and unchanged stopped-Main/file/68-bank-entry
+metadata were confirmed; bank contents were not read.
+
+The original receipt is 3,065 bytes /
+270b53bd6ceb1d754da9263a8e9fad871b0cb4636823bd82dd00f68f29077c45.
+It honestly retains ReleasePending=true and LeaseReleased=false. The separate
+original preexit, 1,999 / e3a9f94e6a4701e33a3110049e126387d8c50ace8e449adcf6aa273aab4f5325,
+confirms the same context, closed owners, actual released/null lease and all 37
+source guards held until verified preexit publication. The exact outer then
+closed guards/publication streams and set CanExit last. True PTY 8035 exited
+zero, completion chunk 9f60a2; it is closed and must not be repolled.
+Independent closure 5,174 / 451064499e90a958d470bd65e3739e5ae429f7a720e7ad480b1b24511346c51c
+records a fresh observation at 03:36:34.8480438Z: parent/host/factory/default
+11656/30320/25648/29828 absent, games/compilers empty and registry version 1 with
+no leases. This remains preparation evidence, not a candidate-native run.
+
+The emitted plan is 67,390 bytes /
+cf27cb151d8b13d2647e6b0ae0491c511312f3c43d3c10e3ef13ecf5c08fbce0;
+host contract 1,390 / f1fba4a95ffd8eff1b538eb9024d4019f425c2b5e7b4970b98c828ec23f7325c;
+capture packet 3,631 / 405cf45422ba858f9f3acd5949e703148370ac5c4794e4f19be02bff63ac2c2d.
+They remain in the immutable Source0bac preparation's runtime output. No PE/PDB
+hash, stock copy, candidate CLI, image lookup, payload or DDS operation occurred.
+
+Next: review the small Source capsule for the existing Catalogue/H1 native
+entry and obtain a distinct Root Native GO for the four incoming callback slots.
+Neither successful CPP87 nor DEFAULT admits descriptor, object mip count,
+pixels, ABI, lifetime or Ready. Pending Source proposals keep their NULL fields;
+only the distinct compiled plan names this exact closed CPP B tuple.

@@ -84,6 +84,14 @@
       ]
     },
     {
+      "id": "world-platform-contact",
+      "command": [
+        "python", "-B", "-m", "unittest", "discover",
+        "-s", "tools-source/asset-bridge/world/platform-contact",
+        "-p", "test_platform_contact.py", "-v"
+      ]
+    },
+    {
       "id": "world-original-arena",
       "command": [
         "python", "-B", "-m", "unittest", "discover",
