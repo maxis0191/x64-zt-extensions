@@ -139,3 +139,24 @@ during the final publication readbacks; a fresh deadline check now runs before
 completion. Either unknown path retains the original guards/context and CanExit
 false, even if a stale Passed file remains. The failed candidate stays in Git;
 neither correction has qualified or executed CPP80.
+
+The separately authorized CPP80 B attempt then refused at the OS-context profile
+guard, before admission, native type loading, job creation or output-root creation.
+It reported `Exact opt-in OS context fields/profile required.` The dated OS proof
+was present, but that guard's profile allowlist omitted the new bindings profile.
+Registration DEFAULT returns through its special Source branch before this
+full Run input/OS check; its success did not cover the missing allowlist entry.
+Original references, null state/owner/lease, empty runner guards and the absent
+run root established known no-effects closure; the eight caller Source guards
+were reverified and closed in that original host. Its true aggregate PTY exit was
+one, with fresh host/parent, heavy-process and lease absence confirmed. This is
+a failed pre-compilation attempt, not a CPP result.
+
+Only `t7-registration-material-bindings-v1` is added to the existing dated OS
+qualification allowlist. The closed11 fields, dates, version, signature, hashes,
+proof/input binding checks and false KB attribution are unchanged. Pure actual-
+function controls cover every existing allowed profile, the new profile, the
+original refusal and five altered new-profile cases. They open only a synthetic
+proof MemoryStream; no installed DLL, registry or lease is inspected. Frozen D
+and its failed caller/plan stay immutable; the fix needs a fresh reviewed package,
+new preparation and a distinct CPP GO.

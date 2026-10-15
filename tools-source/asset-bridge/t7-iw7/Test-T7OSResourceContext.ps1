@@ -28,7 +28,7 @@ $plan=[ordered]@{BuildProfile=@{Name='t7-material-parts-v1'};Inputs=@(@{Path=$tz
         Evidence=@{Path=$proofPath;Bytes=8907;SHA256=$sha};ProductVersion='10.0.26100.9711';
         SignatureStatus='Valid';SignatureType='Catalog';SignerThumbprint='667BBA1E1F478221AA65DE4F75187A751B03A453';KBFileAttributionVerified=$false}}
 $raw=$plan|ConvertTo-Json -Depth 8;$checks=0
-foreach($family in 't7-material-parts-v1','t7-prepatch-link-v3'){
+foreach($family in 't7-material-parts-v1','t7-prepatch-link-v3','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1','t7-registration-material-bindings-v1'){
     $p=$raw|ConvertFrom-Json;$p.BuildProfile.Name=$family
     if((Assert-T7OSResourceContext $p) -cne $proofPath){throw 'Positive fixed context refused'};$checks++
 }
@@ -63,6 +63,27 @@ foreach($case in 'null','extra','wrongprofile','profilearray','datearray','bytes
     $openedBefore=$script:opened
     $refused=$false;try{$null=Assert-T7OSResourceContext $p}catch{$refused=$true}
     if(!$refused -or $script:opened -ne $openedBefore){throw "Invalid OS context accepted or proof opened: $case"};$checks++
+}
+$p=$raw|ConvertFrom-Json;$p.BuildProfile.Name='t7-registration-material-bindings-v1'
+# The actual old function refused the new profile before opening its proof.
+$historical=$function.Extent.Text
+$addition=",'t7-registration-material-bindings-v1'"
+if(($historical.Split($addition,[StringSplitOptions]::None)).Count -ne 2){throw 'Exactly one new opt-in profile required'}
+. ([scriptblock]::Create($historical.Replace($addition,'')))
+$openedBefore=$script:opened;$refused=$false;try{$null=Assert-T7OSResourceContext $p}catch{$refused=$true}
+if(!$refused -or $script:opened -ne $openedBefore){throw 'Historical new-profile refusal not reproduced'};$checks++
+. ([scriptblock]::Create($function.Extent.Text))
+foreach($case in 'unknown-bindings-mode','extra','wrongafter','freeproofsha','kbattribution'){
+    $p=$raw|ConvertFrom-Json;$p.BuildProfile.Name='t7-registration-material-bindings-v1'
+    switch($case){
+        unknown-bindings-mode {$p.BuildProfile.Name='t7-registration-material-bindings-v2'}
+        extra {$p.OSResourceContext|Add-Member NoteProperty Extra 'unexpected'}
+        wrongafter {$p.OSResourceContext.After.SHA256='c'*64}
+        freeproofsha {$p.OSResourceContext.Evidence.SHA256='d'*64}
+        kbattribution {$p.OSResourceContext.KBFileAttributionVerified=$true}
+    }
+    $openedBefore=$script:opened;$refused=$false;try{$null=Assert-T7OSResourceContext $p}catch{$refused=$true}
+    if(!$refused -or $script:opened -ne $openedBefore){throw "New profile relaxed OS proof: $case"};$checks++
 }
 $p=$raw|ConvertFrom-Json;$p.PSObject.Properties.Remove('OSResourceContext');$p.Bindings=@();$p.Inputs[0].SHA256=$old
 $null=Assert-T7OSResourceContext $p;$checks++
