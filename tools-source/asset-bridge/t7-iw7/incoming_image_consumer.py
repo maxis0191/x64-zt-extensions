@@ -102,6 +102,9 @@ def consume(report):
     rows = report["cases"]
     need(type(rows) is list and len(rows) == 4, "four fixed observation slots required")
     counts, ordinals, summaries = [], [], []
+    # Source probe reads the eight pointer bytes, exact target bytes and NUL.
+    # A fully filtered nonmatch needs at least the pointer and first name byte.
+    minimum_reads = references * (8 + len(TARGET) + 2) + ordinary * (8 + len(TARGET) + 1) + nonmatches * 9
     for row, (phase, category) in zip(rows, ORDER):
         exact(row, CASE)
         need((row["phase"], row["name_category"]) == (phase, category), "fixed slot order differs")
@@ -124,6 +127,9 @@ def consume(report):
             need(ordinal > 0, "observed callback ordinal required")
             ordinals.append((phase, ordinal))
             observed, nonzero = snapshot(row["snapshot"], row["raw_name"])
+            minimum_reads += row["snapshot"]["header_copies"] * 264
+            if observed:
+                minimum_reads += 2 * (len(row["raw_name"].encode("utf-8")) + 1)
         state = ("not_observed" if not count else "target_matched_sample_refused" if not observed else
                  "repeated_target_ambiguous" if count > 1 else "first_complete_sample")
         need(row["state"] == state, "sample state contradicts count/copy observation")
@@ -142,12 +148,30 @@ def consume(report):
          "callback accounting differs")
     need(callbacks <= 65536 or accounted == 65536, "over-limit callback is an unprobed trigger")
     need(report["bootstrap_complete"] or not any(counts[2:]), "map samples require the original phase transition")
+    need(report["read_bytes"] >= minimum_reads,
+         "read budget is smaller than known complete copies and name reads")
     need(not (callbacks > 65536 or any(count > 16 for count in counts)) or report["cap_refused"],
          "over-limit trigger requires cap refusal")
     need(len({value for _, value in ordinals}) == len(ordinals), "sample callback ordinals must be distinct")
     bootstrap = [value for phase, value in ordinals if phase == "bootstrap"]
     mapping = [value for phase, value in ordinals if phase == "map_load"]
     need(not bootstrap or not mapping or max(bootstrap) < min(mapping), "callback phase order differs")
+    # Counts include repeats whose headers were not recopied. Their callbacks
+    # must still fit after each known first event and before the phase boundary.
+    firsts = {row["name_category"]: (row["callback_ordinal"], row["matching_events_in_phase"])
+              for row in rows[:2] if row["callback_ordinal"] is not None}
+    earliest_bootstrap_end = sum(counts[:2])
+    for first, _ in firsts.values():
+        suffix = sum(count for ordinal, count in firsts.values() if ordinal >= first)
+        earliest_bootstrap_end = max(earliest_bootstrap_end, first + suffix - 1)
+    need(earliest_bootstrap_end <= accounted - sum(counts[2:]) and
+         (not mapping or earliest_bootstrap_end < min(mapping)),
+         "bootstrap matching events cannot fit before the map phase")
+    map_firsts = [(row["callback_ordinal"], row["matching_events_in_phase"])
+                  for row in rows[2:] if row["callback_ordinal"] is not None]
+    for first, _ in map_firsts:
+        suffix = sum(count for ordinal, count in map_firsts if ordinal >= first)
+        need(suffix <= accounted - first + 1, "map matching events cannot fit after their first callback")
     return {"schema": "iw7.t7-incoming-image-consumer/1", "observation_status": "refused" if report["refused"] else "complete",
             "window_complete": report["window_complete"], "cases": summaries, "metadata_only": True,
             "descriptor_admissible": False, "qualified_object_mip_count": None,

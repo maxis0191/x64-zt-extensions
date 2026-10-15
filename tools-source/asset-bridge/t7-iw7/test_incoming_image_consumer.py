@@ -137,7 +137,8 @@ class IncomingConsumerTests(unittest.TestCase):
         with self.assertRaises(ValueError): c.classify(item, 0)
 
     def test_caps_keep_trigger_counts_and_incomplete_windows_do_not_claim_uniqueness(self):
-        item = refused(report()); item.update(cap_refused=True, image_callbacks=65537, non_target_callbacks=65534)
+        item = refused(report()); item.update(cap_refused=True, image_callbacks=65537,
+                                              non_target_callbacks=65534, read_bytes=600000)
         self.assertEqual(c.consume(item)["observation_status"], "refused")
         altered = copy.deepcopy(item); altered["cap_refused"] = False
         with self.assertRaises(ValueError): c.consume(altered)
@@ -177,6 +178,25 @@ class IncomingConsumerTests(unittest.TestCase):
             path = Path(folder) / "authored.json"; path.write_text("null")
             with patch.object(sys, "argv", ["consumer", str(path), "--native-exit-code", "0"]):
                 with self.assertRaises(ValueError): c.main()
+
+    def test_read_budget_must_cover_known_copies_and_filtering_without_guessing_fault_bytes(self):
+        for budget in (0, 1056, 1182):
+            item = report(); item["read_bytes"] = budget
+            with self.subTest(budget=budget), self.assertRaises(ValueError): c.consume(item)
+        item = report(); item["read_bytes"] = 1183
+        self.assertEqual(c.classify(item, 0)["outcome"], "IncomingMetadataObserved")
+
+    def test_repeated_counts_must_fit_phase_positions_beyond_the_first_samples(self):
+        item = report(); item.update(image_callbacks=3, reference_events=2)
+        item["cases"][0].update(matching_events_in_phase=2, state="repeated_target_ambiguous",
+                                single_event_observed_in_phase=False, unique_in_phase=False)
+        with self.assertRaises(ValueError): c.classify(item, 0)
+        item["cases"][3]["callback_ordinal"] = 3
+        self.assertEqual(c.classify(item, 0)["outcome"], "IncomingMetadataObserved")
+        item = report(); item.update(image_callbacks=3, ordinary_name_events=2)
+        item["cases"][3].update(callback_ordinal=3, matching_events_in_phase=2,
+                                state="repeated_target_ambiguous", single_event_observed_in_phase=False, unique_in_phase=False)
+        with self.assertRaises(ValueError): c.classify(item, 0)
 
 
 if __name__ == "__main__":
