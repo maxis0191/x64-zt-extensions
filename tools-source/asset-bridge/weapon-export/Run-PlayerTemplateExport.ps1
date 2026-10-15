@@ -54,6 +54,13 @@ function Write-PlayerPublication([string]$Path,[byte[]]$Raw){
     if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($actual)).ToLowerInvariant() -cne $expected){throw 'Same-stream publication hash differs.'}
     $expected
 }
+function Get-PlayerOriginalGuardHandle([object]$Guard){
+    # Source/output pins use FileStream; OpenStock's sentinel is already the
+    # actual SafeFileHandle. Refuse foreign shapes before disposing any guard.
+    if($Guard -is [Microsoft.Win32.SafeHandles.SafeFileHandle]){return $Guard}
+    if($Guard -is [IO.FileStream]){return $Guard.SafeFileHandle}
+    throw 'Unexpected original publication/source guard type; retain original references.'
+}
 function Test-PlayerModalPlan($Plan){
     if(!$Plan.PSObject.Properties['ModalDiagnostic']){return $false}
     $modal=$Plan.ModalDiagnostic
@@ -599,8 +606,8 @@ finally{
             Test-PlayerGenerated $state ($plan.GeneratedLimitBytes+$plan.MetadataReserveBytes)
             # Only known final publication/readback/clock/budget success permits
             # disposal. Keep the same lists/references on any earlier failure.
-            $publicationHandles=@($root.PublicationGuards|ForEach-Object {$_.SafeFileHandle})
-            $sourceHandles=@($guards|ForEach-Object {$_.SafeFileHandle})
+            $publicationHandles=@($root.PublicationGuards|ForEach-Object {Get-PlayerOriginalGuardHandle $_})
+            $sourceHandles=@($guards|ForEach-Object {Get-PlayerOriginalGuardHandle $_})
             foreach($guard in $root.PublicationGuards){$guard.Dispose()}
             foreach($guard in $guards){$guard.Dispose()}
             if(@($publicationHandles+$sourceHandles|Where-Object {!$_.IsClosed}).Count){throw 'Original publication/source handles did not close.'}

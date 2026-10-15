@@ -20,7 +20,7 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($Runner,[ref]$tokens,[ref]$errors)
 if($errors.Count){throw 'Actual runner syntax failed'}
-foreach($name in 'New-PlayerPublicationStream','Write-PlayerPublication'){
+foreach($name in 'New-PlayerPublicationStream','Write-PlayerPublication','Get-PlayerOriginalGuardHandle'){
  $function=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true)
  if($function){. ([scriptblock]::Create($function.Extent.Text))}
 }
@@ -55,6 +55,14 @@ $source=Join-Path $Directory 'source.json';[IO.File]::WriteAllText($source,'{}')
 $sourceStream=[IO.File]::Open($source,'Open','Read','Read')
 $sourceHandle=$sourceStream.SafeFileHandle
 $guards=[Collections.Generic.List[object]]::new();$guards.Add($sourceStream)
+$sentinelPath=Join-Path $Directory 'sentinel.json';[IO.File]::WriteAllText($sentinelPath,'{}')
+$sentinelHandle=[IO.File]::OpenHandle($sentinelPath,'Open','Read','Read');$guards.Add($sentinelHandle)
+$foreign=$null
+if($Fault -ceq 'Foreign'){
+ $foreign=[pscustomobject]@{SafeFileHandle=$sourceHandle;Disposed=$false}
+ $foreign|Add-Member ScriptMethod Dispose {$this.Disposed=$true}
+ $guards.Add($foreign)
+}
 $publications=[Collections.Generic.List[object]]::new()
 $plan=[pscustomobject]@{RunRoot=$Directory;GroupSeconds=600;GeneratedLimitBytes=16777216;MetadataReserveBytes=1048576;StockManifests=@(1)}
 $PlanSHA256='a'*64
@@ -72,7 +80,8 @@ $script:SeenStreams=[Collections.Generic.List[object]]::new();$script:SeenHandle
 function Assert-OriginalHeld {
  if(![object]::ReferenceEquals($root,[AppDomain]::CurrentDomain.GetData('Player.Publication.Causal.Original')) -or
     ![object]::ReferenceEquals($root,$global:IW7PlayerTemplateExport) -or ![object]::ReferenceEquals($guards,$originalGuards) -or
-    ![object]::ReferenceEquals($publications,$originalPublications) -or !$sourceStream.CanRead -or $sourceHandle.IsClosed){throw 'Original held Source references lost'}
+    ![object]::ReferenceEquals($publications,$originalPublications) -or !$sourceStream.CanRead -or $sourceHandle.IsClosed -or
+    $sentinelHandle.IsClosed -or ![object]::ReferenceEquals($guards[1],$sentinelHandle)){throw 'Original held Source references lost'}
  foreach($publication in $publications){if(!$publication.CanRead -or !$publication.CanWrite){throw 'Publication closed before final validation'}}
 }
 function New-PlayerPublicationStream([string]$Path){
@@ -116,13 +125,15 @@ try{
  [ordered]@{Status=$state.Status;CanExit=$state.CanExit;SameReferences=$same;Releases=$script:Releases;
   LeaseNull=($null -eq $context.Lease);LeaseReleased=$state.LeaseReleased;Guards=$guards.Count;
   SourceOpen=$sourceStream.CanRead;SourceHandleClosed=$sourceHandle.IsClosed;PublicationGuards=$publications.Count;
+  DirectHandleClosed=$sentinelHandle.IsClosed;SameDirectHandle=($guards.Count -eq 0 -or [object]::ReferenceEquals($guards[1],$sentinelHandle));
+  ForeignDisposed=($null -ne $foreign -and $foreign.Disposed);
   PublicationOpen=@($publications|Where-Object {$_.CanRead -and $_.CanWrite}).Count;
   AllObservedHandlesClosed=(!@($script:SeenHandles|Where-Object {!$_.IsClosed}).Count);
   GuardsDisposed=$state.GuardsDisposed;PublicationGuardsDisposed=$state.PublicationGuardsDisposed;
   FinalReadback=$state.FinalReadback;Final=$final;Events=$script:Events.ToArray();
   Error=$(if($state.Contains('FinalizationError')){$state.FinalizationError}else{''})}|ConvertTo-Json -Depth 6 -Compress
 }finally{
- foreach($stream in $script:SeenStreams){$stream.Fault='None';$stream.Observe=$null;$stream.Dispose()};$sourceStream.Dispose()
+ foreach($stream in $script:SeenStreams){$stream.Fault='None';$stream.Observe=$null;$stream.Dispose()};$sourceStream.Dispose();$sentinelHandle.Dispose()
  [AppDomain]::CurrentDomain.SetData('Player.Publication.Causal.Original',$null)
 }
 '''
@@ -181,7 +192,9 @@ try{
                 self.assertEqual((report['Status'], report['CanExit'], report['Releases'], report['LeaseNull'],
                                   report['LeaseReleased'], report['Guards'], report['SourceOpen'],
                                   report['SourceHandleClosed'], report['SameReferences']),
-                                 ('ClosedFinalizationIncomplete', False, 1, True, True, 1, True, False, True), report)
+                                 ('ClosedFinalizationIncomplete', False, 1, True, True, 2, True, False, True), report)
+                self.assertFalse(report['DirectHandleClosed'], report)
+                self.assertTrue(report['SameDirectHandle'], report)
                 count = 2 if fault == 'CreateNew' else 3
                 self.assertEqual((report['PublicationGuards'], report['PublicationOpen']), (count, count), report)
                 self.assertFalse(report['GuardsDisposed'] or report['PublicationGuardsDisposed'], report)
@@ -193,7 +206,7 @@ try{
                 report = self.invoke('Readback', target)
                 self.assertEqual((report['Status'], report['CanExit'], report['Releases'], report['LeaseNull'],
                                   report['LeaseReleased'], report['Guards'], report['SourceOpen'], report['SameReferences']),
-                                 ('UnknownRetained', False, 0, False, False, 1, True, True), report)
+                                 ('UnknownRetained', False, 0, False, False, 2, True, True), report)
                 count = 1 if target.startswith('measured') else 2
                 self.assertEqual((report['PublicationGuards'], report['PublicationOpen']), (count, count), report)
 
@@ -204,12 +217,21 @@ try{
                           report['SourceHandleClosed'], report['AllObservedHandlesClosed'], report['SameReferences']),
                          ('Passed', True, 1, True, 0, 0, False, True, True, True), report)
         self.assertTrue(report['GuardsDisposed'] and report['PublicationGuardsDisposed'] and report['FinalReadback'], report)
+        self.assertTrue(report['DirectHandleClosed'] and report['SameDirectHandle'], report)
         events = report['Events']
         self.assertLess(events.index('FinalClock'), events.index('FinalBudget'), report)
         self.assertTrue(all(event.startswith('Closing:') for event in events[events.index('FinalBudget') + 1:]), report)
         self.assertEqual((report['Final']['Schema'], report['Final']['GuardsDisposed'], report['Final']['SourceGuardsHeld'],
                           report['Final']['PublicationGuardsHeld'], report['Final']['LeaseReleased']),
-                         ('iw7.player-export-closure/2', False, 1, 3, True), report)
+                         ('iw7.player-export-closure/2', False, 2, 3, True), report)
+
+    def test_actual_mixed_guard_preflight_refuses_foreign_shape_before_any_disposal(self):
+        report = self.invoke('Foreign')
+        self.assertEqual((report['Status'], report['CanExit'], report['LeaseReleased'], report['LeaseNull'],
+                          report['Guards'], report['SourceOpen'], report['SourceHandleClosed'], report['DirectHandleClosed'],
+                          report['SameDirectHandle'], report['ForeignDisposed'], report['PublicationOpen']),
+                         ('ClosedFinalizationIncomplete', False, True, True, 3, True, False, False, True, False, 3), report)
+        self.assertIn('Unexpected original publication/source guard type', report['Error'])
 
 
 if __name__ == '__main__':

@@ -533,6 +533,13 @@ clock and budget failures retain Source/publication guards after release; earlie
 receipt failures keep the original lease too. The successful path closes original
 handles only after final checks, and the unmocked writer verifies CreateNew and
 held-file mutation refusal. These tests do not qualify a native profile run.
+Independent review also rejected the first correction's assumption that every
+guard was a FileStream: OpenStock stores its sentinel SafeFileHandle directly.
+The corrected finalizer preflights every original guard before any disposal,
+accepts only the actual FileStream or SafeFileHandle types, and retains the same
+objects on any foreign shape. Real mixed FileStream/OpenHandle fixtures now run
+through the failure matrix and successful closure; a foreign object with a
+lookalike SafeFileHandle property refuses without disposing any original guard.
 The C++ candidate from CPP J remains unchanged and needs no rebuild for this
 PowerShell-only correction. A new exact Source capsule and distinct Extract GO
 must follow the corrected Source merge; no L retry is authorized.
