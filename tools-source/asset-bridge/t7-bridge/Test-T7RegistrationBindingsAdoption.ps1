@@ -53,6 +53,10 @@ Assert-T7RegistrationBindingsPlan $f.Plan
 Assert-T7RegistrationBindingsCpp80 $f.Plan $f.Build $f.Receipt $f.Handoff $f.Manifest $f.Pre $f.Post $stdout
 Check ((Get-T7CatalogueHostSchema $f.Plan 'host') -ceq 'iw7.t7-registration-bindings-host/1') 'Compiled host schema refused.'
 Check ((Get-T7CatalogueHostOutcomeName $f.Plan) -ceq 'RegistrationBindingsOutcome') 'Compiled outcome differs.'
+foreach($name in 'Schema','Operation','CandidateProfile'){
+    $partial=[pscustomobject]@{};$partial|Add-Member $name @($f.Plan.$name)
+    Refuses {Get-T7CatalogueHostSchema $partial 'host'}
+}
 foreach($name in 'CandidateBytes','CandidateSHA256','ExpectedBuildPlanSHA256','ExpectedBuildReceiptSHA256','TraceStderrLimitBytes'){
     $f=New-Proof;$f.Plan.$name=@($f.Plan.$name);Refuses {Assert-T7RegistrationBindingsPlan $f.Plan}
 }

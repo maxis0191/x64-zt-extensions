@@ -9,6 +9,9 @@ function Test-T7CatalogueHostBindingsCompiledSelector($Plan) {
         $Plan.SelectedRegistrationMaterialBindingsV1.Schema -is [string] -and $Plan.SelectedRegistrationMaterialBindingsV1.Schema -ceq 'iw7.t7-registration-bindings-cpp80/1')
 }
 function Get-T7CatalogueHostSchema($Plan,[string]$Kind) {
+    foreach($name in 'Schema','Operation','CandidateProfile'){
+        if($Plan.PSObject.Properties[$name] -and $Plan.$name -isnot [string]){throw 'Typed T7 host selector required before input access.'}
+    }
     # Source-only selectors must refuse before OpenInputs opens extra bindings.
     if($Plan.PSObject.Properties['SelectedRegistrationMaterialBindingsV1'] -or
        ($Plan.PSObject.Properties['Schema'] -and $Plan.Schema -cin @('iw7.t7-registration-bindings-source-plan/1','iw7.t7-registration-bindings-plan/1')) -or
