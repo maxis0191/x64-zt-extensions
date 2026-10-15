@@ -895,7 +895,7 @@ foreach($bad in @((Join-Path $Fixture 'missing'),$ManifestPath)){
 $ToolSource=Join-Path $Fixture 'source';. $selector
 $manifest=Get-Content -LiteralPath $ManifestPath -Raw|ConvertFrom-Json
 $pin=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Exact pinned tool source required.'")},$true))
-$hashes=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.ForEachStatementAst] -and $n.Condition.Extent.Text -ceq '$manifest.source_hashes.PSObject.Properties'},$true))
+$hashes=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.ForEachStatementAst] -and $n.Condition.Extent.Text -ceq '$manifest.source_hashes.PSObject.Properties' -and $n.Extent.Text.Contains('Pinned source interface changed after preparation.')},$true))
 if($pin.Count -ne 1 -or $hashes.Count -ne 1){throw 'Actual pin and ten-interface gates required'}
 # Exercise the actual production pin gate; no native Git/SDK/compiler probing.
 $LASTEXITCODE=0;$head=$manifest.source_pin
