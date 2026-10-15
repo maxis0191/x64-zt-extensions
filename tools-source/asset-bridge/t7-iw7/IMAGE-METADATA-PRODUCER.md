@@ -315,14 +315,14 @@ admission, mip fact, SourceAssetName association, model/renderer binding, pointe
 or object identity, lifetime, ABI, atomicity, retention, pixels and Ready remain
 unqualified. Absence is scoped to this bounded incoming-event window only.
 
-Seven Python source checks pass. The authored native fixture preserves the
+At the Source147 checkpoint, seven Python source checks passed. The authored native fixture preserves the
 original 39 checks and adds 48 incoming checks, including malformed/mixed argv
 no-arm/no-read, prefix filtering, owned finalization, ambiguity/caps and faults.
-These new fixtures are not compiled/executed. The pending contract pins generated
+Those new fixtures had not yet been compiled/executed. The pending contract pins generated
 main/CLI and derived inputs within the existing source caps; no operational build recipe, host,
 provider or Native execution is enabled by this source seam. Existing H1/T7
 recipe integration, Source review, exact-head CI/merge and separate admitted
-PREP/CPP/Native gates remain required.
+PREP/CPP/Native gates were still required at that checkpoint; the later actual CPP B is recorded below.
 
 ## Incoming build recipe, Source pending
 
@@ -349,8 +349,9 @@ qualification cohort. IncomingCPPQualified can become true only in its actual
 closed successful receipt after both fixture markers, all five phases and input
 rechecks; publication/deadline failure clears it. 117 actual PowerShell
 source-gate checks and 15 targeted Python source checks pass without prepare(),
-SDK/tlog/PE reads or native execution. Fresh admitted PREP, actual-plan review,
-CPP and subsequent Native remain separate pending gates.
+SDK/tlog/PE reads or native execution. At this Source149 checkpoint, fresh admitted PREP,
+actual-plan review, CPP and subsequent Native were separate pending gates. Actual
+PREP B and CPP B below qualify only their pinned cohort; future cohorts retain these gates.
 
 Review rejected Source head `acc46e44`: a singleton SHA256 array on
 IncomingWiring passed the real profile validator through PowerShell collection
@@ -388,5 +389,58 @@ The correction adds the fixture's own iostream include and updates only that
 file's source-contract pin. IOSTREAM was already present in the actual plan's
 1146 input metadata; no SDK file was reopened to establish that fact. Generated
 main/CLI/capture/observer/baseline pins, report shape and claims remain unchanged.
-The correction is Source only until a new reviewed preparation and separate CPP
-GO execute the fixture39+48 and full CLI; the failed A is never relabelled passed.
+The correction was subsequently used by the new reviewed PREP B and separately
+authorized CPP B below; the failed A is never relabelled passed.
+
+## Incoming CPP B: 87 checks and full CLI qualified (2026-10-15)
+
+The compiled extension Source is merge `bde117b8dd40945033d00231b28738b345f09fdb`,
+with Native Source `fab935826c898806855376662a8a03317b3ad8f1`. The actual PREP B
+plan is 403533 bytes, SHA256
+`2becaab02373a248dbcf5797501680beeb4d80f1c5603cbe969540a35776c0f9`:
+187 bindings (181 text, 6 opaque), 1146 inputs, 19 prepared files, no missing pins.
+Its ordinary DEFAULT retained six false effects, candidate null, CPPEnabled false
+and IncomingCPPQualified false. The Source declarations remain pending even when
+a particular later actual receipt qualifies the compiled cohort.
+
+The separate CPP B really compiled and executed the fixture, then compiled main,
+compiled the full T7 CLI and linked it. All five stages exited zero and their
+original job trees closed. Fixture stdout is exactly the two required markers,
+39 legacy followed by 48 incoming, 71 bytes with CRLF; stderr is empty and
+EngineInvoked is false. Four compiler-stage telemetry records are Completed true,
+with zero active/assigned members after original compiler/VCTIP closure. The
+group's inherited CompilerTelemetry.Completed placeholder remains false; the
+probe is not a compiler stage. Neither placeholder is promoted to a runtime fact.
+Top-level RegistrationCPPQualified, IncomingCPPQualified, InputsReverified and
+LeaseReleased are true in this actual Passed receipt.
+
+Elapsed time was 31227.8066 ms. Maximum observed output before receipt publication
+was 222487982 bytes under the existing 256 MiB cap. Link artifacts were measured
+and hashed under the build lease: EXE 22059008 bytes,
+SHA256 `4fcb0205e30979457784d1b883a153ecf5c20751543b68dfb184671d59e3ee4d`;
+PDB 140054528 bytes,
+`f775d2f4acea13f3dbd4f2e7727f00fd8539e4990fc881bb54176edaa9e6154e`.
+Postflight only reads their recorded text metadata; it does not reopen/rehash them.
+
+The evidence in the retained incoming-build-source-bde117b runtime is:
+
+| Record | Bytes | SHA256 |
+| --- | ---: | --- |
+| actual CPP receipt | 49161 | `481dfa424367320699ee368b7272fa17d64b29babef775efe63f4e1fcd81f9b4` |
+| original-host preexit | 10340 | `9a895ee72e2d75909d006ee4bd8f0893cc172e992c9d016de7858dff71d2620b` |
+| closed postflight | 6327 | `5c33ec17caddb888a07d4f7697bba12bf97f9e54612549a3922fcbae144b7a66` |
+| qualification handoff | 15076 | `da75f2c758282ed0e31bcd1f3c0f99ad0ad772c7773ee731bd0e69df374230c3` |
+
+Before exit, the same original PSVariable/AppDomain/context/owner references,
+zero build/caller guards, null lease and CanExit were verified. Manual stage
+objects and raw UTC strings preserve seven fractional digits and Int64 creation
+FILETIMEs. True PTY 50444 actually exited zero (chunk 1ae1c5). Fresh observation
+at 2026-10-15T02:43:07.4168293Z found all eleven recorded identities absent,
+no compiler/VCTIP process and an empty Version1 lease registry.
+
+The candidate was not executed. No Native CLI, stock/game/FF operation, pixels,
+renderer/model association, runtime ABI/lifetime or object mip count is qualified;
+Ready stays false. Old33/eeeca and failed CPP A remain unchanged. Next: the launcher
+owner reviews this closed text handoff and wires the explicit new Source/contract/
+CPP tuple, followed by separate reviewed admission and Root Native GO. A docs
+merge after this checkpoint is not the Source that was compiled.
