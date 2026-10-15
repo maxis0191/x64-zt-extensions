@@ -38,7 +38,7 @@ if($primaryFixture){
     $names=@('name-compile','name-test','argv-compile','argv-test','primary-compile','primary-test','iw7','link')
 }
 if((@($plan.Stages.Name)-join '|') -cne ($names-join '|') -or $plan.Stages[1].ExpectedChecks -ne 8 -or $plan.Stages[3].ExpectedChecks -ne $argvChecks -or
-   ($primaryFixture -and (($plan.Stages[5].ExpectedChecks -isnot [int] -and $plan.Stages[5].ExpectedChecks -isnot [long]) -or $plan.Stages[5].ExpectedChecks -ne 36))){throw 'Fixed source-selected 8+10/36 stage sequence required.'}
+   ($primaryFixture -and (($plan.Stages[5].ExpectedChecks -isnot [int] -and $plan.Stages[5].ExpectedChecks -isnot [long]) -or $plan.Stages[5].ExpectedChecks -ne 36))){throw 'Fixed source-selected 8+10-or-18/36 stage sequence required.'}
 if($plan.GroupDeadlineSeconds -ne 600 -or $plan.OutputLimitBytes -ne 268435456 -or $plan.MetadataReserveBytes -ne 1048576){throw 'Fixed cohort deadline/output reserve required.'}
 $kinds=@('Compile','Probe','Compile','Probe','Compile','Link')
 $artifacts=@('name.obj|name.exe|name.pdb|compile.pdb|dependencies.json','','argv.obj|argv.exe|argv.pdb|compile.pdb|dependencies.json','','iw7-player-cli.obj|compile.pdb|dependencies.json','zonetool-iw7-player.exe|zonetool-iw7-player.pdb|zonetool-iw7-player.lib|zonetool-iw7-player.exp')
@@ -116,7 +116,7 @@ try{
     }
     . $providers.Core
     . $providers.Scheduler
-    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner $(if($primaryFixture){'IW7 one-TU player template CLI and 8+10+36 fixtures'}else{'IW7 one-TU player template CLI and 8+10 fixtures'})
+    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner $(if($pairCLI){'IW7 one-TU pair profile CLI and 8+18+36 fixtures'}elseif($primaryFixture){'IW7 one-TU player template CLI and 8+10+36 fixtures'}else{'IW7 one-TU player template CLI and 8+10 fixtures'})
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     # The source guards acquired before imports remain held through release.
     . $providers.CompilerCore
