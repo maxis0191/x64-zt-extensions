@@ -543,3 +543,75 @@ lookalike SafeFileHandle property refuses without disposing any original guard.
 The C++ candidate from CPP J remains unchanged and needs no rebuild for this
 PowerShell-only correction. A new exact Source capsule and distinct Extract GO
 must follow the corrected Source merge; no L retry is authorized.
+
+## Actual metadata-only profile M checkpoint, 2026-10-15
+
+After independent exact Source/capsule/data/lifecycle reviews and a distinct
+Root Extract GO, M ran the explicit pair-profile CLI once. Its caller is PR191
+merge `ea4a9813e1e786712b80041e130982af6cfa2c1d`; the reused candidate remains
+the actual CPP J build of `e6c0b262973b7832b87c91a6122a7cbb2daef987` with native
+`fab935826c898806855376662a8a03317b3ad8f1`. Nine unchanged C++/preparer Source
+hashes bind that split. No rebuild or qualification of later source is implied.
+L remains frozen and unexecuted.
+
+The single admitted Extract group freshly qualified candidate/TLS/sentinel and
+the fixed33 stock before the native call. Its three original Stock35 transactions
+prepared 7/31/64 aliases from 71 sources, with no retail bytes copied, preserving
+the sources. M adds 102 retained aliases; the related F/G/H/I/J/K/M export cohorts
+retain 586 in total. This count excludes unexecuted L and is not a global NTFS
+inventory or a new physical game copy.
+
+The native tool exited zero in 9941.52 ms with original tree/job closure. Stdout
+was 2516 bytes, SHA256
+`715cfcf849d1ae082fc6dc3dd1c4644004d68c7982d08df9e24e6f01418f25a2`,
+and contained exactly one `IW7_PLAYER_PAIR_PROFILE` completion marker; stderr was
+empty. The strict reader accepted exactly one `player-pair-profile.json`, 936
+bytes, SHA256
+`c5664d90a3956535aa52c5d6477844102024b7b373510b733a28dcfb23c1217e`.
+This artifact tuple and its parsed values came from the original under-lease
+measured receipt; postflight did not reopen the profile, candidate, SDK or retail.
+
+| Source-layout field | Actual M observation |
+| --- | --- |
+| Base weapon type, offset556 | int32 1 |
+| PAP attachment weapon type, offset28 | int32 0 |
+| PAP flag, offset20 | raw byte1, boolean true |
+| Six list counts | `[0,0,0,0,0,2]` |
+| Six list readability flags | all true |
+| Association status / exact registered PAP pointer occurrences | `bounded` / 1 |
+
+The existing Source enum names are NONE0, BULLET1 and PROJECTILE3. Value0 is a
+named Source enum, not null JSON or a false PAP flag. These sources do not prove
+how the engine applies that attachment field: interpreting NONE as "no type
+override" remains an unverified hypothesis. One pointer occurrence in the sixth
+list confirms this bounded Source-layout association, not a PAP transaction or
+mechanical compatibility. M confirms K's base scalar1 and adds the PAP values
+and association; it does not independently verify the complete runtime ABI.
+
+Actual runtime also exercised the PR191 publication fix. The version2 pending
+receipt truthfully records 188 input guards and three publication guards held,
+GuardsDisposed false and LeaseReleased true, binding measured/before hashes.
+After same-stream readback and final clock/budget checks, the same physical
+NoExit scope verified the original root/context/state/plan/guard references,
+closed original native owner/job/process handles, all three prepared/preserved/
+closed stock slots, 71 retained content and three copy streams closed, both
+guard lists empty, lease null, registry empty and CanExit true. The actual
+finalizer's retained arrays proved all 188 input and three publication handles
+closed; the direct sentinel was the same SafeFileHandle exactly once in that
+array. The final state separately records both readbacks and verified disposal.
+
+Root read the preexit and original-handle proofs before host closure. An initial
+dot-sourced helper's `exit` returned to the retained NoExit prompt and was not
+reported as terminal completion. Rechecking the same original guard then using
+explicit inline interactive exit completed the actual PTY with exit zero; no
+native attempt or owner reconstruction was repeated. Fresh 10:11:53 UTC postflight
+found the three host/parent/native identities absent, no game/compiler/ZoneTool/
+VCTIP/mspdbsrv and zero leases. Root independently corroborated fresh closure and
+released its heavy ledger at 10:12:27 UTC.
+
+M is ProfilePassedClosed and PairProfileComplete only. NativeExportComplete,
+full templates, projectile author eligibility, independent runtime ABI, weapon
+grant, projectile damage/physics, retail PAP transaction and owner gameplay
+acceptance remain false. The original PROJECTILE3/3 template and author guards
+still refuse this 1/0 pair; no field was coerced. Any next template/author work
+needs a separate bounded Source proposal, exact review and distinct execution GO.
