@@ -2264,3 +2264,117 @@ function ConvertFrom-T7CatalogueZombiesAddObservation([string]$Text) {
     $result|Add-Member NoteProperty ZombiesAddObservationBytes $split.ObservationBytes
     $result
 }
+function ConvertFrom-T7PrepatchImageCallerJson([byte[]]$Raw) {
+    if(!$Raw -or $Raw.Length -gt 256KB){throw 'Bounded caller JSON required.'}
+    $text=[Text.UTF8Encoding]::new($false,$true).GetString($Raw)
+    $options=[System.Text.Json.JsonDocumentOptions]::new();$options.MaxDepth=25
+    $document=[System.Text.Json.JsonDocument]::Parse($text,$options)
+    try{
+        if($document.RootElement.ValueKind -ne [System.Text.Json.JsonValueKind]::Object){throw 'Caller JSON object required.'}
+        $stack=[Collections.Generic.Stack[System.Text.Json.JsonElement]]::new();$stack.Push($document.RootElement)
+        while($stack.Count){
+            $item=$stack.Pop()
+            if($item.ValueKind -eq [System.Text.Json.JsonValueKind]::Object){
+                $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+                foreach($p in $item.EnumerateObject()){if(!$names.Add($p.Name)){throw 'Duplicate caller JSON field.'};$stack.Push($p.Value)}
+            }elseif($item.ValueKind -eq [System.Text.Json.JsonValueKind]::Array){foreach($v in $item.EnumerateArray()){$stack.Push($v)}}
+        }
+        if((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind')){return ($text|ConvertFrom-Json -Depth 25 -DateKind String)}
+        $text|ConvertFrom-Json -Depth 25
+    }finally{$document.Dispose()}
+}
+function Get-T7PrepatchImageCallerOutcome($Report,$Identity,$ExitCode,[string]$ExpectedModule) {
+    if($null -eq $Report){return 'CallerNoCapture'}
+    if($null -eq $Identity -or !(Test-T7CatalogueInteger $Identity.PID ([uint32]::MaxValue)) -or !$Identity.PID -or
+       $Identity.CreatedUtc -isnot [string]){throw 'Typed original caller identity required.'}
+    if(($ExitCode -isnot [int] -and $ExitCode -isnot [long]) -or $ExitCode -lt [int]::MinValue -or $ExitCode -gt [uint32]::MaxValue){throw 'Original caller exit integer required.'}
+    $baseFields=@('schema','phase','source_base','read_limit','report_limit','window_count','window_observations','requested_bytes','returned_bytes','pid','thread_id','capture_complete',
+        'boot_authorized','abi_proven','runtime_compatibility_proven','writer_proven','gfximage_payload_read','outside_interval_followed','windows','status')
+    $successFields=@('creation_filetime','module_base','base_matches_source','module_path','pe','pdata_records')
+    if($Report -isnot [pscustomobject]){throw 'Typed caller report required.'}
+    $allowed=$baseFields+$successFields+@('metadata_error','capture_error')
+    foreach($name in $baseFields){if(!$Report.PSObject.Properties[$name]){throw 'Missing caller report field.'}}
+    if(@($Report.PSObject.Properties.Name|Where-Object {$_ -cnotin $allowed}).Count){throw 'Unknown caller report field.'}
+    foreach($name in 'read_limit','report_limit','window_count','window_observations','requested_bytes','returned_bytes','pid','thread_id'){
+        if(!(Test-T7CatalogueInteger $Report.$name ([uint32]::MaxValue))){throw 'Typed caller report integer required.'}
+    }
+    if($Report.schema -isnot [string] -or $Report.schema -cne 'iw7.t7-prepatch-image-caller-observation/1' -or
+       $Report.phase -isnot [string] -or $Report.phase -cne 'first_dpi_before_component_post_unpack' -or
+       $Report.source_base -isnot [string] -or $Report.source_base -cne '0x140000000' -or $Report.pid -ne $Identity.PID -or
+       !$Report.pid -or !$Report.thread_id -or $Report.read_limit -ne 4MB -or $Report.report_limit -ne 256KB -or
+       $Report.window_count -ne 1 -or $Report.windows -isnot [array] -or $Report.windows.Count -gt 1 -or
+       $Report.window_observations -ne $Report.windows.Count -or $Report.requested_bytes -gt 4MB -or
+       $Report.returned_bytes -gt $Report.requested_bytes -or $Report.capture_complete -isnot [bool]){throw 'Caller report identity or bounds differ.'}
+    foreach($name in 'boot_authorized','abi_proven','runtime_compatibility_proven','writer_proven','gfximage_payload_read','outside_interval_followed'){
+        if($Report.$name -isnot [bool] -or $Report.$name){throw 'Caller report overclaims scope.'}
+    }
+    foreach($name in 'metadata_error','capture_error'){
+        if($Report.PSObject.Properties[$name] -and ($Report.$name -isnot [string] -or !$Report.$name)){throw 'Typed caller error required.'}
+    }
+    if(!$Report.capture_complete){
+        if($ExitCode -ne 2 -or $Report.status -isnot [string] -or $Report.status -cne 'incomplete_stop'){throw 'Caller partial report and exit disagree.'}
+        return 'CallerCapturePartial'
+    }
+    Assert-T7CatalogueFields $Report ($baseFields+$successFields)
+    if($ExitCode -ne 0 -or $Report.status -isnot [string] -or $Report.status -cne 'captured_for_offline_review' -or
+       $Report.windows.Count -ne 1 -or $Report.requested_bytes -le 0 -or $Report.returned_bytes -ne $Report.requested_bytes){throw 'Caller complete report and exit disagree.'}
+    if($Report.creation_filetime -isnot [string] -or $Report.creation_filetime -cnotmatch '^[1-9][0-9]{0,18}$' -or
+       [datetime]::FromFileTimeUtc([long]::Parse($Report.creation_filetime)).ToString('o') -cne $Identity.CreatedUtc){throw 'Caller process generation differs.'}
+    if($Report.module_path -isnot [string] -or ![IO.Path]::IsPathFullyQualified($Report.module_path) -or
+       [IO.Path]::GetFullPath($Report.module_path) -ine $ExpectedModule){throw 'Caller mapped module differs.'}
+    if($Report.module_base -isnot [string] -or $Report.module_base -cnotmatch '^0x[1-9a-f][0-9a-f]{0,15}$'){throw 'Caller module base format differs.'}
+    $module=[uint64]::Parse($Report.module_base.Substring(2),[Globalization.NumberStyles]::AllowHexSpecifier)
+    if($Report.base_matches_source -isnot [bool] -or $Report.base_matches_source -ne ($module -eq 0x140000000)){throw 'Caller module base claim differs.'}
+    Assert-T7CatalogueFields $Report.pe @('size_of_image','preferred_base','entrypoint_rva','timestamp','dll_characteristics','sections')
+    foreach($name in 'size_of_image','entrypoint_rva','timestamp','dll_characteristics'){
+        if(!(Test-T7CatalogueInteger $Report.pe.$name ([uint32]::MaxValue))){throw 'Typed caller PE integer required.'}
+    }
+    $size=$Report.pe.size_of_image
+    if($size -lt 4096 -or $size -gt 1GB -or $module -gt [uint64]::MaxValue-$size -or
+       !(Test-T7CatalogueInteger $Report.pdata_records ([long][math]::Floor(2MB/12))) -or !$Report.pdata_records -or
+       $Report.pe.sections -isnot [array] -or $Report.pe.sections.Count -lt 1 -or $Report.pe.sections.Count -gt 96 -or
+       $Report.pe.preferred_base -isnot [string] -or $Report.pe.preferred_base -cnotmatch '^0x(?:0|[1-9a-f][0-9a-f]{0,15})$'){throw 'Caller PE/pdata bounds differ.'}
+    foreach($section in $Report.pe.sections){
+        Assert-T7CatalogueFields $section @('name','rva','virtual_size','raw_size','characteristics')
+        if($section.name -isnot [string] -or $section.name.Length -gt 8){throw 'Caller section name differs.'}
+        foreach($name in 'rva','virtual_size','raw_size','characteristics'){
+            if(!(Test-T7CatalogueInteger $section.$name ([uint32]::MaxValue))){throw 'Typed caller section required.'}
+        }
+        if($section.rva -gt $size -or [math]::Max($section.virtual_size,$section.raw_size) -gt $size-$section.rva){throw 'Caller section exceeds image.'}
+    }
+    $row=$Report.windows[0]
+    Assert-T7CatalogueFields $row @('site','rva','window_rva','window_bytes','code_limit','runtime_function','callsite_validated','known_target_rva','callee_read','regions','bytes_hex')
+    foreach($name in 'rva','window_rva','window_bytes','code_limit','known_target_rva'){
+        if(!(Test-T7CatalogueInteger $row.$name ([uint32]::MaxValue))){throw 'Typed caller window integer required.'}
+    }
+    if($row.site -isnot [string] -or $row.site -cne 'Load_GfxImage_caller' -or $row.rva -ne 0x1B1E5D -or
+       $row.known_target_rva -ne 0x7DB4C0 -or $row.code_limit -ne 8192 -or $row.window_bytes -lt 5 -or $row.window_bytes -gt 8192 -or
+       $row.callsite_validated -isnot [bool] -or !$row.callsite_validated -or $row.callee_read -isnot [bool] -or $row.callee_read){throw 'Caller fixed selection differs.'}
+    $fn=$row.runtime_function
+    Assert-T7CatalogueFields $fn @('begin_rva','end_rva','unwind_rva','unwind_header_hex','unwind_format_validated')
+    foreach($name in 'begin_rva','end_rva','unwind_rva'){if(!(Test-T7CatalogueInteger $fn.$name $size)){throw 'Typed caller pdata interval required.'}}
+    if($fn.begin_rva -gt $row.rva -or $fn.end_rva -lt $row.rva+5 -or $fn.begin_rva -ge $fn.end_rva -or
+       $row.window_rva -ne $fn.begin_rva -or $row.window_bytes -ne $fn.end_rva-$fn.begin_rva -or !$fn.unwind_rva -or
+       $fn.unwind_rva+4 -gt $size -or $fn.unwind_header_hex -isnot [string] -or $fn.unwind_header_hex -cnotmatch '^[0-9a-f]{8}$' -or
+       $fn.unwind_format_validated -isnot [bool] -or $fn.unwind_format_validated){throw 'Caller complete bounded pdata interval differs.'}
+    if($row.bytes_hex -isnot [string] -or $row.bytes_hex -cnotmatch ('^[0-9a-f]{'+(2*$row.window_bytes)+'}$')){throw 'Caller code hex length differs.'}
+    $code=[Convert]::FromHexString($row.bytes_hex);$offset=[int]($row.rva-$fn.begin_rva)
+    if($code[$offset] -ne 0xE8 -or ([long]$row.rva+5+[BitConverter]::ToInt32($code,$offset+1)) -ne 0x7DB4C0){throw 'Caller E8 rel32 concordance differs.'}
+    if($row.regions -isnot [array] -or $row.regions.Count -lt 1 -or $row.regions.Count -gt 128){throw 'Caller region count differs.'}
+    $cursor=$module+[uint64]$row.window_rva;$end=$cursor+[uint64]$row.window_bytes
+    foreach($region in $row.regions){
+        Assert-T7CatalogueFields $region @('base','size','allocation_base','state','protect','allocation_protect','type')
+        foreach($name in 'base','allocation_base'){if($region.$name -isnot [string] -or $region.$name -cnotmatch '^0x[1-9a-f][0-9a-f]{0,15}$'){throw 'Caller region address differs.'}}
+        foreach($name in 'state','protect','allocation_protect','type'){if(!(Test-T7CatalogueInteger $region.$name ([uint32]::MaxValue))){throw 'Typed caller region flags required.'}}
+        if(!(Test-T7CatalogueInteger $region.size ([long]::MaxValue)) -or !$region.size){throw 'Typed caller region size required.'}
+        $begin=[uint64]::Parse($region.base.Substring(2),[Globalization.NumberStyles]::AllowHexSpecifier)
+        $allocation=[uint64]::Parse($region.allocation_base.Substring(2),[Globalization.NumberStyles]::AllowHexSpecifier)
+        if($cursor -ge $end -or $begin -gt $cursor -or $begin -gt [uint64]::MaxValue-$region.size -or $begin+$region.size -le $cursor -or
+           $allocation -ne $module -or $region.state -ne 0x1000 -or $region.type -ne 0x1000000 -or ($region.protect -band 0x101)){
+            throw 'Caller readable image region coverage differs.'
+        }
+        $next=$begin+[uint64]$region.size;$cursor=if($next -lt $end){$next}else{$end}
+    }
+    if($cursor -ne $end -or $Report.requested_bytes -lt $row.window_bytes+384){throw 'Caller code/metadata coverage differs.'}
+    'CallerCapturedForOfflineReview'
+}

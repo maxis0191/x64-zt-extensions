@@ -18,9 +18,12 @@ try {
     $guards.Add((Open-H1Pin ([pscustomobject]@{Path=$PlanPath;Bytes=$size;SHA256=$PlanSHA256})))
     $plan=Read-H1SmallJson $PlanPath
     $profile=Join-Path $PSScriptRoot 'T7PrepatchReferenceV2.Profile.ps1'
+    $caller=$plan.PSObject.Properties['CandidateProfile'] -and $plan.CandidateProfile -is [string] -and $plan.CandidateProfile -ceq 't7-prepatch-image-caller-v1'
+    $callerReader=Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1'
     $scheduler=Join-Path $repo 'ops/Resource-Scheduler.Core.ps1'
     $required=@($PSCommandPath,$profile,$core,$scheduler,(Join-Path $repo 'ops/Resource-Memory.ps1'),
         (Join-Path $repo 'ops/Resource-RecorderOwnedProcess.Core.ps1'),(Join-Path $repo 'ops/native/ResourceMemory.cs'))
+    if($caller){$required+=@($callerReader)}
     foreach($path in $required) {
         $pin=@($plan.Bindings|Where-Object {$_.Path -is [string] -and $_.Path -ceq $path -and $_.IsText -is [bool] -and $_.IsText})
         if($pin.Count -ne 1 -or ($pin[0].Bytes -isnot [int] -and $pin[0].Bytes -isnot [long]) -or $pin[0].Bytes -le 0 -or $pin[0].Bytes -gt 1MB -or
@@ -28,6 +31,7 @@ try {
         $guards.Add((Open-H1Pin $pin[0]))
     }
     . $profile
+    if($caller){. $callerReader} # Existing functions-only typed Source/report helpers.
     $plan=Read-T7RefV2Json $PlanPath
     Assert-T7RefV2Plan $plan $repo $PSCommandPath -SourceOnly:$SourceOnly
     $protocol=Get-T7ReferenceProtocol $plan.CandidateProfile
@@ -50,6 +54,7 @@ try {
         if($build.Count -ne 1 -or $build[0].Bytes -ne $cohort.ReceiptBytes -or $build[0].SHA256 -cne $plan.ExpectedBuildReceiptSHA256){throw 'Actual instrumented build receipt binding missing.'}
         Assert-T7RefV2Build $plan (Read-T7RefV2Json $plan.BuildPlan 1MB) (Read-T7RefV2Json $plan.BuildReceipt 1MB) $protocol.Name
         if($protocol.Name -ceq 't7-prepatch-link-v3'){Assert-T7LinkV3ClosedBuildPins $plan (Read-T7RefV2Json $plan.BuildClosedPins)}
+        if($caller){Assert-T7ImageCallerClosedBuildPins $plan (Read-T7RefV2Json $plan.BuildClosedPins)}
     }elseif($plan.CandidateBytes -ne 0 -or $null -ne $plan.CandidateSHA256 -or $null -ne $plan.BuildReceipt -or $null -ne $plan.ExpectedBuildReceiptSHA256){throw 'Incomplete candidate placeholder differs.'}
     if(!$Run) {
         [ordered]@{Status=$(if($SourceOnly){'SourceCohortCheckedPendingPreparationGO'}elseif($candidateReady){'PlanCheckedPendingGO'}else{'PlanCheckedPendingInstrumentedCandidate'});
@@ -108,7 +113,7 @@ try {
             $state.MainAfter=Assert-T7RefV2Main $plan
             Test-H1Budget $plan $state
             Assert-H1Deadline $script:T7RefV2Started 200
-            if(!$failure -and $state.CaptureOutcome -cne 'CaptureComplete'){throw 'Diagnostic did not produce a complete capture.'}
+            if(!$failure -and $state.CaptureOutcome -cne $protocol.CompleteOutcome){throw 'Diagnostic did not produce a complete capture.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
     if($state){Complete-H1Stage $context $state}
@@ -125,7 +130,7 @@ try {
         try {
             if(!$state.Quarantined){Assert-H1Deadline $script:T7RefV2Started 200}
             if(!$failure -and $context.Closed -and !$context.Lease -and $state.LeaseReleased -and
-               !$state.TerminationRequested -and $state.CaptureOutcome -ceq 'CaptureComplete' -and $state.InputsReverified){$state.Status='CaptureCompletePendingReview'}
+               !$state.TerminationRequested -and $state.CaptureOutcome -ceq $protocol.CompleteOutcome -and $state.InputsReverified){$state.Status='CaptureCompletePendingReview'}
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message}
         try {
             Write-H1Receipt $plan $state $plan.StageRoot

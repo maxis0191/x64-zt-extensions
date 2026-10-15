@@ -1,4 +1,4 @@
-# Fixed V2/V3 reference consumers. The unchanged H1 core owns the lifecycle.
+# Fixed V2/V3/caller reference consumers. The unchanged H1 core owns the lifecycle.
 function Read-T7RefV2Json([string]$Path,[int]$Limit=128KB) {
     Assert-H1Path $Path;$stream=[IO.FileStream]::new($Path,'Open','Read','Read')
     try {
@@ -40,19 +40,134 @@ function Assert-T7RefV2TextPin($Pin,$Bindings,[long]$Bytes,[string]$SHA256) {
 function Get-T7ReferenceProtocol($CandidateProfile) {
     Assert-T7RefV2String $CandidateProfile 'candidate profile'
     if($CandidateProfile -ceq 't7-prepatch-reference-v2'){
-        return [pscustomobject]@{Name=$CandidateProfile;Option='-t7-prepatch-reference-v2';PlanSchema='iw7.t7-prepatch-reference-plan/2';ObservationSchema='iw7.t7-prepatch-reference-observation/2';RunSchema='iw7.t7-prepatch-reference-run/2';AttemptSchema='iw7.t7-prepatch-reference-attempt/2';ClosureSchema='iw7.t7-prepatch-reference-host-closure/2';RunPrefix='t7-prepatch-reference';Report='t7-prepatch-reference-v2.local.json';Image='t7-zonetool-prepatch-reference-v2.exe'}
+        return [pscustomobject]@{Name=$CandidateProfile;Option='-t7-prepatch-reference-v2';PlanSchema='iw7.t7-prepatch-reference-plan/2';ObservationSchema='iw7.t7-prepatch-reference-observation/2';RunSchema='iw7.t7-prepatch-reference-run/2';AttemptSchema='iw7.t7-prepatch-reference-attempt/2';ClosureSchema='iw7.t7-prepatch-reference-host-closure/2';RunPrefix='t7-prepatch-reference';Report='t7-prepatch-reference-v2.local.json';Image='t7-zonetool-prepatch-reference-v2.exe';CompleteOutcome='CaptureComplete'}
     }
     if($CandidateProfile -ceq 't7-prepatch-link-v3'){
-        return [pscustomobject]@{Name=$CandidateProfile;Option='-t7-prepatch-link-v3';PlanSchema='iw7.t7-prepatch-link-plan/3';ObservationSchema='iw7.t7-prepatch-link-observation/3';RunSchema='iw7.t7-prepatch-link-run/3';AttemptSchema='iw7.t7-prepatch-link-attempt/3';ClosureSchema='iw7.t7-prepatch-link-host-closure/3';RunPrefix='t7-prepatch-link';Report='t7-prepatch-link-v3.local.json';Image='t7-zonetool-prepatch-link-v3.exe'}
+        return [pscustomobject]@{Name=$CandidateProfile;Option='-t7-prepatch-link-v3';PlanSchema='iw7.t7-prepatch-link-plan/3';ObservationSchema='iw7.t7-prepatch-link-observation/3';RunSchema='iw7.t7-prepatch-link-run/3';AttemptSchema='iw7.t7-prepatch-link-attempt/3';ClosureSchema='iw7.t7-prepatch-link-host-closure/3';RunPrefix='t7-prepatch-link';Report='t7-prepatch-link-v3.local.json';Image='t7-zonetool-prepatch-link-v3.exe';CompleteOutcome='CaptureComplete'}
+    }
+    if($CandidateProfile -ceq 't7-prepatch-image-caller-v1'){
+        return [pscustomobject]@{Name=$CandidateProfile;Option='-t7-prepatch-image-caller-v1';PlanSchema='iw7.t7-prepatch-image-caller-plan/1';ObservationSchema='iw7.t7-prepatch-image-caller-observation/1';RunSchema='iw7.t7-prepatch-image-caller-run/1';AttemptSchema='iw7.t7-prepatch-image-caller-attempt/1';ClosureSchema='iw7.t7-prepatch-image-caller-host-closure/1';RunPrefix='t7-prepatch-image-caller';Report='t7-prepatch-image-caller-v1.local.json';Image='t7-zonetool-prepatch-image-caller-v1.exe';CompleteOutcome='CallerCapturedForOfflineReview'}
     }
     throw 'Unknown fixed reference consumer profile.'
 }
 function Get-T7ReferenceBuildCohort($CandidateProfile) {
     $protocol=Get-T7ReferenceProtocol $CandidateProfile
+    if($protocol.Name -ceq 't7-prepatch-image-caller-v1'){
+        return [pscustomobject]@{PlanBytes=312105;PlanSHA256='8cd3dbdfeb6100e47509abf9621e087109fe522bf94e1bc9e97fbb970ad85fc3';ReceiptBytes=28426;ReceiptSHA256='c07888de31c7700875b2acdb44fa01d26dc294e9deb751f93569e81e092f48b6';CandidateBytes=21780992;CandidateSHA256='f2712242fa0c544e77b313d808f3487bce89a2d8578ff079e6e140764fe93e9e';IndexBytes=31898;IndexSHA256='7d5f0b784ac700d838b36dc9c9e3fd998a185e1f574be422e328e4b789e06529'}
+    }
     if($protocol.Name -ceq 't7-prepatch-reference-v2'){
         return [pscustomobject]@{PlanBytes=303783;PlanSHA256='0aca63cb09e8ecfc96dee34e1fdf94f8cb66e400f8a190ffdefd38bec3a2c549';ReceiptBytes=16885;ReceiptSHA256='77e7fecfbf47217cee2fb5f4e371e76350961b759007130d1d4980488168b9f8';CandidateBytes=21777408;CandidateSHA256='f11c683b5379e08cca4e881a7a412a2a8a45b5f872acb690ac62218fce6717f5';IndexBytes=1867;IndexSHA256='cfb6f523336ad0fd163c2ffcdeaf4ff5b31b83fc5fa17321662bce89c61353d0'}
     }
     [pscustomobject]@{PlanBytes=305621;PlanSHA256='e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530';ReceiptBytes=17200;ReceiptSHA256='0cc0c8b6b46fd75d09c53b3e3c3dc9af40aa4211a786629fcf2f791c52111328';CandidateBytes=21777408;CandidateSHA256='d89c4cf326f21038d9fbcc6a18c18db2c17c17f448400a8567ee2e5fdca6a8bb';IndexBytes=2189;IndexSHA256='b13107f072b164640a4344d8281df79b5b2f3fc1ee229813764ce7e55159e4c2'}
+}
+function Assert-T7ImageCallerBuildProfile($Profile,$Bindings) {
+    Assert-T7RefV2Fields $Profile @('Name','Option','ArgumentCount','Report','ObservationSchema','Helper','Wiring','RangeGuard','RangeGuardSource','BoundaryFixture','FixtureResponse','BaseHelper','BaseWiring','BaseBuildPlan','BaseBuildReceipt','BaseV3BuildPlan','BaseV3Main','PreparedMain') 'caller build profile'
+    $protocol=Get-T7ReferenceProtocol 't7-prepatch-image-caller-v1'
+    foreach($row in @(@('Name',$protocol.Name),@('Option',$protocol.Option),@('Report',$protocol.Report),@('ObservationSchema',$protocol.ObservationSchema))){
+        Assert-T7RefV2String $Profile.($row[0]) $row[0];if($Profile.($row[0]) -cne $row[1]){throw 'Caller exclusive build profile differs.'}
+    }
+    Assert-T7RefV2Integer $Profile.ArgumentCount 'caller argc' 2
+    if($Profile.ArgumentCount -ne 2){throw 'Caller native argc must be two.'}
+    foreach($row in @(
+        @('Helper',16778,'39fd69039d16285ca574f73a768130e294c618a089ba365bacdf84fd2cfa0019'),
+        @('Wiring',2749,'8e6edee60d06dda0c77f8f2cf73bd39677523f0ba046ced2046218cc7eb7d7a2'),
+        @('RangeGuard',3117,'0a633964ed558de91bae621b51b28d5e8e0eab20ab790fc000b1b3c6978aa38a'),
+        @('RangeGuardSource',3117,'0a633964ed558de91bae621b51b28d5e8e0eab20ab790fc000b1b3c6978aa38a'),
+        @('BoundaryFixture',3828,'a2471c937e91191fca49820a50ac15091832eaa54bb993c639671e490dd9ade4'),
+        @('FixtureResponse',1193,'5cd1f496bcb97a3c5080c3e68be7213f469097b3cb3482d460150748baae3822'),
+        @('BaseHelper',15827,'cf839e18a68adb4ed3aae82d683ef110ab595fa8c172584e47ca4d11bb8db48d'),
+        @('BaseWiring',2236,'66f70ca5a979745288232d76496a339e08d639ddf34560aada6e6b63c5bcffa1'),
+        @('BaseBuildPlan',292575,'422e79898fa2b16defc8193182fe146e2db5d73aeb4516c2bd2aaf87c409c4de'),
+        @('BaseBuildReceipt',26199,'af6beecf7a8892e16266a7641d2799f665f86fa8ad7c40c61561b782534f7897'),
+        @('BaseV3BuildPlan',305621,'e484cef7415b2697c188b0202f3771af15377ecb56d98a0a85bfc1d2418fe530'),
+        @('BaseV3Main',14469,'84cde2924df0a0553dd2cddb0ca173aed54af43d6874b06718c01d1a6cec4989'),
+        @('PreparedMain',14557,'2ff1c104f8dfc99432179b289a0453aa1a81b8a99703803fcede1869fae61133')
+    )){Assert-T7RefV2TextPin $Profile.($row[0]) $Bindings $row[1] $row[2]}
+}
+function Assert-T7ImageCallerBuild($Plan,$BuildPlan,$Receipt=$null) {
+    $cohort=Get-T7ReferenceBuildCohort 't7-prepatch-image-caller-v1'
+    if($BuildPlan.Schema -isnot [string] -or $BuildPlan.Schema -cne 'iw7.t7-minimal-build-plan/1' -or
+       $BuildPlan.SourceCommit -isnot [string] -or $BuildPlan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+       $Plan.ExpectedBuildPlanSHA256 -isnot [string] -or $Plan.ExpectedBuildPlanSHA256 -cne $cohort.PlanSHA256){throw 'Caller exact actual recipe required.'}
+    Assert-T7ImageCallerBuildProfile $BuildPlan.BuildProfile $Plan.Bindings
+    Assert-T7RefV2Fields $BuildPlan.ReuseCompile @('OriginalStatus','SourcePlanSHA256','ReceiptSHA256','Checks','RecompiledMain','StageRoots','PrepatchImageCallerV1','SourcePlan','Receipt') 'caller reuse'
+    $marker=$BuildPlan.ReuseCompile.PrepatchImageCallerV1
+    Assert-T7RefV2Fields $marker @('Schema','SourceProfile','RetainedMainBytes','RetainedMainSHA256','BaseMainBytes','BaseMainSHA256','MainBytes','MainSHA256','HelperBytes','HelperSHA256') 'caller Source transition'
+    foreach($row in @(@('Schema','iw7.t7-prepatch-image-caller-build/1'),@('SourceProfile','t7-prepatch-image-caller-v1'),
+        @('RetainedMainSHA256','40de5fda829cec32a5d75359f58e69c84db7d8ee54f198cf6befa2a6ebe6f86e'),
+        @('BaseMainSHA256','84cde2924df0a0553dd2cddb0ca173aed54af43d6874b06718c01d1a6cec4989'),
+        @('MainSHA256','2ff1c104f8dfc99432179b289a0453aa1a81b8a99703803fcede1869fae61133'),
+        @('HelperSHA256','39fd69039d16285ca574f73a768130e294c618a089ba365bacdf84fd2cfa0019'))){
+        if($marker.($row[0]) -isnot [string] -or $marker.($row[0]) -cne $row[1]){throw 'Caller Source transition identity differs.'}
+    }
+    foreach($row in @(@('RetainedMainBytes',12854),@('BaseMainBytes',14469),@('MainBytes',14557),@('HelperBytes',16778))){
+        Assert-T7RefV2Integer $marker.($row[0]) $row[0] 64KB;if($marker.($row[0]) -ne $row[1]){throw 'Caller Source transition length differs.'}
+    }
+    if($BuildPlan.ReuseCompile.RecompiledMain -isnot [bool] -or !$BuildPlan.ReuseCompile.RecompiledMain -or
+       $BuildPlan.ReuseCompile.PSObject.Properties['PrepatchReferenceV2'] -or $BuildPlan.ReuseCompile.PSObject.Properties['PrepatchLinkV3']){throw 'Caller transition cannot relabel V2/V3.'}
+    if($BuildPlan.Stages -isnot [array] -or $BuildPlan.Stages.Count -ne 4 -or
+       (@($BuildPlan.Stages.Name)-join ',') -cne 'caller-fixture-compile,caller-fixture-test,main,link'){throw 'Caller four fixture-first stages required.'}
+    for($i=0;$i -lt 4;$i++){
+        $stage=$BuildPlan.Stages[$i];$kind=if($i -eq 1){'Probe'}elseif($i -eq 3){'Link'}else{'Compile'};$seconds=if($i -eq 1){15}else{120}
+        $name=@('caller-fixture-compile','caller-fixture-test','main','link')[$i]
+        if($stage.Name -isnot [string] -or $stage.Name -cne $name -or $stage.Stage -isnot [string] -or $stage.Stage -cne $kind -or
+           !(($stage.DeadlineSeconds -is [int] -or $stage.DeadlineSeconds -is [long]) -and $stage.DeadlineSeconds -eq $seconds)){
+            throw 'Caller stage kinds/deadlines differ.'
+        }
+    }
+    if($null -eq $Receipt){return}
+    if($Receipt.Schema -isnot [string] -or $Receipt.Schema -cne 'iw7.t7-minimal-build/1' -or $Receipt.Status -isnot [string] -or $Receipt.Status -cne 'Passed' -or
+       $Receipt.PlanSHA256 -isnot [string] -or $Receipt.PlanSHA256 -cne $cohort.PlanSHA256 -or $Receipt.PSObject.Properties['ImageCallerCPPQualified']){throw 'Caller actual CPP receipt differs.'}
+    foreach($row in @(@('InputsReverified',$true),@('TreeClosureConfirmed',$true),@('LeaseReleased',$true),@('Quarantined',$false),@('CandidateExecuted',$false),@('Ready',$false),@('ImageCallerFixturePassed',$true))){
+        if($Receipt.($row[0]) -isnot [bool] -or $Receipt.($row[0]) -ne $row[1]){throw 'Caller actual CPP receipt boolean differs.'}
+    }
+    Assert-T7ImageCallerBuildProfile $Receipt.BuildProfile $Plan.Bindings
+    if($Receipt.Stages -isnot [array] -or $Receipt.Stages.Count -ne 4 -or (@($Receipt.Stages.Name)-join ',') -cne (@($BuildPlan.Stages.Name)-join ',')){throw 'Caller CPP stage sequence differs.'}
+    for($i=0;$i -lt 4;$i++){
+        $stage=$Receipt.Stages[$i]
+        if($stage.Name -isnot [string] -or $stage.Name -cne $BuildPlan.Stages[$i].Name){throw 'Typed caller CPP stage name required.'}
+        if($stage.ExitCode -isnot [int] -and $stage.ExitCode -isnot [long]){throw 'Typed caller CPP stage exit required.'}
+        if($stage.ExitCode -ne 0 -or $stage.TreeClosureConfirmed -isnot [bool] -or !$stage.TreeClosureConfirmed){throw 'Caller CPP stage not closed successfully.'}
+        if($i -eq 1){
+            Assert-T7RefV2Integer $stage.Checks 'caller fixture checks' 25
+            if($stage.Checks -ne 25 -or $stage.EngineInvoked -isnot [bool] -or $stage.EngineInvoked){throw 'Caller compiled fixture25 required.'}
+        }else{
+            Assert-T7RefV2Integer $stage.LastOriginalSnapshot.RootExitCode 'caller compiler exit' 0
+            Assert-T7RefV2Integer $stage.LastOriginalSnapshot.ActiveProcesses 'caller active processes' 0
+            if($stage.CompilerTelemetry.Completed -isnot [bool] -or !$stage.CompilerTelemetry.Completed -or
+               $stage.LastOriginalSnapshot.RootExited -isnot [bool] -or !$stage.LastOriginalSnapshot.RootExited){throw 'Caller compiler/link closure telemetry differs.'}
+        }
+    }
+    $artifacts=@($Receipt.Stages[-1].Artifacts|Where-Object Path -CEQ $Plan.CandidateSource)
+    if($artifacts.Count -ne 1 -or $artifacts[0].Path -isnot [string] -or $artifacts[0].Bytes -isnot [long] -and $artifacts[0].Bytes -isnot [int] -or
+       $artifacts[0].SHA256 -isnot [string] -or $artifacts[0].Bytes -ne $cohort.CandidateBytes -or $artifacts[0].SHA256 -cne $cohort.CandidateSHA256){throw 'Caller candidate differs from actual Link artifact.'}
+}
+function Assert-T7ImageCallerClosedBuildPins($Plan,$Index) {
+    $c=Get-T7ReferenceBuildCohort 't7-prepatch-image-caller-v1'
+    if($Index.Schema -isnot [string] -or $Index.Schema -cne 'iw7.t7-image-caller-cpp-actual-handoff/1' -or
+       $Index.SourceCommit -isnot [string] -or $Index.SourceCommit -cne '408af1d5f51469cca9b27128bedc895383aeee29' -or
+       $Index.NativeSourceCommit -isnot [string] -or $Index.NativeSourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+       $Index.Status -isnot [string] -or $Index.Status -cne 'Passed'){throw 'Caller actual Source/native cohort differs.'}
+    foreach($row in @(@('InputsReverified',$true),@('TreeClosureConfirmed',$true),@('LeaseReleased',$true),@('CompletionPublished',$true),
+        @('OriginalAppDomainRootSame',$true),@('OriginalContextGuardsStatePSVariableValuesSame',$true),@('OriginalReferencesVerified',$true),
+        @('OriginalHostParentStagesAbsent',$true),@('ImageCallerFixturePassed',$true),@('CPPExecuted',$true),@('SourceMarkerRemainsPending',$true),
+        @('ImageCallerCPPQualifiedFlagPresent',$false),@('CandidateExecuted',$false),@('OpaqueInputsReopenedAfterRelease',$false),@('CandidateOrSymbolsReopenedForHandoff',$false),
+        @('NativeObserved',$false),@('Ready',$false),@('KnownLimitAcceptedByRootForThisExactImmutablePlanOnly',$true),@('OpaqueClassificationMutationProtectedByRunner',$false))){
+        if($Index.($row[0]) -isnot [bool] -or $Index.($row[0]) -ne $row[1]){throw 'Caller actual closure/known-limit boolean differs.'}
+    }
+    Assert-T7RefV2Integer $Index.FixtureChecks 'actual fixture count' 25
+    Assert-T7RefV2Integer $Index.ActualPTYAggregateExitCode 'actual PTY exit' 0
+    if($Index.FixtureChecks -ne 25 -or $Index.NativeReport -ne $null -or
+       $Index.FreshHeavyProcesses -isnot [array] -or $Index.FreshHeavyProcesses.Count){throw 'Caller actual CPP closure differs.'}
+    Assert-T7RefV2TextPin $Index.Plan $Plan.Bindings $c.PlanBytes $c.PlanSHA256
+    Assert-T7RefV2TextPin $Index.Receipt $Plan.Bindings $c.ReceiptBytes $c.ReceiptSHA256
+    Assert-T7RefV2Fields $Index.CandidatePinCapturedUnderCPPLease @('Path','Bytes','SHA256') 'caller candidate metadata'
+    Assert-T7RefV2String $Index.CandidatePinCapturedUnderCPPLease.Path 'caller candidate path'
+    Assert-T7RefV2String $Index.CandidatePinCapturedUnderCPPLease.SHA256 'caller candidate SHA'
+    Assert-T7RefV2Integer $Index.CandidatePinCapturedUnderCPPLease.Bytes 'caller candidate bytes' 64MB
+    if($Index.Plan.Path -cne $Plan.BuildPlan -or $Index.Receipt.Path -cne $Plan.BuildReceipt -or
+       $Index.CandidatePinCapturedUnderCPPLease.Path -cne $Plan.CandidateSource -or
+       $Index.CandidatePinCapturedUnderCPPLease.Bytes -ne $c.CandidateBytes -or $Index.CandidatePinCapturedUnderCPPLease.SHA256 -cne $c.CandidateSHA256){throw 'Caller handoff role pins differ.'}
 }
 function Assert-T7RefV2Marker($Marker) {
     Assert-T7RefV2Fields $Marker @('Schema','SourceProfile','RetainedMainBytes','RetainedMainSHA256','BaseMainBytes','BaseMainSHA256','MainBytes','MainSHA256','HelperBytes','HelperSHA256') 'build marker'
@@ -108,6 +223,7 @@ function Assert-T7LinkV3BuildProfile($Profile,$Bindings) {
 }
 function Assert-T7RefV2Build($Plan,$BuildPlan,$Receipt=$null,$CandidateProfile='t7-prepatch-reference-v2') {
     $protocol=Get-T7ReferenceProtocol $CandidateProfile
+    if($protocol.Name -ceq 't7-prepatch-image-caller-v1'){Assert-T7ImageCallerBuild $Plan $BuildPlan $Receipt;return}
     foreach($name in 'Schema','SourceCommit'){Assert-T7RefV2String $BuildPlan.$name ('build.'+$name)}
     if($BuildPlan.Schema -cne 'iw7.t7-minimal-build-plan/1' -or $BuildPlan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
        (@($BuildPlan.Stages.Name)-join ',') -cne 'main,link' -or @($BuildPlan.Stages).Count -ne 2){throw 'V2 fixed two-stage build plan required.'}
@@ -265,8 +381,11 @@ function Assert-T7RefV2Plan($Plan,[string]$Repo,[string]$Runner,[switch]$SourceO
     $protocol=Get-T7ReferenceProtocol $Plan.CandidateProfile
     $cohort=Get-T7ReferenceBuildCohort $protocol.Name
     $candidateBound=$Plan.PSObject.Properties['CandidateSource'] -and $null -ne $Plan.CandidateSource
-    if($SourceOnly -and $protocol.Name -cne 't7-prepatch-link-v3'){throw 'Source-only closure review is restricted to V3.'}
-    if($protocol.Name -ceq 't7-prepatch-reference-v2'){
+    if($SourceOnly -and $protocol.Name -cnotin @('t7-prepatch-link-v3','t7-prepatch-image-caller-v1')){throw 'Source-only closure review is restricted to V3/caller.'}
+    if($protocol.Name -ceq 't7-prepatch-image-caller-v1'){
+        if(!$candidateBound){throw 'Caller requires the actual closed CPP25 candidate tuple.'}
+        Assert-T7ReferenceCandidate $Plan $protocol.Name
+    }elseif($protocol.Name -ceq 't7-prepatch-reference-v2'){
         Assert-T7RefV2String $Plan.BuildClosedPins 'plan.BuildClosedPins'
         if($Plan.ExpectedBuildPlanSHA256 -cne '0aca63cb09e8ecfc96dee34e1fdf94f8cb66e400f8a190ffdefd38bec3a2c549'){throw 'V2 exact original recipe required.'}
     }else{
@@ -392,6 +511,9 @@ function Get-T7ReferenceWindows($ObservationSchema) {
     throw 'Unknown fixed reference observation schema.'
 }
 function Get-T7RefV2Outcome($Report,$Identity,$ExitCode,[string]$ExpectedModule,$ObservationSchema='iw7.t7-prepatch-reference-observation/2') {
+    if($ObservationSchema -ceq 'iw7.t7-prepatch-image-caller-observation/1'){
+        return Get-T7PrepatchImageCallerOutcome $Report $Identity $ExitCode $ExpectedModule
+    }
     $windows=@(Get-T7ReferenceWindows $ObservationSchema)
     $minimumBytes=($windows|Measure-Object Bytes -Sum).Sum
     if($null -eq $Report){return 'NoCapture'}
@@ -450,12 +572,21 @@ function Get-T7RefV2Outcome($Report,$Identity,$ExitCode,[string]$ExpectedModule,
 function Read-T7RefV2Report($Plan,$State,$Context,$CandidateProfile='t7-prepatch-reference-v2') {
     $protocol=Get-T7ReferenceProtocol $CandidateProfile
     $path=Join-Path $Plan.WorkingDirectory $protocol.Report
-    if(!(Test-Path -LiteralPath $path)){return 'NoCapture'}
+    if(!(Test-Path -LiteralPath $path)){if($protocol.Name -ceq 't7-prepatch-image-caller-v1'){return 'CallerNoCapture'};return 'NoCapture'}
     $State.CaptureOutcome='CapturePresentUnqualified';Assert-H1Path $path;$size=(Get-Item -LiteralPath $path).Length
     if($size -le 0 -or $size -gt 256KB){throw 'V2 diagnostic JSON size refused.'}
     $pin=[pscustomobject]@{Path=$path;Bytes=$size;SHA256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}
-    $Context.Guards.Add((Open-H1Pin $pin));$State.Report=$pin
-    Get-T7RefV2Outcome (Read-T7RefV2Json $path 256KB) $State.Identity $State.ExitCode (Join-Path $Plan.WorkingDirectory 'BlackOps3_UnrankedDedicatedServer.exe') $protocol.ObservationSchema
+    $guard=Open-H1Pin $pin;$Context.Guards.Add($guard);$State.Report=$pin
+    if($protocol.Name -ceq 't7-prepatch-image-caller-v1'){
+        $bytes=[byte[]]::new(256KB+1);$used=0
+        try{
+            do{$read=$guard.Read($bytes,$used,$bytes.Length-$used);$used+=$read}while($read -gt 0 -and $used -lt $bytes.Length)
+            if($used -ne $pin.Bytes -or $used -gt 256KB){throw 'Caller report changed during bounded held read.'}
+            $raw=[byte[]]::new($used);[Array]::Copy($bytes,$raw,$used)
+            $report=ConvertFrom-T7PrepatchImageCallerJson $raw
+        }finally{$guard.Position=0}
+    }else{$report=Read-T7RefV2Json $path 256KB}
+    Get-T7RefV2Outcome $report $State.Identity $State.ExitCode (Join-Path $Plan.WorkingDirectory 'BlackOps3_UnrankedDedicatedServer.exe') $protocol.ObservationSchema
 }
 function Enable-T7RefV2RuntimeProfile($Plan,$Context) {
     $script:T7RefV2Started=Get-H1Clock;$script:T7RefV2BaseDeadline=${function:Assert-H1Deadline};$script:T7RefV2BaseBudget=${function:Test-H1Budget}
