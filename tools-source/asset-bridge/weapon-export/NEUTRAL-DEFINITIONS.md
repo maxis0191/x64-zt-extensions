@@ -13,6 +13,14 @@ and false measured/final readbacks, verified all actual handles closed and ended
 with terminal exit1. Root corroborated closure at16:50:25 UTC. See
 EXPORT-COHORT.md; no full-definition/runtime result follows from this attempt.
 
+The subsequent S2 metadata entry failed decoding Source JSON before imports or
+admission; its separate safety closure exited 1 without stock access. S3's ordinal
+BOM correction and real positive reader/parser causal then enabled a distinct
+metadata-only run: 71 files/33 PAKs, exact root7/main31/zone64 layouts and 71 observed
+baselines, no content or candidate read and no aliases created. Ordinary closure
+and Root corroboration at 17:53:44 UTC qualified only this metadata snapshot.
+EXPORT-COHORT.md preserves both outcomes; full definitions remain unobserved.
+
 N/O2 failures and P's execution/finalization facts remain separate.
 N failed definition compilation with C4702; O2 reached compiler exit0 but its
 strict dependency guard refused `shared/cderr.h` before the100-case probe.
@@ -195,12 +203,12 @@ its remaining bookkeeping failure is recorded separately. The current runner
 correction has Source-only owned-output tests and was subsequently validated by
 Q's distinct fresh admitted cycle; it does not retroactively qualify P.
 
-Next: prepare a bounded metadata-only observation proposal for the known fixed
-stock before a new neutral export packet. Actual current metadata must be
-qualified under a distinct admission; historical link counts are not forced or
-silently overwritten in R. Preserve its seven owned aliases and unique evidence.
-Reuse Q unchanged with the existing OwnedH1/Stock35 caller, producer, manifest
-and independent readers. Source preparation opens neither candidate nor stock,
-creates no aliases or lease, and invokes no DEFAULT. Metadata observation, CLI,
-Extract, Native, authoring and game execution need distinct exact review and GO.
-PaP, RayGun, projectile and physics mechanics remain unqualified.
+Next: review the new T2 neutral export packet using actual S3 baselines. Its
+manifest link counts include only earlier aliases planned within that same T
+group; observed global baselines stay unchanged and retained R aliases are not
+added again. Preserve R/S2 failures and unique evidence. Reuse Q unchanged with
+the existing OwnedH1/Stock35 caller, producer, manifest and independent readers.
+Source preparation opens neither candidate nor stock, creates no aliases or
+lease, and invokes no DEFAULT. A distinct exact review and Extract GO must precede
+fresh metadata/content/candidate qualification and CLI execution. PaP, RayGun,
+projectile and physics mechanics remain unqualified.
