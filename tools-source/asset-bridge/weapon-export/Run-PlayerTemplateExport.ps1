@@ -125,7 +125,10 @@ function Test-PlayerRetailManifests($Plan,$Profile){
     if($targets.Count -ne 102 -or $sources.Count -ne 71 -or $paks.Count -ne 33){throw 'Exact fixed33 102-alias/71-source closure required.'}
 }
 $plan=Read-PlayerExportSource $PlanPath $PlanSHA256 -Role Plan|ConvertFrom-Json -Depth 30
+$pairProfile=($null -ne $plan.PSObject.Properties['PairProfile'])
+if($pairProfile -and ($plan.PairProfile -isnot [bool] -or !$plan.PairProfile)){throw 'Explicit true pair profile opt-in required.'}
 $modalSelected=Test-PlayerModalPlan $plan
+if($pairProfile -and $modalSelected){throw 'Pair profile and modal diagnostics cannot mix.'}
 $retailProfile=Get-PlayerRetailProfile $plan
 if($plan.Schema -cne 'iw7.player-template-export-source/1' -or $plan.Ready -or $plan.CandidateExecuted -or
  $plan.StockContentQualified -or $plan.RetailAliasCount -ne $retailProfile.Aliases -or $plan.UniqueRetailSources -ne $retailProfile.Sources -or
@@ -138,7 +141,8 @@ foreach($name in 'Core','Scheduler','Profile','StockCore','BeaconCore','ArenaPro
 }
 $request=Read-PlayerExportSource $plan.Request.Path $plan.Request.SHA256 $plan.Request.Bytes -Role Request
 if($request -cne "weapon,iw7_shredder_zm`nattachment,shredderpap1`n" -or $plan.Request.Bytes -ne 47){throw 'Exact two-row request required.'}
-if($plan.Pack -cne 'paris_enemy_cp_zmb_raygun_template_a_player_weapon_source' -or
+$expectedPack=if($pairProfile){'paris_enemy_cp_zmb_raygun_pair_profile_a'}else{'paris_enemy_cp_zmb_raygun_template_a_player_weapon_source'}
+if($plan.Pack -isnot [string] -or $plan.Pack -cne $expectedPack -or
  (@($plan.StockManifests.Name)-join '|') -cne 'root|main|zone' -or (@($plan.StockManifests|ForEach-Object {$_.Count})-join '|') -cne $retailProfile.Counts){throw 'Fixed pair/layout required.'}
 foreach($manifest in $plan.StockManifests){$null=Read-PlayerExportSource $manifest.Path $manifest.SHA256 $manifest.Bytes -Role StockManifest}
 Test-PlayerRetailManifests $plan $retailProfile
@@ -354,6 +358,52 @@ function Read-PlayerOutput([string]$Path,[int]$Cap){
     Assert-PlayerExportClock
     [pscustomobject]@{Path=$Path;Bytes=$used;SHA256=$sha;Text=[Text.Encoding]::UTF8.GetString($raw)}
 }
+function Convert-PlayerPairProfileJson([string]$Text){
+    if([Text.Encoding]::UTF8.GetByteCount($Text) -gt 16384){throw 'Pair profile byte cap exceeded.'}
+    $document=[Text.Json.JsonDocument]::Parse($Text)
+    try{
+        $v=$document.RootElement
+        foreach($entry in @(@($v,@('schema','donor','native_source_pin','weapon','pap_attachment','source_offsets','observed','association','source_layout_only','templates_exported','projectile_author_eligible','runtime_abi_verified','weapon_granted','projectile_damage_verified','physics_qualified','retail_pap_transaction_verified','gameplay_accepted')),
+            @($v.GetProperty('source_offsets'),@('base_type','pap_type','pap_flag')),
+            @($v.GetProperty('observed'),@('base_type','pap_type','pap_flag_raw','pap_flag')),
+            @($v.GetProperty('association'),@('status','counts','readable','occurrences')))){
+            $obj=$entry[0];$keys=$entry[1]
+            if($obj.ValueKind -ne [Text.Json.JsonValueKind]::Object){throw 'Pair profile object required.'}
+            $names=@($obj.EnumerateObject()|ForEach-Object Name)
+            if($names.Count -ne $keys.Count -or @($names|Sort-Object -Unique).Count -ne $names.Count -or
+               @($names|Where-Object {$_ -cnotin $keys}).Count){throw 'Closed unique pair profile keys required.'}
+        }
+        $strings=@{schema='iw7.player-pair-profile/1';donor='cp_zmb';native_source_pin='fab935826c898806855376662a8a03317b3ad8f1';weapon='iw7_shredder_zm';pap_attachment='shredderpap1'}
+        foreach($key in $strings.Keys){$p=$v.GetProperty($key);if($p.ValueKind -ne [Text.Json.JsonValueKind]::String -or $p.GetString() -cne $strings[$key]){throw 'Pair profile identity differs.'}}
+        if($v.GetProperty('source_layout_only').ValueKind -ne [Text.Json.JsonValueKind]::True){throw 'Source layout-only literal true required.'}
+        foreach($key in @('templates_exported','projectile_author_eligible','runtime_abi_verified','weapon_granted','projectile_damage_verified','physics_qualified','retail_pap_transaction_verified','gameplay_accepted')){
+            if($v.GetProperty($key).ValueKind -ne [Text.Json.JsonValueKind]::False){throw 'Pair profile qualification must remain literal false.'}
+        }
+        $offsets=$v.GetProperty('source_offsets');$wanted=@{base_type=556;pap_type=28;pap_flag=20}
+        foreach($key in $wanted.Keys){$p=$offsets.GetProperty($key);[int]$n=0;if($p.ValueKind -ne [Text.Json.JsonValueKind]::Number -or $p.GetRawText() -cnotmatch '^(0|[1-9][0-9]*)$' -or !$p.TryGetInt32([ref]$n) -or $n -ne $wanted[$key]){throw 'Exact Source offsets required.'}}
+        $observed=$v.GetProperty('observed')
+        foreach($key in @('base_type','pap_type','pap_flag_raw')){$p=$observed.GetProperty($key);[int]$n=0;if($p.ValueKind -ne [Text.Json.JsonValueKind]::Number -or $p.GetRawText() -cnotmatch '^-?(0|[1-9][0-9]*)$' -or !$p.TryGetInt32([ref]$n) -or ($key -ceq 'pap_flag_raw' -and ($n -lt 0 -or $n -gt 255))){throw 'Observed scalar int32/raw byte required.'}}
+        $raw=$observed.GetProperty('pap_flag_raw').GetInt32();$flag=$observed.GetProperty('pap_flag')
+        if(($raw -eq 0 -and $flag.ValueKind -ne [Text.Json.JsonValueKind]::False) -or
+           ($raw -eq 1 -and $flag.ValueKind -ne [Text.Json.JsonValueKind]::True) -or
+           ($raw -gt 1 -and $flag.ValueKind -ne [Text.Json.JsonValueKind]::Null)){throw 'Raw PAP byte must not be coerced.'}
+        $association=$v.GetProperty('association');$counts=$association.GetProperty('counts');$readable=$association.GetProperty('readable');$bounded=$true;[long]$total=0
+        if($counts.ValueKind -ne [Text.Json.JsonValueKind]::Array -or $counts.GetArrayLength() -ne 6 -or
+           $readable.ValueKind -ne [Text.Json.JsonValueKind]::Array -or $readable.GetArrayLength() -ne 6){throw 'Six exact association slots required.'}
+        for($i=0;$i -lt 6;$i++){$p=$counts[$i];[uint32]$n=0
+            if($p.ValueKind -ne [Text.Json.JsonValueKind]::Number -or $p.GetRawText() -cnotmatch '^(0|[1-9][0-9]*)$' -or !$p.TryGetUInt32([ref]$n) -or
+               $readable[$i].ValueKind -notin @([Text.Json.JsonValueKind]::True,[Text.Json.JsonValueKind]::False) -or
+               ($n -eq 0 -and $readable[$i].ValueKind -ne [Text.Json.JsonValueKind]::True) -or
+               ($n -gt 64 -and $readable[$i].ValueKind -ne [Text.Json.JsonValueKind]::False)){throw 'Exact count/readability scalar required.'}
+            if($n -gt 64 -or $readable[$i].ValueKind -eq [Text.Json.JsonValueKind]::False){$bounded=$false};$total+=$n
+        }
+        $status=$association.GetProperty('status');$occurrences=$association.GetProperty('occurrences');[int]$found=0
+        if($status.ValueKind -ne [Text.Json.JsonValueKind]::String -or $status.GetString() -cne $(if($bounded){'bounded'}else{'refused_bounds_or_readability'})){throw 'Association status contradicts bounds.'}
+        if($bounded){if($occurrences.ValueKind -ne [Text.Json.JsonValueKind]::Number -or $occurrences.GetRawText() -cnotmatch '^(0|[1-9][0-9]*)$' -or !$occurrences.TryGetInt32([ref]$found) -or $found -gt $total){throw 'Bounded observed occurrence count required.'}}
+        elseif($occurrences.ValueKind -ne [Text.Json.JsonValueKind]::Null){throw 'Unread association must stay null.'}
+        $Text|ConvertFrom-Json -Depth 20
+    }finally{$document.Dispose()}
+}
 function Convert-PlayerNativeJson([string]$Text,[string]$Kind){
     $document=[Text.Json.JsonDocument]::Parse($Text)
     try{
@@ -443,7 +493,7 @@ try{
     Copy-PlayerOwned $plan.Sentinel (Join-Path $plan.WorkRoot 'main/fileSysCheck.cfg') -Mutable
     Confirm-PlayerStock
     $tool=Join-Path $plan.WorkRoot 'zonetool-iw7-player.exe'
-    $arguments=@('-headless','-iw7-player-weapon-templates','cp_zmb',$plan.Request.Path,$plan.Pack)
+    $arguments=@('-headless',$(if($pairProfile){'-iw7-player-weapon-pair-profile'}else{'-iw7-player-weapon-templates'}),'cp_zmb',$plan.Request.Path,$plan.Pack)
     if($modalSelected){
         $root.ModalOptions=[pscustomobject]@{StartedMs=(Get-H1Clock);RunRoot=$plan.ModalDiagnostic.RunRoot;DiagnosticZone='global_mp';ModalTextOnly=$true;
             ModalSource=$plan.ModalDiagnostic.ModalSource;Python=$plan.ModalDiagnostic.Python.Path;PythonSHA256=$plan.ModalDiagnostic.Python.SHA256;
@@ -459,9 +509,16 @@ try{
     $state.CandidateExecuted=$true
     Test-PlayerGenerated $state.Tool
     $stdout=Read-PlayerOutput $state.Tool.Stdout 2MB
-    $marker='IW7_PLAYER_WEAPON_TEMPLATES donor=cp_zmb weapon=iw7_shredder_zm pap=shredderpap1 count=2 output=dump\'+$plan.Pack
+    $marker=$(if($pairProfile){'IW7_PLAYER_PAIR_PROFILE donor=cp_zmb weapon=iw7_shredder_zm pap=shredderpap1 count=1 output=dump\'}else{'IW7_PLAYER_WEAPON_TEMPLATES donor=cp_zmb weapon=iw7_shredder_zm pap=shredderpap1 count=2 output=dump\'})+$plan.Pack
     if(@($stdout.Text -split '\r?\n'|Where-Object {$_ -ceq $marker}).Count -ne 1 -or $stdout.Text -match '\[ ERROR \]|\[ FATAL \]|IW7 player/PAP template export failed'){throw 'Exact successful native export marker required.'}
     $output=Join-Path $plan.WorkRoot ('dump/'+$plan.Pack)
+    if($pairProfile){
+        $files=@(Get-ChildItem $output -Recurse -File -Force)
+        if($files.Count -ne 1 -or $files[0].FullName -cne (Join-Path $output 'player-pair-profile.json')){throw 'Exact single diagnostic profile output required.'}
+        $read=Read-PlayerOutput $files[0].FullName 16384
+        $state.PairProfile=Convert-PlayerPairProfileJson $read.Text
+        $state.Artifacts=@([pscustomobject]@{Path=$read.Path;Bytes=$read.Bytes;SHA256=$read.SHA256})
+    }else{
     $files=@(Get-ChildItem $output -Recurse -File -Force)
     $expected=@('weapons/iw7_shredder_zm.json','attachments/shredderpap1.json','player-template-manifest.json')
     if($files.Count -ne 3 -or @($files|Where-Object {([IO.Path]::GetRelativePath($output,$_.FullName).Replace('\','/')) -cnotin $expected}).Count){throw 'Exact full two-JSON/manifest output required.'}
@@ -483,7 +540,9 @@ try{
     }
     foreach($entry in $state.NativeManifest.files){$pin=@($state.Artifacts|Where-Object Path -CEQ (Join-Path $output $entry.path))[0];if(!$pin -or $pin.Bytes -ne $entry.bytes -or $pin.SHA256 -cne $entry.sha256.ToLowerInvariant()){throw 'Native manifest file binding differs.'}}
     if((@($state.NativeManifest.files.path|Sort-Object)-join '|') -cne 'attachments/shredderpap1.json|weapons/iw7_shredder_zm.json'){throw 'Native manifest must bind both unique files.'}
-    Confirm-PlayerStock;$state.Status='MeasuredPassed';$state.StockContentQualified=$true;$state.NativeExportComplete=$true
+    }
+    Confirm-PlayerStock;$state.Status='MeasuredPassed';$state.StockContentQualified=$true
+    if($pairProfile){$state.PairProfileComplete=$true}else{$state.NativeExportComplete=$true}
 }catch{$failure=$_;$state.Status='Failed';$state.Error=$_.Exception.Message}
 finally{
     Close-PlayerOriginalJobs

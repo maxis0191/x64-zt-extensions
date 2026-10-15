@@ -19,6 +19,32 @@ FIXTURE_SHA = hashlib.sha256(FIXTURE.encode()).hexdigest()
 
 
 class PreparationTests(unittest.TestCase):
+    def test_pair_profile_preserves_projectile_module_and_never_serializes_templates(self):
+        source=support.read_source(support.HERE/'native_player_templates.inc')
+        prior=source.split('\nnamespace player_weapon_templates\n{\n    bool profile_readable_span',1)[0]
+        self.assertEqual(hashlib.sha256(prior.encode()).hexdigest(),'4a37687fd24ba9e7fb7876497c537e349b6622bc35585801443398d0baef667b')
+        profile=source.split('void dump_iw7_player_pair_profile(',1)[1]
+        for forbidden in ('dump_asset(', 'compatible_pair(', 'iProjectileSpeed', 'projLifetime', 'gunXModel', 'szXAnims', 'get_asset_name('):
+            self.assertNotIn(forbidden,profile)
+        self.assertIn('std::memcpy(&pap_flag',profile)
+        self.assertIn('pap_flag <= 1 ? ordered_json(pap_flag == 1) : ordered_json(nullptr)',profile)
+        self.assertIn('if (bounded)',profile)
+        self.assertLess(profile.index('counts[slot] <= 64'),profile.index('counts[slot] * sizeof'))
+        self.assertLess(profile.index('if (bounded)'),profile.index('lists[slot][i] == pap'))
+        self.assertIn('PAGE_GUARD | PAGE_NOACCESS',source)
+
+    def test_actual_profile_list_guard_short_circuits_unreadable_and_large_spans(self):
+        source=support.read_source(support.HERE/'native_player_templates.inc')
+        expr=re.search(r'readable\[slot\] = (.*?);',source,re.S).group(1)
+        expr=re.sub(r'player_weapon_templates::profile_readable_span\(lists\[slot\], counts\[slot\] \* sizeof\(WeaponAttachment\*\)\)', 'probe(slot)',expr)
+        expr=expr.replace('&&','and').replace('||','or')
+        for counts,available,want_reads,want_walk in (([0]*6,[False]*6,[],True),([65,0,0,0,0,0],[True]*6,[],False),
+            ([1,0,0,0,0,0],[False]*6,[0],False),([1,2,0,0,0,0],[True]*6,[0,1],True)):
+            reads=[]
+            def probe(slot):
+                self.assertLessEqual(counts[slot],64);reads.append(slot);return available[slot]
+            actual=[eval(expr,{'__builtins__':{}},{'slot':slot,'counts':counts,'probe':probe}) for slot in range(6)]
+            self.assertEqual(reads,want_reads);self.assertEqual(all(actual),want_walk)
     def primary_source_policy(self, changes=None, lifetimes=None):
         # Source causal over the actual finite C++ helper; not native execution.
         text=support.read_source(support.HERE/'native_primary_guard.hpp')
@@ -206,7 +232,8 @@ class PreparationTests(unittest.TestCase):
             self.assertTrue(report['build_extension']['requires_fresh_native_compile'])
             self.assertEqual(report['build_extension']['translation_unit'], support.NATIVE_PATH)
             self.assertEqual(report['build_extension']['argv_count_including_executable'], 6)
-            self.assertEqual(report['build_extension']['argv_fixture_checks_authored'], 10)
+            self.assertEqual(report['build_extension']['argv_fixture_checks_authored'], 18)
+            self.assertEqual(report['build_extension']['pair_profile_option'],'-iw7-player-weapon-pair-profile')
             self.assertFalse(report['compiled'] or report['native_export_executed'] or report['ready'])
         with self.assertRaisesRegex(ValueError, 'Explicit source CLI boolean'):
             support.stage('not-read', Path('not-created'), player_cli=1)

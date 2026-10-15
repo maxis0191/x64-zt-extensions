@@ -414,7 +414,7 @@ and the exact 8/10/36 native checks for PR175 Source `d284f05`; see BUILD-COHORT
 for its under-lease artifact tuple and original-host closure evidence. Its Source
 preparation receipt remains authored/unexecuted evidence and was not relabelled.
 
-No instrumented candidate CLI has run. J remains its original failed uninstrumented
+At the I CPP checkpoint no instrumented candidate CLI had run. J remains its original failed uninstrumented
 attempt; its first failed predicate/value and FP/TP/animation/rig/tag/FX references
 remain unknown. The next diagnostic export proposal uses I's qualified tuple and
 the same Shredder/shredderpap1 fixed33 layout, with historical post-J alias counts
@@ -422,3 +422,79 @@ derived only from J's closed journals. Its 102 aliases/71 sources still require
 fresh admitted identity/content/binary checks, exact capsule review and a distinct
 Root Extract GO. CPP success grants no export, runtime ABI, PAP/physics or gameplay
 qualification, and neither replays J nor rebuilds the candidate.
+
+## Actual K diagnostic, 2026-10-15
+
+Under its distinct reviewed Extract GO, K freshly qualified the I candidate and
+71 current retail sources with the original guards/admission, then prepared the
+same fixed33 7/31/64 layout (102 aliases, no physical retail copy). The native
+candidate loaded through `cp_zmb` and its patch, emitted exactly one first-refusal
+line, and exited 1:
+
+```text
+IW7_PLAYER_TEMPLATE_PRIMARY_REFUSAL schema=1 predicate=weapType kind=int32 value=1 container=WeaponDef source_offset=0x22C
+```
+
+Stdout is 2644 bytes, SHA256
+`b2839cff9847ee28a4c7b3c473f720d055cc297532280fa50630f2679c9d0484`,
+with empty stderr. This is one observed int32 at the compiled Source field;
+Source enum `BULLET=1` versus required `PROJECTILE=3` explains this guard's
+refusal. It is not independent runtime ABI proof, a firing-behavior measurement
+or proof that the donor is intrinsically wrong. Classification was eagerly read
+but not emitted; inventory, clip/ammunition/damage/projectile fields, pointers,
+PAP flag/type and six-list relation were not reached. No output directory,
+template JSON pair or manifest was created. The guard was not relaxed or replayed.
+
+Normal finalization reverified stock/content under the lease and preserved
+all sources. The same physical NoExit scope proved its original AppDomain/script
+root/context/state, closed native owner/job/process handles (actual native exit1),
+three prepared/closed Stock35 slots, 71 retained but closed content streams and
+three retained but closed copied-file streams, zero guards/leases and CanExit.
+The 2148-byte preexit proof has SHA256
+`6acc40f0887effb9e8144de84e9f8782041c5e00b0d8919f36400378280ebb2b`.
+A doubled digit in initial chat transmission was corrected from the unchanged
+file; the value above is the actual 64-digit file hash.
+
+After Root read that proof, explicit exit produced true PTY exit1, preserving the
+diagnostic failure honestly. The 810-byte postflight proof is SHA256
+`5b9c4555a7ef73553dc61473d0fcc5b1abc468a1fde9b91051d80751e9ae31e7`;
+fresh 07:02:41 UTC observations found host/native/parent absent, no game/compiler/
+ZoneTool/VCTIP and an empty authoritative registry. Root independently corroborated
+fresh closure at 07:03:28 UTC before releasing its ledger. K is
+FailedClosedDiagnosticCaptured, not a template export pass. Its 102 aliases remain,
+bringing F/G/H/I/J/K to 484; old artifacts and receipts remain unchanged.
+
+## Explicit metadata-only pair profile (Source only)
+
+The optional scalar `PairProfile=true` uses the existing caller/H1/Stock35 lifecycle,
+exact pair CSV, six CLI arguments and fixed profile pack
+`paris_enemy_cp_zmb_raygun_pair_profile_a`. The old absent-selector template mode
+retains its PROJECTILE3/3 checks and full-output manifest contract. Selectors that
+are false, arrays or strings, mixed modal diagnostics, wrong packs or mixed/trailing
+CLI operations refuse. No new host, job type, provider or generic asset scan exists.
+
+The new mode emits only `player-pair-profile.json`, capped at 16 KiB with closed
+schema `iw7.player-pair-profile/1`. It records exact identities/Source pin/offsets,
+observed base/PAP int32 enums and raw PAP flag byte; 0/1 map to false/true, any
+other byte stays null. It does not coerce an enum or promise compatible mechanics.
+Header spans and each nonempty list are checked for committed readable memory,
+without guard/no-access protection, using a bounded local VirtualQuery walk.
+Each of six counts is capped at 64 before list access; readable lists count exact
+PAP pointer identity only, without unrelated asset-name dereferences. Unreadable
+or oversized lists report `refused_bounds_or_readability` and null occurrences.
+This is a truthful partial diagnostic, not successful PAP compatibility.
+
+No full serializer, projectile statistics, model/animation/FX traversal, authoring
+or weapon grant occurs. The strict reader checks closed/unique keys, integer
+types/ranges, Source offsets, raw-flag consistency, six slots and occurrence/bound
+consistency; all template/author/ABI/weapon/physics/PAP/gameplay flags remain false.
+Successful metadata completion sets PairProfileComplete only after stock recheck;
+NativeExportComplete remains false. The native projectile author independently
+rejects this schema even if full-template fields are forged around it, and its
+valid PROJECTILE3/3 output behavior remains unchanged.
+
+This implementation has Source tests only. No new C++ compile, native profile,
+retail observation or donor qualification follows from it. No alternative retail
+PROJECTILE base/PAP pair was established by the bounded Source search; synthetic
+positive fixtures are not retail evidence. New CPP and diagnostic Extract work
+each require their own exact reviewed capsule and distinct Root GO.

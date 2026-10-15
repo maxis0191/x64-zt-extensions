@@ -90,6 +90,23 @@ class DefaultTests(unittest.TestCase):
         self.assertFalse(any(report[key] for key in ('NativeTypesLoaded','NativeInputsHashed','RunRootCreated','LeaseAcquired','Ready')))
         self.assertFalse(Path(self.plan['Compiler']).exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
 
+    def test_pair_cli_requires_matching_module_and_exact_eighteen_checks(self):
+        self.primary_plan()
+        source=Path(self.plan['PreparedBindings'][0]['Path'])
+        source.write_bytes(source.read_bytes()+b'// IW7_PLAYER_PAIR_PROFILE donor=cp_zmb iw7_player_template_cli::pair_selected(args)\n')
+        self.plan['PreparedBindings'][0].update(Bytes=source.stat().st_size,SHA256=hashlib.sha256(source.read_bytes()).hexdigest())
+        self.plan.update(PairProfileCLI=True)
+        self.plan['Stages'][3].update(ExpectedChecks=18,ExpectedStdout='IW7_PLAYER_TEMPLATE_ARGV_CHECKS=18\n')
+        good=json.loads(json.dumps(self.plan));r=self.invoke();self.assertEqual(r.returncode,0,r.stderr)
+        self.assertEqual(json.loads(r.stdout)['ArgvChecksAuthored'],18)
+        for mutate in (lambda p:p.pop('PairProfileCLI'),lambda p:p.update(PairProfileCLI=[True]),
+                       lambda p:p.update(PairProfileCLI=False),lambda p:p['Stages'][3].update(ExpectedChecks='18'),
+                       lambda p:p['Stages'][3].update(ExpectedChecks=10),lambda p:p['Stages'][3].update(ExpectedStdout='IW7_PLAYER_TEMPLATE_ARGV_CHECKS=10\n'),
+                       lambda p:p.update(PreparedBindings=[])):
+            self.plan=json.loads(json.dumps(good));mutate(self.plan)
+            self.assertNotEqual(self.invoke().returncode,0)
+        self.assertFalse(Path(self.plan['RunRoot']).exists())
+
     def test_primary_fixture_mixed_or_coerced_contract_refused_before_effects(self):
         self.primary_plan();original=json.loads(json.dumps(self.plan))
         def downgrade_with_new_module(plan):

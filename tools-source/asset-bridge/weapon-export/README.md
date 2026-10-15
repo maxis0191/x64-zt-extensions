@@ -2,6 +2,19 @@
 
 2026-10-14: inactive source support. No native compilation or export has run.
 
+Current 2026-10-15 checkpoint: BUILD-COHORT.md records actual CPP I (54 checks)
+and EXPORT-COHORT.md records actual refused K (`weapType=1` at Source offset0x22C).
+These dated initial-support notes do not replace those receipts. The separate
+pair-profile option below is new Source-only code, not a compiled/runtime result.
+
+`-iw7-player-weapon-pair-profile` and caller `PairProfile=true` select one explicit
+metadata-only diagnostic for the same exact pair. Its closed small JSON preserves
+observed enums/raw PAP flag and bounded/readable association facts, with no full
+templates or authoring eligibility. The existing projectile export/author still
+requires PROJECTILE3/3 and its original mechanics invariants. New argv18 is authored
+only; neither the new mode nor any new C++ candidate has run. See EXPORT-COHORT.md
+for partial results, strict-reader boundaries and the separate future GO gates.
+
 `native_player_templates.inc` adds one support function to the IW7 owner-fork
 ZoneTool source pinned at `fab935826c898806855376662a8a03317b3ad8f1`. It uses the
 existing shared/map load, exact registered database lookup and full native

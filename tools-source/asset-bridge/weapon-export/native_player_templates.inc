@@ -235,3 +235,102 @@ void dump_iw7_player_weapon_templates(const std::string& donor_zone, const std::
     printf("IW7_PLAYER_WEAPON_TEMPLATES donor=cp_zmb weapon=iw7_shredder_zm pap=shredderpap1 count=2 output=%s\n", output.string().c_str());
     fflush(stdout);
 }
+
+namespace player_weapon_templates
+{
+    bool profile_readable_span(const void* address, size_t bytes)
+    {
+        auto cursor = reinterpret_cast<std::uintptr_t>(address);
+        if (!address || !bytes || bytes > UINTPTR_MAX - cursor) return false;
+        const auto end = cursor + bytes;
+        for (unsigned region = 0; cursor < end && region < 8; ++region)
+        {
+            MEMORY_BASIC_INFORMATION info{};
+            if (VirtualQuery(reinterpret_cast<const void*>(cursor), &info, sizeof(info)) != sizeof(info) ||
+                info.State != MEM_COMMIT || (info.Protect & (PAGE_GUARD | PAGE_NOACCESS)) ||
+                !(info.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_WRITECOPY |
+                    PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))) return false;
+            const auto base = reinterpret_cast<std::uintptr_t>(info.BaseAddress);
+            if (base > cursor || info.RegionSize > UINTPTR_MAX - base || base + info.RegionSize <= cursor) return false;
+            cursor = base + info.RegionSize;
+        }
+        return cursor >= end;
+    }
+}
+
+// Separate metadata-only mode. It never enters compatible_pair or dump_asset,
+// and its closed profile schema cannot be used as a complete weapon template.
+void dump_iw7_player_pair_profile(const std::string& donor_zone, const std::string& input_path,
+    const std::string& pack_name)
+{
+    if (donor_zone != "cp_zmb" || pack_name != "paris_enemy_cp_zmb_raygun_pair_profile_a")
+        throw std::runtime_error("Exact player pair profile token required");
+    player_weapon_templates::exact_request(input_path);
+    const auto output = std::filesystem::path("dump") / pack_name;
+    player_weapon_templates::ordinary_ancestry(output);
+    if (std::filesystem::exists(output) || !zone_exists(donor_zone))
+        throw std::runtime_error("Fresh profile output and legitimate donor required");
+    const auto old_dump = globals.dump, old_csv = globals.dump_csv, old_verify = globals.verify;
+    const auto old_target = globals.target_game;
+    const auto old_filter = asset_type_filter;
+    const auto restore = gsl::finally([&]
+    {
+        globals.dump = old_dump; globals.dump_csv = old_csv; globals.verify = old_verify;
+        globals.target_game = old_target; asset_type_filter = old_filter;
+    });
+    globals.dump = false; globals.dump_csv = false; globals.verify = false;
+    globals.target_game = game::iw7; asset_type_filter.clear();
+    load_enemy_source_zones(donor_zone);
+    auto base = player_weapon_templates::exact_asset(ASSET_TYPE_WEAPON, "iw7_shredder_zm");
+    auto upgrade = player_weapon_templates::exact_asset(ASSET_TYPE_ATTACHMENT, "shredderpap1");
+    const auto* weapon = base.asset.header.weapon;
+    const auto* pap = upgrade.asset.header.attachment;
+    if (!player_weapon_templates::profile_readable_span(weapon, sizeof(WeaponCompleteDef)) ||
+        !player_weapon_templates::profile_readable_span(pap, sizeof(WeaponAttachment)) || !weapon->weapDef ||
+        !player_weapon_templates::profile_readable_span(weapon->weapDef, sizeof(WeaponDef)))
+        throw std::runtime_error("Pair profile source pointers required");
+    static_assert(offsetof(WeaponDef, weapType) == 0x22C && offsetof(WeaponAttachment, weaponType) == 0x1C);
+    static_assert(offsetof(WeaponAttachment, papAttachment) == 0x14 && sizeof(pap->papAttachment) == 1);
+    const auto base_type = static_cast<std::int32_t>(weapon->weapDef->weapType);
+    const auto pap_type = static_cast<std::int32_t>(pap->weaponType);
+    std::uint8_t pap_flag;
+    std::memcpy(&pap_flag, &pap->papAttachment, sizeof(pap_flag)); // Do not coerce a noncanonical bool byte.
+    const std::array<unsigned int, 6> counts = {weapon->numAttachments, weapon->numAttachments2,
+        weapon->numAttachments3, weapon->numAttachments4, weapon->numAttachments5, weapon->numAttachments6};
+    const std::array<WeaponAttachment**, 6> lists = {weapon->attachments, weapon->attachments2,
+        weapon->attachments3, weapon->attachments4, weapon->attachments5, weapon->attachments6};
+    std::array<bool, 6> readable{};
+    bool bounded = true;
+    for (size_t slot = 0; slot < lists.size(); ++slot)
+    {
+        readable[slot] = counts[slot] <= 64 && (counts[slot] == 0 ||
+            player_weapon_templates::profile_readable_span(lists[slot], counts[slot] * sizeof(WeaponAttachment*)));
+        if (counts[slot] > 64 || !readable[slot]) bounded = false;
+    }
+    unsigned int occurrences = 0;
+    if (bounded)
+        for (size_t slot = 0; slot < lists.size(); ++slot)
+            for (unsigned int i = 0; i < counts[slot]; ++i)
+                if (lists[slot][i] == pap) ++occurrences; // Pointer equality only; no unrelated name reads.
+    ordered_json profile = {{"schema", "iw7.player-pair-profile/1"}, {"donor", donor_zone},
+        {"native_source_pin", "fab935826c898806855376662a8a03317b3ad8f1"},
+        {"weapon", base.identity}, {"pap_attachment", upgrade.identity},
+        {"source_offsets", {{"base_type", offsetof(WeaponDef, weapType)},
+            {"pap_type", offsetof(WeaponAttachment, weaponType)}, {"pap_flag", offsetof(WeaponAttachment, papAttachment)}}},
+        {"observed", {{"base_type", base_type}, {"pap_type", pap_type}, {"pap_flag_raw", pap_flag},
+            {"pap_flag", pap_flag <= 1 ? ordered_json(pap_flag == 1) : ordered_json(nullptr)}}},
+        {"association", {{"status", bounded ? "bounded" : "refused_bounds_or_readability"}, {"counts", counts},
+            {"readable", readable}, {"occurrences", bounded ? ordered_json(occurrences) : ordered_json(nullptr)}}},
+        {"source_layout_only", true}, {"templates_exported", false}, {"projectile_author_eligible", false},
+        {"runtime_abi_verified", false}, {"weapon_granted", false}, {"projectile_damage_verified", false}, {"physics_qualified", false},
+        {"retail_pap_transaction_verified", false}, {"gameplay_accepted", false}};
+    const auto bytes = profile.dump(2) + "\n";
+    if (bytes.size() > 16384) throw std::runtime_error("Pair profile output bound exceeded");
+    std::filesystem::create_directories(output.parent_path());
+    if (!std::filesystem::create_directory(output)) throw std::runtime_error("Exclusive pair profile directory required");
+    const auto path = output / "player-pair-profile.json";
+    utils::io::write_file(path.string(), bytes);
+    if (player_weapon_templates::bounded_file(path, 16384) != bytes) throw std::runtime_error("Pair profile readback differs");
+    printf("IW7_PLAYER_PAIR_PROFILE donor=cp_zmb weapon=iw7_shredder_zm pap=shredderpap1 count=1 output=%s\n", output.string().c_str());
+    fflush(stdout);
+}

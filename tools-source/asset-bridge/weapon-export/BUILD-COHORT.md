@@ -167,5 +167,18 @@ The physical NoExit host then explicitly exited; true PTY exit zero and fresh
 06:21:00 UTC absence of all 15 observed host/parent/stage/member IDs plus an empty
 authoritative registry completed teardown. Root independently corroborated fresh
 absence and released its heavy ledger at 06:24:52 UTC. This is a PassedClosed CPP
-checkpoint only. The candidate CLI has not run; retail first-refusal values,
-template JSON, runtime ABI, weapon/PAP/physics and owner gameplay remain unqualified.
+checkpoint only. At that checkpoint its candidate CLI had not run. Later K
+diagnostic evidence is recorded in EXPORT-COHORT.md; template JSON, runtime ABI,
+weapon/PAP/physics and owner gameplay remain unqualified.
+
+## Source-only pair-profile CLI extension
+
+The separate metadata-only pair-profile option retains the existing six-argument
+form and original template behavior. Its updated argv fixture authors 18 checks:
+the original ten plus eight profile valid/refusal vectors. It has not been compiled
+or executed. `PairProfileCLI=true`, with the primary fixture profile, selects the
+same eight stages with exact name8/argv18/primary36 markers. A prepared profile TU
+with a ten-check plan, a coerced selector/count or missing profile module refuses
+before native access. No shared T7 builder, ownership API, stage or budget is added.
+The new 62-check authored total is not I's actual 54-check result. A new source
+package, exact CPP capsule review and Root GO are required before compilation.
