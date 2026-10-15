@@ -70,6 +70,7 @@ namespace
     void before_real_zone()
     {
         Pair pair; pair.scalar_fx(); nd::Collector collector(Memory::copy, &pair.memory);
+        check(pair.fields.notetrackFXMapValues == nullptr); // Optional fixed-capacity pointer array.
         check(nd::collect_pair(&pair.weapon, &pair.attachment, collector));
         check(collector.frozen() && collector.external_count() == 1);
         // The production collecting API accepts no zone/factory/effects callback.
@@ -209,6 +210,10 @@ namespace
         Pair pair; nd::Collector collector(Memory::copy, &pair.memory); check(collector.count(64, true));
         check(collector.count(8192 - 64, false)); check(!collector.count(1, false));
         nd::Collector dynamic(Memory::copy, &pair.memory); check(!dynamic.count(65, true));
+        pair.weapon.numAttachments6 = 1; // Counted dynamic array without required storage.
+        nd::Collector missing_storage(Memory::copy, &pair.memory);
+        check(!nd::collect_pair(&pair.weapon, &pair.attachment, missing_storage) && !missing_storage.frozen());
+        pair.weapon.numAttachments6 = 0;
         nd::Collector repeated(Memory::copy, &pair.memory); check(repeated.begin(nd::Owner::weapon, pair.weapon.name));
         for (unsigned i = 0; i < 8192; ++i) check(repeated.asset(ASSET_TYPE_FX, pair.fx.name, {"field"}));
         check(!repeated.asset(ASSET_TYPE_FX, pair.fx.name, {"field"}) && repeated.references().size() == 1);

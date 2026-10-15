@@ -6,10 +6,12 @@ It does not change the historical CPP Q module or activate a native command.
 The sixteen C++ fixtures are authored, **not compiled or executed**. The Python
 Source checks do not establish C++ syntax, ABI, runtime or roundtrip acceptance.
 
-The corrected gates are sequential: author and review this Source; obtain a
-distinct complete CPP recipe/admission/GO; compile the actual production walkers
-and run all sixteen fixtures; require sixteen actual PASS before any FF packet,
-runnable qualification or weapon readiness claim. Source merge may precede CPP.
+The corrected gates are sequential: author and approve this exact Source; review
+a dedicated CPP recipe and obtain its distinct admission/GO; compile the actual
+production walkers and run all sixteen fixtures, then compile both patched native
+translation units. Only after these checks pass may this foundation PR merge.
+Require sixteen actual PASS before any FF packet, runnable qualification or
+weapon readiness claim. FF/full CLI qualification is a separate later gate.
 The earlier proposal's requirement to run C++ before CPP is superseded by this
 gate correction. It is not a waiver of the future sixteen actual PASS.
 
@@ -102,20 +104,28 @@ prefix and no empty/default sentinel. All failures poison the operation; no
 automatic reset or larger budget is offered. Allocation failure also refuses.
 
 The conservative JSON cap can dominate unique-reference/edge/text caps. The
-production `Budget::permits` arithmetic is tested independently at each boundary
+production `Budget::permits` arithmetic is exercised independently at each boundary
 by the authored C++ fixture, alongside actual duplicate-occurrence exhaustion.
 This does not invent a reachable graph at every simultaneous maximum.
 
 ## Validation and next action
 
-Six Python Source tests exercise the real patch renderer with owned Source
+Seven Python Source tests exercise the real patch renderer with owned Source
 fixtures, reject pin/statement/reviewed-walker drift, verify API separation,
 preserve historical activation and inventory sixteen C++ cases. A separate
 Source-only render against the four exact pinned native texts verifies byte
 preservation outside the dependency regions and the one header insertion.
 No C++ PASS is claimed from any Python check.
 
-The next concrete gate is review of the exact Source PR and a distinct bounded
+The initial reviewed head `6bbb3960c9ca7073d7d981cbb106ae67bf3886dc` wrongly
+required the optional fixed-capacity `notetrackFXMapValues` pointer when NULL.
+Source review found this before CPP. The renderer now skips a NULL optional
+fixed-capacity pointer array and charges its capacity only when present; a
+dynamic counted array still refuses a nonzero count without storage. The
+authored positive fixtures explicitly retain the NULL pointer, and a negative
+fixture covers missing counted storage. No failed C++ run is invented.
+
+The next concrete gate is review of the corrected exact Source PR and a distinct bounded
 CPP recipe/GO. That recipe must compile this header/walkers with the exact pinned
 native declarations and execute all sixteen cases with production code, then
 compile both patched native translation units. Until that succeeds, no new

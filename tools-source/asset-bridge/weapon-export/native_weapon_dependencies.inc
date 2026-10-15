@@ -88,10 +88,9 @@ template<class Sink> bool visit_weapon_fields(WeaponDef* asset, Sink& sink)
     if (asset->szXAnims && !sink.asset(ASSET_TYPE_ANIM_PACKAGE, asset->szXAnims->name, {"weapDef.szXAnims", 0})) return false;
     if (asset->szXAnimsRightHanded && !sink.asset(ASSET_TYPE_ANIM_PACKAGE, asset->szXAnimsRightHanded->name, {"weapDef.szXAnimsRightHanded", 0})) return false;
     if (asset->szXAnimsLeftHanded && !sink.asset(ASSET_TYPE_ANIM_PACKAGE, asset->szXAnimsLeftHanded->name, {"weapDef.szXAnimsLeftHanded", 0})) return false;
-    if (!sink.count(static_cast<size_t>(16), false)) return false;
-    if (!sink.required(!(16) || asset->notetrackFXMapValues != nullptr)) return false;
     if (asset->notetrackFXMapValues)
     {
+        if (!sink.count(static_cast<size_t>(16), false)) return false;
         for (auto idx = 0u; idx < (unsigned int)16; ++idx)
         {
             if (!emit_fx(asset->notetrackFXMapValues[idx], {"weapDef.notetrackFXMapValues[]", idx}, sink)) return false;

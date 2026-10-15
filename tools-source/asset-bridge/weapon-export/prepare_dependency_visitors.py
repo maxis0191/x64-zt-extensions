@@ -75,11 +75,17 @@ def traversal(text, signature, name, native_type, prefix, attachment=False):
         if macro.endswith('_ARR'):
             field, asset_type, count = args if 'FXCOMBINED' not in macro else (args[0], None, args[1])
             inline = '_FIELD_ARR' in macro
-            lines.append(f'    if (!sink.count(static_cast<size_t>({count}), {str(count.startswith("asset->")).lower()})) return false;')
-            if not inline:
+            dynamic = count.startswith('asset->')
+            if inline or dynamic:
+                lines.append(f'    if (!sink.count(static_cast<size_t>({count}), {str(dynamic).lower()})) return false;')
+            if not inline and dynamic:
                 lines.append(f'    if (!sink.required(!({count}) || asset->{field} != nullptr)) return false;')
+            if not inline:
                 lines.append(f'    if (asset->{field})')
-            lines += ['    {', f'        for (auto idx = 0u; idx < (unsigned int){count}; ++idx)', '        {']
+            lines.append('    {')
+            if not inline and not dynamic:
+                lines.append(f'        if (!sink.count(static_cast<size_t>({count}), false)) return false;')
+            lines += [f'        for (auto idx = 0u; idx < (unsigned int){count}; ++idx)', '        {']
             origin = '{"' + prefix + field + '[]", idx}'
             if 'FXCOMBINED' in macro:
                 lines.append(f'            if (!emit_fx(asset->{field}[idx], {origin}, sink)) return false;')

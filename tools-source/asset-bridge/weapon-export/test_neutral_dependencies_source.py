@@ -82,6 +82,16 @@ void weapon_attachment::untouched() { original_write(); }
             with self.assertRaisesRegex(ValueError, 'four pinned'):
                 production.render({})
 
+    def test_optional_static_pointer_array_skips_null_but_counted_array_requires_storage(self):
+        sources = self.corpus()
+        with patch.object(production, 'PINS', self.pins(sources)):
+            text = production.derive(sources)['native_weapon_dependencies.inc']
+        start = text.index('if (asset->notetrackFXMapValues)')
+        block = text[start:text.index('for (auto i =', start)]
+        self.assertLess(block.index('if (asset->notetrackFXMapValues)'), block.index('sink.count('))
+        self.assertNotIn('sink.required', block)
+        self.assertIn('sink.required(!(asset->numAttachments6) || asset->attachments6 != nullptr)', text)
+
     def test_unmapped_traversal_refuses_and_reviewed_walker_drift_refuses(self):
         sources = self.corpus(); sources['weapondef.cpp'] = sources['weapondef.cpp'].replace(
             'WEAPON_SUBASSET_DEPENDING_FXCOMBINED(projExplosionEffect);', 'future_unmapped_effect();')
