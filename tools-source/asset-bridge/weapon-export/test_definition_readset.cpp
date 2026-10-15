@@ -1,6 +1,7 @@
 // Authored native causal fixture; not executed by the Source-only tests.
 // Uses the pinned declarations and the PRODUCTION gate/readset, with owned
 // memory only. A future separately admitted CPP cohort compiles/runs this.
+#define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
 #include <array>

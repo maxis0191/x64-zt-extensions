@@ -279,3 +279,35 @@ warning suppression, relaxed response or modified generated N input. A later
 Source revision, prepared sibling and distinct Root CPP GO must establish whether
 MSVC accepts the fix. No extraction, Native49 strict3/3 change, authoring,
 projectile/PAP mechanics or owner gameplay acceptance follows from this failure.
+
+## Actual neutral-definition CPP O2 dependency failure, 2026-10-15
+
+After successful PREP O2 and a distinct Root CPP GO, O2 used merge
+`3f62719a6982a056fdf59a5f26d4431a598e13a5`, native Source
+`fab935826c898806855376662a8a03317b3ad8f1`, and the exact420,035-byte plan
+SHA256 `c80ce11a8401f8e30fa625c37e7dc6381f8559be20d1b6fd107fec473b65bda9`.
+The name8/argv28/primary36 probes passed again:72 actual checks. Definition
+compilation exited0 and emitted its bounded artifacts/dependency JSON. Its
+strict dependency validation then refused `shared/cderr.h` before the100-case
+probe. The328-include report has30 undeclared occurrences /23 unique SDK paths.
+IW7 TU and link never ran; no new CLI candidate or current qualification exists.
+
+All seven original stage jobs closed, including the last compiler/VCTIP tree.
+The same original final owner retained compiler exit0, Closed=true and five
+original closed job/process/IO SafeFileHandles. The same global context, state,
+plan and guard-list references passed preexit checks with CanExit=true,
+lease=null, zero guards and measured/final readback complete. NativeInputsReverified
+remains false after the dependency failure. The physical terminal exited1.
+Fresh postflight found all13 captured identities absent with no game/compiler/
+VCTIP/Java process or authoritative lease. Root independently read the proofs,
+corroborated at14:39:43 UTC and released the heavy ledger. O2 stays FailedClosed.
+
+The failed output, plan and prepared files remain immutable. Only the canonical
+fixture gains `WIN32_LEAN_AND_MEAN` before `Windows.h`, aligned with pinned native
+Source; its exact runner pin changes accordingly. The100 cases, production
+module, `/W4 /WX` response and strict allowed-input check are unchanged. The
+Source guard audit in DEFINITION-RECIPE.md proves the current refusal remains
+strict, not that a future lean compilation succeeds. Unknown SDK pins remain
+null. A new prepared sibling and distinct Root CPP GO must measure actual
+dependency closure and run the fixture. No retry, extraction or gameplay is
+authorized by this Source correction.

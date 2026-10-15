@@ -114,3 +114,43 @@ The runner's exact normalized readset hash changes with that reviewed Source.
 The generated N package, plan, responses and failed receipts remain immutable.
 A new package/PREP/CPP sibling and distinct admission are required to validate
 the correction in MSVC; existing Source checks alone do not do so.
+
+## Actual O2: dependency refusal after compiler exit0
+
+PREP O2 prepared merge `3f62719a6982a056fdf59a5f26d4431a598e13a5`; Python and
+ordinary DEFAULT exited0, original closure/physical terminal exit0 were checked,
+and Root independently released its Analysis ledger. The earlier Source-only O
+capsule was rejected before execution because its manifest argument retained N's
+hash. O2 used the corrected current manifest argument and distinct operation roots.
+
+A distinct CPP GO then ran name8/argv28/primary36 successfully. Definition
+compilation exited0 with `/W4 /WX`, so the earlier C4702 no longer stopped that
+translation unit. The post-compile dependency guard then refused
+`shared/cderr.h`. The emitted report contains328 include occurrences;30
+occurrences, representing23 unique SDK paths, are absent from the declared set.
+The guard stopped before the definition probe, IW7 TU or link. No 172-check
+result or linked candidate exists. O2 remains FailedClosed, not a qualified build.
+
+The report is a flat include list: it does not identify the direct parent of
+`cderr.h`. Unknown SDK sizes/hashes and direct-parent identities remain null;
+no SDK file was opened, queried or hashed after release. No speculative SDK pin
+or broad directory permission is added.
+
+The fixture included `Windows.h` without the `WIN32_LEAN_AND_MEAN` definition
+already used by pinned native `std_include.hpp` before its Windows include.
+The correction aligns that one fixture with the existing native policy and
+updates its exact normalized Source pin. Microsoft documents this macro's
+[exclusion of optional Windows API header families](https://learn.microsoft.com/en-us/windows/win32/winprog/using-the-windows-headers).
+This supports the bounded Source hypothesis; it does not prove which observed
+SDK edges disappear or that the future include set is complete. The response,
+warning policy, strict dependency guard and expected native declarations remain
+unchanged. A fresh package/PREP/CPP cycle must measure the real result.
+
+An isolated Source audit calls the actual pinned `Assert-T7Dependencies` and
+its actual JSON/path reader, extracted from provider Source without importing
+native types. It reproduces O2's exact first refusal on the original measured
+report, separately refuses all23 observed unknown paths, and accepts only the298
+already-declared include occurrences in a bounded owned report:25 checks.
+That accepted subset is not a compiler report for the lean correction. No SDK
+IO, native compilation or new lease occurs in this audit. The unchanged strict
+guard must still accept the future measured report before fixture execution.
