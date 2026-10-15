@@ -823,6 +823,93 @@ if(!$caught -or $context.Closed -or $context.Owner -or $previous.StopCalls -ne 0
                 str(Path(model_lab.__file__).with_name('OriginalArena.Process.ps1')),temp],capture_output=True,text=True,timeout=20)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
+    @unittest.skipUnless(sys.platform == 'win32' and shutil.which('pwsh'), 'Real NTFS alias accounting requires Windows PowerShell')
+    def test_original_job_accounting_requires_actual_qualified_aliases_under_strict_mode(self):
+        dependencies = [arena.REPO/name for name in (
+            'sdk/modding/BeaconFF.Core.ps1', 'ops/hud-lab/HudFileIdentity.cs', 'ops/Base-Client.Core.ps1')]
+        if not all(path.is_file() for path in dependencies):
+            self.skipTest('Actual identity/path/accounting dependencies are exercised in the composed Source package')
+        script = r'''
+param($Helper,$Root,$Beacon,$Identity,$Base)
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+. $Beacon
+. $Base
+Add-Type -LiteralPath $Identity
+. $Helper
+$script:Started=0;$script:Mutation='none';$script:Target=$null
+function Get-IW7ResourceSnapshot { [pscustomobject]@{Committed=99;CommitLimit=100} }
+function Invoke-H1OwnedStage($Plan,$State,$Context,$Start,$SHA,$Logs){
+    $script:Started++;$Context.Closed=$false
+    $Context.Owner=[pscustomobject]@{Closed=$false;StopCalls=0}
+    $Context.Owner|Add-Member ScriptMethod StopAndConfirm {param($Ms);$this.StopCalls++;$this.Closed=$true}
+    if($script:Mutation -ne 'none'){
+        [IO.File]::Delete($script:Target)
+        if($script:Mutation -eq 'replace'){[IO.File]::WriteAllText($script:Target,'same small bytes')}
+    }
+    Test-H1Budget $Plan $State
+    $State.Identity=[ordered]@{PID=1234;Image=$Start.FileName;CreatedUtc='2026-10-15T00:00:00Z'}
+    $State.TreeClosureConfirmed=$true;$State.ExitCode=0;$Context.Closed=$true;$Context.Owner.Closed=$true
+}
+foreach($case in 'prealias','qualified','copy','source-id-only','empty','malformed','array-id','missing-source-id',
+                  'mismatch','disappeared','replaced','declared-foreign-match','replace-during-poll','remove-during-poll'){
+    $directory=Join-Path $Root $case;$work=Join-Path $directory 'run/work'
+    $provider=Join-Path $directory 'provider';[IO.Directory]::CreateDirectory($provider)|Out-Null
+    [IO.Directory]::CreateDirectory($work)|Out-Null;$run=Split-Path $work -Parent
+    $source=Join-Path $provider 'input.bin';$target=Join-Path $work 'alias.bin'
+    [IO.File]::WriteAllText($source,'same small bytes')
+    $sourceId=[IW7HudFileIdentity]::Read($source)
+    if($case -ne 'prealias'){
+        if($case -eq 'copy'){[IO.File]::WriteAllText($target,'same small bytes')}
+        else{New-Item -ItemType HardLink -Path $target -Target $source|Out-Null}
+    }
+    $entry=[pscustomobject]@{Mode='HardLink';Source=$source;Relative='alias.bin';SourceId=$sourceId}
+    if($case -notin @('prealias','source-id-only')){$entry|Add-Member NoteProperty TargetId ([IW7HudFileIdentity]::Read($target))}
+    switch($case){
+        'copy' {$entry.Mode='Copy'}
+        'empty' {$entry.TargetId=''}
+        'malformed' {$entry.SourceId='invalid';$entry.TargetId='invalid'}
+        'array-id' {$entry.TargetId=@($sourceId)}
+        'missing-source-id' {$entry.PSObject.Properties.Remove('SourceId')}
+        'mismatch' {$entry.TargetId='00000000:0000000000000000'}
+        'disappeared' {[IO.File]::Delete($target)}
+        'replaced' {[IO.File]::Delete($target);[IO.File]::WriteAllText($target,'same small bytes')}
+        'declared-foreign-match' {
+            [IO.File]::Delete($target);[IO.File]::WriteAllText($target,'same small bytes')
+            $entry.SourceId=[IW7HudFileIdentity]::Read($target);$entry.TargetId=$entry.SourceId
+        }
+    }
+    $script:Started=0;$script:Mutation='none';$script:Target=$target
+    if($case -eq 'replace-during-poll'){$script:Mutation='replace'}
+    if($case -eq 'remove-during-poll'){$script:Mutation='remove'}
+    $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=[pscustomobject]@{Token='source-only'};Work=$work}
+    $errorRecord=$null;$result=$null
+    try{$result=Invoke-OriginalArenaTool $context (Join-Path $provider 'absent-tool.exe') ('1'*64) @('-strict-content-sources') $work $run probe @($entry) 30}
+    catch{$errorRecord=$_}
+    if($case -in @('prealias','qualified','copy','source-id-only')){
+        if($errorRecord){throw $errorRecord}
+        $expected=if($case -in @('copy','source-id-only')){[IO.FileInfo]::new($target).Length}else{0}
+        if($script:Started -ne 1 -or !$result.JobClosed -or $context.OutputBaseline -ne $expected -or
+           $result.OwnerEvidence.MaxObservedOutputBytes -ne $expected){throw "Wrong actual file accounting: $case"}
+    }elseif($case -in @('replace-during-poll','remove-during-poll')){
+        if(!$errorRecord -or $script:Started -ne 1 -or !$context.Closed -or $context.Owner.StopCalls -ne 1){throw "Changed alias inherited an exemption: $case"}
+    }else{
+        if(!$errorRecord -or $script:Started -ne 0 -or $context.Owner){throw "Unqualified alias reached Start: $case"}
+        if($case -in @('empty','malformed','array-id','missing-source-id','mismatch') -and
+           $errorRecord.Exception.Message -cne 'Qualified original hardlink identities required for output exemption.'){
+            throw "Wrong identity-declaration refusal: $case"
+        }
+    }
+}
+'actual-alias-accounting-pass: 14 cases; actual path/identity/measure, H1 owner and telemetry only mocked'
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'source-alias-accounting.ps1';path.write_text(script,encoding='utf-8')
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(path),
+                str(Path(model_lab.__file__).with_name('OriginalArena.Process.ps1')),temp,
+                *map(str,dependencies)],capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertIn('actual-alias-accounting-pass: 14 cases',result.stdout)
+
     def reference_fixture(self,root):
         tool,_,_,legacy=self.binding_fixture(root)
         measurement=root/'measurement';measurement.mkdir()

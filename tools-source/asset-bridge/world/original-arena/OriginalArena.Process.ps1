@@ -20,13 +20,32 @@ function Invoke-OriginalArenaTool($Context,[string]$Executable,[string]$SHA256,[
     $plan=[pscustomobject]@{RunRoot=$RunRoot}
     # Use the same sampled output accounting as the existing FF caller. Only
     # freshly proved same-ID hardlinks are exempt; copied bootstrap is counted.
-    $exempt=@($Inputs|Where-Object {$_.Mode -ceq 'HardLink' -and $_.TargetId -and $_.TargetId -ceq $_.SourceId}|ForEach-Object Relative)
     $accountingWork=$Context.Work
+    $arenaAccountingInputs=$Inputs
+    $arenaExempt={
+        foreach($entry in $arenaAccountingInputs){
+            # Pre-alias source validation has no TargetId yet. A SourceId alone
+            # must never exempt an output path or attest a staged alias.
+            if($entry.Mode -cne 'HardLink' -or !$entry.PSObject.Properties['TargetId']){continue}
+            if(!$entry.PSObject.Properties['SourceId'] -or $entry.SourceId -isnot [string] -or
+               $entry.TargetId -isnot [string] -or $entry.SourceId -cnotmatch '^[A-F0-9]{8}:[A-F0-9]{16}$' -or
+               $entry.TargetId -cne $entry.SourceId){throw 'Qualified original hardlink identities required for output exemption.'}
+            $source=Resolve-IW7BasePath (Split-Path $entry.Source -Parent) (Split-Path $entry.Source -Leaf)
+            $target=Resolve-IW7BasePath $accountingWork $entry.Relative
+            if([IW7HudFileIdentity]::Read($source) -cne $entry.SourceId -or
+               [IW7HudFileIdentity]::Read($target) -cne $entry.TargetId){throw 'Original hardlink provider or alias identity changed before output accounting.'}
+            $entry.Relative
+        }
+    }
+    $exempt=@(& $arenaExempt)
     if(!$Context.PSObject.Properties['OutputBaseline']){
         $Context|Add-Member NoteProperty OutputBaseline (Measure-BeaconOutputFiles @(Get-ChildItem -LiteralPath $RunRoot -Recurse -File -Force) $accountingWork $exempt)
     }
     $baseline=$Context.OutputBaseline
     function Test-H1Budget($Plan,$State) {
+        # The counter excludes by path only; requalify the actual alias on each
+        # sample so a removed/replaced path cannot inherit an earlier exemption.
+        $exempt=@(& $arenaExempt)
         $bytes=Measure-BeaconOutputFiles @(Get-ChildItem -LiteralPath $RunRoot -Recurse -File -Force) $accountingWork $exempt
         $State.MaxObservedOutputBytes=[math]::Max($State.MaxObservedOutputBytes,$bytes)
         if($bytes -gt $baseline+256MB){throw 'Original arena generated output exceeds sampled 256 MiB phase allowance.'}
