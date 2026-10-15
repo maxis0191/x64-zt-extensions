@@ -855,7 +855,10 @@
     "tools-source/asset-bridge/t7-iw7/incoming_image_event_observation.hpp",
     "tools-source/asset-bridge/t7-iw7/native_incoming_image_metadata.inc",
     "tools-source/asset-bridge/t7-iw7/prepare_incoming_image_metadata.py",
-    "tools-source/asset-bridge/t7-iw7/test_incoming_image_metadata.py"
+    "tools-source/asset-bridge/t7-iw7/test_incoming_image_metadata.py",
+    "tools-source/asset-bridge/t7-bridge/T7IncomingImage.Profile.ps1",
+    "tools-source/asset-bridge/t7-bridge/Test-T7IncomingImageSource.ps1",
+    "tools-source/asset-bridge/t7-bridge/INCOMING-IMAGE-LAUNCHER.md"
   ],
   "dependencies": [
     {
