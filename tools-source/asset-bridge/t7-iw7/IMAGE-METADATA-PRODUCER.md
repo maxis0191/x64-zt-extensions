@@ -323,3 +323,39 @@ main/CLI and derived inputs within the existing source caps; no operational buil
 provider or Native execution is enabled by this source seam. Existing H1/T7
 recipe integration, Source review, exact-head CI/merge and separate admitted
 PREP/CPP/Native gates remain required.
+
+## Incoming build recipe, Source pending
+
+The explicit `--image-incoming-header-v1` extension now selects the reviewed
+incoming source profile on top of the existing registration/metadata/provenance
+recipe. It retains one H1 five-stage group: registration fixture compile/test,
+main, T7 CLI and link. That fixture uses the derived incoming capture/observer
+and the baseline39 source with two token replacements, then the new48 fixture. Both exact
+stdout markers and empty stderr are mandatory before main/CLI compilation;
+neither an old39-only marker nor48 alone can pass. Historical source contracts,
+source-only API declarations and old compiled cohorts remain unchanged.
+
+The recipe adds nine Source bindings, declares the same 1146 input pins and
+expects 187 bindings with actual H4/OS1 proofs. It keeps the 192 KiB CLI cap,
+600-second group, 256 MiB output limit and 1 MiB reserve; only this explicit profile
+receives a 448 KiB authored-payload cap. The existing artifact/dependency guards,
+original-job/VCTIP closure and resource admission code are reused.
+
+DEFAULT remains new-API source-pending with CPPEnabled=false, no candidate and
+IncomingCPPQualified=false, even when the real old H proof is accepted. It
+reports that the recipe still needs qualification; no effects or opaque reads
+are enabled by DEFAULT. The Run path is only for a separately authorized actual
+qualification cohort. IncomingCPPQualified can become true only in its actual
+closed successful receipt after both fixture markers, all five phases and input
+rechecks; publication/deadline failure clears it. 117 actual PowerShell
+source-gate checks and 15 targeted Python source checks pass without prepare(),
+SDK/tlog/PE reads or native execution. Fresh admitted PREP, actual-plan review,
+CPP and subsequent Native remain separate pending gates.
+
+Review rejected Source head `acc46e44`: a singleton SHA256 array on
+IncomingWiring passed the real profile validator through PowerShell collection
+comparison/coercion. All nine Incoming pins now require a closed three-key
+Path/Bytes/SHA256 object and scalar string/integer/string types before any pin
+comparison, contract read or binding match. Ninety malformed-pin causals cover
+all nine roles; valid Int64 sizes remain accepted. The rejected Source package
+and its before-runner CI audit are retained, with no PREP/CPP execution claimed.

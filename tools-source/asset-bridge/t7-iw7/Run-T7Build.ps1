@@ -264,6 +264,10 @@ function Assert-T7RegistrationMetadataTransition($Plan,[string]$SourceRoot) {
     }
     foreach($row in @(@('main','PreparedMain','MainBytes','MainSHA256'),@('cli','PreparedCLI','CLIBytes','CLISHA256'))){
         $expected=$c.($row[0]);$actual=$p.($row[1]);$cap=if($row[0] -ceq 'main'){64KB}else{192KB}
+        if($Plan.ReuseCompile.PSObject.Properties['IncomingObservation']){
+            $extension=$Plan.ReuseCompile.IncomingObservation
+            $actual=[pscustomobject]@{Bytes=$extension.('Base'+$row[2]);SHA256=$extension.('Base'+$row[3])}
+        }
         if($expected.bytes -le 0 -or $expected.bytes -gt $cap -or $actual.Bytes -ne $expected.bytes -or
            $actual.SHA256 -cne $expected.sha256 -or $m.($row[2]) -ne $expected.bytes -or $m.($row[3]) -cne $expected.sha256){throw 'Registration generated output pin differs.'}
     }
@@ -283,7 +287,7 @@ function Assert-T7RegistrationMetadataTransition($Plan,[string]$SourceRoot) {
         ('/external:I'+(Join-Path $native 'src/zonetool')),('/external:I'+(Join-Path $native 'deps/json/single_include/nlohmann')),
         ('/I'+$SourceRoot),('/I'+$Plan.PreparedRoot),'/sourceDependencies',(Join-Path $root 'dependencies.json'),
         ('/Fo'+(Join-Path $root 'registration-fixture.obj')),('/Fe'+(Join-Path $root 'registration-fixture.exe')),
-        (Join-Path $SourceRoot 'registration_image_header_fixture.cpp'),'/link','/INCREMENTAL:NO','/DEBUG',('/PDB:'+(Join-Path $root 'registration-fixture.pdb')))
+        (Join-Path $SourceRoot $(if($Plan.ReuseCompile.PSObject.Properties['IncomingObservation']){'incoming_image_event_fixture.cpp'}else{'registration_image_header_fixture.cpp'})),'/link','/INCREMENTAL:NO','/DEBUG',('/PDB:'+(Join-Path $root 'registration-fixture.pdb')))
     $pin=$p.RegistrationResponse
     if($pin.Path -isnot [string] -or $pin.Path -cne $response -or
        ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 16KB -or
@@ -298,6 +302,77 @@ function Assert-T7RegistrationFixtureOutput([string]$StageRoot,$StageState) {
         throw 'Exactly 39 actual registration-header checks required before main/CLI compilation.'
     }
     $StageState.Checks=39;$StageState.EngineInvoked=$false
+}
+function Assert-T7IncomingMetadataTransition($Plan,[string]$SourceRoot) {
+    $p=$Plan.BuildProfile;$m=$Plan.ReuseCompile.IncomingObservation
+    if($m.Schema -isnot [string] -or $m.SourceProfile -isnot [string] -or $p.IncomingSchema -isnot [string] -or
+       $p.Name -isnot [string] -or $p.Option -isnot [string] -or $p.ObservationSchema -isnot [string]){
+        throw 'Incoming schema/profile text scalars required.'
+    }
+    foreach($role in 'IncomingWiring','IncomingContract','IncomingMembers','IncomingModule','IncomingEntry','IncomingFixture',
+        'IncomingCapture','IncomingObserver','IncomingBaselineFixture'){
+        if(!$p.PSObject.Properties[$role]){throw "Closed scalar incoming source pin required: $role."}
+        $pin=$p.$role
+        if($pin -isnot [pscustomobject] -or (@($pin.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
+           $pin.Path -isnot [string] -or [string]::IsNullOrWhiteSpace($pin.Path) -or
+           ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 64KB -or
+           $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$'){
+            throw "Closed scalar incoming source pin required: $role."
+        }
+    }
+    if((@($m.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'BaseCLIBytes,BaseCLISHA256,BaseMainBytes,BaseMainSHA256,CLIBytes,CLISHA256,CPPQualified,MainBytes,MainSHA256,Ready,Schema,SourceOnlyPending,SourceProfile' -or
+       $m.Schema -cne 'iw7.t7-incoming-image-build/1' -or $m.SourceProfile -cne 't7-incoming-image-header-observation-v1' -or
+       $p.IncomingSchema -cne 'iw7.t7-incoming-image-header-observation/1' -or
+       $m.SourceOnlyPending -isnot [bool] -or !$m.SourceOnlyPending -or $m.CPPQualified -isnot [bool] -or $m.CPPQualified -or
+       $m.Ready -isnot [bool] -or $m.Ready -or $p.IncomingCPPQualified -isnot [bool] -or $p.IncomingCPPQualified -or
+       ($p.IncomingFixtureChecks -isnot [int] -and $p.IncomingFixtureChecks -isnot [long]) -or $p.IncomingFixtureChecks -ne 48){throw 'Exact pending incoming source marker required.'}
+    foreach($name in 'BaseMainBytes','BaseCLIBytes','MainBytes','CLIBytes'){
+        if(($m.$name -isnot [int] -and $m.$name -isnot [long]) -or $m.$name -le 0){throw 'Incoming integer source size required.'}
+    }
+    foreach($name in 'BaseMainSHA256','BaseCLISHA256','MainSHA256','CLISHA256'){
+        if($m.$name -isnot [string] -or $m.$name -cnotmatch '^[0-9a-f]{64}$'){throw 'Incoming source hash required.'}
+    }
+    $base=$Plan.ReuseCompile.RegistrationMetadata
+    if($m.BaseMainBytes -ne $base.MainBytes -or $m.BaseMainSHA256 -cne $base.MainSHA256 -or
+       $m.BaseCLIBytes -ne $base.CLIBytes -or $m.BaseCLISHA256 -cne $base.CLISHA256){throw 'Incoming must extend the exact CPP39 source pair.'}
+    $pin=$p.IncomingContract;$path=Join-Path $SourceRoot 'incoming-image-source-contract.json'
+    if($pin.Path -isnot [string] -or $pin.Path -cne $path -or
+       ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or $pin.Bytes -gt 16KB -or
+       $pin.SHA256 -isnot [string] -or $pin.SHA256 -cnotmatch '^[0-9a-f]{64}$' -or
+       (Get-Item $path).Length -ne $pin.Bytes -or (Get-FileHash $path).Hash -ine $pin.SHA256){throw 'Pinned incoming source contract required.'}
+    $c=Get-Content -LiteralPath $path -Raw|ConvertFrom-Json
+    foreach($name in 'schema','source_profile','native_option','report_schema','target_name'){
+        if($c.$name -isnot [string]){throw 'Incoming contract text scalar required.'}
+    }
+    if($c.schema -cne 'iw7.t7-incoming-image-source/1' -or $c.source_profile -cne 't7-incoming-image-header-observation-v1' -or
+       $c.native_option -cne '-t7-iw7-incoming-image-header-v1' -or $c.report_schema -cne $p.IncomingSchema -or
+       $c.target_name -cne '$camo_base_normal' -or $c.fixture_legacy_checks -ne 39 -or $c.fixture_incoming_checks -ne 48 -or
+       $c.fixture_stdout -cne "IW7_T7_REGISTRATION_HEADER_CHECKS=39`nIW7_T7_INCOMING_IMAGE_CHECKS=48`n" -or
+       $c.source_only_pending -isnot [bool] -or !$c.source_only_pending -or $c.cpp_qualified -isnot [bool] -or $c.cpp_qualified -or
+       $c.native_observed -isnot [bool] -or $c.native_observed -or $c.ready -isnot [bool] -or $c.ready){throw 'Exact incoming source/fixture contract required.'}
+    foreach($row in @(@('main','PreparedMain','MainBytes','MainSHA256'),@('cli','PreparedCLI','CLIBytes','CLISHA256'))){
+        $expected=$c.($row[0]);$actual=$p.($row[1]);$cap=if($row[0] -ceq 'main'){64KB}else{192KB}
+        if($expected.bytes -le 0 -or $expected.bytes -gt $cap -or $actual.Bytes -ne $expected.bytes -or $actual.SHA256 -cne $expected.sha256 -or
+           $m.($row[2]) -ne $expected.bytes -or $m.($row[3]) -cne $expected.sha256){throw 'Incoming main/CLI output pin differs.'}
+    }
+    foreach($row in @(@('IncomingMembers','incoming_image_capture_members.inc'),@('IncomingModule','incoming_image_event_observation.hpp'),
+        @('IncomingEntry','native_incoming_image_metadata.inc'),@('IncomingFixture','incoming_image_event_fixture.cpp'))){
+        $expected=$c.files.($row[1]);$actual=$p.($row[0])
+        if($actual.Path -cne (Join-Path $SourceRoot $row[1]) -or $actual.Bytes -ne $expected.bytes -or $actual.SHA256 -cne $expected.sha256){throw 'Incoming source file pin differs.'}
+    }
+    foreach($row in @(@('IncomingCapture','derived_capture'),@('IncomingObserver','derived_observer'),@('IncomingBaselineFixture','derived_baseline_fixture'))){
+        $expected=$c.($row[1]);$actual=$p.($row[0])
+        if($actual.Bytes -ne $expected.bytes -or $actual.SHA256 -cne $expected.sha256){throw 'Incoming derived source pin differs.'}
+    }
+    # Existing registration stage validator checks the SAME fixed stage/RSP profile,
+    # choosing only the explicit new source fixture for this exact incoming marker.
+}
+function Assert-T7IncomingFixtureOutput([string]$StageRoot,$StageState) {
+    $stdout=Join-Path $StageRoot 'stdout.log';$stderr=Join-Path $StageRoot 'stderr.log'
+    $expected="IW7_T7_REGISTRATION_HEADER_CHECKS=39`nIW7_T7_INCOMING_IMAGE_CHECKS=48`n"
+    if((Get-Item $stdout).Length -gt 128 -or (Get-Item $stderr).Length -ne 0 -or
+       ([IO.File]::ReadAllText($stdout)).Replace("`r`n","`n") -cne $expected){throw 'Exactly 39 legacy and 48 incoming actual checks required before main/CLI compilation.'}
+    $StageState.LegacyRegistrationChecks=39;$StageState.IncomingChecks=48;$StageState.EngineInvoked=$false
 }
 function Assert-T7ImageFixtureProof($Profile,$Bindings) {
     foreach($row in @(
@@ -382,10 +457,13 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     $parts=$null -ne $profile -and $profile.Name -ceq 't7-material-parts-v1'
     $partsMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['MaterialParts']
     if($parts -ne $partsMarker){throw 'Parts profile and finite transition must be paired.'}
-    $registration=$null -ne $profile -and $profile.Name -ceq 't7-registration-image-header-metadata-v1'
+    $incoming=$null -ne $profile -and $profile.Name -ceq 't7-incoming-image-header-observation-v1'
+    $incomingMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['IncomingObservation']
+    if($incoming -ne $incomingMarker){throw 'Incoming profile and source transition must be paired.'}
+    $registration=$null -ne $profile -and $profile.Name -cin @('t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')
     $registrationMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['RegistrationMetadata']
     if($registration -ne $registrationMarker){throw 'Registration profile and finite marker must be paired.'}
-    $provenance=$null -ne $profile -and $profile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1')
+    $provenance=$null -ne $profile -and $profile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')
     $provenanceMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['ImageProvenance']
     if($provenance -ne $provenanceMarker -or ($provenance -and $partsMarker)){throw 'Exclusive provenance profile and finite transition must be paired.'}
     $metadata=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['ImageMetadata']
@@ -398,7 +476,7 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
     }
     $referenceMarker=$null -ne $Plan.PSObject.Properties['ReuseCompile'] -and $null -ne $Plan.ReuseCompile -and $null -ne $Plan.ReuseCompile.PSObject.Properties['PrepatchReferenceV2']
     if($reference -ne $referenceMarker){throw 'Prepatch V2 profile and marker must be paired.'}
-    $publication=$null -ne $profile -and $profile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1')
+    $publication=$null -ne $profile -and $profile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')
     if($cliMarker -and !$publication){throw 'CLI rebuild marker requires the publication profile.'}
     if($publication -and (!$cliMarker -or $Plan.ReuseCompile.RecompiledZonetool -isnot [bool] -or
         !$Plan.ReuseCompile.RecompiledZonetool)){throw 'Publication requires both fresh translation units.'}
@@ -536,17 +614,17 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             if((@($profile.$name.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'Bytes,Path,SHA256' -or
                $profile.$name.Bytes -ne $expected[$name][0] -or $profile.$name.SHA256 -cne $expected[$name][1]){throw 'Frozen prepatch V2 text pin differs.'}
         }
-    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1')) {
+    } elseif($profile.Name -cin @('t7-catalog-trace','t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')) {
         $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,Name,Option,PreparedMain,TraceSchema,Wiring'
-        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1')) {
+        if($profile.Name -cin @('t7-catalog-exit-context','t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')) {
             if($profile.ContextSchema -cne 'iw7.t7-catalog-exit-context/1'){throw 'Exact exit-context schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
-        if($profile.Name -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1')) {
+        if($profile.Name -cin @('t7-catalog-callers','t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')) {
             if($profile.CallerSchema -cne 'iw7.t7-catalog-callers/1'){throw 'Exact caller schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
-        if($profile.Name -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1')) {
+        if($profile.Name -cin @('t7-catalog-message','t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')) {
             if($profile.MessageSchema -cne 'iw7.t7-catalog-message/1'){throw 'Exact message schema required.'}
             $fields='ArgumentCount,BaseBuildPlan,BaseBuildReceipt,CallerSchema,ContextSchema,MessageSchema,Name,Option,PreparedMain,TraceSchema,Wiring'
         }
@@ -576,9 +654,9 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
             Assert-T7MaterialPartsTransition $Plan $SourceRoot
         }
         if($provenance){
-            if($profile.Option -isnot [string] -or $profile.Option -cne $(if($registration){'-t7-iw7-image-registration-metadata-v1'}else{'-t7-iw7-image-provenance-v1'}) -or
+            if($profile.Option -isnot [string] -or $profile.Option -cne $(if($incoming){'-t7-iw7-incoming-image-header-v1'}elseif($registration){'-t7-iw7-image-registration-metadata-v1'}else{'-t7-iw7-image-provenance-v1'}) -or
                ($profile.ArgumentCount -isnot [int] -and $profile.ArgumentCount -isnot [long]) -or $profile.ArgumentCount -ne 5 -or
-               $profile.ObservationSchema -isnot [string] -or $profile.ObservationSchema -cne $(if($registration){'iw7.t7-registration-image-header-metadata/1'}else{'iw7.t7-selected-image-provenance/1'}) -or
+               $profile.ObservationSchema -isnot [string] -or $profile.ObservationSchema -cne $(if($incoming){'iw7.t7-incoming-image-header-observation/1'}elseif($registration){'iw7.t7-registration-image-header-metadata/1'}else{'iw7.t7-selected-image-provenance/1'}) -or
                $profile.SourceOnlyPending -isnot [bool]){throw 'Exact source-pending provenance profile required.'}
             $fields=(@($fields.Split(','))+@('ObservationSchema','ProvenanceBaseWiring','ProvenanceWiring','ProvenanceSource','ProvenanceEntry','ProvenanceContract','ProvenanceFixture','SourceOnlyPending')|Sort-Object)-join ','
             if(!$profile.SourceOnlyPending){
@@ -597,8 +675,13 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
                     'RegistrationWiring','RegistrationContract','RegistrationCapture','RegistrationEntry','RegistrationFixture','RegistrationObserver','RegistrationResponse')|Sort-Object)-join ','
                 Assert-T7RegistrationMetadataTransition $Plan $SourceRoot
             }
+            if($incoming){
+                $fields=(@($fields.Split(','))+@('IncomingSchema','IncomingFixtureChecks','IncomingCPPQualified',
+                    'IncomingWiring','IncomingContract','IncomingMembers','IncomingModule','IncomingEntry','IncomingFixture','IncomingCapture','IncomingObserver','IncomingBaselineFixture')|Sort-Object)-join ','
+                Assert-T7IncomingMetadataTransition $Plan $SourceRoot
+            }
         }
-        if($profile.Option -cne $(if($registration){'-t7-iw7-image-registration-metadata-v1'}elseif($provenance){'-t7-iw7-image-provenance-v1'}elseif($parts){'-t7-iw7-material-parts-v1'}else{'-t7-iw7-catalog'}) -or
+        if($profile.Option -cne $(if($incoming){'-t7-iw7-incoming-image-header-v1'}elseif($registration){'-t7-iw7-image-registration-metadata-v1'}elseif($provenance){'-t7-iw7-image-provenance-v1'}elseif($parts){'-t7-iw7-material-parts-v1'}else{'-t7-iw7-catalog'}) -or
            $profile.ArgumentCount -ne $(if($parts -or $provenance){5}else{3}) -or
            $profile.TraceSchema -cne 'iw7.t7-catalog-trace/1' -or
            (@($profile.PSObject.Properties.Name|Sort-Object)-join ',') -cne $fields -or
@@ -676,6 +759,17 @@ function Assert-T7BuildProfile($Plan,[string]$SourceRoot) {
                 $paths.RegistrationObserver=Join-Path $Plan.PreparedRoot 'selected_image_registration_observer.hpp'
                 $paths.RegistrationResponse=Join-Path (Split-Path $Plan.PreparedRoot -Parent) 'registration-fixture.rsp'
             }
+            if($incoming){
+                $paths.IncomingWiring=Join-Path $SourceRoot 'prepare_incoming_image_metadata.py'
+                $paths.IncomingContract=Join-Path $SourceRoot 'incoming-image-source-contract.json'
+                $paths.IncomingMembers=Join-Path $SourceRoot 'incoming_image_capture_members.inc'
+                $paths.IncomingModule=Join-Path $SourceRoot 'incoming_image_event_observation.hpp'
+                $paths.IncomingEntry=Join-Path $SourceRoot 'native_incoming_image_metadata.inc'
+                $paths.IncomingFixture=Join-Path $SourceRoot 'incoming_image_event_fixture.cpp'
+                $paths.IncomingCapture=Join-Path $Plan.PreparedRoot 'selected_image_incoming_capture.hpp'
+                $paths.IncomingObserver=Join-Path $Plan.PreparedRoot 'selected_image_incoming_observer.hpp'
+                $paths.IncomingBaselineFixture=Join-Path $Plan.PreparedRoot 'incoming_registration_baseline_fixture.cpp'
+            }
         }
     } else {
         throw 'Unknown T7 build profile.'
@@ -713,7 +807,7 @@ function Assert-T7OSResourceContext($Plan) {
         return $null
     }
     $context=$Plan.OSResourceContext
-    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3','t7-image-provenance-v1','t7-registration-image-header-metadata-v1') -or
+    if($null -eq $context -or $Plan.BuildProfile.Name -isnot [string] -or $Plan.BuildProfile.Name -cnotin @('t7-material-parts-v1','t7-prepatch-link-v3','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1') -or
        (@($context.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'After,Before,Evidence,KBFileAttributionVerified,Name,ProductVersion,Schema,SignatureStatus,SignatureType,SignerThumbprint,SourceOSDate'){
         throw 'Exact opt-in OS context fields/profile required.'
     }
@@ -764,7 +858,7 @@ function Assert-T7InputBindings($Plan) {
     # cardinality and bijection checks below continue over their unchanged set.
     $bindings=@($Plan.Bindings|Where-Object {!$osProofPath -or $_.Path -cne $osProofPath});$inputs=@($Plan.Inputs)
     if($null -ne $Plan.PSObject.Properties['BuildProfile'] -and $null -ne $Plan.BuildProfile -and
-       $Plan.BuildProfile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1') -and $Plan.BuildProfile.PSObject.Properties['FixtureProof']){
+       $Plan.BuildProfile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1') -and $Plan.BuildProfile.PSObject.Properties['FixtureProof']){
         $fixturePaths=@(Assert-T7ImageFixtureProof $Plan.BuildProfile $Plan.Bindings)
         $bindings=@($bindings|Where-Object {$_.Path -cnotin $fixturePaths})
     }
@@ -783,14 +877,15 @@ function Assert-T7InputBindings($Plan) {
     $provenance=$null -ne $reuse -and $reuse.PSObject.Properties.Name -contains 'ImageProvenance'
     $metadata=$provenance -and $reuse.PSObject.Properties.Name -contains 'ImageMetadata'
     $registration=$provenance -and $reuse.PSObject.Properties.Name -contains 'RegistrationMetadata'
-    $provenanceProfile=$null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1')
+    $incoming=$registration -and $reuse.PSObject.Properties.Name -contains 'IncomingObservation'
+    $provenanceProfile=$null -ne $Plan.BuildProfile -and $Plan.BuildProfile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')
     if($provenance -ne $provenanceProfile -or ($provenance -and ($parts -or $zombies -or $add -or $reference -or $link))){throw 'Exclusive provenance marker/profile pairing required before inputs.'}
     if($provenance){$null=Assert-T7BuildProfile $Plan ([IO.Path]::GetDirectoryName($Plan.Runner))}
     if($parts){$null=Assert-T7BuildProfile $Plan ([IO.Path]::GetDirectoryName($Plan.Runner))}
     if($parts -and ($zombies -or $add -or $reuse.PSObject.Properties['PrepatchReferenceV2'])){throw 'Parts transition cannot mix with other diagnostic markers.'}
     if($zombies -and $add){throw 'C and C2 observation markers are exclusive.'}
     $observed=$zombies -or $add
-    if($bindings.Count -gt $(if($registration){173}elseif($metadata){166}elseif($provenance){155}elseif($parts){154}elseif($observed){151}else{149}) -or $inputs.Count -gt 2048 -or
+    if($bindings.Count -gt $(if($incoming){182}elseif($registration){173}elseif($metadata){166}elseif($provenance){155}elseif($parts){154}elseif($observed){151}else{149}) -or $inputs.Count -gt 2048 -or
         @($bindings.Path|Sort-Object -Unique).Count -ne $bindings.Count -or
         @($inputs.Path|Sort-Object -Unique).Count -ne $inputs.Count){throw 'Input set bound/uniqueness differs.'}
     if(@($bindings|Where-Object {$_.IsText -isnot [bool]}).Count){throw 'Binding text/binary classification required.'}
@@ -808,13 +903,13 @@ function Assert-T7InputBindings($Plan) {
         return
     }
     if($Plan.SourceCommit -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
-        $Plan.BuildProfile.Name -cne $(if($registration){'t7-registration-image-header-metadata-v1'}elseif($provenance){'t7-image-provenance-v1'}elseif($parts){'t7-material-parts-v1'}elseif($add){'t7-zombies-catalogue-observation-c2'}elseif($zombies){'t7-zombies-catalogue-observation-c'}else{'t7-catalog-message-publication'}) -or
+        $Plan.BuildProfile.Name -cne $(if($incoming){'t7-incoming-image-header-observation-v1'}elseif($registration){'t7-registration-image-header-metadata-v1'}elseif($provenance){'t7-image-provenance-v1'}elseif($parts){'t7-material-parts-v1'}elseif($add){'t7-zombies-catalogue-observation-c2'}elseif($zombies){'t7-zombies-catalogue-observation-c'}else{'t7-catalog-message-publication'}) -or
         $Plan.BuildProfile.PublicationSchema -cne 'iw7.t7-message-publication-build/1' -or
         $reuse.RecompiledMain -isnot [bool] -or !$reuse.RecompiledMain -or
         $reuse.RecompiledZonetool -isnot [bool] -or !$reuse.RecompiledZonetool -or
         $reuse.PSObject.Properties.Name -contains 'ResidentSurfaceCountDiagnostic' -or
-        $bindings.Count -ne $(if($registration){173}elseif($metadata){166}elseif($provenance){155}elseif($parts){154}elseif($observed){151}elseif($streamed){149}else{144}) -or $inputs.Count -ne 1146 -or
-        @($bindings|Where-Object IsText).Count -ne $(if($registration){167}elseif($metadata){160}elseif($provenance){149}elseif($parts){148}elseif($observed){145}elseif($streamed){143}else{138})){throw 'Exact multisurface publication input profile required.'}
+        $bindings.Count -ne $(if($incoming){182}elseif($registration){173}elseif($metadata){166}elseif($provenance){155}elseif($parts){154}elseif($observed){151}elseif($streamed){149}else{144}) -or $inputs.Count -ne 1146 -or
+        @($bindings|Where-Object IsText).Count -ne $(if($incoming){176}elseif($registration){167}elseif($metadata){160}elseif($provenance){149}elseif($parts){148}elseif($observed){145}elseif($streamed){143}else{138})){throw 'Exact multisurface publication input profile required.'}
     $observerRoot=[IO.Path]::GetDirectoryName($Plan.Runner)
     if($zombies) {
         $observation=$reuse.ZombiesObservationC
@@ -993,6 +1088,8 @@ function Assert-T7InputBindings($Plan) {
         if($metadata -and $row.Path -ceq 'prepared/zonetool.cpp'){$wiredBytes=$reuse.ImageMetadata.CLIBytes;$wiredSHA=$reuse.ImageMetadata.CLISHA256}
         if($registration -and $row.Path -ceq 'prepared/main.cpp'){$wiredBytes=$reuse.RegistrationMetadata.MainBytes;$wiredSHA=$reuse.RegistrationMetadata.MainSHA256}
         if($registration -and $row.Path -ceq 'prepared/zonetool.cpp'){$wiredBytes=$reuse.RegistrationMetadata.CLIBytes;$wiredSHA=$reuse.RegistrationMetadata.CLISHA256}
+        if($incoming -and $row.Path -ceq 'prepared/main.cpp'){$wiredBytes=$reuse.IncomingObservation.MainBytes;$wiredSHA=$reuse.IncomingObservation.MainSHA256}
+        if($incoming -and $row.Path -ceq 'prepared/zonetool.cpp'){$wiredBytes=$reuse.IncomingObservation.CLIBytes;$wiredSHA=$reuse.IncomingObservation.CLISHA256}
         if($observed -and $row.Path -ceq 'prepared/zonetool.cpp') {
             if($wiredBytes -ne $observation.BaseCLIBytes -or $wiredSHA -cne $observation.BaseCLISHA256){throw 'Zombies observation base transition differs.'}
             $wiredBytes=$observation.CLIBytes;$wiredSHA=$observation.CLISHA256
@@ -1102,23 +1199,28 @@ try {
     $reuse=$plan.PSObject.Properties.Name -contains 'ReuseCompile' -and $null -ne $plan.ReuseCompile
     $recompiled=Assert-T7BuildProfile $plan $PSScriptRoot
     $buildProfile=if($recompiled){$plan.BuildProfile}else{$null}
-    $registration=$null -ne $buildProfile -and $buildProfile.Name -ceq 't7-registration-image-header-metadata-v1'
-    $publication=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1')
+    $incoming=$null -ne $buildProfile -and $buildProfile.Name -ceq 't7-incoming-image-header-observation-v1'
+    $registration=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')
+    $publication=$null -ne $buildProfile -and $buildProfile.Name -cin @('t7-catalog-message-publication','t7-zombies-catalogue-observation-c','t7-zombies-catalogue-observation-c2','t7-material-parts-v1','t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')
     $names=@(if($publication){'main','zonetool11','link'}elseif($recompiled){'main','link'}elseif($reuse){'link'}else{'helper','probe','main','zonetool11','xpak','link'})
     if($registration){
         $names=@('registration-fixture-compile','registration-fixture-test')+$names
     }elseif($null -ne $buildProfile -and $buildProfile.PSObject.Properties['MetadataSchema']){
         $names=@('metadata-fixture-compile','metadata-fixture-test')+$names
     }
-    if($null -ne $buildProfile -and $buildProfile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1')){
+    if($null -ne $buildProfile -and $buildProfile.Name -cin @('t7-image-provenance-v1','t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')){
         if($Run -and $buildProfile.SourceOnlyPending){throw 'Image-provenance producer is source-pending: measured H proof and separate full-CLI CPP GO required.'}
         if(!$Run){
             $check=[ordered]@{SourceProfile=$buildProfile.Name;SourceOnlyPending=$buildProfile.SourceOnlyPending;CPPEnabled=!$buildProfile.SourceOnlyPending;
                 CandidateBytes=$null;CandidateSHA256=$null;NativeTypesLoaded=$false;BinaryInputsHashed=$false;ZoneHashObserved=$false;
                 LeaseAcquired=$false;FilesCreated=$false;Ready=$false}
-            if($buildProfile.Name -ceq 't7-registration-image-header-metadata-v1'){
+            if($buildProfile.Name -cin @('t7-registration-image-header-metadata-v1','t7-incoming-image-header-observation-v1')){
                 $check.BaseProvenanceSourceOnlyPending=$buildProfile.SourceOnlyPending;$check.SourceOnlyPending=$true
                 $check.RegistrationCPPQualified=$false;$check.RegistrationFixtureRequired=39;$check.FixtureFirstEnforced=$true
+            }
+            if($buildProfile.Name -ceq 't7-incoming-image-header-observation-v1'){
+                $check.CPPEnabled=$false;$check.CPPRecipeNeedsQualification=$true
+                $check.IncomingCPPQualified=$false;$check.IncomingFixtureRequired=48
             }
             $check|ConvertTo-Json -Compress
             return
@@ -1187,6 +1289,7 @@ try {
         EstimatesAreMeasured=$false;TreeClosureConfirmed=$true;LeaseReleased=$false;Quarantined=$false;
         MaxObservedOutputBytes=0L;CompilerTelemetry=[ordered]@{Completed=$false};Stages=[Collections.Generic.List[object]]::new()}
     if($registration){$state.RegistrationFixturePassed=$false;$state.RegistrationCPPQualified=$false}
+    if($incoming){$state.IncomingFixturePassed=$false;$state.IncomingCPPQualified=$false}
     $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes $plan.PhysicalBytes -CommitBytes $plan.CommitBytes -Owner 'T7 three TU build and name helper'
     $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock
     if(Test-Path -LiteralPath $plan.RunRoot){throw 'Output appeared during admission.'}
@@ -1236,7 +1339,8 @@ try {
             if((Get-Item -LiteralPath $stdout).Length -gt $limit -or (Get-Item -LiteralPath $stderr).Length -ne 0){throw 'Fixture output differs.'}
             $observed=[IO.File]::ReadAllText($stdout)
             if($stage.Name -ceq 'registration-fixture-test'){
-                Assert-T7RegistrationFixtureOutput $stageRoot $stageState
+                if($incoming){Assert-T7IncomingFixtureOutput $stageRoot $stageState;$state.IncomingFixturePassed=$true}
+                else{Assert-T7RegistrationFixtureOutput $stageRoot $stageState}
                 $state.RegistrationFixturePassed=$true
             }elseif($stage.Name -ceq 'metadata-fixture-test'){
                 $expected="PASS copied image metadata fixture: 54 checks; authored only.`nPASS selected metadata read guard fixture: 13 checks; no engine.`n"
@@ -1269,6 +1373,7 @@ try {
             if(!$failure -and $context.Closed -and !$context.Lease){
                 $state.Status='Passed'
                 if($registration){$state.RegistrationCPPQualified=$state.RegistrationFixturePassed -and $state.InputsReverified}
+                if($incoming){$state.IncomingCPPQualified=$state.IncomingFixturePassed -and $state.InputsReverified}
             }
         }catch{
             if(!$failure){$failure=$_}
@@ -1279,6 +1384,7 @@ try {
         $state.FinishedUtc=[datetime]::UtcNow.ToString('o')
         try{Write-H1Receipt $plan $state $plan.RunRoot}catch{
             if($registration){$state.RegistrationCPPQualified=$false;$state.Status='Failed'}
+            if($incoming){$state.IncomingCPPQualified=$false}
             if(!$failure){$failure=$_};Write-Warning $_.Exception.Message
         }
         if(!$failure) {
@@ -1286,6 +1392,7 @@ try {
             catch {
                 $failure=$_;$state.Status='Failed';$state.GroupDeadlineError=$_.Exception.Message
                 if($registration){$state.RegistrationCPPQualified=$false}
+                if($incoming){$state.IncomingCPPQualified=$false}
                 $state.ElapsedMs=(Get-H1Clock)-$script:T7GroupStarted
                 # A slow publication must not leave a canonical Passed receipt.
                 # Preserve the late attempt, then publish failure diagnostics.
