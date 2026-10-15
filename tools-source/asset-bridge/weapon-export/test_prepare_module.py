@@ -19,11 +19,19 @@ FIXTURE_SHA = hashlib.sha256(FIXTURE.encode()).hexdigest()
 
 
 class PreparationTests(unittest.TestCase):
+    def setUp(self):
+        # Small synthetic TU fixtures exercise staging only. Canonical native
+        # declaration/serializer verification is independently tested in the
+        # finite generator; production stage has no bypass option.
+        generated=support.read_source(support.HERE/'native_definition_fields.inc')
+        mock=patch.object(support.definition_readset,'render',return_value=(generated,dict(functions=41,macro_fields=1203)))
+        mock.start();self.addCleanup(mock.stop)
+
     def test_pair_profile_preserves_projectile_module_and_never_serializes_templates(self):
         source=support.read_source(support.HERE/'native_player_templates.inc')
         prior=source.split('\nnamespace player_weapon_templates\n{\n    bool profile_readable_span',1)[0]
         self.assertEqual(hashlib.sha256(prior.encode()).hexdigest(),'4a37687fd24ba9e7fb7876497c537e349b6622bc35585801443398d0baef667b')
-        profile=source.split('void dump_iw7_player_pair_profile(',1)[1]
+        profile=source.split('void dump_iw7_player_pair_profile(',1)[1].split('\nnamespace player_weapon_definitions',1)[0]
         for forbidden in ('dump_asset(', 'compatible_pair(', 'iProjectileSpeed', 'projLifetime', 'gunXModel', 'szXAnims', 'get_asset_name('):
             self.assertNotIn(forbidden,profile)
         self.assertIn('std::memcpy(&pap_flag',profile)
@@ -113,11 +121,14 @@ class PreparationTests(unittest.TestCase):
         result, module = support.wire_module(FIXTURE, FIXTURE_SHA)
         addition = '\n'.join('\t' + line if line else '' for line in module.splitlines()) + '\n\n'
         without_module = result.replace(addition, '', 1).replace(
-            '#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n', '', 1)
+            '#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n#include <limits>\n#include <cstring>\n#include <type_traits>\n', '', 1)
         name_header = support.read_source(support.HERE / 'native_bounded_name.hpp').removeprefix('#pragma once\n')
         without_module = without_module.replace(name_header + '\n', '', 1)
         primary_header = support.read_source(support.HERE / 'native_primary_guard.hpp').removeprefix('#pragma once\n')
         without_module = without_module.replace(primary_header + '\n', '', 1)
+        definition_headers='\n'.join(support.read_source(support.HERE/name).removeprefix('#pragma once\n') for name in
+            ('native_definition_access.hpp','native_definition_readset.hpp','native_definition_fields.inc','native_definition_gate.hpp'))
+        without_module=without_module.replace('\n'+definition_headers,'',1)
         self.assertEqual(without_module, FIXTURE)
         self.assertEqual(result.count('void ' + support.FUNCTION + '('), 1)
         self.assertEqual(result.count(support.FUNCTION), 1)  # no call-site introduced
@@ -232,7 +243,8 @@ class PreparationTests(unittest.TestCase):
             self.assertTrue(report['build_extension']['requires_fresh_native_compile'])
             self.assertEqual(report['build_extension']['translation_unit'], support.NATIVE_PATH)
             self.assertEqual(report['build_extension']['argv_count_including_executable'], 6)
-            self.assertEqual(report['build_extension']['argv_fixture_checks_authored'], 18)
+            self.assertEqual(report['build_extension']['argv_fixture_checks_authored'], 28)
+            self.assertEqual(report['build_extension']['definition_fixture_checks_authored'],100)
             self.assertEqual(report['build_extension']['pair_profile_option'],'-iw7-player-weapon-pair-profile')
             self.assertFalse(report['compiled'] or report['native_export_executed'] or report['ready'])
         with self.assertRaisesRegex(ValueError, 'Explicit source CLI boolean'):

@@ -334,3 +334,149 @@ void dump_iw7_player_pair_profile(const std::string& donor_zone, const std::stri
     printf("IW7_PLAYER_PAIR_PROFILE donor=cp_zmb weapon=iw7_shredder_zm pap=shredderpap1 count=1 output=%s\n", output.string().c_str());
     fflush(stdout);
 }
+
+// Separate neutral definition observation. No existing mode or compatibility
+// predicate above is changed. The public native serializers are read-only but
+// may still fault after preflight; H1 owns that standalone failure boundary.
+namespace player_weapon_definitions
+{
+    struct Context { player_definition_access::script_function script; };
+    bool readable(const void* address, size_t bytes, void*)
+    {
+        return player_weapon_templates::profile_readable_span(address, bytes);
+    }
+    bool copy(void* destination, const void* source, size_t bytes, void*)
+    {
+        return player_definition_access::copy(destination, source, bytes);
+    }
+    const char* script_name(scr_string_t id, void* opaque, bool* converted)
+    {
+        const auto* context = static_cast<const Context*>(opaque);
+        *converted = false;
+        if (!context || SL_ConvertToString.get() != context->script || id <= 0) return nullptr;
+        const char* text = nullptr;
+        *converted = player_definition_access::script(context->script, static_cast<unsigned int>(id), &text);
+        return text;
+    }
+    bool executable(const void* address)
+    {
+        MEMORY_BASIC_INFORMATION info{};
+        if (!address || VirtualQuery(address, &info, sizeof(info)) != sizeof(info) || info.State != MEM_COMMIT ||
+            (info.Protect & (PAGE_GUARD | PAGE_NOACCESS))) return false;
+        const auto protection = info.Protect & 0xff;
+        return protection == PAGE_EXECUTE || protection == PAGE_EXECUTE_READ ||
+            protection == PAGE_EXECUTE_READWRITE || protection == PAGE_EXECUTE_WRITECOPY;
+    }
+    template<size_t N> player_weapon_templates::NamedAsset registered_asset(player_definition_readset::Reader& reader,
+        XAssetType type, const char (&name)[N])
+    {
+        // Same two exact registration requests as the existing modes. Copy the
+        // returned entry header before inspecting it; the typed gate below
+        // checks the target header/name without an unchecked name getter.
+        const auto* entry = db_find_x_asset_entry(type, name);
+        if (!entry || !reader.object(entry, "registration.entry"))
+            throw std::runtime_error("Neutral definition registration entry unreadable");
+        decltype(entry->type) entry_type;
+        XAssetHeader header{};
+        if (!reader.load(&entry->type, entry_type, "registration.type") ||
+            !reader.load(&entry->header, header, "registration.header") ||
+            entry_type != static_cast<unsigned char>(type) || !header.data || DB_IsXAssetDefault(type, name))
+            throw std::runtime_error("Neutral definition registration missing, default or unreadable");
+        player_weapon_templates::NamedAsset result;
+        result.asset.type = type; result.asset.header = header;
+        result.identity.assign(name, N - 1); // Gate validates both actual names before serializer entry.
+        return result;
+    }
+}
+
+void dump_iw7_player_pair_definitions(const std::string& donor_zone, const std::string& input_path,
+    const std::string& pack_name)
+{
+    if (donor_zone != "cp_zmb" || pack_name != "paris_enemy_cp_zmb_raygun_pair_definitions_a")
+        throw std::runtime_error("Exact neutral player definition token required");
+    player_weapon_templates::exact_request(input_path);
+    const auto output = std::filesystem::path("dump") / pack_name;
+    player_weapon_templates::ordinary_ancestry(output);
+    if (std::filesystem::exists(output) || !zone_exists(donor_zone))
+        throw std::runtime_error("Fresh definition output and legitimate donor required");
+    const auto old_dump = globals.dump, old_csv = globals.dump_csv, old_verify = globals.verify;
+    const auto old_target = globals.target_game;
+    const auto old_filter = asset_type_filter;
+    const auto restore = gsl::finally([&]
+    {
+        globals.dump = old_dump; globals.dump_csv = old_csv; globals.verify = old_verify;
+        globals.target_game = old_target; asset_type_filter = old_filter;
+    });
+    globals.dump = false; globals.dump_csv = false; globals.verify = false;
+    globals.target_game = game::iw7; asset_type_filter.clear();
+    load_enemy_source_zones(donor_zone);
+    player_weapon_definitions::Context context{SL_ConvertToString.get()};
+    if (reinterpret_cast<std::uintptr_t>(context.script) != 0x140C03300 ||
+        !player_weapon_definitions::executable(reinterpret_cast<const void*>(context.script)))
+        throw std::runtime_error("Pinned IW7 script-string binding unavailable");
+    player_definition_readset::Reader reader{player_weapon_definitions::readable, player_weapon_definitions::copy,
+        player_weapon_definitions::script_name, &context};
+    auto base = player_weapon_definitions::registered_asset(reader, ASSET_TYPE_WEAPON, "iw7_shredder_zm");
+    auto upgrade = player_weapon_definitions::registered_asset(reader, ASSET_TYPE_ATTACHMENT, "shredderpap1");
+    const auto captured = player_definition_readset::with_pair(reader, base.asset.header.weapon,
+        upgrade.asset.header.attachment, [&](const WeaponCompleteDef* weapon, const WeaponAttachment* pap)
+    {
+        if (SL_ConvertToString.get() != context.script) throw std::runtime_error("Script-string binding changed before serializers");
+        std::filesystem::create_directories(output.parent_path());
+        if (!std::filesystem::create_directory(output)) throw std::runtime_error("Exclusive neutral output required");
+        std::filesystem::create_directory(output / "weapons");
+        std::filesystem::create_directory(output / "attachments");
+        filesystem::set_fastfile(pack_name);
+        // Keep dump=false: no global dispatcher/hook or build load_depending.
+        // Native public signatures are non-const; reviewed dump bodies only read
+        // these definitions. No enum, bool, name, pointer or reference is edited.
+        weapon_def::dump(const_cast<WeaponCompleteDef*>(weapon));
+        if (SL_ConvertToString.get() != context.script) throw std::runtime_error("Script-string binding changed between serializers");
+        weapon_attachment::dump(const_cast<WeaponAttachment*>(pap));
+    });
+    if (!captured)
+    {
+        printf("IW7_PLAYER_DEFINITION_REFUSAL field=%s\n", reader.refusal ? reader.refusal : "readset");
+        fflush(stdout);
+        throw std::runtime_error("Neutral definition readset refused before serializer");
+    }
+    ordered_json matrices = ordered_json::array();
+    for (size_t i = 0; i < reader.matrix_count; ++i) matrices.push_back(reader.native_string_matrices[i]);
+    ordered_json manifest = {{"schema", "iw7.registered-player-definition-pair/1"}, {"donor", donor_zone},
+        {"native_source_pin", "fab935826c898806855376662a8a03317b3ad8f1"},
+        {"weapon", base.identity}, {"pap_attachment", upgrade.identity},
+        {"observed", {{"base_type", 1}, {"pap_type", 0}, {"pap_flag_raw", 1}, {"pap_flag", true}, {"occurrences", 1}}},
+        {"readset", {{"bytes", reader.bytes}, {"elements", reader.elements}, {"script_calls", reader.script_calls},
+            {"copied_text_bytes", reader.copied_text_bytes}, {"json_estimate", reader.json_bytes},
+            {"allocation_estimate", reader.allocation_bytes},
+            {"native_string_matrices", matrices}, {"flat_empty_string_arrays", reader.flat_empty_string_arrays}}},
+        {"source_layout_only", true}, {"templates_exported", true}, {"full_definitions_observed", true},
+        {"projectile_author_eligible", false}, {"dependency_bodies_captured", false}, {"runtime_abi_verified", false},
+        {"lifetime_verified", false}, {"roundtrip_verified", false}, {"weapon_granted", false},
+        {"projectile_damage_verified", false}, {"physics_qualified", false}, {"retail_pap_transaction_verified", false},
+        {"gameplay_accepted", false}, {"files", ordered_json::array()}};
+    const std::array<const char*, 2> files{"weapons/iw7_shredder_zm.json", "attachments/shredderpap1.json"};
+    for (size_t i = 0; i < files.size(); ++i)
+    {
+        const auto bytes = player_weapon_templates::bounded_file(output / files[i], player_weapon_templates::json_cap);
+        const auto data = ordered_json::parse(bytes);
+        const auto identity = i == 0 ? base.identity : upgrade.identity;
+        if (!data.is_object() || !data.contains("szInternalName") || data["szInternalName"] != identity)
+            throw std::runtime_error("Neutral native JSON identity differs");
+        if (i == 0 && (!data.contains("weapDef") || !data["weapDef"].is_object() ||
+            !data["weapDef"].contains("weapType") || !data["weapDef"]["weapType"].is_number_integer() || data["weapDef"]["weapType"] != 1))
+            throw std::runtime_error("Neutral base scalar changed during serialization");
+        if (i == 1 && (!data.contains("weaponType") || !data["weaponType"].is_number_integer() || data["weaponType"] != 0 ||
+            !data.contains("papAttachment") || !data["papAttachment"].is_boolean() || data["papAttachment"] != true))
+            throw std::runtime_error("Neutral PAP scalars changed during serialization");
+        manifest["files"].push_back({{"path", files[i]}, {"bytes", bytes.size()},
+            {"sha256", utils::string::to_lower(utils::cryptography::sha256::compute(reinterpret_cast<const uint8_t*>(bytes.data()), bytes.size(), true))}});
+    }
+    const auto receipt = manifest.dump(2) + "\n";
+    if (receipt.size() > 16384) throw std::runtime_error("Neutral definition manifest bound exceeded");
+    const auto path = output / "player-definition-pair-manifest.json";
+    utils::io::write_file(path.string(), receipt);
+    if (player_weapon_templates::bounded_file(path, 16384) != receipt) throw std::runtime_error("Neutral manifest readback differs");
+    printf("IW7_PLAYER_PAIR_DEFINITIONS donor=cp_zmb weapon=iw7_shredder_zm pap=shredderpap1 count=2 output=%s\n", output.string().c_str());
+    fflush(stdout);
+}

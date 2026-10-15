@@ -1,5 +1,11 @@
 # IW7 player-template CLI: separate source cohort
 
+The new neutral mode has a separate **unexecuted** ten-stage Source contract:
+`PairDefinitionsCLI=true` requires the existing primary/profile selections,
+argv28 and a new production-readset fixture100. Name8 and primary36 remain.
+See NEUTRAL-DEFINITIONS.md. Historical CPP J's62 results and candidate533c
+remain unchanged and do not qualify this new source or its fixtures.
+
 2026-10-15: a specialized caller reuses the existing H1 original owner and the
 T7 profile's artifact, dependency, deadline and linker/VCTIP primitives. It does
 not widen `Run-T7Build`'s finite T7 profile or edit the frozen texture D cohort.

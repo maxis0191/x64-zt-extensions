@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import generate_definition_readset as definition_readset
 
 HERE = Path(__file__).resolve().parent
 SOURCE_PIN = "fab935826c898806855376662a8a03317b3ad8f1"
@@ -35,12 +36,14 @@ def wire_module(text, expected_sha256=BASE_LF_SHA256):
     module = read_source(HERE / "native_player_templates.inc")
     name_header = read_source(HERE / "native_bounded_name.hpp").removeprefix("#pragma once\n")
     primary_header = read_source(HERE / "native_primary_guard.hpp").removeprefix("#pragma once\n")
+    definition_headers = '\n'.join(read_source(HERE / name).removeprefix('#pragma once\n') for name in
+        ('native_definition_access.hpp', 'native_definition_readset.hpp', 'native_definition_fields.inc', 'native_definition_gate.hpp'))
     addition = "\n".join("\t" + line if line else "" for line in module.splitlines()) + "\n\n"
     result = text.replace(ANCHOR, addition + ANCHOR, 1)
     # Standard includes stay global, before the existing native namespace.
     result = result.replace("namespace zonetool::iw7\n{",
-        "#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n" + name_header + "\n" + primary_header + "\n"
-        "namespace zonetool::iw7\n{", 1)
+        "#include <array>\n#include <cmath>\n#include <fstream>\n#include <sstream>\n#include <limits>\n#include <cstring>\n#include <type_traits>\n" + name_header + "\n" + primary_header + "\n"
+        "namespace zonetool::iw7\n{\n" + definition_headers, 1)
     require(len(result.encode("utf-8")) <= CAP, "Staged source cap exceeded")
     return result, module
 
@@ -66,6 +69,8 @@ def stage(source_root, output, *, player_cli=False):
             not any(p.is_symlink() or p.is_junction() for p in (output, *output.parents)),
             "Fresh ordinary absolute output required")
     original = read_source(Path(source_root) / NATIVE_PATH)
+    generated, readset_metadata = definition_readset.render(source_root)
+    require(generated == read_source(HERE / 'native_definition_fields.inc'), 'Reviewed complete serializer readset differs')
     patched, module = wire_cli(original) if player_cli else wire_module(original)
     target = output / NATIVE_PATH
     report = {"schema": "iw7.player-template-export-support/1", "native_source_pin": SOURCE_PIN,
@@ -76,17 +81,24 @@ def stage(source_root, output, *, player_cli=False):
         "staged_lf_sha256": hashlib.sha256(patched.encode("utf-8")).hexdigest(),
         "support_function": FUNCTION, "allowlisted_weapon": "iw7_shredder_zm",
         "allowlisted_pap": "shredderpap1", "cli_wired": player_cli, "compiled": False,
-        "native_export_executed": False, "full_templates_observed": False, "ready": False}
+        "native_export_executed": False, "full_templates_observed": False, "ready": False,
+        "neutral_definition_readset": readset_metadata}
     if player_cli:
         names = ('prepare_module.py','native_player_templates.inc','native_bounded_name.hpp',
                  'native_player_cli.hpp','native_player_cli.inc','test_bounded_name.cpp','test_player_cli.cpp',
-                 'native_primary_guard.hpp','test_primary_guard.cpp')
+                 'native_primary_guard.hpp','test_primary_guard.cpp', 'generate_definition_readset.py',
+                 'native_definition_access.hpp','native_definition_readset.hpp','native_definition_fields.inc',
+                 'native_definition_gate.hpp','test_definition_readset.cpp')
         report['build_extension'] = dict(translation_unit=NATIVE_PATH, replace_retained_translation_unit=True,
             source_only=True, requires_fresh_native_compile=True, argv_count_including_executable=6,
-            option='-iw7-player-weapon-templates', pair_profile_option='-iw7-player-weapon-pair-profile', pair_profile_metadata_only=True, other_overlays_preserved=False,
+            option='-iw7-player-weapon-templates', pair_profile_option='-iw7-player-weapon-pair-profile', pair_profile_metadata_only=True,
+            pair_definitions_option='-iw7-player-weapon-pair-definitions', pair_definitions_neutral=True,
+            readset_fixture_native_structs=str((Path(source_root) / definition_readset.NATIVE / 'structs.hpp').resolve()),
+            other_overlays_preserved=False,
             ordering='pristine pinned IW7 -> reviewed support127 -> exact CLI -> separately reviewed compatible overlays',
             inputs={name: hashlib.sha256(read_source(HERE/name).encode()).hexdigest() for name in names},
-            name_fixture_checks_authored=8, argv_fixture_checks_authored=18, primary_fixture_checks_authored=36, cpp_executed=False, ready=False)
+            name_fixture_checks_authored=8, argv_fixture_checks_authored=28, primary_fixture_checks_authored=36,
+            definition_fixture_checks_authored=100, cpp_executed=False, ready=False)
     target.parent.mkdir(parents=True, exist_ok=False)
     with target.open("x", encoding="utf-8", newline="\n") as stream:
         stream.write(patched)
