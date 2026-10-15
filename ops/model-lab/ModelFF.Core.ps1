@@ -352,6 +352,13 @@ function New-ModelFFOutputNamespace([string]$RunRoot,[string]$SourceRoot,[string
     $receipts=@('authored-native-run.json','authored-closure.json')
     $known=@('state.local.json','mod.ff','assets.csv','geometry-roundtrip.json','surface-roundtrip.json',
         'backup/recovery.local.json',($sourceRelative+'/model-ff-plan.json'),('work/zone/'+$Zone+'.ff'))
+    # Finite D6-owned baseline; provenance and its limits are recorded in
+    # AUTHORED-FF.md. These names are fixed before Run, never learned from disk.
+    $known+=@('work/__iw7_ship','work/main/data0.dcache','work/main/data1.dcache',
+        'work/main/toc0.dcache','work/main/toc1.dcache')
+    foreach($phase in @('hud-build','hud-offline','hud-roundtrip')){
+        $known+=('owned-'+$phase+'/zt-tlsdll.dll')
+    }
     foreach($phase in @('authored-stage','authored-source','hud-build','hud-offline','hud-roundtrip','model-geometry','model-authored-material')){
         foreach($stream in @('stdout.log','stderr.log')){$known+=('owned-'+$phase+'/'+$stream)}
     }

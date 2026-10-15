@@ -1,0 +1,324 @@
+{
+  "schema": "iw7.authored-model-ff-publication-failure-checkpoint/1",
+  "date_utc": "2026-10-15",
+  "scope": "Seven native phases and independent readbacks passed; eight undeclared output names refused publication; original failed operation closed",
+  "overall_operation_passed": false,
+  "operation_verdict": "FailedPublication",
+  "assets_revision": "971b02395aeb57d6439eaa62520e622dad481403",
+  "native_source_revision": "fab935826c898806855376662a8a03317b3ad8f1",
+  "writer_producer_revision": "8f55ac7819d93f5bcede273aea3e478ae9438a12",
+  "stage_sdk_revision": "24edc27ff7f379613d51ae9d91b3f10054d67b6a",
+  "consumer_sdk_revision_not_executed": "62cf38834a0cbcd7243a3d52ce6100c1edbd9cdc",
+  "sdk_runtime_revision": "6dcfc719e0535509f109c593fa4342ce201b5523",
+  "source_tests_before_run": {
+    "model_lab": 50,
+    "skipped": 0,
+    "authored_assertions": 66,
+    "path_metadata_interop_cases": 64
+  },
+  "source_workspace": {
+    "files": 1099,
+    "bytes": 11214573,
+    "receipt_bytes": 388932,
+    "receipt_sha256": "d8d29cdf7625c089fb60834fe9f5713532ea19c5d58e917ae4581896d3b9d5d6"
+  },
+  "source_preflight": {
+    "max_effective_native_path_characters": 172,
+    "material_metadata_match": true,
+    "actual_techset_name": "mopw_l_sm_replace_i0c0s0o0n0p0",
+    "d5_max_path_errno_proven": false
+  },
+  "admission_count": 1,
+  "actual_phases": [
+    {
+      "name": "authored-stage",
+      "exit_code": 0,
+      "original_tree_closure_confirmed": true,
+      "elapsed_ms": 346.39989998936653
+    },
+    {
+      "name": "authored-source",
+      "exit_code": 0,
+      "original_tree_closure_confirmed": true,
+      "elapsed_ms": 237.9239999949932
+    },
+    {
+      "name": "hud-build",
+      "exit_code": 0,
+      "original_tree_closure_confirmed": true,
+      "elapsed_ms": 6745.337600007653
+    },
+    {
+      "name": "hud-offline",
+      "exit_code": 0,
+      "original_tree_closure_confirmed": true,
+      "elapsed_ms": 4634.784799993038
+    },
+    {
+      "name": "hud-roundtrip",
+      "exit_code": 0,
+      "original_tree_closure_confirmed": true,
+      "elapsed_ms": 6798.222699999809
+    },
+    {
+      "name": "model-geometry",
+      "exit_code": 0,
+      "original_tree_closure_confirmed": true,
+      "elapsed_ms": 2437.864500015974
+    },
+    {
+      "name": "model-authored-material",
+      "exit_code": 0,
+      "original_tree_closure_confirmed": true,
+      "elapsed_ms": 2269.6667000055313
+    }
+  ],
+  "geometry_job_registration": "Original job already empty before CIM registration",
+  "accepted_source_plan": {
+    "schema": "iw7.model-ff-plan/3",
+    "bytes": 4936,
+    "sha256": "02285a22c7a10333dfb1d3593479cc2248c81eddf2eb90405f35a7ae7ddd19a1"
+  },
+  "candidate_qualified_under_original_admission": true,
+  "candidate_binary_sha256_measured_under_admission": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "stock_inputs_measured": 104,
+  "hardlink_inputs": 95,
+  "copy_inputs": 9,
+  "unique_stock_providers_measured": 73,
+  "ff": {
+    "bytes": 1904,
+    "sha256": "6a4c9743cc8a25d354dec22ef3369fa0c28ea8d7285cb3bfc2fa35c94a8a8427",
+    "inventory_verified": true,
+    "geometry_readback_verified": true,
+    "material_fields_verified": true,
+    "serialized_image_bytes_verified": true
+  },
+  "geometry_reader": {
+    "bytes": 1355,
+    "sha256": "ea7d29f25840cb9ea28c9b198377cc06c6e0c42ff2ec06e9a6ab205734fdc34c",
+    "document": {
+      "schema": "iw7.model-roundtrip/1",
+      "geometry_profile": "iw7-authored-rigid-v1",
+      "namespace": "sdk_author_platform",
+      "zone": "sdk_author_platform",
+      "model_name": "sdk_author_platform_model",
+      "mesh_name": "sdk_author_platform_mesh",
+      "vertices": 24,
+      "triangles": 12,
+      "bones": 1,
+      "surfaces": 1,
+      "lods": 1,
+      "shadow_cutoff_lod": 6,
+      "collision_lod": 255,
+      "lod0_dist": 1000000,
+      "has_lods": true,
+      "geometry_roundtrip_verified": true,
+      "read_existing_supported": true,
+      "normal_encoding": "H1-1010102-candidate",
+      "iw7_normal_encoding_verified": false,
+      "material_reference": "sdk_author_platform_material",
+      "physics_serialized": false,
+      "ff_built": false,
+      "pixels_verified": false,
+      "ready": false,
+      "source_plan_sha256": "02285A22C7A10333DFB1D3593479CC2248C81EDDF2EB90405F35A7AE7DDD19A1",
+      "ff": {
+        "bytes": 1904,
+        "sha256": "6A4C9743CC8A25D354DEC22EF3369FA0C28EA8D7285CB3BFC2FA35C94A8A8427"
+      },
+      "dumped_artifacts": [
+        {
+          "path": "xmodel/sdk_author_platform_model.xmb",
+          "bytes": 978,
+          "sha256": "30F6A789B8E0698B1F3237DB2ED2565553F6DD7ADB185F3EE6F27763ECCE131A"
+        },
+        {
+          "path": "xsurface/sdk_author_platform_mesh.xsb",
+          "bytes": 1233,
+          "sha256": "50978EEDAB24B38C7AA8604ECBBC133B7364305BB4957DF884BD227B506F41A8"
+        }
+      ]
+    }
+  },
+  "surface_reader": {
+    "bytes": 1050,
+    "sha256": "d0c10c96ddead4798f71d3903d4bd4e0abc428d2f4eb7d7916b35774e6b02e58",
+    "document": {
+      "schema": "iw7.authored-material-roundtrip/1",
+      "geometry_profile": "iw7-authored-rigid-v1",
+      "namespace": "sdk_author_platform",
+      "zone": "sdk_author_platform",
+      "material_reference": "sdk_author_platform_material",
+      "source_plan_sha256": "02285a22c7a10333dfb1d3593479cc2248c81eddf2eb90405f35a7ae7ddd19a1",
+      "ff": {
+        "bytes": 1904,
+        "sha256": "6a4c9743cc8a25d354dec22ef3369fa0c28ea8d7285cb3bfc2fa35c94a8a8427"
+      },
+      "image": {
+        "image": "sdk_author_platform_color",
+        "dxgi_format": 28,
+        "width": 8,
+        "height": 8,
+        "mip_count": 1,
+        "pixel_bytes": 256,
+        "iw7_semantic": 14,
+        "pixel_sha256": "1efc11620bcb75a33400281206b658059cb4f3fe704693d8beec52fa7a65ef77",
+        "serialized_pixel_bytes_verified": true,
+        "material_verified": false,
+        "rendered_verified": false
+      },
+      "material_fields_verified": true,
+      "native_cbt_semantics_verified": false,
+      "recipient_resolution_verified": false,
+      "pixels_rendered_verified": false,
+      "physics_serialized": false,
+      "ready": false
+    }
+  },
+  "primary_failure": {
+    "stage": "before-release publication",
+    "error": "Unexpected ModelFF output file.",
+    "main_try_failure": false
+  },
+  "original_state": {
+    "status": "BootstrapInventoryVerified",
+    "transaction_restored": true,
+    "restored": true,
+    "stock_preserved": true,
+    "restoration_status": "Refused",
+    "cleanup_error": "Unexpected ModelFF output file.",
+    "success_flags_left_false": true
+  },
+  "global_output_before_recovery_publication": {
+    "entries": 146,
+    "files": 84,
+    "directories": 62,
+    "bytes": 1674733,
+    "original_declared_entry_limit": 391,
+    "original_declared_files": 316,
+    "original_declared_directories": 75,
+    "original_namespace_accepted": false,
+    "original_namespace_frozen_unchanged": true,
+    "global_output_limit_bytes": 268435456,
+    "metadata_reserve_bytes": 1048576,
+    "unexpected_metadata_only": [
+      {
+        "path": "work/__iw7_ship",
+        "bytes": 4
+      },
+      {
+        "path": "work/main/data0.dcache",
+        "bytes": 0
+      },
+      {
+        "path": "work/main/data1.dcache",
+        "bytes": 0
+      },
+      {
+        "path": "work/main/toc0.dcache",
+        "bytes": 549664
+      },
+      {
+        "path": "work/main/toc1.dcache",
+        "bytes": 549664
+      },
+      {
+        "path": "owned-hud-roundtrip/zt-tlsdll.dll",
+        "bytes": 113152
+      },
+      {
+        "path": "owned-hud-offline/zt-tlsdll.dll",
+        "bytes": 113152
+      },
+      {
+        "path": "owned-hud-build/zt-tlsdll.dll",
+        "bytes": 113152
+      }
+    ],
+    "opaque_contents_opened_for_namespace_diagnosis": false
+  },
+  "closure": {
+    "recovery_invocations": 1,
+    "same_original_references_verified": true,
+    "actual_closed_handles": {
+      "context_inputs": 88,
+      "stock": 73,
+      "outer_source": 1119,
+      "reader_metadata_inputs": 2,
+      "failure_publications": 2,
+      "total": 1284
+    },
+    "separate_invocation_source_handle_closed": true,
+    "all_actual_guard_handles_closed_and_lists_empty": true,
+    "original_exact_three_statement_release_tail": true,
+    "lease_released": true,
+    "restoration_replayed": false,
+    "new_owner_context_lease_job_or_deadline": false,
+    "forced_kill": false,
+    "failure_publications_combined_bytes": 107058,
+    "guarded_create_new_flush_true_same_stream_hash_json_readback": true,
+    "original_group_deadline_seconds_unchanged": 600,
+    "original_group_elapsed_at_preexit_ms": 1064225.0511999875,
+    "final_exit_mode": "guarded interactive exit 1",
+    "true_pty_aggregate_exit_code": 1,
+    "postexit_captured_utc": "2026-10-15T11:51:14.6481956Z",
+    "fresh_nine_original_pids_games_compiler_vctip_mspdbsrv_and_leases_absent": true,
+    "kernel_creation_filetime_preserved_as_string_locally": true,
+    "root_independently_corroborated_before_slot_release": true,
+    "root_slot_release_utc": "2026-10-15T11:51:20.9048475Z"
+  },
+  "evidence": {
+    "capsule.source.json": {
+      "bytes": 2261,
+      "sha256": "db722c60c23f1ca9c88cf09620be3ebee535158cd4d7c15f46a1ed0542d69c7e"
+    },
+    "authored-ff-d6.outer.ps1": {
+      "bytes": 13622,
+      "sha256": "4ce9b06c5f608a46ada1a36c1fed9e913ac05ca8cf4c90c273945f861619bd09"
+    },
+    "ff-plan.local.json": {
+      "bytes": 280351,
+      "sha256": "c5d7f7662966a63de07fe6bd38b6e5edc73ed09c8feaa219bf9d09002a8b0e80"
+    },
+    "output-namespace.source.json": {
+      "bytes": 16496,
+      "sha256": "6b61d32b07cb4d12b79733487e84e0eaff7ea1fd1310a1e4c7ff3ce62d5da223"
+    },
+    "author-inputs.local.json": {
+      "bytes": 3511,
+      "sha256": "249ea9735edf49780d9449217ab9c81c48919201ef72b41cf4fa36fbf4c40430"
+    },
+    "main-stock-source.local.json": {
+      "bytes": 606,
+      "sha256": "ae3cb170120f3f4cece1cc683c28b65b6da35d08a66bb9a0e6e7312822a1b711"
+    },
+    "source-preview.local.json": {
+      "bytes": 439,
+      "sha256": "556b68a1aa89976c0f84215ae7987e6923249d16a3427d866f9518124149a163"
+    },
+    "Close-AuthoredFFD6Failure.Source.local.ps1": {
+      "bytes": 24349,
+      "sha256": "3a7b240d4cbfcde267caa344a29a4c6715c4feb59061aea278d6dbe1d626e0e7"
+    },
+    "d6-failure-preexit.json": {
+      "bytes": 104480,
+      "sha256": "5bd7e7b089b19b2e0a9136e8ff5ffad8a609519563fdd68cac536f8d1005e72a"
+    },
+    "d6-failure-closure.json": {
+      "bytes": 2578,
+      "sha256": "759e76c1350b88eeeb07742678cb52c267f55520cb70ea4338861c230f46abd5"
+    },
+    "d6-original-host-postexit.local.json": {
+      "bytes": 2497,
+      "sha256": "2212dcc4e19dbc0499d87818a7484c572a3da12180ec6cf3ba660fa8335b6759"
+    }
+  },
+  "native_or_stock_artifacts_reopened_for_documentation": false,
+  "standalone_cpp_rebuilt": false,
+  "bind_materialize_run": false,
+  "rendered_pixels_verified": false,
+  "collision_or_player_contact_verified": false,
+  "game_run": false,
+  "owner_gameplay_accepted": false,
+  "ready": false
+}

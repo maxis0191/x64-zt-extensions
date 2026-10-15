@@ -1989,6 +1989,31 @@ $originalPlan=[pscustomobject]@{RunRoot=$RunRoot;OutputLimitBytes=256MB;Metadata
 $modelFFRoot=[pscustomobject]@{Plan=$originalPlan;OutputNamespace=$profile;OutputNamespaceCounter=$counter;
     Publications=[Collections.Generic.List[object]]::new();PublicationGuards=[Collections.Generic.List[IDisposable]]::new()}
 try{
+    # Owned synthetic text only: exercise all eight fixed engine-output names,
+    # including publication with them present. No D6 blob or DLL is opened.
+    $engineOutputs=@('work/__iw7_ship','work/main/data0.dcache','work/main/data1.dcache',
+        'work/main/toc0.dcache','work/main/toc1.dcache','owned-hud-build/zt-tlsdll.dll',
+        'owned-hud-offline/zt-tlsdll.dll','owned-hud-roundtrip/zt-tlsdll.dll')
+    foreach($name in $engineOutputs){
+        Check ($profile.Files.ContainsKey($name)) ('Fixed pre-run engine output missing: '+$name)
+        Put $RunRoot $name
+    }
+    $engineSnapshot=Measure-ModelFFOutputNamespace $profile $RunRoot
+    Check ($engineSnapshot.Entries -eq 140 -and $engineSnapshot.Files -eq 77 -and $engineSnapshot.Directories -eq 63 -and $engineSnapshot.Bytes -eq 77) 'Engine outputs escaped global file/directory/byte accounting.'
+    Check ((& $counter $RunRoot) -eq 77) 'Frozen counter did not count all eight engine outputs.'
+    Refuse {& $counter $RunRoot 76} 'Global ModelFF output byte allowance'
+    foreach($foreign in @('work/main/data2.dcache','work/main/toc2.dcache','work/main/extra.dcache',
+            'work/__iw7_ship.extra','owned-hud-build/extra.dll','owned-model-geometry/zt-tlsdll.dll')){
+        Put $RunRoot $foreign
+        try{Refuse {& $counter $RunRoot} 'Unexpected ModelFF output file'}
+        finally{[IO.File]::Delete((Join-Path $RunRoot $foreign))}
+    }
+    Put $RunRoot 'owned-hud-build/nested/zt-tlsdll.dll'
+    try{Refuse {& $counter $RunRoot} 'Unexpected ModelFF output directory'}
+    finally{
+        [IO.File]::Delete((Join-Path $RunRoot 'owned-hud-build/nested/zt-tlsdll.dll'))
+        [IO.Directory]::Delete((Join-Path $RunRoot 'owned-hud-build/nested'))
+    }
     $record=Publish-ModelFFReceipt ([ordered]@{Schema='synthetic-source-native';Ready=$false}) 'authored-native-run.json'
     Check ([IO.File]::Exists($record.Path) -and $modelFFRoot.Publications.Count -eq 1 -and $modelFFRoot.PublicationGuards.Count -eq 1) 'Actual atomic publication/guard was bypassed.'
     Check (![IO.File]::Exists((Join-Path $RunRoot 'authored-native-run.pending.json'))) 'Pending publication was not moved atomically.'
@@ -2004,7 +2029,7 @@ try{
     Put $RunRoot 'work/foreign.json'
     Refuse {Publish-ModelFFReceipt ([ordered]@{Ready=$false}) 'authored-closure.json'} 'Unexpected ModelFF output file|directory|entry count'
     Check ($modelFFRoot.PublicationGuards.Count -eq 1 -and ![IO.File]::Exists((Join-Path $RunRoot 'authored-closure.json'))) 'Refused publication dropped guards or wrote a receipt.'
-    [IO.File]::Delete((Join-Path $RunRoot 'work/foreign.json'));[IO.Directory]::Delete((Join-Path $RunRoot 'work'))
+    [IO.File]::Delete((Join-Path $RunRoot 'work/foreign.json'))
     Refuse {Publish-ModelFFReceipt @{} 'foreign.json'} 'literal publication'
     $otherProfile=New-ModelFFOutputNamespace -RunRoot $RunRoot -SourceRoot (Join-Path $RunRoot 'source') -Zone source_test -DeclaredFiles @('source/other.json')
     $modelFFRoot.OutputNamespaceCounter=New-ModelFFOutputNamespaceCounter $otherProfile
