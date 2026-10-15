@@ -10,7 +10,7 @@ retail image definitions or authorize a different native operation.
 The distinct input has exactly 41 outer keys, nine keys per binding row and the
 existing ten-key owned snapshot. It reuses `incoming_image_consumer.snapshot`
 and `selected_image_request.validate_copied_image_metadata` for the existing
-124-key image DTO. No duplicate image parser, selector, serializer, extraction
+copied-image DTO. No duplicate image parser, selector, serializer, extraction
 or capture pipeline is introduced. The original incoming, F2, registration33
 and selected-image APIs remain unchanged.
 
