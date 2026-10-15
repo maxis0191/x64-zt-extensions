@@ -2,6 +2,12 @@
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+function Test-PlayerHostCreation([datetime]$CimCreated,[datetime]$KernelCreated){
+    # Compare integral UTC microseconds; retain original kernel100ns separately.
+    [long]$cimTicks=$CimCreated.ToUniversalTime().Ticks
+    [long]$kernelTicks=$KernelCreated.ToUniversalTime().Ticks
+    ($cimTicks-($cimTicks%10)) -eq ($kernelTicks-($kernelTicks%10))
+}
 function Read-PlayerExportSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$Keep=$null,
  [ValidateSet('Plan','Runner','Provider','Metadata','Request','StockManifest','Receipt')][string]$Role='Metadata'){
     # Role/path/extension checks precede Get-Item and, crucially, FileStream.
@@ -55,14 +61,14 @@ if($hostArgs.Count -ne 6 -or $hostArgs[0] -cne $managed -or $hostArgs[1] -cne '-
  [Reflection.Assembly]::GetEntryAssembly().Location -cne $managed){throw 'Physical fresh NoExit/dot managed invocation required.'}
 $physical=Get-CimInstance Win32_Process -Filter "ProcessId=$PID"
 $currentProcess=[Diagnostics.Process]::GetCurrentProcess()
-try{$physicalImage=$currentProcess.MainModule.FileName;$physicalCreated=$currentProcess.StartTime.ToUniversalTime().ToString('o')}finally{$currentProcess.Dispose()}
+try{$physicalImage=$currentProcess.MainModule.FileName;$kernelCreated=$currentProcess.StartTime.ToUniversalTime();$physicalCreated=$kernelCreated.ToString('o')}finally{$currentProcess.Dispose()}
 if($physical.ExecutablePath -cne $bundled -or $physicalImage -cne $bundled -or !$physical.CreationDate -or
- $physical.CreationDate.ToUniversalTime().ToString('o') -cne $physicalCreated -or $physical.CommandLine -notmatch '(?i)-NoExit\b' -or
+ !(Test-PlayerHostCreation $physical.CreationDate $kernelCreated) -or $physical.CommandLine -notmatch '(?i)-NoExit\b' -or
  ('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7StockLinksV1.Ntfs' -as [type])){throw 'Fresh original host identity required.'}
 $guards=[Collections.Generic.List[object]]::new()
 $context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards;Work=$plan.WorkRoot}
 $state=[ordered]@{Schema='iw7.player-template-export/1';Status='Pending';PlanSHA256=$PlanSHA256;CanExit=$false;Ready=$false;
- Host=[ordered]@{PID=$PID;Image=$physical.ExecutablePath;CreatedUtc=$physical.CreationDate.ToUniversalTime().ToString('o')};
+ Host=[ordered]@{PID=$PID;Image=$physical.ExecutablePath;CreatedUtc=$physicalCreated;CimCreatedUtc=$physical.CreationDate.ToUniversalTime().ToString('o')};
  Inputs=[Collections.Generic.List[object]]::new();ContentPins=[Collections.Generic.List[object]]::new();
  CreatedCopies=[Collections.Generic.List[object]]::new();UnknownCopyCreation=$false;LeaseReleased=$false;GuardsDisposed=$false;CandidateExecuted=$false}
 $root=@{Context=$context;State=$state;Plan=$plan;Key='IW7.PlayerTemplateExport.Original';StockContexts=[Collections.Generic.List[object]]::new();CopyStreams=[Collections.Generic.List[object]]::new()}

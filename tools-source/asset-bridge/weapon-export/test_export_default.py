@@ -105,4 +105,14 @@ foreach($path in @((Join-Path $Directory 'absent.exe'),(Join-Path $Directory 'ab
 }
 Write-Output 'before-open-role-pass'
 ''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('before-open-role-pass',r.stdout)
+ def test_creation_precision_positive_and_different_microsecond_negative(self):
+  r=self.fragment('Test-PlayerHostCreation','''
+$kernel=[datetime]::Parse('2026-10-14T23:40:12.2195679Z').ToUniversalTime()
+$cim=[datetime]::Parse('2026-10-14T23:40:12.2195670Z').ToUniversalTime()
+$different=[datetime]::Parse('2026-10-14T23:40:12.2195680Z').ToUniversalTime()
+if(!(Test-PlayerHostCreation $cim $kernel)){throw 'Valid truncated CIM creation refused'}
+if(Test-PlayerHostCreation $different $kernel){throw 'Different creation accepted'}
+if($kernel.ToString('o') -cne '2026-10-14T23:40:12.2195679Z'){throw 'Kernel identity precision lost'}
+Write-Output 'precision-causal-pass'
+''');self.assertEqual(r.returncode,0,r.stderr);self.assertIn('precision-causal-pass',r.stdout)
 if __name__=='__main__':unittest.main()
