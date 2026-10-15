@@ -419,3 +419,8 @@ writer and native geometry readback for that exact project. See the
 [closed run and remaining gates](../../docs/AUTHORED-PLATFORM-CPP-2026-10-15.md).
 The authored FF connection above remains Source-only; its material, FF and
 runtime claims are unchanged by the standalone geometry result.
+
+The authored branch now has a separate
+[Source checkpoint for one-admission staging and FF ownership](AUTHORED-FF.md).
+This changes only execution preparation/lifecycle; it supplies no actual FF or
+runtime evidence and does not relabel the frozen B2 CPP result.

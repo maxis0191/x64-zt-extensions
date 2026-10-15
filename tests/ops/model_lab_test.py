@@ -50,7 +50,7 @@ $ErrorActionPreference='Stop'
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($Entry,[ref]$tokens,[ref]$errors)
 if($errors){throw 'Entry parse failed'}
-$gates=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Observed stock metadata/mode changed.'") -and $n.Clauses[0].Item1.Extent.Text.Trim() -cne '$StockBindingPlan'},$true))
+$gates=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Observed stock metadata/mode changed.'") -and $n.Clauses[0].Item1.Extent.Text.Contains('$f.Length -ne $entry.Bytes')},$true))
 if($gates.Count -ne 1){throw 'Unique actual stock metadata gate required'}
 $gate=[scriptblock]::Create($gates[0].Extent.Text)
 $path=Join-Path $Root 'authored-stock.bin'
@@ -171,7 +171,7 @@ $toolPath=Join-Path $CandidateRoot 'bin/zonetool-community.exe'
 $expected=(Microsoft.PowerShell.Utility\Get-FileHash -LiteralPath $toolPath).Hash.ToLowerInvariant()
 $metadata=Join-Path $CandidateRoot 'build-artifact.local.json'
 @{schema='iw7.zonetool-community-candidate/1';executable=@{path=$toolPath;sha256=$expected}}|ConvertTo-Json|Set-Content $metadata
-$CandidateArtifactSHA256='1'*64;$ToolProvenance='';$NativeJobAssembly='';$arena=$false
+$CandidateArtifactSHA256='1'*64;$ToolProvenance='';$NativeJobAssembly='';$arena=$false;$authored=$false
 $script:Admitted=$false;$script:OpaqueReads=0;$script:QualificationCalls=0
 function Resolve-IW7BasePath($Base,$Relative){Join-Path $Base $Relative}
 function Read-BeaconJson($Path,$Limit){Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json}
@@ -191,7 +191,7 @@ function Assert-BeaconCandidate($Base,$SHA){
     [pscustomobject]@{Path=$toolPath;SHA256=$expected}
 }
 . ([scriptblock]::Create($blocks[0].Extent.Text))
-$preCdb=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '!$CandidateRoot -or !$arena'},$true))[0]
+$preCdb=@($ast.FindAll({param($n);$n -is [Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text.Trim() -ceq '!$CandidateRoot -or (!$arena -and !$authored)'},$true))[0]
 . ([scriptblock]::Create($preCdb.Extent.Text))
 $DryRun=$true;$RunRoot='authored-fresh-run';$inputs=@([pscustomobject]@{Relative='authored-input'});$sourceNames=@('authored-source');$reader=$null
 $preview=& ([scriptblock]::Create($dry.Extent.Text))
@@ -1852,7 +1852,7 @@ foreach($profile in @('t7-iw7-resident-static-v1','t7-iw7-resident-static-v2','u
 # stock, admission or process body. This catches an accidentally v1-only gate.
 $ast=[Management.Automation.Language.Parser]::ParseFile("$Repo/ops/model-lab/Build-ModelFF.ps1",[ref]$tokens,[ref]$errors)
 if($errors){throw $errors}
-$gate=$ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Pinned exact original FF source preparation required.'")},$true)
+$gate=$ast.FindAll({param($n) $n -is [Management.Automation.Language.IfStatementAst] -and $n.Extent.Text.Contains("throw 'Pinned exact original FF source preparation required.'") -and $n.Clauses[0].Item1.Extent.Text.Contains('$plan.schema -cne')},$true)
 if(@($gate).Count -ne 1){throw 'Ambiguous build source gate'}
 $plan=$valid;$planVersion=2;$authored=$false;$sourceNames=@(Get-ModelFFSourceNames $plan)
 Invoke-Expression $gate[0].Extent.Text
@@ -1901,6 +1901,21 @@ if(!$http.Stopped){throw 'Synthetic HTTP worker remains active'}
 ''')
             result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), folder], capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+class AuthoredModelFFLifecycleTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('pwsh') and sys.platform == 'win32', 'Windows Source path/owner fixtures require pwsh')
+    def test_actual_authored_entry_metadata_deadlines_and_restore_callback(self):
+        result = subprocess.run(['pwsh', '-NoLogo', '-NoProfile', '-File',
+                                 str(ROOT / 'tests/ops/Test-AuthoredModelFF.Source.ps1'), '-Repo', str(ROOT)],
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        report = json.loads(result.stdout.strip())
+        self.assertEqual(report['Result'], 'PASS')
+        self.assertGreaterEqual(report['Assertions'], 60)
+        self.assertFalse(report['NativeProcessStarted'])
+        self.assertFalse(report['StockRead'])
+        self.assertFalse(report['LeaseAcquired'])
 
 
 if __name__ == '__main__':
