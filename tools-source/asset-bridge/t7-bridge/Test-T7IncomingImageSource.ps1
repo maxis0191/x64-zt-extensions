@@ -1,17 +1,23 @@
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'h1-fixture/H1Native.Core.ps1')
 . (Join-Path $PSScriptRoot 'T7Catalogue.Profile.ps1')
 . (Join-Path $PSScriptRoot 'T7CatalogueHost.Core.ps1')
 . (Join-Path $PSScriptRoot 'T7IncomingImage.Profile.ps1')
 $checks=0
 function Check($Value,[string]$Message){if(!$Value){throw $Message};$script:checks++}
 function Refuses([scriptblock]$Action,[string]$Message){$caught=$false;try{& $Action}catch{$caught=$_.Exception.Message.Contains($Message)};Check $caught ('Expected refusal: '+$Message)}
-function New-IncomingSourcePlan {
-    [pscustomobject]@{Schema='iw7.t7-incoming-image-source-plan/1';Operation='IncomingImageObservationV1';CandidateProfile='t7-incoming-image-header-observation-v1';
+function New-IncomingSourcePlan([switch]$Corrected) {
+    $plan=[pscustomobject]@{Schema='iw7.t7-incoming-image-source-plan/1';Operation='IncomingImageObservationV1';CandidateProfile='t7-incoming-image-header-observation-v1';
         Arguments=@('-t7-iw7-incoming-image-header-v1','mp_freerun_04','p7_fre_platform_cap_02','0');
         CandidateSource=$null;CandidateBytes=$null;CandidateSHA256=$null;BuildPlan=$null;BuildReceipt=$null;ExpectedBuildPlanSHA256=$null;ExpectedBuildReceiptSHA256=$null;
         SelectedIncomingImageObservationV1=[pscustomobject]@{Schema='iw7.t7-incoming-image-proposal/1';SourceRevision='4873ef4a4ce8478020d8533651f123f8feadfa95';NativeSchema='iw7.t7-incoming-image-header-observation/1';
             Contract=[pscustomobject]@{Path='C:\authored\incoming-image-source-contract.json';Bytes=4613;SHA256='1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f'};
             SlotOrder=@('bootstrap/reference','bootstrap/ordinary','map_load/reference','map_load/ordinary');SourceOnlyPending=$true;CPPQualified=$false;NativeObserved=$false;QualifiedObjectMipCount=$null;Ready=$false}}
+    if($Corrected){
+        $plan.SelectedIncomingImageObservationV1.SourceRevision='41e595f09dabdd6dff14439f09bd701bddd4a235'
+        $plan.SelectedIncomingImageObservationV1.Contract.SHA256='a2cdaf54b7387616bd56d9a78538e7a273ec35e9eb2f6f6ac1e130ecd3851323'
+    }
+    $plan
 }
 $plan=New-IncomingSourcePlan;Assert-T7IncomingImageSourcePlan $plan;Check $true 'Exact pending Source plan refused.'
 Check (Test-T7IncomingImageIntent $plan) 'Incoming Source intent not detected.'
@@ -23,6 +29,21 @@ function New-T7PrepatchStart {throw 'Reached process setup'}
 Refuses {Assert-T7CataloguePlan $plan 'unused' 'unused'} 'new actual closed CPP cohort'
 Refuses {Assert-T7CatalogueBuild $plan $null} 'new actual closed CPP cohort'
 Refuses {New-T7CatalogueStart $plan} 'new actual closed CPP cohort'
+$corrected=New-IncomingSourcePlan -Corrected
+Assert-T7IncomingImageSourcePlan $corrected;Check $true 'Corrected Source prerequisite refused.'
+Refuses {Assert-T7CataloguePlan $corrected 'unused' 'unused'} 'new actual closed CPP cohort'
+Refuses {Assert-T7CatalogueBuild $corrected $null} 'new actual closed CPP cohort'
+Refuses {New-T7CatalogueStart $corrected} 'new actual closed CPP cohort'
+foreach($pair in @(@($false,'a2cdaf54b7387616bd56d9a78538e7a273ec35e9eb2f6f6ac1e130ecd3851323'),
+                  @($true,'1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f'))){
+    $useCorrected=[bool]$pair[0]
+    $mixed=New-IncomingSourcePlan -Corrected:$useCorrected;$mixed.SelectedIncomingImageObservationV1.Contract.SHA256=$pair[1]
+    Refuses {Assert-T7IncomingImageSourcePlan $mixed} 'contract text pin required'
+}
+$mixed=New-IncomingSourcePlan -Corrected;$mixed.SelectedIncomingImageObservationV1.SourceRevision='2057a2c7704b5fbb914268721da4be852c746e75'
+Refuses {Assert-T7IncomingImageSourcePlan $mixed} 'Source revision required'
+$mixed=New-IncomingSourcePlan -Corrected;$mixed.CandidateSHA256='eeeca36f26ff2c76b98a608fe17a6b47259401b1cd800f73fe886bd099ac6dbc'
+Refuses {Assert-T7IncomingImageSourcePlan $mixed} 'must remain NULL'
 foreach($name in 'CandidateSource','CandidateBytes','CandidateSHA256','BuildPlan','BuildReceipt','ExpectedBuildPlanSHA256','ExpectedBuildReceiptSHA256'){
     foreach($bad in @('eeeca36f',0,$false,[object[]]@($null))){$plan=New-IncomingSourcePlan;$plan.$name=$bad;Refuses {Assert-T7IncomingImageSourcePlan $plan} 'must remain NULL'}
     $plan=New-IncomingSourcePlan;$plan.PSObject.Properties.Remove($name);Refuses {Assert-T7IncomingImageSourcePlan $plan} 'must remain NULL'
@@ -60,6 +81,107 @@ foreach($operation in 'Catalogue','ResidentExportV1','MaterialPartsV1','ImagePro
     Check (!(Test-T7IncomingImageIntent $legacy)) 'Existing mode selected incoming.'
     Check ((Get-T7CatalogueOperation $legacy) -ceq $operation) 'Existing operation changed.'
 }
+# Authored CPP87 bodies; these tests never launch a fixture or inspect an artifact.
+function New-IncomingCompiledPlan {
+    $c=Get-T7IncomingImageCohort;$root='C:\authored\cpp87';$bindings=@()
+    $m=[ordered]@{Schema='iw7.t7-incoming-image-cpp87/1';ReviewedPrerequisiteSource=$c.ReviewedPrerequisiteSource;CompiledExtensionSource=$c.Source}
+    foreach($name in 'Contract','SourceManifest','HostWitness','ClosureWitness','FixtureStdout','FreshWitness'){
+        $pin=[pscustomobject]@{Path=(Join-Path $root ($name+'.json'));Bytes=$c[$name][0];SHA256=$c[$name][1]}
+        $m[$name]=$pin;$bindings+=,[pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true}
+    }
+    foreach($pair in @(@('Plan','plan.json'),@('Receipt','receipt.json'))){
+        $bindings+=,[pscustomobject]@{Path=(Join-Path $root $pair[1]);Bytes=$c[$pair[0]][0];SHA256=$c[$pair[0]][1];IsText=$true}
+    }
+    [pscustomobject]@{Schema='iw7.t7-incoming-image-plan/1';Operation='IncomingImageObservationV1';CandidateProfile='t7-incoming-image-header-observation-v1';
+        BootstrapPolicy='QualifiedCollectionV3';Bootstraps=@(1..23);SharedQualification=[pscustomobject]@{};CandidateBytes=$c.EXEBytes;CandidateSHA256=$c.EXESHA256;
+        CandidateSource=(Join-Path $root 'link/zonetool-t7.exe');BuildPlan=(Join-Path $root 'plan.json');BuildReceipt=(Join-Path $root 'receipt.json');
+        ExpectedBuildPlanSHA256=$c.Plan[1];ExpectedBuildReceiptSHA256=$c.Receipt[1];OutputKey='t7_iw7_incoming_image_observation_v1';TraceStderrLimitBytes=16384;
+        Arguments=@('-t7-iw7-incoming-image-header-v1','mp_freerun_04','p7_fre_platform_cap_02','0');Bindings=$bindings;SelectedIncomingImageObservationV1=[pscustomobject]$m}
+}
+function New-IncomingCppFixture {
+    $c=Get-T7IncomingImageCohort;$plan=New-IncomingCompiledPlan
+    $profile=[pscustomobject]@{Name='t7-incoming-image-header-observation-v1';Option='-t7-iw7-incoming-image-header-v1';ArgumentCount=5;
+        ObservationSchema='iw7.t7-incoming-image-header-observation/1';IncomingSchema='iw7.t7-incoming-image-header-observation/1';
+        RegistrationSchema='iw7.t7-registration-image-header-metadata/1';
+        RegistrationFixtureChecks=39;IncomingFixtureChecks=48;SourceOnlyPending=$false;RegistrationCPPQualified=$false;IncomingCPPQualified=$false}
+    $stages=@(foreach($name in 'registration-fixture-compile','registration-fixture-test','main','zonetool11','link'){
+        [pscustomobject]@{Name=$name;Stage=$(if($name -ceq 'registration-fixture-test'){'Probe'}elseif($name -ceq 'link'){'Link'}else{'Compile'});
+            ExitCode=0;TreeClosureConfirmed=$true;Artifacts=@();CompilerTelemetry=[pscustomobject]@{Completed=($name -cne 'registration-fixture-test');
+                AfterStop=[pscustomobject]@{RootExited=$true;RootExitCode=0;ActiveProcesses=0};AfterStopMembers=[pscustomobject]@{Members=@()}}}
+    })
+    $stages[1]|Add-Member LegacyRegistrationChecks 39;$stages[1]|Add-Member IncomingChecks 48;$stages[1]|Add-Member EngineInvoked $false
+    $stages[-1].Artifacts=@([pscustomobject]@{Path=$plan.CandidateSource;Bytes=$c.EXEBytes;SHA256=$c.EXESHA256})
+    $receipt=[pscustomobject]@{Schema='iw7.t7-minimal-build/1';Status='Passed';PlanSHA256=$c.Plan[1];InputsReverified=$true;TreeClosureConfirmed=$true;
+        LeaseReleased=$true;Quarantined=$false;CandidateExecuted=$false;RegistrationFixturePassed=$true;IncomingFixturePassed=$true;
+        RegistrationCPPQualified=$true;IncomingCPPQualified=$true;Stages=$stages;CompilerTelemetry=[pscustomobject]@{Completed=$false}}
+    $known=@(for($i=0;$i -lt 11;$i++){[pscustomobject]@{PID=$c.OriginalIDs[$i];Image='C:\authored\original.exe';CreationFileTime=([long]134365054277439850+$i)}})
+    $known[9].Image='C:\authored\pwsh.exe';$known[9].CreationFileTime=[long]134365054277439850
+    $known[10].Image='C:\authored\pwsh.exe';$known[10].CreationFileTime=[long]134365054279170774
+    $observations=@($known|ForEach-Object {[pscustomobject]@{Expected=[pscustomobject]@{PID=$_.PID;Image=$_.Image;CreationFileTime=$_.CreationFileTime};OriginalIdentityPresent=$false;Live=$null}})
+    $witness=[pscustomobject]@{Schema='iw7.t7-incoming-image-cpp-preexit/1';SourceCommit=$c.Source;Status='Passed';BuildGuards=0;CallerSourceGuards=0;
+        Host=[pscustomobject]@{PID=19212;CreationFileTime=[long]134365054279170774;Image='C:\authored\pwsh.exe';EntryAssembly='C:\authored\pwsh.dll';Invocation='.';
+            NoExitVerified=$true;VerifiedBeforeImportsAndAdmission=$true;Arguments=@('C:\authored\pwsh.dll','-NoLogo','-NoProfile','-NoExit','-Command','. authored.ps1')};
+        Parent=[pscustomobject]@{PID=26324;CreationFileTime=[long]134365054277439850;Image='C:\authored\pwsh.exe'};KnownOriginalIdentities=$known;
+        CandidateExecuted=$false;NativeCLIExecuted=$false;StockRead=$false;Ready=$false;PhaseProjectionIncomplete=$false}
+    foreach($name in 'SameActualCallerAppDomain','SameOriginalContextPSVariable','SameOriginalStatePSVariable','SameOriginalGuardsPSVariable','SameOriginalOwnerReference',
+        'OriginalContextClosed','OriginalOwnerClosed','CallerSourcePinsReverified','LeaseNull','CanExit','InputsReverified','LeaseReleased','TreeClosureConfirmed',
+        'RegistrationFixturePassed','IncomingFixturePassed','RegistrationCPPQualified','IncomingCPPQualified','ExactCreationFILETIMEsInt64','FourCompilerStageTelemetryCompleted','ProbeCompilerTelemetryNotApplicable'){$witness|Add-Member $name $true}
+    $closure=[pscustomobject]@{Schema='iw7.t7-incoming-image-cpp-closure/1';SourceCommit=$c.Source;Status='Passed';ActualTruePTYSession=50444;ActualTruePTYExitCode=0;
+        ActualCompletionChunk='1ae1c5';Receipt=[pscustomobject]@{SHA256=$c.Receipt[1]};SameOriginalContextProof=[pscustomobject]@{SHA256=$c.HostWitness[1]};
+        FreshObservation=[pscustomobject]@{SHA256=$c.FreshWitness[1]};LeaseRegistryCount=0;OriginalIdentityObservations=$observations;
+        CandidateExecuted=$false;NativeCLIExecuted=$false;StockRead=$false;Ready=$false;ContextReconstructed=$false}
+    foreach($name in 'AllElevenOriginalIdentitiesAbsent','InputsReverified','LeaseReleased','TreeClosureConfirmed','RegistrationCPPQualified','IncomingCPPQualified','NoOpaqueArtifactReopened'){$closure|Add-Member $name $true}
+    [pscustomobject]@{Plan=$plan;Build=[pscustomobject]@{SourceCommit=$c.NativeSource;RunRoot='C:\authored\cpp87';BuildProfile=$profile};Receipt=$receipt;
+        Manifest=[pscustomobject]@{revisions=[pscustomobject]@{'x64-zt-extensions'=$c.Source}};Witness=$witness;Closure=$closure;
+        Fresh=[pscustomobject]@{Schema='iw7.t7-incoming-image-cpp-fresh-identities/1';OriginalPIDs=$c.OriginalIDs;RegistryVersion=1;RegistryLeaseCount=0;NoProcessStopped=$true;LiveAtOriginalPIDs=@();CompilerOrVCTIP=@()}}
+}
+function Qualify-Incoming($f){Assert-T7IncomingImageCpp87 $f.Plan $f.Build $f.Receipt $f.Manifest $f.Witness $f.Closure $f.Fresh}
+$compiled=New-IncomingCompiledPlan;Assert-T7IncomingImagePlan $compiled;Check (Test-T7IncomingImageCompiledPlan $compiled) 'Compiled incoming selector failed.'
+function New-T7PrepatchStart {[Diagnostics.ProcessStartInfo]::new()}
+$start=New-T7CatalogueStart $compiled
+Check (($start.ArgumentList -join '|') -ceq ($compiled.Arguments -join '|')) 'Incoming argv fell through to catalogue.'
+$f=New-IncomingCppFixture;Qualify-Incoming $f;Check $true 'Authored closed CPP87 refused.'
+foreach($case in 'candidate','old-plan','old-receipt','doc-source','old-source','native-source','profile-array','count','stage-order','stage-exit','stage-unclosed',
+    'compiler-placeholder','active','members','probe39','probe48','probe-engine','inputs','receipt-qualified','context','guards','lease','host-generation','host-argv',
+    'pty','live','identity-generation','closure-qualified','reconstructed','fresh-lease','fresh-compiler','artifact','host-argument-array','closure-hash-array','fresh-pid-string',
+    'top-telemetry-promoted','probe-telemetry-promoted','top-telemetry-untyped','probe-telemetry-untyped'){
+    $f=New-IncomingCppFixture
+    switch($case){
+        candidate {$f.Plan.CandidateSHA256='eeeca36f26ff2c76b98a608fe17a6b47259401b1cd800f73fe886bd099ac6dbc'} old-plan {$f.Plan.ExpectedBuildPlanSHA256='old'}
+        old-receipt {$f.Plan.ExpectedBuildReceiptSHA256='old'} doc-source {$f.Manifest.revisions.'x64-zt-extensions'='b20bdb5c4cd20d64da7e7fa9cf6cbd24cf938f43'}
+        old-source {$f.Manifest.revisions.'x64-zt-extensions'='2057a2c7704b5fbb914268721da4be852c746e75'} native-source {$f.Build.SourceCommit='old'}
+        profile-array {$f.Build.BuildProfile.Name=@($f.Build.BuildProfile.Name)} count {$f.Build.BuildProfile.ArgumentCount='5'}
+        stage-order {$f.Receipt.Stages=@($f.Receipt.Stages[1],$f.Receipt.Stages[0])+$f.Receipt.Stages[2..4]} stage-exit {$f.Receipt.Stages[2].ExitCode=2}
+        stage-unclosed {$f.Receipt.Stages[3].TreeClosureConfirmed=$false} compiler-placeholder {$f.Receipt.Stages[2].CompilerTelemetry.Completed=$false}
+        active {$f.Receipt.Stages[4].CompilerTelemetry.AfterStop.ActiveProcesses=1} members {$f.Receipt.Stages[0].CompilerTelemetry.AfterStopMembers.Members=@(1)}
+        probe39 {$f.Receipt.Stages[1].LegacyRegistrationChecks=38} probe48 {$f.Receipt.Stages[1].IncomingChecks=47} probe-engine {$f.Receipt.Stages[1].EngineInvoked=$true}
+        inputs {$f.Receipt.InputsReverified='true'} receipt-qualified {$f.Receipt.IncomingCPPQualified=$false} context {$f.Witness.SameOriginalOwnerReference=$false}
+        guards {$f.Witness.BuildGuards=1} lease {$f.Witness.LeaseNull=$false} host-generation {$f.Witness.Host.CreationFileTime++}
+        host-argv {$f.Witness.Host.Arguments[3]='-Exit'} pty {$f.Closure.ActualTruePTYExitCode=1} live {$f.Closure.OriginalIdentityObservations[0].OriginalIdentityPresent=$true}
+        identity-generation {$f.Closure.OriginalIdentityObservations[0].Expected.CreationFileTime++} closure-qualified {$f.Closure.IncomingCPPQualified=$false}
+        reconstructed {$f.Closure.ContextReconstructed=$true} fresh-lease {$f.Fresh.RegistryLeaseCount=1} fresh-compiler {$f.Fresh.CompilerOrVCTIP=@(1)}
+        artifact {$f.Receipt.Stages[-1].Artifacts[0].SHA256='old'}
+        host-argument-array {$f.Witness.Host.Arguments[5]=@('. authored.ps1')} closure-hash-array {$f.Closure.Receipt.SHA256=@($f.Closure.Receipt.SHA256)}
+        fresh-pid-string {$f.Fresh.OriginalPIDs[0]=[string]$f.Fresh.OriginalPIDs[0]}
+        top-telemetry-promoted {$f.Receipt.CompilerTelemetry.Completed=$true} probe-telemetry-promoted {$f.Receipt.Stages[1].CompilerTelemetry.Completed=$true}
+        top-telemetry-untyped {$f.Receipt.CompilerTelemetry.Completed='false'} probe-telemetry-untyped {$f.Receipt.Stages[1].CompilerTelemetry.Completed='false'}
+    }
+    Refuses {Qualify-Incoming $f} ''
+}
+foreach($name in 'Contract','SourceManifest','HostWitness','ClosureWitness','FixtureStdout','FreshWitness'){
+    foreach($field in 'Bytes','SHA256'){
+        $compiled=New-IncomingCompiledPlan;$compiled.SelectedIncomingImageObservationV1.$name.$field=@($compiled.SelectedIncomingImageObservationV1.$name.$field)
+        Refuses {Assert-T7IncomingImagePlan $compiled} 'typed closed CPP87 text pin'
+    }
+}
+$compiled=New-IncomingCompiledPlan;$compiled.SelectedIncomingImageObservationV1.CompiledExtensionSource=(Get-T7IncomingImageCohort).ReviewedPrerequisiteSource
+Refuses {Assert-T7IncomingImagePlan $compiled} 'collection/tuple'
+$jsonPath=Join-Path ([IO.Path]::GetTempPath()) ('iw7-incoming-source-'+[guid]::NewGuid().ToString('N')+'.json')
+try{
+    [IO.File]::WriteAllText($jsonPath,('{"SourceFixture":true}'+(' '*49139)),[Text.UTF8Encoding]::new($false))
+    Check ((Read-H1SmallJson $jsonPath 1MB).SourceFixture) 'CPP receipt-sized text refused by existing CPP reader.'
+    Refuses {Read-H1SmallJson $jsonPath 32KB} 'exceeds bound'
+}finally{if([IO.File]::Exists($jsonPath)){[IO.File]::Delete($jsonPath)}}
 # Authored Source records. Capture acceptance deliberately does not run consumer150.
 function New-IncomingRecord {
     $r=[ordered]@{}
