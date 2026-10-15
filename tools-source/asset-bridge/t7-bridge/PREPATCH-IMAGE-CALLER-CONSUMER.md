@@ -55,6 +55,8 @@ readable MEM_IMAGE region coverage and exact code hex length. The E8 instruction
 inside the copied interval and its signed rel32 must agree with known target
 7DB4C0; the target is never read or followed. Partial reports require native exit2;
 complete reports require exit0 and return `CallerCapturedForOfflineReview`.
+The existing runner's validation/finalization gates use that selected protocol
+outcome before `CaptureCompletePendingReview`; V2/V3 retain `CaptureComplete`.
 
 All boot, runtime-compatibility, ABI, writer, GfxImage payload and outside-interval
 claims must remain false. A structurally valid report does not establish live

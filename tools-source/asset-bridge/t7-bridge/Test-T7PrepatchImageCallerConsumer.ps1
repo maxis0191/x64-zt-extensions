@@ -179,6 +179,26 @@ Check ($protocol.Option -ceq '-t7-prepatch-image-caller-v1' -and $protocol.Repor
 Check ((Get-T7ReferenceBuildCohort 't7-prepatch-link-v3').CandidateSHA256 -ceq 'd89c4cf326f21038d9fbcc6a18c18db2c17c17f448400a8567ee2e5fdca6a8bb') 'Old V3 cohort relabeled'
 $start=New-T7RefV2Start ([pscustomobject]@{Image='C:\authored\caller.exe';WorkingDirectory='C:\authored\work';RunRoot='C:\authored'}) $protocol.Name
 Check ($start.ArgumentList.Count -eq 1 -and $start.ArgumentList[0] -ceq $protocol.Option -and !$start.UseShellExecute -and $start.CreateNoWindow -and $start.Environment.Count -eq 9) 'Actual caller native invocation differs'
+# Execute the two actual runner outcome gates without its IO/admission/native body.
+$tokens=$null;$errors=$null
+$runnerAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7PrepatchReferenceV2.ps1'),[ref]$tokens,[ref]$errors)
+Check (!$errors.Count) 'Actual runner parse failed'
+$gates=@($runnerAst.FindAll({param($a)$a -is [Management.Automation.Language.IfStatementAst] -and $a.Clauses.Count -eq 1 -and $a.Clauses[0].Item1.Extent.Text.Contains('$state.CaptureOutcome')},$true))
+Check ($gates.Count -eq 2) 'Actual outcome validation/finalization gates missing'
+$validation=@($gates|Where-Object {$_.Clauses[0].Item2.Extent.Text.Contains('Diagnostic did not produce a complete capture.')})
+$finalization=@($gates|Where-Object {$_.Clauses[0].Item2.Extent.Text.Contains("`$state.Status='CaptureCompletePendingReview'")})
+Check ($validation.Count -eq 1 -and $finalization.Count -eq 1) 'Actual outcome gate roles differ'
+foreach($name in 't7-prepatch-reference-v2','t7-prepatch-link-v3','t7-prepatch-image-caller-v1'){
+    $protocol=Get-T7ReferenceProtocol $name;$failure=$null
+    $context=[pscustomobject]@{Closed=$true;Lease=$null}
+    $state=[ordered]@{CaptureOutcome=$protocol.CompleteOutcome;LeaseReleased=$true;TerminationRequested=$false;InputsReverified=$true;Status='Running'}
+    & ([scriptblock]::Create($validation[0].Extent.Text));Check $true 'Actual validation rejected its protocol outcome'
+    & ([scriptblock]::Create($finalization[0].Extent.Text));Check ($state.Status -ceq 'CaptureCompletePendingReview') 'Actual finalization rejected its protocol outcome'
+    $state.CaptureOutcome=if($name -ceq 't7-prepatch-image-caller-v1'){'CaptureComplete'}else{'CallerCapturedForOfflineReview'};$state.Status='Running'
+    Refuses {& ([scriptblock]::Create($validation[0].Extent.Text))} 'Actual validation accepted another protocol outcome'
+    & ([scriptblock]::Create($finalization[0].Extent.Text));Check ($state.Status -ceq 'Running') 'Actual finalization accepted another protocol outcome'
+}
+$protocol=Get-T7ReferenceProtocol 't7-prepatch-image-caller-v1'
 # Exercise the real held-stream decoder with authored text only; no opaque input exists.
 $tempBase=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
 $tempRoot=Join-Path $tempBase ('t7-caller-source-tests-'+[guid]::NewGuid().ToString('N'))

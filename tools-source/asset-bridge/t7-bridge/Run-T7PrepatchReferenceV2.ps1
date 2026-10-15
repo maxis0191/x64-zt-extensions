@@ -113,7 +113,7 @@ try {
             $state.MainAfter=Assert-T7RefV2Main $plan
             Test-H1Budget $plan $state
             Assert-H1Deadline $script:T7RefV2Started 200
-            if(!$failure -and $state.CaptureOutcome -cne 'CaptureComplete'){throw 'Diagnostic did not produce a complete capture.'}
+            if(!$failure -and $state.CaptureOutcome -cne $protocol.CompleteOutcome){throw 'Diagnostic did not produce a complete capture.'}
         }catch{if(!$failure){$failure=$_};$state.ValidationError=$_.Exception.Message;$state.Status='Failed'}
     }
     if($state){Complete-H1Stage $context $state}
@@ -130,7 +130,7 @@ try {
         try {
             if(!$state.Quarantined){Assert-H1Deadline $script:T7RefV2Started 200}
             if(!$failure -and $context.Closed -and !$context.Lease -and $state.LeaseReleased -and
-               !$state.TerminationRequested -and $state.CaptureOutcome -ceq 'CaptureComplete' -and $state.InputsReverified){$state.Status='CaptureCompletePendingReview'}
+               !$state.TerminationRequested -and $state.CaptureOutcome -ceq $protocol.CompleteOutcome -and $state.InputsReverified){$state.Status='CaptureCompletePendingReview'}
         }catch{if(!$failure){$failure=$_};$state.Status='Failed';$state.FinalizationError=$_.Exception.Message}
         try {
             Write-H1Receipt $plan $state $plan.StageRoot
