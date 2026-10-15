@@ -42,9 +42,9 @@ Source preparation. The ten stages are:
 5. IW7 TU;
 6. link.
 
-Preparation only authors172 checks. P later executed172 at its exact revision
-(BUILD-COHORT.md); a new prepared revision cannot inherit that result. CPP and
-any later extraction still require their own distinct Root decisions.
+Preparation only authors172 checks. P and Q later executed172 at their exact
+revisions (BUILD-COHORT.md); a new prepared revision cannot inherit either result.
+CPP and any later extraction still require their own distinct Root decisions.
 
 ## Ordinary CPP DEFAULT checks actual fixture wiring
 
@@ -194,5 +194,30 @@ receipts despite that unchanged native cap. Separate metadata-reserve and
 native-byte overflow cases refuse before publication/release, retaining the
 same owned guard and fixture lease. Existing pre/post-release deadline cases
 remain. These tests load no native owner and acquire no actual reservation;
-they do not qualify a fresh native build. A new package/PREP/CPP decision remains
-necessary before any runtime/extraction decision.
+they do not qualify a fresh native build. A new package/PREP/CPP decision was
+required before the distinct Q execution below.
+
+## Q execution of the corrected ordinary finalization
+
+After its own Source preparation, ordinary DEFAULT and exact Root CPP GO, Q
+compiled merge `e2c96b6a97db2f4874ae9eafec5e19bf7e72c57b` with the unchanged
+native pin `fab935826c898806855376662a8a03317b3ad8f1`. Its exact plan is 419,802
+bytes / SHA256 `d8432df0fd21283a77313a96a496d067278d74adab8e7f889ab94956a7671f6c`.
+All ten stages passed: 8/28/36/100 real checks, fresh IW7 TU and link exit 0.
+Every actual dependency report passed the unchanged strict guard.
+
+The corrected finally path completed under the original clock and context:
+NativeInputsReverified, MeasuredReadback, FinalReadback, LeaseReleased,
+GuardsDisposed and CanExit were true. Its 57,404-byte metadata total stayed below
+the existing reserve; no post-release native-output rescan occurred. Original
+owner job/process/IO handles were closed; individual Source-handle references
+were unavailable and were not recreated. The physical NoExit host exited 0,
+PTY83459/chunk `b3bb2a`; fresh 18-identity absence/empty registry and independent
+Root verification at 16:13:59 UTC completed PassedClosed qualification. No safety
+cleanup was needed. P's separate incomplete result remains unchanged.
+
+BUILD-COHORT.md records the original artifact declarations and additive Root
+receipt. This validates the recipe and ordinary closure for Q's exact compiled
+revision, not a later documentation revision, runtime ABI or retail serializer.
+Only Source preparation/review of the next neutral extraction is authorized;
+its actual operation still needs a distinct exact review and GO.

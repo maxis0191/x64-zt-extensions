@@ -1,6 +1,12 @@
 # Neutral registered player definitions: Source contract
 
-2026-10-15: N/O2 failures and P's execution/finalization facts are separate.
+2026-10-15: Q is a qualified 172-check CPP build with ordinary closure, compiled
+at merge `e2c96b6a97db2f4874ae9eafec5e19bf7e72c57b`. Root independently verified
+closure and released its slot at 16:13:59 UTC. No candidate CLI, retail serializer,
+extraction or game run has executed. BUILD-COHORT.md records its exact plan,
+artifact declarations and original/additive qualification receipts.
+
+N/O2 failures and P's execution/finalization facts remain separate.
 N failed definition compilation with C4702; O2 reached compiler exit0 but its
 strict dependency guard refused `shared/cderr.h` before the100-case probe.
 P at merge `acb608cc98bde80e27cce37b925da36729aa0ef3` ran name8/argv28/
@@ -154,9 +160,10 @@ and production `with_pair` gate. It covers unchanged values, missing copy,
 integer-copy refusal, unreadable spans, count/overflow/string/UTF8/bool/float
 refusals, inline21 arrays, curves, nested mappings/subblocks, all32 turret masks,
 script conversion failures/full32-bit IDs, aggregate budgets and the AV-only
-leaf. P executed all100 cases, and the earlier8/28/36 probes, at the exact Source
-revision recorded in BUILD-COHORT.md. These facts do not turn its incomplete
-administrative finalization into a qualified build or qualify a later revision.
+leaf. P and Q executed all100 cases and the earlier8/28/36 probes at their exact
+Source revisions recorded in BUILD-COHORT.md. Only Q completed ordinary
+finalization and Root qualification. Its result does not repair P or qualify a
+later Source revision, retail pointers or runtime ABI/lifetime.
 
 The build plan's explicit `PairDefinitionsCLI=true` requires both existing
 fixture profiles and the fixed ten-stage sequence: name compile/test8, argv
@@ -178,10 +185,12 @@ Source correction for the excessive header graph. P's definition compilation
 passed the unchanged strict dependency guard before its100-case probe ran.
 Native artifacts and inputs were measured/reverified under its original lease;
 its remaining bookkeeping failure is recorded separately. The current runner
-correction has Source-only owned-output tests and still needs a distinct fresh
-admitted cycle; it does not retroactively qualify P.
+correction has Source-only owned-output tests and was subsequently validated by
+Q's distinct fresh admitted cycle; it does not retroactively qualify P.
 
-Next: finish exact Source review/CI/private merge, then a new Source package,
-PREP sibling and separately admitted CPP capsule. Only its actual closed candidate may feed a
-separately admitted neutral extraction. No CPP, Native, Extract, authoring or
-game authorization follows from this Source document.
+Next: prepare and review a separate neutral full-definitions export packet using
+Q's declared candidate tuple and the existing OwnedH1/Stock35 caller, producer,
+manifest and independent readers. Source preparation opens neither the candidate
+nor retail stock and creates no aliases or lease. Analysis, CLI, Extract, Native,
+authoring and game execution need a distinct exact review and GO. PaP, RayGun,
+projectile and physics mechanics remain unqualified.
