@@ -171,14 +171,70 @@ checkpoint only. At that checkpoint its candidate CLI had not run. Later K
 diagnostic evidence is recorded in EXPORT-COHORT.md; template JSON, runtime ABI,
 weapon/PAP/physics and owner gameplay remain unqualified.
 
-## Source-only pair-profile CLI extension
+## Pair-profile CLI extension: original Source proposal
 
 The separate metadata-only pair-profile option retains the existing six-argument
 form and original template behavior. Its updated argv fixture authors 18 checks:
-the original ten plus eight profile valid/refusal vectors. It has not been compiled
-or executed. `PairProfileCLI=true`, with the primary fixture profile, selects the
+the original ten plus eight profile valid/refusal vectors. At this proposal
+checkpoint it had not been compiled or executed. `PairProfileCLI=true`, with the
+primary fixture profile, selects the
 same eight stages with exact name8/argv18/primary36 markers. A prepared profile TU
 with a ten-check plan, a coerced selector/count or missing profile module refuses
 before native access. No shared T7 builder, ownership API, stage or budget is added.
-The new 62-check authored total is not I's actual 54-check result. A new source
-package, exact CPP capsule review and Root GO are required before compilation.
+The new 62-check authored total was not I's actual 54-check result. A new source
+package, exact CPP capsule review and Root GO were required before compilation.
+
+## Actual pair-profile CPP J checkpoint, 2026-10-15
+
+After independent exact-packet reviews and a distinct Root CPP GO, J compiled
+PR183 merge `e6c0b262973b7832b87c91a6122a7cbb2daef987`, native
+`fab935826c898806855376662a8a03317b3ad8f1` and retained texture `1ad68ee` inputs.
+The prepared IW7 TU is SHA256
+`50ae228999cd1c90e6f8db5c76cd03f8c9a97b5680aba1565d946061fb6f7919`.
+A later documentation merge does not identify the compiled Source revision.
+
+All eight stages exited zero with original tree closure confirmed. The three
+native probes emitted exactly name8/argv18/primary36 with empty stderr: 62 actual
+checks, including the original ten argv vectors and eight new profile vectors.
+The fresh IW7 TU compiled its Source offset assertions and the strict dependency
+guard accepted all 722 includes. Link kept 412 objects and replaced only the IW7
+object. This compiled the explicit profile route and metadata writer; the linked
+candidate has not executed its CLI or observed a retail pair profile.
+
+The linked executable is 22,029,824 bytes, SHA256
+`533c587da155ed6bef0504a22b142c7d5765e70342256ca44e4b56feec52e0e2`;
+its PDB is 140,021,760 bytes, SHA256
+`edf6158c6100c85f090a991614b348031bcceefb4bb931847ad0e81d06021e2e`.
+These tuples came only from the measured receipt captured and read back under
+the original lease and native/Source input guards. The publication and later
+Source checks did not reopen, stat or hash opaque artifacts after lease release.
+
+The I physical NoExit/dot host guard remained in force, retaining kernel100ns
+separately from six-digit CIM. J held 125 runtime Source guards, 171 parent
+declarations and the same 1151 retained opaque declarations. Existing H1/T7
+providers, jobs/VCTIP policy, 600-second group clock and 256-MiB generated budget
+plus 1-MiB metadata reserve remained unchanged. The same original context,
+state, plan, guards and witness passed preexit reference checks; the final link
+owner had root exit zero/Active0, closed job/process handles, and the original
+context had zero guards, a null lease and an empty authoritative registry.
+
+The same host rechecked its original references, kernel creation witness,
+owner/handles and empty registry immediately before explicit exit. Its actual
+managed PTY then completed with exit zero. Fresh postflight at 08:58:42 UTC found
+all 15 captured host/parent/stage/member identities absent, no game/compiler/
+ZoneTool/VCTIP process and zero authoritative leases. Root's separate fresh
+corroboration and heavy-ledger release remain its responsibility.
+
+A wrapped terminal transcription initially added one zero to the communicated
+preexit SHA. The immutable preexit JSON was unchanged; the external publisher
+refused that expectation before publication. After correction, an initial fresh
+postflight condition also refused before publication without emitting its local
+rows, so no specific transient cause is inferred. A separate fresh observation
+and the successful final publication independently found an empty state. These
+publication checks neither repeated native execution nor reconstructed an owner.
+
+J is a PassedClosed CPP checkpoint. Runtime pair-profile/ABI observation, full
+template export, authoring eligibility, weapon grant, projectile damage/physics,
+retail PAP transaction and owner gameplay acceptance remain false. The original
+PROJECTILE3/3 template and author guards remain unchanged. A separate exact
+Source profile-export packet and distinct Root Extract GO must precede its CLI.
