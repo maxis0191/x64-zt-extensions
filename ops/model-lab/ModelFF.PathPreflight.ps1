@@ -125,6 +125,9 @@ function Assert-ModelFFNamespaceStage($Declaration,[string]$RunRoot,[string]$Sou
     if(!$source.StartsWith($root+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){
         throw 'Deferred ModelFF namespace stage must be inside RunRoot.'
     }
+    for($part=$source;$part;$part=[IO.Path]::GetDirectoryName($part)){
+        if(([IO.File]::GetAttributes($part) -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'ModelFF stage root or ancestor reparse refused before descent.'}
+    }
     $prefix=[IO.Path]::GetRelativePath($root,$source).Replace('\','/')+'/'
     $expected=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($name in $Declaration.Files){if($name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){$null=$expected.Add($name.Substring($prefix.Length))}}
@@ -162,8 +165,9 @@ function Test-ModelFFJsonValueEqual([System.Text.Json.JsonElement]$Before,[Syste
     if($Before.ValueKind -ne $After.ValueKind){
         # Preserve the existing Python verifier's scalar numeric equality.
         if($Before.ValueKind -in [System.Text.Json.JsonValueKind]::True,[System.Text.Json.JsonValueKind]::False -and $After.ValueKind -eq [System.Text.Json.JsonValueKind]::Number){
-            $number=0D;$truth=if($Before.ValueKind -eq [System.Text.Json.JsonValueKind]::True){1D}else{0D}
-            return $After.TryGetDecimal([ref]$number) -and $number -eq $truth
+            $truth=if($Before.ValueKind -eq [System.Text.Json.JsonValueKind]::True){1}else{0}
+            if($After.GetRawText() -notmatch '[.eE]'){return [Numerics.BigInteger]::Parse($After.GetRawText(),[Globalization.CultureInfo]::InvariantCulture) -eq $truth}
+            $number=$After.GetDouble();return [double]::IsFinite($number) -and $number -eq $truth
         }
         if($After.ValueKind -in [System.Text.Json.JsonValueKind]::True,[System.Text.Json.JsonValueKind]::False -and $Before.ValueKind -eq [System.Text.Json.JsonValueKind]::Number){return Test-ModelFFJsonValueEqual $After $Before}
         return $false
@@ -185,10 +189,18 @@ function Test-ModelFFJsonValueEqual([System.Text.Json.JsonElement]$Before,[Syste
         }
         String {return [string]::Equals($Before.GetString(),$After.GetString(),[StringComparison]::Ordinal)}
         Number {
-            $first=0D;$second=0D
-            if($Before.TryGetDecimal([ref]$first) -and $After.TryGetDecimal([ref]$second)){return $first -eq $second}
-            $firstDouble=$Before.GetDouble();$secondDouble=$After.GetDouble()
-            return [double]::IsFinite($firstDouble) -and [double]::IsFinite($secondDouble) -and $firstDouble -eq $secondDouble
+            $beforeText=$Before.GetRawText();$afterText=$After.GetRawText()
+            $beforeInteger=$beforeText -notmatch '[.eE]';$afterInteger=$afterText -notmatch '[.eE]'
+            if($beforeInteger -and $afterInteger){
+                return [Numerics.BigInteger]::Parse($beforeText,[Globalization.CultureInfo]::InvariantCulture) -eq [Numerics.BigInteger]::Parse($afterText,[Globalization.CultureInfo]::InvariantCulture)
+            }
+            if($beforeInteger -or $afterInteger){
+                $integerText=if($beforeInteger){$beforeText}else{$afterText}
+                $float=if($beforeInteger){$After.GetDouble()}else{$Before.GetDouble()}
+                return [double]::IsFinite($float) -and [math]::Truncate($float) -eq $float -and [Numerics.BigInteger]::Parse($integerText,[Globalization.CultureInfo]::InvariantCulture) -eq [Numerics.BigInteger]::new($float)
+            }
+            $first=$Before.GetDouble();$second=$After.GetDouble()
+            return [double]::IsFinite($first) -and [double]::IsFinite($second) -and $first -eq $second
         }
         True {return $true}
         False {return $true}

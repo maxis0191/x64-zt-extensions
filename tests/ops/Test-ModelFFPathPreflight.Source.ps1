@@ -88,6 +88,23 @@ try{
     Confirm-SourceRefusal 'actual stage missing file' {$path=Join-Path $source 'xmodel/fixture.xmb';[IO.File]::Delete($path);try{Assert-ModelFFNamespaceStage $stageDeclaration $run $source $plan $writer $true}finally{[IO.File]::WriteAllText($path,'Source fixture only')}}
     Confirm-SourceRefusal 'stage declared extra recipe file' {$value=New-SourceValue;$value.Files=@($stageValue.Files)+@('source/undeclared-recipe.txt');$different=Read-SourceDeclaration $value;Assert-ModelFFNamespaceStage $different $run $source $plan $writer $true}
     Confirm-SourceRefusal 'unexpected empty stage directory' {$path=Join-Path $source 'unexpected';$null=[IO.Directory]::CreateDirectory($path);try{Assert-ModelFFNamespaceStage $stageDeclaration $run $source $plan $writer $true}finally{[IO.Directory]::Delete($path,$false)}}
+    foreach($junctionRole in 'root','ancestor'){
+        Confirm-SourceCase ('actual stage '+$junctionRole+' junction') {
+            $target=Join-Path $fixtureRoot ('junction-target-'+$junctionRole);$alias=Join-Path $fixtureRoot ('junction-alias-'+$junctionRole)
+            $targetSource=if($junctionRole -ceq 'root'){$target}else{Join-Path $target 'source'}
+            foreach($name in $stageFiles){$path=Join-Path $targetSource $name;$null=[IO.Directory]::CreateDirectory((Split-Path $path));[IO.File]::WriteAllText($path,'Owned Source junction fixture')}
+            if($junctionRole -ceq 'root'){$junctionRun=Join-Path $fixtureRoot 'junction-root-run';$null=[IO.Directory]::CreateDirectory($junctionRun);$alias=Join-Path $junctionRun 'source'}else{$junctionRun=$alias}
+            $null=New-Item -ItemType Junction -Path $alias -Target $target
+            $refused=$false
+            try{Assert-ModelFFNamespaceStage $stageDeclaration $junctionRun (Join-Path $junctionRun 'source') $plan $writer $true}
+            catch{if($_.Exception.Message -cne 'ModelFF stage root or ancestor reparse refused before descent.'){throw};$refused=$true}
+            finally{
+                if(([IO.File]::GetAttributes($alias) -band [IO.FileAttributes]::ReparsePoint) -eq 0){throw 'Source fixture junction identity changed before cleanup.'}
+                [IO.Directory]::Delete($alias,$false)
+            }
+            if(!$refused){throw 'Actual stage junction was accepted.'}
+        }
+    }
     $material='{"techniqueSet->name":"fixture_techset","constantTable":[{"name":"a","literal":[1,1,1,1]}],"textureTable":[{"image":"fixture_color","semantic":14}],"stateFlags":57}'
     function Invoke-SourceMaterial([string]$Before,[string]$After){
         $first=Write-SourceJson $Before;$second=Write-SourceJson $After
@@ -102,6 +119,10 @@ try{
     Confirm-SourceCase 'literal techniqueSet and all source fields match' {Invoke-SourceMaterial $material $material}
     Confirm-SourceCase 'JSON formatting and object order do not affect semantic match' {Invoke-SourceMaterial $material '{"stateFlags":57,"textureTable":[{"semantic":14,"image":"fixture_color"}],"constantTable":[{"literal":[1.0,1,1,1],"name":"a"}],"techniqueSet->name":"fixture_techset","extraNativeField":0}'}
     Confirm-SourceCase 'existing Python numeric scalar equality preserved' {Invoke-SourceMaterial ($material.Replace('"stateFlags":57','"stateFlags":true')) ($material.Replace('"stateFlags":57','"stateFlags":1.0'))}
+    Confirm-SourceCase 'Python float rounding preserved' {Invoke-SourceMaterial ($material.Replace('"stateFlags":57','"stateFlags":0.1')) ($material.Replace('"stateFlags":57','"stateFlags":0.10000000000000000555'))}
+    Confirm-SourceCase 'equal large integers remain equal without double conversion' {$large=$material.Replace('"stateFlags":57','"stateFlags":9007199254740992000000000000000');Invoke-SourceMaterial $large $large}
+    Confirm-SourceRefusal 'large distinct integer JSON values remain unequal' {Invoke-SourceMaterial ($material.Replace('"stateFlags":57','"stateFlags":9007199254740992000000000000000')) ($material.Replace('"stateFlags":57','"stateFlags":9007199254740992000000000000001'))}
+    Confirm-SourceRefusal 'integer versus rounded float remains unequal' {Invoke-SourceMaterial ($material.Replace('"stateFlags":57','"stateFlags":9007199254740993')) ($material.Replace('"stateFlags":57','"stateFlags":9007199254740992.0'))}
     Confirm-SourceRefusal 'material wrong literal techset value' {Invoke-SourceMaterial $material ($material.Replace('fixture_techset','different'))}
     Confirm-SourceRefusal 'material wrong literal key' {Invoke-SourceMaterial $material ($material.Replace('techniqueSet->name','techniqueSet'))}
     Confirm-SourceRefusal 'material changed constant' {Invoke-SourceMaterial $material ($material.Replace('[1,1,1,1]','[2,1,1,1]'))}
@@ -130,6 +151,35 @@ try{
         $json=@($commands|Where-Object {$_.GetCommandName() -ceq 'Assert-ModelFFDumpMaterialJson'})[0]
         $copy=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.ForEachStatementAst] -and $node.Variable.Extent.Text -ceq '$name' -and $node.Condition.Extent.Text -ceq '$dumpNames'},$true))[0]
         if($json.Extent.EndOffset -ge $copy.Extent.StartOffset -or !$copy.Extent.Text.Contains('Copy-Item -LiteralPath $p -Destination $target')){throw 'Required material sidecar copying was omitted or reordered.'}
+    }
+    . (Join-Path (Split-Path $Entry) 'ModelFF.Core.ps1')
+    $namespaceBlock=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.IfStatementAst] -and $node.Clauses[0].Item1.Extent.Text -ceq '$authored' -and $node.Extent.Text.Contains('Read-ModelFFOutputNamespacePlan')},$true))[0]
+    $namespaceCode=[scriptblock]::Create($namespaceBlock.Extent.Text)
+    $rootAssignment=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$modelFFRoot' -and $node.Right.Extent.Text.Contains('IW7.AuthoredModelFF.Root.')},$true))[0]
+    $rootCode=[scriptblock]::Create($rootAssignment.Extent.Text)
+    Confirm-SourceCase 'actual factories attach the same sealed profile and counter before Run' {
+        & {
+            $authored=$true;$deferredAuthored=$true;$RunRoot=Join-Path $fixtureRoot 'integration-run';$source=Join-Path $RunRoot 'source';$zoneName='fixture'
+            $authorInputs=[pscustomobject]@{ProjectFiles=$project};$authorDescriptor=$descriptor
+            $pin=Write-SourceJson ($projectValue|ConvertTo-Json -Depth 8 -Compress);$OutputNamespacePlan=$pin.Path;$OutputNamespacePlanSHA256=$pin.SHA256
+            . $namespaceCode
+            $originalContext=[pscustomobject]@{Guards=[Collections.Generic.List[IDisposable]]::new()};$state=[ordered]@{};$stockGuards=[Collections.Generic.List[IDisposable]]::new();$cleanup=[pscustomobject]@{Confirmed=$true}
+            . $rootCode
+            if(![object]::ReferenceEquals($modelFFRoot.OutputNamespace,$namespaceProfile) -or ![object]::ReferenceEquals($modelFFRoot.OutputNamespaceCounter,$namespaceCounter) -or
+                ![object]::ReferenceEquals($namespaceCounter.Module.SessionState.PSVariable.GetValue('sealedModelFFNamespace'),$namespaceProfile) -or (Test-Path -LiteralPath $RunRoot)){
+                throw 'Actual pre-run namespace/counter attachment changed references or created outputs.'
+            }
+        }
+    }
+    Confirm-SourceCase 'actual wrapper also bounds constructor-added phase-log paths' {
+        & {
+            $authored=$true;$deferredAuthored=$true;$auto='owned-model-authored-material/stdout.log';$RunRoot='C:\'+('r'*(260-1-$auto.Length-3));$source=Join-Path $RunRoot 'source';$zoneName='fixture'
+            $authorInputs=[pscustomobject]@{ProjectFiles=$project};$authorDescriptor=$descriptor
+            $pin=Write-SourceJson ($projectValue|ConvertTo-Json -Depth 8 -Compress);$OutputNamespacePlan=$pin.Path;$OutputNamespacePlanSHA256=$pin.SHA256
+            Assert-ModelFFNativePathBudget $RunRoot ([object[]]$projectValue.Files)
+            $refused=$false;try{. $namespaceCode}catch{if($_.Exception.Message -notlike 'ModelFF native path exceeds MAX_PATH budget*'){throw};$refused=$true}
+            if(!$refused){throw 'Constructor-added effective path was not refused before admission.'}
+        }
     }
     [ordered]@{Schema='iw7.model-ff-path-source-tests/1';SourceOnly=$true;CaseCount=$testNames.Count;Cases=$testNames.ToArray();NativeJobStarted=$false;LeaseAcquired=$false;GameRun=$false;Passed=$true}|ConvertTo-Json -Depth 4
 }finally{

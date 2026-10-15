@@ -43,6 +43,8 @@ fields/types, and accepts only unique ordinary relative paths. Separators are
 forward slashes; traversal, rooted paths, reserved Windows names and trailing
 dots/spaces are refused. Returned file lists are read-only. No game/tool/blob is
 read, output directory created, native owner imported or reservation acquired.
+The declared `author-project` set must also exactly match the six original
+project files and six template destinations before admission.
 
 Every declared file's effective full path must contain fewer than 260 UTF-16
 characters, including room for the terminating null. The same check covers the
@@ -61,6 +63,10 @@ After the SDK job, its actual plan and original writer recipe must describe
 exactly the Source-prefixed files in the declaration. A bounded metadata walk
 also checks the actual staged file/directory tree, refusing missing or extra
 files, unexpected empty directories and reparse points before FF construction.
+The stage root and every ancestor are checked before enumeration, so a junction
+cannot redirect the stage even when its target contains the expected files.
+Work Source copies and the plan's required native dump/roundtrip paths must also
+be present in the sealed namespace before FF work.
 After current stock discovery, its actual relative input set must exactly equal
 `StockInputs` before provider hashing, aliases and FF work. No mismatch expands
 the sealed namespace. The complete-tree publication policy is implemented by
@@ -81,6 +87,9 @@ numeric formatting do not matter; constants, texture entries and their
 semantics remain compared. Extra top-level native fields are allowed, as in the
 existing independent verifier. A mismatch reports the differing field before
 the original required-sidecar loop runs.
+Integer tokens compare exactly through `BigInteger`; a large integer is never
+rounded to double for integer equality. Mixed integer/float and Boolean/numeric
+comparisons preserve the existing Python verifier's numeric scalar semantics.
 
 `MetadataMatch` is a diagnostic result. Material readback, image bytes, native
 CBT semantics, recipient/normal/shader ABI, pixels, physics and Ready remain
