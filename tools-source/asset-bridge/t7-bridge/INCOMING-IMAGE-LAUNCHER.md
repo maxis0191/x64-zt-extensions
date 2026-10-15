@@ -203,7 +203,15 @@ The closed JSON is 5,754 bytes /
 e62b417854e2b1dac1d42cb38b711ff751d33ccfaa414246bb4415d6c18ab882;
 receipt 35,028 / 73b8369bf04f8ec5adf01ef74ae9873d68cd163df515dcbb424a130065a407a0;
 stdout 6,215 / 906bc6a960ec56f83de5caa93b2b579bfe04c65abed1680c2cfe445e273fc879.
-Deep interpretation remains consumer150's responsibility, separate from capture.
+Consumer150 then read this exact record through its strict 32 KiB reader and
+classify(report, 0) returned IncomingMetadataObserved: observation_status=complete,
+metadata_only=true. Its 42/15/10, DTO124, counter/copy/phase/read-floor checks passed;
+the full consumer result is 7,913 bytes /
+5d8b492bfb768d7c8b1982e9a5045a46365294cf68fa5856b2c04b02d6a53d38.
+This separate interpretation preserves the all-zero reference samples, bootstrap
+ambiguity, bounded ordinary absence, payload zero and unqualified proofs. The
+original shell receipt remains PendingReview/DeepMetadataOutcome=NULL; it is not
+rewritten or promoted by this subsequent consumer result.
 The publisher ran under its original Open-H1Pin source guard in the same closed
 NoExit host: preexit 1,104 / b8f3aa155d1397016f210c4f31042380163da29e98980e044bc2200877cf1296,
 same AppDomain, CanExit true, zero remaining guards, released lease. True PTY37536
