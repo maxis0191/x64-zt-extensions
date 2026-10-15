@@ -68,7 +68,7 @@ no invented compiler, SDK, candidate or runtime identity.
 
 ## Source evidence and authoring corrections
 
-Source validation passed25 targeted Python checks,125 new PowerShell controls
+Source validation passed25 targeted Python checks,134 new PowerShell controls
 and117 retained incoming Source controls. The new80-check C++ cohort is authored
 only: it has not compiled or executed and no candidate/native result is claimed.
 
@@ -89,3 +89,12 @@ before helper bootstrap/import, then also through the transition function;
 wrong hashes refuse while the complete synthetic contract passes. The Python
 contract reader also refuses null/coerced sub-pins. The failed Source candidate
 and correction remain separate commits; no native input was prepared from it.
+
+PREP review then found a second Source-only refusal: the first input bound still
+selected the legacy173 ceiling before the later exact187 check. Only its new
+bindings branch now selects187; old registration173/incoming182, duplicate and
+oversized-input refusals stay fixed. The actual bound expression is exercised
+on synthetic metadata, including the original187-refused counterexample.
+The187/181/6 limits apply after the four H proof texts and one OS proof are
+removed, matching the existing normalization. Raw192 is a Source expectation
+with those five proof texts, not an observed preparation or relaxed validator.
