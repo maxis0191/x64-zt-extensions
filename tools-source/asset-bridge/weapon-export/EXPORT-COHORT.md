@@ -247,3 +247,93 @@ oversized/wrong-path modal record, prove the retained stream blocks writes, and
 invoke the actual World Core through the bounded reader. These controls perform
 no HWND or native/game diagnostic. A fresh sibling I needs its own composed
 Source pins, review, admission and distinct GO; H is never rewritten as passed.
+
+2026-10-15 actual diagnostic I used the separately reviewed Source capsule from
+merged 5032aa4. Under its distinct Extract GO it revalidated the 39 current content
+sources and prepared 70 more aliases (280 retained across F/G/H/I, no physical
+retail copy). The unchanged global_mp log triggered at 45.833 seconds. The original
+target was still live with two job members; the original-owned Python helper
+completed root0/Active0/exit0 and produced its 1,448-byte modal record below the
+declared package-owned runtime. The bounded player reader retained the record's
+actual stream through the ordinary combined teardown and finalization.
+
+The observed dialog was `Fatal Error`, class #32770, with exact Static text
+`Could not find asset file assetfile17.pak`. Target/helper/parent and owned-window
+identity checks succeeded after reading; errors were empty, text was not truncated
+and no interaction occurred. This directly measures the current I loader's missing
+file at global_mp. It does not retroactively qualify G/H, prove a minimum retail
+closure, or establish that adding only this file would complete the export.
+
+The caller intentionally ended its one diagnostic with the Captured exception.
+The original target closed with owned stop code -536870911 and the helper with
+exit 0. Ordinary finalization rechecked stock/content, counted 1,380,275 generated
+bytes before receipts and 1,427,113 at its final combined observation, and flushed/
+read back closure evidence. Same-host actual-reference preexit checks confirmed
+both jobs, three prepared Stock35 transactions, all retained content/copy streams,
+zero guards and zero leases closed. True terminal exit 0 and fresh 04:32:09 UTC
+host/target/helper/wrapper absence with zero authoritative leases completed the
+lifecycle evidence. I remains FailedClosed with diagnostic Captured,
+CandidateStarted=true, NativeExportComplete=false and Ready=false. No export,
+RayGun, PAP or physics/gameplay acceptance follows from the helper's exit code.
+
+I's frozen plan and both owned runtime trees stay preserved. No extra PAK, retry,
+build or game operation was performed under I's GO. Any further retail coverage
+is a new explicit Source profile and capsule with its own review/admission/GO.
+
+## Explicit fixed33-pak Source profile
+
+The separate `RetailProfile="fixed33-pak"` contract reuses the exact names from
+World [M7 coverage](../world/original-arena/ASSETFILE-COVERAGE.md). Its 33 indices
+are 1,17,19,21,25,26,36,37,52,53,68,69,84,85,100,101,116,117,132,133,148,149,
+164,165,180,181,196,197,212,213,228,229,244. Each maps to `zone/assetfileN.pak`
+from the declared current Main stock provider. No wildcard, directory scan,
+imagefile, old Doom provider, historical retail hash or historical World ID is
+reused. World M7's typed 104-input qualifier is incompatible with this Stock35
+layout and is not imported. Its successful material reference is evidence for
+this finite namespace choice, not a player export or minimum-subset proof.
+
+Pack1 already exists in the original 70-alias/39-source layout. The explicit new
+profile adds exactly 32 hardlinks: 102 aliases and 71 unique sources, split as
+root7/main31/zone64. Source-only validation requires this exact count/layout,
+distinct baseline declarations, matching manifest provider/targets, scalar bounded
+row sizes and all 33 PAK names exactly once below zone. Missing/duplicate/extra
+names, foreign targets/providers and coerced declarations refuse before native
+file access. An absent RetailProfile retains the original 70/39 and 7/31/32
+contract; the new counts cannot silently select that old profile.
+
+The historical Main metadata and World's names-only handoff declare 4,705,977,508
+PAK bytes, including 4,695,508,096 for the 32 additions. These are logical input
+bytes, not new physical payload copies or current hash/identity qualification.
+Eight PAK files exceed the old 256-MiB reader bound; the largest declared input
+is assetfile21.pak at 944,406,564 bytes. Only these exact named PAK paths under
+the selected provider receive the new profile's 1-GiB per-file read bound.
+Other retail inputs and all code/TLS/sentinel pins keep their 256-MiB bound.
+This is a finite file validation limit, not a RAM reservation or admission test.
+
+Initial content hashing and revalidation use 1-MiB streaming buffers. The new
+profile rehashes through the same actual content streams retained before Stock35
+Apply, after the existing original-handle/path/alias identity checks. It never
+reopens a large PAK through the unchanged T7 code-input pin API. Repeated reads
+check exact length, count and SHA and rewind the original stream; replacement,
+early end, overrun, closed stream or changed hash refuses. The legacy revalidation
+path remains unchanged. No new process, supervisor, content cache or asset reader
+is introduced. Actual content pins and identities must be established under the
+future admitted operation; the Source declarations cannot supply that proof.
+
+The declared unique retail input volume is 5,148,333,884 bytes. Three passes on
+a diagnostic failure read about 15.45 billion logical bytes; successful paired
+export follows the existing fourth verification pass as well. Storage caching
+may affect physical reads and no completion-time guarantee is inferred. The
+existing 600-second group deadline remains; native phases remain 240 seconds
+normally or 120 in the existing explicit diagnostic, with its 10-second helper.
+The combined 256-path/16-MiB generated allowance plus 1-MiB metadata reserve,
+2-MiB stream thresholds, 64-KiB modal reader and combined teardown remain intact.
+All same-ID retail aliases remain exempt only after actual admitted proof.
+
+Source causals build the complete declared 102/71 namespace from the actual
+World list, prove DEFAULT stays pure and reject profile/count/baseline/layout,
+extra/missing/duplicate PAK, foreign provider/target, scalar and size mutants.
+Small synthetic streams prove original-guard retention, exact rehash, rewind and
+closed/hash/bound refusals without retail payload access. The profile has not
+qualified an export. J requires a new frozen capsule, independent review and a
+distinct GO; F/G/H/I and the legacy Source contracts remain unchanged.
