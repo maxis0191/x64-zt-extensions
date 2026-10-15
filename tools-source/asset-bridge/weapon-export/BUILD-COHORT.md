@@ -93,3 +93,29 @@ exit zero. Fresh postflight found all 11 captured identities absent and no lease
 This qualifies the bounded CPP/link checkpoint only. The new tool has never run
 its player-template CLI; export, full template observation, weapon/physics/PAP
 and game acceptance remain false and need their separate current-stock GO.
+
+## Optional first-refusal fixture profile
+
+The next instrumented module adds a pure primary-guard helper and authored native
+fixture as two explicitly exported Source files. Its build-extension receipt binds
+all nine input sources and declares 36 primary checks authored, never executed.
+It preserves the existing CLI, native source pin, retained 412 objects and 413-object
+link. The shared T7 builder/adapters are not modified or claimed compatible by this
+Player contract.
+
+`PrimaryGuardFixture=true` selects an exact eight-stage sequence: the existing
+name compile/test8 and argv compile/test10, primary compile/test36, then the fresh
+IW7 TU and link. DEFAULT requires the matching prepared instrumented TU and its
+Source bindings; new module with old six stages, missing module, coerced flag,
+changed marker/count, extra argument or artifact refuses before native access.
+The primary probe prints exactly `IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=36` only
+after every explicit counted check succeeds. Existing six-stage plans remain
+bound to their old uninstrumented sources and keep their 8/10 evidence.
+
+The 600-second absolute clock, existing per-phase limits, 256-MiB generated budget
+plus 1-MiB metadata reserve, original jobs/VCTIP/guards/dependency checks and
+teardown are unchanged. No Source test compiles this fixture or reads compiler,
+SDK, candidate, retail or tool binaries. A future CPP cohort must freshly pin the
+two added sources and all actual compiler dependencies; a new binary/hash and
+its original closure proof precede any distinct admitted export. The J failure
+and original G_A84 tool remain immutable and are not retroactively instrumented.

@@ -69,7 +69,41 @@ class DefaultTests(unittest.TestCase):
     def test_sequence_refused(self):
         self.plan['Stages'][0]['Name']='link'
         result=self.invoke();self.assertNotEqual(result.returncode,0)
-        self.assertIn('Fixed six-stage',result.stderr)
+        self.assertIn('Fixed source-selected',result.stderr)
+
+    def primary_plan(self):
+        self.plan['PrimaryGuardFixture']=True
+        source=self.root/'prepared'/'src'/'zonetool'/'zonetool'/'iw7'/'zonetool.cpp'
+        source.parent.mkdir(parents=True);source.write_bytes(b'// Source fixture IW7_PLAYER_TEMPLATE_PRIMARY_REFUSAL schema=1 first_failure(reader)\n')
+        self.plan['PreparedBindings']=[dict(Path=str(source),Bytes=source.stat().st_size,SHA256=hashlib.sha256(source.read_bytes()).hexdigest())]
+        self.plan['Stages'][4:4]=[
+            dict(Name='primary-compile',Stage='Compile',DeadlineSeconds=120,Image=self.plan['Compiler'],
+                Arguments=['@'+str(self.root/'prepared'/'primary.rsp')],
+                Artifacts=['primary.obj','primary.exe','primary.pdb','compile.pdb','dependencies.json']),
+            dict(Name='primary-test',Stage='Probe',DeadlineSeconds=15,
+                Image=str(self.root/'not-created'/'primary-compile'/'primary.exe'),Arguments=[],Artifacts=[],
+                ExpectedChecks=36,ExpectedStdout='IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=36\n')]
+
+    def test_primary_fixture_opt_in_is_pure_and_keeps_native_unopened(self):
+        self.primary_plan();result=self.invoke();self.assertEqual(result.returncode,0,result.stderr)
+        report=json.loads(result.stdout);self.assertEqual(report['Stages'],8);self.assertEqual(report['PrimaryChecksAuthored'],36)
+        self.assertFalse(any(report[key] for key in ('NativeTypesLoaded','NativeInputsHashed','RunRootCreated','LeaseAcquired','Ready')))
+        self.assertFalse(Path(self.plan['Compiler']).exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
+
+    def test_primary_fixture_mixed_or_coerced_contract_refused_before_effects(self):
+        self.primary_plan();original=json.loads(json.dumps(self.plan))
+        def downgrade_with_new_module(plan):
+            plan.pop('PrimaryGuardFixture');del plan['Stages'][4:6]
+        mutations=[lambda p:p.update(PrimaryGuardFixture='true'),lambda p:p.update(PrimaryGuardFixture=False),
+            lambda p:p.pop('PrimaryGuardFixture'),lambda p:p['Stages'][5].update(ExpectedChecks=35),lambda p:p['Stages'][5].update(ExpectedChecks='36'),
+            lambda p:p['Stages'][5].update(ExpectedStdout='IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=35\n'),
+            lambda p:p['Stages'][5].update(ExpectedStdout=['IW7_PLAYER_TEMPLATE_PRIMARY_CHECKS=36\n']),
+            lambda p:p.update(PreparedBindings=[]),
+            lambda p:p['Stages'][4]['Artifacts'].append('extra.bin'),lambda p:p['Stages'][5]['Arguments'].append('unexpected'),downgrade_with_new_module]
+        for i,mutate in enumerate(mutations):
+            with self.subTest(case=i):
+                self.plan=json.loads(json.dumps(original));mutate(self.plan);result=self.invoke()
+                self.assertNotEqual(result.returncode,0);self.assertFalse(Path(self.plan['RunRoot']).exists())
 
     def test_missing_own_header_coverage_refused(self):
         self.plan['OwnDirectIncludeCoverage'][0]['Pinned']=False
