@@ -160,3 +160,31 @@ original refusal and five altered new-profile cases. They open only a synthetic
 proof MemoryStream; no installed DLL, registry or lease is inspected. Frozen D
 and its failed caller/plan stay immutable; the fix needs a fresh reviewed package,
 new preparation and a distinct CPP GO.
+
+CPP80 C on the later frozen E plan then refused before admission at
+`Wired v2 transition binding differs.` Its original references and no-effects
+context (null state/owner/lease, empty runner guards and absent run root) were
+verified; the eight caller Source guards were rehashed and closed in that same
+host. The true aggregate PTY exit was one, followed by fresh host/parent,
+heavy-process and lease absence. No fixture, compiler or candidate ran.
+
+The transition cascade still selected the registration39 main43620/05f601 and
+CLI175031/26e9ae pairs, while the already validated bindings marker and prepared
+pins declared main43764/970fe0 and CLI190891/d732c8. Two bindings-specific final
+overrides now select those marker pairs after the older layers. The inherited
+three-row transition journal and its716-byte/09f477 digest are unchanged; no
+profile fallback, pin substitution or proof promotion is added. Source controls
+execute the actual loop for registration39, incoming and bindings, compare the
+unchanged digest input, reject eight inconsistent selections, and reproduce the
+original missing-overlay refusal. The resulting bindings suite has144 controls.
+
+A separate Source-only audit uses the real immutable E plan and actual runner
+AST through the entire pre-admission body, stopping before Enter-IW7ResourceLease.
+With just these two overrides it reaches that boundary: full input/profile/OS/
+fixture/source-contract validation, source guard loops, provider pins, responses,
+413 link objects, fixed stages/roots, retained proof and complete-input checks.
+It hashes183 bounded text files;1163 size queries use declared metadata only.
+Core/scheduler imports, native types, opaque bytes and admission are never run.
+The old runner reproduces the refusal. This establishes the semantic preflight
+path, not live binary identity or CPP qualification. Frozen E/C evidence remains
+unchanged; a future reviewed Source/plan and separate CPP GO are still required.

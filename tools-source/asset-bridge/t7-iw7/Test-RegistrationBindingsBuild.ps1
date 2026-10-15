@@ -70,6 +70,54 @@ try{
         $bp.Bindings=@($bp.Bindings|Where-Object Path -CNE $pin.Path)+@([pscustomobject]@{Path=$pin.Path;Bytes=$pin.Bytes;SHA256=$pin.SHA256;IsText=$true})
     }
     Check (Assert-T7BuildProfile $bp $PSScriptRoot) 'Actual bindings Source profile refused'
+    # Execute the actual full wired-transition loop, preserving its base rows.
+    # Full real-plan pre-admission evidence is recorded separately; no SDK IO here.
+    $wiredNode=$ast.Find({param($n)$n -is [Management.Automation.Language.ForEachStatementAst] -and
+        $n.Extent.Text.Contains("throw 'Wired v2 transition binding differs.'")},$true)
+    if(!$wiredNode){throw 'Actual wired-transition loop missing'}
+    $wiredCode=[scriptblock]::Create($wiredNode.Extent.Text)
+    function Invoke-WiredFixture([string]$Mode,[string]$Alter=''){
+        $Plan=[pscustomobject]@{PreparedRoot=(Join-Path $temp 'wired/prepared')}
+        $parts=$false;$provenance=$false;$metadata=$false;$registration=$true;$observed=$false
+        $incoming=$Mode -ceq 'incoming';$registrationBindings=$Mode -ceq 'bindings'
+        $reuse=[pscustomobject]@{RegistrationMetadata=$bp.ReuseCompile.RegistrationMetadata;
+            RegistrationBindingsObservation=$marker;IncomingObservation=[pscustomobject]@{
+                MainBytes=43658;MainSHA256=('a'*64);CLIBytes=180000;CLISHA256=('b'*64)}}
+        $proof=[pscustomobject]@{SourceTransitions=@(foreach($name in 'main.cpp','zonetool.cpp','third.cpp'){
+            [pscustomobject]@{Path=('prepared/'+$name);PreviousBytes=1;PreviousSHA256=('0'*64);
+                Bytes=2;SHA256=('1'*64);WiredBytes=3;WiredSHA256=('2'*64)}
+        })}
+        $before=$proof|ConvertTo-Json -Depth 6 -Compress
+        $last=if($registrationBindings){$marker}elseif($incoming){$reuse.IncomingObservation}else{$reuse.RegistrationMetadata}
+        $bindings=@(foreach($row in $proof.SourceTransitions){
+            $size=if($row.Path -ceq 'prepared/main.cpp'){$last.MainBytes}elseif($row.Path -ceq 'prepared/zonetool.cpp'){$last.CLIBytes}else{$row.WiredBytes}
+            $hash=if($row.Path -ceq 'prepared/main.cpp'){$last.MainSHA256}elseif($row.Path -ceq 'prepared/zonetool.cpp'){$last.CLISHA256}else{$row.WiredSHA256}
+            [pscustomobject]@{Path=(Join-Path (Split-Path $Plan.PreparedRoot -Parent) $row.Path);Bytes=$size;SHA256=$hash;IsText=$true}
+        })
+        switch($Alter){
+            old-main {$bindings[0].Bytes=$reuse.RegistrationMetadata.MainBytes;$bindings[0].SHA256=$reuse.RegistrationMetadata.MainSHA256}
+            old-cli {$bindings[1].Bytes=$reuse.RegistrationMetadata.CLIBytes;$bindings[1].SHA256=$reuse.RegistrationMetadata.CLISHA256}
+            size {$bindings[0].Bytes++}
+            hash {$bindings[1].SHA256='f'*64}
+            missing {$bindings=$bindings[1..2]}
+            duplicate {$bindings+=@($bindings[1])}
+            nontext {$bindings[0].IsText=$false}
+            no-marker {$registrationBindings=$false}
+        }
+        $rows=[Collections.Generic.List[string]]::new()
+        . $wiredCode
+        if(($proof|ConvertTo-Json -Depth 6 -Compress) -cne $before -or $rows.Count -ne 3){throw 'Wired profile rewrote the base transition proof'}
+        return ($rows -join '')
+    }
+    $legacyRows=Invoke-WiredFixture 'registration';$incomingRows=Invoke-WiredFixture 'incoming';$bindingsRows=Invoke-WiredFixture 'bindings'
+    Check ($legacyRows -ceq $incomingRows -and $legacyRows -ceq $bindingsRows) 'Base proof digest input changed across last-source overlays'
+    foreach($bad in 'old-main','old-cli','size','hash','missing','duplicate','nontext','no-marker'){
+        $caseContext='wired-'+$bad;Refuses {Invoke-WiredFixture 'bindings' $bad}
+    }
+    $newLines=@($wiredNode.Extent.Text -split "`r?`n"|Where-Object {$_ -notmatch '^\s*if\(\$registrationBindings -and \$row.Path'})
+    $oldWired=$wiredCode;$wiredCode=[scriptblock]::Create(($newLines -join "`n"))
+    $caseContext='original-wired-missing-last-overlay';Refuses {Invoke-WiredFixture 'bindings'}
+    $wiredCode=$oldWired
     # Execute the actual first bound expression; no full input/SDK walk is needed.
     $boundNode=$ast.Find({param($n)$n -is [Management.Automation.Language.IfStatementAst] -and
         $n.Extent.Text.Contains("throw 'Input set bound/uniqueness differs.'")},$true)
