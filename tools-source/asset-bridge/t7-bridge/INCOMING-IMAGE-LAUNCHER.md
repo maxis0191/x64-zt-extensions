@@ -67,7 +67,23 @@ incoming observation/consumer JSON cap remains 32 KiB. No shared guard is raised
 The compiled route retains QualifiedCollectionV3's 23 items and shared qualifier,
 106 unique bindings for that existing collection, a 32 KiB report cap and 16 KiB
 stderr cap. The corrected contract marker aliases the guarded IncomingContract
-pin; it must not be added twice. No factory or new host is introduced.
+pin; it must not be added twice. CPP qualification introduces no new host.
+
+The separate finite `prepare_incoming_image_probe.py` data adapter reuses the
+retained E5 reference, shared preservation/snapshot helpers, 23-item collection
+and Catalogue/H1 entry. It pins the actual CPP87 handoff, recipe, receipt and six
+cohort text witnesses, then derives 106 unique bindings and 27 input metadata
+rows. The contract marker aliases IncomingContract explicitly rather than hiding
+duplicate bindings. Its pure derive function performs no file queries.
+
+An admitted preparation may invoke its CLI with fresh candidate and Main
+preservation metadata snapshots. The adapter reads bounded text and the shared
+strict ordinary 32 KiB snapshots; it never stats/hashes/opens the candidate,
+retail files or bank contents. Only after all input validation does it create
+fresh work/evidence/temp and control JSON outputs. Returned DEFAULT/Native argv
+are data for separate GOs, never child launches. Source tests exercise the pure
+mapping and refusal paths without executing this factory or DEFAULT. The future
+capsule reuses the existing original-owner preparation lifecycle, not a new host.
 
 The future producer observation has 42 outer keys, 15 case keys and 10 snapshot
 keys. Four slots stay distinct and ordered: bootstrap/reference,
