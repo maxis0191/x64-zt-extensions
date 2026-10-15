@@ -455,6 +455,17 @@
       ]
     },
     {
+      "id": "Test-T7IncomingImageSource",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7IncomingImageSource.ps1"
+      ]
+    },
+    {
       "id": "Test-T7Catalogue",
       "command": [
         "pwsh",
