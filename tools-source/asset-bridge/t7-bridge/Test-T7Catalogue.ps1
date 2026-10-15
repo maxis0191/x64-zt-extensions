@@ -275,7 +275,7 @@ try {
     $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-T7Catalogue.ps1'),[ref]$tokens,[ref]$errors)
     Check ($errors.Count -eq 0) 'Runner parse failed.'
     $outer=@($ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})[0]
-    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2));$export=$false;$parts=$false;$provenance=$false;$registration=$false
+    $text=$outer.Finally.Extent.Text;$finalizer=[scriptblock]::Create($text.Substring(1,$text.Length-2));$export=$false;$parts=$false;$provenance=$false;$registration=$false;$incoming=$false
     function Read-T7CatalogueReport($Plan,$State,$Context){$script:reportReads++;if($mode -cin @('trace-only','context-only','context-partial','callers-only','callers-partial','message-only','message-prefix','message-partial')){'NoCatalogue'}else{'EmptyCatalogue'}}
     function Read-T7CatalogueTrace($Plan,$State,$Context){
         if((Get-T7CatalogueCandidateProfile $Plan) -ceq 'ordinary-d2'){return}
@@ -286,7 +286,7 @@ try {
         if($mode.StartsWith('message-')){$State.ExitContextOutcome='Observed';$State.CallersOutcome='Observed';$State.MessageOutcome=switch($mode){'message-prefix'{'Prefix'};'message-partial'{'Partial'};default{'Observed'}}}
         if($mode -ceq 'trace-malformed'){$State.TraceOutcome='TracePresentUnqualified';throw 'injected malformed trace'}
     }
-    function Assert-T7PrepatchMain($Expected){$script:mainChecks++;if($mode -cin @('main-changed','parts-main-changed','prov-main-changed','reg-main-changed')){throw 'injected Main state change'};[pscustomobject]@{GenerationAndUDP27016OwnerUnchanged=$true}}
+    function Assert-T7PrepatchMain($Expected){$script:mainChecks++;if($mode -cin @('main-changed','parts-main-changed','prov-main-changed','reg-main-changed','incoming-main-changed')){throw 'injected Main state change'};[pscustomobject]@{GenerationAndUDP27016OwnerUnchanged=$true}}
     function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
     foreach($mode in 'normal','release-late','publication-late','release-failed','forced','unclosed','trace-valid','trace-only','trace-missing','trace-malformed','trace-forced','main-changed','context-only','context-partial','context-forced','callers-only','callers-partial','callers-forced','message-only','message-prefix','message-partial','message-forced') {
         Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
@@ -464,6 +464,44 @@ try {
         . $core
         function Get-H1Clock {$script:clock}
         function Open-H1Pin($Pin){$script:pinReads++;[IO.MemoryStream]::new()}
+    }
+    # Incoming SOURCE caller seam uses the real finally AST with mocked ownership.
+    function Read-T7IncomingImageRecord($Plan,$State,$Context){
+        if(!$Context.Closed -or !$Context.Lease){throw 'Incoming capture read escaped original admission.'}
+        $script:incomingReads++
+        switch($mode){'incoming-missing'{'IncomingNoReport'};'incoming-nonzero'{'IncomingRecordFromFailedProcess'};'incoming-refused'{'IncomingRecordRefused'};default{'IncomingRecordCaptured'}}
+    }
+    $parts=$false;$export=$false;$provenance=$false;$registration=$false;$incoming=$true
+    function Open-H1Pin($Pin){$script:pinReads++;if($mode -ceq 'incoming-pin-changed'){throw 'injected input recheck failure'};[IO.MemoryStream]::new()}
+    foreach($mode in @('incoming-normal','incoming-missing','incoming-nonzero','incoming-forced','incoming-unclosed','incoming-release-failed','incoming-release-late','incoming-publication-late','incoming-main-changed','incoming-refused','incoming-pin-changed')){
+        Reset-Owner;$context=$ctx;$context.Owner=$fakeOwner;$context.Closed=$true
+        $guards=$context.Guards;$attempted=$true;$failure=$null;$zonePin=[pscustomobject]@{Path='synthetic'}
+        $state.InputsReverified=$false;$state.IncomingObservationOutcome='IncomingNoReport';$state.Identity=$identity;$state.ExitCode=0
+        $state.EngineOutputsValidated=$false;$script:incomingReads=0;$script:traceReads=0;$script:reportReads=0;$script:pinReads=0;$script:mainChecks=0
+        Enable-T7CatalogueRuntimeProfile $plan
+        $plan|Add-Member NoteProperty CandidateProfile 't7-incoming-image-header-observation-v1' -Force
+        if($mode -cin @('incoming-nonzero','incoming-refused')){$state.ExitCode=1;$failure='original nonzero exit';$state.Status='Failed'}
+        if($mode -ceq 'incoming-release-failed'){$script:releaseFails=$true}
+        if($mode -ceq 'incoming-release-late'){$script:clock=199999;$script:releaseDelay=2}
+        if($mode -ceq 'incoming-publication-late'){$script:clock=199999;$script:publicationLate=$true}
+        function Write-H1Receipt($Plan,$State,$StageRoot){if($script:publicationLate){$script:clock+=2;$script:publicationLate=$false};[IO.File]::WriteAllText((Join-Path $StageRoot 'receipt.json'),($State|ConvertTo-Json -Depth 8))}
+        if($mode -cin @('incoming-forced','incoming-unclosed')){
+            $context.Closed=$false;$failure='injected runtime failure';$state.Status='Failed';$fakeOwner.StopFails=$mode -ceq 'incoming-unclosed'
+        }
+        . $finalizer
+        $saved=Get-Content -Raw -LiteralPath (Join-Path $evidence 'receipt.json')|ConvertFrom-Json
+        Check ($traceReads -eq 0 -and $reportReads -eq 0) 'Incoming capture route inspected a legacy trace/catalogue.'
+        if($mode -ceq 'incoming-normal'){Check ($saved.Status -ceq 'IncomingRecordCapturedPendingReview' -and $state.LeaseReleased -and $incomingReads -eq 1) 'Incoming capture success was not promoted through its own outcome.'}
+        elseif($mode -ceq 'incoming-forced'){Check ($state.TerminationRequested -and $state.LeaseReleased -and $incomingReads -eq 0 -and $pinReads -eq 0 -and $saved.Status -ceq 'Failed') 'Forced incoming capture route inspected after release.'}
+        elseif($mode -ceq 'incoming-unclosed'){Check ($state.Quarantined -and $context.Lease -and $incomingReads -eq 0 -and $pinReads -eq 0) 'Unclosed incoming capture route lost ownership.'}
+        elseif($mode -ceq 'incoming-release-failed'){Check ($state.Quarantined -and $context.Lease -and $incomingReads -eq 1 -and $saved.Status -cne 'IncomingRecordCapturedPendingReview') 'Failed lease release accepted incoming capture.'}
+        else{Check ($saved.Status -ceq 'Failed' -and $state.LeaseReleased -and $incomingReads -eq 1) ('Missing/nonzero/late incoming capture record upgraded: '+$mode+'/'+$saved.Status+'/'+$incomingReads)}
+        [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.synthetic',$null)
+        Remove-Item -LiteralPath (Join-Path $evidence 'receipt.json')
+        if(Test-Path -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')){Remove-Item -LiteralPath (Join-Path $evidence 'receipt.deadline-exceeded.json')}
+        . $core
+        function Get-H1Clock {$script:clock}
+        function Open-H1Pin($Pin){$script:pinReads++;if($mode -ceq 'incoming-pin-changed'){throw 'injected input recheck failure'};[IO.MemoryStream]::new()}
     }
     [ordered]@{Status='Passed';Checks=$checks;NativeTypesLoaded=$false;RealLeaseAcquired=$false;NativeProcessStarted=$false;OwnerStockRead=$false}|ConvertTo-Json
 }finally{
