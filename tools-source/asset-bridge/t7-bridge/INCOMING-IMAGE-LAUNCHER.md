@@ -4,6 +4,18 @@ The Source147 contract is pinned at reviewed extension source
 4873ef4a4ce8478020d8533651f123f8feadfa95, merged by 8a04291.
 Its exact contract text is 4,613 bytes /
 `1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f`.
+That frozen revision/hash pair remains distinct from the corrected Source154
+prerequisite: reviewed source 41e595f09dabdd6dff14439f09bd701bddd4a235,
+merged by bde117b8dd40945033d00231b28738b345f09fdb, contract 4,613 bytes /
+`a2cdaf54b7387616bd56d9a78538e7a273ec35e9eb2f6f6ac1e130ecd3851323`.
+The added fixture include changes its bytes to 9,865 /
+`30a010171628ce7c64562d613dc445cb392c18da7ad2cbd78a7eb56aafc4b4b1`;
+the 42/15/10 protocol is unchanged. The validator accepts only those two exact
+revision/hash pairs. It refuses mixed pairs and the failed Source2057 attempt
+as a corrected prerequisite. Both proposals remain Source-only and CPP-pending;
+neither supplies a compiled candidate or changes the unconditional operational
+gate. A successful corrected build still needs its own actual closed evidence.
+
 This finite interface uses the existing Catalogue/H1 entry points and names a
 future IncomingObservationOutcome. The Source shell capture seam uses that same
 host and its retained stdout guard. It introduces no preparation factory, native

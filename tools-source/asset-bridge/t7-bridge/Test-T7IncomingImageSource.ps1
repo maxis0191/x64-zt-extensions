@@ -5,13 +5,18 @@ $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $checks=0
 function Check($Value,[string]$Message){if(!$Value){throw $Message};$script:checks++}
 function Refuses([scriptblock]$Action,[string]$Message){$caught=$false;try{& $Action}catch{$caught=$_.Exception.Message.Contains($Message)};Check $caught ('Expected refusal: '+$Message)}
-function New-IncomingSourcePlan {
-    [pscustomobject]@{Schema='iw7.t7-incoming-image-source-plan/1';Operation='IncomingImageObservationV1';CandidateProfile='t7-incoming-image-header-observation-v1';
+function New-IncomingSourcePlan([switch]$Corrected) {
+    $plan=[pscustomobject]@{Schema='iw7.t7-incoming-image-source-plan/1';Operation='IncomingImageObservationV1';CandidateProfile='t7-incoming-image-header-observation-v1';
         Arguments=@('-t7-iw7-incoming-image-header-v1','mp_freerun_04','p7_fre_platform_cap_02','0');
         CandidateSource=$null;CandidateBytes=$null;CandidateSHA256=$null;BuildPlan=$null;BuildReceipt=$null;ExpectedBuildPlanSHA256=$null;ExpectedBuildReceiptSHA256=$null;
         SelectedIncomingImageObservationV1=[pscustomobject]@{Schema='iw7.t7-incoming-image-proposal/1';SourceRevision='4873ef4a4ce8478020d8533651f123f8feadfa95';NativeSchema='iw7.t7-incoming-image-header-observation/1';
             Contract=[pscustomobject]@{Path='C:\authored\incoming-image-source-contract.json';Bytes=4613;SHA256='1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f'};
             SlotOrder=@('bootstrap/reference','bootstrap/ordinary','map_load/reference','map_load/ordinary');SourceOnlyPending=$true;CPPQualified=$false;NativeObserved=$false;QualifiedObjectMipCount=$null;Ready=$false}}
+    if($Corrected){
+        $plan.SelectedIncomingImageObservationV1.SourceRevision='41e595f09dabdd6dff14439f09bd701bddd4a235'
+        $plan.SelectedIncomingImageObservationV1.Contract.SHA256='a2cdaf54b7387616bd56d9a78538e7a273ec35e9eb2f6f6ac1e130ecd3851323'
+    }
+    $plan
 }
 $plan=New-IncomingSourcePlan;Assert-T7IncomingImageSourcePlan $plan;Check $true 'Exact pending Source plan refused.'
 Check (Test-T7IncomingImageIntent $plan) 'Incoming Source intent not detected.'
@@ -23,6 +28,21 @@ function New-T7PrepatchStart {throw 'Reached process setup'}
 Refuses {Assert-T7CataloguePlan $plan 'unused' 'unused'} 'new actual closed CPP cohort'
 Refuses {Assert-T7CatalogueBuild $plan $null} 'new actual closed CPP cohort'
 Refuses {New-T7CatalogueStart $plan} 'new actual closed CPP cohort'
+$corrected=New-IncomingSourcePlan -Corrected
+Assert-T7IncomingImageSourcePlan $corrected;Check $true 'Corrected Source prerequisite refused.'
+Refuses {Assert-T7CataloguePlan $corrected 'unused' 'unused'} 'new actual closed CPP cohort'
+Refuses {Assert-T7CatalogueBuild $corrected $null} 'new actual closed CPP cohort'
+Refuses {New-T7CatalogueStart $corrected} 'new actual closed CPP cohort'
+foreach($pair in @(@($false,'a2cdaf54b7387616bd56d9a78538e7a273ec35e9eb2f6f6ac1e130ecd3851323'),
+                  @($true,'1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f'))){
+    $useCorrected=[bool]$pair[0]
+    $mixed=New-IncomingSourcePlan -Corrected:$useCorrected;$mixed.SelectedIncomingImageObservationV1.Contract.SHA256=$pair[1]
+    Refuses {Assert-T7IncomingImageSourcePlan $mixed} 'contract text pin required'
+}
+$mixed=New-IncomingSourcePlan -Corrected;$mixed.SelectedIncomingImageObservationV1.SourceRevision='2057a2c7704b5fbb914268721da4be852c746e75'
+Refuses {Assert-T7IncomingImageSourcePlan $mixed} 'Source revision required'
+$mixed=New-IncomingSourcePlan -Corrected;$mixed.CandidateSHA256='eeeca36f26ff2c76b98a608fe17a6b47259401b1cd800f73fe886bd099ac6dbc'
+Refuses {Assert-T7IncomingImageSourcePlan $mixed} 'must remain NULL'
 foreach($name in 'CandidateSource','CandidateBytes','CandidateSHA256','BuildPlan','BuildReceipt','ExpectedBuildPlanSHA256','ExpectedBuildReceiptSHA256'){
     foreach($bad in @('eeeca36f',0,$false,[object[]]@($null))){$plan=New-IncomingSourcePlan;$plan.$name=$bad;Refuses {Assert-T7IncomingImageSourcePlan $plan} 'must remain NULL'}
     $plan=New-IncomingSourcePlan;$plan.PSObject.Properties.Remove($name);Refuses {Assert-T7IncomingImageSourcePlan $plan} 'must remain NULL'

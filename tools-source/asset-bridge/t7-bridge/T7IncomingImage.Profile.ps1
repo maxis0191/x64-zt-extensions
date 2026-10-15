@@ -10,14 +10,20 @@ function Assert-T7IncomingImageSourcePlan($Plan) {
     foreach($name in 'Schema','SourceRevision','NativeSchema'){
         if($marker.$name -isnot [string]){throw 'Typed incoming Source descriptor texts required.'}
     }
-    if($marker.Schema -cne 'iw7.t7-incoming-image-proposal/1' -or $marker.SourceRevision -cne '4873ef4a4ce8478020d8533651f123f8feadfa95' -or
+    if($marker.Schema -cne 'iw7.t7-incoming-image-proposal/1' -or
        $marker.NativeSchema -cne 'iw7.t7-incoming-image-header-observation/1'){throw 'Exact pending incoming Source basis required.'}
+    # Keep the frozen proposal distinct from the corrected fixture prerequisite.
+    $contractSHA=switch -CaseSensitive ($marker.SourceRevision){
+        '4873ef4a4ce8478020d8533651f123f8feadfa95' {'1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f'}
+        '41e595f09dabdd6dff14439f09bd701bddd4a235' {'a2cdaf54b7387616bd56d9a78538e7a273ec35e9eb2f6f6ac1e130ecd3851323'}
+        default {throw 'Exact pending incoming Source revision required.'}
+    }
     $pin=$marker.Contract;Assert-T7CatalogueFields $pin @('Path','Bytes','SHA256')
     if($pin.Path -isnot [string] -or ![IO.Path]::IsPathFullyQualified($pin.Path) -or [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or
        $pin.Path.StartsWith('\\') -or $pin.Path.Substring(2).Contains(':') -or $pin.Path -match '["\x00-\x1f]' -or
        [IO.Path]::GetFileName($pin.Path) -cne 'incoming-image-source-contract.json' -or
        !(Test-T7CatalogueInteger $pin.Bytes 8KB) -or $pin.Bytes -ne 4613 -or
-       $pin.SHA256 -isnot [string] -or $pin.SHA256 -cne '1f672f51533f90ea10d396bd28a8298f6070d39df938b0bf4033c4754dc4659f'){
+       $pin.SHA256 -isnot [string] -or $pin.SHA256 -cne $contractSHA){
         throw 'Exact incoming Source contract text pin required.'
     }
     $slots=@('bootstrap/reference','bootstrap/ordinary','map_load/reference','map_load/ordinary')
