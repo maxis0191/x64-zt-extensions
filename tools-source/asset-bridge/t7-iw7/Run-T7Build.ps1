@@ -1132,6 +1132,8 @@ function Assert-T7InputBindings($Plan) {
         if($registration -and $row.Path -ceq 'prepared/zonetool.cpp'){$wiredBytes=$reuse.RegistrationMetadata.CLIBytes;$wiredSHA=$reuse.RegistrationMetadata.CLISHA256}
         if($incoming -and $row.Path -ceq 'prepared/main.cpp'){$wiredBytes=$reuse.IncomingObservation.MainBytes;$wiredSHA=$reuse.IncomingObservation.MainSHA256}
         if($incoming -and $row.Path -ceq 'prepared/zonetool.cpp'){$wiredBytes=$reuse.IncomingObservation.CLIBytes;$wiredSHA=$reuse.IncomingObservation.CLISHA256}
+        if($registrationBindings -and $row.Path -ceq 'prepared/main.cpp'){$wiredBytes=$reuse.RegistrationBindingsObservation.MainBytes;$wiredSHA=$reuse.RegistrationBindingsObservation.MainSHA256}
+        if($registrationBindings -and $row.Path -ceq 'prepared/zonetool.cpp'){$wiredBytes=$reuse.RegistrationBindingsObservation.CLIBytes;$wiredSHA=$reuse.RegistrationBindingsObservation.CLISHA256}
         if($observed -and $row.Path -ceq 'prepared/zonetool.cpp') {
             if($wiredBytes -ne $observation.BaseCLIBytes -or $wiredSHA -cne $observation.BaseCLISHA256){throw 'Zombies observation base transition differs.'}
             $wiredBytes=$observation.CLIBytes;$wiredSHA=$observation.CLISHA256
