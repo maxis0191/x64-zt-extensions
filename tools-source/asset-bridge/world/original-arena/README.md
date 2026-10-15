@@ -5,6 +5,30 @@ Owner: `x64-zt-extensions`. Native shape creation/query integration belongs to
 installation belongs to the server; creator distribution belongs to the SDK.
 This directory does not change those shared implementations.
 
+## Original-job accounting before aliases exist
+
+The authored FF D4 source-validation phase reached this helper before staging
+its104 declared inputs. The95 hardlink rows had qualified source identities but
+no `TargetId` yet. The earlier exemption predicate dereferenced that absent
+property under StrictMode, before any new H1 owner/start. This was an accounting
+initializer failure; it did not create FF aliases or qualify an FF.
+
+`Invoke-OriginalArenaTool` now treats an absent `TargetId` as no exemption.
+A claimed hardlink exemption requires scalar, matching identities and fresh
+reads of both the actual provider and the actual alias through the existing
+identity/path providers. It repeats that check at every output sample because
+`Measure-BeaconOutputFiles` excludes by path only. A declared match cannot hide
+a foreign, missing or replaced alias. Copies remain counted; input guards,
+budgets and original-owner/closure behavior are unchanged.
+
+The targeted `test_arena.py` causal runs the real helper under StrictMode with
+real small files/hardlinks, `Measure-BeaconOutputFiles`, path validation and NTFS
+identity reads. Its14 cases cover pre-alias input, a qualified alias, copies,
+SourceId-only and invalid declarations, disappeared/replaced/spoofed aliases,
+and changes between samples. Only H1 ownership and memory telemetry are mocked.
+Run this in the composed Source package so its existing SDK/native dependencies
+are present. It exercises no game, stock, PE, lease or native tool process.
+
 The separate [platform/contact source jointure](../platform-contact/README.md)
 uses one authored 256×256×16 mesh matching the fixed a572 fixture. It does not
 resize this seven-box arena, alter writer D or qualify a new runtime cohort.
