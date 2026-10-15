@@ -138,6 +138,14 @@ skips the other NULL arrays. The corrected fixture preserves a sparse legacy
 sequence check and supplies five owned arrays of NULL entries for the strict
 recording check. Production visitors, collector and legacy adapter are unchanged.
 
+A nonzero shared count with some NULL model arrays is permitted by the original
+native parser/traversal. It is an explicitly unsupported subdomain of the initial
+strict collecting policy, rather than an intrinsically invalid upstream layout.
+The sparse fixture checks the legacy contract; the populated fixture exercises
+the stricter recording domain. No such layout is claimed observed in actual
+retail bodies. Accepting it in collection can be a separate future Source
+capacity change; this initial refusal is not a permanent platform ceiling.
+
 C remains failed and unqualified. Its original context closed, all 828 retained
 FileStream/SafeFileHandle references closed, three same-stream publication
 readbacks and the last deadline passed, and the original physical terminal exited
