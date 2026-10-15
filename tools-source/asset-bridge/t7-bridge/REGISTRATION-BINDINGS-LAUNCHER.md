@@ -59,3 +59,41 @@ Host216 and historical Incoming319 passed; the tracked ownership check passed
 with 902 files, 884 exports and three explicit dependencies. No native fixture,
 CPP, extraction or game operation was performed by these checks. Hosted CI
 status is recorded separately on the exact PR head.
+
+## Source-only CPP80 receipt shape
+
+After recipe PR173, `Assert-T7RegistrationBindingsCpp80Shape` checks declared
+build and receipt bodies, an explicit plan SHA, bounded fixture stdout and an
+explicit empty stderr. It
+performs no filesystem query, import, artifact read, process setup or admission;
+it returns no qualification object and does not change its inputs. The
+operational plan/build/start/host gates above remain unconditional.
+
+The check pins the corrected recipe contract3052/0724e666, validator11140/95581e3c
+and immutable producer166 Source pairs. It checks relevant recipe/profile
+identities and input flags, the closed18-field pending transition, exact
+39+41 markers, five phase names/kinds/deadlines and their declared artifact
+metadata. Four compiler phases require completed, empty-job telemetry; the
+Probe and top-level placeholder keep Completed=false. The receipt must declare
+successful closure, input revalidation and both fixture results without
+candidate execution or Ready.
+
+The new actual receipt field is `RegistrationBindingsFixturePassed`, following
+the runner's guarded output projection. Probe fields are
+`LegacyRegistrationChecks=39`, `BindingsChecks=41`, `EngineInvoked=false`.
+The inherited top-level `RegistrationCPPQualified` refers to the base39;
+recipe flags stay false and no new top-level `RegistrationBindingsCPPQualified`
+is accepted. Source expected counts and input proof flags are not rewritten.
+
+This checks a necessary metadata shape only. It cannot authenticate a measured
+Source manifest, guarded artifact identity, original host/context, actual
+candidate/build tuple, PTY exit or independent fresh process/lease closure.
+Those facts still need a later finite qualifier tied to the actual reviewed
+cohort. A matching body alone cannot qualify CPP80, launch a candidate, or
+inherit the old CPP39/87 results. No runtime proof tuple is introduced here.
+
+The Source test uses explicitly authored bodies and nonexistent `C:\authored`
+artifact declarations. Its 113 controls include failed/unclosed phases, wrong
+39/41 counts, input proof promotion, Source-pin null/type/hash drift, artifact
+and plan mismatch, live compiler members, old incoming markers and continued
+gate refusal after a valid shape. No real artifact is generated or inspected.

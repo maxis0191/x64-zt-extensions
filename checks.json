@@ -463,6 +463,16 @@
       ]
     },
     {
+      "id": "Test-T7RegistrationBindingsCppSource",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "tools-source/asset-bridge/t7-bridge/Test-T7RegistrationBindingsCppSource.ps1"
+      ]
+    },
+    {
       "id": "Test-T7RegistrationBindingsSource",
       "command": [
         "pwsh",
