@@ -70,7 +70,7 @@ if($DryRun){
         NativeTypesLoaded=$false;LeaseAcquired=$false;SourcePlanDeferred=$deferredAuthored;Reader=$null;Ready=$false}|ConvertTo-Json -Depth 8
     return
 }
-$lease=$null;$originalContext=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Work=$work;
+$lease=$null;$inputs=@();$originalContext=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Work=$work;
     Guards=[Collections.Generic.List[IDisposable]]::new()}
 $cleanup=[pscustomobject]@{Confirmed=$true};$transactionSaved=$false
 $stockGuards=[Collections.Generic.List[IDisposable]]::new()
@@ -110,10 +110,17 @@ try{
         function Add-ModelFFHeldInput([string]$Path,[string]$Expected='',[switch]$Stock) {
             Assert-ModelFFGroupDeadline
             $path=Assert-IW7LabPath ([IO.Path]::GetFullPath($Path)) ([IO.Path]::GetFullPath($Path))
+            if($Stock){
+                $pin=[pscustomobject]@{Path=$path;Bytes=(Get-Item -LiteralPath $path).Length;SHA256=$Expected}
+                $modelFFRoot.StockPins.Add($pin)
+                Open-ModelFFStockPin $pin $stockGuards -Measure
+                Assert-ModelFFGroupDeadline
+                return $pin
+            }
             $pin=[pscustomobject]@{Path=$path;Bytes=(Get-Item -LiteralPath $path).Length;SHA256=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()}
             if($Expected -and $pin.SHA256 -ine $Expected){throw 'Admitted authored input differs.'}
             $guard=Open-H1Pin $pin
-            if($Stock){$stockGuards.Add($guard);$modelFFRoot.StockPins.Add($pin)}else{$originalContext.Guards.Add($guard);$modelFFRoot.Pins.Add($pin)}
+            $originalContext.Guards.Add($guard);$modelFFRoot.Pins.Add($pin)
             Assert-ModelFFGroupDeadline
             $pin
         }
@@ -137,6 +144,7 @@ try{
             Assert-ModelFFGroupDeadline
             $record=Write-H1Receipt $modelFFRoot.Plan $Value $RunRoot -Name $Name -PassThru
             $modelFFRoot.PublicationGuards.Add((Open-H1Pin $record));$modelFFRoot.Publications.Add($record)
+            Assert-ModelFFGroupDeadline
             $record
         }
         if(!$deferredAuthored){
@@ -562,7 +570,7 @@ finally{
                 # Restore has proved the original source IDs/metadata. Reopen
                 # against those same measured byte pins for the final proof;
                 # this never reconstructs a job owner or adopts another input.
-                foreach($pin in $modelFFRoot.StockPins){$stockGuards.Add((Open-H1Pin $pin))}
+                foreach($pin in $modelFFRoot.StockPins){Open-ModelFFStockPin $pin $stockGuards}
                 Assert-ModelFFInputs $inputs $work -SourceOnly
                 Confirm-ModelFFStockGuards
                 Assert-ModelFFGroupDeadline
@@ -572,8 +580,8 @@ finally{
                 foreach($guard in $stockGuards){$guard.Dispose()};$stockGuards.Clear()
                 foreach($guard in $originalContext.Guards){$guard.Dispose()};$originalContext.Guards.Clear()
             }}else{$null}
-            Complete-ModelFFRestore $state $statePath $lease.Token -BeforeReleaseCheck $beforeRelease
-            if($authored){$originalContext.Lease=$null}
+            try{Complete-ModelFFRestore $state $statePath $lease.Token -BeforeReleaseCheck $beforeRelease}
+            finally{if($authored -and $null -eq $state.RetainedLeaseToken){$originalContext.Lease=$null}}
         }}
     # A pre-transaction failure has no borrowed files or child; release normally.
     elseif($cleanup.Confirmed -and $lease){
@@ -600,6 +608,7 @@ if($authored){
         TransactionRestored=$state.Restored;StockPreserved=$state.StockPreserved;LeaseReleased=$true;Ready=$false}
     $null=Publish-ModelFFReceipt $closure 'authored-closure.json'
     foreach($record in $modelFFRoot.Publications){$check=Open-H1Pin $record;$check.Dispose()}
+    Assert-ModelFFGroupDeadline
     foreach($guard in $modelFFRoot.PublicationGuards){$guard.Dispose()};$modelFFRoot.PublicationGuards.Clear()
     $modelFFRoot.FinalClosureVerified=$true;$modelFFRoot.CanExit=$true
 }

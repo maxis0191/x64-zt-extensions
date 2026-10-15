@@ -1912,7 +1912,7 @@ class AuthoredModelFFLifecycleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         report = json.loads(result.stdout.strip())
         self.assertEqual(report['Result'], 'PASS')
-        self.assertGreaterEqual(report['Assertions'], 40)
+        self.assertGreaterEqual(report['Assertions'], 60)
         self.assertFalse(report['NativeProcessStarted'])
         self.assertFalse(report['StockRead'])
         self.assertFalse(report['LeaseAcquired'])

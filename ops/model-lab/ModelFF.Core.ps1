@@ -241,6 +241,21 @@ function Get-ModelFFAuthoredStockInputs($Descriptor,[string]$StockRoot) {
         @($rows|Where-Object Mode -CEQ Copy).Count -ne 9){throw 'Exact authored 104-alias Main/fixed33 profile required.'}
     $rows.ToArray()
 }
+function Open-ModelFFStockPin($Pin,[Collections.Generic.List[IDisposable]]$Guards,[switch]$Measure) {
+    # Only the explicit authored retail-stock role uses this streaming bound.
+    # H1's generic 64 MiB input policy is intentionally unchanged.
+    Assert-H1Path $Pin.Path
+    if(($Pin.Bytes -isnot [int] -and $Pin.Bytes -isnot [long]) -or $Pin.Bytes -lt 1 -or $Pin.Bytes -gt 16GB -or
+        $Pin.SHA256 -isnot [string] -or (!$Measure -and $Pin.SHA256 -cnotmatch '^[a-f0-9]{64}$') -or
+        ($Pin.SHA256 -and $Pin.SHA256 -cnotmatch '^[a-f0-9]{64}$')){throw 'Finite authored stock byte pin required.'}
+    $stream=[IO.FileStream]::new($Pin.Path,'Open','Read','Read')
+    $Guards.Add($stream) # Retain the actual handle before length/hash can fail.
+    if($stream.Length -ne $Pin.Bytes){throw 'Authored stock stream size differs.'}
+    $actual=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($stream)).ToLowerInvariant()
+    $stream.Position=0
+    if($Pin.SHA256 -and $actual -cne $Pin.SHA256){throw 'Authored stock stream content differs.'}
+    if($Measure){$Pin.SHA256=$actual}
+}
 function Assert-ModelFFVacant([string]$Work) {
     foreach($p in @(Get-CimInstance Win32_Process | Where-Object {$_.Name -match '^(iw7|zonetool).*\.exe$'})) {
         if($p.ExecutablePath -and ([IO.Path]::GetFullPath($p.ExecutablePath)).StartsWith($Work+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Model tool work directory remains occupied; retain inputs and reservation.'}

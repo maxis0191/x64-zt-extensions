@@ -127,4 +127,100 @@ foreach($case in @(
     Require ($script:modelFFFake.Starts -eq $case.Starts) ('Wrong Start count: '+$case.Name)
     Require ([object]::ReferenceEquals($originalContext.Owner,$script:modelFFFake) -eq $case.Retained) ('Wrong actual owner retention: '+$case.Name)
 }
+
+# The first real dispatcher call uses the actual original @() assignment,
+# including when SDK staging precedes all stock observations under StrictMode.
+& {
+    Set-StrictMode -Version Latest
+    $inputAssignments=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$inputs'},$true))
+    . ([scriptblock]::Create($inputAssignments[0].Extent.Text))
+    $dispatcher=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Invoke-ModelFFTool'},$true))
+    . ([scriptblock]::Create($dispatcher[0].Extent.Text))
+    $authored=$true;$work='C:\synthetic work';$RunRoot='C:\synthetic run'
+    $originalContext=[pscustomobject]@{Closed=$true;Lease='synthetic-original'}
+    $cleanup=[pscustomobject]@{Confirmed=$true}
+    $modelFFRoot=[pscustomobject]@{PhaseStarted=$null;PhaseSeconds=0;LastPhaseStarted=$null;OriginalPhases=[Collections.Generic.List[object]]::new()}
+    function Assert-ModelFFGroupDeadline {}
+    function Invoke-OriginalArenaTool($Context,$Executable,$SHA,$Arguments,$Work,$Run,$Phase,$Inputs,$Seconds,$Poll){
+        Require ($null -ne $Inputs -and $Inputs.Count -eq 0) 'First Stage must receive the actual initialized empty stock input array'
+        [pscustomobject]@{ExitCode=0;JobClosed=$true}
+    }
+    $result=Invoke-ModelFFTool authored-stage @('-B','-S') -Executable 'C:\fixture\python.exe' -SHA256 ('a'*64) -WorkingDirectory 'C:\source' -Seconds 60
+    Require ($result.ExitCode -eq 0 -and $cleanup.Confirmed) 'Actual StrictMode dispatcher must reach SDK stage collaborator'
+}
+
+# Exercise the actual publisher and final gate with clock crossings inside
+# flush/guard enrollment and final readback. The original publication guards,
+# context and lease state remain available on expiry; CanExit stays false.
+$publisher=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Publish-ModelFFReceipt'},$true))
+$finalBlock=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.IfStatementAst] -and
+    $node.Clauses[0].Item1.Extent.Text.Trim() -ceq '$authored' -and $node.Extent.Text.Contains("Schema='iw7.authored-model-ff-closure/1'")},$true))
+Require ($publisher.Count -eq 1 -and $finalBlock.Count -eq 1) 'One actual publisher/final gate required'
+foreach($case in @(
+    @{Name='pre-release-flush';Final=$false;WriteDelay=2;GuardDelay=0;ReadbackDelay=0;Pass=$false},
+    @{Name='pre-release-guard';Final=$false;WriteDelay=0;GuardDelay=2;ReadbackDelay=0;Pass=$false},
+    @{Name='post-release-flush';Final=$true;WriteDelay=2;GuardDelay=0;ReadbackDelay=0;Pass=$false},
+    @{Name='post-release-readback';Final=$true;WriteDelay=0;GuardDelay=0;ReadbackDelay=2;Pass=$false},
+    @{Name='known-closed';Final=$true;WriteDelay=0;GuardDelay=0;ReadbackDelay=0;Pass=$true}
+)){
+    & {
+        $authored=$true;$RunRoot='C:\synthetic run';$stockGuards=[Collections.Generic.List[IDisposable]]::new()
+        $originalContext=[pscustomobject]@{Closed=$true;Lease=$null;Guards=[Collections.Generic.List[IDisposable]]::new()}
+        if(!$case.Final){$originalContext.Lease='synthetic-original'}
+        $script:modelFFClock=599999.0;$openCalls=0
+        $modelFFRoot=[pscustomobject]@{Key='synthetic-original';Publications=[Collections.Generic.List[object]]::new();
+            PublicationGuards=[Collections.Generic.List[IDisposable]]::new();FinalClosureVerified=$false;CanExit=$false;
+            Plan=$null;GroupStarted=0.0;GroupDeadlineSeconds=600;PhaseStarted=$null;PhaseSeconds=0}
+        $originalRoot=$modelFFRoot
+        if($case.Final){$modelFFRoot.Publications.Add([pscustomobject]@{Path=(Join-Path $RunRoot 'authored-native-run.json');Bytes=1;SHA256=('a'*64)})}
+        $state=@{Restored=$true;StockPreserved=$true}
+        function Assert-ModelFFGroupDeadline {& $originalFFDeadline $modelFFRoot.GroupStarted $modelFFRoot.GroupDeadlineSeconds}
+        function Write-H1Receipt($Plan,$State,$StageRoot,$Name,[switch]$PassThru){
+            $script:modelFFClock+=$case.WriteDelay
+            [pscustomobject]@{Path=(Join-Path $StageRoot $Name);Bytes=1;SHA256=('a'*64)}
+        }
+        function Open-H1Pin($Pin){
+            $script:openCallsForCase++
+            if($script:openCallsForCase -eq 1){$script:modelFFClock+=$case.GuardDelay}
+            if($script:openCallsForCase -eq 3){$script:modelFFClock+=$case.ReadbackDelay}
+            [IO.MemoryStream]::new()
+        }
+        $script:openCallsForCase=0
+        . ([scriptblock]::Create($publisher[0].Extent.Text))
+        $refused=$false
+        try{if($case.Final){. ([scriptblock]::Create($finalBlock[0].Extent.Text))}else{$null=Publish-ModelFFReceipt @{} 'authored-native-run.json'}}catch{$refused=$true}
+        if($case.Pass){
+            Require (!$refused -and $modelFFRoot.CanExit -and $modelFFRoot.PublicationGuards.Count -eq 0) 'Known final success must close publication guards before CanExit'
+        }else{
+            Require ($refused -and !$modelFFRoot.CanExit -and $modelFFRoot.PublicationGuards.Count -eq 1 -and
+                $modelFFRoot.PublicationGuards[0].CanRead) ('Expired '+$case.Name+' lost original publication guard')
+            Require (($null -eq $originalContext.Lease) -eq $case.Final) 'Expiry must preserve the actual pre/post-release lease state'
+        }
+        Require ([object]::ReferenceEquals($originalRoot,$modelFFRoot)) 'Late failure must not reconstruct the root'
+        foreach($guard in $modelFFRoot.PublicationGuards){$guard.Dispose()}
+    }
+}
+
+# A synthetic file over H1's 64 MiB generic limit must work for the explicit
+# stock role, initially and finally, without broadening that generic API.
+$largeRoot=Join-Path ([IO.Path]::GetTempPath()) ('model-ff-source-stock-'+[guid]::NewGuid().ToString('N'))
+[IO.Directory]::CreateDirectory($largeRoot)|Out-Null
+$largePath=Join-Path $largeRoot 'authored-synthetic.pak'
+$largeStream=[IO.File]::Open($largePath,'CreateNew','Write','None')
+try{$largeStream.SetLength(64MB+1)}finally{$largeStream.Dispose()}
+$stockHandles=[Collections.Generic.List[IDisposable]]::new()
+try{
+    $largePin=[pscustomobject]@{Path=$largePath;Bytes=[long](64MB+1);SHA256=''}
+    Open-ModelFFStockPin $largePin $stockHandles -Measure
+    Require ($stockHandles.Count -eq 1 -and $stockHandles[0].Position -eq 0 -and $largePin.SHA256 -cmatch '^[a-f0-9]{64}$') 'Initial large stock guard must hash/retain one real stream'
+    $genericRefused=$false;try{$generic=Open-H1Pin $largePin;$generic.Dispose()}catch{$genericRefused=$true}
+    Require $genericRefused 'Generic H1 limit must remain unchanged'
+    foreach($handle in $stockHandles){$handle.Dispose()};$stockHandles.Clear()
+    Open-ModelFFStockPin $largePin $stockHandles
+    Require ($stockHandles.Count -eq 1 -and $stockHandles[0].CanRead -and $stockHandles[0].Position -eq 0) 'Final large stock recheck must retain the same-stream guard'
+}finally{
+    foreach($handle in $stockHandles){$handle.Dispose()};$stockHandles.Clear()
+    if(![IO.Path]::GetFullPath($largePath).StartsWith([IO.Path]::GetFullPath($largeRoot)+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Synthetic cleanup path escaped'}
+    [IO.File]::Delete($largePath);[IO.Directory]::Delete($largeRoot)
+}
 [ordered]@{SourceOnly=$true;Assertions=$checks;NativeProcessStarted=$false;StockRead=$false;LeaseAcquired=$false;Result='PASS'}|ConvertTo-Json -Compress

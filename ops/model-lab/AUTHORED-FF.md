@@ -80,8 +80,13 @@ against those same pins and verifies current content before release.
 The optional existing restore callback runs after restoration/source proof and
 before reservation release. It publishes a bounded native snapshot through the
 existing H1 receipt writer, flushes/readbacks/hashes it, then closes input guards.
-A final closure publication binds that original snapshot. Publication guards and
-the actual AppDomain root remain until final verification. Unknown jobs, failed
+A final closure publication binds that original snapshot and its confirmed input
+closure, following the existing two-phase writer protocol. Deadline checks follow
+publication/guard enrollment and the final readbacks; expiry keeps CanExit false
+with the original root and publication guards retained.
+Stock uses a local 16 GiB streaming file bound for both initial and final guards,
+hashing the same retained handle. H1's generic 64 MiB bound is unchanged.
+Publication guards and the actual AppDomain root remain until final verification. Unknown jobs, failed
 restoration, changed inputs or failed publication preserve the exact references
 and prevent CanExit. Authored recovery must use that retained original host;
 a new process cannot reconstruct ownership from `state.local.json`.
