@@ -63,6 +63,14 @@ function New-CallerFixture {
 $checks=0;$fixture=New-CallerFixture
 if(!(Assert-T7BuildProfile $fixture $PSScriptRoot)){throw 'Valid caller profile refused.'};$checks++
 Assert-T7InputBindings $fixture;$checks++
+if($guards.Count -ne 2 -or @($guards|Where-Object {!$_.CanRead -or $_.Position -ne 0}).Count){throw 'Actual Source RSP guards not held/readable after validation.'};$checks++
+$responseFunction=$ast.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-T7ImageCallerFixtureResponse'},$true).Extent.Text
+if($responseFunction.IndexOf('Open-T7Bootstrap $pin.Path') -ge $responseFunction.IndexOf('$reader.ReadToEnd()') -or
+   $responseFunction.IndexOf('$reader.ReadToEnd()') -ge $responseFunction.IndexOf('Split-T7ResponseArguments $text')){throw 'Actual held Source response ordering differs.'};$checks++
+$runnerTry=@($ast.EndBlock.Statements|Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})[0]
+$profileCall=$runnerTry.Body.Find({param($n)$n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Assert-T7BuildProfile'},$true)
+$leaseCall=$runnerTry.Body.Find({param($n)$n -is [Management.Automation.Language.CommandAst] -and $n.GetCommandName() -ceq 'Enter-IW7ResourceLease'},$true)
+if(!$profileCall -or !$leaseCall -or $profileCall.Extent.StartOffset -ge $leaseCall.Extent.StartOffset){throw 'Caller profile/RSP validation must precede real admission.'};$checks++
 foreach($change in @(
     {param($f)$f.BuildProfile.Option='-t7-prepatch-link-v3'},
     {param($f)$f.BuildProfile.Option=@($f.BuildProfile.Option)},
@@ -172,4 +180,4 @@ if('IW7.AnimationProbe.NativeJob' -as [type]){throw 'Source tests imported a nat
 Clear-CallerSourceGuards
 [ordered]@{Schema='iw7.t7-prepatch-image-caller-source-tests/1';Checks=$checks;Status='Passed';NativeExecuted=$false;CPPFixtureExecuted=$false;
     RepinnedResponseMutationCases=$rspCases.Count;OriginalP2AcceptanceReproduced=$true;HeldSourceStreamValidated=$true;
-    SourceResponseFixtureRoot=$script:callerSourceTestRoot;OpaqueInputsRead=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json -Compress
+SourceResponseFixtureRoot=$script:callerSourceTestRoot;OpaqueInputsRead=$false;LeaseAcquired=$false;Ready=$false}|ConvertTo-Json -Compress

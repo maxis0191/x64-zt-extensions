@@ -89,7 +89,7 @@ correction checks the original plan property itself before accepting this mode;
 the original failing candidate and correction remain separate commits. No
 preparation, compiler or capture ran from that candidate.
 
-Source validation after correction passes 11 targeted Python tests and 150 actual
+Source validation after correction passes 11 targeted Python tests and 153 actual
 PowerShell profile/input/fixture-output controls. Retained V3/V2 controls pass
 48/100, OS controls 39, input-binding controls 132, deadline controls 3 and the
 registration-bindings controls 144. Shared build/registration Python checks ran
