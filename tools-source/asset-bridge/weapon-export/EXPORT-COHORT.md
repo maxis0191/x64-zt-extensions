@@ -606,8 +606,8 @@ reported as terminal completion. Rechecking the same original guard then using
 explicit inline interactive exit completed the actual PTY with exit zero; no
 native attempt or owner reconstruction was repeated. Fresh 10:11:53 UTC postflight
 found the three host/parent/native identities absent, no game/compiler/ZoneTool/
-VCTIP/mspdbsrv and zero leases. Root independently corroborated fresh closure and
-released its heavy ledger at 10:12:27 UTC.
+VCTIP/mspdbsrv and zero leases. Root independently corroborated fresh closure at
+10:12:27 UTC, then released its heavy ledger.
 
 M is ProfilePassedClosed and PairProfileComplete only. NativeExportComplete,
 full templates, projectile author eligibility, independent runtime ABI, weapon
