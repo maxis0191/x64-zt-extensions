@@ -369,7 +369,7 @@ CandidateStarted=true, NativeExportComplete=false and Ready=false. Its 102 alias
 are retained, bringing F/G/H/I/J to 382. No automatic replay or guard relaxation
 followed; the shell exit is closure evidence only.
 
-## Source-only first-refusal witness
+## First-refusal witness and separate CPP checkpoint
 
 The next module names only the first failed predicate within the existing group.
 Its pure helper retains the original classification read before type/inventory,
@@ -389,8 +389,9 @@ the later PAP/attachment checks, the CLI and serializers remain unchanged.
 The pinned primary header is native fab9358's large
 `src/zonetool/zonetool/iw7/structs.hpp` (354,227 bytes), not the small game header.
 The following x64 offsets are derived from that Source and checked by new
-compile-time assertions in a future TU. They have not been observed in a new
-compiled layout or validated against runtime data:
+compile-time assertions. Actual CPP I compiled these assertions successfully
+against that pinned Source layout. This does not validate the runtime asset ABI
+or establish any field's value in the retail asset:
 
 | Container | Field | Source offset | Required value |
 | --- | --- | --- | --- |
@@ -408,5 +409,16 @@ remove them. Source causals interpret the actual finite helper's operations and
 verify preparation/insertion, bounded output and unchanged later guards; they
 are not native C++ execution. A separate optional eight-stage CPP profile requires
 name8, argv10 and primary36 before the same fresh IW7 TU/link. The old six-stage
-cohort stays unchanged. No new candidate, native witness or asset value is
-qualified yet; future CPP and export each need their own reviewed capsule/GO.
+cohort stays unchanged. Actual CPP I now separately qualifies compilation/link
+and the exact 8/10/36 native checks for PR175 Source `d284f05`; see BUILD-COHORT.md
+for its under-lease artifact tuple and original-host closure evidence. Its Source
+preparation receipt remains authored/unexecuted evidence and was not relabelled.
+
+No instrumented candidate CLI has run. J remains its original failed uninstrumented
+attempt; its first failed predicate/value and FP/TP/animation/rig/tag/FX references
+remain unknown. The next diagnostic export proposal uses I's qualified tuple and
+the same Shredder/shredderpap1 fixed33 layout, with historical post-J alias counts
+derived only from J's closed journals. Its 102 aliases/71 sources still require
+fresh admitted identity/content/binary checks, exact capsule review and a distinct
+Root Extract GO. CPP success grants no export, runtime ABI, PAP/physics or gameplay
+qualification, and neither replays J nor rebuilds the candidate.
