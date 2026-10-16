@@ -265,6 +265,25 @@ class NativeBodySchemaTests(unittest.TestCase):
         following = next(e for e in trace.events if e[0] == 'attachment')
         self.assertEqual(following[2], 5816)
 
+    def test_real_outer_entry_and_parent_graph_handlers_allocate_in_order(self):
+        # Ordinary authored typed roots, not the private profile or actual input.
+        w, a = authored('WeaponCompleteDef'), authored('WeaponAttachment')
+        row = authored('NoteTrackToSoundEntry')
+        row.update(attachment='aaaaaaa', notetrackSoundMapKeys=['bbbbbbb'], notetrackSoundMapValues=['ccccccc'])
+        w['notetrackOverrides'] = [row]
+        w['notetrackSuitEntries'] = [authored('NoteTrackToSuitSoundEntry')]
+        w['accuracyGraphKnots'] = [[[1.0, 2.0]], [[3.0, 4.0]]]
+        w['weapDef'].update(accuracyGraphName=['ddddddd', 'eeeeeee'], originalAccuracyGraphKnotCount=[1, 1],
+                            originalAccuracyGraphKnots=[[[5.0, 6.0]], [[7.0, 8.0]]])
+        trace = production._inspect(w, a)
+        self.assertEqual((trace.offset, trace.cells, trace.script_entries), (6120, 8, 4))
+        self.assertEqual([(e[0], e[2], e[3]) for e in trace.events if e[0] in
+                          ('weapon.notetrackOverrides', 'weapon.notetrackSuitEntries', 'weapon.accuracyGraphKnots[0]',
+                           'weapon.accuracyGraphKnots[1]', 'weapon.weapDef', 'attachment')],
+                         [('weapon.notetrackOverrides', 312, 24), ('weapon.notetrackSuitEntries', 368, 24),
+                          ('weapon.accuracyGraphKnots[0]', 392, 8), ('weapon.accuracyGraphKnots[1]', 400, 8),
+                          ('weapon.weapDef', 408, 5144), ('attachment', 5584, 536)])
+
     def test_cursor_utf8_chain_effective_header_and_zero_no_padding(self):
         for text, align_type, expected in [('é', 'float', 3), ('€', 'const char*', 4)]:
             trace = production._Trace(); trace.string(text, 'string')
