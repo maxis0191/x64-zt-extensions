@@ -210,7 +210,18 @@ namespace authored_pair_fixture
         for(size_t i=0;i<3;++i)
         {
             Report report;Stats stats;
-            auto actual=execute(approved_cases[i],approved_cases[i].original,report,stats);
+            Result actual;
+            try { actual=execute(approved_cases[i],approved_cases[i].original,report,stats); }
+            catch(const zonetool::checked_memory_error& error)
+            {
+                std::fprintf(stderr,
+                    "FAIL authored_pair label=%.16s reason_enum=%d primary_enum=%d capacity=%zu release_attempts=%u "
+                    "copies=%u hashes=%u decodes=%u arenas=%u weapon_parses=%u attachment_parses=%u publications=%u\n",
+                    approved_cases[i].label, static_cast<int>(error.reason()), static_cast<int>(report.primary()),
+                    report.capacity(), report.release_attempts(), stats.copies, stats.hashes, stats.decodes,
+                    stats.arenas, stats.weapon_parses, stats.attachment_parses, stats.publications);
+                throw; // Preserve this same unexpected refusal after diagnostics.
+            }
             need(stats.hashes==4&&stats.decodes==3&&stats.arenas==1&&stats.weapon_parses==1&&stats.attachment_parses==1&&stats.publications==1);
             released_once(report);need(oracle(approved_cases[i],actual));
             if(i==0)golden=actual;else need(!oracle(approved_cases[i],golden)); // A prefab golden result cannot satisfy mutants.

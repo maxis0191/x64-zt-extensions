@@ -1,10 +1,10 @@
 # Authored JSON pair through the real native cores
 
 This Source lot isolates the two pinned JSON-to-native implementations and
-authors an end-to-end C++ fixture. **J1d and J2 compiled both cores, then fixture
-compilation failed before link or execution.** The current literal-emission
-correction has no CPP qualification. A fresh gate must prove the complete real
-link and parse; earlier allocator fixtures and partial core compilation do not
+authors an end-to-end C++ fixture. **J3 compiled the cores and fixture and linked
+them, then fixture execution exited two before completing its eight groups.**
+The current refusal diagnostics have no CPP qualification. A fresh gate must
+prove the complete real link and parse; earlier allocator fixtures and partial core compilation do not
 qualify the complete witness.
 
 ## Pure Source renderer
@@ -169,8 +169,37 @@ token groups. Original bytes, lengths, SHA pins, literal oracles and qualificati
 flags stay identical to the `e0e4f49` baseline. Only the generated Source header
 representation changes: 81,207 bytes, SHA256
 `e00390da93d3b3c423559e4037dca9690051509018300e96abf8ff6b529f2b3a`.
-The emitter fix has not been compiled or linked. Consumed J2 sources, plans,
-generated headers and objects remain untouched.
+That Source checkpoint did not compile or link the emitter fix. Consumed J2
+sources, plans, generated headers and objects remain untouched.
+
+The separately authorized J3 attempt at `bbf2fd4` compiled both cores and the
+fixture, then completed the real link, all with exit zero. Fixture execution
+exited two. Its only observed PASS line was `PASS sha256_known_vectors`:
+stdout 27 bytes, SHA256
+`f5db5fe8281a4738f55cc5f94208fc1984f08306efc2615f47aacb75227b4361`.
+Stderr was `Checked zone memory refused`, 29 bytes, SHA256
+`1339416a1fb7f326dff715c7c14ebdaffa61c41dd236eaaf1ce139d4be37757a`.
+The generic message does not establish the reason enum, allocation phase or a
+capacity/overflow/OS/ABI cause. Full fixture count remains null/unverified,
+wrappers did not run and `NativeInputsReverified=false` is preserved.
+
+J3 is immutable FailedClosed. All five entered stage trees closed; original
+postflight, true exit and Root fresh closure completed with 961 streams and
+saved handles closed. The probe's CIM registration error and the existing
+original-job-already-empty route remain recorded. That observation is not
+attributed as the test failure's cause or explained by assumed timing.
+
+The current change instruments only an unexpected `checked_memory_error` from
+the positive `real_pair_variants()` call. One bounded stderr line prints the
+approved label (at most sixteen characters), reason/primary enum numbers,
+existing report capacity/release attempts and existing Stats counters. These
+enum numbers are not Win32 error codes. No pool addresses or raw input are
+printed. The same exception is rethrown with `throw;`; `execute()` and its
+exception-pointer/free/rethrow path are byte-identical, as are all expected
+negative paths and success output. Capacity stays 6,208 bytes. Parser, allocator,
+Inventory, input pins/oracles, source header representation and flags are
+unchanged. Two targeted Source checks cover scope, the line bound and rethrow;
+no new native run or qualification is claimed.
 
 Before merge, review the exact Source head and prepare a fresh minimal native
 capsule with both real core TUs, the real inventory support, generated authored

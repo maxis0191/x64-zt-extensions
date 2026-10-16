@@ -142,6 +142,42 @@ class PairJsonCoreSourceTests(unittest.TestCase):
 
 
 class AuthoredPairFixtureSourceTests(unittest.TestCase):
+    def test_unexpected_refusal_diagnostic_is_only_the_positive_boundary_delta(self):
+        source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        function = source.index('    void real_pair_variants()')
+        start = source.index('            Result actual;', function)
+        end = source.index('            need(stats.hashes==4', start)
+        original = (source[:start] +
+                    '            auto actual=execute(approved_cases[i],approved_cases[i].original,report,stats);\n' +
+                    source[end:])
+        # execute/free/rethrow, all negatives, success output and other C++ are
+        # byte-identical to bbf2; only this unexpected positive-call boundary changes.
+        self.assertEqual(hashlib.sha256(original.encode('utf-8')).hexdigest(),
+                         '60ca6d94ac2a95695a26e0dba2febbcd8cfad0892f276692b1a654cc1cdbe176')
+
+    def test_unexpected_refusal_line_is_bounded_existing_metadata_and_same_rethrow(self):
+        source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        positive = function_body(source, 'void real_pair_variants()')
+        self.assertLess(positive.index('Report report;Stats stats;'), positive.index('try { actual=execute('))
+        catch = function_body(positive, 'catch(const zonetool::checked_memory_error& error)')
+        code = re.sub(r'//[^\n]*', '', catch)
+        self.assertEqual(re.findall(r'\bthrow[^;]*;', code), ['throw;'])
+        self.assertEqual(source.count('std::fprintf(stderr,'), 1)
+        self.assertLess(code.index('std::fprintf(stderr,'), code.index('throw;'))
+        before_arguments = code[:code.index('approved_cases[i].label')]
+        parts = re.findall(r'"(?:\\.|[^"\\])*"', before_arguments)
+        fmt = ''.join(ast.literal_eval(part) for part in parts)
+        self.assertEqual(fmt.count('\n'), 1); self.assertTrue(fmt.endswith('\n'))
+        widths = {'%.16s': 16, '%d': 11, '%zu': 20, '%u': 10}
+        estimated = re.sub(r'%\.16s|%zu|%d|%u', lambda m: 'x'*widths[m[0]], fmt)
+        self.assertNotIn('%', estimated); self.assertLessEqual(len(estimated), 384)
+        for field in ('error.reason()', 'report.primary()', 'report.capacity()', 'report.release_attempts()',
+                      'stats.copies', 'stats.hashes', 'stats.decodes', 'stats.arenas', 'stats.weapon_parses',
+                      'stats.attachment_parses', 'stats.publications'):
+            self.assertIn(field, code)
+        for forbidden in ('GetLastError', 'primary_error', 'original_pool', 'incoming', 'bytes[', '%p', 'report.free'):
+            self.assertNotIn(forbidden, code)
+
     def test_actual_emission_reconstructs_all_twelve_originals_and_unchanged_pins_oracles(self):
         import json
         approved = fixtures.cases()
