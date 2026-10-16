@@ -153,6 +153,11 @@ No compiled CLI, template JSON, stock binding, export or Ready is qualified here
 
 ## Descriptive dependency inventory
 
+The [inactive pair session Source](PAIR-PARSE-SESSION.md) adds lifetime/event
+contracts and pin-first in-memory staging of rejecting hooks. Its C++ fake
+fixture is authored only. It opens no actual file, seals no real route and adds
+no parser/arena, CLI, builder or runtime permission.
+
 The pure [native input preflight](NATIVE-BODY-SCHEMA.md) checks the verified
 immutable private-pair buffers against the pinned consumed dialect and exact
 no-padding allocation order. It creates no native arena/parser and carries no
