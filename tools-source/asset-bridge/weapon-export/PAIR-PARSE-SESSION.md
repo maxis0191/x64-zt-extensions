@@ -181,6 +181,12 @@ staging. Literal `stage_checked=True` renders an in-memory overlay only. Removin
 the explicit checked additions reconstructs the original Source exactly.
 No consumer or existing pair stager imports/selects this overlay.
 
+Source review of initial head `ba299e8` found the character bound was checked
+too late. The corrected entry checks exact str type and at most 3,000 characters
+before NUL scan, UTF-8 encoding or hashing. A causal trace checks oversized
+ordinary, NUL-containing and invalid-Unicode texts refuse before those actions;
+the independent exact byte length, strict UTF-8 and Source hash checks remain.
+
 The staged `zone_memory(checked_memory_tag, size, report)` constructor binds an
 external original-owner report once. It captures failed VirtualAlloc's error
 immediately and throws a fixed-message diagnostic. In checked mode, capacity
@@ -220,11 +226,15 @@ test-local redirected allocation/free/message calls and a small static fake
 buffer: constructor/capacity/overflow refusals, remaining-capacity checks,
 zero-count/packed layout, copy refusal, free-to-destructor success and failure,
 repeated free without retry/NULL calls, terminal-use refusal, and durable
-primary/cleanup reports. **All twelve are AUTHORED, NOT COMPILED OR EXECUTED.**
-The fourteen targeted Python checks pass real renderer Source causals, exact
+primary/cleanup reports. The durable-report case also authors an explicit fake
+VirtualFree-throws subcase: one attempt, no retry on later free/destruction,
+unavailable OS result, no invented error and the original primary preserved.
+Lock-throw handling remains Source-inspected only and is not exercised by the
+fixture. **All twelve named cases are AUTHORED, NOT COMPILED OR EXECUTED.**
+The fifteen targeted Python checks pass real renderer Source causals, exact
 default/reversible legacy preservation, state/side-effect order and absent
-integration. The complete Python module suite has 183 tests: 182 passed and one
-existing composed-package dependency test skipped (74.474 seconds). No C++ was
+integration. The complete Python module suite has 184 tests: 183 passed and one
+existing composed-package dependency test skipped (76.222 seconds). No C++ was
 compiled or executed. Fake tests cannot establish real OS failure or actual closure.
 
 The three PR217 hooks remain unconditionally rejecting. Same-owner raw/schema

@@ -3,6 +3,7 @@ import ast
 import hashlib
 from pathlib import Path
 import re
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -55,10 +56,31 @@ class CheckedMemorySourceTests(unittest.TestCase):
 
     def test_pin_drift_refuses_before_any_replacement(self):
         with patch.object(production, 'replacements', side_effect=AssertionError('staging before pin')):
-            for source in (corpus(), 'x' * 3000, 'x' * 65537, '\ufeff' + corpus()):
+            for source in (corpus(), 'x' * 3000, '\ufeff' + corpus()):
                 with self.subTest(source_bytes=len(source.encode())):
                     with self.assertRaisesRegex(ValueError, 'Pinned memory Source drift'):
                         production.render(source, stage_checked=True)
+
+    def test_character_bound_refuses_before_nul_scan_encode_or_hash(self):
+        tree = ast.parse((HERE / 'prepare_pair_checked_memory.py').read_text(encoding='utf-8'))
+        render = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'render')
+        nul_line = render.body[2].lineno
+        encode_line = render.body[3].body[0].lineno
+        for source in ('x' * 3001, '\0' + 'x' * 3000, '\ud800' + 'x' * 3000):
+            visited = set()
+            def trace(frame, event, _arg):
+                if frame.f_code is production.render.__code__ and event == 'line': visited.add(frame.f_lineno)
+                return trace
+            previous = sys.gettrace()
+            try:
+                sys.settrace(trace)
+                with patch.object(production.hashlib, 'sha256', side_effect=AssertionError('hash before character bound')):
+                    with self.assertRaisesRegex(ValueError, 'Source character bound before scans'):
+                        production.render(source, stage_checked=True)
+            finally:
+                sys.settrace(previous)
+            self.assertNotIn(nul_line, visited)
+            self.assertNotIn(encode_line, visited)
 
     def test_input_types_utf8_and_literal_selection_refuse(self):
         for source in (None, b'source', 1, 'source\0tail', '\ud800'):
@@ -161,6 +183,10 @@ class CheckedMemorySourceTests(unittest.TestCase):
         self.assertIn('IW7_PAIR_CHECKED_MEMORY_FIXTURE=12', fixture)
         self.assertNotRegex(fixture, r'\bassert\s*\(|::VirtualAlloc\(|::VirtualFree\(')
         self.assertIn('AUTHORED ONLY', fixture)
+        self.assertIn('Fake VirtualFree throw', fixture)
+        self.assertIn('for (bool api_throw : {false, true})', fixture)
+        self.assertIn('!report.release_result_available()', fixture)
+        self.assertIn('Source-inspected only', fixture)
 
     def test_renderer_is_pure_source_without_cli_write_or_process(self):
         path = HERE / 'prepare_pair_checked_memory.py'

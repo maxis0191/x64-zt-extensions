@@ -190,7 +190,11 @@ def replacements():
 
 
 def render(source, *, stage_checked=False):
-    if type(source) is not str or '\0' in source:
+    if type(source) is not str:
+        raise ValueError('Bounded exact Source text required')
+    if len(source) > SOURCE_BYTES:
+        raise ValueError('Source character bound before scans')
+    if '\0' in source:
         raise ValueError('Bounded exact Source text required')
     try:
         raw = source.encode('utf-8', errors='strict')

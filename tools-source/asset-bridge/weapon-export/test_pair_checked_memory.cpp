@@ -19,7 +19,7 @@ namespace fixture
     std::array<unsigned char, 256> pool;
     struct State
     {
-        bool alloc_ok = true, release_ok = true, bad_call = false;
+        bool alloc_ok = true, release_ok = true, release_throws = false, bad_call = false;
         unsigned allocations = 0, releases = 0, null_releases = 0, messages = 0;
         DWORD allocation_error = 0x1234, release_error = 0x5678;
         LPVOID last_released = nullptr;
@@ -42,6 +42,7 @@ namespace fixture
         if (!base) ++state.null_releases;
         if (base != pool.data() || bytes != 0 || flags != MEM_RELEASE) state.bad_call = true;
         state.last_released = base;
+        if (state.release_throws) { SetLastError(0xD00D); throw std::runtime_error("Fake VirtualFree throw"); }
         if (!state.release_ok) { SetLastError(state.release_error); return FALSE; }
         return TRUE;
     }
@@ -228,26 +229,48 @@ static void checked_terminal_operations_refuse_before_any_use()
 }
 static void checked_report_survives_destruction_preserves_primary_and_release_error()
 {
-    Report report;
-    fixture::state.release_ok = false;
-    const void* owner = nullptr;
-    try
+    // Two explicitly fake subcases in this one named case. API throw is not an
+    // observed Win32 failure; lock throwing remains Source-inspected only.
+    for (bool api_throw : {false, true})
     {
-        Arena arena(Tag{}, 8, report);
-        owner = &arena;
-        arena.manual_allocate<char>(9);
-        throw std::runtime_error("Expected primary refusal absent");
+        fixture::reset();
+        fixture::state.release_ok = false;
+        fixture::state.release_throws = api_throw;
+        Report report;
+        const void* owner = nullptr;
+        try
+        {
+            Arena arena(Tag{}, 8, report);
+            owner = &arena;
+            try { arena.manual_allocate<char>(9); }
+            catch (const Error&)
+            {
+                if (api_throw)
+                {
+                    arena.free(); // Fake API throws; checked release must not.
+                    need(report.cleanup_exception() && !report.release_result_available());
+                    need(report.release_error() == 0 && report.release_attempts() == 1);
+                    fixture::state.release_throws = false;
+                    fixture::state.release_ok = true;
+                    SetLastError(0xEEEE);
+                    arena.free(); // No retry even if the fake would now succeed.
+                }
+                throw; // Preserve the exact primary through the later destructor.
+            }
+            throw std::runtime_error("Expected primary refusal absent");
+        }
+        catch (const Error& error) { need(error.reason() == Failure::capacity); }
+        need(report.primary() == Failure::capacity && report.primary_error() == 0);
+        need(report.release() == Release::failed && report.release_error() == (api_throw ? 0 : 0x5678));
+        need(report.release_result_available() == !api_throw && report.cleanup_exception() == api_throw);
+        need(report.owner() == owner && report.original_pool() == fixture::pool.data());
+        need(report.release_attempts() == 1 && fixture::state.releases == 1);
+        fixture::state.release_ok = true;
+        SetLastError(0xEEEE);
+        refuses(Failure::report_reuse, [&] { Arena another(Tag{}, 8, report); });
+        need(fixture::state.allocations == 1 && fixture::state.releases == 1);
+        need(report.release() == Release::failed && report.release_error() == (api_throw ? 0 : 0x5678));
     }
-    catch (const Error& error) { need(error.reason() == Failure::capacity); }
-    need(report.primary() == Failure::capacity && report.primary_error() == 0);
-    need(report.release() == Release::failed && report.release_error() == 0x5678);
-    need(report.owner() == owner && report.original_pool() == fixture::pool.data());
-    need(report.release_attempts() == 1 && fixture::state.releases == 1);
-    fixture::state.release_ok = true;
-    SetLastError(0xEEEE);
-    refuses(Failure::report_reuse, [&] { Arena another(Tag{}, 8, report); });
-    need(fixture::state.allocations == 1 && fixture::state.releases == 1);
-    need(report.release() == Release::failed && report.release_error() == 0x5678);
 }
 
 int main()
