@@ -153,6 +153,15 @@ No compiled CLI, template JSON, stock binding, export or Ready is qualified here
 
 ## Descriptive dependency inventory
 
+The [inactive pair session Source](PAIR-PARSE-SESSION.md) adds lifetime/event
+contracts and pin-first in-memory staging of rejecting hooks. Separate admitted
+CPP G at Source `2b48cd8` passed all twelve production-header fake checks and
+compiled the three modified native translation units; Root verified ordinary
+closure and the original terminal exit. Later doc/merge heads are not newly
+compiled. It opens no actual pair file, seals no real route and adds no native
+parser/arena, CLI, builder or runtime permission; fatal allocator closure remains
+uncovered.
+
 The pure [native input preflight](NATIVE-BODY-SCHEMA.md) checks the verified
 immutable private-pair buffers against the pinned consumed dialect and exact
 no-padding allocation order. It creates no native arena/parser and carries no
