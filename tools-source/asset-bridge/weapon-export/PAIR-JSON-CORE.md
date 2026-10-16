@@ -333,3 +333,52 @@ FILE/route activation, arbitrary definitions, captured U1/T2/body/stock, full
 CLI, FF, engine ABI, game and NativeD remain closed. `Ready`, actual parse
 qualification and actual allocator-closure qualification remain false until
 their own evidence and decisions exist.
+
+
+## J6 actual result and durable Source correction
+
+J6 used Source7c21ebe3e7de722ad574a6726f258619be666a86 and plan
+91dde13398e6fe7f3d09ca09eba0f7795d2a5720e87b73deb4a923dc67d0007b.
+Both real cores, fixture compile and LINK exited0. The fixture exited0 and
+the original exact-output gate verified all eight groups. WeaponDef and
+WeaponAttachment wrappers closed with exit0. The filesystem compiler result
+was0, but its normal stage closure was interrupted by the shared whole-tree
+Output entry count exceeded64 guard. Normal final input reverify and
+measured/final publication readbacks remained false. J6 is unqualified.
+
+A separately reviewed, one-attempt safety protocol used the same original
+context, owner, clock,971 FileStreams and saved SFHs. The owner was already
+closed, so no stop/observe was repeated. The original clock was expired;
+safety recheck performed zero native reads/hashes. Five retained owner handles
+were closed; the null thread remained unmeasured. The971 guard/SFH pairs,
+helper Source stream, three bounded safety Source publications and distinct
+outer caller Source stream closed with same-stream readback/reference proof.
+The original terminal exited1. Root independently confirmed all17 captured
+identities absent and the Version1 lease registry empty at
+2026-10-16T10:06:03.1604368Z and released the slot. The original native
+UnknownRetained/CanExit-false result was preserved rather than rewritten.
+
+The three safety Source publication tuples are38421/
+65b5cb6b74d9e01db96664bfdbe9559f14dc64066c71f4aea71ec453195e8325,
+402/2ccc8e0efefd98cd91561043e9d811090446ece8ee433fb565bda4e18abc206a,
+and1092/a178e3cc1f68535067b8ce7014e4b44a35de4262636867cb54dc5a1c6e625fb6.
+They are not the missing normal native publications. Their text leaves later
+guard/self-closure pending where appropriate; only the later original-PTY
+attestation established those subsequent closure facts. Root's original
+execution API output was truncated before its tail; this chat retained the
+untruncated literal exit1 result. No native log, artifact or SDK file was
+reopened after release.
+
+The subsequent canonical Source correction gives only this authored
+eight-stage profile the derived48+single-group64 output contract described
+in BUILD-COHORT.md, and separates failed-publication safety cleanup from
+normal publication. It does not alter the parser, checked allocator, raw
+case pins, arena capacity, Source cuts, eight groups or acceptance flags.
+J1–J6 consumed plans, sources, objects and results remain immutable.
+The corrective Source checks are90 H1 assertions and21 Python build-default
+tests, with the two affected finalizer tests rechecked after final Core
+set-validation changes. No new native execution is implied. A fresh Source
+packet, independent exact-head review and distinct Root CPP authorization
+remain required for all eight groups, all three wrappers, full input reverify
+and ordinary original-host publication/closure. PR220 remains draft; neither
+a merge nor a native qualification is authorized by these Source changes.

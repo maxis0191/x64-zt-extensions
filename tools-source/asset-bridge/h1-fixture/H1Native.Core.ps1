@@ -33,7 +33,100 @@ function Read-H1SmallJson([string]$Path,[int]$Limit=128KB) {
         [Text.Encoding]::UTF8.GetString($bytes,0,$used)|ConvertFrom-Json -Depth 20
     }finally{$stream.Dispose()}
 }
-function Measure-H1Output([string]$Root) {
+function Assert-H1OutputName([string]$Name) {
+    # Win32 treats trailing dots/spaces, devices and streams as aliases.
+    if([string]::IsNullOrWhiteSpace($Name) -or $Name -in @('.','..') -or
+       $Name -match '[<>:"/\\|?*\x00-\x1f]' -or $Name -match '[. ]$' -or
+       $Name.Split('.')[0].TrimEnd(' ','.') -match '^(?i:CON|PRN|AUX|NUL|CONIN\$|CONOUT\$|COM[1-9¹²³]|LPT[1-9¹²³])$'){
+        throw 'Ordinary unaliased Win32 output component required.'
+    }
+}
+function New-H1AuthoredOutputBudget([string]$Root,$Stages) {
+    # Pure Source derivation. There is no caller-selected numeric entry limit.
+    if($Root -cnotmatch '^[A-Za-z]:\\' -or [IO.Path]::GetFullPath($Root) -cne $Root -or
+       $Root.EndsWith('\') -or $Root.Contains('/')){throw 'Canonical owned Win32 output root required.'}
+    foreach($component in $Root.Substring(3).Split('\')){Assert-H1OutputName $component}
+    $names=@('weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test','weapondef','weaponattachment','filesystem')
+    if(@($Stages).Count -ne 8 -or (@($Stages.Name)-join '|') -cne ($names-join '|')){throw 'Only the exact authored eight-stage output profile is supported.'}
+    $entries=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $roots=[Collections.Generic.List[string]]::new()
+    for($i=0;$i -lt 8;$i++){
+        $stage=$Stages[$i];Assert-H1OutputName $stage.Name
+        $expected=if($i -eq 4){@()}elseif($i -eq 3){@('fixture.exe','fixture.pdb')}
+            else{@($(if($i -eq 2){'fixture.obj'}else{$stage.Name+'.obj'}),'compile.pdb','dependencies.json')}
+        $kind=if($i -eq 4){'Probe'}elseif($i -eq 3){'Link'}else{'Compile'}
+        if($stage.Stage -cne $kind -or (@($stage.Artifacts)-join '|') -cne ($expected-join '|')){throw 'Exact declared authored output types/artifacts required.'}
+        $stageRoot=Join-Path $Root $stage.Name
+        $entries.Add($stageRoot,'Directory');$roots.Add($stageRoot)
+        foreach($name in @($stage.Artifacts)+@('stdout.log','stderr.log')){
+            Assert-H1OutputName $name
+            $entries.Add((Join-Path $stageRoot $name),'File')
+        }
+    }
+    foreach($name in @('measured-before-release.json','closure-before-release.json','final-closure.json','stop.request')){
+        $entries.Add((Join-Path $Root $name),'File')
+    }
+    if($entries.Count -ne 48 -or @($entries.Values|Where-Object {$_ -ceq 'File'}).Count -ne 40){throw 'Authored output shape must be eight directories and forty files.'}
+    [pscustomobject]@{Schema='iw7.h1-authored-output-budget/1';Root=$Root;
+        Entries=[Collections.ObjectModel.ReadOnlyDictionary[string,string]]::new($entries);
+        StageRoots=$roots.AsReadOnly();Stages=$Stages;ResidualEntries=64;MaximumDepth=64}
+}
+function Assert-H1AuthoredOutputBudget([string]$Root,$Budget) {
+    if($Budget.Schema -cne 'iw7.h1-authored-output-budget/1' -or $Budget.Root -cne $Root -or
+       $Budget.Entries.Count -ne 48 -or $Budget.StageRoots.Count -ne 8 -or
+       $Budget.ResidualEntries -ne 64 -or $Budget.MaximumDepth -ne 64){throw 'Reviewed derived authored output budget required.'}
+    $expected=New-H1AuthoredOutputBudget $Root $Budget.Stages
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($pair in $Budget.Entries.GetEnumerator()){
+        if($pair.Key -isnot [string] -or $pair.Value -isnot [string] -or
+           [IO.Path]::GetFullPath($pair.Key) -cne $pair.Key -or !$seen.Add($pair.Key) -or $seen.Count -gt 48 -or
+           !$expected.Entries.ContainsKey($pair.Key) -or $expected.Entries[$pair.Key] -cne $pair.Value){
+            throw 'Authored declared output set/types/aliases differ from the exact Source profile.'
+        }
+    }
+    if($seen.Count -ne 48){throw 'Authored declared output set/types/aliases differ from the exact Source profile.'}
+    $seen.Clear()
+    foreach($stageRoot in $Budget.StageRoots){
+        if($stageRoot -isnot [string] -or [IO.Path]::GetFullPath($stageRoot) -cne $stageRoot -or
+           !$seen.Add($stageRoot) -or $seen.Count -gt 8 -or !@($expected.StageRoots|Where-Object {[string]::Equals($_,$stageRoot,[StringComparison]::OrdinalIgnoreCase)}).Count){
+            throw 'Authored stage root set/aliases differ from the exact Source profile.'
+        }
+    }
+    if($seen.Count -ne 8){throw 'Authored stage root set/aliases differ from the exact Source profile.'}
+    # Measure with the fresh immutable derivation, not the caller's mutable map.
+    $expected
+}
+function Measure-H1AuthoredOutput([string]$Root,$Budget) {
+    $Budget=Assert-H1AuthoredOutputBudget $Root $Budget
+    Assert-H1Path $Root
+    $pending=[Collections.Generic.Stack[object]]::new();$pending.Push(@($Root,0))
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $total=0L;$residual=0
+    while($pending.Count){
+        $directory=$pending.Pop()
+        foreach($entry in [IO.Directory]::EnumerateFileSystemEntries($directory[0])){
+            if(!$seen.Add($entry) -or $seen.Count -gt 112){throw 'Authored output entry total or case alias refused.'}
+            Assert-H1OutputName ([IO.Path]::GetFileName($entry))
+            if([IO.Path]::GetFullPath($entry) -cne $entry){throw 'Canonical output entry required.'}
+            $declared=$Budget.Entries.ContainsKey($entry)
+            if(!$declared){
+                if(!@($Budget.StageRoots|Where-Object {$entry.StartsWith($_+'\',[StringComparison]::OrdinalIgnoreCase)}).Count){throw 'Undeclared root output refused.'}
+                if(++$residual -gt 64){throw 'Authored group residual output entry count exceeded 64.'}
+            }
+            $attributes=[IO.File]::GetAttributes($entry)
+            if($attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Output reparse entry refused before descent.'}
+            $isDirectory=($attributes -band [IO.FileAttributes]::Directory) -ne 0
+            if($declared -and (($Budget.Entries[$entry] -ceq 'Directory') -ne $isDirectory)){throw 'Declared output file/directory type differs.'}
+            if($isDirectory){
+                if($directory[1]+1 -gt 64){throw 'Authored output depth exceeded 64.'}
+                $pending.Push(@($entry,($directory[1]+1)))
+            }else{$total+=([IO.FileInfo]$entry).Length}
+        }
+    }
+    $total
+}
+function Measure-H1Output([string]$Root,$EntryBudget=$null) {
+    if($null -ne $EntryBudget){return Measure-H1AuthoredOutput $Root $EntryBudget}
     Assert-H1Path $Root
     $pending=[Collections.Generic.Stack[string]]::new();$pending.Push($Root)
     $total=0L;$count=0
@@ -53,7 +146,14 @@ function Assert-H1Deadline($Started,[int]$Seconds) {
     if((Get-H1Clock)-$Started -ge $Seconds*1000){throw 'Stage deadline exceeded.'}
 }
 function Test-H1Budget($Plan,$State) {
-    $bytes=Measure-H1Output $Plan.RunRoot
+    if($Plan.PSObject.Properties['AuthoredOutputBudget']){
+        if(!$Plan.PSObject.Properties['Schema'] -or $Plan.Schema -cne 'iw7.authored-pair-core-cpp-source/1'){
+            throw 'Only the authored eight-stage cohort may select its output budget.'
+        }
+        $expected=New-H1AuthoredOutputBudget $Plan.RunRoot $Plan.Stages
+        $null=Assert-H1AuthoredOutputBudget $Plan.RunRoot $Plan.AuthoredOutputBudget
+        $bytes=Measure-H1Output $Plan.RunRoot $expected
+    }else{$bytes=Measure-H1Output $Plan.RunRoot}
     $State.MaxObservedOutputBytes=[math]::Max($State.MaxObservedOutputBytes,$bytes)
     if($bytes -gt $Plan.OutputLimitBytes-$Plan.MetadataReserveBytes){throw 'Output budget exceeded; preserve diagnostics.'}
     $snapshot=Get-IW7ResourceSnapshot

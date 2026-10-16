@@ -48,7 +48,8 @@ class DefaultTests(unittest.TestCase):
             Artifacts=['zonetool-iw7-player.exe','zonetool-iw7-player.pdb','zonetool-iw7-player.lib','zonetool-iw7-player.exp'])]
 
     def invoke(self, native=False):
-        path=self.root/'plan.json';raw=(json.dumps(self.plan)+'\n').encode();path.write_bytes(raw)
+        name='cohort-source-plan.json' if self.plan['Schema']=='iw7.authored-pair-core-cpp-source/1' else 'plan.json'
+        path=self.root/name;raw=(json.dumps(self.plan)+'\n').encode();path.write_bytes(raw)
         command=[shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(RUNNER),
             '-PlanPath',str(path),'-PlanSHA256',hashlib.sha256(raw).hexdigest()]
         if native: command.append('-Run')
@@ -356,6 +357,224 @@ try{
                         ('UnknownRetained',False,0,1,True,False,0),report)
                     self.assertFalse(report['OriginalGuardClosed'])
                     self.assertIn('before',report['Error'])
+
+
+    def authored_plan(self):
+        """Synthetic UNQUALIFIED metadata. Providers throw if imported; opaque files do not exist."""
+        prepared=self.root/'authored-prepared';prepared.mkdir()
+        def binding(name, text, parent=False):
+            path=(self.root if parent else prepared)/name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            raw=text.encode();path.write_bytes(raw)
+            return dict(Path=str(path),Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest(),IsText=True)
+        def metadata(name, value):
+            return binding(name, json.dumps(value)+'\n')
+        head='f'*40
+        source=[binding('invoke-cohort.local.ps1',"throw 'Source-only synthetic capsule'\n",True)]
+        postflight={role:binding(role.lower()+'.ps1',"throw 'Source-only postflight'\n",True)
+                    for role in ('Writer','Caller','Bootstrap')}
+        source.extend(postflight.values())
+        parents=[binding('provider-'+str(i)+'.ps1',"throw 'Provider must NEVER import in this Source test'\n",True)
+                 for i in range(11)]
+        providers=dict(zip(('Core','CompilerCore','ObserverSource','CompilerPolicySource','Scheduler','Profile'),
+                           (p['Path'] for p in parents)))
+        unopened=self.root/'unopened-opaque'
+        raw=dict(Path=str(unopened/'json.hpp'),Bytes=1019792,
+            SHA256='33499c641336b51fdfe4d71374b7f2de30cbcd4cb63d0c56f306e1f90ae7d724',
+            InputRole='CompilerInclude',DeclaredRoleRoot=str(unopened),ParentPlanSHA256='a'*64,AdmissionRequired=True)
+        roles=metadata('input-roles.json',dict(Schema='iw7.authored-core-compiler-input-roles/1',
+            OpaqueFilesQueried=False,InheritedQualification=False,AdmissionBeforeOpaqueIO=True,Selected=[raw]))
+        lfhash='53855e4a20d7bc92d9624bf0d83fba8e22d0d9de83f9480bd4895651602fa8cc'
+        include=metadata('include-closure.json',dict(OpaqueFilesQueried=False,ActualCompilerDependencySubsetStillRequired=True,
+            NoPostcompileGuardAdds=True,JSONDiagnostics=1,JSONSourceExpectedLFHash=lfhash,
+            DirectIncludeDeclarations=[dict(Declaration=raw)]))
+        fixture=metadata('fixture-closure.json',dict(Schema='iw7.authored-fixture-prepared-source-closure/1',
+            SourceHead=head,SourceOnly=True,OpaqueFilesQueried=False,OldFourFileDeclarationSetRefuses=True,
+            ActualCompilerDependencySubsetStillRequired=True,Ready=False,CanonicalSupportFiles=['source-only']*6,
+            GeneratedHeaders=[{},{}],VisitedSourceBindings=[]))
+        provenance=metadata('source-provenance.json',dict(SourceOnly=True))
+        snapshot=metadata('provider-snapshot.json',dict(SourceOnly=True))
+        pins=[roles,include,fixture,provenance,snapshot]
+        names=('weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test','weapondef','weaponattachment','filesystem')
+        runtime=self.root/'authored-runtime-absent';compiler=unopened/'cl.exe'
+        cases=['source_only_'+str(i) for i in range(8)]
+        marker=''.join('PASS '+case+'\n' for case in cases)+'IW7_AUTHORED_PAIR_REAL_CORE_FIXTURE=8\n'
+        stages=[]
+        for i,name in enumerate(names):
+            if i==4:
+                stages.append(dict(Name=name,Stage='Probe',Image=str(runtime/'fixture-link'/'fixture.exe'),
+                    Arguments=[],Artifacts=[],DeadlineSeconds=15,ExpectedChecks=8,ExpectedStdout=marker))
+            else:
+                artifacts=['fixture.exe','fixture.pdb'] if i==3 else [
+                    'fixture.obj' if i==2 else name+'.obj','compile.pdb','dependencies.json']
+                pins.append(binding(name+'.rsp','/nologo /W4 /WX /c source-only.cpp\n'))
+                stages.append(dict(Name=name,Stage='Link' if i==3 else 'Compile',
+                    Image=str(unopened/'link.exe') if i==3 else str(compiler),
+                    Arguments=['@'+str(prepared/(name+'.rsp'))],Artifacts=artifacts,DeadlineSeconds=120))
+        self.plan=dict(Schema='iw7.authored-pair-core-cpp-source/1',SourceHead=head,
+            NativeSourcePin='fab935826c898806855376662a8a03317b3ad8f1',Ready=False,CandidateExecuted=False,
+            ChecksExecuted=False,TUsCompiled=False,CoresLinked=False,ParentCPPQualificationInherited=False,
+            FatalAllocatorClosure=False,ActualPairParseActivated=False,NoHistoricalObjects=True,NoFullCLILink=True,
+            RealOSAllocatorRequested=True,ChecksAuthored=8,GroupDeadlineSeconds=600,OutputLimitBytes=268435456,
+            MetadataReserveBytes=1048576,PhysicalReservationBytes=4294967296,CommitReservationBytes=6442450944,
+            LogicalFixtureArenaBytes=6208,MaximumSimultaneousFixtureArenas=1,RequireActualDependenciesWithinGuardedSet=True,
+            FixtureCompileProfile='RealCoreJSONDiagnostics1RealArena',RunRoot=str(runtime),PreparedRoot=str(prepared),
+            Compiler=str(compiler),SourceBindings=source,PreparedBindings=pins,ParentBindings=parents,Providers=providers,
+            RunnerBinding=dict(Path=str(RUNNER),Bytes=RUNNER.stat().st_size,SHA256=hashlib.sha256(RUNNER.read_bytes()).hexdigest(),IsText=True),
+            Stages=stages,FixtureCases=cases,RetainedInputPins=[raw],CompilerInputRoleManifest=roles,DirectIncludeClosure=include,
+            NativeSourceProvenance=provenance,CurrentProviderSourceSnapshot=snapshot,FixtureSourceClosure=fixture,
+            PostflightSources=postflight,CheckedMemoryOverlay=dict(StagedBytes=11393,
+                StagedSHA256='8835b6da207f4fb872e199a5f6b86f0d98a8714a1d6a11421ac7e8d19ca766d4',ActualActivation=False),
+            JSONBinding=dict(RawDeclaration=raw,Diagnostics=1,IdentityVerified=False,
+                JSONRevision='484483acad6d562306efc9b3c6d413404f1b1f8a',SourceExpectedLFHash=lfhash),
+            GeneratedLinkInputs=[str(runtime/'weapon-core'/'weapon-core.obj'),
+                str(runtime/'attachment-core'/'attachment-core.obj'),str(runtime/'fixture-compile'/'fixture.obj')])
+
+    def test_authored_default_stays_source_only_and_checks_all_eleven_providers(self):
+        self.authored_plan()
+        result=self.invoke();self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        report=json.loads(result.stdout)
+        self.assertEqual((report['Stages'],report['ProviderSources'],report['FixtureGroupsAuthored']),(8,11,8))
+        for key in ('NativeTypesLoaded','NativeInputsHashed','RunRootCreated','LeaseAcquired','CPPExecuted','Ready'):
+            self.assertFalse(report[key],key)
+        self.assertFalse((self.root/'unopened-opaque').exists())
+        self.assertFalse(Path(self.plan['RunRoot']).exists())
+        self.plan['ParentBindings'].pop()
+        result=self.invoke();self.assertNotEqual(result.returncode,0)
+        self.assertIn('All eleven',result.stderr)
+
+    def test_authored_source_and_json_drift_refuse_before_actual_import(self):
+        self.authored_plan()
+        self.plan['JSONBinding']['SourceExpectedLFHash']='0'*64
+        result=self.invoke();self.assertNotEqual(result.returncode,0)
+        self.assertIn('JSON Source/opaque binding',result.stderr)
+        self.plan['JSONBinding']['SourceExpectedLFHash']='53855e4a20d7bc92d9624bf0d83fba8e22d0d9de83f9480bd4895651602fa8cc'
+        Path(self.plan['ParentBindings'][-1]['Path']).write_text('# changed transitive Source')
+        result=self.invoke();self.assertNotEqual(result.returncode,0)
+        self.assertIn('Source size differs',result.stderr)
+        self.assertFalse((self.root/'unopened-opaque').exists())
+
+    def test_authored_actual_switch_requires_original_physical_capsule_before_import(self):
+        self.authored_plan()
+        result=self.invoke(native=True);self.assertNotEqual(result.returncode,0)
+        self.assertIn('physical NoExit/dot capsule witness',result.stderr)
+        self.assertFalse((self.root/'unopened-opaque').exists())
+        self.assertFalse(Path(self.plan['RunRoot']).exists())
+
+    def test_authored_real_finalizer_publication_refusal_does_not_own_teardown(self):
+        for scenario in range(7):
+            with self.subTest(scenario=scenario):
+                result = self.source_fragment(r'''
+$core=Join-Path (Split-Path (Split-Path $Runner -Parent) -Parent) 'h1-fixture/H1Native.Core.ps1'
+. $core
+foreach($name in @('Get-PlayerAuthoredSafetyClock','Open-NeutralPublication','Write-NeutralPublication',
+    'Read-NeutralPublication','New-NeutralPublication','Save-PlayerAuthoredGuardReferences',
+    'Complete-NeutralPublication','Complete-PlayerAuthoredFinalization')){
+    $definition=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true)
+    if(!$definition){throw ('Canonical finalizer function absent: '+$name)}
+    . ([scriptblock]::Create($definition.Extent.Text))
+}
+$runRoot=Join-Path $Directory ('authored-finalizer-'+$FailAt)
+[IO.Directory]::CreateDirectory($runRoot)|Out-Null
+$names=@('weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test','weapondef','weaponattachment','filesystem')
+$stages=@(for($i=0;$i -lt 8;$i++){
+    [pscustomobject]@{Name=$names[$i];Stage=$(if($i -eq 4){'Probe'}elseif($i -eq 3){'Link'}else{'Compile'});
+        Artifacts=$(if($i -eq 4){@()}elseif($i -eq 3){@('fixture.exe','fixture.pdb')}
+            else{@($(if($i -eq 2){'fixture.obj'}else{$names[$i]+'.obj'}),'compile.pdb','dependencies.json')})}
+})
+$plan=[pscustomobject]@{RunRoot=$runRoot;GroupDeadlineSeconds=600;MetadataReserveBytes=1MB;OutputLimitBytes=256MB;
+    AuthoredOutputBudget=(New-H1AuthoredOutputBudget $runRoot $stages)}
+$script:SourceClock=if($FailAt -eq 3){600001}else{1000}
+$script:OriginalStarted=0;$script:T7GroupStarted=0;$script:Releases=0;$script:Measurements=0
+function Get-H1Clock {$script:SourceClock}
+$script:ActualMeasure=(Get-Command Measure-H1Output -CommandType Function).ScriptBlock
+function Measure-H1Output($Root,$Budget){$script:Measurements++;& $script:ActualMeasure $Root $Budget}
+$owner=[pscustomobject]@{Closed=($FailAt -notin @(4,6));ExitCode=0;Stops=0;StopFails=($FailAt -eq 4)}
+$owner|Add-Member ScriptMethod StopAndConfirm {
+    param($Timeout)
+    $this.Stops++
+    if($this.StopFails){throw 'Owned Source closure unknown'}
+    $this.Closed=$true
+}
+$guards=[Collections.Generic.List[object]]::new()
+$inputPath=Join-Path $Directory ('authored-source-'+$FailAt+'.ps1')
+[IO.File]::WriteAllText($inputPath,'# owned Source input')
+$inputGuard=[IO.FileStream]::new($inputPath,'Open','Read','Read')
+$inputSFH=$inputGuard.SafeFileHandle;$guards.Add($inputGuard)
+$originalLease=[pscustomobject]@{Token='source-causal-owned-lease'}
+$context=[pscustomobject]@{Owner=$owner;Closed=$owner.Closed;Lease=$originalLease;Guards=$guards}
+$originalContext=$context;$originalOwner=$owner;$originalGuards=$guards
+function Exit-IW7ResourceLease($Token){
+    if($Token -cne 'source-causal-owned-lease' -or ![object]::ReferenceEquals($context.Lease,$originalLease) -or
+       ![object]::ReferenceEquals($context.Owner,$originalOwner) -or !$context.Closed -or !$owner.Closed){
+        throw 'Uncorrelated/unclosed original Source owner reached release'
+    }
+    $script:Releases++
+    if($FailAt -eq 5){throw 'Owned Source release refused'}
+}
+$state=[ordered]@{Schema='source-causal';PlanSHA256=('0'*64);Status='Failed';Error='Original primary64 causal';
+    Host=[ordered]@{SourceOnly=$true};MaxObservedOutputBytes=0L;NativeInputsReverified=$false;MeasuredReadback=$false;
+    FinalReadback=$false;LeaseReleased=$false;GuardsDisposed=$false;CanExit=$false;Ready=$false}
+if($FailAt -in @(0,6)){function New-NeutralPublication {throw 'Owned first-publication refusal'}}
+if($FailAt -eq 1){function Write-NeutralPublication($Entry){
+    $Entry.Stream.Write($Entry.Bytes,0,1);$Entry.Stream.Flush($true)
+    throw 'Owned mid-write refusal'
+}}
+if($FailAt -eq 2){function Read-NeutralPublication {throw 'Owned readback refusal'}}
+try{
+    Complete-PlayerAuthoredFinalization $plan $state $context $guards $script:OriginalStarted $null $true
+    $refsPresent=$null -ne $context.PSObject.Properties['FinalGuardReferences']
+    $sameRefs=if($refsPresent){[object]::ReferenceEquals($context.FinalGuardReferences[0],$inputGuard) -and
+        [object]::ReferenceEquals($context.FinalGuardSafeHandles[0],$inputSFH)}else{
+        $guards.Count -gt 0 -and [object]::ReferenceEquals($guards[0],$inputGuard)}
+    $allClosed=$refsPresent
+    if($refsPresent){for($i=0;$i -lt $context.FinalGuardReferences.Count;$i++){
+        if(!$context.FinalGuardSafeHandles[$i].IsClosed -or $context.FinalGuardReferences[$i].CanRead -or
+           $context.FinalGuardReferences[$i].CanWrite -or $context.FinalGuardReferences[$i].CanSeek){$allClosed=$false}
+    }}
+    $partial=if($context.PSObject.Properties['PublicationEntries']){$context.PublicationEntries.Count}else{0}
+    [ordered]@{Status=$state.Status;CanExit=$state.CanExit;Primary=$state.Error;Releases=$script:Releases;Stops=$owner.Stops;
+        Measurements=$script:Measurements;SameContext=[object]::ReferenceEquals($context,$originalContext);
+        SameOwner=[object]::ReferenceEquals($context.Owner,$originalOwner);SameList=[object]::ReferenceEquals($guards,$originalGuards);
+        SameIndividualRefs=$sameRefs;InputSFHClosed=$inputSFH.IsClosed;AllSavedRefsClosed=$allClosed;GuardsRemaining=$guards.Count;
+        LeaseHeld=($null -ne $context.Lease);PartialPublications=$partial;MeasuredReadback=$state.MeasuredReadback;
+        FinalReadback=$state.FinalReadback;NativeInputsReverified=$state.NativeInputsReverified;Ready=$state.Ready;
+        OriginalClockUnchanged=($script:OriginalStarted -eq 0 -and $script:T7GroupStarted -eq 0);
+        NoExitRequired=$context.SafetyClosure.NoExitRequired;ResourcesClosed=$context.SafetyClosure.ResourcesClosed;
+        NativeTypeLoaded=[bool]('IW7.AnimationProbe.NativeJob' -as [type])}|ConvertTo-Json -Depth 5 -Compress
+}finally{
+    # Only test-owned Source handles; fake lease has no external registry.
+    foreach($guard in $guards){$guard.Dispose()}
+    if($context.PSObject.Properties['PublicationEntries']){foreach($entry in $context.PublicationEntries){if($entry.Stream){$entry.Stream.Dispose()}}}
+    [AppDomain]::CurrentDomain.SetData('IW7.H1.Quarantine.source-causal-owned-lease',$null)
+}
+''', scenario)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                report = json.loads(result.stdout)
+                self.assertEqual(report['Primary'], 'Original primary64 causal')
+                for key in ('SameContext', 'SameOwner', 'SameList', 'SameIndividualRefs',
+                            'OriginalClockUnchanged', 'NoExitRequired'):
+                    self.assertTrue(report[key], (key, report))
+                for key in ('CanExit', 'FinalReadback', 'NativeInputsReverified', 'Ready', 'NativeTypeLoaded'):
+                    self.assertFalse(report[key], (key, report))
+                self.assertEqual(report['Stops'], 1 if scenario in (4, 6) else 0, report)
+                if scenario in (4, 5):
+                    self.assertEqual(report['Releases'], 0 if scenario == 4 else 1, report)
+                    self.assertTrue(report['LeaseHeld'], report)
+                    self.assertFalse(report['InputSFHClosed'], report)
+                    self.assertFalse(report['ResourcesClosed'], report)
+                else:
+                    self.assertEqual(report['Releases'], 1, report)
+                    self.assertFalse(report['LeaseHeld'], report)
+                    self.assertEqual(report['GuardsRemaining'], 0, report)
+                    self.assertTrue(report['InputSFHClosed'], report)
+                    self.assertTrue(report['AllSavedRefsClosed'], report)
+                    self.assertTrue(report['ResourcesClosed'], report)
+                if scenario == 3:
+                    self.assertEqual((report['Measurements'], report['PartialPublications']), (0, 0), report)
+                if scenario in (1, 2, 5):
+                    self.assertEqual(report['PartialPublications'], 3, report)
+                self.assertEqual(report['MeasuredReadback'], scenario == 5, report)
 
 
 if __name__=='__main__': unittest.main()
