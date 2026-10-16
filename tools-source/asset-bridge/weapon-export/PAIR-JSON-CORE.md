@@ -1,8 +1,8 @@
 # Authored JSON pair through the real native cores
 
 This Source lot isolates the two pinned JSON-to-native implementations and
-authors an end-to-end C++ fixture. **J1d compiled both cores at `c9d8332`, then
-fixture compilation failed before link or execution.** The current support-list
+authors an end-to-end C++ fixture. **J1d and J2 compiled both cores, then fixture
+compilation failed before link or execution.** The current literal-emission
 correction has no CPP qualification. A fresh gate must prove the complete real
 link and parse; earlier allocator fixtures and partial core compilation do not
 qualify the complete witness.
@@ -141,9 +141,36 @@ witness/support files, including both transitive Inventory walkers. The next
 Source preparer must consume that list and pin each file from the exact product
 head, with both generated headers supplied separately. A Source regression
 reads actual local includes and exposes the old four-file omission. The authored
-case header remains byte-identical (80,847 bytes); parser code, input pins,
+case header at that checkpoint remained byte-identical (80,847 bytes); parser code, input pins,
 oracles, qualification flags and `/W4 /WX` are unchanged. This correction has
 not been compiled or linked and does not reuse J1d objects or qualification.
+
+The separately authorized J2 attempt at `e0e4f49` included all six support
+sources and compiled both cores with exit zero. Its fixture compile then failed
+with C2026 at the three weapon literals; C2737 followed for the const case
+array. Treating C2737 as secondary remains an inference. No link, fixture group
+or wrapper TU ran; J2 is immutable FailedClosed with
+`NativeInputsReverified=false`. Original postflight, true exit and independent
+Root closure completed. Only its two authorized diagnostic texts were read:
+stdout 887 bytes, SHA256
+`25619e157367295e29b3d3af57b3b44d65c10ea27d9bce1047f34d7ef6690523`,
+and empty stderr.
+
+MSVC limits each literal before adjacent-literal concatenation; see
+[Microsoft C2026](https://learn.microsoft.com/en-us/cpp/error-messages/compiler-errors-1/compiler-error-c2026?view=msvc-170).
+The Source emitter now fragments each original buffer into adjacent raw literals
+of at most 4,096 UTF-8 bytes per complete token, including its 19 syntax bytes.
+It splits only at character boundaries and checks the whole buffer for NUL and
+the closing delimiter before any fragmentation, including boundary-spanning
+occurrences. No runtime loader or fixture C++ change is introduced.
+
+Source tests reconstruct all twelve original buffers from the actual emitted
+token groups. Original bytes, lengths, SHA pins, literal oracles and qualification
+flags stay identical to the `e0e4f49` baseline. Only the generated Source header
+representation changes: 81,207 bytes, SHA256
+`e00390da93d3b3c423559e4037dca9690051509018300e96abf8ff6b529f2b3a`.
+The emitter fix has not been compiled or linked. Consumed J2 sources, plans,
+generated headers and objects remain untouched.
 
 Before merge, review the exact Source head and prepare a fresh minimal native
 capsule with both real core TUs, the real inventory support, generated authored

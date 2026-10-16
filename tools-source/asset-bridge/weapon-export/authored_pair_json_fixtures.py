@@ -71,6 +71,24 @@ def validate_originals(raw, pins):
     validation.validate_private_pair_bodies(raw[0], *pins[0], raw[1], raw[2], raw[3])
 
 
+def _raw_literals(raw):
+    text = raw.decode('utf-8', errors='strict')
+    # Validate the WHOLE buffer first, including a delimiter crossing a chunk.
+    if ')IW7AUTH"' in text or '\0' in text:
+        raise ValueError('Authored literal delimiter or NUL refused')
+    # Include the 19 syntax bytes in the 4096-byte Source-token ceiling.
+    payload_limit = 4096 - len('R"IW7AUTH()IW7AUTH"'.encode('utf-8'))
+    chunks, start, size = [], 0, 0
+    for at, character in enumerate(text):
+        count = len(character.encode('utf-8'))
+        if size + count > payload_limit:
+            chunks.append(text[start:at])
+            start, size = at, 0
+        size += count
+    chunks.append(text[start:])  # Empty buffers still have one valid literal.
+    return tuple('R"IW7AUTH(' + chunk + ')IW7AUTH"' for chunk in chunks)
+
+
 def render_header():
     approved = cases()  # Every PR215/216 check finishes before output creation.
     lines = ['#pragma once', '// Authored test Source only. Thirteen report flags remain false.',
@@ -78,10 +96,8 @@ def render_header():
     for case in approved:
         lines.append('  {"' + case['label'] + '", {{')
         for raw in case['raw']:
-            text = raw.decode('utf-8', errors='strict')
-            if ')IW7AUTH"' in text or '\0' in text:
-                raise ValueError('Authored literal delimiter or NUL refused')
-            lines.append('    R"IW7AUTH(' + text + ')IW7AUTH",')
+            lines.extend('    ' + literal for literal in _raw_literals(raw))
+            lines[-1] += ','  # Adjacent literals form the same original buffer.
         lines.append('  }}, {{')
         for size, digest in case['pins']:
             lines.append('    {' + str(size) + ', "' + digest + '"},')

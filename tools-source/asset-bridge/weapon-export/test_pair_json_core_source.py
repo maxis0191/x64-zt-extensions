@@ -142,6 +142,50 @@ class PairJsonCoreSourceTests(unittest.TestCase):
 
 
 class AuthoredPairFixtureSourceTests(unittest.TestCase):
+    def test_actual_emission_reconstructs_all_twelve_originals_and_unchanged_pins_oracles(self):
+        import json
+        approved = fixtures.cases()
+        summary = [{key: case[key] for key in ('label', 'pins', 'capacity', 'weapondef_offset',
+                    'attachment_offset', 'references', 'edges', 'occurrences')} for case in approved]
+        baseline = json.dumps(summary, sort_keys=True, separators=(',', ':')).encode('utf-8')
+        self.assertEqual(hashlib.sha256(baseline).hexdigest(),
+                         'f98e7a1bc37a9fa8e628065325c2be66f73bd2c8969b9ad0ca24845f16d35da7')
+        originals, pending = [], bytearray()
+        tokens = list(re.finditer(r'(R"IW7AUTH\((.*?)\)IW7AUTH")(,?)', fixtures.render_header(), re.DOTALL))
+        self.assertGreater(len(tokens), 12)
+        for token in tokens:
+            self.assertLessEqual(len(token[1].encode('utf-8')), 4096)
+            pending.extend(token[2].encode('utf-8'))
+            if token[3]:
+                originals.append(bytes(pending)); pending.clear()
+        self.assertEqual(pending, b'')
+        self.assertEqual(originals, [raw for case in approved for raw in case['raw']])
+        self.assertEqual(len(originals), 12)
+        self.assertEqual([(len(raw), hashlib.sha256(raw).hexdigest()) for raw in originals],
+                         [pin for case in approved for pin in case['pins']])
+
+    def test_literal_tokens_preserve_empty_and_multibyte_boundaries(self):
+        for raw in (b'', b'a'*4077, b'a'*4078,
+                    ('a'*4076 + 'é🙂' + 'b'*4096).encode('utf-8'), ('🙂'*2049).encode('utf-8')):
+            with self.subTest(bytes=len(raw)):
+                tokens = fixtures._raw_literals(raw)
+                self.assertTrue(tokens)
+                decoded = []
+                for token in tokens:
+                    self.assertLessEqual(len(token.encode('utf-8')), 4096)
+                    match = re.fullmatch(r'R"IW7AUTH\((.*?)\)IW7AUTH"', token, re.DOTALL)
+                    self.assertIsNotNone(match)
+                    decoded.append(match[1].encode('utf-8'))
+                self.assertEqual(b''.join(decoded), raw)
+
+    def test_whole_buffer_nul_delimiter_and_utf8_refusals_survive_fragmentation(self):
+        for raw in (b'\0', b'a'*4077 + b'\0', b'a'*9000 + b'\0',
+                    b')IW7AUTH"', b'a'*4073 + b')IW7AUTH"' + b'b'*4096):
+            with self.subTest(bytes=len(raw)), self.assertRaisesRegex(ValueError, 'delimiter or NUL'):
+                fixtures._raw_literals(raw)
+        with self.assertRaises(UnicodeDecodeError):
+            fixtures._raw_literals(b'a'*4077 + b'\xff')
+
     def test_fixture_source_manifest_closes_real_includes_and_exposes_old_four_file_omission(self):
         here = Path(__file__).parent
         generated = {Path(production.CORE_HEADER).name, 'authored_pair_json_cases.hpp'}
@@ -192,9 +236,9 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
     def test_header_generation_validates_every_case_before_return_and_is_deterministic(self):
         self.assertEqual(fixtures.render_header(), fixtures.render_header())
         header = fixtures.render_header().encode('utf-8')
-        self.assertEqual(len(header), 80847)
+        self.assertEqual(len(header), 81207)
         self.assertEqual(hashlib.sha256(header).hexdigest(),
-                         '08bece709bc7525c02205b55869e9fc11f26ab14ca24521f9062832bf65b8733')
+                         'e00390da93d3b3c423559e4037dca9690051509018300e96abf8ff6b529f2b3a')
         with patch.object(fixtures.validation, 'validate_private_pair_bodies', side_effect=ValueError('refused original')):
             with self.assertRaisesRegex(ValueError, 'refused original'): fixtures.render_header()
 
