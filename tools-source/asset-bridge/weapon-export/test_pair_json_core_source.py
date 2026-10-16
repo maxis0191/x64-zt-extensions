@@ -144,39 +144,81 @@ class PairJsonCoreSourceTests(unittest.TestCase):
 class AuthoredPairFixtureSourceTests(unittest.TestCase):
     def test_unexpected_refusal_diagnostic_is_only_the_positive_boundary_delta(self):
         source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        stats_start = source.index('    // Entry intervals only;')
+        stats_end = source.index('    // Ordinary private byte storage', stats_start)
+        source = source[:stats_start] + '    struct Stats { unsigned copies{}, hashes{}, decodes{}, arenas{}, weapon_parses{}, attachment_parses{}, publications{}; };\n' + source[stats_end:]
+        for marker in ('            stats.phase=ParsePhase::pair_construction;\n',
+                       'stats.phase=ParsePhase::weapon_parse;',
+                       '                stats.phase=ParsePhase::attachment_parse;\n',
+                       '                stats.phase=ParsePhase::post_parse;\n'):
+            self.assertEqual(source.count(marker), 1)
+            source = source.replace(marker, '', 1)
         function = source.index('    void real_pair_variants()')
         start = source.index('            Result actual;', function)
         end = source.index('            need(stats.hashes==4', start)
         original = (source[:start] +
                     '            auto actual=execute(approved_cases[i],approved_cases[i].original,report,stats);\n' +
                     source[end:])
-        # execute/free/rethrow, all negatives, success output and other C++ are
-        # byte-identical to bbf2; only this unexpected positive-call boundary changes.
+        # Removing only Stats phase metadata, four phase markers and the positive
+        # diagnostic boundary reconstructs all bbf2 bytes, including cleanup,
+        # parser calls/order, negative criteria and eight-group success output.
         self.assertEqual(hashlib.sha256(original.encode('utf-8')).hexdigest(),
                          '60ca6d94ac2a95695a26e0dba2febbcd8cfad0892f276692b1a654cc1cdbe176')
 
-    def test_unexpected_refusal_line_is_bounded_existing_metadata_and_same_rethrow(self):
+    def test_unexpected_refusal_lines_bound_all_fields_and_preserve_same_rethrow(self):
         source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
         positive = function_body(source, 'void real_pair_variants()')
         self.assertLess(positive.index('Report report;Stats stats;'), positive.index('try { actual=execute('))
         catch = function_body(positive, 'catch(const zonetool::checked_memory_error& error)')
         code = re.sub(r'//[^\n]*', '', catch)
         self.assertEqual(re.findall(r'\bthrow[^;]*;', code), ['throw;'])
-        self.assertEqual(source.count('std::fprintf(stderr,'), 1)
+        self.assertEqual(source.count('std::fprintf(stderr,'), 3)  # Two exclusive branches plus one common size line.
         self.assertLess(code.index('std::fprintf(stderr,'), code.index('throw;'))
-        before_arguments = code[:code.index('approved_cases[i].label')]
-        parts = re.findall(r'"(?:\\.|[^"\\])*"', before_arguments)
-        fmt = ''.join(ast.literal_eval(part) for part in parts)
-        self.assertEqual(fmt.count('\n'), 1); self.assertTrue(fmt.endswith('\n'))
-        widths = {'%.16s': 16, '%d': 11, '%zu': 20, '%u': 10}
-        estimated = re.sub(r'%\.16s|%zu|%d|%u', lambda m: 'x'*widths[m[0]], fmt)
-        self.assertNotIn('%', estimated); self.assertLessEqual(len(estimated), 384)
+        formats = [''.join(ast.literal_eval(p) for p in re.findall(r'"(?:\\.|[^"\\])*"', block))
+                   for block in re.findall(r'std::fprintf\(stderr,\s*((?:"(?:\\.|[^"\\])*"\s*)+),', code)]
+        self.assertEqual(len(formats), 3)
+        widths = {'%.16s': 16, '%.20s': 20, '%d': 11, '%zu': 20, '%u': 10}
+        maximum = []
+        for fmt in formats:
+            self.assertEqual(fmt.count('\n'), 1); self.assertTrue(fmt.endswith('\n'))
+            estimated = re.sub(r'%\.16s|%\.20s|%zu|%d|%u', lambda m: 'x'*widths[m[0]], fmt)
+            self.assertNotIn('%', estimated); self.assertTrue(estimated.isascii()); maximum.append(len(estimated))
+        self.assertLessEqual(max(maximum[:2]) + maximum[2], 1024)
+        self.assertIn('if(failure.available)', code)
+        self.assertIn('snapshot=0 ordinal=NA unit=NA count=NA bytes=NA', formats[1])
+        self.assertIn('char requested[21]="NA";', code)
+        self.assertIn('if(failure.requested_bytes_valid) std::snprintf(requested,sizeof(requested),"%zu",failure.requested_bytes);', code)
+        self.assertIn('bytes=%.20s', formats[0])
+        for fmt in formats[:2]:
+            self.assertIn('padding=NA source_pad=0', fmt)
+            self.assertIn('align_api=none', fmt)
         for field in ('error.reason()', 'report.primary()', 'report.capacity()', 'report.release_attempts()',
                       'stats.copies', 'stats.hashes', 'stats.decodes', 'stats.arenas', 'stats.weapon_parses',
                       'stats.attachment_parses', 'stats.publications'):
             self.assertIn(field, code)
+        for field in ('failure.ordinal', 'failure.element_bytes', 'failure.count', 'failure.requested_type_alignment',
+                      'failure.used_before', 'failure.capacity', 'static_cast<unsigned>(stats.phase)',
+                      'sizeof(WeaponCompleteDef)', 'alignof(WeaponCompleteDef)', 'sizeof(WeaponDef)', 'alignof(WeaponDef)',
+                      'sizeof(WeaponAttachment)', 'alignof(WeaponAttachment)', 'sizeof(WeaponAttachment*)',
+                      'sizeof(ReticleDef*)', 'sizeof(const char*)', 'sizeof(char)', 'alignof(FxEffectDef)',
+                      'alignof(ReticleDef)', 'sizeof(vec2_t)'):
+            self.assertIn(field, code)
         for forbidden in ('GetLastError', 'primary_error', 'original_pool', 'incoming', 'bytes[', '%p', 'report.free'):
             self.assertNotIn(forbidden, code)
+
+    def test_phase_markers_are_entry_intervals_without_changing_cleanup(self):
+        source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        body = function_body(source, 'Result execute(')
+        ordered = ['stats.phase=ParsePhase::pair_construction;', 'Pair pair(factory);',
+                   'stats.phase=ParsePhase::weapon_parse;', '++stats.weapon_parses;', 'pq::parse_weapon_json(',
+                   'stats.phase=ParsePhase::attachment_parse;', '++stats.attachment_parses;', 'pq::parse_attachment_json(',
+                   'stats.phase=ParsePhase::post_parse;', 'pair.retain_returned_roots(']
+        self.assertEqual(sorted(body.index(value) for value in ordered), [body.index(value) for value in ordered])
+        self.assertIn('if(mode!=Mode::bypass_core){stats.phase=ParsePhase::weapon_parse;', body)
+        cleanup = function_body(body, 'catch(...)')
+        self.assertIn('const auto primary=std::current_exception();factory.memory->free();std::rethrow_exception(primary);', cleanup)
+        self.assertNotIn('phase=', cleanup)
+        self.assertEqual(source.count('report.allocation_failure()'), 1)
 
     def test_actual_emission_reconstructs_all_twelve_originals_and_unchanged_pins_oracles(self):
         import json

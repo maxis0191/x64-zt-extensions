@@ -80,7 +80,13 @@ namespace authored_pair_fixture
         for(auto value:h) for(unsigned i=0;i<8;++i) result.push_back(digits[(value>>(28-4*i))&15]);
         return result;
     }
-    struct Stats { unsigned copies{}, hashes{}, decodes{}, arenas{}, weapon_parses{}, attachment_parses{}, publications{}; };
+    // Entry intervals only; reaching a phase never means its parser succeeded.
+    enum class ParsePhase : unsigned { pair_construction, weapon_parse, attachment_parse, post_parse };
+    struct Stats
+    {
+        unsigned copies{}, hashes{}, decodes{}, arenas{}, weapon_parses{}, attachment_parses{}, publications{};
+        ParsePhase phase = ParsePhase::pair_construction;
+    };
     // Ordinary private byte storage, not a transferable validation capability.
     struct Buffers
     {
@@ -157,6 +163,7 @@ namespace authored_pair_fixture
         Factory factory(source,incoming,report,stats,capacity?capacity:source.capacity);
         Result result;
         {
+            stats.phase=ParsePhase::pair_construction;
             Pair pair(factory);
             try
             {
@@ -168,10 +175,12 @@ namespace authored_pair_fixture
                     factory.attachment_map->strings.emplace_back(reinterpret_cast<scr_string_t*>(base+source.attachment_offset+offsetof(WeaponAttachment,internalName)),"first_attachment");
                 }
                 WeaponCompleteDef* weapon=nullptr;
-                if(mode!=Mode::bypass_core){++stats.weapon_parses;weapon=pq::parse_weapon_json(factory.raw_ref->weapon,factory.memory,factory.weapon_map->strings);}
+                if(mode!=Mode::bypass_core){stats.phase=ParsePhase::weapon_parse;++stats.weapon_parses;weapon=pq::parse_weapon_json(factory.raw_ref->weapon,factory.memory,factory.weapon_map->strings);}
                 if(mode==Mode::second_parse_error) factory.raw_ref->attachment["papAttachment"]="authored_negative_type_fault"; // Explicit non-null type fault after trusted-byte checks.
+                stats.phase=ParsePhase::attachment_parse;
                 ++stats.attachment_parses;
                 auto* attachment=pq::parse_attachment_json(factory.raw_ref->attachment,factory.memory,factory.attachment_map->strings);
+                stats.phase=ParsePhase::post_parse;
                 pair.retain_returned_roots(weapon,attachment);
                 need(reinterpret_cast<std::uintptr_t>(weapon)%alignof(WeaponCompleteDef)==0&&reinterpret_cast<std::uintptr_t>(attachment)%alignof(WeaponAttachment)==0);
                 need(reinterpret_cast<std::uintptr_t>(weapon->weapDef)==base+source.weapondef_offset&&reinterpret_cast<std::uintptr_t>(attachment)==base+source.attachment_offset);
@@ -214,12 +223,37 @@ namespace authored_pair_fixture
             try { actual=execute(approved_cases[i],approved_cases[i].original,report,stats); }
             catch(const zonetool::checked_memory_error& error)
             {
+                const auto& failure=report.allocation_failure();
+                if(failure.available)
+                {
+                    char requested[21]="NA";
+                    if(failure.requested_bytes_valid) std::snprintf(requested,sizeof(requested),"%zu",failure.requested_bytes);
+                    std::fprintf(stderr,
+                        "FAIL authored_pair label=%.16s phase=%u snapshot=1 ordinal=%zu unit=%zu count=%zu bytes=%.20s "
+                        "type_align=%zu align_api=none used=%zu cap=%zu padding=NA source_pad=0 reason_enum=%d primary_enum=%d "
+                        "releases=%u copies=%u hashes=%u decodes=%u arenas=%u w_calls=%u a_calls=%u pubs=%u\n",
+                        approved_cases[i].label, static_cast<unsigned>(stats.phase), failure.ordinal,
+                        failure.element_bytes, failure.count, requested, failure.requested_type_alignment,
+                        failure.used_before, failure.capacity, static_cast<int>(error.reason()), static_cast<int>(report.primary()),
+                        report.release_attempts(), stats.copies, stats.hashes, stats.decodes, stats.arenas,
+                        stats.weapon_parses, stats.attachment_parses, stats.publications);
+                }
+                else
+                {
+                    std::fprintf(stderr,
+                        "FAIL authored_pair label=%.16s phase=%u snapshot=0 ordinal=NA unit=NA count=NA bytes=NA "
+                        "type_align=NA align_api=none used=NA report_cap=%zu padding=NA source_pad=0 reason_enum=%d primary_enum=%d "
+                        "releases=%u copies=%u hashes=%u decodes=%u arenas=%u w_calls=%u a_calls=%u pubs=%u\n",
+                        approved_cases[i].label, static_cast<unsigned>(stats.phase), report.capacity(),
+                        static_cast<int>(error.reason()), static_cast<int>(report.primary()), report.release_attempts(),
+                        stats.copies, stats.hashes, stats.decodes, stats.arenas, stats.weapon_parses, stats.attachment_parses, stats.publications);
+                }
                 std::fprintf(stderr,
-                    "FAIL authored_pair label=%.16s reason_enum=%d primary_enum=%d capacity=%zu release_attempts=%u "
-                    "copies=%u hashes=%u decodes=%u arenas=%u weapon_parses=%u attachment_parses=%u publications=%u\n",
-                    approved_cases[i].label, static_cast<int>(error.reason()), static_cast<int>(report.primary()),
-                    report.capacity(), report.release_attempts(), stats.copies, stats.hashes, stats.decodes,
-                    stats.arenas, stats.weapon_parses, stats.attachment_parses, stats.publications);
+                    "FAIL compiled_sizes wc=%zu/%zu wd=%zu/%zu wa=%zu/%zu ptr_wa=%zu ptr_ret=%zu ptr_str=%zu "
+                    "char=%zu fx_align=%zu ret_align=%zu vec2=%zu\n",
+                    sizeof(WeaponCompleteDef),alignof(WeaponCompleteDef),sizeof(WeaponDef),alignof(WeaponDef),
+                    sizeof(WeaponAttachment),alignof(WeaponAttachment),sizeof(WeaponAttachment*),sizeof(ReticleDef*),
+                    sizeof(const char*),sizeof(char),alignof(FxEffectDef),alignof(ReticleDef),sizeof(vec2_t));
                 throw; // Preserve this same unexpected refusal after diagnostics.
             }
             need(stats.hashes==4&&stats.decodes==3&&stats.arenas==1&&stats.weapon_parses==1&&stats.attachment_parses==1&&stats.publications==1);

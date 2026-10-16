@@ -23,6 +23,14 @@ TYPES = r'''
 		checked_memory_failure reason() const noexcept { return reason_; }
 		const char* what() const noexcept override { return "Checked zone memory refused"; }
 	};
+	// First refused request only; scalar diagnostics, never an owner or authority.
+	struct checked_allocation_failure final
+	{
+		bool available{};
+		bool requested_bytes_valid{};
+		std::size_t ordinal{}, element_bytes{}, count{}, requested_bytes{};
+		std::size_t requested_type_alignment{}, used_before{}, capacity{};
+	};
 	// The original owner's report must outlive the arena. No reset or authority.
 	class checked_memory_report final
 	{
@@ -39,6 +47,8 @@ TYPES = r'''
 		BOOL release_result_{};
 		DWORD release_error_{};
 		bool cleanup_exception_{};
+		std::size_t allocation_ordinal_{};
+		checked_allocation_failure allocation_failure_{};
 	public:
 		checked_memory_report() = default;
 		checked_memory_report(const checked_memory_report&) = delete;
@@ -57,6 +67,7 @@ TYPES = r'''
 		BOOL release_result() const noexcept { return release_result_; }
 		DWORD release_error() const noexcept { return release_error_; }
 		bool cleanup_exception() const noexcept { return cleanup_exception_; }
+		const checked_allocation_failure& allocation_failure() const noexcept { return allocation_failure_; }
 	};
 	// Ordinary arithmetic only. This helper does not validate an owner or pool.
 	inline std::size_t checked_memory_bytes(std::size_t size, std::size_t count,
@@ -101,10 +112,27 @@ PRIVATE = r'''
 		template<class T> T* checked_allocate(std::size_t size, std::size_t count)
 		{
 			checked_need_live();
+			++checked_report_->allocation_ordinal_; // Includes zero-count entries; never reset by cleanup.
 			if (count == 0) return nullptr;
 			std::size_t bytes;
 			try { bytes = checked_memory_bytes(size, count, mem_pos_, memory_size_); }
-			catch (const checked_memory_error& error) { checked_fail(error.reason()); }
+			catch (const checked_memory_error& error)
+			{
+				if (!checked_report_->allocation_failure_.available)
+				{
+					auto& failure = checked_report_->allocation_failure_;
+					failure.ordinal = checked_report_->allocation_ordinal_;
+					failure.element_bytes = size;
+					failure.count = count;
+					failure.requested_bytes_valid = !size || count <= (std::numeric_limits<std::size_t>::max)() / size;
+					if (failure.requested_bytes_valid) failure.requested_bytes = size * count;
+					failure.requested_type_alignment = alignof(T);
+					failure.used_before = mem_pos_;
+					failure.capacity = memory_size_;
+					failure.available = true;
+				}
+				checked_fail(error.reason());
+			}
 			auto pointer = reinterpret_cast<char*>(memory_pool_) + mem_pos_;
 			memset(pointer, 0, bytes);
 			mem_pos_ += bytes;
