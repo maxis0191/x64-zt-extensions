@@ -120,7 +120,7 @@ confirmed the captured original job was already empty, the original process
 exited 0 and the expected twelve-check stdout matched. This does not establish
 why the registration observations differed, and no retry or adoption occurred.
 
-Each of the four compiles verified its 222 bound Source inputs; actual compiler
+Each of the four compiles verified its 222 bound inputs; actual compiler
 dependencies remained inside the guarded set. Inherited inputs were rechecked.
 Maximum observed output was 34,976,985 bytes under the fixed 256 MiB bound.
 The group/compile/probe deadlines were 600/120/15 seconds; positive 4/6 GiB
