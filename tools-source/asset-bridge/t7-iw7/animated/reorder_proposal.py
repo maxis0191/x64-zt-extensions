@@ -6,7 +6,7 @@ resident pure-skinned snapshots without rigid/collision lists fit this proposal.
 """
 import struct
 
-from preflight import blob, decode_stream_weights, evidence, integer, require, schema
+from .preflight import blob, decode_stream_weights, evidence, integer, require, schema
 
 
 def regroup_surface(s):

@@ -1,7 +1,7 @@
 """Original author-created arrays. No retail/extracted bytes or string IDs."""
 import struct
 
-from preflight import ABSENT, FLAGS, STREAMS, ZERO_COUNTS
+from .preflight import ABSENT, FLAGS, STREAMS, ZERO_COUNTS
 
 
 def skeleton():
