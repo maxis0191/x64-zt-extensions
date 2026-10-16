@@ -261,7 +261,7 @@ static void checked_report_survives_destruction_preserves_primary_and_release_er
         }
         catch (const Error& error) { need(error.reason() == Failure::capacity); }
         need(report.primary() == Failure::capacity && report.primary_error() == 0);
-        need(report.release() == Release::failed && report.release_error() == (api_throw ? 0 : 0x5678));
+        need(report.release() == Release::failed && report.release_error() == (api_throw ? DWORD{0} : DWORD{0x5678}));
         need(report.release_result_available() == !api_throw && report.cleanup_exception() == api_throw);
         need(report.owner() == owner && report.original_pool() == fixture::pool.data());
         need(report.release_attempts() == 1 && fixture::state.releases == 1);
@@ -269,7 +269,7 @@ static void checked_report_survives_destruction_preserves_primary_and_release_er
         SetLastError(0xEEEE);
         refuses(Failure::report_reuse, [&] { Arena another(Tag{}, 8, report); });
         need(fixture::state.allocations == 1 && fixture::state.releases == 1);
-        need(report.release() == Release::failed && report.release_error() == (api_throw ? 0 : 0x5678));
+        need(report.release() == Release::failed && report.release_error() == (api_throw ? DWORD{0} : DWORD{0x5678}));
     }
 }
 

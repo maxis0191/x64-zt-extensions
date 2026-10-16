@@ -231,10 +231,25 @@ VirtualFree-throws subcase: one attempt, no retry on later free/destruction,
 unavailable OS result, no invented error and the original primary preserved.
 Lock-throw handling remains Source-inspected only and is not exercised by the
 fixture. **All twelve named cases are AUTHORED, NOT COMPILED OR EXECUTED.**
+
+The H2 attempt on 2026-10-16 stopped at its first fixture compilation with
+exit code 2: `/W4 /WX` rejected two signed/unsigned comparisons between the
+`DWORD` cleanup error and signed ternary constants in the durable-report case.
+No fixture case executed, and none of the three affected translation units
+compiled. The failed state, including its incomplete stage telemetry and
+unverified native inputs, was preserved. Original owner/job, retained streams,
+saved handles and three
+publication readbacks were checked closed; a separate Source failure receipt
+preceded true terminal exit code 1 and independent process/lease checks.
+The correction types both ternary operands as `DWORD`, keeping `/W4 /WX`.
+It changes no allocator or report behavior. A new H3 recipe with fresh Source
+bindings and a separate execution GO is still required; H2 remains failed.
+
 The fifteen targeted Python checks pass real renderer Source causals, exact
 default/reversible legacy preservation, state/side-effect order and absent
-integration. The complete Python module suite has 184 tests: 183 passed and one
-existing composed-package dependency test skipped (76.222 seconds). No C++ was
+integration. At Source head `a0abfdf`, the complete Python module suite had
+184 tests: 183 passed and one existing composed-package dependency test skipped
+(76.222 seconds). No C++ was
 compiled or executed. Fake tests cannot establish real OS failure or actual closure.
 
 The three PR217 hooks remain unconditionally rejecting. Same-owner raw/schema
