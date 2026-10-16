@@ -170,3 +170,66 @@ actual pair input, FF, runtime, grant, physics/PAP transaction or gameplay.
 Fatal allocator closure and actual activation remain false; Ready remains false.
 The next step is a small separately reviewed Source proposal for the original
 raw-buffer bridge, live-file admission and fatal allocation boundary.
+
+## Opt-in checked allocator Source — V9b
+
+`prepare_pair_checked_memory.render` accepts only the exact 3,000-byte UTF-8
+memory header at native `fab935826c898806855376662a8a03317b3ad8f1`, SHA-256
+`9025b835313ee45ba3418e3322210dec3b6d334e504a1dd3b59e9f38e2898f35`.
+It performs no I/O or invocation. DEFAULT returns that same input text without
+staging. Literal `stage_checked=True` renders an in-memory overlay only. Removing
+the explicit checked additions reconstructs the original Source exactly.
+No consumer or existing pair stager imports/selects this overlay.
+
+The staged `zone_memory(checked_memory_tag, size, report)` constructor binds an
+external original-owner report once. It captures failed VirtualAlloc's error
+immediately and throws a fixed-message diagnostic. In checked mode, capacity
+exhaustion and multiplication overflow also throw before pointer arithmetic,
+zero-fill or position changes. Successful allocation preserves the original
+packed offsets and no-padding trace, including zero-count behavior while Live.
+These are proposed Source behaviors, not executed native qualification.
+
+Both checked public `free()` and the existing destructor use the same private
+release state. The attempt is marked before the single VirtualFree call. Success
+is terminal/idempotent; repeated free/destruction never calls VirtualFree again
+or on NULL. Failure is terminal/sticky and preserves the first return/error and
+original pool identity without clearing, retrying, transferring ownership or
+reclassifying it as Closed. A primary allocation failure poisons later use but
+still allows its one pending cleanup attempt. Allocation (even count zero),
+clear, string duplication, statistics and copy from a checked source refuse
+before subsequent pool use. The legacy copy behavior remains outside checked
+mode; the mutex already implicitly deletes assignment, so no operator= fix is
+introduced.
+
+The original report must be constructed before and outlive the arena. It is
+noncopyable/nonmovable, exposes read-only diagnostics, and has no reset or
+readiness authority. It preserves primary and cleanup errors separately after
+arena destruction. Checked release catches unexpected lock/API exceptions,
+records a terminal cleanup exception without inventing an OS result, and never
+replaces an unwinding primary exception. A report or destructor return is not
+proof that the OS released a pool. A failed release remains unqualified.
+
+The mode/report fields change class layout. CPP G compiled the earlier `2b48cd8`
+code and does not qualify this overlay, any new header, affected native TUs or a
+full CLI. Legacy DEFAULT Source and its two fatal paths remain unchanged. Those
+paths are constructor failure at memory.hpp:44 and capacity exhaustion at119;
+neither is globally repaired or covered by the opt-in path.
+
+`test_pair_checked_memory.cpp` authors twelve production-header cases using only
+test-local redirected allocation/free/message calls and a small static fake
+buffer: constructor/capacity/overflow refusals, remaining-capacity checks,
+zero-count/packed layout, copy refusal, free-to-destructor success and failure,
+repeated free without retry/NULL calls, terminal-use refusal, and durable
+primary/cleanup reports. **All twelve are AUTHORED, NOT COMPILED OR EXECUTED.**
+The fourteen targeted Python checks pass real renderer Source causals, exact
+default/reversible legacy preservation, state/side-effect order and absent
+integration. The complete Python module suite has 183 tests: 182 passed and one
+existing composed-package dependency test skipped (74.474 seconds). No C++ was
+compiled or executed. Fake tests cannot establish real OS failure or actual closure.
+
+The three PR217 hooks remain unconditionally rejecting. Same-owner raw/schema
+binding, live FILE identity, real route/alias exclusion and actual allocator
+closure still block activation. No raw body, native arena, compiler/SDK query,
+lease, CLI, builder, FF or game operation is supplied. Root must review the
+exact code head before a distinct CPP recipe and execution GO; this Source lot
+must not merge on the earlier CPP G qualification. Ready remains false.
