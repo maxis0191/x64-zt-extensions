@@ -23,6 +23,8 @@ PINS = {
     'tools-source/asset-bridge/weapon-export/NATIVE-BODY-SCHEMA.md': '00b83ce302028d4fdfe1ed98c4aa7d6bb2e5a467db57fbf217f7194b7ff6cc64',
 }
 HEADER_DESTINATION = NATIVE + 'utils/native_pair_session.hpp'
+EXPLICIT_HEADER_BYTES = 8349
+EXPLICIT_HEADER_SHA256 = '65995c3552058107c572c70bd12f2b8134c81550edd87cf584fdbb5176dc7d93'
 
 
 def require(ok, message):
@@ -45,7 +47,7 @@ def validate_sources(sources):
                 'Pinned Source drift: ' + path)
 
 
-def render(sources, *, stage_inactive=False):
+def render(sources, *, stage_inactive=False, source_header=None):
     validate_sources(sources)
     require(type(stage_inactive) is bool, 'Literal Source staging selection required')
     result = dict(sources)
@@ -56,10 +58,17 @@ def render(sources, *, stage_inactive=False):
     if not stage_inactive:
         return result, metadata
     # Only our authored header is read; never a body, SDK or native artifact.
-    header_path = HERE / 'native_pair_session.hpp'
-    require(header_path.is_file() and not header_path.is_symlink(), 'Regular authored Source header required')
-    with header_path.open('rb') as stream:
-        raw = stream.read(2097153)
+    if source_header is None:
+        header_path = HERE / 'native_pair_session.hpp'
+        require(header_path.is_file() and not header_path.is_symlink(), 'Regular authored Source header required')
+        with header_path.open('rb') as stream:
+            raw = stream.read(2097153)
+    else:
+        require(type(source_header) is str and len(source_header) <= 2097152,
+                'Bounded explicit authored Source header required')
+        raw = source_header.replace('\r\n', '\n').encode('utf-8', errors='strict')
+        require(len(raw) == EXPLICIT_HEADER_BYTES and hashlib.sha256(raw).hexdigest() == EXPLICIT_HEADER_SHA256,
+                'Pinned explicit authored Source header drift')
     require(len(raw) <= 2097152 and b'\0' not in raw, 'Bounded authored Source header required')
     header = raw.decode('utf-8', errors='strict').replace('\r\n', '\n')
     require('[[noreturn]] inline void reject_native_activation()' in header, 'Inactive rejection contract absent')
