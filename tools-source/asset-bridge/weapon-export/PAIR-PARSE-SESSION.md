@@ -170,3 +170,146 @@ actual pair input, FF, runtime, grant, physics/PAP transaction or gameplay.
 Fatal allocator closure and actual activation remain false; Ready remains false.
 The next step is a small separately reviewed Source proposal for the original
 raw-buffer bridge, live-file admission and fatal allocation boundary.
+
+## Opt-in checked allocator — V9c
+
+`prepare_pair_checked_memory.render` accepts only the exact 3,000-byte UTF-8
+memory header at native `fab935826c898806855376662a8a03317b3ad8f1`, SHA-256
+`9025b835313ee45ba3418e3322210dec3b6d334e504a1dd3b59e9f38e2898f35`.
+It performs no I/O or invocation. DEFAULT returns that same input text without
+staging. Literal `stage_checked=True` renders an in-memory overlay only. Removing
+the explicit checked additions reconstructs the original Source exactly.
+No consumer or existing pair stager imports/selects this overlay.
+
+Source review of initial head `ba299e8` found the character bound was checked
+too late. The corrected entry checks exact str type and at most 3,000 characters
+before NUL scan, UTF-8 encoding or hashing. A causal trace checks oversized
+ordinary, NUL-containing and invalid-Unicode texts refuse before those actions;
+the independent exact byte length, strict UTF-8 and Source hash checks remain.
+
+The staged `zone_memory(checked_memory_tag, size, report)` constructor binds an
+external original-owner report once. It captures failed VirtualAlloc's error
+immediately and throws a fixed-message diagnostic. In checked mode, capacity
+exhaustion and multiplication overflow also throw before pointer arithmetic,
+zero-fill or position changes. Successful allocation preserves the original
+packed offsets and no-padding trace, including zero-count behavior while Live.
+H3b exercises these behaviors through fixture-local fake OS calls. Real OS
+failure and arena closure remain unqualified.
+
+Both checked public `free()` and the existing destructor use the same private
+release state. The attempt is marked before the single VirtualFree call. Success
+is terminal/idempotent; repeated free/destruction never calls VirtualFree again
+or on NULL. Failure is terminal/sticky and preserves the first return/error and
+original pool identity without clearing, retrying, transferring ownership or
+reclassifying it as Closed. A primary allocation failure poisons later use but
+still allows its one pending cleanup attempt. Allocation (even count zero),
+clear, string duplication, statistics and copy from a checked source refuse
+before subsequent pool use. The legacy copy behavior remains outside checked
+mode; the mutex already implicitly deletes assignment, so no operator= fix is
+introduced.
+
+The original report must be constructed before and outlive the arena. It is
+noncopyable/nonmovable, exposes read-only diagnostics, and has no reset or
+readiness authority. It preserves primary and cleanup errors separately after
+arena destruction. Checked release catches unexpected lock/API exceptions,
+records a terminal cleanup exception without inventing an OS result, and never
+replaces an unwinding primary exception. A report or destructor return is not
+proof that the OS released a pool. A failed release remains unqualified.
+
+The mode/report fields change class layout. CPP G compiled the earlier `2b48cd8`
+code and does not qualify this overlay, any new header, affected native TUs or a
+full CLI. Legacy DEFAULT Source and its two fatal paths remain unchanged. Those
+paths are constructor failure at memory.hpp:44 and capacity exhaustion at119;
+neither is globally repaired or covered by the opt-in path.
+
+`test_pair_checked_memory.cpp` authors twelve production-header cases using only
+test-local redirected allocation/free/message calls and a small static fake
+buffer: constructor/capacity/overflow refusals, remaining-capacity checks,
+zero-count/packed layout, copy refusal, free-to-destructor success and failure,
+repeated free without retry/NULL calls, terminal-use refusal, and durable
+primary/cleanup reports. The durable-report case also authors an explicit fake
+VirtualFree-throws subcase: one attempt, no retry on later free/destruction,
+unavailable OS result, no invented error and the original primary preserved.
+Lock-throw handling remains Source-inspected only and is not exercised by the
+fixture. **All twelve named cases passed in H3b; allocation/free calls are fake.**
+
+The H2 attempt on 2026-10-16 stopped at its first fixture compilation with
+exit code 2: `/W4 /WX` rejected two signed/unsigned comparisons between the
+`DWORD` cleanup error and signed ternary constants in the durable-report case.
+No fixture case executed, and none of the three affected translation units
+compiled. The failed state, including its incomplete stage telemetry and
+unverified native inputs, was preserved. Original owner/job, retained streams,
+saved handles and three publication readbacks were checked closed; a Source
+failure receipt
+preceded true terminal exit code 1 and independent process/lease checks.
+The correction types both ternary operands as `DWORD`, keeping `/W4 /WX`.
+It changes no allocator or report behavior. H3b used fresh Source bindings and
+a separate reviewed execution GO; H2 remains failed and is never requalified.
+
+The fifteen targeted Python checks pass real renderer Source causals, exact
+default/reversible legacy preservation, state/side-effect order and absent
+integration. At Source head `a0abfdf`, the complete Python module suite had
+184 tests: 183 passed and one existing composed-package dependency test skipped
+(76.222 seconds). That earlier Source checkpoint compiled/executed no C++.
+The fifteen targeted checks passed again on `ffc2ea2` in 0.007 seconds. The
+unchanged Python suite was not repeated for the two C++ constants or later docs.
+Fake tests cannot establish real OS failure or actual arena closure.
+
+### H3b native compilation checkpoint — 2026-10-16
+
+The compiled code head is `ffc2ea25c3c2754291a10f6ab5e3754129663ef6`, tree
+`8ad3ccd792122ef77224fabe4898d35a81eb11ff`. Documentation/merge heads are separate
+from that compiled revision. Native Source remains pinned to
+`fab935826c898806855376662a8a03317b3ad8f1`; the current scheduler providers came
+from core `d271f6e680cfdc2d09d2b3dbc23d9e96aa23eeb1` and were byte-identical to
+the reviewed provider implementation. The checked memory header is still
+10,176 bytes, SHA-256
+`47affa362ea7d42131030396af828252b598e751f118f0bb8e747730e9ddefa0`.
+
+All five phases exited zero: fixture compilation, twelve verified fixture
+cases, then `weapondef.cpp`, `weaponattachment.cpp` and `filesystem.cpp`.
+The three TU compilations and the fixture retained `/W4 /WX`. Every compiler
+completed its original-handle verification and telemetry-child closure. The
+short-lived fixture exited before CIM registration; the existing guarded
+original-job-already-empty path established closure without adopting a new
+process. All five original stage closures were confirmed. Compiler dependencies
+remained within the guarded set, and all 682 retained inputs were reverified
+before release; no postcompile guard was added.
+
+The admitted group kept its original 600-second deadline, 120-second compile
+limits, 15-second fixture limit and 256 MiB output/1 MiB metadata bounds. Maximum
+recorded output was 34,803,446 bytes. These are bounded compilation results,
+not performance or real allocator-failure acceptance.
+
+The measured and before-release publications were read back while the lease was
+held. The final publication was written and read back after release through its
+same retained original stream, before guard disposal. The preplanned finite
+PASS postflight then checked all 1,629 original FileStream
+references and 1,629 saved handles closed, along with the same three publication
+entries, original owner/job and both held Source-helper streams/handles. Its
+separate bounded Source receipt was flushed, reread for byte/hash/strict-JSON
+equality and closed inside the writer before return. No OBJ/EXE/PDB or SDK input
+was reopened after release. The retained original terminal subsequently exited
+zero; the worker's postexit observation found all eleven owned host/launcher/
+compiler/fixture/telemetry identities absent and the lease registry empty.
+Root independently confirmed the actual terminal result and the same fresh
+absence/empty registry at `2026-10-16T04:32:21.8923478Z`. A separately authorized
+Root Source-only fixture-log read found twelve PASS lines plus the exact
+count marker in 766 stdout bytes and empty stderr; it opened no opaque artifact.
+
+The immutable H3b plan SHA-256 is
+`66d2a325b6877746acee403364f2c7fdda93b04b80e8686a9ba52f380299ca1c`.
+The separate preexit Source receipt is 31,590 bytes, SHA-256
+`8f6002cb52b1c68a7a13cd8852f4b1c35b18d34865fda936b1f412777b3797cf`.
+Those receipts qualify this bounded fixture/TU checkpoint only. Earlier H2 and
+the first H3 Source DEFAULT refusal retain their failed outcomes. That DEFAULT
+refused an old exact-head constant before native effects. H3b's successful
+DEFAULT and twenty finite-policy Source fake causals are separate from its
+subsequent actual C++ run and do not prove original native closure themselves.
+
+The three PR217 hooks remain unconditionally rejecting. Same-owner raw/schema
+binding, live FILE identity, real route/alias exclusion and actual allocator
+closure still block activation. H3b supplied no actual raw body, live arena,
+full CLI, FF or game operation. Its separately admitted compiler/SDK access
+does not authorize integration or another run. Final exact-head CI disposition,
+independent review and the merge audit remain separate gates. Ready remains false.
