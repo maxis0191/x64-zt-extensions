@@ -58,6 +58,14 @@ and `storage_domain_only=True`. This proves no charge-mode meaning. A new empty
 enum, changed type/converter/macro or use outside these two scalar fields blocks
 generation; this exception supplies no index/count or gameplay authority.
 
+The finite bitfield rule preserves the five `GfxDrawSurfFields` widths
+16/32/2/14/64 in unsigned64 storage units under MSVC x64/default pack8. The first
+four share one unit and the last occupies a second: size16/alignment8, also for
+the `GfxDrawSurf` union with `Packed128`. Another type, width sequence, mixed
+storage type or packing refuses; this is not a general C++ bitfield parser.
+Every other derived struct size must also equal its pinned `assert_sizeof`
+when one is present, rather than silently masking a mismatched derivation.
+
 Attachment keys such as `overlay.shader`, `projExplosionEffect.type` and
 `projExplosionEffect.u.fx` are literal flat JSON keys. The attachment macros
 stringify the complete C++ member expression (weaponattachment.cpp:115-172,
@@ -142,3 +150,18 @@ owners, runtime ABI and actual capacity/base alignment. Inventory remains
 descriptive; strict dependency policy remains FX/VFX/RETICLE. No additional
 reference family, builder adoption, branding rawfile, FF/readback, weapon grant,
 physics, PAP transaction, BO3 authentication or gameplay acceptance is supplied.
+
+## Review corrections
+
+The initial Source candidate `1854dd2` passed its authored tests but discarded
+bitfield widths, describing `GfxDrawSurfFields/GfxDrawSurf` as40 bytes. Review
+caught this metadata error; `MaterialInfo48` and `Material280` were already
+asserted and no current arena under-allocation was demonstrated. The finite
+unit rule and shared-unit/crossing refusals above replace that derivation.
+
+Review also found that the original280-versus8 test called the allocation helper
+directly while the full handler fixtures kept `unk0.material` null. A new owned
+private-pair positive reaches the real `unk_material` handler and requires its
+280-byte event, name allocation, following attachment offset and6384-byte total.
+Changing that handler to an8-byte shell now loses272 bytes and fails the test.
+These are Source regression checks, not observations of any real input or arena.

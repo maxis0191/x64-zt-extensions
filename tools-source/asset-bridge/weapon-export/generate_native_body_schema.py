@@ -95,6 +95,23 @@ def canonical(text):
     return re.sub(r'\s+', ' ', text.replace(' *', '*').replace('* ', '*').strip())
 
 
+def uint64_bitfield_units(widths):
+    """Reviewed MSVC x64 uint64 storage units, solely for GfxDrawSurfFields.
+
+    Consecutive fields share one 64-bit unit; a field never straddles a unit.
+    Zero-width/anonymous/mixed-type/packed forms are outside this finite rule.
+    """
+    require(bool(widths), 'Nonempty reviewed bitfield sequence required')
+    units, used = 0, 64
+    for width in widths:
+        require(type(width) is int and 0 < width <= 64, 'Unreviewed uint64 bitfield width')
+        if used + width > 64:
+            units += 1
+            used = 0
+        used += width
+    return units * 8, 8
+
+
 class Declarations:
     """Reachable declarations only; Windows x64 LLP64, default pack8.
 
@@ -137,7 +154,7 @@ class Declarations:
                 inner, end = block(body, m.end())
                 require(body[end:].lstrip().startswith(';'), 'Named nested union unsupported')
                 cells = self.simple_members(inner)
-                lookup.update(cells)
+                lookup.update({k: v['type'] for k, v in cells.items()})
                 units.append(('union', list(cells.values())))
                 body = body[end:].lstrip()[1:]
             else:
@@ -145,7 +162,7 @@ class Declarations:
                 require(pos >= 0, 'Unclosed member declaration')
                 cells = self.simple_members(body[:pos + 1])
                 require(not set(cells) & set(lookup), 'Duplicate member')
-                lookup.update(cells)
+                lookup.update({k: v['type'] for k, v in cells.items()})
                 units.extend(('member', [v]) for v in cells.values())
                 body = body[pos + 1:]
         return lookup, units
@@ -155,10 +172,10 @@ class Declarations:
         result = {}
         for decl in body.split(';'):
             if not decl.strip(): continue
-            m = re.fullmatch(r'\s*(.*?)\s+(\w+)\s*((?:\[\d+\])*)\s*(?::\s*\d+)?\s*', decl, re.S)
+            m = re.fullmatch(r'\s*(.*?)\s+(\w+)\s*((?:\[\d+\])*)\s*(?::\s*(\d+))?\s*', decl, re.S)
             require(m is not None, 'Unreviewed member: ' + decl[:100])
             require(m[2] not in result, 'Duplicate declaration')
-            result[m[2]] = canonical(m[1]) + m[3]
+            result[m[2]] = {'type': canonical(m[1]) + m[3], 'bits': int(m[4]) if m[4] is not None else None}
         return result
 
     def field(self, owner, expression):
@@ -216,18 +233,33 @@ class Declarations:
                 row['conversion_basis'] = 'fixed-int32-default-json-' + JSON_REVISION
         elif ty in self.structs:
             kind, _, packing = self.structs[ty]
-            _, units = self.members(ty)
+            members, units = self.members(ty)
+            bitfields = [cell for _, cells in units for cell in cells if cell['bits'] is not None]
+            if bitfields:
+                expected_names = ['objectId', 'pad0', 'tessellation', 'pad1', 'pad2']
+                expected_widths = [16, 32, 2, 14, 64]
+                require(ty == 'GfxDrawSurfFields' and kind == 'struct' and packing == 8
+                        and list(members) == expected_names and len(units) == 5
+                        and all(unit == 'member' and len(cells) == 1 for unit, cells in units)
+                        and all(cell['type'] == 'unsigned __int64' for cell in bitfields)
+                        and [cell['bits'] for cell in bitfields] == expected_widths,
+                        'Unreviewed native bitfield layout: ' + ty)
+                size, alignment = uint64_bitfield_units(expected_widths)
+                row = {'kind': 'object', 'size': size, 'align': alignment, 'pack': packing,
+                       'size_basis': 'reviewed-msvc-x64-uint64-bitfield-units',
+                       'bitfields': list(zip(expected_names, expected_widths))}
+                self.cache[ty] = row
+                return row
             offset, alignment = 0, 1
             for unit_kind, cells in units:
-                layouts = [self.describe(v) for v in cells]
+                layouts = [self.describe(v['type']) for v in cells]
                 a = min(packing, max(v['align'] for v in layouts))
                 size = max(v['size'] for v in layouts) if unit_kind == 'union' else layouts[0]['size']
                 alignment = max(alignment, a)
                 offset = max(offset, size) if kind == 'union' else (offset + a - 1) // a * a + size
             calculated = (offset + alignment - 1) // alignment * alignment
-            # Bitfields in asserted dependency structs have Source size assertions;
-            # their alignment still follows their declared storage types/packing.
             size = self.sizes.get(ty, calculated)
+            require(size == calculated, 'Derived layout differs from pinned sizeof assertion: ' + ty)
             row = {'kind': 'object', 'size': size, 'align': alignment, 'pack': packing,
                    'size_basis': 'assert_sizeof' if ty in self.sizes else 'finite-member-layout'}
         else:

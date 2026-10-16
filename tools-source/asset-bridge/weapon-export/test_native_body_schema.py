@@ -72,7 +72,8 @@ class NativeBodySchemaTests(unittest.TestCase):
         self.assertFalse(SCHEMA['coverage']['actual_input_admissibility'])
         expected = {'WeaponCompleteDef': (312, 8), 'WeaponDef': (5144, 8), 'WeaponAttachment': (536, 8),
                     'Material': (280, 8), 'FxCombinedDef': (16, 8), 'NoteTrackToSoundEntry': (24, 8),
-                    'NoteTrackToSuitSoundEntry': (24, 8), 'GrenadeRotationParams': (52, 4)}
+                    'NoteTrackToSuitSoundEntry': (24, 8), 'GrenadeRotationParams': (52, 4),
+                    'GfxDrawSurfFields': (16, 8), 'GfxDrawSurf': (16, 8), 'MaterialInfo': (48, 8)}
         for ty, pair in expected.items():
             self.assertEqual((SCHEMA['types'][ty]['size'], SCHEMA['types'][ty]['align']), pair)
         attachment = {r.get('key'): r for r in SCHEMA['structures']['WeaponAttachment']['ops']}
@@ -252,6 +253,18 @@ class NativeBodySchemaTests(unittest.TestCase):
         trace = production._Trace(); production._walk('WeaponDef', d, 'def', trace, {'accuracyGraphKnots': [None, None]})
         self.assertEqual((trace.offset, trace.cells), (16, 0))
 
+    def test_real_unk_material_handler_counts_full_material_and_order(self):
+        w, a = private_pair()
+        w['weapDef']['unk0']['material'] = 'aaaaaaa'
+        self.assertIsNone(invoke(w, a))
+        trace = production._inspect(w, a)
+        self.assertEqual(trace.offset, 6096 + 280 + 8)
+        events = [e for e in trace.events if '.unk0.material' in e[0]]
+        self.assertEqual(events, [('weapon.weapDef.unk0.material', 'Material', 5528, 280, 8),
+                                  ('weapon.weapDef.unk0.material.name', 'char', 5808, 8, 1)])
+        following = next(e for e in trace.events if e[0] == 'attachment')
+        self.assertEqual(following[2], 5816)
+
     def test_cursor_utf8_chain_effective_header_and_zero_no_padding(self):
         for text, align_type, expected in [('é', 'float', 3), ('€', 'const char*', 4)]:
             trace = production._Trace(); trace.string(text, 'string')
@@ -300,6 +313,19 @@ class NativeBodySchemaTests(unittest.TestCase):
 
 
 class SourceGrammarTests(unittest.TestCase):
+    def test_reviewed_bitfields_share_units_and_never_straddle(self):
+        self.assertEqual(generator.uint64_bitfield_units([16, 32, 2, 14]), (8, 8))
+        self.assertEqual(generator.uint64_bitfield_units([16, 32, 2, 14, 64]), (16, 8))
+        self.assertEqual(generator.uint64_bitfield_units([63, 2]), (16, 8))
+        for widths in ([0], [65], [True], []):
+            with self.assertRaises(ValueError): generator.uint64_bitfield_units(widths)
+        native = 'struct GfxDrawSurfFields { unsigned __int64 objectId:16; unsigned __int64 pad0:32; unsigned __int64 tessellation:2; unsigned __int64 pad1:14; unsigned __int64 pad2:64; }; struct Packed128 { std::uint64_t p0; std::uint64_t p1; }; union GfxDrawSurf { GfxDrawSurfFields fields; Packed128 packed; };'
+        d = generator.Declarations(native)
+        self.assertEqual((d.describe('GfxDrawSurf')['size'], d.describe('GfxDrawSurf')['align']), (16, 8))
+        self.assertEqual(d.describe('GfxDrawSurfFields')['bitfields'], [('objectId', 16), ('pad0', 32), ('tessellation', 2), ('pad1', 14), ('pad2', 64)])
+        for changed in (native.replace('pad1:14', 'pad1:15'), native.replace('GfxDrawSurfFields', 'UnknownBits')):
+            with self.assertRaisesRegex(ValueError, 'Unreviewed native bitfield'):
+                generator.Declarations(changed).describe('GfxDrawSurf')
     def test_unknown_manual_and_nonmacro_sites_cannot_be_omitted(self):
         body = '\nWEAPON_PARSE_FIELD(x);\n'
         generator.body_coverage('Owned', body)
