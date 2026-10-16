@@ -10,6 +10,18 @@ import neutral_pair_bodies as validation
 from test_native_body_schema import private_pair
 from test_neutral_pair_inputs import CSV, encode, fixture
 
+# Complete owned Source support for the C++ witness. Future Source capsules copy
+# this list, including Inventory's transitive walkers; generated headers are
+# supplied separately by the real core renderer and render_header().
+FIXTURE_SOURCE_FILES = (
+    'test_authored_pair_json.cpp',
+    'native_pair_session.hpp',
+    'native_neutral_dependencies.hpp',
+    'native_definition_access.hpp',
+    'native_weapon_dependencies.inc',
+    'native_attachment_dependencies.inc',
+)
+
 FX_NAME = 'authored_fx0001'
 OTHER_FX = 'authored_fx0002'
 RETICLE = 'authored_rt0001'

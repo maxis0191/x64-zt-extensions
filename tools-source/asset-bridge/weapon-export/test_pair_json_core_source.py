@@ -142,6 +142,28 @@ class PairJsonCoreSourceTests(unittest.TestCase):
 
 
 class AuthoredPairFixtureSourceTests(unittest.TestCase):
+    def test_fixture_source_manifest_closes_real_includes_and_exposes_old_four_file_omission(self):
+        here = Path(__file__).parent
+        generated = {Path(production.CORE_HEADER).name, 'authored_pair_json_cases.hpp'}
+
+        def missing_includes(supplied):
+            return {dependency for name in supplied
+                    for dependency in re.findall(r'^\s*#\s*include\s*"([^"]+)"',
+                                                 (here/name).read_text(encoding='utf-8'), re.MULTILINE)
+                    if dependency not in supplied and dependency not in generated}
+
+        old_four = {'test_authored_pair_json.cpp', 'native_pair_session.hpp',
+                    'native_neutral_dependencies.hpp', 'native_definition_access.hpp'}
+        self.assertEqual(missing_includes(old_four),
+                         {'native_weapon_dependencies.inc', 'native_attachment_dependencies.inc'})
+        supplied = set(fixtures.FIXTURE_SOURCE_FILES)
+        self.assertEqual(len(supplied), len(fixtures.FIXTURE_SOURCE_FILES))
+        self.assertTrue(old_four <= supplied)
+        self.assertEqual(missing_includes(supplied), set())
+        import json
+        exports = json.loads((here.parents[2]/'product.json').read_text(encoding='utf-8'))['exports']
+        self.assertTrue(all('tools-source/asset-bridge/weapon-export/' + name in exports for name in supplied))
+
     def test_three_approved_originals_pass_production_validation_and_13_flags_stay_false(self):
         for case in fixtures.cases():
             fixtures.validate_originals(case['raw'], case['pins'])
@@ -169,6 +191,10 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
 
     def test_header_generation_validates_every_case_before_return_and_is_deterministic(self):
         self.assertEqual(fixtures.render_header(), fixtures.render_header())
+        header = fixtures.render_header().encode('utf-8')
+        self.assertEqual(len(header), 80847)
+        self.assertEqual(hashlib.sha256(header).hexdigest(),
+                         '08bece709bc7525c02205b55869e9fc11f26ab14ca24521f9062832bf65b8733')
         with patch.object(fixtures.validation, 'validate_private_pair_bodies', side_effect=ValueError('refused original')):
             with self.assertRaisesRegex(ValueError, 'refused original'): fixtures.render_header()
 

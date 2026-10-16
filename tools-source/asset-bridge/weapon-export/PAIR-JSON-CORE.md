@@ -1,9 +1,11 @@
 # Authored JSON pair through the real native cores
 
 This Source lot isolates the two pinned JSON-to-native implementations and
-authors an end-to-end C++ fixture. **The new cores and fixture are not compiled,
-linked or executed.** The next native gate must prove a real link and parse,
-not reuse the earlier checked-memory fixture or its twelve fake-API results.
+authors an end-to-end C++ fixture. **J1d compiled both cores at `c9d8332`, then
+fixture compilation failed before link or execution.** The current support-list
+correction has no CPP qualification. A fresh gate must prove the complete real
+link and parse; earlier allocator fixtures and partial core compilation do not
+qualify the complete witness.
 
 ## Pure Source renderer
 
@@ -122,6 +124,26 @@ Source checkpoint, 2026-10-16: 68 targeted tests passed across
 Git render passed DEFAULT identity and exact reconstruction of both inactive
 wrappers. The product boundary check passed with 992 tracked files, 974 exports
 and three dependencies. No native input, compiler, linker or arena was opened.
+
+The later separately authorized J1d CPP attempt compiled both real cores with
+exit zero, then failed fixture compilation with C1083: Inventory's
+`native_weapon_dependencies.inc` was absent from the prepared support set.
+`native_attachment_dependencies.inc` was omitted as well. No link, fixture
+group or legacy TU ran. J1d remains immutable FailedClosed, with
+`NativeInputsReverified=false`; original postflight and true terminal exit
+completed, and Root independently confirmed closure before releasing the slot.
+The authorized diagnostic read covered only fixture stdout (288 bytes, SHA256
+`0bbee7c4dbe6be81b5269e786f9eeec75599a339f97a958f60aea829d100d91b`)
+and empty stderr. No SDK or native artifact was reopened.
+
+`authored_pair_json_fixtures.FIXTURE_SOURCE_FILES` now declares all six owned
+witness/support files, including both transitive Inventory walkers. The next
+Source preparer must consume that list and pin each file from the exact product
+head, with both generated headers supplied separately. A Source regression
+reads actual local includes and exposes the old four-file omission. The authored
+case header remains byte-identical (80,847 bytes); parser code, input pins,
+oracles, qualification flags and `/W4 /WX` are unchanged. This correction has
+not been compiled or linked and does not reuse J1d objects or qualification.
 
 Before merge, review the exact Source head and prepare a fresh minimal native
 capsule with both real core TUs, the real inventory support, generated authored
