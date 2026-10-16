@@ -153,6 +153,11 @@ No compiled CLI, template JSON, stock binding, export or Ready is qualified here
 
 ## Descriptive dependency inventory
 
+The pure [native input preflight](NATIVE-BODY-SCHEMA.md) checks the verified
+immutable private-pair buffers against the pinned consumed dialect and exact
+no-padding allocation order. It creates no native arena/parser and carries no
+permission to use actual inputs, routing, owners, a builder or runtime.
+
 The bounded Source-only inventory and pure typed identity contract are documented
 in [NEUTRAL-INVENTORY.md](NEUTRAL-INVENTORY.md). They retain the strict
 FX/VFX/RETICLE policy and activate no CLI, builder, parser route or runtime.

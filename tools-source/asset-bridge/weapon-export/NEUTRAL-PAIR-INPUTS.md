@@ -51,8 +51,12 @@ After byte checks, a complete native body key/shape/count/range/allocation gate
 must still precede arena construction. Actual parser opens must refer to the
 same held validated files **before their first read**, with CWD/search paths
 sealed and restored. Keep both parser objects/maps, roots, arena and guards alive
-in the required destruction order. These physical I/O, native schema, routing
+in the required destruction order. These physical I/O, actual native admission, routing
 and durable owner gates remain unimplemented; no parse/CLI/builder is wired.
+The separate [pure body preflight](NATIVE-BODY-SCHEMA.md) now validates the
+pinned consumed dialect and ordered demand/alignment model on original byte
+buffers. This does not add native body admission, physical routing or owners,
+and does not change either report/raw-byte helper's scope.
 See [NEUTRAL-INVENTORY.md](NEUTRAL-INVENTORY.md) for the separate descriptive
 inventory and its absence of builder authority.
 
