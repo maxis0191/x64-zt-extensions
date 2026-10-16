@@ -4,14 +4,9 @@ No IO, decoding, pointers, native stride admission, binds or weapon serializatio
 The 12/16/12/2 strides reproduce primary source, not an observed Ray Gun payload.
 """
 import math
-from pathlib import Path
 import struct
-import sys
-
-_components = Path(__file__).resolve().parents[3] / 't7-iw7' / 'animated'
-sys.path.insert(0, str(_components))
-from preflight import decode_stream_weights, integer, names, require, schema
-from reorder_proposal import regroup_surface
+from animated.preflight import decode_stream_weights, integer, names, require, schema
+from animated.reorder_proposal import regroup_surface
 
 
 def _slice_range(offset, base, count, stride, extent):

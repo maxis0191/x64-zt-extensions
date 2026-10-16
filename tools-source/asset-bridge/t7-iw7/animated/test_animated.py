@@ -3,13 +3,16 @@ import importlib.util
 import itertools
 from pathlib import Path
 import struct
+import sys
 import unittest
 
-import fixtures
-from preflight import (ABSENT, FLAGS, NARROWED, ZERO_COUNTS, Refusal, decode_stream_weights,
+# Source test bootstrap owns package-root setup; helpers never change sys.path.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from animated import fixtures
+from animated.preflight import (ABSENT, FLAGS, NARROWED, ZERO_COUNTS, Refusal, decode_stream_weights,
                        preflight_clip, preflight_skeleton, preflight_weights)
-from read_blend import read_blend
-from reorder_proposal import regroup_surface
+from animated.read_blend import read_blend
+from animated.reorder_proposal import regroup_surface
 
 
 class AnimatedTests(unittest.TestCase):
