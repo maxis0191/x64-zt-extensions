@@ -1,10 +1,14 @@
 """Print minimal original reproductions. No files, assets or processes are read."""
 import json
 import struct
+from pathlib import Path
+import sys
 
-import fixtures
-from preflight import NARROWED, Refusal, preflight_clip, preflight_weights
-from reorder_proposal import regroup_surface
+# This explicit Source caller supplies the package root, never a helper module.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from animated import fixtures
+from animated.preflight import NARROWED, Refusal, preflight_clip, preflight_weights
+from animated.reorder_proposal import regroup_surface
 
 
 def refusal(function, *args):

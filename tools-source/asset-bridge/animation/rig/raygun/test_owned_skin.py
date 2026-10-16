@@ -1,10 +1,14 @@
 """Original source-shaped streams, not extracted BO3/Ray Gun/native evidence."""
 import copy
 import struct
+from pathlib import Path
+import sys
 import unittest
 
+# Test caller supplies the ordinary namespace-package root.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 't7-iw7'))
 from owned_skin_mapping import map_owned_source_surface
-from read_blend import read_blend
+from animated.read_blend import read_blend
 
 
 def fixture():

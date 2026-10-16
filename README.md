@@ -17,6 +17,12 @@ fresh, bounded source package; they are not vendored into this repository.
 The composition receipt records every owner, commit, Git blob and checkout-byte
 hash. It does not qualify a native build or inherit an older runtime receipt.
 
+The [owned rig binding](tools-source/asset-bridge/animation/rig/OWNED-RIG-BINDING.md)
+is a generic decoded-data interface for model bone order, skin influences and
+clip channels. It keeps complete typed input identities and immutable results;
+authored checks do not qualify real assets or engine playback. BO3 interoperability
+and the two secondary demonstrations do not gate generic engine modding work.
+
 Run the pinned IW7-Mod `ops/source_workspace.py` with `--project`, exact
 `--revision`, one `--source PRODUCT=CHECKOUT` per dependency, and a fresh `--output`.
 Each source checkout must match the manifest revision and have clean tracked
