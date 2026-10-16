@@ -220,14 +220,27 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
         self.assertNotIn('phase=', cleanup)
         self.assertEqual(source.count('report.allocation_failure()'), 1)
 
-    def test_actual_emission_reconstructs_all_twelve_originals_and_unchanged_pins_oracles(self):
+    def test_actual_emission_reconstructs_all_twelve_new_source_pins_and_retained_oracles(self):
         import json
         approved = fixtures.cases()
         summary = [{key: case[key] for key in ('label', 'pins', 'capacity', 'weapondef_offset',
                     'attachment_offset', 'references', 'edges', 'occurrences')} for case in approved]
         baseline = json.dumps(summary, sort_keys=True, separators=(',', ':')).encode('utf-8')
         self.assertEqual(hashlib.sha256(baseline).hexdigest(),
-                         'f98e7a1bc37a9fa8e628065325c2be66f73bd2c8969b9ad0ca24845f16d35da7')
+                         '5026784b19b7dd1cf7b60bee8841275eaa45572399b5d42a22f8087d55dd94a6')
+        expected = [
+            ('7137883b66b4735e5347cb25d7b29c3ec2bc60b66bfcfae33965abd0bcf90807',
+             '0da006d96531b0d8afc74e6da211911a3c5b71b34c8104101926222bd5f9aa03'),
+            ('d2a219fe38146bb3bb47bc6342e663fdb94de986a8a1779a1dc165fd79535772',
+             'c71bf500b5cd0a5a60d89eab070edd49c7cdad584b44b1ba1d6eab843f870e7d'),
+            ('9f393c3fb117a121917b3ac35ac222fe91263a2d08838283d8f723a3e7819e01',
+             '0bd29bac7240039ff432e103243304674fcfb5995740c90e1d8224674b1ddf7d'),
+        ]
+        for case, (report_hash, weapon_hash) in zip(approved, expected):
+            self.assertEqual(case['pins'], ((1764, report_hash), (22356, weapon_hash),
+                             (1806, '088c665ca39c03daa3a6c8b84821318389611a5ef5b895223e263a5cdbe5969b'),
+                             (66, 'f539cb31e182b7648cac4eb4da369e344d0a8da1a877c4fbed1dc23ef105f2c8')))
+            self.assertEqual(json.loads(case['raw'][1])['weapDef']['accuracyGraphName'], [None, None])
         originals, pending = [], bytearray()
         tokens = list(re.finditer(r'(R"IW7AUTH\((.*?)\)IW7AUTH")(,?)', fixtures.render_header(), re.DOTALL))
         self.assertGreater(len(tokens), 12)
@@ -294,6 +307,27 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
             self.assertEqual(case['capacity'], 6208)
             self.assertEqual(case['occurrences'], 4)
 
+    def test_old_empty_graph_pair_reconstructs_old_pins_but_refuses_before_emission(self):
+        import json
+        case = fixtures.cases()[0]
+        weapon, attachment = json.loads(case['raw'][1]), json.loads(case['raw'][2])
+        weapon['weapDef']['accuracyGraphName'] = ['', '']
+        report, wr, ar = report_fixture(encode(weapon), encode(attachment)); rr = encode(report)
+        self.assertEqual((len(rr), hashlib.sha256(rr).hexdigest()),
+                         (1764, 'd2f2b5189ab6669f2e2a7876694353a4f97e3269904e9620dbcff92e616f4564'))
+        self.assertEqual((len(wr), hashlib.sha256(wr).hexdigest()),
+                         (22352, '5114899831042a0d9f93988d011a5675799f1706c329cd52316ce289e05fc449'))
+        demand = bodies._inspect(weapon, attachment, alignment=False)
+        self.assertEqual(demand.offset, 6210)
+        self.assertEqual(next(e[2] for e in demand.events if e[0] == 'attachment'), 5594)
+        graph_names = [e for e in demand.events if '.accuracyGraphName[' in e[0]]
+        self.assertEqual([(e[2], e[3]) for e in graph_names], [(5576, 1), (5577, 1)])
+        with self.assertRaisesRegex(ValueError, 'attachment: legacy cursor misalignment for WeaponAttachment'):
+            bodies.validate_private_pair_bodies(rr, len(rr), hashlib.sha256(rr).hexdigest(), wr, ar, case['raw'][3])
+        with patch.object(fixtures, 'private_pair', return_value=(weapon, attachment)):
+            with self.assertRaisesRegex(ValueError, 'legacy cursor misalignment'):
+                fixtures.render_header()
+
     def test_same_length_mutant_old_pin_refuses_new_approved_pin_changes_literal_oracle(self):
         base, renamed, swapped = fixtures.cases()
         self.assertEqual(tuple(map(len, base['raw'])), tuple(map(len, renamed['raw'])))
@@ -314,9 +348,9 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
     def test_header_generation_validates_every_case_before_return_and_is_deterministic(self):
         self.assertEqual(fixtures.render_header(), fixtures.render_header())
         header = fixtures.render_header().encode('utf-8')
-        self.assertEqual(len(header), 81207)
+        self.assertEqual(len(header), 81219)
         self.assertEqual(hashlib.sha256(header).hexdigest(),
-                         'e00390da93d3b3c423559e4037dca9690051509018300e96abf8ff6b529f2b3a')
+                         '61e9a981c4474bd6d2783f5bfd2c77bfebd15bc9cb2a2cfeac6430a0e4c741b5')
         with patch.object(fixtures.validation, 'validate_private_pair_bodies', side_effect=ValueError('refused original')):
             with self.assertRaisesRegex(ValueError, 'refused original'): fixtures.render_header()
 

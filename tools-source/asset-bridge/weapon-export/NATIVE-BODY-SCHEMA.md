@@ -93,8 +93,13 @@ actual conditional dump at weapondef.cpp:2258-2267 and reads at 583-593:
 | 0, positive | Two-element outer array: null, slot1 rows |
 | positive, positive | Two arrays with their respective parent lengths |
 
-Original name and count arrays still require two slots. Names may be empty
-strings: that is the dump's explicit representation of a null native name.
+Original name and count arrays still require two slots. Every non-null name,
+including an empty string, duplicates its UTF-8 bytes plus NUL. The native
+branch tests JSON-value `empty()`, which is false for a string even when it
+contains no characters; it is not a string-emptiness check. A null name skips
+storage only when both the corresponding parent count and the uncoerced
+original count are zero. Nonzero-count null names and other shapes refuse.
+An empty string in a dump is therefore not an allocation-free null name on read.
 Original stored counts must equal parent allocation counts in this conservative
 dialect. Extra tails, explicit null replacing the absent whole key, missing
 nonzero graphs and mismatches refuse. This is conditional consumption, not an
@@ -115,12 +120,29 @@ the pinned execution order; the three inline override tables are interleaved by
 index. Multiplication and addition are checked in the uint64 `size_t` domain.
 Before each typed event the current offset must satisfy its Source alignment.
 FX memory allocated as `char` must also satisfy the effective typed header view.
-Unknown/misaligned storage refuses. Count-zero/null branches advance nothing.
+Unknown/misaligned storage refuses. A count-zero allocation adds no bytes;
+its separate non-null graph-name string still adds its NUL byte. A permitted
+null name adds no string storage.
 
 No offset rounding, string padding, reordered allocation, shadow arena or legacy
 allocator change is supplied. A sufficient total size cannot establish alignment.
 The actual allocator returns `pool + mem_pos` without padding and uses unchecked
 arithmetic (utils/memory.hpp:102-128); its MessageBox/exit0 path is not validation.
+
+J5 at `d6525ca` measured one first-refusal boundary: ordinal24, size16/count1,
+used6194/cap6208, attachment-entry phase and type alignment1. The compiled root
+units312/5144/536 matched the Source assumptions for that fixture. Source
+reconstruction identifies the prior model's first omitted request at graph
+name0 (one NUL), then graph name1 (one NUL). It predicts the observed final
+request and attachment offset5594 modulo align8=2. Earlier rows and that offset
+are reconstructed, not individually measured; no general ABI proof follows.
+The previous twenty-row projection is incomplete and remains historical.
+
+The corrected owned zero-graph fixture uses two JSON null names and strict new
+weapon/report identities. Its demand6208 and attachment offset5592 are unchanged.
+J1-J5 inputs/results stay immutable. No allocator, native parser/cut, padding or
+capacity change is made. The new Source inputs have not been natively qualified.
+See the [JSON empty API](https://json.nlohmann.me/api/basic_json/empty/).
 
 Caps remain 2 MiB per raw definition, 32,768 decoded nodes and depth64 per body,
 8,192 elements per JSON array, plus 8,192 **allocated native array cells across

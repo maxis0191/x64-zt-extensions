@@ -1,10 +1,10 @@
 # Authored JSON pair through the real native cores
 
 This Source lot isolates the two pinned JSON-to-native implementations and
-authors an end-to-end C++ fixture. **J4 compiled the cores and fixture and linked
-them, then fixture execution exited two with a checked-capacity refusal.**
-The new first-refusal snapshot/report layout and two-line diagnostic are Source
-only and have not been compiled. A fresh gate must
+authors an end-to-end C++ fixture. **J5 compiled the cores and fixture and linked
+them, then execution exited two with a measured checked-capacity refusal.**
+The corrected graph-name model and new null-name Source identities are not yet
+natively qualified. A fresh gate must
 prove the complete real link and parse; earlier allocator fixtures and partial core compilation do not
 qualify the complete witness.
 
@@ -219,13 +219,13 @@ closure; original sessions and outputs are never reopened for this change.
 A finite Source comparison pins eleven Git blobs and nine parser cuts. Its
 twenty nonzero requests project weapon5592 + attachment616 =6208, agreeing
 row-for-row with the Source model. Root sizes312/5144/536 and pointer8/char1 are
-Source assumptions, not runtime measurements. Explicit stub requests use8 bytes,
+Source assumptions in that comparison. Explicit stub requests use8 bytes,
 not full WeaponAttachment536 or ReticleDef32. Two original-graph count0 calls
 add no bytes. No first mismatch or runtime cause was demonstrated; allocator
 header/overload dispatch, Pair construction and live request/sizeof values are
 outside that comparison. It does not justify raising capacity.
 
-The current Source-only change captures the first refused `checked_allocate`
+The `d6525ca` Source checkpoint added capture of the first refused `checked_allocate`
 request before `checked_fail` or cleanup. The original report holds a sticky
 scalar snapshot and one const noexcept reference accessor; report layout changes
 explicitly. Its ordinal counts checked-allocation entries, including count0,
@@ -246,24 +246,80 @@ padding for a refused request from the unchanged no-padding Source policy.
 
 The second line prints compiled sizeof/alignof for the three roots, actual
 pointer/char units, required FX/reticle effective alignments and the vec2 unit
-for zero-count calls. Those values have not yet been observed. The two lines
+for zero-count calls. Those values were unobserved at that Source checkpoint. The two lines
 are bounded at 851 ASCII bytes total (within 1024) and contain no addresses or
 raw inputs. The same exception is rethrown. Removing only Stats phase metadata,
 four phase markers and the positive diagnostic boundary reconstructs the
 previous whole C++ fixture bytes; parser calls/order, exception_ptr/free/rethrow
 cleanup, negative criteria and success output remain unchanged. Expected-negative
-paths emit no new diagnostics. Capacity6208, raw twelve pins/oracles/13 false
-flags, header representation and /W4 /WX stay fixed. C-string Source table
+paths emit no new diagnostics. That diagnostic change retained capacity6208,
+raw twelve pins/oracles/13 false flags, header representation and /W4 /WX. C-string Source table
 counts denote logical bytes; actual allocator size/count arguments are captured
 separately and need not use that same factorization.
 
-Forty targeted Source tests pass across `test_pair_checked_memory_source` and
+Forty targeted Source tests passed at `d6525ca` across `test_pair_checked_memory_source` and
 `test_pair_json_core_source`. They exercise the real renderer's first-sticky
 capture/order, guarded overflow product, unavailable/readonly report, bounded
 formatting, phase entry and unchanged cleanup/success/negative scope. These are
-Source causals, not native snapshot or ABI evidence; unchanged broader suites
-were not rerun. Exact-head Source review must precede fresh capsule preparation
-and a distinct CPP GO. No historical CPP result qualifies this report layout.
+Source causals; unchanged broader suites were not rerun at that checkpoint.
+
+J5 subsequently compiled the two cores and fixture and completed the real link
+at that exact head. Its only stdout PASS is still sha256_known_vectors. The
+405-byte stderr (SHA256
+`0fdc210ce1433fe12b575b7bcbb6429d7b7824c73fbad122166ffe0c9fd76d6f`)
+records one actual first-refusal snapshot: phase2, ordinal24, unit16/count1,
+bytes16, type_align1, used6194/cap6208, primary/reason capacity3 and publications0.
+Only14 bytes remained. The size line reports wc312/8, wd5144/8, wa536/8,
+pointer units8, char1, FX/reticle align8 and vec2 size8. These values qualify
+only those compiled types in that fixture, not general ABI. Padding remains
+unmeasured/NA and release1 remains an attempt, not Free success.
+
+J5 remains immutable FailedClosed: five entered stage trees closed, eight
+groups unverified/counter null, zero wrappers and NativeInputsReverified=false.
+Original owner/five retained handles,959 streams/saved handles, three readbacks,
+lease release, same-host finite postflight and true exit completed. The thread
+handle was null/unmeasured; Root fresh closure completed at08:46:02 UTC. The
+two logs were each captured once after closure. No original log or artifact is
+reopened by this correction.
+
+The first Source discrepancy is the original-graph name branch. Native
+weapondef.cpp:585 tests a JSON value's `empty()`, false even for a string with
+zero characters. The old Python model used string truthiness and omitted two
+one-byte NUL requests for `accuracyGraphName=["",""]`. Adding these to the
+Source reconstruction yields24 entries (including two count0 vec2 calls),
+used6194 before the final16-byte reticle-name request and requested end6210.
+Only the final boundary is directly measured; earlier request labels/offsets
+are reconstructed. The predicted attachment offset5594 modulo observed align8
+is2. The earlier twenty-row table is incomplete; matching sizeof did not make
+it runtime proof. Capacity growth would not preserve that alignment preflight.
+
+The corrected model counts every permitted non-null graph-name string, including
+empty. Null is permitted only when both parent and uncoerced correlated original
+counts are0. The owned zero-graph builder now emits `[null,null]`; the existing
+native branch skips those strings. Nonzero-count null, count mismatches and
+unsupported types/shapes still refuse. No native parser/cut, allocator, packed
+no-padding cursor, instrumentation, /W4 /WX or acceptance criterion changes.
+
+Root and weapon explicitly approved three new authored weapon/report identities.
+Each weapon buffer is22356 bytes (previously22352); each report remains1764 bytes
+with a new digest. Attachment1806 and CSV66 bytes/digests remain identical, as do
+the literal references/edges/occurrences,13 false flags, demand6208 and offsets
+384/5592. All twelve future expected pins remain fixed Source constants;
+the C++ still hashes its private input copies against them. No old raw12 or
+J1-J5 plan/buffer/receipt/artifact is rewritten.
+
+The new header is81219 bytes, SHA256
+`61e9a981c4474bd6d2783f5bfd2c77bfebd15bc9cb2a2cfeac6430a0e4c741b5`;
+the Source case-summary digest is
+`5026784b19b7dd1cf7b60bee8841275eaa45572399b5d42a22f8087d55dd94a6`.
+New Source causals count the two empty-string NULs, preserve separate count0
+calls, constrain null to two correlated zeros and reconstruct the exact old
+base report/weapon pins before rejecting its misaligned attachment preflight
+and header emission. These new Source identities have no native qualification.
+All84 affected Source tests pass across native-body/schema, pair-core/fixture,
+inactive-session and private-input suites. The current C++ fixture, checked
+allocator, parser/cuts and instrumentation remain byte-identical to `d6525ca`.
+Exact-head Source review must precede any new capsule and distinct CPP GO.
 
 Before merge, review the exact Source head and prepare a fresh minimal native
 capsule with both real core TUs, the real inventory support, generated authored

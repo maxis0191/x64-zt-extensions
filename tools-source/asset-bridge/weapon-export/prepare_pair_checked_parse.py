@@ -19,8 +19,8 @@ PINS = {
     NATIVE + 'utils/io/filesystem.cpp': '580cdb455ad178b1cb14fcadecea1a7ec2738ecdd25b655aa12254b9098a76c2',
     NATIVE + 'utils/memory.hpp': '9025b835313ee45ba3418e3322210dec3b6d334e504a1dd3b59e9f38e2898f35',
     'tools-source/asset-bridge/weapon-export/native_neutral_dependencies.hpp': 'b5d4aa4f09db9eb28434e350e5cd9358ee522cd683882539476e2a0bb6e4c95e',
-    'tools-source/asset-bridge/weapon-export/neutral_pair_bodies.py': '2d6aa9bdd723bf1717c0b04bb9333aaf162c576212df88b827a30621cf9b1e4d',
-    'tools-source/asset-bridge/weapon-export/NATIVE-BODY-SCHEMA.md': '00b83ce302028d4fdfe1ed98c4aa7d6bb2e5a467db57fbf217f7194b7ff6cc64',
+    'tools-source/asset-bridge/weapon-export/neutral_pair_bodies.py': '820c8580549c3d0e5022e58d5f5bfc120d23db64b9f9f6e4513e05494c178626',
+    'tools-source/asset-bridge/weapon-export/NATIVE-BODY-SCHEMA.md': 'ac2980872c1ae97b76a998998e43b88601eb33ae14ab6a3677d3c6fb1b338809',
 }
 HEADER_DESTINATION = NATIVE + 'utils/native_pair_session.hpp'
 EXPLICIT_HEADER_BYTES = 8349
