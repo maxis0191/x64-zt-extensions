@@ -85,12 +85,88 @@ exercise the real renderer, not a duplicate renderer, and inspect inactive hook
 bodies/default preservation, guard order, no copy/move, restore failure reporting
 and absent integration.
 
-`test_pair_session.cpp` authors twelve future checks using the production header
+`test_pair_session.cpp` authors twelve checks using the production header
 with owned fake identities/routes/components: ordering and refusal, unwindable
 restore/partial construction, both map lifetimes and guard-last destruction.
-It is **AUTHORED, NOT COMPILED OR EXECUTED** in this Source lot. Source checks do
-not claim those C++ cases passed. A later CPP operation needs separate admission.
+Python Source checks do not execute those C++ cases or grant native permission.
 
 ```powershell
 python -B -m unittest -v test_pair_session_source
 ```
+
+### Admitted CPP G checkpoint — 2026-10-16
+
+A separately reviewed and admitted five-stage operation compiled Source
+`2b48cd810de3c7bd8cb005f2ea07d17bdb0fb27d`, tree
+`ae57ab273fa504b4451987a38b61d877f7af2123`, against native Source pin
+`fab935826c898806855376662a8a03317b3ad8f1`. Later documentation and merge commits
+are not additional compiled heads. No old object or earlier CPP qualification
+was inherited. The staged project sources were freshly obtained from that Git
+pin; the compiler/SDK declarations remained opaque until admission.
+
+| Stage | Observed result |
+| --- | --- |
+| Production-header fake fixture compile | Exit 0 |
+| Production-header fake fixture run | All 12 checks PASS; exact stdout verified; exit 0 |
+| Patched `weapondef.cpp` compile | Exit 0 |
+| Patched `weaponattachment.cpp` compile | Exit 0 |
+| Patched `filesystem.cpp` compile | Exit 0 |
+
+All five original process/job trees closed. Each compiler's retained `vctip`
+member was observed and closed through its original job; final active/listed
+counts were zero. The probe recorded `Original process differs from scheduler
+observation.` during CIM registration. The pre-existing reviewed fallback
+confirmed the captured original job was already empty, the original process
+exited 0 and the expected twelve-check stdout matched. This does not establish
+why the registration observations differed, and no retry or adoption occurred.
+
+Each of the four compiles verified its 222 bound Source inputs; actual compiler
+dependencies remained inside the guarded set. Inherited inputs were rechecked.
+Maximum observed output was 34,976,985 bytes under the fixed 256 MiB bound.
+The group/compile/probe deadlines were 600/120/15 seconds; positive 4/6 GiB
+planning estimates introduced no RAM or commit admission minimum.
+
+The retained original context confirmed owner closure, lease release, zero
+remaining guards, measured/final same-stream readbacks within the deadline, and
+all 1,619 original FileStream references plus their 1,619 saved SafeHandles
+closed. The three original publications were read back on their original
+streams; their pre-disposal snapshots are distinct from the later closure
+proof. The bundled physical NoExit/dot host remained open for that proof, then
+exited normally with code 0. Root independently verified all eleven tracked
+process identities absent and the account lease registry empty before release.
+
+The initial separate receipt helper was rejected in Source review because its
+arbitrary absolute JSON destination admitted alternate streams. The preserved
+sibling B correction binds one literal owned Source destination, checks ordinary
+non-reparse ancestors, and uses bounded CreateNew ReadWrite publication,
+Flush(true), same-stream byte/hash/JSON readback and actual stream/SafeHandle
+closure before returning metadata. Seventeen Source causal checks passed;
+positive publication used an explicitly substituted isolated Source/fake path,
+never a false actual preexit receipt. Its caller held and pinned the helper's
+original Source stream, dotted those same held bytes, rechecked it and confirmed
+the original Source guard closed. The new publication's actual references were
+checked inside the writer before return; they were not exported for a later
+reference recheck. No native output was reopened, inspected or hashed after
+release. The original plan, runner and launch capsule remained unchanged.
+
+Reproducibility bindings retained with the local operational evidence:
+
+| Source evidence | SHA-256 |
+| --- | --- |
+| Exact G plan | `574905d074b13954864828b7b3ec28a929662b95865735482579cdf4cf72668f` |
+| Original-context B preexit receipt | `fc1f76df94e7b3ed29a4bc214b178165846fa894012cc6f7cd56cf8d0dbaa6cc` |
+| Independent Root closed postflight | `065ceab54730ac47158aa477eb3db3783831281dca22c4478f6f146ee5dd41ed` |
+
+The same code head also completed 169 Python module tests: 168 passed and one
+existing composed-package dependency test skipped. The ten targeted Source
+tests passed separately. These are local results; hosted jobs refused before
+any runner/step because of the account billing/spending condition are **not CI
+passes** and require the existing narrowly scoped workflow exception.
+
+CPP G qualifies compilation of the inactive hooks and the twelve owned fake
+cases only. It does not execute native parser bodies or the real allocator,
+inspect a live FILE, prove a route seal, create a full CLI, or authorize any
+actual pair input, FF, runtime, grant, physics/PAP transaction or gameplay.
+Fatal allocator closure and actual activation remain false; Ready remains false.
+The next step is a small separately reviewed Source proposal for the original
+raw-buffer bridge, live-file admission and fatal allocation boundary.
