@@ -657,7 +657,8 @@ same-context preexit proves closure without rewriting it. External Source and
 host saved SFH remained held until the distinct terminal GO; the same Source
 was rechecked/closed before original Process disposal and true exit0. Roots
 were retained until death; kernel CloseHandle's return was not separately
-measured. Root observed terminal chunk `a2b58f` at 06:58:54 UTC and then fresh
+measured. Root issued the distinct terminal GO at 06:58:54.2529225 UTC, then
+observed true exit0, terminal chunk `a2b58f`, before the fresh
 06:59:23.3431656 UTC absence of all seven captured identities, preserved Main
 identity and an empty V1 lease registry. Terminal-call latency 0.0000339s is not
 total PTY wall time. The original terminal must never be polled or replayed.

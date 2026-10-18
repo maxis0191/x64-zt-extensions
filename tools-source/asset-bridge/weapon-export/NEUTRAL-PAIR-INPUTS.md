@@ -148,8 +148,9 @@ The external Source stream and host saved SFH remained held until Root's
 distinct terminal GO. That same Source was rechecked and closed, then the
 original Process was disposed at the known-closure gate. The original roots
 were retained until process death; no claim that both roots became null is
-made. Kernel CloseHandle's return was not measured separately. Root observed
-true exit0 at 06:58:54 UTC, terminal chunk `a2b58f`; that session is terminal and
+made. Kernel CloseHandle's return was not measured separately. Root issued the
+distinct terminal GO at 06:58:54.2529225 UTC, then observed true exit0, terminal
+chunk `a2b58f`; that session is terminal and
 must never be polled or replayed. The terminal tool call's 0.0000339-second
 latency is not total PTY duration, which was not measured.
 
