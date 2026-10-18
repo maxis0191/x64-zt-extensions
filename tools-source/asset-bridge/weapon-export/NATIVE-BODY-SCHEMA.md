@@ -109,6 +109,40 @@ not a body decoder/interpreter, real-pair admission, arena or engine ABI,
 builder/CLI/FF integration, readiness or gameplay. It does not qualify the future
 DOC commit or merge as newly compiled Source.
 
+## Inactive SAME-owned C++ body preflight
+
+`iw7::neutral::player_pair_bodies::validate_owned_pair_bodies(const
+player_pair_input::OwnedInput&)` ports the existing Python dialect to the pinned
+constants. It calls the real J9 report checker before decoding either body. A
+public PRIMARY SAX guard checks floating lexemes and decoded duplicate keys;
+ordered DOM decoding then reads the SAME owned role bytes, with independent
+32,768-value/container, root-depth64 and 8,192-element array limits in both passes.
+Raw BOM/NUL, malformed UTF-8/surrogates, decoded NUL, trailing input and silent
+callback discard are refused. Lexer/JSON/STL temporaries use ordinary memory;
+this is not allocation-free or an arena-owner guarantee.
+
+The seventeen operation tags and eight manual handlers preserve literal keys,
+null/count relationships, named counters and the full Python front door: private
+names, BULLET1/NONE0, literal PAP true and one declared association in six slots.
+Strings do not resolve an unused pointer target layout; an actual layout request
+still refuses an unknown type. Demand/domain checks complete before a second
+weapon-then-attachment trace enables Source alignment, without padding or reset.
+The trace is ordinary internal diagnostics, not a parse capability or permission.
+
+Boolean, integer and floating variants remain distinct. Signed zeros with a zero mantissa are
+allowed for floating targets; a nonzero mantissa underflowing to zero refuses.
+IEEE binary32 conversion preserves Python's rounding just above its maximum up
+to the exclusive halfway overflow boundary, without an out-of-range C++ cast.
+No engine ABI, real-pair input, native core/arena/routing, builder, CLI, FF,
+readiness or gameplay is supplied. The new C++ fixture is AUTHORED, NOT COMPILED
+or executed: eight groups have the authored marker `IW7_OWNED_BODY_PREFLIGHT=8`.
+Its ordinary-memory causal arms the first standard-new failure reached after
+entering the decoder; the exact failing allocation is unknown. This does not
+prove late-allocation or general unwind behavior. Six Python checks cover static
+Source dispatch/order/integration only. J10 qualified only the earlier constants
+fixture. New compilation and exact original closure require their own reviewed
+recipe and distinct GO.
+
 ## Exact input rules
 
 Objects have exact keys; booleans, integers, ranges and enum domains are checked
