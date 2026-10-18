@@ -297,11 +297,11 @@ static void standard_allocation_frontiers() {
         catch(const allocation_fault::Failure&){allocation_fault::armed=false;check(std::current_exception()==allocation_fault::primary);refused=true;}
         allocation_fault::armed=false;check(refused&&report.calls==4);closed(report);unwatch();}
     // Adopt's storage allocation failure leaves BOTH existing caller variables.
-    {Observation report;auto raw=data.own();auto guard=std::make_unique<Guard>(report);auto* original_raw=raw.get();auto* original_guard=guard.get();
+    {Observation report;auto raw=data.own();auto guard=std::make_unique<Guard>(report);auto* original_raw_owner=raw.get();auto* original_guard=guard.get();
         watch(report,raw.get());allocation_fault::remaining=0;allocation_fault::armed=true;bool refused=false;
         try{auto value=owned::adopt_owned(std::move(guard),std::move(raw));(void)value;}
         catch(const allocation_fault::Failure&){allocation_fault::armed=false;refused=true;}
-        allocation_fault::armed=false;check(refused&&raw.get()==original_raw&&guard.get()==original_guard);
+        allocation_fault::armed=false;check(refused&&raw.get()==original_raw_owner&&guard.get()==original_guard);
         raw.reset();guard.reset();closed(report);unwatch();}
 }
 static void primary_and_cleanup_kept_distinct() {
