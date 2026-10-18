@@ -1,9 +1,10 @@
-// This extracted-owner revision is AUTHORED, NOT COMPILED/LINKED/EXECUTED.
+// This real-preflight composition is AUTHORED, NOT COMPILED/LINKED/EXECUTED.
 // J7 qualifies its older exact Source only. A new admitted native GO is required.
 // No fake parser, DB/SL/filesystem stub, builder, captured input or game entry.
 #include "weapon_pair_json_core.hpp"
 #include "native_pair_session.hpp"
 #include "native_pair_owned_input.hpp"
+#include "native_pair_bodies.hpp"
 #include "native_neutral_dependencies.hpp"
 #include <algorithm>
 #include <exception>
@@ -55,6 +56,8 @@ namespace authored_pair_fixture
     enum class ParsePhase : unsigned { pair_construction, weapon_parse, attachment_parse, post_parse };
     struct Stats : input::Counters
     {
+        // Constructor hashes and explicit core DOM reads only; the real
+        // preflight performs additional hashing/JSON work outside these counters.
         unsigned decodes{}, arenas{}, weapon_parses{}, attachment_parses{}, publications{};
         ParsePhase phase = ParsePhase::pair_construction;
     };
@@ -66,6 +69,7 @@ namespace authored_pair_fixture
         Buffers(const Inputs& incoming, const Pins& trusted, Stats& stats)
             : raw(incoming, trusted, stats)
         {
+            iw7::neutral::player_pair_bodies::validate_owned_pair_bodies(raw);
             const auto report=pq::ordered_json::parse(raw.bytes(input::Role::report));++stats.decodes;
             for(const char* flag:{"bo3_assets_authenticated","external_name_driven_gameplay_verified","native_parser_verified","ff_built","roundtrip_verified","runtime_abi_verified","lifetime_verified","weapon_granted","projectile_damage_verified","physics_qualified","retail_pap_transaction_verified","gameplay_accepted","ready"}) need(report.at(flag).is_boolean()&&!report.at(flag).get<bool>());
             weapon=pq::ordered_json::parse(raw.bytes(input::Role::weapon));++stats.decodes;
@@ -121,10 +125,12 @@ namespace authored_pair_fixture
     {
         require_approved_source(source); // Before copies, decoding or arena.
         Factory factory(source,incoming,report,stats,capacity?capacity:source.capacity);
+        const auto* const original_raw=&factory.raw_ref->raw;
         Result result;
         {
             stats.phase=ParsePhase::pair_construction;
             Pair pair(factory);
+            need(!factory.pending && &factory.raw_ref->raw == original_raw);
             try
             {
                 need(factory.weapon_map!=factory.attachment_map);
@@ -238,6 +244,42 @@ namespace authored_pair_fixture
             Inputs input=original.original;input[1]=bad;Report report;Stats stats;bool refused=false;
             try{execute(original,input,report,stats);}catch(const PinError&){refused=true;}
             need(refused&&stats.decodes==0&&stats.arenas==0&&stats.publications==0&&!report.bound());
+        }
+        // Fresh caller pins qualify only these direct ordinary Buffers negatives,
+        // never a fourth AuthoredCase address or a native parse through execute().
+        for(const bool report_mismatch:{true,false})
+        {
+            const auto& source=approved_cases[0];
+            std::array<std::string,4> changed,hashes;
+            for(size_t i=0;i<4;++i)changed[i]=source.original[i];
+            changed[1]="not-json-before-core-dom";
+            auto metadata=pq::ordered_json::parse(changed[0]);
+            for(auto& row:metadata["files"]) if(row["path"]=="weapons/sdk_shredder_clone_zm.json")
+            {
+                row["bytes"]=changed[1].size();
+                row["sha256"]=report_mismatch?std::string(64,'0'):sha256(changed[1]);
+            }
+            changed[0]=metadata.dump();Inputs incoming;Pins trusted;
+            for(size_t i=0;i<4;++i)
+            {
+                hashes[i]=sha256(changed[i]);incoming[i]=changed[i];
+                trusted[i]={changed[i].size(),hashes[i]};
+            }
+            Report report;Stats stats;bool refused=false;
+            try{Buffers buffers(incoming,trusted,stats);static_cast<void>(buffers);}
+            catch(const player_pair_report::ReportError& error)
+            {
+                need(report_mismatch&&std::string_view(error.what())=="Report row does not bind SAME owned role");
+                refused=true;
+            }
+            catch(const iw7::neutral::player_pair_bodies::detail::BodyError& error)
+            {
+                need(!report_mismatch&&std::string_view(error.what()).find("weapon:")==0);
+                refused=true;
+            }
+            need(refused&&stats.copies==4&&stats.hashes==4&&stats.decodes==0&&stats.arenas==0&&
+                stats.weapon_parses==0&&stats.attachment_parses==0&&stats.publications==0&&!report.bound());
+            // Zero decodes means no explicit core DOM read, not no validator work.
         }
     }
     void map_lifetime_and_first_pointer_wins()
