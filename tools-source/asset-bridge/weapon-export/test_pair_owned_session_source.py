@@ -10,7 +10,6 @@ ROOT = HERE.parents[2]
 UNCHANGED = {
     'native_pair_owned_input.hpp': (6833, 'f5c31c73c4e5e5e152bb29bf9efd55008297f81ab7c4b4ec9e562cf2059a44ce'),
     'native_pair_session.hpp': (8349, '65995c3552058107c572c70bd12f2b8134c81550edd87cf584fdbb5176dc7d93'),
-    'test_authored_pair_json.cpp': (21305, '55cd60cb30ad753299b44fd05ecbd32854aa4291d124899dc6e6a29e7d1111c7'),
     'native_pair_report.hpp': (12553, '301a8f2a381290abaedd7bd6f87cfe271b0c659af772b41a7873ff37497bd204'),
     'native_pair_bodies.hpp': (33561, '46647a305dca84d8c5bdadbbc6c344387b37000ede41cb07c3c0657da259d52f'),
     'native_pair_body_schema.hpp': (1073140, 'dbedd4632d8bb20686c8c1355d4b0200fc2c6149ba141897007f41252f555b75'),

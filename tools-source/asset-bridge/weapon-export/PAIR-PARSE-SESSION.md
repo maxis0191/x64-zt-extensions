@@ -389,3 +389,44 @@ closure still block activation. H3b supplied no actual raw body, live arena,
 full CLI, FF or game operation. Its separately admitted compiler/SDK access
 does not authorize integration or another run. Final exact-head CI disposition,
 independent review and the merge audit remain separate gates. Ready remains false.
+
+## Opt-in in-memory native components — Source preparation
+
+`native_pair_native_components.hpp` adds `make_in_memory_owned_pair` beside the
+generic typed owner. It receives an existing uniquely owned ingress, a capacity
+from the finite authored case, and the caller's original checked-memory report.
+That external report must outlive the returned pair. The configuration-only
+builder creates no arena or role DOM before the existing `Transfer` has completed
+the real report/body preflight on the SAME `OwnedInput`. Preflight itself uses
+temporary JSON objects and ordinary allocation; this is not a zero-decode gate.
+
+Each private role owns its DOM, script-string map and actual non-null parser
+return, and both roles use the SAME raw owner and arena. Only the concrete maker
+can complete the private bridge, once, after both real core calls return. The
+temporary builder supplies no surviving storage. `roots() const &` returns a
+borrowed const view whose owner must remain alive; the rvalue overload is deleted,
+and absence still throws. It cannot prevent a caller retaining dangling copied
+pointers. Destruction retains the existing order: roots, attachment role, weapon
+role, arena, route, raw, guards. Each map dies before its role DOM. No public
+registration setter, mutable pair, mutable arena or authority token is added.
+
+The existing real-core fixture now authors this composition for the same three
+Source case addresses and unchanged twelve raw roles/oracles. It also authors
+repinned report/body refusals before role construction, private-access negatives,
+post-builder lifetime, and three ordinary-new storage failures identified by
+actual allocation ordinal, size and arena-binding phase. The second-role capacity
+negative targets its actual root allocation; it is not a deep JSON-parser error.
+The original exception address is compared only while its handler is alive and
+then cleared. Cleanup status remains in the external report. These new C++ checks
+are **AUTHORED, NON-COMPILED** at Source preparation. Python checks and RAM renders
+qualify Source only; they do not supply a new C++ pass or OS/fatal cleanup proof.
+
+The fixture's declared support closure grows from ten to twelve Sources by adding
+the typed owner and companion. A future separately reviewed eight-phase capsule
+must close those includes and freshly compile both cores and the fixture; no
+consumed plan or canonical runner is patched here. The previous J16/J18 evidence
+qualifies their exact earlier Sources. No name/FILE route, DB fallback, full CLI,
+engine ABI, actual stock pair, FF, Game or Ready acceptance is supplied, and all
+three inactive native hooks keep rejecting. External live-FILE-before-first-byte,
+route/alias/CWD exclusion, real guard authority and fatal closure remain separate
+unimplemented gates.

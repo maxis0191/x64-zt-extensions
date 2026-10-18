@@ -17,6 +17,8 @@ FIXTURE_SOURCE_FILES = (
     'test_authored_pair_json.cpp',
     'native_pair_session.hpp',
     'native_pair_owned_input.hpp',
+    'native_pair_owned_session.hpp',
+    'native_pair_native_components.hpp',
     'native_pair_bodies.hpp',
     'native_pair_report.hpp',
     'native_pair_body_schema.hpp',

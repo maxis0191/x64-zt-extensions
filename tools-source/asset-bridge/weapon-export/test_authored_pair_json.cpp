@@ -1,16 +1,63 @@
-// This real-preflight composition is AUTHORED, NOT COMPILED/LINKED/EXECUTED.
-// J7 qualifies its older exact Source only. A new admitted native GO is required.
+// NativeComponents additions are AUTHORED, NOT COMPILED/LINKED/EXECUTED.
+// J16/J18 qualify their older exact Sources only. A new native GO is required.
 // No fake parser, DB/SL/filesystem stub, builder, captured input or game entry.
 #include "weapon_pair_json_core.hpp"
 #include "native_pair_session.hpp"
 #include "native_pair_owned_input.hpp"
 #include "native_pair_bodies.hpp"
+#include "native_pair_native_components.hpp"
 #include "native_neutral_dependencies.hpp"
 #include <algorithm>
 #include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
+#include <cstdlib>
+#include <new>
+
+// Fixture-local ordinary-new observation only; never a production injection API.
+namespace native_component_fault
+{
+    struct Allocation { void* pointer; size_t bytes; bool arena_bound; };
+    inline Allocation allocations[65536]{};
+    inline void* deletions[65536]{};
+    inline size_t calls{}, deletes{}, fail_at{}, failed_bytes{};
+    inline bool active{}, failed_bound{};
+    inline const zonetool::checked_memory_report* report{};
+    inline const std::bad_alloc* primary{};
+    void begin(const zonetool::checked_memory_report& value, size_t failure = 0) noexcept
+    { calls=deletes=failed_bytes=0;failed_bound=false;fail_at=failure;report=&value;primary=nullptr;active=true; }
+    struct Watch final
+    {
+        explicit Watch(const zonetool::checked_memory_report& value,size_t failure=0) noexcept{begin(value,failure);}
+        ~Watch() noexcept{active=false;primary=nullptr;report=nullptr;}
+    };
+    void* allocate(size_t bytes)
+    {
+        const auto ordinal=active?++calls:0;
+        if(active&&(ordinal>65536||ordinal==fail_at))
+        {
+            failed_bytes=bytes;failed_bound=report->bound();
+            try{throw std::bad_alloc();}
+            catch(const std::bad_alloc& error){primary=&error;throw;}
+        }
+        void* pointer=std::malloc(bytes?bytes:1);
+        if(!pointer)throw std::bad_alloc();
+        if(active)allocations[ordinal-1]={pointer,bytes,report->bound()};
+        return pointer;
+    }
+    void deallocate(void* pointer) noexcept
+    {
+        if(active&&pointer&&deletes<65536)deletions[deletes++]=pointer;
+        std::free(pointer);
+    }
+}
+void* operator new(size_t bytes){return native_component_fault::allocate(bytes);}
+void* operator new[](size_t bytes){return ::operator new(bytes);}
+void operator delete(void* pointer) noexcept{native_component_fault::deallocate(pointer);}
+void operator delete[](void* pointer) noexcept{::operator delete(pointer);}
+void operator delete(void* pointer,size_t) noexcept{::operator delete(pointer);}
+void operator delete[](void* pointer,size_t) noexcept{::operator delete(pointer);}
 
 namespace authored_pair_fixture
 {
@@ -25,6 +72,8 @@ namespace authored_pair_fixture
     using Pin = input::Pin;
     using Inputs = input::Inputs;
     using Pins = input::Pins;
+    namespace owned = player_pair_owned_session;
+    using Native = owned::NativeComponents;
     struct ExpectedReference { int type; std::string_view name; bool owned; };
     struct ExpectedEdge { size_t reference; nd::Owner owner; std::string_view path; };
     struct AuthoredCase
@@ -130,6 +179,7 @@ namespace authored_pair_fixture
         {
             stats.phase=ParsePhase::pair_construction;
             Pair pair(factory);
+            bool absent=false;try{pair.roots();}catch(const std::logic_error&){absent=true;}need(absent);
             need(!factory.pending && &factory.raw_ref->raw == original_raw);
             try
             {
@@ -148,6 +198,7 @@ namespace authored_pair_fixture
                 auto* attachment=pq::parse_attachment_json(factory.raw_ref->attachment,factory.memory,factory.attachment_map->strings);
                 stats.phase=ParsePhase::post_parse;
                 pair.retain_returned_roots(weapon,attachment);
+                bool duplicate=false;try{pair.retain_returned_roots(weapon,attachment);}catch(const std::logic_error&){duplicate=true;}need(duplicate);
                 need(reinterpret_cast<std::uintptr_t>(weapon)%alignof(WeaponCompleteDef)==0&&reinterpret_cast<std::uintptr_t>(attachment)%alignof(WeaponAttachment)==0);
                 need(reinterpret_cast<std::uintptr_t>(weapon->weapDef)==base+source.weapondef_offset&&reinterpret_cast<std::uintptr_t>(attachment)==base+source.attachment_offset);
                 need(weapon->weapDef->weapType==WEAPTYPE_BULLET&&attachment->weaponType==WEAPTYPE_NONE&&attachment->papAttachment);
@@ -173,6 +224,172 @@ namespace authored_pair_fixture
     }
     void released_once(const Report& report)
     {need(report.release_attempts()==1&&report.release()==Release::succeeded&&report.release_result_available()&&report.release_result()&&!report.cleanup_exception());}
+    struct NativeGuards final
+    {
+        unsigned& destroyed;
+        explicit NativeGuards(unsigned& value) noexcept:destroyed(value){}
+        ~NativeGuards() noexcept{++destroyed;}
+    };
+    using NativeOwner=owned::TypedOwnedPair<NativeGuards,Native>;
+    template<class T,class=void> struct exposes_completion:std::false_type{};
+    template<class T> struct exposes_completion<T,std::void_t<decltype(
+        std::declval<T&>().register_component_returns(std::declval<const typename T::Roots&>()))>>:std::true_type{};
+    template<class T,class=void> struct exposes_rvalue_roots:std::false_type{};
+    template<class T> struct exposes_rvalue_roots<T,std::void_t<decltype(std::declval<const T&&>().roots())>>:std::true_type{};
+    static_assert(!std::is_constructible_v<Native,size_t,Report&>);
+    static_assert(!std::is_constructible_v<Native::WeaponMap,const input::OwnedInput&,Arena&>);
+    static_assert(!std::is_constructible_v<Native::AttachmentMap,const input::OwnedInput&,Arena&>);
+    static_assert(!std::is_constructible_v<owned::detail::Transfer<NativeGuards,Native>,
+        std::unique_ptr<owned::OwnedIngress<NativeGuards>>&&,Native&>);
+    static_assert(!exposes_completion<NativeOwner>::value&&!exposes_rvalue_roots<NativeOwner>::value);
+    static_assert(std::is_same_v<decltype(std::declval<const NativeOwner&>().roots()),const NativeOwner::Roots&>);
+    static_assert(!noexcept(std::declval<const NativeOwner&>().roots()));
+    struct NativeReader
+    {
+        const Report& report;
+        static bool copy(void* out,const void* in,size_t count,void* context)
+        {
+            const auto& observation=static_cast<NativeReader*>(context)->report;
+            const auto base=reinterpret_cast<std::uintptr_t>(observation.original_pool()),at=reinterpret_cast<std::uintptr_t>(in);
+            if(!observation.bound()||observation.release()!=Release::not_attempted||at<base||
+                at-base>observation.capacity()||count>observation.capacity()-(at-base))return false;
+            std::memcpy(out,in,count);return true;
+        }
+    };
+    std::unique_ptr<owned::OwnedIngress<NativeGuards>> native_ingress(const AuthoredCase& source,
+        const Inputs& incoming,const Pins& pins,input::Counters& counters,unsigned& destroyed,NativeGuards** observer=nullptr)
+    {
+        require_approved_source(source); // SAME three original addresses, before any owner/copy.
+        auto guards=std::make_unique<NativeGuards>(destroyed);
+        if(observer)*observer=guards.get(); // Borrowed address for deletion observation only.
+        return owned::copy_with_guards(std::move(guards),incoming,pins,counters);
+    }
+    size_t last_delete(const void* pointer)
+    {
+        for(size_t i=native_component_fault::deletes;i>0;--i)
+            if(native_component_fault::deletions[i-1]==pointer)return i;
+        throw std::runtime_error("Expected original owner deletion missing");
+    }
+    size_t allocation_of(const void* pointer)
+    {
+        for(size_t i=native_component_fault::calls;i>0;--i)
+            if(native_component_fault::allocations[i-1].pointer==pointer)return i;
+        throw std::runtime_error("Expected original allocation missing");
+    }
+    void native_components_variants()
+    {
+        for(const auto& source:approved_cases)
+        {
+            Report report;input::Counters counters;unsigned destroyed=0;
+            auto ingress=native_ingress(source,source.original,source.trusted_source_pins,counters,destroyed);
+            const auto* raw=&ingress->input();
+            auto owner=owned::make_in_memory_owned_pair(std::move(ingress),source.capacity,report);
+            // The configuration-only builder is already dead here. Roots borrow
+            // their owner; only the copied Inventory below can outlive that owner.
+            need(!ingress && &owner->input()==raw&&counters.copies==4&&counters.hashes==4&&destroyed==0);
+            const auto& roots=owner->roots();need(&roots==&owner->roots()&&roots.weapon&&roots.attachment);
+            const auto base=reinterpret_cast<std::uintptr_t>(report.original_pool());
+            need(reinterpret_cast<std::uintptr_t>(roots.weapon->weapDef)==base+source.weapondef_offset&&
+                reinterpret_cast<std::uintptr_t>(roots.attachment)==base+source.attachment_offset);
+            NativeReader reader{report};nd::Inventory inventory(NativeReader::copy,&reader);
+            need(nd::inventory_pair(const_cast<WeaponCompleteDef*>(roots.weapon),
+                const_cast<WeaponAttachment*>(roots.attachment),inventory));
+            Result result{inventory.references(),inventory.edges(),inventory.occurrences()};
+            need(inventory.good()&&inventory.frozen()&&oracle(source,result));
+            owner.reset();need(destroyed==1);released_once(report);need(oracle(source,result));
+        }
+    }
+    void native_preflight_refusals()
+    {
+        for(const bool report_mismatch:{true,false})
+        {
+            const auto& source=approved_cases[0];
+            std::array<std::string,4> bytes,hashes;for(size_t i=0;i<4;++i)bytes[i]=source.original[i];
+            bytes[1]="not-json-before-native-role-dom";
+            auto metadata=pq::ordered_json::parse(bytes[0]);
+            for(auto& row:metadata["files"])if(row["path"]=="weapons/sdk_shredder_clone_zm.json")
+            {row["bytes"]=bytes[1].size();row["sha256"]=report_mismatch?std::string(64,'0'):sha256(bytes[1]);}
+            bytes[0]=metadata.dump();Inputs incoming;Pins pins;
+            for(size_t i=0;i<4;++i){hashes[i]=sha256(bytes[i]);incoming[i]=bytes[i];pins[i]={bytes[i].size(),hashes[i]};}
+            Report report;input::Counters counters;unsigned destroyed=0;bool refused=false;
+            auto ingress=native_ingress(source,incoming,pins,counters,destroyed);
+            try{auto value=owned::make_in_memory_owned_pair(std::move(ingress),source.capacity,report);static_cast<void>(value);}
+            catch(const player_pair_report::ReportError& error)
+            {need(report_mismatch&&std::string_view(error.what())=="Report row does not bind SAME owned role");refused=true;}
+            catch(const iw7::neutral::player_pair_bodies::detail::BodyError& error)
+            {need(!report_mismatch&&std::string_view(error.what()).find("weapon:")==0);refused=true;}
+            need(refused&&!ingress&&destroyed==1&&counters.copies==4&&counters.hashes==4&&!report.bound());
+            // This observes no role arena. The real preflight has its own JSON
+            // temporaries; it is not a zero-allocation or zero-decode operation.
+        }
+    }
+    void native_second_role_capacity_failure()
+    {
+        const auto& source=approved_cases[0];Report report;input::Counters counters;unsigned destroyed=0;bool refused=false;
+        auto ingress=native_ingress(source,source.original,source.trusted_source_pins,counters,destroyed);
+        try{auto value=owned::make_in_memory_owned_pair(std::move(ingress),source.attachment_offset,report);static_cast<void>(value);}
+        catch(const zonetool::checked_memory_error& error)
+        {
+            const auto& failure=report.allocation_failure();
+            need(error.reason()==Failure::capacity&&failure.available&&failure.used_before==source.attachment_offset&&
+                failure.element_bytes==sizeof(WeaponAttachment)&&failure.count==1&&report.primary()==Failure::capacity);
+            refused=true; // The actual second core's root allocation, not a deep JSON error.
+        }
+        need(refused&&!ingress&&destroyed==1);released_once(report);
+    }
+    void native_storage_failures_and_order()
+    {
+        const auto& source=approved_cases[0];std::array<size_t,3> phases{};
+        {
+            Report report;input::Counters counters;unsigned destroyed=0;
+            NativeGuards* guards=nullptr;
+            auto ingress=native_ingress(source,source.original,source.trusted_source_pins,counters,destroyed,&guards);
+            const auto* raw=&ingress->input();
+            native_component_fault::Watch watch(report);
+            auto owner=owned::make_in_memory_owned_pair(std::move(ingress),source.capacity,report);
+            const auto* wrapper=owner.get();
+            phases[2]=allocation_of(wrapper);
+            // First ordinary allocation after checked arena binding is the
+            // first role's storage (before its DOM). Check its actual size too.
+            for(size_t i=0;i<native_component_fault::calls;++i)
+                if(native_component_fault::allocations[i].arena_bound){phases[1]=i+1;break;}
+            need(phases[1]&&native_component_fault::allocations[phases[1]-1].bytes==sizeof(Native::WeaponMap));
+            const void* weapon_component=native_component_fault::allocations[phases[1]-1].pointer;
+            const void* arena=report.owner();
+            owner.reset();
+            need(native_component_fault::deletes>=2);
+            const void* pair=native_component_fault::deletions[native_component_fault::deletes-2];
+            phases[0]=allocation_of(pair);
+            need(native_component_fault::allocations[phases[0]-1].bytes==sizeof(owned::detail::Pair<NativeGuards,Native>));
+            need(last_delete(weapon_component)<last_delete(arena)&&last_delete(arena)<last_delete(raw)&&
+                last_delete(raw)<last_delete(guards)&&last_delete(guards)<last_delete(pair)&&last_delete(pair)<last_delete(wrapper));
+            native_component_fault::active=false;
+            need(destroyed==1&&phases[0]<phases[1]&&phases[1]<phases[2]);released_once(report);
+        }
+        for(size_t phase=0;phase<phases.size();++phase)
+        {
+            Report report;input::Counters counters;unsigned destroyed=0;bool refused=false;
+            auto ingress=native_ingress(source,source.original,source.trusted_source_pins,counters,destroyed);
+            const auto* raw=&ingress->input();
+            native_component_fault::Watch watch(report,phases[phase]);
+            try{auto value=owned::make_in_memory_owned_pair(std::move(ingress),source.capacity,report);static_cast<void>(value);}
+            catch(const std::bad_alloc& error)
+            {
+                need(&error==native_component_fault::primary); // SAME live exception, not current_exception() copies.
+                native_component_fault::primary=nullptr;refused=true;
+            }
+            native_component_fault::active=false;
+            need(refused&&!ingress&&destroyed==1&&native_component_fault::calls==phases[phase]&&
+                native_component_fault::primary==nullptr&&last_delete(raw)>0&&report.primary()==Failure::none);
+            const std::array<size_t,3> expected_sizes{sizeof(owned::detail::Pair<NativeGuards,Native>),
+                sizeof(Native::WeaponMap),sizeof(NativeOwner)};
+            need(native_component_fault::failed_bytes==expected_sizes[phase]&&native_component_fault::failed_bound==(phase!=0));
+            if(phase==0)need(!report.bound()&&report.release_attempts()==0);
+            else released_once(report);
+        }
+        // These are storage-before-move/DOM frontiers. None is claimed as a
+        // parser-internal allocation failure or a fatal allocator/OS guarantee.
+    }
     void hash_vectors()
     {
         need(sha256("")=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
@@ -227,6 +444,7 @@ namespace authored_pair_fixture
             if(i==0)golden=actual;else need(!oracle(approved_cases[i],golden)); // A prefab golden result cannot satisfy mutants.
         }
     }
+    void real_pair_and_native_variants(){real_pair_variants();native_components_variants();}
     void same_length_old_pin_refuses()
     {
         Report report;Stats stats;bool refused=false;
@@ -281,6 +499,7 @@ namespace authored_pair_fixture
                 stats.weapon_parses==0&&stats.attachment_parses==0&&stats.publications==0&&!report.bound());
             // Zero decodes means no explicit core DOM read, not no validator work.
         }
+        native_preflight_refusals();
     }
     void map_lifetime_and_first_pointer_wins()
     {Report report;Stats stats;const auto& c=approved_cases[0];const auto r=execute(c,c.original,report,stats,Mode::preseed_maps);released_once(report);need(oracle(c,r));}
@@ -289,6 +508,7 @@ namespace authored_pair_fixture
         Report report;Stats stats;bool refused=false;
         try{execute(approved_cases[0],approved_cases[0].original,report,stats,Mode::normal,1);}catch(const zonetool::checked_memory_error& e){refused=e.reason()==Failure::capacity;}
         need(refused&&stats.publications==0&&stats.attachment_parses==0&&report.primary()==Failure::capacity);released_once(report);
+        native_second_role_capacity_failure();
     }
     void real_second_parse_error_keeps_primary()
     {
@@ -314,16 +534,21 @@ namespace authored_pair_fixture
         try{execute(fourth,fourth.original,fourth_report,fourth_stats);}catch(const PinError&){fourth_refused=true;}
         need(fourth_refused&&fourth_stats.copies==0&&fourth_stats.hashes==0&&fourth_stats.decodes==0&&
             fourth_stats.arenas==0&&fourth_stats.publications==0&&!fourth_report.bound());
+        input::Counters fourth_counters;unsigned fourth_destroyed=0;bool native_fourth_refused=false;
+        try{auto ingress=native_ingress(fourth,fourth.original,fourth.trusted_source_pins,fourth_counters,fourth_destroyed);static_cast<void>(ingress);}
+        catch(const PinError&){native_fourth_refused=true;}
+        need(native_fourth_refused&&fourth_counters.copies==0&&fourth_counters.hashes==0&&fourth_destroyed==0);
         Report report;Stats stats;bool refused=false;
         try{execute(approved_cases[0],approved_cases[0].original,report,stats,Mode::bypass_core);}catch(const std::logic_error&){refused=true;}
         need(refused&&stats.weapon_parses==0&&stats.publications==0);released_once(report);
+        native_storage_failures_and_order();
     }
 }
 int main()
 {
     using namespace authored_pair_fixture;
     struct Case{const char* name;void(*run)();};
-    const Case tests[]={{"sha256_known_vectors",hash_vectors},{"real_pair_and_approved_mutants",real_pair_variants},
+    const Case tests[]={{"sha256_known_vectors",hash_vectors},{"real_pair_and_approved_mutants",real_pair_and_native_variants},
         {"same_length_mutant_old_source_pin_refuses",same_length_old_pin_refuses},{"malformed_raw_old_pins_refuse_before_decode",malformed_inputs_refuse_before_decode},
         {"real_maps_outlive_roots_first_pointer_wins",map_lifetime_and_first_pointer_wins},{"checked_capacity_failure_unwinds_once",capacity_failure_unwinds},
         {"real_second_parser_failure_keeps_primary",real_second_parse_error_keeps_primary},{"bypassed_core_cannot_publish_inventory",bypass_real_core_refuses}};
