@@ -533,6 +533,26 @@ imports/assembly loads, initializer/fallback calls or replacement factories refu
 The forbidden fallback is never invoked, restored, compiled or adopted here.
 NativeJob DLL and other opaque inputs stay behind full fresh admission/guards.
 
+J8 verifies the actual pinned `helper-link.rsp` and `fixture-link.rsp` texts
+before imports, using the retained J7 linker Source grammar: `/NOLOGO
+/INCREMENTAL:NO /DEBUG /MACHINE:X64 /SUBSYSTEM:CONSOLE /WX /NODEFAULTLIB`,
+their own exact executable/PDB outputs, and only the literal helper object or
+three core/fixture objects. Seven quoted library operands are selected uniquely
+from `FixtureLinkInput` declarations in the existing order (LIBCMT, LIBCPMT,
+LIBVCRUNTIME, OLDNAMES, LIBUCRT, KERNEL32, USER32). No library/SDK file is queried
+by this check; it establishes no SDK compatibility. Correct plan maps cannot
+excuse an empty, swapped or repinned response with missing/old/extra objects,
+changed output, missing library or unapproved flag. Same-cohort production and
+original guards for those actual objects remain required at the real link.
+
+The four asset providers also have a closed executable root shape: function
+definitions, Core's one literal `Set-StrictMode -Version Latest`, and Profile's
+two exact original-function capture assignments. New top-level member/command
+calls, assignments, root parameters, named blocks, attributes, using statements
+or traps refuse before any provider import. The causal tests repin each of the
+four Sources with an inert-to-the-test Process.Start text or an unknown command;
+only Parser/production DEFAULT analysis observes those texts, never evaluation.
+
 Light checks parse the real provider Sources and exercise the actual finite
 analyzer with initializer, lock-body, top-level, dynamic-call, fallback-type and
 factory mutants. They distinguish inert strings/definitions from calls. Budget
@@ -552,9 +572,18 @@ Unknown or expired states retain original references; safety never promotes them
 Ready, ActualPairParseActivated and FatalAllocatorClosure remain false; there is
 no U1/T2/body/stock, CLI/FF/Game, engine ABI/grant/physics/PAP or BO3 authorization.
 
-At this Source checkpoint, `python -B -m unittest -v test_build_default` passed
-26 tests in 46.035 seconds, including real eleven-provider AST analysis and its
-pure lock/initializer mutants; no test skipped. The existing light
+Before the linker-response/root-shape correction,
+`python -B -m unittest -v test_build_default` passed 26 tests in 46.035 seconds,
+including real eleven-provider AST analysis and its pure lock/initializer
+mutants; no test skipped. The existing light
 `Test-H1Native.ps1` passed 102 assertions with NativeTypesLoaded, RealJobsTested,
 LeaseAcquired and CompilerLaunched all false. These runs used selected production
 function ASTs, fake ownership APIs and owned temporary Source files only.
+
+After this correction, the same Python Source command passed 28 tests in
+72.378 seconds, without skips. The two new causals cover 22 repinned linker
+response mutants (eleven per linker) and eight repinned root member/command
+mutants (two per asset provider). The positive contains two complete fixed
+linker responses; all opaque inputs remain nonexistent synthetic declarations
+in that fixture. Neither these metadata responses nor these tests are a build,
+SDK qualification, native execution result or new actual authorization.

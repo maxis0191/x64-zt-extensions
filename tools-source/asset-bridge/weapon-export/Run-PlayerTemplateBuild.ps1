@@ -258,6 +258,35 @@ function Assert-PlayerOwnedInputPassed($Plan,$State) {
         if($stage.TreeClosureConfirmed -isnot [bool] -or !$stage.TreeClosureConfirmed -or $stage.ExitCode -ne 0){throw 'Every original J8 stage must exit zero with known closure.'}
     }
 }
+function Assert-PlayerOwnedInputLinkResponses($Plan) {
+    # Exact J8 linker Source grammar from the retained J7 fixture-link response.
+    # Paths here are declaration strings only: NEVER open/stat/hash a library.
+    if($Plan.RunRoot -isnot [string] -or ![IO.Path]::IsPathFullyQualified($Plan.RunRoot) -or
+       [IO.Path]::GetFullPath($Plan.RunRoot) -cne $Plan.RunRoot -or $Plan.RunRoot -match '["\x00-\x1f]'){throw 'Canonical J8 linker output root required.'}
+    $libraries=@()
+    foreach($name in 'LIBCMT.LIB','LIBCPMT.LIB','LIBVCRUNTIME.LIB','OLDNAMES.LIB','LIBUCRT.LIB','KERNEL32.LIB','USER32.LIB'){
+        $pins=@($Plan.RetainedInputPins|Where-Object {$_.InputRole -ceq 'FixtureLinkInput' -and [IO.Path]::GetFileName($_.Path) -ieq $name})
+        if($pins.Count -ne 1){throw 'One exact declared J8 linker library per fixed Source role required.'}
+        $pin=$pins[0]
+        if($pin.Path -isnot [string] -or ![IO.Path]::IsPathFullyQualified($pin.Path) -or
+           [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or $pin.Path -match '["\x00-\x1f]' -or
+           ($pin.Bytes -isnot [int] -and $pin.Bytes -isnot [long]) -or $pin.Bytes -le 0 -or
+           $pin.SHA256 -cnotmatch '\A[0-9a-f]{64}\z') {throw 'Canonical J8 linker library declaration required.'}
+        $libraries+=@($pin.Path)
+    }
+    foreach($program in 'helper','fixture'){
+        $name=$program+'-link';$root=Join-Path $Plan.RunRoot $name
+        $objects=if($program -ceq 'helper'){@((Join-Path $Plan.RunRoot 'helper-compile/helper.obj'))}
+            else{@((Join-Path $Plan.RunRoot 'weapon-core/weapon-core.obj'),(Join-Path $Plan.RunRoot 'attachment-core/attachment-core.obj'),(Join-Path $Plan.RunRoot 'fixture-compile/fixture.obj'))}
+        $response='/NOLOGO /INCREMENTAL:NO /DEBUG /MACHINE:X64 /SUBSYSTEM:CONSOLE /WX /NODEFAULTLIB /OUT:"'+
+            (Join-Path $root ($program+'.exe'))+'" /PDB:"'+(Join-Path $root ($program+'.pdb'))+'" '+
+            (@(@($objects)+$libraries|ForEach-Object {'"'+$_+'"'}) -join ' ')+"`n"
+        $pins=@($Plan.PreparedBindings|Where-Object Path -CEQ (Join-Path $Plan.PreparedRoot ($name+'.rsp')))
+        if($pins.Count -ne 1){throw 'One complete J8 linker response Source pin required.'}
+        $text=Read-PlayerAuthoredSource $pins[0].Path $pins[0].SHA256 $pins[0].Bytes
+        if($text.Replace("`r`n","`n") -cne $response){throw 'Exact J8 linker response requires only its fresh objects, fixed flags/libraries and own outputs.'}
+    }
+}
 function Assert-PlayerOwnedInputProviderGraph($Plan,$Texts) {
     # AST/Source only: NEVER dot these Sources, compile them or resolve an opaque provider.
     $pin=$Plan.CurrentProviderSourceSnapshot
@@ -344,6 +373,28 @@ function Assert-PlayerOwnedInputProviderAst($Sources) {
         }
     }
     if($seen.Count -ne $allowed.Count){throw 'Exact recursive Build scheduler allowlist required.'}
+    # These four Sources are actually dot-sourced. Close all executable root
+    # forms before scanning their function bodies; definitions are not imports.
+    foreach($name in @(($asset+'h1-fixture/H1Native.Core.ps1'),($asset+'h1-fixture/H1Native.Compiler.ps1'),($asset+'surfaces/MaterialV2.Compiler.ps1'),($asset+'t7-iw7/T7Build.Profile.ps1'))){
+        $tree=$trees[$name];$statements=@($tree.EndBlock.Statements)
+        if($tree.ParamBlock -or $tree.BeginBlock -or $tree.ProcessBlock -or $tree.CleanBlock -or
+           $tree.DynamicParamBlock -or $tree.UsingStatements.Count -or $tree.Attributes.Count -or !$tree.EndBlock -or ($tree.EndBlock.Traps -and $tree.EndBlock.Traps.Count)){
+            throw 'Asset provider gained an unreviewed executable root form.'
+        }
+        $special=@{}
+        if($name -ceq ($asset+'h1-fixture/H1Native.Core.ps1')){$special[0]='Set-StrictMode -Version Latest'}
+        if($name -ceq ($asset+'t7-iw7/T7Build.Profile.ps1')){
+            $special[0]='$script:T7H1Deadline=${function:Assert-H1Deadline}'
+            $special[3]='$script:T7H1Budget=${function:Test-H1Budget}'
+        }
+        foreach($index in $special.Keys){if($index -ge $statements.Count){throw 'Exact asset provider root definitions required.'}}
+        for($index=0;$index -lt $statements.Count;$index++){
+            $node=$statements[$index]
+            if($special.ContainsKey($index)){
+                if($node.Extent.Text -cne $special[$index]){throw 'Asset provider gained an unreviewed top-level activation.'}
+            }elseif($node -isnot [Management.Automation.Language.FunctionDefinitionAst]){throw 'Asset provider gained an unreviewed top-level activation.'}
+        }
+    }
     $dynamic=@('& $BeforeReleaseCheck','& $script:T7H1Deadline $script:T7GroupStarted 600',
         '& $script:T7H1Deadline $Started $Seconds','& $script:T7H1Budget $Plan $State')
     foreach($name in @(($asset+'h1-fixture/H1Native.Core.ps1'),($asset+'h1-fixture/H1Native.Compiler.ps1'),($asset+'surfaces/MaterialV2.Compiler.ps1'),($asset+'t7-iw7/T7Build.Profile.ps1'))){
@@ -544,7 +595,10 @@ foreach($role in 'Writer','Caller','Bootstrap'){
     $pin=$plan.PostflightSources.$role
     if(@($plan.SourceBindings|Where-Object {$_.Path -ceq $pin.Path -and $_.SHA256 -ceq $pin.SHA256 -and $_.Bytes -eq $pin.Bytes}).Count -ne 1){throw 'Postflight Source pin absent.'}
 }
-if($ownedInputProfile){Assert-PlayerOwnedInputProviderGraph $plan $providerTexts}
+if($ownedInputProfile){
+    Assert-PlayerOwnedInputLinkResponses $plan
+    Assert-PlayerOwnedInputProviderGraph $plan $providerTexts
+}
 if(Test-Path -LiteralPath $plan.RunRoot){throw 'Fresh exact owned runtime root required.'}
 if(!$Run){
     $defaultResult=[ordered]@{Schema='iw7.authored-pair-core-cpp-default/1';PlanSHA256=$PlanSHA256;SourceHead=$plan.SourceHead;

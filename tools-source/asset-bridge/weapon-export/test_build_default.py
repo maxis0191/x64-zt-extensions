@@ -502,6 +502,16 @@ try{
         self.plan.update(HelperCases=helper,FixtureCases=fixture)
         prepared=Path(self.plan['PreparedRoot']);runtime=Path(self.plan['RunRoot'])
         self.plan['HelperLinkInputs']=[str(runtime/'helper-compile/helper.obj')]
+        # Declaration-only synthetic library pins. Their files do not exist.
+        libraries=[runtime.parent/'unopened-opaque'/'lib'/name for name in
+            ('LIBCMT.LIB','LIBCPMT.LIB','LIBVCRUNTIME.LIB','OLDNAMES.LIB','LIBUCRT.LIB','KERNEL32.LIB','USER32.LIB')]
+        for path in libraries:
+            self.plan['RetainedInputPins'].append(dict(Path=str(path),Bytes=1,SHA256='e'*64,
+                InputRole='FixtureLinkInput',DeclaredRoleRoot=str(runtime.parent/'unopened-opaque'),
+                ParentPlanSHA256='a'*64,AdmissionRequired=True))
+        self.replace_metadata(self.plan['CompilerInputRoleManifest'],dict(
+            Schema='iw7.authored-core-compiler-input-roles/1',OpaqueFilesQueried=False,
+            InheritedQualification=False,AdmissionBeforeOpaqueIO=True,Selected=self.plan['RetainedInputPins']))
         names=['helper-compile','helper-link','helper-test','weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test']
         self.plan['Stages']=[]
         for i,name in enumerate(names):
@@ -513,9 +523,19 @@ try{
                     Arguments=[],Artifacts=[],DeadlineSeconds=15,ExpectedChecks=len(cases),
                     ExpectedStdout=''.join('PASS '+c+'\n' for c in cases)+marker+'\n'))
             else:
-                response=prepared/(name+'.rsp');raw=b'/nologo /W4 /WX /c source-only.cpp\n';response.write_bytes(raw)
-                if not any(p['Path']==str(response) for p in self.plan['PreparedBindings']):
-                    self.plan['PreparedBindings'].append(dict(Path=str(response),Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest(),IsText=True))
+                response=prepared/(name+'.rsp')
+                text='/nologo /W4 /WX /c source-only.cpp\n'
+                if i in (1,6):
+                    objects=self.plan['HelperLinkInputs'] if i==1 else self.plan['GeneratedLinkInputs']
+                    # Real fixed linker Source syntax, not a compile-RSP stub.
+                    text=('/NOLOGO /INCREMENTAL:NO /DEBUG /MACHINE:X64 /SUBSYSTEM:CONSOLE /WX /NODEFAULTLIB '
+                          +'/OUT:"'+str(runtime/name/(program+'.exe'))+'" /PDB:"'
+                          +str(runtime/name/(program+'.pdb'))+'" '
+                          +' '.join('"'+str(path)+'"' for path in objects+libraries)+'\n')
+                pin=next((p for p in self.plan['PreparedBindings'] if p['Path']==str(response)),None)
+                if pin is None:
+                    pin=dict(Path=str(response),IsText=True);self.plan['PreparedBindings'].append(pin)
+                self.replace_source(pin,text)
                 artifacts=[program+'.exe',program+'.pdb'] if i in (1,6) else [
                     'helper.obj' if i==0 else 'fixture.obj' if i==5 else name+'.obj','compile.pdb','dependencies.json']
                 self.plan['Stages'].append(dict(Name=name,Stage='Link' if i in (1,6) else 'Compile',
@@ -528,6 +548,10 @@ try{
         for name in ('test_pair_owned_input.cpp','native_pair_owned_input.hpp'):
             raw=RUNNER.with_name(name).read_bytes();target=prepared/name;target.write_bytes(raw)
             self.plan['PreparedBindings'].append(dict(Path=str(target),Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest(),IsText=True))
+
+    def replace_source(self,pin,text):
+        raw=text.encode();Path(pin['Path']).write_bytes(raw)
+        pin.update(Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest())
 
     def replace_metadata(self,pin,value):
         raw=(json.dumps(value)+'\n').encode();Path(pin['Path']).write_bytes(raw)
@@ -552,6 +576,51 @@ try{
             self.plan=copy.deepcopy(original);mutate(self.plan)
             result=self.invoke();self.assertNotEqual(result.returncode,0,result.stdout)
             self.assertFalse((self.root/'unopened-opaque').exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
+
+    def test_j8_repinned_link_responses_bind_exact_fresh_objects_flags_libraries_and_outputs(self):
+        self.owned_input_plan()
+        pins={name:next(p for p in self.plan['PreparedBindings'] if p['Path']==str(Path(self.plan['PreparedRoot'])/(name+'-link.rsp')))
+              for name in ('helper','fixture')}
+        original={name:Path(pin['Path']).read_text() for name,pin in pins.items()}
+        for name in ('helper','fixture'):
+            text=original[name];other='fixture' if name=='helper' else 'helper'
+            objects=self.plan['HelperLinkInputs'] if name=='helper' else self.plan['GeneratedLinkInputs']
+            variants=dict(empty='',blank='\n',compile_rsp='/nologo /W4 /WX /c source-only.cpp\n',
+                missing_object=text.replace('"'+objects[0]+'" ',''),swapped_family=original[other],
+                old_object=text.replace(objects[0],str(self.root/'old-run'/'old.obj')),
+                extra_object=text.rstrip()+' "'+str(self.root/'old-run'/'extra.obj')+'"\n',
+                wrong_output=text.replace('/OUT:"','/OUT:"wrong-'),
+                wrong_pdb=text.replace('/PDB:"','/PDB:"wrong-'),
+                unknown_option=text.replace('/WX ','/WX /FORCE '),
+                missing_library=text[:text.rfind(' "')]+"\n")
+            for scenario,mutant in variants.items():
+                with self.subTest(program=name,scenario=scenario):
+                    for key,pin in pins.items():self.replace_source(pin,original[key])
+                    self.replace_source(pins[name],mutant)
+                    result=self.invoke();self.assertNotEqual(result.returncode,0,result.stdout)
+                    self.assertIn('Source tuple required' if not mutant else 'Exact J8 linker response',result.stderr)
+                    self.assertFalse((self.root/'unopened-opaque').exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
+
+    def test_j8_asset_provider_top_level_member_and_command_mutants_refuse_without_evaluation(self):
+        self.owned_input_plan()
+        paths=('h1-fixture/H1Native.Core.ps1','h1-fixture/H1Native.Compiler.ps1',
+               'surfaces/MaterialV2.Compiler.ps1','t7-iw7/T7Build.Profile.ps1')
+        for suffix in paths:
+            entry=next(e for e in self.provider_snapshot['Entries'] if e['SourcePath'].endswith('/'+suffix))
+            path=Path(entry['Path']);original=path.read_text()
+            parent=next(p for p in self.plan['ParentBindings'] if p['Path']==str(path))
+            # Parse/production DEFAULT only. NEVER import or evaluate these texts.
+            for addition in ("\n[Diagnostics.Process]::Start('source-only-never-run')\n",
+                             "\nInvoke-UnreviewedSourceOnly -NeverRun\n"):
+                with self.subTest(provider=suffix,addition=addition):
+                    self.replace_source(parent,original+addition)
+                    entry.update(Bytes=parent['Bytes'],SHA256=parent['SHA256'])
+                    self.replace_metadata(self.plan['CurrentProviderSourceSnapshot'],self.provider_snapshot)
+                    result=self.invoke();self.assertNotEqual(result.returncode,0,result.stdout)
+                    self.assertIn('unreviewed top-level activation',result.stderr)
+                    self.assertFalse((self.root/'unopened-opaque').exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
+            self.replace_source(parent,original);entry.update(Bytes=parent['Bytes'],SHA256=parent['SHA256'])
+            self.replace_metadata(self.plan['CurrentProviderSourceSnapshot'],self.provider_snapshot)
 
     def test_j8_ast_rejects_initializer_dynamic_fallback_load_and_factory_mutations(self):
         self.owned_input_plan()
