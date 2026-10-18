@@ -43,10 +43,10 @@ namespace zonetool::iw7::neutral_dependencies
         }
     };
 
-    // This closed policy proves only these three zero-body reference paths.
+    // This closed policy admits only these four Source-proven zero-body paths.
     // See NEUTRAL-DEPENDENCIES.md. Recognition by a walker is not support.
     inline bool reference_supported(int type)
-    { return type == ASSET_TYPE_FX || type == ASSET_TYPE_VFX || type == ASSET_TYPE_RETICLE; }
+    { return type == ASSET_TYPE_FX || type == ASSET_TYPE_VFX || type == ASSET_TYPE_RETICLE || type == ASSET_TYPE_RUMBLE; }
 
     // Descriptive recognition never grants reference-only support. Keep this
     // finite set aligned with the two pinned pure walkers, without body walks.

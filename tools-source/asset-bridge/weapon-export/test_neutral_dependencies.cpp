@@ -158,6 +158,53 @@ namespace
         check(nd::collect_pair(&pair.weapon, &pair.attachment, collector) && collector.external_count() == 2);
         check(collector.edges()[0].path == "projectile.projExplosionEffect" && collector.edges()[1].path == "charged.chargeMeterEffect");
     }
+    void rumble_origins_and_freeze()
+    {
+        Pair pair; RumbleInfo rumble{}; rumble.name = "fixture_rumble"; pair.memory.allow(rumble.name);
+        // Neither production walker may follow a referenced RumbleInfo body.
+        rumble.highRumbleGraph = reinterpret_cast<RumbleGraph*>(1);
+        rumble.lowRumbleGraph = reinterpret_cast<RumbleGraph*>(1);
+        std::remove_pointer_t<decltype(pair.attachment.rumbles)> rumbles{};
+        pair.fields.fireRumble = &rumble; pair.attachment.rumbles = &rumbles; rumbles.fireRumble = &rumble;
+        nd::Collector collector(Memory::copy, &pair.memory);
+        check(nd::collect_pair(&pair.weapon, &pair.attachment, collector));
+        check(collector.frozen() && collector.external_count() == 1 && collector.references().size() == 1);
+        check(collector.occurrences() == 2 && collector.edges().size() == 2);
+        check(collector.references()[0].type == ASSET_TYPE_RUMBLE && collector.references()[0].name == rumble.name && !collector.references()[0].owned);
+        check(collector.edges()[0].reference == 0 && collector.edges()[0].owner == nd::Owner::weapon && collector.edges()[0].path == "weapDef.fireRumble");
+        check(collector.edges()[1].reference == 0 && collector.edges()[1].owner == nd::Owner::attachment && collector.edges()[1].path == "rumbles.fireRumble");
+        const nd::Row row{ASSET_TYPE_RUMBLE, rumble.name}; check(collector.verify_rows(&row, 1));
+        check(!collector.asset(ASSET_TYPE_RUMBLE, rumble.name, {"late"}) && !collector.frozen());
+    }
+    void rumble_rows_exact()
+    {
+        Pair pair; pair.scalar_fx(); RumbleInfo rumble{}; rumble.name = "fixture_rumble";
+        pair.memory.allow(rumble.name); pair.fields.fireRumble = &rumble;
+        nd::Collector collector(Memory::copy, &pair.memory);
+        check(nd::collect_pair(&pair.weapon, &pair.attachment, collector));
+        const nd::Row rows[]{{ASSET_TYPE_FX, pair.fx.name}, {ASSET_TYPE_RUMBLE, rumble.name}};
+        check(collector.external_count() == 2 && collector.verify_rows(rows, 2));
+        check(!collector.verify_rows(rows, 1) && !collector.verify_rows(nullptr, 2));
+        const nd::Row extra[]{rows[0], rows[1], {ASSET_TYPE_RETICLE, "fixture_extra"}};
+        check(!collector.verify_rows(extra, 3));
+        const nd::Row reordered[]{rows[1], rows[0]}; check(!collector.verify_rows(reordered, 2));
+        nd::Row changed[]{rows[0], {ASSET_TYPE_FX, rumble.name}}; check(!collector.verify_rows(changed, 2));
+        changed[1] = {ASSET_TYPE_RUMBLE, "changed"}; check(!collector.verify_rows(changed, 2));
+        changed[1] = {ASSET_TYPE_RUMBLE, ",fixture_rumble"}; check(!collector.verify_rows(changed, 2));
+        changed[1] = {ASSET_TYPE_ATTACHMENT, nd::attachment_name}; check(!collector.verify_rows(changed, 2));
+        check(collector.frozen() && collector.verify_rows(rows, 2)); // Refusal never rewrites the frozen rows.
+    }
+    void rumble_names_refuse()
+    {
+        Pair pair;
+        for (const char* name : {"", "default", "$default", ",fixture_rumble", "bad\nname", "\xc0\x80", nd::weapon_name, nd::attachment_name})
+        {
+            pair.memory.allow(name); nd::Collector collector(Memory::copy, &pair.memory);
+            check(collector.begin(nd::Owner::weapon, pair.weapon.name));
+            check(!collector.asset(ASSET_TYPE_RUMBLE, name, {"weapDef.fireRumble"}));
+            check(!collector.good() && !collector.frozen() && collector.references().empty());
+        }
+    }
     void fx_invalid_kind()
     {
         Pair pair; pair.scalar_fx(); pair.fields.projExplosionEffect.type = static_cast<FxCombinedType>(7);
@@ -221,7 +268,7 @@ namespace
     void unsupported_type()
     {
         Pair pair;
-        for (const int type : {static_cast<int>(ASSET_TYPE_IMAGE), static_cast<int>(ASSET_TYPE_ATTACHMENT),
+        for (const int type : {static_cast<int>(ASSET_TYPE_IMAGE), static_cast<int>(ASSET_TYPE_ATTACHMENT), static_cast<int>(ASSET_TYPE_MATERIAL),
             static_cast<int>(ASSET_TYPE_XMODEL), -1})
         {
             nd::Collector collector(Memory::copy, &pair.memory); check(collector.begin(nd::Owner::weapon, pair.weapon.name));
@@ -287,15 +334,17 @@ int main()
         {"owner_origin_required", owner_origin_required}, {"dedup_keeps_origins", dedup_keeps_origins},
         {"private_roots_never_ignored", private_roots_never_ignored}, {"no_external_body_recursion", no_external_body_recursion},
         {"fx_scalar", fx_scalar}, {"fx_arrays", fx_arrays}, {"attachment_fx", attachment_fx},
+        {"rumble_origins_and_freeze", rumble_origins_and_freeze}, {"rumble_rows_exact", rumble_rows_exact},
+        {"rumble_names_refuse", rumble_names_refuse},
         {"fx_invalid_kind", fx_invalid_kind}, {"name_bound", name_bound}, {"origin_bound", origin_bound},
         {"count_and_byte_boundaries", count_and_byte_boundaries}, {"unsupported_type", unsupported_type},
         {"reference_preflight_freeze", reference_preflight_freeze}, {"legacy_parity", legacy_parity}};
-    static_assert(sizeof cases / sizeof cases[0] == 16);
+    static_assert(sizeof cases / sizeof cases[0] == 19);
     unsigned passed = 0;
     for (const auto& test : cases)
     {
         try { test.run(); ++passed; std::printf("PASS %s\n", test.name); }
         catch (const std::exception& error) { std::printf("FAIL %s: %s\n", test.name, error.what()); return 1; }
     }
-    std::printf("%u/16 PASS\n", passed); return passed == 16 ? 0 : 1;
+    std::printf("%u/19 PASS\n", passed); return passed == 19 ? 0 : 1;
 }

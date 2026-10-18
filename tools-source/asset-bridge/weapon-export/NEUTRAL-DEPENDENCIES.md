@@ -1,10 +1,36 @@
 # Neutral pair dependency Source foundation — 2026-10-15
 
 The next bounded Source lot is documented in [NEUTRAL-INVENTORY.md](NEUTRAL-INVENTORY.md).
-It adds a distinct descriptive inventory and pure identity contract; the strict
-policy remains FX/VFX/RETICLE. Actual CPP F at Source `a97bfc9` passed the original
+It adds a distinct descriptive inventory and pure identity contract. The current
+inactive Source policy is FX/VFX/RETICLE/RUMBLE; the RUMBLE addition below has
+not been compiled or run. Actual CPP F at Source `a97bfc9` passed the original
 16 cases, 12 new cases and both native TUs, with independently verified closure. The E3 result
 below qualifies only its earlier Source; F's exact pins/limits are in that note.
+
+## RUMBLE Source-only extension — 2026-10-18
+
+The only production change is adding RUMBLE to `reference_supported`. Existing
+typed walkers, constructors, names, budgets, freeze/row checks, legacy routing
+and private-root ownership remain unchanged. No arbitrary owned RUMBLE, builder
+staging, CLI, token, activation, serialized manifest or export is added. The
+strict Collector can now describe a RUMBLE reference and verify its exact
+internal reference-only rows. Those rows do not authorize a builder.
+
+The three new authored strict cases use the actual walkers and Collector:
+weapon/attachment fireRumble deduplicate to one key with two owner/path edges;
+RUMBLE plus FX checks exact discovery-order rows and missing/extra/reordered or
+wrong type/name rows; invalid/default/comma/private-root RUMBLE names refuse.
+Poisoned graph pointers test that these walkers inspect only the direct name.
+MATERIAL and external ATTACHMENT remain refused. The original budgets and legacy
+sequence cases remain in the fixture. Inventory's separate canonical identity
+helper tests mixed RUMBLE modes in both orders; this is not Collector coupling.
+Such coupling is still required before any generalized builder.
+
+The current fixtures contain **19 strict and 13 inventory cases, AUTHORED and
+NOT COMPILED/RUN for this change**. Exact Source review must precede a separately
+reviewed CPP recipe and distinct GO/admission: compile/run both complete fixtures
+and compile both patched native TUs before merge/adoption. Earlier E3, F and J7
+results do not qualify this policy. Python Source checks do not execute C++.
 
 This opt-in Source implementation owns two typed pure walkers, one local bounded
 collector, a public-parse seam and an in-memory native Source patch renderer.
@@ -69,8 +95,8 @@ projectile/charged paths share the same production helper.
 
 ## Closed external policy and its Source proof
 
-Only FX, VFX and RETICLE are admitted as external reference-only candidates in
-this initial Source step. This proves a native writer path for empty reference
+Only FX, VFX, RETICLE and RUMBLE are admitted as external reference-only
+candidates by the current Source policy. This proves a native writer path for empty reference
 placeholders, not retail-name resolution, availability or runtime acceptance.
 The future builder must apply the frozen ignore rows **before** either full
 owned root. `zone.cpp` adds a leading comma for ignored typed names, before
@@ -83,10 +109,17 @@ At the same pinned fork revision:
 | FX | `iw7/assets/fxeffectdef.hpp` detects leading comma. `fxeffectdef.cpp::init` allocates a zeroed struct, sets only name and returns before parse/DB fallback. `prepare` is empty; `load_depending` has zero element counts; `write` writes the struct/name and skips null `elemDefs`. |
 | VFX | `iw7/assets/particle_system.hpp` detects leading comma. `particle_system.cpp::init` returns after zeroed allocation/name. `prepare` is empty; `load_depending` skips null `emitterDefs`; `write` skips null emitter/scripted-input blocks. |
 | RETICLE | `iw7/assets/reticle.hpp` detects leading comma. `reticle.cpp::init` returns after zeroed allocation/name. `prepare` and `load_depending` are empty; `write` skips null `widgetName`. |
+| RUMBLE | `iw7/assets/rumble.hpp` detects leading comma. `rumble.cpp::init` allocates zeroed `RumbleInfo`, sets name and returns before parse/DB fallback. `prepare` is empty; `load_depending` and `write` skip the null high/low graph pointers; write emits shell/name. |
+
+RUMBLE's exact primary Git blobs at the native pin above are
+`rumble.hpp` = `4a95159064885c3e53286e467d8d382f40e9c53a` and
+`rumble.cpp` = `7ddf02027205952e67f2fa6d5292b6faa075d7bf`. This Source proof
+does not establish retail-name availability, native/runtime resolution or a
+writer/FF execution for this change.
 
 `utils/memory.hpp::manual_allocate` zeroes the requested allocation.
 `iw7/zonetool.cpp::dump_enemy_pack_asset` has a closed type set that excludes
-FX, VFX and RETICLE, so its intermediate callback does not dump these bodies.
+FX, VFX, RETICLE and RUMBLE, so its intermediate callback does not dump these bodies.
 All paths above are relative to `src/zonetool/zonetool/` at the pin, except
 `zone.cpp` and `zonetool.cpp`, which are under `iw7/`.
 
@@ -96,7 +129,7 @@ and its writer writes the full attachment/subblocks. This change preserves that
 legacy behavior. The owned private PAP remains a full definition, never an
 external reference placeholder.
 
-ANIM_PACKAGE, GESTURE, LASER, MATERIAL, RUMBLE, SFX_PACKAGE, TRACER, VFX_PACKAGE
+ANIM_PACKAGE, GESTURE, LASER, MATERIAL, SFX_PACKAGE, TRACER, VFX_PACKAGE
 and XMODEL are recognized and emitted by the pure walkers but refused by the
 collector until their entire reference path is separately proven/reviewed.
 Unknown types and IMAGE are refused. This initial refusal is a documented step,

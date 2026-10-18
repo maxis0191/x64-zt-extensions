@@ -6,6 +6,21 @@ module. No CLI, native builder, input parser/routing, serialized manifest,
 readback transaction or runtime caller is activated. No clone/T2, stock,
 opaque tool/SDK artifact, FF or game input was opened for this Source work.
 
+The 2026-10-18 inactive RUMBLE Source extension changes only the shared strict
+`reference_supported` policy. Inventory's interface, thirteen recognized
+families, records, budgets and nonconvertibility remain unchanged. Its policy
+assessment does change: RUMBLE is no longer counted as blocked; all thirteen
+external families together now have nine blockers rather than ten. A new
+authored case checks RUMBLE alone has no policy blocker and adding MATERIAL
+still blocks. This remains descriptive evidence, with no rows/token/builder
+authority. The separate canonical-claim helper tests mixed RUMBLE modes in both
+orders; Collector has no generic mixed-mode coupling and none is implied here.
+
+Current fixtures have **19 strict and 13 inventory cases, AUTHORED and NOT
+COMPILED/RUN for this extension**. A new exact recipe, Source review, distinct CPP
+GO/admission, both complete fixture runs and both patched native TU compiles are
+required before merge/adoption. Earlier F/E3/J7 results remain historical.
+
 Actual CPP F at Source `a97bfc9f248c0c4e522175cb3a28261df714ca9d` passed the
 original sixteen cases, all twelve new inventory cases and both patched native
 TU compiles. Root independently verified ordinary closure and released its
@@ -15,7 +30,7 @@ unqualified. Later documentation/merge revisions are not newly compiled.
 PR213/E3 at `05c28704ff0af07ab08b5b35681356999d96b26a` remains a separate
 earlier foundation result. Python Source checks do not stand in for either CPP.
 
-## Complete description and unchanged strict policy
+## Complete description and finite strict policy
 
 `neutral_dependencies::Inventory` uses the same production typed walkers,
 name-copy/UTF-8 checks, owner/origin/index records and fixed budgets as the
@@ -42,16 +57,16 @@ accounting and conservative sparse-array refusal remain unchanged.
 surface exposes records and completeness, but has no `verify_rows` and cannot
 convert to the strict collector. The descriptive constructor selector is
 private, immutable and accessible only to `Inventory`. Ordinary `Collector`
-construction always retains the strict FX/VFX/RETICLE policy. There is no
+construction always retains the strict FX/VFX/RETICLE/RUMBLE policy. There is no
 caller-supplied predicate, widening flag or reset operation.
 
 `policy_blocked()` is true for an incomplete/refused inventory or any unique
-external reference outside FX/VFX/RETICLE. A complete inventory may therefore
+external reference outside FX/VFX/RETICLE/RUMBLE. A complete inventory may therefore
 remain blocked. `neutral_pair_contract::assess` reports incomplete, refused,
 complete-policy-blocked or complete-with-no-policy-blockers plus the blocked
 external count. The last state describes this finite type policy only; it
 does not authorize a builder, create rows/tokens or prove external resolution.
-The nine families covered by additional Source audits are still blocked, as
+The other eight families covered by additional Source audits are still blocked, as
 is external ATTACHMENT. No audit is adopted automatically.
 
 ## Pure typed identity contract

@@ -125,11 +125,11 @@ void weapon_attachment::untouched() { original_write(); }
         for forbidden in ('subprocess', 'write_text(', 'mkdir(', 'argparse', 'buildzone', 'loadzone'):
             self.assertNotIn(forbidden, preparer)
 
-    def test_cpp_fixture_has_sixteen_real_cases_without_duplicate_walker(self):
+    def test_cpp_fixture_has_nineteen_real_cases_without_duplicate_walker(self):
         fixture = self.source('test_neutral_dependencies.cpp')
         cases = re.findall(r'\{"([a-z_]+)", ([a-z_]+)\}', fixture)
-        self.assertEqual(len(cases), 16)
-        self.assertEqual(len(set(cases)), 16)
+        self.assertEqual(len(cases), 19)
+        self.assertEqual(len(set(cases)), 19)
         for name, function in cases:
             self.assertEqual(name, function)
             self.assertIn('void ' + function + '()', fixture)
@@ -138,6 +138,35 @@ void weapon_attachment::untouched() { original_write(); }
             self.assertNotIn(forbidden, fixture)
         self.assertIn('#include "native_neutral_dependencies.hpp"', fixture)
         self.assertIn('IW7_NATIVE_STRUCTS_HEADER', fixture)
+
+    def test_rumble_causals_call_real_walkers_and_row_verifier(self):
+        fixture = self.source('test_neutral_dependencies.cpp')
+        def case(name):
+            _, opening, end = production.body(fixture, 'void ' + name + '()')
+            return fixture[opening:end]
+        origins = case('rumble_origins_and_freeze')
+        for required in ('pair.fields.fireRumble = &rumble', 'rumbles.fireRumble = &rumble',
+                         'rumble.highRumbleGraph = reinterpret_cast<RumbleGraph*>(1)',
+                         'rumble.lowRumbleGraph = reinterpret_cast<RumbleGraph*>(1)',
+                         'nd::collect_pair(', 'collector.occurrences() == 2',
+                         'collector.edges().size() == 2', '"weapDef.fireRumble"',
+                         '"rumbles.fireRumble"', 'collector.verify_rows(&row, 1)',
+                         '!collector.asset(ASSET_TYPE_RUMBLE'):
+            self.assertIn(required, origins)
+        rows = case('rumble_rows_exact')
+        for required in ('nd::collect_pair(', 'collector.verify_rows(rows, 2)',
+                         '!collector.verify_rows(rows, 1)', '!collector.verify_rows(nullptr, 2)',
+                         '!collector.verify_rows(extra, 3)', '!collector.verify_rows(reordered, 2)',
+                         '{ASSET_TYPE_FX, rumble.name}', '{ASSET_TYPE_RUMBLE, "changed"}',
+                         '{ASSET_TYPE_RUMBLE, ",fixture_rumble"}',
+                         '{ASSET_TYPE_ATTACHMENT, nd::attachment_name}'):
+            self.assertIn(required, rows)
+        names = case('rumble_names_refuse')
+        for required in ('nd::weapon_name', 'nd::attachment_name', '"default"', '"$default"',
+                         '",fixture_rumble"', '!collector.asset(ASSET_TYPE_RUMBLE',
+                         'collector.references().empty()'):
+            self.assertIn(required, names)
+        self.assertIn('static_cast<int>(ASSET_TYPE_MATERIAL)', case('unsupported_type'))
 
     def test_parity_fixture_has_storage_for_all_counted_model_arrays(self):
         walker = self.source('native_weapon_dependencies.inc')
