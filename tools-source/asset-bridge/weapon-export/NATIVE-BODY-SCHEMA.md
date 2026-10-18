@@ -186,7 +186,39 @@ exact `weapon.notetrackSoundMapKeys` alignment refusal. Its separate 6232-byte
 oracle uses `inspect(..., false)` and describes demand only: two four-byte
 buffers plus two eight-byte strings add24 to6208. This does not add padding,
 change private names, or relax the validator/Python policy. This next fixture
-correction is AUTHORED, NOT COMPILED or executed; no result is inherited from J12.
+correction was AUTHORED, NOT COMPILED at that Source checkpoint; no result was
+inherited from J12.
+
+J13 separately compiled exact Source `c18ca31a046707804991be60c922d08195732a20`
+with explicit provider Source `efe6761bc6a96581140767bde9f82816af579375`.
+Compile, fresh single-object link and probe each exited 0, with measured stage
+durations 3053.1687, 1122.2272 and 2357.7446 ms. All eight groups passed:
+`same_owned_complete_frontdoor`, `source_trace_oracles`,
+`pins_and_report_before_decode`, `strict_raw_sax_frontiers`,
+`numeric_domains_and_lexemes`, `profile_shapes_and_shared_counts`,
+`manual_order_and_graph_policy` and `direct_bounds_and_standard_unwind`, followed
+by `IW7_OWNED_BODY_PREFLIGHT=8`. Raw stdout was 307 bytes/SHA256
+`0f8109c5c5b16d37685899c237d8daaa09447140ea25a6f26dcc0e5a73cc91db`;
+the raw bytes were hashed before explicit CRLF-to-LF ordinal comparison with
+the Source literal. Stderr was empty.
+
+Root's same-original postflight established 35 Source records, 498 input records
+and 3 publication streams: all 536 saved SafeFileHandles and all three original
+owners/jobs closed, with the 6 inner/7 external witnesses and references
+preserved, native inputs reverified, context closed, lease null and
+`CanExit=true`. The final disk receipt honestly recorded guards still held
+before disposal; the subsequent original preexit and memory postflight
+corroborated closure. External caller Source and the host handle remained held
+until the reviewed terminal gate. Root then observed true exit 0 of original
+PTY18331 / terminal chunk `4371fe`; its fresh check at 11:15:11.3312666 UTC found
+the seven expected processes absent, the protected Main unchanged and the
+Version1 lease registry empty. No exact terminal UTC, total PTY wall time or
+separate kernel CloseHandle return is inferred.
+
+J11/J12 remain failed historical runs. J13 qualifies this synthetic standalone
+fixture and its compiled headers, not a real pair, arena, engine ABI, native
+parser/core routing, CLI, FF, gameplay or BO3/Ray Gun portability. The API stays
+inactive. This later documentation commit is not newly compiled Source.
 
 ## Exact input rules
 
