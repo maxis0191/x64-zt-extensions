@@ -182,6 +182,22 @@ function Resolve-H1AuthoredPlanOutputBudget($Plan) {
     foreach($name in 'Schema','Root','Entries','StageRoots','Stages','ResidualEntries','MaximumDepth'){
         if($budget.PSObject.Properties[$name] -isnot [Management.Automation.PSNoteProperty]){throw 'Literal derived budget values required.'}
     }
+    $entries=$budget.PSObject.Properties['Entries'].Value
+    $roots=$budget.PSObject.Properties['StageRoots'].Value
+    if($entries -isnot [Collections.ObjectModel.ReadOnlyDictionary[string,string]] -or
+       $roots -isnot [Collections.ObjectModel.ReadOnlyCollection[string]] -or
+       $entries.PSObject.Methods['GetType'] -isnot [Management.Automation.PSMethod] -or
+       $roots.PSObject.Methods['GetType'] -isnot [Management.Automation.PSMethod] -or
+       $entries.GetType() -ne [Collections.ObjectModel.ReadOnlyDictionary[string,string]] -or
+       $roots.GetType() -ne [Collections.ObjectModel.ReadOnlyCollection[string]]){
+        throw 'Exact factory output collection types required before observation.'
+    }
+    foreach($collection in @($entries,$roots)){
+        if($collection.PSObject.Properties['Count'] -isnot [Management.Automation.PSProperty] -or
+           $collection.PSObject.Methods['GetEnumerator'] -isnot [Management.Automation.PSMethod]){
+            throw 'Ordinary factory collection members required before observation.'
+        }
+    }
     if($Plan.RunRoot -isnot [string] -or $budget.Schema -isnot [string] -or $budget.Root -isnot [string] -or
        $budget.ResidualEntries -isnot [int] -or
        $budget.MaximumDepth -isnot [int]){throw 'Strict authored output root and integer bounds required.'}

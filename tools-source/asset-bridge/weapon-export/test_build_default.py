@@ -838,7 +838,7 @@ class AuthoredBudgetContractTests(unittest.TestCase):
         prefix = r'''param([string]$Core)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
 $script:Measurements=0;$script:Snapshots=0;$script:ObservedBytes=0L
-$script:ForbiddenCalls=0;$script:Assertions=0;$script:Refusals=0;$script:LastBudget=$null
+$script:ForbiddenCalls=0;$script:CollectionCalls=0;$script:Assertions=0;$script:Refusals=0;$script:LastBudget=$null
 # Fakes exist BEFORE any production body is defined or called. Never import Core.
 function Measure-H1Output($Root,$Budget=$null){$script:Measurements++;$script:LastBudget=$Budget;return $script:ObservedBytes}
 function Get-IW7ResourceSnapshot {$script:Snapshots++;[pscustomobject]@{CommitLimit=100L;Committed=10L}}
@@ -882,6 +882,7 @@ function New-SourceState {[ordered]@{MaxObservedOutputBytes=0L}}
 Check ($script:ForbiddenCalls-eq0) 'A provider/owner/admission/input sentinel was called'
 Check (!('IW7.AnimationProbe.NativeJob'-as[type])) 'Native owner type must remain unloaded'
 [ordered]@{Assertions=$script:Assertions;Refusals=$script:Refusals;Measurements=$script:Measurements;
+    CollectionSentinelCalls=$script:CollectionCalls;ForbiddenCalls=$script:ForbiddenCalls;Snapshots=$script:Snapshots;
     FunctionPins=$functionPins;ProviderImported=$false;OpaqueIO=$false;CPPExecuted=$false}|ConvertTo-Json -Depth 4 -Compress
 '''
         with tempfile.TemporaryDirectory() as directory:
@@ -961,15 +962,19 @@ $mutants=@(
     {$plan.RunRoot='C:\SourceOnly\CON\output'},
     {$plan.PSObject.Properties.Remove('RunRoot');$plan|Add-Member ScriptProperty RunRoot {$script:ForbiddenCalls++;throw 'getter executed'}},
     {$plan.AuthoredOutputBudget.PSObject.Properties.Remove('MaximumDepth');$plan.AuthoredOutputBudget|Add-Member ScriptProperty MaximumDepth {$script:ForbiddenCalls++;throw 'getter executed'}},
-    {$plan.AuthoredOutputBudget.StageRoots=@($plan.AuthoredOutputBudget.StageRoots[0])*8},
-    {$roots=@($plan.AuthoredOutputBudget.StageRoots);$roots[0]='C:\SourceOnly\other';$plan.AuthoredOutputBudget.StageRoots=$roots},
+    {$roots=[Collections.Generic.List[string]]::new();foreach($i in 0..7){$roots.Add($plan.AuthoredOutputBudget.StageRoots[0])}
+     $plan.AuthoredOutputBudget.StageRoots=$roots.AsReadOnly()},
+    {$roots=[Collections.Generic.List[string]]::new();foreach($root in $plan.AuthoredOutputBudget.StageRoots){$roots.Add($root)}
+     $roots[0]='C:\SourceOnly\other';$plan.AuthoredOutputBudget.StageRoots=$roots.AsReadOnly()},
     {$map=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
      foreach($entry in $plan.AuthoredOutputBudget.Entries.GetEnumerator()){$map.Add($entry.Key,$entry.Value)}
-     $key='C:\SourceOnly\never-open-output\helper-compile';$map[$key]='File';$plan.AuthoredOutputBudget.Entries=$map},
+     $key='C:\SourceOnly\never-open-output\helper-compile';$map[$key]='File'
+     $plan.AuthoredOutputBudget.Entries=[Collections.ObjectModel.ReadOnlyDictionary[string,string]]::new($map)},
     {$map=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
      foreach($entry in $plan.AuthoredOutputBudget.Entries.GetEnumerator()){$map.Add($entry.Key,$entry.Value)}
      $key='C:\SourceOnly\never-open-output\helper-compile';$map.Remove($key)|Out-Null
-     $map.Add($key.ToUpperInvariant(),'Directory');$plan.AuthoredOutputBudget.Entries=$map}
+     $map.Add($key.ToUpperInvariant(),'Directory')
+     $plan.AuthoredOutputBudget.Entries=[Collections.ObjectModel.ReadOnlyDictionary[string,string]]::new($map)}
 )
 foreach($mutate in $mutants){
     $plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1'
@@ -978,6 +983,37 @@ foreach($mutate in $mutants){
 }
 ''')
         self.assertEqual(report['Refusals'],28)
+
+    def test_nested_collection_sentinels_refuse_without_getters_or_enumeration(self):
+        report=self.budget_fragment(r'''
+$script:CollectionCalls=0
+$mutants=@(
+    {$value=[pscustomobject]@{};$value|Add-Member ScriptProperty Count {$script:CollectionCalls++;return 44}
+     $plan.AuthoredOutputBudget.Entries=$value},
+    {$value=[pscustomobject]@{Count=44};$value|Add-Member ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()}
+     $plan.AuthoredOutputBudget.Entries=$value},
+    {$value=[pscustomobject]@{};$value|Add-Member ScriptProperty Count {$script:CollectionCalls++;return 8}
+     $value|Add-Member ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()}
+     $plan.AuthoredOutputBudget.StageRoots=$value},
+    {$plan.AuthoredOutputBudget.Entries=@{}},
+    {$plan.AuthoredOutputBudget.StageRoots=@($plan.AuthoredOutputBudget.StageRoots)},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.Entries ScriptProperty Count {$script:CollectionCalls++;return 44} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.Entries ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.StageRoots ScriptProperty Count {$script:CollectionCalls++;return 8} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.StageRoots ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.Entries ScriptMethod GetType {$script:CollectionCalls++;return [Collections.ObjectModel.ReadOnlyDictionary[string,string]]} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.StageRoots ScriptMethod GetType {$script:CollectionCalls++;return [Collections.ObjectModel.ReadOnlyCollection[string]]} -Force}
+)
+foreach($mutate in $mutants){
+    $plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1'
+    & $mutate
+    Refuses {Resolve-H1AuthoredPlanOutputBudget $plan}
+    Refuses {Test-H1Budget $plan (New-SourceState)}
+    Check ($script:CollectionCalls-eq0) 'Nested collection code ran before refusal'
+}
+Check ($script:Snapshots-eq0) 'Nested collection refusal reached fake telemetry'
+''')
+        self.assertEqual(report['Refusals'],22)
 
     def test_pure_preflight_and_existing_byte_reserve_boundary(self):
         report=self.budget_fragment(r'''

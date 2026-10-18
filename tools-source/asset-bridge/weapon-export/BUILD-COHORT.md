@@ -521,7 +521,10 @@ The pure `Resolve-H1AuthoredPlanOutputBudget` contract also maps the distinct
 shape. That schema requires a derived budget; the two older schema/profile
 pairs and other callers' no-budget legacy64TOTAL path remain separate. The
 resolver checks typed literal stages/bounds and the complete exact-case output
-set before measurement or telemetry, returning a fresh derivation. Runtime
+set before measurement or telemetry, returning a fresh derivation. Nested
+entries/roots must have the exact factory .NET read-only collection types and
+ordinary adapted GetType/Count/GetEnumerator members before any observation; forged
+getters/enumerators and subclasses are refused. Runtime
 `Test-H1Budget` reuses it. A future successor runner must call this pure gate
 immediately after deriving its budget and before Scheduler/admission/owner
 creation; no consumed runner or plan is patched here. This Source change
