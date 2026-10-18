@@ -612,6 +612,6 @@ two refused metadata snapshots and preserved C FAILED/D unexecuted-refused
 history are recorded in
 [PAIR-JSON-CORE.md](PAIR-JSON-CORE.md#j8e-owned-input-cpp-and-known-closure-2026-10-18).
 Only Source and own metadata/stdout were read after release, without reopening
-native outputs. This DOC head is not the compiled head. Real pair/U1/T2/body,
+opaque native outputs. This DOC head is not the compiled head. Real pair/U1/T2/body,
 FILE/arena/CLI/FF, engine ABI/lifetime, physics/PAP and game stay unqualified;
 Ready and both activation flags remain false. No new actual GO follows.
