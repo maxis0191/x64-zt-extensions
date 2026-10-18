@@ -36,6 +36,79 @@ allocate eight bytes, rather than a full external body. `unk0.material` instead
 allocates a full 280-byte `Material`. These are Source assumptions for later
 independent C++ checks; they are not a runtime ABI observation.
 
+## Offline C++ constants projection
+
+`native_pair_body_schema.hpp` is inactive Source data projected from the pinned
+Python literal: 239 type records, 41 structures, 1,213 ordered operations and 17
+operation tags. It does not decode input or construct native objects. Presence
+bits distinguish absent, false, zero and empty values; integers retain a sign
+and uint64 magnitude, including UINT64_MAX. Enum declaration aliases, shared
+count names/types, manual arguments, direct sites and Source provenance remain
+separate. Thirty pointer element labels are not expanded into layouts: known
+labels require a type-ID tag; only unknown pointer labels use the exact literal
+string tag. Unknown array element types refuse.
+
+The adopted bytes are the single reviewed Source emission at generator commit
+`cfd291253f8d836bb9e6b1d818272f5568990eef`, generator blob
+`cf33622aa09ccb871d92c059d3df4cfe19691a78`, 50,953 LF bytes/SHA256
+`35770c090a883e5edc2b28783a92d2954563b4fd1a62ca27949efbee54732939`.
+The header is 1,073,140 bytes, SHA256
+`dbedd4632d8bb20686c8c1355d4b0200fc2c6149ba141897007f41252f555b75`.
+Its four provenance roles preserve the historical extraction generator4717a82a,
+the new projection generator, the original SCHEMA and the body validator.
+The projection generator was frozen externally before header emission, avoiding
+a generator/output self-hash cycle. The transitive executable Source was pinned
+before execution; no SCHEMA module was imported.
+
+An independent Source aggregate reader reconstructs every field, required order,
+type and presence from the emitted text and compares it to the original literal.
+The adoption check also requires the exact raw header pin. These Python checks
+supply Source fidelity; the separate constants-only C++ result follows.
+
+On 2026-10-18, J10 compiled `test_native_pair_body_schema.cpp`, freshly linked its
+single produced object and ran the fixture, all at exact Source
+`1adcece1ae57697156f5e54e44030d881feb6ad2` with explicit provider Source
+`efe6761bc6a96581140767bde9f82816af579375` and the pinned `fab9358` native model.
+The three original stages exited 0 with confirmed job-tree closure; their measured
+stage durations were 1796.3844, 1059.5636 and 192.3097 ms respectively. The four
+observed PASS groups were `fixed_width_sign_magnitude`,
+`ids_spans_element_canonicality`, `utf8_pool_bytes` and
+`ordered_records_aliases_manual_sites`, followed by `IW7_BODY_SCHEMA_CONSTANTS=4`.
+Raw stdout was 164 bytes/SHA256
+`fecb014d4b92312bc7697fe37dbff63ba97769ad0d9044834319912ca56c6340`.
+Its CRLF bytes were read and hashed before explicit CRLF-to-LF ordinal comparison
+with the Source literal; all three stderr logs were empty.
+
+Root's observation of the same originals before exit recorded 31 Source records, 498 input
+records and 3 publication streams: all 532 saved FileStreams/SafeFileHandles and
+all 3 original owners were closed, with the 6 inner/7 external witnesses and their
+references preserved, lease null and `CanExit=true`. The 490 selected input
+declarations plus 4 opaque parent declarations are metadata counts, not a claim
+of 494 unique physical inputs. The maximum measured output was 13,315,956 bytes
+under admission; the original clock was never reset. The final disk receipt
+described a released lease with guards still held pending postflight; the
+later observation established actual disposal. The external caller Source and
+host handle stayed retained until the reviewed terminal gate, closing Source
+before disposing the same Process object. A separate kernel CloseHandle return
+was not measured.
+
+Root issued the distinct terminal GO at 08:32:15.8839269 UTC, then observed true
+exit 0 / terminal chunk `c5cec0`. The terminal event's exact UTC and total PTY wall
+time were not separately measured. Root's fresh check at 08:32:46.2630292 UTC
+found the seven expected processes absent, an empty Version1 lease registry and
+the protected Main unchanged. The probe's registration error
+`Original process differs from scheduler observation.` remains recorded alongside
+`Original job already empty before CIM registration`; no cause is inferred from
+its short duration. Earlier Source A's residual JSON-binding refusal and the
+Source/harness corrections remain retained; only the corrected B packet ran.
+After release, this documentation update read only Source and own JSON/text logs,
+without reopening opaque native outputs.
+
+This result qualifies the standalone constants fixture and its compiled table,
+not a body decoder/interpreter, real-pair admission, arena or engine ABI,
+builder/CLI/FF integration, readiness or gameplay. It does not qualify the future
+DOC commit or merge as newly compiled Source.
+
 ## Exact input rules
 
 Objects have exact keys; booleans, integers, ranges and enum domains are checked
