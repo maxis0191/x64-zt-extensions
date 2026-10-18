@@ -717,3 +717,46 @@ J14 remains failed and immutable; its first compiler registration did not qualif
 a completed CPP stage. This later DOC head/merge receives no compiled credit.
 PR227 typed ingress, new native Components, actual stock pairs, full CLI, engine
 ABI, FF, Game and Ready remain unqualified; no new actual GO follows.
+
+## Actual J18 typed-ingress CPP and known closure, 2026-10-18
+
+J18 compiled exact Source `8dd6dd3f040da0c872b4ea75de8dabfdd332894c`, tree
+`ce6d6ff3c5d352026e3f0399eda7e9f5089bd83b`, with the explicitly retained Native
+provider `efe6761bc6a96581140767bde9f82816af579375`. One invocation of the
+standalone typed-owner fixture reached exit0 and original tree closure in all
+three stages: fresh compile, fresh-object link and eight-group probe.
+`NativeInputsReverified` was true. Raw stdout was 338 bytes, SHA256
+`74b907c69fdd0ead8a17815bfe1ef013de12b1e6a6267240c410f5fc679998f0`;
+raw hashing preceded explicit CRLF-to-LF ordinal comparison with the eight PASS
+lines and `IW7_TYPED_OWNED_PAIR=8`. All three stage stderr files were empty.
+
+Earlier results remain failures. J15 on `e8f44f2` failed compilation: local
+`original_raw` shadowed the global name (C4459), promoted by `/WX` to C2220;
+the saved compiler snapshot had exit2 while the stage ExitCode field was absent.
+J17 on `b7fdf8e` compiled and linked with exit0, then its probe exited2 after
+four PASS groups. Successive `std::current_exception()` results are not a
+portable same-object witness on MSVC; the exact failing subcase was not
+instrumented. The fixture-only `8dd6dd3` correction compares addresses of typed
+caught exceptions while their handlers remain alive and clears the witnesses
+before leaving. It preserves the ownership/unwind checks and all eight groups;
+production headers and compiler warning flags are unchanged.
+
+The disk final receipt retains its honest earlier guards-held snapshot. Later
+postflight verified 538 closed original FileStream/saved-SFH pairs: 37 Source
+records, 498 input records and three publications; all three owners were
+closed, inner guards empty and the context lease null. These are record counts,
+not guarantees of unique physical identities. At Root's direction, the internal
+owner projected SAME Root6/External7 witnesses and original arrays; Root read
+the original tool records and own metadata, without direct child-memory or
+child-PTY access. Distinct terminal GO was followed by true exit0 in original
+tool `a1d8e2`. The original parent then rechecked its SAME held CPP literal bytes
+and observed its stream/saved-SFH closure. Root's fresh check found all seven
+captured identities absent, the protected Main/client preserved and V1 leases
+empty. Neither total PTY wall time nor kernel CloseHandle's return was measured.
+
+This qualifies the standalone authored typed-ingress fixture at `8dd6dd3`, not
+this later DOC head or a merge. See the
+[typed ingress contract](NEUTRAL-PAIR-INPUTS.md#typed-owned-ingress-and-j18-validation-2026-10-18).
+Full CLI, engine TU/ABI, real pair/stock input, actual native arena, fatal-allocator
+closure, FILE/routes, FF and Game remain unqualified; Ready remains false.
+No new actual or NativeComponents implementation authorization follows.

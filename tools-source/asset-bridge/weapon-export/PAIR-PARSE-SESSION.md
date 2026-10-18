@@ -91,6 +91,39 @@ owner outlives those guards. The fixed constructor preflight happens before any
 such transfer here; it does not implement real guard/FILE ownership. The native
 hooks, legacy entry points and all activation boundaries below stay unchanged.
 
+## Typed guards/raw ingress — inactive Source
+
+The separate `native_pair_owned_session.hpp` companion retains ordinary original
+guard/raw owners without changing `OwnedInput`, the legacy `OwnedPair`, the
+three native reject hooks or the existing three-case fixture. `copy_with_guards`
+allocates ingress storage before moving the caller guard, rejects a null guard,
+then constructs raw in its body: bounds/copy/hash therefore run while that guard
+object is owned. `adopt_owned` instead moves an already constructed raw and guard
+into ordered members before its null checks; it proves no guard history during
+the earlier acquisition/copy. Neither a non-null generic guard nor either API is
+an OS identity, provenance, permission token or external parse authorization.
+
+The real report/body preflight runs while ingress still owns both originals.
+Only after it passes do two fixed noexcept pointer moves feed the existing Pair;
+no caller `raw()` callback, validation or allocation sits between those moves.
+Raw is never copied/moved/rebuilt. Pair/wrapper allocation or component failure
+unwinds its current unique owners. Components receive the same raw and owned
+arena references; they must not borrow the temporary adapter/builder scratch.
+The typed wrapper owns Pair and offers a const raw view only for its own lifetime,
+with rvalue access deleted. No accessor or behavior is added to legacy Pair.
+
+`test_pair_owned_session.cpp` authors eight standalone groups using real owned
+input/preflight and synthetic components, with one literal Source case copied
+from the pinned existing body fixture. It covers copy/adopt, null/repeated
+ownership, report-before-body refusal, stable views, partial components, ordinary
+allocation frontiers and primary/cleanup distinction. A successful allocation
+prefix locates the Pair-storage fault; an earlier copy/hash or JSON fault is
+not relabeled as that frontier. Its guard/route diagnostics are authored, not OS
+release observations. These cases are **AUTHORED, NON-COMPILED**; the targeted
+Python checker verifies Source bindings/structure only. No existing CPP result
+qualifies the new companion. Real FILE/route exclusion, native arena/maps,
+non-unwinding fatal closure, CLI/FF/Game and admission remain separately gated.
+
 ## Explicit uncovered boundaries
 
 The contracts apply only on normal return/status refusal and exceptions that
