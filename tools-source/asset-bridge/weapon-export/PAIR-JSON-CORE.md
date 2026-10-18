@@ -431,7 +431,7 @@ its saved process handle; the outer parent then reported all three Source
 guards reverified/closed and exited. Root personally read the own-metadata
 receipts, then independently checked fresh absence/registry at
 `2026-10-18T01:08:10Z`: no leases, all 17 captured identities absent, broad
-process observation showing only Main PID37296. This is that snapshot's Main
+process observation showing only the preserved Main with its observed original identity. This is that snapshot's Main
 identity, not a promise of a fixed identity. Root released the slot and recorded
 `root-j7-cpp-closed-20261018T010810650Z.json`, 5027 bytes, SHA256
 `a83a9a9779df89823265b7783d81ec311689a479d4ce05852eb3e26cd7a0fc07`.
