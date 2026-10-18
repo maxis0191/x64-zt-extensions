@@ -81,7 +81,7 @@ class TypedIngressSource(unittest.TestCase):
         self.assertEqual(actual, GROUPS)
         self.assertIn('IW7_TYPED_OWNED_PAIR=8', text)
         for required in ('catch(const player_pair_report::ReportError&', 'catch(const bodies::detail::BodyError&',
-                         'report.calls==0', 'std::current_exception()==report.primary',
+                         'report.calls==0',
                          'first_route_size==sizeof(LegacyPair)', 'fail_wrapper_allocation=true',
                          'allocation_fault::live+1==live', 'const unsigned expected[]{5,4,3,2,1,0}'):
             self.assertIn(required, text)

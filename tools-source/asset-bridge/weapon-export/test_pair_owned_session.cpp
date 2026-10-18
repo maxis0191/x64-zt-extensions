@@ -17,6 +17,7 @@ namespace bodies = iw7::neutral::player_pair_bodies;
 using Json = nlohmann::ordered_json;
 struct Guard;
 struct Observation;
+struct Primary;
 static void record_raw_delete() noexcept;
 namespace allocation_fault {
     struct Failure : std::bad_alloc {};
@@ -25,7 +26,7 @@ namespace allocation_fault {
     void* raw_address = nullptr;
     std::unique_ptr<Guard>* caller_guard = nullptr;
     Observation* observer = nullptr;
-    std::exception_ptr primary;
+    const Failure* primary = nullptr; // Compared only while the receiving handler is alive.
 }
 void* operator new(std::size_t bytes) {
     ++allocation_fault::attempts; allocation_fault::last_size = bytes;
@@ -33,7 +34,7 @@ void* operator new(std::size_t bytes) {
         allocation_fault::moved_before_raw = allocation_fault::caller_guard && !*allocation_fault::caller_guard;
     if (allocation_fault::armed && !allocation_fault::remaining) {
         try { throw allocation_fault::Failure(); }
-        catch (...) { allocation_fault::primary = std::current_exception(); throw; }
+        catch (const allocation_fault::Failure& error) { allocation_fault::primary = &error; throw; }
     }
     if (allocation_fault::armed) --allocation_fault::remaining;
     if (void* value = std::malloc(bytes ? bytes : 1)) {
@@ -100,7 +101,7 @@ struct Observation {
     const input::OwnedInput* expected_raw=nullptr;
     const void* expected_guard=nullptr;
     const void* expected_arena=nullptr;
-    std::exception_ptr primary;
+    const Primary* primary = nullptr; // Non-owning witness across the bare rethrow.
     void record(unsigned id) noexcept { if(used<order.size())order[used++]=id;else component_views_live=false; }
 };
 static void record_raw_delete() noexcept {
@@ -128,7 +129,7 @@ template<unsigned Id> struct Node {
 };
 struct Primary : std::exception { const char* what() const noexcept override{return "authored component primary";} };
 static void raise_primary(Observation& report) {
-    try{throw Primary();}catch(...){report.primary=std::current_exception();throw;}
+    try{throw Primary();}catch(const Primary& error){report.primary=&error;throw;}
 }
 struct Components {
     using Route=Node<2>;using Arena=Node<3>;using WeaponMap=Node<4>;using AttachmentMap=Node<5>;
@@ -239,7 +240,7 @@ static void partial_components_reverse_unwind() {
         Observation report;auto ingress=adopt(data,report);Components components(report);
         components.fail_at=return_null?0:at;components.null_at=return_null?at:0;bool refused=false;
         try{auto pair=owned::make_validated_owned_pair(std::move(ingress),components);(void)pair;}
-        catch(const Primary&){check(!return_null&&std::current_exception()==report.primary);refused=true;}
+        catch(const Primary& error){check(!return_null && &error==report.primary);report.primary=nullptr;refused=true;}
         catch(const std::logic_error&){check(return_null);refused=true;}
         check(refused&&!ingress&&report.calls==at-1);closed(report);
         std::size_t index=0;for(unsigned id=at-1;id>=2;--id)check(report.order[index++]==id);
@@ -270,7 +271,7 @@ static void standard_allocation_frontiers() {
         auto* original=guard.get();watch(report,nullptr,&guard);const auto live=allocation_fault::live;bool refused=false;
         allocation_fault::remaining=budget;allocation_fault::armed=true;
         try{auto value=owned::copy_with_guards(std::move(guard),data.incoming,data.pins,counters);(void)value;}
-        catch(const allocation_fault::Failure&){allocation_fault::armed=false;check(std::current_exception()==allocation_fault::primary);refused=true;}
+        catch(const allocation_fault::Failure& error){allocation_fault::armed=false;check(&error==allocation_fault::primary);allocation_fault::primary=nullptr;refused=true;}
         allocation_fault::armed=false;check(refused&&counters.hashes==0);
         if(budget==0){check(guard.get()==original&&report.guard_destroys==0&&allocation_fault::live==live);guard.reset();}
         else{check(!guard&&report.guard_destroys==1&&report.raw_before_guard&&allocation_fault::live+1==live);}
@@ -287,20 +288,20 @@ static void standard_allocation_frontiers() {
     {Observation report;auto ingress=adopt(data,report);Components components(report);bool refused=false;
         allocation_fault::attempts=0;allocation_fault::remaining=pair_attempt-1;allocation_fault::armed=true;
         try{auto pair=owned::make_validated_owned_pair(std::move(ingress),components);(void)pair;}
-        catch(const allocation_fault::Failure&){allocation_fault::armed=false;check(std::current_exception()==allocation_fault::primary);refused=true;}
+        catch(const allocation_fault::Failure& error){allocation_fault::armed=false;check(&error==allocation_fault::primary);allocation_fault::primary=nullptr;refused=true;}
         allocation_fault::armed=false;check(refused&&allocation_fault::attempts==pair_attempt&&
             allocation_fault::last_size==sizeof(LegacyPair)&&report.calls==0&&!ingress);closed(report);unwatch();}
     // Arm only AFTER attachment map construction, immediately before the wrapper
     // allocation. The completed Pair must unwind if publication storage fails.
     {Observation report;auto ingress=adopt(data,report);Components components(report);components.fail_wrapper_allocation=true;bool refused=false;
         try{auto pair=owned::make_validated_owned_pair(std::move(ingress),components);(void)pair;}
-        catch(const allocation_fault::Failure&){allocation_fault::armed=false;check(std::current_exception()==allocation_fault::primary);refused=true;}
+        catch(const allocation_fault::Failure& error){allocation_fault::armed=false;check(&error==allocation_fault::primary);allocation_fault::primary=nullptr;refused=true;}
         allocation_fault::armed=false;check(refused&&report.calls==4);closed(report);unwatch();}
     // Adopt's storage allocation failure leaves BOTH existing caller variables.
     {Observation report;auto raw=data.own();auto guard=std::make_unique<Guard>(report);auto* original_raw_owner=raw.get();auto* original_guard=guard.get();
         watch(report,raw.get());allocation_fault::remaining=0;allocation_fault::armed=true;bool refused=false;
         try{auto value=owned::adopt_owned(std::move(guard),std::move(raw));(void)value;}
-        catch(const allocation_fault::Failure&){allocation_fault::armed=false;refused=true;}
+        catch(const allocation_fault::Failure&){allocation_fault::armed=false;allocation_fault::primary=nullptr;refused=true;}
         allocation_fault::armed=false;check(refused&&raw.get()==original_raw_owner&&guard.get()==original_guard);
         raw.reset();guard.reset();closed(report);unwatch();}
 }
@@ -308,7 +309,7 @@ static void primary_and_cleanup_kept_distinct() {
     Data data;Observation report;auto ingress=adopt(data,report);Components components(report);
     components.fail_at=5;components.failed_cleanup=true;bool refused=false;
     try{auto pair=owned::make_validated_owned_pair(std::move(ingress),components);(void)pair;}
-    catch(const Primary&){check(std::current_exception()==report.primary);refused=true;}
+    catch(const Primary& error){check(&error==report.primary);report.primary=nullptr;refused=true;}
     check(refused&&report.cleanup_failed&&report.calls==4);closed(report);unwatch();
     // An ordinary model guard/report is no native admission or cleanup success.
     bool still_inactive=false;try{player_pair_session::reject_native_activation();}
