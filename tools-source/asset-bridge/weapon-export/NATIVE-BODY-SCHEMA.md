@@ -109,6 +109,117 @@ not a body decoder/interpreter, real-pair admission, arena or engine ABI,
 builder/CLI/FF integration, readiness or gameplay. It does not qualify the future
 DOC commit or merge as newly compiled Source.
 
+## Inactive SAME-owned C++ body preflight
+
+`iw7::neutral::player_pair_bodies::validate_owned_pair_bodies(const
+player_pair_input::OwnedInput&)` ports the existing Python dialect to the pinned
+constants. It calls the real J9 report checker before decoding either body. A
+public PRIMARY SAX guard checks floating lexemes and decoded duplicate keys;
+ordered DOM decoding then reads the SAME owned role bytes, with independent
+32,768-value/container, root-depth64 and 8,192-element array limits in both passes.
+Raw BOM/NUL, malformed UTF-8/surrogates, decoded NUL, trailing input and silent
+callback discard are refused. Lexer/JSON/STL temporaries use ordinary memory;
+this is not allocation-free or an arena-owner guarantee.
+
+The seventeen operation tags and eight manual handlers preserve literal keys,
+null/count relationships, named counters and the full Python front door: private
+names, BULLET1/NONE0, literal PAP true and one declared association in six slots.
+Strings do not resolve an unused pointer target layout; an actual layout request
+still refuses an unknown type. Demand/domain checks complete before a second
+weapon-then-attachment trace enables Source alignment, without padding or reset.
+The trace is ordinary internal diagnostics, not a parse capability or permission.
+
+Boolean, integer and floating variants remain distinct. Signed zeros with a zero mantissa are
+allowed for floating targets; a nonzero mantissa underflowing to zero refuses.
+IEEE binary32 conversion preserves Python's rounding just above its maximum up
+to the exclusive halfway overflow boundary, without an out-of-range C++ cast.
+No engine ABI, real-pair input, native core/arena/routing, builder, CLI, FF,
+readiness or gameplay is supplied. The C++ fixture has eight authored groups
+and the success marker `IW7_OWNED_BODY_PREFLIGHT=8`.
+Its ordinary-memory causal arms the first standard-new failure reached after
+entering the decoder; the exact failing allocation is unknown. This does not
+prove late-allocation or general unwind behavior. Six Python checks cover static
+Source dispatch/order/integration only. J10 qualified only the earlier constants
+fixture.
+
+J11 compiled Source `4bd693ce0abac588ead62d0f3b6a733c8bbda113` with explicit
+provider Source `efe6761bc6a96581140767bde9f82816af579375`: compile and fresh link
+exited 0, then the probe exited 2. Its first five observed PASS groups were
+`same_owned_complete_frontdoor`, `source_trace_oracles`,
+`pins_and_report_before_decode`, `strict_raw_sax_frontiers` and
+`numeric_domains_and_lexemes`. Raw stdout was 164 bytes/SHA256
+`bb655fa945c604ff1916c2a53a4c62e50433d57f2fa02787a258067543b7b629`;
+stderr was 29 bytes containing `Wrong body refusal frontier` followed by CRLF.
+The sixth group never published PASS. The message identifies no individual
+mutation, so it does not establish which case actually failed.
+
+Source review found one incorrect fixture expectation in that group:
+`attachments=[]` is refused by the existing shared-count guard at owner path
+`weapon`, with reason `positive dynamic arrays required`, before its array rule.
+The Python policy uses the same owner path and reason. The fixture now expects
+that exact reason and owner path; the validator and its policy are unchanged.
+Failure diagnostics retain bounded case, expected path/reason and actual
+BodyError text, with the active group in the terminal diagnostic. Known group
+names and the explicit text caps keep that diagnostic below 1 KiB, with truncation
+marked. This is fixture diagnosis, not a new exception/unwind guarantee.
+
+Root observed the same original context closed with lease null, 534 saved
+SafeFileHandles and three owners closed, then observed true exit 1 of original
+PTY4815 / terminal chunk `848839` through the separately reviewed terminal gate.
+J11 remains FAILED; its packet and evidence are immutable. The fixture correction
+following that run was AUTHORED, NOT COMPILED at that checkpoint. A separate J12
+recipe subsequently compiled that correction; no old executable was rerun.
+
+J12 compiled exact Source `c43a6504c063148ef56c9588e47a41dbf8c51f82` with the
+same explicit EFE provider: compile and fresh link exited 0, then the probe
+exited 2 after the same five PASS groups. Its 97-byte stderr, SHA256
+`08d0d0fa3b0d8ab28d2d934874f59c1bf7ba8b1dfba162597f900ef08ecba07d`,
+contained `FAIL profile_shapes_and_shared_counts: weapon.notetrackSoundMapKeys: legacy cursor misalignment`
+followed by CRLF. Root established known closure and observed true exit 1 of
+original PTY90806 / terminal chunk `a04e0d`; J12 remains FAILED and immutable.
+
+Source review identifies an invalid positive shared-count fixture: the cursor is
+378 before the first `scr_string_t` buffer, which requires alignment4;
+`378 % 4 == 2`. The equal one-element arrays satisfy the shared-count shape but
+do not make that intermediate allocation aligned. The fixture now expects the
+exact `weapon.notetrackSoundMapKeys` alignment refusal. Its separate 6232-byte
+oracle uses `inspect(..., false)` and describes demand only: two four-byte
+buffers plus two eight-byte strings add24 to6208. This does not add padding,
+change private names, or relax the validator/Python policy. This next fixture
+correction was AUTHORED, NOT COMPILED at that Source checkpoint; no result was
+inherited from J12.
+
+J13 separately compiled exact Source `c18ca31a046707804991be60c922d08195732a20`
+with explicit provider Source `efe6761bc6a96581140767bde9f82816af579375`.
+Compile, fresh single-object link and probe each exited 0, with measured stage
+durations 3053.1687, 1122.2272 and 2357.7446 ms. All eight groups passed:
+`same_owned_complete_frontdoor`, `source_trace_oracles`,
+`pins_and_report_before_decode`, `strict_raw_sax_frontiers`,
+`numeric_domains_and_lexemes`, `profile_shapes_and_shared_counts`,
+`manual_order_and_graph_policy` and `direct_bounds_and_standard_unwind`, followed
+by `IW7_OWNED_BODY_PREFLIGHT=8`. Raw stdout was 307 bytes/SHA256
+`0f8109c5c5b16d37685899c237d8daaa09447140ea25a6f26dcc0e5a73cc91db`;
+the raw bytes were hashed before explicit CRLF-to-LF ordinal comparison with
+the Source literal. Stderr was empty.
+
+Root's same-original postflight established 35 Source records, 498 input records
+and 3 publication streams: all 536 saved SafeFileHandles and all three original
+owners/jobs closed, with the 6 inner/7 external witnesses and references
+preserved, native inputs reverified, context closed, lease null and
+`CanExit=true`. The final disk receipt honestly recorded guards still held
+before disposal; the subsequent original preexit and memory postflight
+corroborated closure. External caller Source and the host handle remained held
+until the reviewed terminal gate. Root then observed true exit 0 of original
+PTY18331 / terminal chunk `4371fe`; its fresh check at 11:15:11.3312666 UTC found
+the seven expected processes absent, the protected Main unchanged and the
+Version1 lease registry empty. No exact terminal UTC, total PTY wall time or
+separate kernel CloseHandle return is inferred.
+
+J11/J12 remain failed historical runs. J13 qualifies this synthetic standalone
+fixture and its compiled headers, not a real pair, arena, engine ABI, native
+parser/core routing, CLI, FF, gameplay or BO3/Ray Gun portability. The API stays
+inactive. This later documentation commit is not newly compiled Source.
+
 ## Exact input rules
 
 Objects have exact keys; booleans, integers, ranges and enum domains are checked
