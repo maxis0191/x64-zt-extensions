@@ -687,7 +687,7 @@ lines and `IW7_TYPED_OWNED_PAIR=8`. All three stage stderr files were empty.
 
 Earlier results remain failures. J15 on `e8f44f2` failed compilation: local
 `original_raw` shadowed the global name (C4459), promoted by `/WX` to C2220;
-the saved compiler snapshot had exit2 while the stage ExitCode remained null.
+the saved compiler snapshot had exit2 while the stage ExitCode field was absent.
 J17 on `b7fdf8e` compiled and linked with exit0, then its probe exited2 after
 four PASS groups. Successive `std::current_exception()` results are not a
 portable same-object witness on MSVC; the exact failing subcase was not
