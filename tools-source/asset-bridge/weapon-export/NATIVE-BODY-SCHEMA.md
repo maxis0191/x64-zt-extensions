@@ -167,9 +167,26 @@ Root observed the same original context closed with lease null, 534 saved
 SafeFileHandles and three owners closed, then observed true exit 1 of original
 PTY4815 / terminal chunk `848839` through the separately reviewed terminal gate.
 J11 remains FAILED; its packet and evidence are immutable. The fixture correction
-following that run is AUTHORED, NOT COMPILED or executed. It inherits no C++
-qualification from the five completed groups. A fresh reviewed recipe and
-distinct GO are required before another compilation; no old executable is rerun.
+following that run was AUTHORED, NOT COMPILED at that checkpoint. A separate J12
+recipe subsequently compiled that correction; no old executable was rerun.
+
+J12 compiled exact Source `c43a6504c063148ef56c9588e47a41dbf8c51f82` with the
+same explicit EFE provider: compile and fresh link exited 0, then the probe
+exited 2 after the same five PASS groups. Its 97-byte stderr, SHA256
+`08d0d0fa3b0d8ab28d2d934874f59c1bf7ba8b1dfba162597f900ef08ecba07d`,
+contained `FAIL profile_shapes_and_shared_counts: weapon.notetrackSoundMapKeys: legacy cursor misalignment`
+followed by CRLF. Root established known closure and observed true exit 1 of
+original PTY90806 / terminal chunk `a04e0d`; J12 remains FAILED and immutable.
+
+Source review identifies an invalid positive shared-count fixture: the cursor is
+378 before the first `scr_string_t` buffer, which requires alignment4;
+`378 % 4 == 2`. The equal one-element arrays satisfy the shared-count shape but
+do not make that intermediate allocation aligned. The fixture now expects the
+exact `weapon.notetrackSoundMapKeys` alignment refusal. Its separate 6232-byte
+oracle uses `inspect(..., false)` and describes demand only: two four-byte
+buffers plus two eight-byte strings add24 to6208. This does not add padding,
+change private names, or relax the validator/Python policy. This next fixture
+correction is AUTHORED, NOT COMPILED or executed; no result is inherited from J12.
 
 ## Exact input rules
 

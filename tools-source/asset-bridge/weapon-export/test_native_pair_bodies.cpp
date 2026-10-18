@@ -312,8 +312,8 @@ static void profile_shapes_and_shared_counts() {
     reject_mutation("shared_null_policy", [](Documents& doc) { doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); }, "weapon", "shared count");
     reject_mutation("shared_length", [](Documents& doc) { doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); doc.weapon["notetrackSoundMapValues"] = Json::array({"bbbbbbb", "ccccccc"}); }, "weapon", "shared count");
     Data equal; auto doc = equal.documents();
-    doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); doc.weapon["notetrackSoundMapValues"] = Json::array({"bbbbbbb"}); equal.set(doc); accepts(equal);
-    check(d::inspect(doc.weapon, doc.attachment).offset == 6232, "Independent shared two-array +24 demand differs");
+    doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); doc.weapon["notetrackSoundMapValues"] = Json::array({"bbbbbbb"}); equal.set(doc); rejects(equal, "weapon.notetrackSoundMapKeys", "legacy cursor misalignment", "shared_equal_counts_unaligned");
+    check(d::inspect(doc.weapon, doc.attachment, false).offset == 6232, "Independent shared two-array +24 demand-only differs");
     // Unknown pointer label does NOT globally forbid STRING operations. These
     // Source strings allocate char bytes and do not consult a const-char layout.
     Data string_value; doc = string_value.documents(); doc.weapon["weapDef"]["chargeUpSound"] = "aaaaaaa";
