@@ -177,3 +177,38 @@ U1/T2/stock data, change the three-case binding gate, or establish PR216 native
 eligibility, provenance, arena/fatal closure, engine ABI/lifetime, FILE/routes,
 CLI/FF, weapon grant, physics, PAP or Game. Ready remains false. No new actual
 authorization or compiled credit to this DOC revision follows.
+
+## J16 real-preflight CPP and known closure, 2026-10-18
+
+The distinct J16 run of exact Source
+`ea364a134310c36d24a3152b2f5b68a6d7237080` passed its six-group owned-input helper
+and eight-group real-core composition fixture. The fixture's real report/body
+preflight checked the SAME owned raw input before its explicit DOM reads and core
+calls; the three Source-case address gate stayed unchanged. Both cores and both
+links were fresh, with all eight stage exits0 and original tree closure. The
+Source pins and closure sequence are in
+[BUILD-COHORT.md](BUILD-COHORT.md#actual-j16-real-preflight-cpp-checkpoint-2026-10-18).
+
+Root hashed raw 191/386-byte probe stdout before strict UTF8, explicit CRLF-to-LF
+normalization and fixed ordinal six/eight-group comparison; stderr was empty.
+The helper-test registration error remains preserved: `Original process differs
+from scheduler observation` / `Original job already empty before CIM registration`.
+No cause of execution speed or replacement successful registration is inferred.
+
+The earlier final JSON truthfully remains
+`ClosedReleasedGuardsHeldPendingPostflight`, GuardsDisposed=false and 788 held
+guards. Later SAME-context postflight established their closure and eight closed
+owners; separate terminal `0c2d03` exit0 and Root's fresh 16-identity absence/empty
+V1 registry completed known closure. Root directed original-scope checks through
+the internal owner and reviewed own metadata, without direct child-memory access.
+The immutable 8872-byte Root proof is
+`root-j16-cpp-knownclosed-20261018T185635885Z-2f154e83838e4deba641290ef0b4627f.json`,
+SHA256 `3a3cc16c65c731f422b8b33031cfcd97cd18fba6ca7506da3794db1ab52091a7`.
+
+This qualifies only the bounded authored preflight/core composition and ordinary
+known closure. It supplies no PR227 typed-ingress/native Components result,
+actual stock-pair admission, FILE/routes, fatal allocator closure, full CLI,
+engine ABI, FF, Game or Ready qualification. J14 remains failed and immutable;
+this DOC revision/merge is not compiled and authorizes no new actual. Only Source,
+own JSON metadata and bounded stdout/stderr were read for this documentation;
+no binary native output, OBJ/EXE/PDB or SDK input was reopened.

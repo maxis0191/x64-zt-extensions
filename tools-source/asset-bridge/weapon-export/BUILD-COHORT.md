@@ -686,3 +686,34 @@ metadata/stdout were read after release, without reopening opaque native outputs
 This bounded standalone result grants no real pair/U1/T2/body/stock, arena or
 fatal closure, engine ABI/lifetime, FILE/routes, CLI/FF, weapon/physics/PAP/Game
 or Ready qualification, and no new actual GO.
+
+## Actual J16 real-preflight CPP checkpoint, 2026-10-18
+
+One separately authorized J16 invocation compiled Source
+`ea364a134310c36d24a3152b2f5b68a6d7237080`, with explicit Native provider
+`efe6761bc6a96581140767bde9f82816af579375` and parser Source
+`fab935826c898806855376662a8a03317b3ad8f1`. All eight original stage trees closed
+with exit0: helper compile/link/test6, fresh weapon core, fresh attachment core,
+then fixture compile/link/test8. Both links used their own fresh objects. Raw
+probe stdout was hashed before strict UTF8 and explicit CRLF-to-LF normalization
+for ordinal comparison with the exact six/eight PASS groups and markers; both
+probe stderr files were empty. The existing 44+64 output contract was retained.
+
+Root reviewed own receipts and probe bytes, and directed SAME-scope checks
+through the internal session owner; it did not directly read the child host's
+live memory. The final disk JSON remains the honest earlier guards-held snapshot.
+Later postflight proved all 788 original inner FileStream/saved-SFH pairs and all
+eight owners closed, empty inner guards, null lease and CanExit true. After a
+distinct Root terminal GO, the owner executed the frozen gate: SAME external
+Source recheck/closure preceded original host disposal. Original tool `0c2d03`
+reported true exit0. Root's separate fresh 18:51:43.6555247 UTC check found all 16
+captured identities absent and the V1 registry empty, preserving occupied owner
+instances. Kernel CloseHandle return and total PTY wall time were not separately
+measured; the definitive terminal must never be polled or replayed.
+
+The real preflight/core scope and closed-proof pin are recorded in
+[NEUTRAL-PAIR-INPUTS.md](NEUTRAL-PAIR-INPUTS.md#j16-real-preflight-cpp-and-known-closure-2026-10-18).
+J14 remains failed and immutable; its first compiler registration did not qualify
+a completed CPP stage. This later DOC head/merge receives no compiled credit.
+PR227 typed ingress, new native Components, actual stock pairs, full CLI, engine
+ABI, FF, Game and Ready remain unqualified; no new actual GO follows.
