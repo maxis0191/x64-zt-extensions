@@ -70,3 +70,16 @@ Python-only lot adds no C++/FF/runtime qualification or new runtime permission.
 ```powershell
 python -B -m unittest -v test_neutral_pair_inputs
 ```
+
+The inactive C++ `native_pair_report.hpp` now supplies a void report-only check
+on the same const `OwnedInput`: externally copied raw report pin first, strict
+primary JSON with decoded-key duplicate rejection and event bounds, then the
+closed thirty-key schema and three rows bound to the same owned bytes/pins,
+including exact CSV66. It does not decode bodies or change the three-case Source
+address gate, PR216 eligibility, provenance or external-ingress permission.
+`test_pair_report.cpp` contains eight authored groups, uncompiled and unexecuted
+at this Source preparation; its real standard-new fault targets the report SHA
+rehash before decode and is not parser-allocation or fatal-allocator evidence.
+Only the new targeted Python Source checks were run. New standalone C++
+compile/link/probe requires separate exact review, admission, Root GO and known
+closure; J8E does not qualify these new files. No CLI/FF/Game/ABI/Ready promotion.
