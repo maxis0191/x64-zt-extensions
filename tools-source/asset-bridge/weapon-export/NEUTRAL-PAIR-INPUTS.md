@@ -177,3 +177,31 @@ U1/T2/stock data, change the three-case binding gate, or establish PR216 native
 eligibility, provenance, arena/fatal closure, engine ABI/lifetime, FILE/routes,
 CLI/FF, weapon grant, physics, PAP or Game. Ready remains false. No new actual
 authorization or compiled credit to this DOC revision follows.
+
+## Typed owned ingress and J18 validation, 2026-10-18
+
+`native_pair_owned_session.hpp` adds an opt-in typed owner around the existing
+pair lifetime. Copy ingress retains the original guards before constructing the
+four owned raw buffers; adopt ingress takes already-constructed guards/input and
+does not retroactively prove guarded acquisition. Both retain unique ownership
+through the real report/body preflight before component construction, then
+transfer the same owners into the pair without moving the `OwnedInput` object.
+Null or consumed ingress refuses. Partial construction unwinds components before
+raw input and guards; primary failures and cleanup observations remain distinct.
+The internal transfer constructor is private to the validated factory.
+
+Const views borrow from the owning pair and require its lifetime; retaining a
+view does not extend that lifetime. The API is not an OS guard, provenance proof
+or native eligibility token. The existing three-case authored address gate and
+legacy session/native rejection hooks remain unchanged. Production parser/map
+construction, live-FILE-before-first-byte binding, CWD/routes, real native arena
+and fatal-allocator closure still require their own implementation and evidence.
+
+The distinct J18 cohort compiled Source
+`8dd6dd3f040da0c872b4ea75de8dabfdd332894c` and passed all eight authored groups
+with compile/link/probe exit0 and known closure. The
+[J18 build checkpoint](BUILD-COHORT.md#actual-j18-typed-ingress-cpp-and-known-closure-2026-10-18)
+retains the J15 compile failure, J17 oracle failure, corrected exception-identity
+witness and later postflight/true-exit/freshness evidence. This DOC revision and
+any merge were not compiled. No full CLI/engine TU/ABI, real pair, FF, Game or
+Ready qualification, new input permission or NativeComponents Code GO follows.
