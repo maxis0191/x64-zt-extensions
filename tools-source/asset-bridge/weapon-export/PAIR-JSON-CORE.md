@@ -422,10 +422,10 @@ The separate Source preexit receipt is 48908 bytes, SHA256
 The final disk `GuardsHeld` snapshot remains an honest pre-disposal observation;
 the subsequent original preexit/reference checks and true exits establish the
 later closure. No receipt is rewritten to make those times identical, and no
-SDK, OBJ, EXE, PDB or native output was reopened after release.
+SDK, OBJ, EXE, PDB or opaque native output was reopened after release.
 
 The internal execution owner reports original PTY25008 terminal completion:
-chunk `59b968`, exit 0, wall 0.4213263s. Root did not directly observe that execution
+chunk `59b968`, exit 0, last exit-call wall 0.4213263s (not total cohort/run wall). Root did not directly observe that execution
 API result. The original parent Process reported true child exit 0 and closed
 its saved process handle; the outer parent then reported all three Source
 guards reverified/closed and exited. Root personally read the own-metadata
