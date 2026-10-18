@@ -57,7 +57,7 @@ external caller Source stream, which remained held at postflight and was closed
 through its original saved handle at the separately approved terminal frontier.
 
 Root personally parsed and hashed the three own-metadata publications, checked
-the real probe stdout/stderr, then read the preexit witness. Exact receipts are:
+the real probe stdout/stderr, and read the preexit witness. Exact receipts are:
 
 | Own metadata | Bytes | SHA256 |
 | --- | ---: | --- |
@@ -72,9 +72,9 @@ later preexit, terminal and fresh observations prove subsequent closure. Root
 observed the original NoExit terminal exit 0 (`ed7196`) and its fresh
 04:11:21.5787837Z snapshot found all twelve captured identities and leases absent,
 with the preserved Main unchanged. Root qualified this bounded CPP result and
-released the slot. No native output, OBJ/EXE/PDB or SDK input was reopened,
-statted or hashed after release. Post-release verification reads Source and own
-JSON metadata.
+released the slot. No binary native output, OBJ/EXE/PDB or SDK input was reopened,
+statted or hashed after release. Post-release verification reads Source, own JSON
+metadata and bounded probe stdout/stderr only.
 
 Both probe CIM registration errors remain alongside the original-job-already-
 empty markers, actual exit0 and known native tree closure; no timing cause is
