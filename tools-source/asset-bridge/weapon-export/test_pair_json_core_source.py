@@ -431,5 +431,102 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
             self.assertIn('tools-source/asset-bridge/weapon-export/' + name, exports)
 
 
+
+class OwnedPairReportSourceTests(unittest.TestCase):
+    """Inactive contract/provenance checks; none compiles or executes the C++ fixture."""
+    def setUp(self):
+        self.here = Path(__file__).parent
+        self.header = (self.here/'native_pair_report.hpp').read_text(encoding='utf-8')
+        self.fixture = (self.here/'test_pair_report.cpp').read_text(encoding='utf-8')
+
+    def test_closed_literals_match_existing_python_oracle(self):
+        import neutral_pair_inputs as oracle
+        for key, value in oracle._TEXT.items():
+            self.assertIn('{"' + key + '", "' + value + '"}', self.header)
+        flags = self.header.split('false_flags{{', 1)[1].split('}};', 1)[0]
+        self.assertEqual(tuple(re.findall(r'"([^"\n]+)"', flags)), oracle._FALSE_FLAGS)
+        paths = self.header.split('paths{{', 1)[1].split('}};', 1)[0]
+        self.assertEqual(tuple(re.findall(r'"([^"\n]+)"', paths)), tuple(oracle._PATH_CAPS))
+        self.assertIn(oracle._CSV_HASH, self.header)
+        for key in oracle._KEYS:
+            self.assertIn('"' + key + '"', self.header.split('closed(report,', 1)[1].split('});', 1)[0])
+        self.assertEqual(len(oracle._KEYS), 30)
+
+    def test_primary_include_and_single_const_owner_stay_inactive(self):
+        self.assertIn('#if defined(JSON_DIAGNOSTICS) && JSON_DIAGNOSTICS != 1', self.header)
+        self.assertLess(self.header.index('#define JSON_DIAGNOSTICS 1'), self.header.index('#include <json.hpp>'))
+        self.assertIn('484483acad6d562306efc9b3c6d413404f1b1f8a', self.header)
+        self.assertIn('53855e4a20d7bc92d9624bf0d83fba8e22d0d9de83f9480bd4895651602fa8cc', self.header)
+        body = function_body(self.header, 'inline void validate_owned_report(')
+        self.assertIn('inline void validate_owned_report(const player_pair_input::OwnedInput& owner)', self.header)
+        self.assertLess(body.index('raw_pin(owner, Role::report)'), body.index('parse_report(owner.bytes(Role::report), guard)'))
+        self.assertEqual(self.header.count('Json::parse('), 1)
+        code = re.sub(r'//[^\n]*', '', self.header)
+        for forbidden in ('native_pair_session', 'native_neutral_dependencies', 'OwnedPair', 'zone_memory',
+                          'Factory', 'FILE', 'Windows.h', 'LoadLibrary', 'VirtualAlloc', 'operator bool', 'const_cast'):
+            self.assertNotIn(forbidden, code)
+        self.assertNotIn('parse_report(owner.bytes(Role::weapon)', code)
+        self.assertNotIn('parse_report(owner.bytes(Role::attachment)', code)
+
+    def test_framing_event_guard_and_literal_integer_checks(self):
+        parsing = function_body(self.header, 'inline Json parse_report(')
+        self.assertLess(parsing.index('role_caps[0]'), parsing.index('Json::parse('))
+        self.assertLess(parsing.index('Report BOM refused'), parsing.index('Json::parse('))
+        self.assertLess(parsing.index('Report raw NUL refused'), parsing.index('Json::parse('))
+        self.assertIn('raw.begin(), raw.end()', parsing)
+        self.assertIn('true, false, false)', parsing)
+        self.assertNotIn('c_str()', parsing)
+        events = function_body(self.header, 'bool operator()(')
+        self.assertIn('frames.back().keys.insert(key).second, "Duplicate report key"', events)
+        self.assertEqual(events.count('return true;'), 1)
+        self.assertNotIn('return false', events)
+        self.assertIn('depth <= 64', self.header)
+        self.assertIn('nodes < 32768', self.header)
+        self.assertIn('frames.back().elements < 8192', self.header)
+        numbers = function_body(self.header, 'inline std::size_t bounded_integer(')
+        for variant in ('number_unsigned', 'number_integer'):
+            self.assertIn('Json::value_t::' + variant, numbers)
+        self.assertLess(numbers.index('value.type()'), numbers.index('value.get<'))
+        self.assertLess(numbers.index('number <= cap'), numbers.index('static_cast<std::size_t>(number)'))
+        self.assertIn('number >= 0 &&', numbers)
+
+    def test_eight_authored_groups_call_actual_helper_without_body_integration(self):
+        self.assertIn('#include "native_pair_report.hpp"', self.fixture)
+        self.assertIn('AUTHORED, NOT COMPILED/EXECUTED at Source preparation', self.fixture)
+        self.assertIn('IW7_PAIR_REPORT=8', self.fixture)
+        groups = self.fixture.split('groups[] = {', 1)[1].split('};', 1)[0]
+        self.assertEqual(len(re.findall(r'\{"[^"\n]+", \w+\}', groups)), 8)
+        for causal in ('report::validate_owned_report(*owner)', 'Duplicate report key',
+                       'Report raw NUL refused', 'Report BOM refused', 'guard.nodes == 48',
+                       'mixed.nodes == 7', 'node_limit.value_start(0)', 'catch (const allocation_fault::Failure&)',
+                       'refuses_as<Json::parse_error>', 'allocation_fault::live == before',
+                       'BEFORE decode', 'std::declval<const input::OwnedInput&>()'):
+            self.assertIn(causal, self.fixture)
+        for forbidden in ('void validate_owned_report(', 'class OwnedInput', 'std::string sha256(',
+                          'native_pair_session.hpp', 'native_neutral_dependencies.hpp', 'zone_memory', 'LoadLibrary'):
+            self.assertNotIn(forbidden, self.fixture)
+
+    def test_six_reference_sources_and_address_gate_are_unchanged(self):
+        pins = {
+            'neutral_pair_inputs.py': 'a722b66b55c2558951dbd481fd742e0f66a74cbefec97d3ddc69168eac29fcd3',
+            'native_pair_owned_input.hpp': 'f5c31c73c4e5e5e152bb29bf9efd55008297f81ab7c4b4ec9e562cf2059a44ce',
+            'test_neutral_pair_inputs.py': 'aa60cf2de06b88f2ad953f32da949b1c59ce2de8a1db09f19f686954af412565',
+            'test_authored_pair_json.cpp': 'b893b9aec10d7a3cba208f3d0d4a2f71943716986937c9fdaf3489b8f9159759',
+            'authored_pair_json_fixtures.py': 'c58a63ce0a95ad797e2789b533424900e7c5a09a6781390f4ade36e0642f34ac',
+            'prepare_pair_json_core.py': 'ce24d250062cf7146738acfdb69e7842f51b05d4803b17df2dae83454c80d9cb',
+        }
+        for name, pin in pins.items():
+            self.assertEqual(digest((self.here/name).read_text(encoding='utf-8')), pin, name)
+        old_fixture = (self.here/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        self.assertIn('if (&source == &approved)', old_fixture)
+        self.assertNotIn('native_pair_report.hpp', old_fixture)
+
+    def test_exact_two_new_declarative_exports(self):
+        import json
+        exports = json.loads((self.here.parents[2]/'product.json').read_text(encoding='utf-8'))['exports']
+        for name in ('native_pair_report.hpp', 'test_pair_report.cpp'):
+            self.assertEqual(exports.count('tools-source/asset-bridge/weapon-export/' + name), 1)
+        self.assertIn('Success is not provenance', self.header)
+
 if __name__ == '__main__':
     unittest.main()
