@@ -157,18 +157,29 @@ static void unchanged(const input::OwnedInput& owner, const std::array<std::stri
 static void accepts(const Data& value) {
     const auto owner = value.own(); bodies::validate_owned_pair_bodies(*owner); unchanged(*owner, value.raw);
 }
-template<class F> static std::string body_refusal(F call, std::string_view path, std::string_view reason) {
+static std::string bounded_diagnostic(std::string_view value, std::size_t limit) {
+    auto result = std::string(value.substr(0, limit));
+    if (value.size() > limit) result += "...[truncated]";
+    return result;
+}
+template<class F> static std::string body_refusal(F call, std::string_view path, std::string_view reason,
+                                                std::string_view case_name = "direct_refusal") {
     try { call(); }
     catch (const d::BodyError& error) {
         const std::string message = error.what();
-        check(message.find(path) != std::string::npos && message.find(reason) != std::string::npos, "Wrong body refusal frontier");
+        if (message.find(path) == std::string::npos || message.find(reason) == std::string::npos)
+            throw std::runtime_error("Wrong body refusal frontier; case=" + bounded_diagnostic(case_name, 64) +
+                "; expected_path=" + bounded_diagnostic(path, 128) + "; expected_reason=" + bounded_diagnostic(reason, 128) +
+                "; actual=" + bounded_diagnostic(message, 384));
         return message;
     }
-    throw std::runtime_error("Expected actual BodyError");
+    throw std::runtime_error("Expected actual BodyError; case=" + bounded_diagnostic(case_name, 64) +
+        "; expected_path=" + bounded_diagnostic(path, 128) + "; expected_reason=" + bounded_diagnostic(reason, 128));
 }
-static std::string rejects(const Data& value, std::string_view path, std::string_view reason) {
+static std::string rejects(const Data& value, std::string_view path, std::string_view reason,
+                           std::string_view case_name = "owned_refusal") {
     const auto owner = value.own();
-    auto message = body_refusal([&] { bodies::validate_owned_pair_bodies(*owner); }, path, reason);
+    auto message = body_refusal([&] { bodies::validate_owned_pair_bodies(*owner); }, path, reason, case_name);
     unchanged(*owner, value.raw); return message;
 }
 static void same_owned_complete_frontdoor() {
@@ -281,25 +292,25 @@ static void numeric_domains_and_lexemes() {
     }
 }
 static void profile_shapes_and_shared_counts() {
-    const auto reject_mutation = [](auto alter, std::string_view path, std::string_view reason) {
-        Data value; auto doc = value.documents(); alter(doc); value.set(doc); rejects(value, path, reason);
+    const auto reject_mutation = [](std::string_view case_name, auto alter, std::string_view path, std::string_view reason) {
+        Data value; auto doc = value.documents(); alter(doc); value.set(doc); rejects(value, path, reason, case_name);
     };
-    reject_mutation([](Documents& doc) { doc.weapon["szInternalName"] = "wrong"; }, "weapon.szInternalName", "");
-    reject_mutation([](Documents& doc) { doc.attachment["szInternalName"] = "wrong"; }, "attachment.szInternalName", "");
-    reject_mutation([](Documents& doc) { doc.weapon["weapDef"]["weapType"] = 3; }, "weapon.weapDef.weapType", "");
-    reject_mutation([](Documents& doc) { doc.attachment["weaponType"] = 3; }, "attachment.weaponType", "");
-    reject_mutation([](Documents& doc) { doc.attachment["papAttachment"] = false; }, "attachment.papAttachment", "");
-    reject_mutation([](Documents& doc) { doc.weapon["attachments6"] = nullptr; }, "weapon.attachments", "");
-    reject_mutation([](Documents& doc) { doc.weapon["attachments5"] = doc.weapon["attachments6"]; }, "weapon.attachments", "");
-    reject_mutation([](Documents& doc) { doc.weapon["attachments5"] = doc.weapon["attachments6"]; doc.weapon["attachments6"] = nullptr; }, "weapon.attachments", "");
+    reject_mutation("weapon_name", [](Documents& doc) { doc.weapon["szInternalName"] = "wrong"; }, "weapon.szInternalName", "");
+    reject_mutation("attachment_name", [](Documents& doc) { doc.attachment["szInternalName"] = "wrong"; }, "attachment.szInternalName", "");
+    reject_mutation("base_profile_type", [](Documents& doc) { doc.weapon["weapDef"]["weapType"] = 3; }, "weapon.weapDef.weapType", "");
+    reject_mutation("pap_profile_type", [](Documents& doc) { doc.attachment["weaponType"] = 3; }, "attachment.weaponType", "");
+    reject_mutation("pap_literal_true", [](Documents& doc) { doc.attachment["papAttachment"] = false; }, "attachment.papAttachment", "");
+    reject_mutation("missing_association", [](Documents& doc) { doc.weapon["attachments6"] = nullptr; }, "weapon.attachments", "");
+    reject_mutation("duplicate_association", [](Documents& doc) { doc.weapon["attachments5"] = doc.weapon["attachments6"]; }, "weapon.attachments", "");
+    reject_mutation("wrong_slot", [](Documents& doc) { doc.weapon["attachments5"] = doc.weapon["attachments6"]; doc.weapon["attachments6"] = nullptr; }, "weapon.attachments", "");
     for (const char* alias : {",sdk_shredder_clone_pap_zm", "sdk_shredder_clone_zm", ",sdk_shredder_clone_zm"})
-        reject_mutation([&](Documents& doc) { doc.weapon["attachments6"] = Json::array({alias}); }, "weapon.attachments", "");
-    reject_mutation([](Documents& doc) { doc.weapon.erase("attachments5"); }, "weapon", "closed");
-    reject_mutation([](Documents& doc) { doc.weapon["weapDef"]["unk0"]["unexplained"] = 0; }, "weapon.weapDef.unk0", "closed");
-    reject_mutation([](Documents& doc) { doc.weapon["weapDef"]["overlay.shader"] = nullptr; }, "weapon.weapDef", "closed");
-    reject_mutation([](Documents& doc) { doc.weapon["attachments"] = Json::array(); }, "weapon.attachments", "");
-    reject_mutation([](Documents& doc) { doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); }, "weapon", "shared count");
-    reject_mutation([](Documents& doc) { doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); doc.weapon["notetrackSoundMapValues"] = Json::array({"bbbbbbb", "ccccccc"}); }, "weapon", "shared count");
+        reject_mutation(alias, [&](Documents& doc) { doc.weapon["attachments6"] = Json::array({alias}); }, "weapon.attachments", "");
+    reject_mutation("missing_slot_key", [](Documents& doc) { doc.weapon.erase("attachments5"); }, "weapon", "closed");
+    reject_mutation("unknown_nested_key", [](Documents& doc) { doc.weapon["weapDef"]["unk0"]["unexplained"] = 0; }, "weapon.weapDef.unk0", "closed");
+    reject_mutation("flat_key_in_nested_owner", [](Documents& doc) { doc.weapon["weapDef"]["overlay.shader"] = nullptr; }, "weapon.weapDef", "closed");
+    reject_mutation("empty_attachments", [](Documents& doc) { doc.weapon["attachments"] = Json::array(); }, "weapon", "positive dynamic arrays required");
+    reject_mutation("shared_null_policy", [](Documents& doc) { doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); }, "weapon", "shared count");
+    reject_mutation("shared_length", [](Documents& doc) { doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); doc.weapon["notetrackSoundMapValues"] = Json::array({"bbbbbbb", "ccccccc"}); }, "weapon", "shared count");
     Data equal; auto doc = equal.documents();
     doc.weapon["notetrackSoundMapKeys"] = Json::array({"aaaaaaa"}); doc.weapon["notetrackSoundMapValues"] = Json::array({"bbbbbbb"}); equal.set(doc); accepts(equal);
     check(d::inspect(doc.weapon, doc.attachment).offset == 6232, "Independent shared two-array +24 demand differs");
@@ -310,9 +321,9 @@ static void profile_shapes_and_shared_counts() {
     // Deliberate early cursor misalignment plus LATER unsupported domain. The
     // first non-alignment walk must expose damage's domain before alignment.
     Data two_errors; doc = two_errors.documents(); doc.weapon["szDisplayName"] = "AA"; doc.weapon["weapDef"]["damage"] = true;
-    two_errors.set(doc); rejects(two_errors, "weapon.weapDef.damage", "");
+    two_errors.set(doc); rejects(two_errors, "weapon.weapDef.damage", "", "domain_before_alignment");
     doc.weapon["weapDef"]["damage"] = 0; two_errors.set(doc);
-    rejects(two_errors, "weapon.attachments6", "legacy cursor misalignment");
+    rejects(two_errors, "weapon.attachments6", "legacy cursor misalignment", "first_typed_misalignment");
 }
 static void manual_order_and_graph_policy() {
     Data value; auto doc = value.documents();
@@ -434,6 +445,7 @@ int main() {
         {"profile_shapes_and_shared_counts", profile_shapes_and_shared_counts},
         {"manual_order_and_graph_policy", manual_order_and_graph_policy},
         {"direct_bounds_and_standard_unwind", direct_bounds_and_standard_unwind}};
-    try { for (const auto& group : groups) { group.run(); std::cout << "PASS " << group.name << '\n'; } std::cout << "IW7_OWNED_BODY_PREFLIGHT=8\n"; return 0; }
-    catch (const std::exception& error) { allocation_fault::armed = false; std::cerr << error.what() << '\n'; return 2; }
+    const char* active_group = "before_groups";
+    try { for (const auto& group : groups) { active_group = group.name; group.run(); std::cout << "PASS " << group.name << '\n'; } std::cout << "IW7_OWNED_BODY_PREFLIGHT=8\n"; return 0; }
+    catch (const std::exception& error) { allocation_fault::armed = false; std::cerr << "FAIL " << active_group << ": " << bounded_diagnostic(error.what(), 896) << '\n'; return 2; }
 }

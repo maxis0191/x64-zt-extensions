@@ -134,14 +134,42 @@ allowed for floating targets; a nonzero mantissa underflowing to zero refuses.
 IEEE binary32 conversion preserves Python's rounding just above its maximum up
 to the exclusive halfway overflow boundary, without an out-of-range C++ cast.
 No engine ABI, real-pair input, native core/arena/routing, builder, CLI, FF,
-readiness or gameplay is supplied. The new C++ fixture is AUTHORED, NOT COMPILED
-or executed: eight groups have the authored marker `IW7_OWNED_BODY_PREFLIGHT=8`.
+readiness or gameplay is supplied. The C++ fixture has eight authored groups
+and the success marker `IW7_OWNED_BODY_PREFLIGHT=8`.
 Its ordinary-memory causal arms the first standard-new failure reached after
 entering the decoder; the exact failing allocation is unknown. This does not
 prove late-allocation or general unwind behavior. Six Python checks cover static
 Source dispatch/order/integration only. J10 qualified only the earlier constants
-fixture. New compilation and exact original closure require their own reviewed
-recipe and distinct GO.
+fixture.
+
+J11 compiled Source `4bd693ce0abac588ead62d0f3b6a733c8bbda113` with explicit
+provider Source `efe6761bc6a96581140767bde9f82816af579375`: compile and fresh link
+exited 0, then the probe exited 2. Its first five observed PASS groups were
+`same_owned_complete_frontdoor`, `source_trace_oracles`,
+`pins_and_report_before_decode`, `strict_raw_sax_frontiers` and
+`numeric_domains_and_lexemes`. Raw stdout was 164 bytes/SHA256
+`bb655fa945c604ff1916c2a53a4c62e50433d57f2fa02787a258067543b7b629`;
+stderr was 29 bytes containing `Wrong body refusal frontier` followed by CRLF.
+The sixth group never published PASS. The message identifies no individual
+mutation, so it does not establish which case actually failed.
+
+Source review found one incorrect fixture expectation in that group:
+`attachments=[]` is refused by the existing shared-count guard at owner path
+`weapon`, with reason `positive dynamic arrays required`, before its array rule.
+The Python policy uses the same owner path and reason. The fixture now expects
+that exact reason and owner path; the validator and its policy are unchanged.
+Failure diagnostics retain bounded case, expected path/reason and actual
+BodyError text, with the active group in the terminal diagnostic. Known group
+names and the explicit text caps keep that diagnostic below 1 KiB, with truncation
+marked. This is fixture diagnosis, not a new exception/unwind guarantee.
+
+Root observed the same original context closed with lease null, 534 saved
+SafeFileHandles and three owners closed, then observed true exit 1 of original
+PTY4815 / terminal chunk `848839` through the separately reviewed terminal gate.
+J11 remains FAILED; its packet and evidence are immutable. The fixture correction
+following that run is AUTHORED, NOT COMPILED or executed. It inherits no C++
+qualification from the five completed groups. A fresh reviewed recipe and
+distinct GO are required before another compilation; no old executable is rerun.
 
 ## Exact input rules
 
