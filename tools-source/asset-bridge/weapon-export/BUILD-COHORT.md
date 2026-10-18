@@ -516,6 +516,17 @@ The T7 profile adapter is unchanged; its captured Core budget gate checks the
 literal plan/schema correspondence. Fixture closure is exactly seven canonical
 support names plus two generated headers; helper TU/header bindings are retained.
 
+The pure `Resolve-H1AuthoredPlanOutputBudget` contract also maps the distinct
+`iw7.authored-preflight-real-core-cpp-source/1` schema to this existing44+64
+shape. That schema requires a derived budget; the two older schema/profile
+pairs and other callers' no-budget legacy64TOTAL path remain separate. The
+resolver checks typed literal stages/bounds and the complete exact-case output
+set before measurement or telemetry, returning a fresh derivation. Runtime
+`Test-H1Budget` reuses it. A future successor runner must call this pure gate
+immediately after deriving its budget and before Scheduler/admission/owner
+creation; no consumed runner or plan is patched here. This Source change
+qualifies no CPP stage, lease, input or actual execution.
+
 Before imports, J8 validates all eleven pinned provider Sources and their actual
 AST graph. Native provider Source remains explicitly selected at
 `efe6761bc6a96581140767bde9f82816af579375`; a later Native head is not adopted.

@@ -90,7 +90,8 @@ function Assert-H1AuthoredOutputBudget([string]$Root,$Budget) {
     foreach($pair in $Budget.Entries.GetEnumerator()){
         if($pair.Key -isnot [string] -or $pair.Value -isnot [string] -or
            [IO.Path]::GetFullPath($pair.Key) -cne $pair.Key -or !$seen.Add($pair.Key) -or $seen.Count -gt $expected.Entries.Count -or
-           !$expected.Entries.ContainsKey($pair.Key) -or $expected.Entries[$pair.Key] -cne $pair.Value){
+           !$expected.Entries.ContainsKey($pair.Key) -or !@($expected.Entries.Keys|Where-Object {$_ -ceq $pair.Key}).Count -or
+           $expected.Entries[$pair.Key] -cne $pair.Value){
             throw 'Authored declared output set/types/aliases differ from the exact Source profile.'
         }
     }
@@ -98,7 +99,7 @@ function Assert-H1AuthoredOutputBudget([string]$Root,$Budget) {
     $seen.Clear()
     foreach($stageRoot in $Budget.StageRoots){
         if($stageRoot -isnot [string] -or [IO.Path]::GetFullPath($stageRoot) -cne $stageRoot -or
-           !$seen.Add($stageRoot) -or $seen.Count -gt 8 -or !@($expected.StageRoots|Where-Object {[string]::Equals($_,$stageRoot,[StringComparison]::OrdinalIgnoreCase)}).Count){
+           !$seen.Add($stageRoot) -or $seen.Count -gt 8 -or !@($expected.StageRoots|Where-Object {[string]::Equals($_,$stageRoot,[StringComparison]::Ordinal)}).Count){
             throw 'Authored stage root set/aliases differ from the exact Source profile.'
         }
     }
@@ -155,17 +156,54 @@ function Get-H1Clock { [Diagnostics.Stopwatch]::GetTimestamp()/([double][Diagnos
 function Assert-H1Deadline($Started,[int]$Seconds) {
     if((Get-H1Clock)-$Started -ge $Seconds*1000){throw 'Stage deadline exceeded.'}
 }
-function Test-H1Budget($Plan,$State) {
-    if($Plan.PSObject.Properties['AuthoredOutputBudget']){
-        if(!$Plan.PSObject.Properties['Schema'] -or $Plan.Schema -cnotin @('iw7.authored-pair-core-cpp-source/1','iw7.authored-owned-input-core-cpp-source/1')){
-            throw 'Only the authored eight-stage cohort may select its output budget.'
+function Resolve-H1AuthoredPlanOutputBudget($Plan) {
+    # Pure Source contract only: no filesystem measurement, telemetry or owner.
+    $schemaProperty=$Plan.PSObject.Properties['Schema']
+    $budgetProperty=$Plan.PSObject.Properties['AuthoredOutputBudget']
+    if(!$budgetProperty){
+        if($schemaProperty -is [Management.Automation.PSNoteProperty] -and
+           $schemaProperty.Value -is [string] -and $schemaProperty.Value -ceq 'iw7.authored-preflight-real-core-cpp-source/1'){
+            throw 'The authored preflight profile requires its derived output budget.'
         }
-        $expected=New-H1AuthoredOutputBudget $Plan.RunRoot $Plan.Stages
-        $owned=$Plan.Schema -ceq 'iw7.authored-owned-input-core-cpp-source/1'
-        if(($expected.Schema -ceq 'iw7.h1-owned-input-output-budget/1') -ne $owned){throw 'Exact authored plan/output profile correspondence required.'}
-        $null=Assert-H1AuthoredOutputBudget $Plan.RunRoot $Plan.AuthoredOutputBudget
-        $bytes=Measure-H1Output $Plan.RunRoot $expected
-    }else{$bytes=Measure-H1Output $Plan.RunRoot}
+        return $null # Existing callers without a budget retain legacy64TOTAL.
+    }
+    if($schemaProperty -isnot [Management.Automation.PSNoteProperty] -or $schemaProperty.Value -isnot [string] -or
+       $budgetProperty -isnot [Management.Automation.PSNoteProperty]){throw 'Literal authored schema and budget NoteProperties required.'}
+    $profile=switch -CaseSensitive ($schemaProperty.Value){
+        'iw7.authored-pair-core-cpp-source/1' {'iw7.h1-authored-output-budget/1'}
+        'iw7.authored-owned-input-core-cpp-source/1' {'iw7.h1-owned-input-output-budget/1'}
+        'iw7.authored-preflight-real-core-cpp-source/1' {'iw7.h1-owned-input-output-budget/1'}
+        default {throw 'Only the authored eight-stage cohort may select its output budget.'}
+    }
+    $budget=$budgetProperty.Value
+    foreach($name in 'RunRoot','Stages'){
+        if($Plan.PSObject.Properties[$name] -isnot [Management.Automation.PSNoteProperty]){throw 'Literal authored plan values required.'}
+    }
+    foreach($name in 'Schema','Root','Entries','StageRoots','Stages','ResidualEntries','MaximumDepth'){
+        if($budget.PSObject.Properties[$name] -isnot [Management.Automation.PSNoteProperty]){throw 'Literal derived budget values required.'}
+    }
+    if($Plan.RunRoot -isnot [string] -or $budget.Schema -isnot [string] -or $budget.Root -isnot [string] -or
+       $budget.ResidualEntries -isnot [int] -or
+       $budget.MaximumDepth -isnot [int]){throw 'Strict authored output root and integer bounds required.'}
+    foreach($stages in @($Plan.Stages,$budget.Stages)){
+        if($stages -isnot [array]){throw 'Exact authored stage arrays required.'}
+        foreach($stage in $stages){
+            foreach($name in 'Name','Stage','Artifacts'){
+                if($stage.PSObject.Properties[$name] -isnot [Management.Automation.PSNoteProperty]){throw 'Literal authored stage values required.'}
+            }
+            if($stage.Name -isnot [string] -or $stage.Stage -isnot [string] -or $stage.Artifacts -isnot [array] -or
+               @($stage.Artifacts|Where-Object {$_ -isnot [string]}).Count){throw 'Strict authored stage names, kinds and artifact arrays required.'}
+        }
+    }
+    $expected=New-H1AuthoredOutputBudget $Plan.RunRoot $Plan.Stages
+    if($expected.Schema -cne $profile){throw 'Exact authored plan/output profile correspondence required.'}
+    $verified=Assert-H1AuthoredOutputBudget $Plan.RunRoot $budget
+    if($verified.Schema -cne $expected.Schema){throw 'Supplied authored budget differs from the plan output profile.'}
+    return $expected # Fresh read-only entry derivation, never the supplied map.
+}
+function Test-H1Budget($Plan,$State) {
+    $expected=Resolve-H1AuthoredPlanOutputBudget $Plan
+    $bytes=Measure-H1Output $Plan.RunRoot $expected
     $State.MaxObservedOutputBytes=[math]::Max($State.MaxObservedOutputBytes,$bytes)
     if($bytes -gt $Plan.OutputLimitBytes-$Plan.MetadataReserveBytes){throw 'Output budget exceeded; preserve diagnostics.'}
     $snapshot=Get-IW7ResourceSnapshot
