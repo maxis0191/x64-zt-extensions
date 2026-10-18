@@ -62,16 +62,52 @@ before execution; no SCHEMA module was imported.
 
 An independent Source aggregate reader reconstructs every field, required order,
 type and presence from the emitted text and compares it to the original literal.
-The adoption check also requires the exact raw header pin. This supplies Source
-fidelity, not compiled initializer/ABI evidence, an interpreter, body admission,
-arena ownership, builder/CLI/FF integration or runtime/game qualification. No C++
-compilation of this constants header has been performed by this Source lot.
+The adoption check also requires the exact raw header pin. These Python checks
+supply Source fidelity; the separate constants-only C++ result follows.
 
-`test_native_pair_body_schema.cpp` is AUTHORED, NOT COMPILED or executed. Its four
-standalone groups are `fixed_width_sign_magnitude`, `ids_spans_element_canonicality`,
-`utf8_pool_bytes` and `ordered_records_aliases_manual_sites`, with the authored
-stdout marker `IW7_BODY_SCHEMA_CONSTANTS=4`. These Source expectations are not
-observed PASS results. A separate reviewed CPP recipe and admission are required.
+On 2026-10-18, J10 compiled `test_native_pair_body_schema.cpp`, freshly linked its
+single produced object and ran the fixture, all at exact Source
+`1adcece1ae57697156f5e54e44030d881feb6ad2` with explicit provider Source
+`efe6761bc6a96581140767bde9f82816af579375` and the pinned `fab9358` native model.
+The three original stages exited 0 with confirmed job-tree closure; their measured
+stage durations were 1796.3844, 1059.5636 and 192.3097 ms respectively. The four
+observed PASS groups were `fixed_width_sign_magnitude`,
+`ids_spans_element_canonicality`, `utf8_pool_bytes` and
+`ordered_records_aliases_manual_sites`, followed by `IW7_BODY_SCHEMA_CONSTANTS=4`.
+Raw stdout was 164 bytes/SHA256
+`fecb014d4b92312bc7697fe37dbff63ba97769ad0d9044834319912ca56c6340`.
+Its CRLF bytes were read and hashed before explicit CRLF-to-LF ordinal comparison
+with the Source literal; all three stderr logs were empty.
+
+Root's observation of the same originals before exit recorded 31 Source records, 498 input
+records and 3 publication streams: all 532 saved FileStreams/SafeFileHandles and
+all 3 original owners were closed, with the 6 inner/7 external witnesses and their
+references preserved, lease null and `CanExit=true`. The 490 selected input
+declarations plus 4 opaque parent declarations are metadata counts, not a claim
+of 494 unique physical inputs. The maximum measured output was 13,315,956 bytes
+under admission; the original clock was never reset. The final disk receipt
+described a released lease with guards still held pending postflight; the
+later observation established actual disposal. The external caller Source and
+host handle stayed retained until the reviewed terminal gate, closing Source
+before disposing the same Process object. A separate kernel CloseHandle return
+was not measured.
+
+Root issued the distinct terminal GO at 08:32:15.8839269 UTC, then observed true
+exit 0 / terminal chunk `c5cec0`. The terminal event's exact UTC and total PTY wall
+time were not separately measured. Root's fresh check at 08:32:46.2630292 UTC
+found the seven expected processes absent, an empty Version1 lease registry and
+the protected Main unchanged. The probe's registration error
+`Original process differs from scheduler observation.` remains recorded alongside
+`Original job already empty before CIM registration`; no cause is inferred from
+its short duration. Earlier Source A's residual JSON-binding refusal and the
+Source/harness corrections remain retained; only the corrected B packet ran.
+After release, this documentation update read only Source and own JSON/text logs,
+without reopening opaque native outputs.
+
+This result qualifies the standalone constants fixture and its compiled table,
+not a body decoder/interpreter, real-pair admission, arena or engine ABI,
+builder/CLI/FF integration, readiness or gameplay. It does not qualify the future
+DOC commit or merge as newly compiled Source.
 
 ## Exact input rules
 
