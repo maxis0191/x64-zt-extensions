@@ -442,6 +442,382 @@ def render(schema):
     return '\n'.join([*lines, '}', ''])
 
 
+# Constants-only projection. The existing extractor, renderer and CLI above are
+# unchanged. No file is read or written by these helpers.
+CPP_SCHEMA_PIN = {'git_blob': '99e084aeac3e26798a9b4349e22c245b5a15b664',
+                  'bytes_lf': 262207,
+                  'sha256_lf': '5e18fe147f2bbc55459f60c4e724dbdd15b86fe4bb23de92562016c2345813db'}
+CPP_EXTRACTION_GENERATOR_PIN = {'git_blob': '4717a82a21117be7f744bc6e0e6ce56cf9c7db92',
+                                'bytes_lf': 24497,
+                                'sha256_lf': '4ddfdf8a9c46b2d78af8ccc70f74524596c16a116f5d04423cfe7d6cb413f9e6'}
+CPP_TYPE_TAGS = ('object', 'pointer', 'enum', 'array', 'bool', 'int', 'float')
+CPP_OP_TAGS = ('ASSET', 'ASSET_ALLOC_ARR_MODVAL', 'ASSET_ARR', 'ASSET_FIELD_ARR',
+               'FIELD', 'FIELD_ALLOC_ARR', 'FIELD_ARR', 'FIELD_RENAME', 'FXCOMBINED',
+               'FXCOMBINED_ALLOC_ARR', 'MANUAL', 'OPTIONAL', 'SCRIPT_STRING',
+               'SCRIPT_STRING_ALLOC_ARR', 'SCRIPT_STRING_ALLOC_ARR_MODVAL', 'STRING', 'STRING_ARR')
+CPP_MANUAL_TAGS = ('object', 'entries', 'graphs', 'definition', 'original_graphs',
+                   'overrides', 'unk_material', 'internal_script')
+CPP_TYPE_OPTIONALS = ('pack', 'size_basis', 'element', 'extents', 'min', 'max',
+                       'values', 'members', 'bitfields', 'conversion_basis',
+                       'semantic_domain_unknown', 'storage_domain_only')
+CPP_OP_OPTIONALS = ('field', 'key', 'flavor', 'type', 'count', 'count_type',
+                     'semantic_domain_unknown', 'handler')
+CPP_RECORDS = {
+    'StringSpan': (('offset', 'u32'), ('count', 'u32')),
+    'Integer': (('negative', 'bool'), ('magnitude', 'u64')),
+    'NamedInteger': (('name', 'u32'), ('value', 'Integer')),
+    'NamedUnsigned': (('name', 'u32'), ('value', 'u64')),
+    'TypeRecord': (('name', 'u32'), ('kind', 'u32'), ('present', 'u32'), ('size', 'u64'),
+                   ('align', 'u64'), ('pack', 'u64'), ('size_basis', 'u32'),
+                   ('element_tag', 'u32'), ('element', 'u32'), ('extents', 'StringSpan'), ('minimum', 'Integer'),
+                   ('maximum', 'Integer'), ('values', 'StringSpan'), ('members', 'StringSpan'),
+                   ('bitfields', 'StringSpan'), ('conversion_basis', 'u32'),
+                   ('semantic_domain_unknown', 'bool'), ('storage_domain_only', 'bool')),
+    'Operation': (('tag', 'u32'), ('line', 'u32'), ('present', 'u32'), ('field', 'u32'),
+                  ('key', 'u32'), ('flavor', 'u32'), ('type', 'u32'), ('count_tag', 'u32'),
+                  ('fixed_count', 'u64'), ('named_count', 'u32'), ('count_type', 'u32'),
+                  ('semantic_domain_unknown', 'bool'), ('manual', 'u32')),
+    'Manual': (('owner', 'u32'), ('line', 'u32'), ('tag', 'u32'), ('arguments', 'StringSpan')),
+    'DirectSite': (('line', 'u32'), ('text', 'u32')),
+    'Structure': (('name', 'u32'), ('layout', 'u32'), ('source', 'u32'), ('first', 'u32'),
+                   ('last', 'u32'), ('keys', 'StringSpan'), ('ops', 'StringSpan'),
+                   ('direct_sites', 'StringSpan')),
+    'OwnerSpan': (('owner', 'u32'), ('items', 'StringSpan')),
+    'SourcePin': (('name', 'u32'), ('sha256', 'u32')),
+    'Provenance': (('role', 'u32'), ('git_blob', 'u32'), ('bytes_lf', 'u64'), ('sha256_lf', 'u32')),
+    'Metadata': (('pin', 'u32'), ('platform', 'u32'), ('json_revision', 'u32'),
+                  ('typed_structures', 'u32'), ('macro_sites', 'u32'),
+                  ('complete_pinned_extraction', 'bool'), ('actual_input_admissibility', 'bool'),
+                  ('runtime_abi_verified', 'bool')),
+}
+CPP_TABLES = {'strings': 'StringSpan', 'extents': 'u64', 'integers': 'Integer',
+              'enum_members': 'NamedInteger', 'bitfields': 'NamedUnsigned',
+              'types': 'TypeRecord', 'key_ids': 'u32', 'argument_ids': 'u32',
+              'manuals': 'Manual', 'operations': 'Operation', 'direct_sites': 'DirectSite',
+              'structures': 'Structure', 'direct_owners': 'OwnerSpan', 'manual_ids': 'u32',
+              'manual_owners': 'OwnerSpan', 'source_pins': 'SourcePin',
+              'conversion_pins': 'SourcePin', 'manual_body_pins': 'SourcePin',
+              'provenance': 'Provenance', 'type_tags': 'u32', 'op_tags': 'u32',
+              'manual_tags': 'u32', 'metadata': 'Metadata'}
+
+
+def _cpp_u(value, bits):
+    require(type(value) is int and 0 <= value < 1 << bits, 'C++ table unsigned narrowing')
+    return value
+
+
+def _cpp_integer(value):
+    require(type(value) is int and -(1 << 64) < value < 1 << 64,
+            'C++ table sign/magnitude range')
+    return (value < 0, abs(value))
+
+
+def _cpp_same(left, right):
+    if type(left) is not type(right): return False
+    if isinstance(left, dict):
+        return list(left) == list(right) and all(_cpp_same(left[k], right[k]) for k in left)
+    if isinstance(left, (list, tuple)):
+        return len(left) == len(right) and all(_cpp_same(a, b) for a, b in zip(left, right))
+    return left == right
+
+
+def _cpp_source_pin(pin):
+    require(type(pin) is dict and set(pin) == {'git_blob', 'bytes_lf', 'sha256_lf'},
+            'Closed Source provenance pin')
+    require(type(pin['git_blob']) is str and re.fullmatch('[0-9a-f]{40}', pin['git_blob']) and
+            type(pin['sha256_lf']) is str and re.fullmatch('[0-9a-f]{64}', pin['sha256_lf']),
+            'Canonical Source provenance digest')
+    require(type(pin['bytes_lf']) is int and 0 < pin['bytes_lf'] <= 2097152,
+            'Bounded Source provenance length')
+
+
+def _cpp_literal(schema_raw, expected_schema_pin):
+    _cpp_source_pin(expected_schema_pin)
+    require(type(schema_raw) is bytes and len(schema_raw) <= 2097152 and b'\0' not in schema_raw,
+            'Bounded literal Source bytes')
+    text = schema_raw.decode('utf-8', errors='strict').replace('\r\n', '\n')
+    encoded = text.encode('utf-8')
+    require(len(encoded) == expected_schema_pin['bytes_lf'] and
+            hashlib.sha256(encoded).hexdigest() == expected_schema_pin['sha256_lf'],
+            'Literal Source pin differs before AST parse')
+    require(hashlib.sha1(b'blob ' + str(len(encoded)).encode() + b'\0' + encoded).hexdigest() ==
+            expected_schema_pin['git_blob'], 'Literal Source Git blob differs before AST parse')
+    tree = ast.parse(text)
+    require(len(tree.body) == 2 and isinstance(tree.body[0], ast.Expr) and
+            isinstance(tree.body[0].value, ast.Constant) and type(tree.body[0].value.value) is str,
+            'Only docstring and one literal SCHEMA assignment permitted')
+    assignment = tree.body[1]
+    require(isinstance(assignment, ast.Assign) and len(assignment.targets) == 1 and
+            isinstance(assignment.targets[0], ast.Name) and assignment.targets[0].id == 'SCHEMA',
+            'One literal SCHEMA assignment required')
+    return ast.literal_eval(assignment.value)
+
+
+def _cpp_schema(schema):
+    require(type(schema) is dict and set(schema) == {'coverage', 'enum_conversion_source',
+            'pin', 'platform', 'source_pins', 'structures', 'types'}, 'Closed SCHEMA fields')
+    require(schema['pin'] == PIN and schema['platform'] == 'Windows-x64-LLP64-default-pack8' and
+            _cpp_same(schema['source_pins'], PINS), 'Exact native Source provenance')
+    conversion = schema['enum_conversion_source']
+    require(type(conversion) is dict and set(conversion) == {'json_revision', 'pins'} and
+            conversion['json_revision'] == JSON_REVISION and _cpp_same(conversion['pins'], CONVERSION_PINS),
+            'Exact conversion Source provenance')
+    types, structures, coverage = schema['types'], schema['structures'], schema['coverage']
+    require(type(types) is dict and len(types) == 239 and type(structures) is dict and
+            len(structures) == 41, 'Finite type/structure identities')
+    for name, desc in types.items():
+        require(type(name) is str and type(desc) is dict and desc.get('kind') in CPP_TYPE_TAGS,
+                'Closed type kind')
+        kind = desc['kind']; base = {'kind', 'size', 'align'}
+        extra = {'object': {'pack', 'size_basis'}, 'pointer': {'element'},
+                 'enum': {'min', 'max', 'values', 'members'}, 'array': {'element', 'extents'},
+                 'bool': set(), 'int': {'min', 'max'}, 'float': set()}[kind]
+        optional = {'object': {'bitfields'}, 'enum': {'conversion_basis', 'semantic_domain_unknown',
+                    'storage_domain_only'}}.get(kind, set())
+        require(base | extra <= set(desc) <= base | extra | optional, 'Unknown/missing type fields')
+        for field in ('size', 'align', 'pack'):
+            if field in desc: _cpp_u(desc[field], 64)
+        require(desc['align'] > 0, 'Nonzero Source alignment')
+        if 'element' in desc:
+            require(type(desc['element']) is str and (kind == 'pointer' or desc['element'] in types),
+                    'Exact pointer label or known array element type')
+        if 'extents' in desc:
+            require(type(desc['extents']) is list and desc['extents'], 'Explicit array extents')
+            for value in desc['extents']: _cpp_u(value, 64)
+        for field in ('min', 'max'):
+            if field in desc: _cpp_integer(desc[field])
+        if 'values' in desc:
+            require(type(desc['values']) is list, 'Present enum values list')
+            for value in desc['values']: _cpp_integer(value)
+        if 'members' in desc:
+            require(type(desc['members']) is dict, 'Present ordered enum declaration map')
+            for member, value in desc['members'].items():
+                require(type(member) is str, 'Enum declaration name'); _cpp_integer(value)
+        if 'bitfields' in desc:
+            require(type(desc['bitfields']) is list, 'Ordered bitfield metadata')
+            for pair in desc['bitfields']:
+                require(type(pair) is tuple and len(pair) == 2 and type(pair[0]) is str, 'Named bitfield tuple')
+                _cpp_u(pair[1], 64)
+        for field in ('semantic_domain_unknown', 'storage_domain_only'):
+            if field in desc: require(type(desc[field]) is bool, 'Exact boolean type flag')
+        for field in ('size_basis', 'conversion_basis'):
+            if field in desc: require(type(desc[field]) is str, 'Exact layout/conversion label')
+    require(type(coverage) is dict and set(coverage) == {'typed_structures', 'macro_sites', 'direct_sites',
+            'manual_handlers', 'complete_pinned_extraction', 'actual_input_admissibility', 'runtime_abi_verified'},
+            'Closed coverage fields')
+    require(type(coverage['typed_structures']) is int and coverage['typed_structures'] == 41 and
+            type(coverage['macro_sites']) is int and coverage['macro_sites'] == 1203, 'Exact coverage counts')
+    for field in ('complete_pinned_extraction', 'actual_input_admissibility', 'runtime_abi_verified'):
+        require(type(coverage[field]) is bool, 'Exact coverage boolean')
+    require(type(coverage['direct_sites']) is dict and set(coverage['direct_sites']) == set(structures), 'Every direct-site owner retained')
+    require(_cpp_same(coverage['manual_handlers'], MANUAL), 'Pinned manual sites/order/arguments')
+    total = manual = 0
+    for name, structure in structures.items():
+        require(type(name) is str and type(structure) is dict and set(structure) == {'first', 'keys', 'last', 'layout', 'source', 'ops'}, 'Closed structure fields')
+        require(name in types and _cpp_same(structure['layout'], types[name]), 'Complete structure layout matches referenced type')
+        require(type(structure['source']) is str and structure['source'] in ('weapondef.cpp', 'weaponattachment.cpp'), 'Closed Source filename')
+        _cpp_u(structure['first'], 32); _cpp_u(structure['last'], 32)
+        require(structure['first'] <= structure['last'] and type(structure['keys']) is list and
+                all(type(k) is str for k in structure['keys']) and type(structure['ops']) is list, 'Ordered structure keys/operations')
+        for op in structure['ops']:
+            require(type(op) is dict and op.get('op') in CPP_OP_TAGS, 'Closed operation tag')
+            _cpp_u(op['line'], 32); total += 1
+            if op['op'] == 'MANUAL':
+                require(set(op) == {'op', 'line', 'handler'} and type(op['handler']) is list and
+                        op['handler'] and op['handler'][0] in CPP_MANUAL_TAGS and
+                        all(type(v) is str for v in op['handler']), 'Closed manual handler')
+                arity = 3 if op['handler'][0] in ('object', 'entries') else 1
+                require(len(op['handler']) == arity, 'Manual argument arity')
+                if arity == 3: require(op['handler'][2] in structures, 'Manual target structure')
+                manual += 1
+            else:
+                base = {'op', 'line', 'field', 'key', 'flavor', 'type'}
+                dynamic = op['op'] in ('ASSET_ALLOC_ARR_MODVAL', 'ASSET_ARR', 'SCRIPT_STRING_ALLOC_ARR_MODVAL')
+                counted = dynamic or op['op'] in ('FIELD_ALLOC_ARR', 'FIELD_ARR', 'SCRIPT_STRING_ALLOC_ARR', 'ASSET_FIELD_ARR', 'FXCOMBINED_ALLOC_ARR', 'STRING_ARR')
+                expected = base | ({'count', 'count_type'} if dynamic else {'count'} if counted else set())
+                require(expected <= set(op) <= expected | ({'semantic_domain_unknown'} if op['op'] == 'FIELD' else set()), 'Unknown/missing operation field')
+                require(all(type(op[k]) is str for k in ('field', 'key', 'flavor', 'type')) and
+                        op['flavor'] in ('weapon', 'attachment') and op['type'] in types, 'Closed operation strings/type reference')
+                if dynamic: require(type(op['count']) is str and type(op['count_type']) is str and op['count_type'] in types, 'Named count and distinct type')
+                elif counted: _cpp_u(op['count'], 64)
+                if 'semantic_domain_unknown' in op: require(type(op['semantic_domain_unknown']) is bool, 'Exact operation boolean flag')
+        sites = coverage['direct_sites'][name]
+        require(type(sites) is list, 'Ordered direct sites')
+        for site in sites:
+            require(type(site) is dict and set(site) == {'line', 'text'} and type(site['text']) is str, 'Closed direct-site record')
+            _cpp_u(site['line'], 32)
+    require(total == 1213 and manual == 10 and total - manual == coverage['macro_sites'], 'Exact finite operation/manual totals')
+
+
+def _cpp_project(schema, provenance):
+    _cpp_schema(schema)
+    require(type(provenance) is dict and set(provenance) == {'schema', 'extraction_generator', 'projection_generator', 'body_validator'}, 'Closed offline provenance roles')
+    for pin in provenance.values(): _cpp_source_pin(pin)
+    require(_cpp_same(provenance['extraction_generator'], CPP_EXTRACTION_GENERATOR_PIN),
+            'Historical extraction provenance is not the new projection generator')
+    pool = {''}
+    def strings(value):
+        if type(value) is str:
+            require('\0' not in value, 'NUL-free Source string'); value.encode('utf-8', errors='strict'); pool.add(value)
+        elif isinstance(value, dict):
+            for k, v in value.items(): strings(k); strings(v)
+        elif isinstance(value, (list, tuple)):
+            for v in value: strings(v)
+    strings(schema); strings(provenance); strings(MANUAL_BODY_SHA256)
+    for values in (CPP_TYPE_TAGS, CPP_OP_TAGS, CPP_MANUAL_TAGS): strings(values)
+    names = sorted(pool, key=lambda s: s.encode('utf-8')); sid = {v: i for i, v in enumerate(names)}
+    types = sorted(schema['types'], key=lambda s: s.encode('utf-8')); tid = {v: i for i, v in enumerate(types)}
+    structures = sorted(schema['structures'], key=lambda s: s.encode('utf-8')); owners = {v: i for i, v in enumerate(structures)}
+    tables = {name: [] for name in CPP_TABLES}; char_pool = bytearray()
+    def span(table, values):
+        values = list(values); start = _cpp_u(len(tables[table]), 32); count = _cpp_u(len(values), 32)
+        require(count <= (1 << 32) - 1 - start, 'Span append overflow')
+        tables[table].extend(values); return (start, count)
+    for name in names:
+        encoded = name.encode('utf-8'); tables['strings'].append((_cpp_u(len(char_pool), 32), _cpp_u(len(encoded), 32))); char_pool.extend(encoded)
+    for name in types:
+        d = schema['types'][name]; mask = sum(1 << i for i, key in enumerate(CPP_TYPE_OPTIONALS) if key in d)
+        tables['types'].append((sid[name], CPP_TYPE_TAGS.index(d['kind']), mask, d['size'], d['align'], d.get('pack', 0),
+            sid[d.get('size_basis', '')], 0 if 'element' not in d else 1 if d['element'] in tid else 2,
+            tid[d['element']] if 'element' in d and d['element'] in tid else sid[d['element']] if 'element' in d else 0,
+            span('extents', d.get('extents', [])), _cpp_integer(d.get('min', 0)), _cpp_integer(d.get('max', 0)),
+            span('integers', (_cpp_integer(v) for v in d.get('values', []))),
+            span('enum_members', ((sid[k], _cpp_integer(v)) for k, v in d.get('members', {}).items())),
+            span('bitfields', ((sid[k], v) for k, v in d.get('bitfields', []))), sid[d.get('conversion_basis', '')],
+            d.get('semantic_domain_unknown', False), d.get('storage_domain_only', False)))
+    manual_lookup = {}
+    for name in structures:
+        d = schema['structures'][name]; operations = []
+        for op in d['ops']:
+            mask = sum(1 << i for i, key in enumerate(CPP_OP_OPTIONALS) if key in op)
+            count_tag = 0 if 'count' not in op else 1 if type(op['count']) is int else 2
+            manual_id = 0
+            if op['op'] == 'MANUAL':
+                handler = op['handler']; key = (name, op['line'], *handler)
+                require(key not in manual_lookup, 'Duplicate manual site identity')
+                manual_id = len(tables['manuals']); manual_lookup[key] = manual_id
+                tables['manuals'].append((owners[name], op['line'], CPP_MANUAL_TAGS.index(handler[0]), span('argument_ids', (sid[v] for v in handler[1:]))))
+            operations.append((CPP_OP_TAGS.index(op['op']), op['line'], mask, sid[op.get('field', '')], sid[op.get('key', '')],
+                sid[op.get('flavor', '')], tid[op['type']] if 'type' in op else 0, count_tag,
+                op['count'] if count_tag == 1 else 0, sid[op['count']] if count_tag == 2 else 0,
+                tid[op['count_type']] if 'count_type' in op else 0, op.get('semantic_domain_unknown', False), manual_id))
+        sites = schema['coverage']['direct_sites'][name]
+        tables['structures'].append((sid[name], tid[name], sid[d['source']], d['first'], d['last'],
+            span('key_ids', (sid[k] for k in d['keys'])), span('operations', operations),
+            span('direct_sites', ((s['line'], sid[s['text']]) for s in sites))))
+    for name in schema['coverage']['direct_sites']:
+        tables['direct_owners'].append((owners[name], tables['structures'][owners[name]][7]))
+    for name, sites in schema['coverage']['manual_handlers'].items():
+        ids = [manual_lookup[(name, *site)] for site in sites]
+        tables['manual_owners'].append((owners[name], span('manual_ids', ids)))
+    tables['source_pins'] = [(sid[k], sid[v]) for k, v in schema['source_pins'].items()]
+    tables['conversion_pins'] = [(sid[k], sid[v]) for k, v in schema['enum_conversion_source']['pins'].items()]
+    tables['manual_body_pins'] = [(sid[k], sid[v]) for k, v in MANUAL_BODY_SHA256.items()]
+    tables['provenance'] = [(sid[k], sid[provenance[k]['git_blob']], provenance[k]['bytes_lf'], sid[provenance[k]['sha256_lf']])
+                            for k in ('schema', 'extraction_generator', 'projection_generator', 'body_validator')]
+    for table, tags in (('type_tags', CPP_TYPE_TAGS), ('op_tags', CPP_OP_TAGS), ('manual_tags', CPP_MANUAL_TAGS)):
+        tables[table] = [sid[v] for v in tags]
+    c = schema['coverage']; tables['metadata'] = [(sid[schema['pin']], sid[schema['platform']], sid[schema['enum_conversion_source']['json_revision']],
+        c['typed_structures'], c['macro_sites'], c['complete_pinned_extraction'], c['actual_input_admissibility'], c['runtime_abi_verified'])]
+    _cpp_check_tables(tables, bytes(char_pool))
+    return tables, bytes(char_pool)
+
+
+def _cpp_check_tables(tables, char_pool):
+    require(type(tables) is dict and set(tables) == set(CPP_TABLES), 'Closed table names')
+    require(type(char_pool) is bytes and len(char_pool) < 1 << 32, 'Bounded char pool')
+    def cell(value, kind):
+        if kind in ('u32', 'u64'): _cpp_u(value, int(kind[1:])); return
+        if kind == 'bool': require(type(value) is bool, 'Exact record boolean'); return
+        require(type(value) is tuple and len(value) == len(CPP_RECORDS[kind]), 'Closed record width')
+        for v, (_, ty) in zip(value, CPP_RECORDS[kind]): cell(v, ty)
+        if kind == 'Integer': require(not(value[0] and value[1] == 0), 'No negative zero')
+    for table, kind in CPP_TABLES.items():
+        require(type(tables[table]) is list and len(tables[table]) < 1 << 32, 'Bounded typed table')
+        for value in tables[table]: cell(value, kind)
+    def ref(value, table): require(value < len(tables[table]), 'Orphan table reference')
+    def span(value, table):
+        length = len(char_pool) if table == 'char_pool' else len(tables[table])
+        require(value[0] <= length and value[1] <= length - value[0], 'Orphan/subtraction-checked table span')
+    for value in tables['strings']: span(value, 'char_pool')
+    def text(index):
+        ref(index, 'strings'); start, count = tables['strings'][index]
+        return char_pool[start:start+count].decode('utf-8', errors='strict')
+    type_names = {text(row[0]) for row in tables['types']}
+    require(len(type_names) == len(tables['types']), 'Unique type identity names')
+    for table in ('key_ids', 'argument_ids', 'type_tags', 'op_tags', 'manual_tags'):
+        for value in tables[table]: ref(value, 'strings')
+    for table in ('enum_members', 'bitfields', 'source_pins', 'conversion_pins', 'manual_body_pins'):
+        for row in tables[table]:
+            ref(row[0], 'strings')
+            if table in ('source_pins', 'conversion_pins', 'manual_body_pins'): ref(row[1], 'strings')
+    for row in tables['types']:
+        ref(row[0], 'strings'); require(row[1] < len(CPP_TYPE_TAGS) and row[2] < 1 << len(CPP_TYPE_OPTIONALS), 'Closed type tag/presence')
+        if row[1] in (CPP_TYPE_TAGS.index('pointer'), CPP_TYPE_TAGS.index('array')):
+            require(row[2] & (1 << 2), 'Pointer/array element presence required')
+        for i in (6, 15): ref(row[i], 'strings')
+        if not row[2] & (1 << 2): require(row[7] == 0 and row[8] == 0, 'Absent element tag/reference')
+        elif row[7] == 1: ref(row[8], 'types')
+        elif row[7] == 2:
+            require(row[1] == CPP_TYPE_TAGS.index('pointer') and text(row[8]) not in type_names,
+                    'Only unexpanded pointer labels use tag2; known labels require tag1')
+        else: raise ValueError('Closed element reference tag')
+        if row[1] == CPP_TYPE_TAGS.index('array'): require(row[7] == 1, 'Array element requires known type')
+        for i, table in ((9, 'extents'), (12, 'integers'), (13, 'enum_members'), (14, 'bitfields')): span(row[i], table)
+    for row in tables['operations']:
+        require(row[0] < len(CPP_OP_TAGS) and row[2] < 1 << len(CPP_OP_OPTIONALS) and row[7] in (0, 1, 2), 'Closed op tag/presence/count')
+        for i in (3, 4, 5, 9): ref(row[i], 'strings')
+        if row[2] & (1 << 3): ref(row[6], 'types')
+        if row[2] & (1 << 5): ref(row[10], 'types')
+        if row[0] == CPP_OP_TAGS.index('MANUAL'): ref(row[12], 'manuals')
+    for row in tables['manuals']:
+        ref(row[0], 'structures'); require(row[2] < len(CPP_MANUAL_TAGS), 'Closed manual tag'); span(row[3], 'argument_ids')
+    for row in tables['direct_sites']: ref(row[1], 'strings')
+    for row in tables['structures']:
+        ref(row[0], 'strings'); ref(row[1], 'types'); ref(row[2], 'strings')
+        for i, table in ((5, 'key_ids'), (6, 'operations'), (7, 'direct_sites')): span(row[i], table)
+    for table, target in (('direct_owners', 'direct_sites'), ('manual_owners', 'manual_ids')):
+        for row in tables[table]: ref(row[0], 'structures'); span(row[1], target)
+    for value in tables['manual_ids']: ref(value, 'manuals')
+    for row in tables['provenance']:
+        for i in (0, 1, 3): ref(row[i], 'strings')
+    for row in tables['metadata']:
+        for i in (0, 1, 2): ref(row[i], 'strings')
+
+
+def render_cpp(schema_raw, expected_schema_pin, source_provenance):
+    """Pure constants-only projection. Provenance is not an execution token.
+
+    The future caller must externally pin this executing generator and its
+    transitive executable Source BEFORE import. Its new Git identity is supplied
+    after phase1 freeze, avoiding a generator/header self-hash cycle.
+    """
+    schema = _cpp_literal(schema_raw, expected_schema_pin)
+    require(type(source_provenance) is dict, 'Explicit offline provenance data')
+    require(_cpp_same(source_provenance.get('schema'), expected_schema_pin), 'Schema provenance matches external pin')
+    tables, pool = _cpp_project(schema, source_provenance)
+    def value(v, kind):
+        if kind == 'bool': return 'true' if v else 'false'
+        if kind in ('u32', 'u64'): return str(v) + ('ULL' if kind == 'u64' else 'U')
+        return '{' + ','.join(value(x, ty) for x, (_, ty) in zip(v, CPP_RECORDS[kind])) + '}'
+    lines = ['// Generated offline Source constants. No runtime or ABI authority.', '#pragma once',
+             '#include <array>', '#include <cstdint>', 'namespace iw7::neutral::body_schema {']
+    for name, fields in CPP_RECORDS.items():
+        ty = {'u32': 'std::uint32_t', 'u64': 'std::uint64_t', 'bool': 'bool'}
+        lines.append('struct '+name+' {'+' '.join(ty.get(kind, kind)+' '+field+';' for field, kind in fields)+'};')
+    lines.append('inline constexpr char string_pool[] = {')
+    for offset in range(0, len(pool), 16):
+        lines.append(','.join('static_cast<char>(0x%02x)' % b for b in pool[offset:offset+16])+',')
+    lines.append('};')
+    for name, kind in CPP_TABLES.items():
+        ty = {'u32': 'std::uint32_t', 'u64': 'std::uint64_t', 'bool': 'bool'}.get(kind, kind)
+        lines.append('inline constexpr std::array<'+ty+','+str(len(tables[name]))+'> '+name+'{{')
+        lines.extend(value(row, kind)+',' for row in tables[name])
+        lines.append('}};')
+    lines.extend(['} // namespace iw7::neutral::body_schema', ''])
+    return '\n'.join(lines)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--native-source-root', type=Path, required=True)
