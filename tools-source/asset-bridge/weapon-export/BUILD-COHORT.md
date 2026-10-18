@@ -491,3 +491,127 @@ J1–J6 remain immutable failures. Only Source `5e1207` was compiled; this DOC h
 and any subsequent merge were not. Ready and downstream parse/allocator
 activation stay false. There is no new U1/T2/body, stock, CLI/FF, engine ABI,
 grant/physics/PAP, game or BO3-demo authorization, nor a new actual GO.
+
+## Inactive J8 owned-input profile, 2026-10-18
+
+`iw7.authored-owned-input-core-cpp-source/1` is a separate finite Source profile:
+helper-compile, helper-link, helper-test, weapon-core, attachment-core,
+fixture-compile, fixture-link, fixture-test. The helper probe requires its six
+literal groups; the real-core probe requires the unchanged eight groups and
+three Source-approved sets. Both stdout tables and the empty stderr requirement
+are exact. Helper link takes only its fresh helper object; fixture link takes
+only this cohort's two fresh core objects and fixture object. `HelperLinked`
+and `CoresLinked` are separate; only fixture-link sets the latter. Passed needs
+both links, both complete probes and all eight original stage closures/exit0.
+No previous object or J7 compiled credit is reused. No legacy wrapper TU is
+requested: those renderer/wrapper texts did not change for the owner extraction.
+
+J8 derives eight stage directories, sixteen artifacts, sixteen logs, three
+publication slots and stop.request: 44 entries, including 36 files. One shared
+64-entry stage residual gives 108 maximum entries. J7 retains its existing
+48/40/112 shape. Complete set/type/root/schema correspondence is rederived
+before output IO; neither a caller count nor a budget property selects a profile.
+Case/device/stream/traversal/reparse/depth and byte-reserve guards remain.
+The T7 profile adapter is unchanged; its captured Core budget gate checks the
+literal plan/schema correspondence. Fixture closure is exactly seven canonical
+support names plus two generated headers; helper TU/header bindings are retained.
+
+Before imports, J8 validates all eleven pinned provider Sources and their actual
+AST graph. Native provider Source remains explicitly selected at
+`efe6761bc6a96581140767bde9f82816af579375`; a later Native head is not adopted.
+The five Native Source hashes are fixed. The six asset providers bind the final
+reviewed asset Source head. Binding verification and pure AST analysis are
+separate functions; the latter is ordinary analysis, not an admission token.
+
+Scheduler really dot-sources Memory, OwnedProcess and Recorder. Their function
+definitions are evaluated; they are not retained-only or selectively imported.
+OwnedProcess's seven definitions include its initializer, but its invocation
+allowlist in Build is empty, as is Recorder's. The recursive Enter/Add/Exit graph
+has sixteen scheduler functions, Memory's snapshot leaf and the original literal
+lock bodies. H1 keeps the exact NativeJob factory. Unknown dynamic calls, new
+imports/assembly loads, initializer/fallback calls or replacement factories refuse.
+The forbidden fallback is never invoked, restored, compiled or adopted here.
+NativeJob DLL and other opaque inputs stay behind full fresh admission/guards.
+
+J8 verifies the actual pinned `helper-link.rsp` and `fixture-link.rsp` texts
+before imports, using the retained J7 linker Source grammar: `/NOLOGO
+/INCREMENTAL:NO /DEBUG /MACHINE:X64 /SUBSYSTEM:CONSOLE /WX /NODEFAULTLIB`,
+their own exact executable/PDB outputs, and only the literal helper object or
+three core/fixture objects. Seven quoted library operands are selected uniquely
+from `FixtureLinkInput` declarations in the existing order (LIBCMT, LIBCPMT,
+LIBVCRUNTIME, OLDNAMES, LIBUCRT, KERNEL32, USER32). No library/SDK file is queried
+by this check; it establishes no SDK compatibility. Correct plan maps cannot
+excuse an empty, swapped or repinned response with missing/old/extra objects,
+changed output, missing library or unapproved flag. Same-cohort production and
+original guards for those actual objects remain required at the real link.
+
+The four asset providers also have a closed executable root shape: function
+definitions, Core's one literal `Set-StrictMode -Version Latest`, and Profile's
+two exact original-function capture assignments. New top-level member/command
+calls, assignments, root parameters, named blocks, attributes, using statements
+or traps refuse before any provider import. The causal tests repin each of the
+four Sources with an inert-to-the-test Process.Start text or an unknown command;
+only Parser/production DEFAULT analysis observes those texts, never evaluation.
+
+Light checks parse the real provider Sources and exercise the actual finite
+analyzer with initializer, lock-body, top-level, dynamic-call, fallback-type and
+factory mutants. They distinguish inert strings/definitions from calls. Budget
+and finalization tests evaluate explicitly selected Source function ASTs with
+fake owners/leases and owned temporary Source handles, without importing Core
+or providers. These checks do not prove arbitrary code/race isolation or runtime
+closure and are not C++ results.
+
+At this initial Source checkpoint, the extension had not compiled or executed
+either fixture or core; the later distinct J8E result is recorded below.
+The J7 host/session, packets, clocks, outputs and results remain immutable. No
+runnable J8 packet is prepared by this change. Final exact-head review, complete
+Source/opaque declarations frozen before IO, distinct CPP GO and fresh atomic
+admission remain mandatory. Keep the same original NoExit/job/guards/clock,
+600/120/15-second deadlines, 256-MiB output/1-MiB metadata reserve, one compiler,
+same-stream publication/readbacks and distinct Root-reviewed exit/known closure.
+Unknown or expired states retain original references; safety never promotes them.
+Ready, ActualPairParseActivated and FatalAllocatorClosure remain false; there is
+no U1/T2/body/stock, CLI/FF/Game, engine ABI/grant/physics/PAP or BO3 authorization.
+
+Before the linker-response/root-shape correction,
+`python -B -m unittest -v test_build_default` passed 26 tests in 46.035 seconds,
+including real eleven-provider AST analysis and its pure lock/initializer
+mutants; no test skipped. The existing light
+`Test-H1Native.ps1` passed 102 assertions with NativeTypesLoaded, RealJobsTested,
+LeaseAcquired and CompilerLaunched all false. These runs used selected production
+function ASTs, fake ownership APIs and owned temporary Source files only.
+
+After this correction, the same Python Source command passed 28 tests in
+72.378 seconds, without skips. The two new causals cover 22 repinned linker
+response mutants (eleven per linker) and eight repinned root member/command
+mutants (two per asset provider). The positive contains two complete fixed
+linker responses; all opaque inputs remain nonexistent synthetic declarations
+in that fixture. Neither these metadata responses nor these tests are a build,
+SDK qualification, native execution result or new actual authorization.
+
+## Actual J8E owned-input CPP checkpoint, 2026-10-18
+
+One independently reviewed Source E packet compiled exact Source
+`40936235798697560f6d84ad585bd8f101050329` with provider NativeEFE and parser
+fab935. All eight phases above reached exit0 and original tree closure; the
+helper probe passed six groups and the real-core probe eight. Both links used
+their own fresh objects. No additional wrapper TU or full CLI was requested.
+
+Root personally read all three own receipts/stdout, checked the SAME original
+context/witnesses, 817 closed saved FileStream/SFH pairs, eight closed owners,
+empty inner guards and null lease, then separately authorized true exit0.
+The disk final receipt remains the honest earlier guards-held snapshot. Fresh
+05:52:15 UTC observation found all 16 captured identities absent, Main unchanged
+and the V1 lease registry empty before Root released the slot. The observed 733
+input records are not recategorized as declarations. Maximum observed output
+was 55523369 bytes; 108-entry/600s/120s/15s/256MiB including 1MiB reserve limits
+were unchanged.
+
+The exact Source/plan, receipt hashes, timing scopes, helper registration error,
+two refused metadata snapshots and preserved C FAILED/D unexecuted-refused
+history are recorded in
+[PAIR-JSON-CORE.md](PAIR-JSON-CORE.md#j8e-owned-input-cpp-and-known-closure-2026-10-18).
+Only Source and own metadata/stdout were read after release, without reopening
+opaque native outputs. This DOC head is not the compiled head. Real pair/U1/T2/body,
+FILE/arena/CLI/FF, engine ABI/lifetime, physics/PAP and game stay unqualified;
+Ready and both activation flags remain false. No new actual GO follows.

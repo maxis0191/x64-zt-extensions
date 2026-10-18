@@ -1,7 +1,9 @@
-// AUTHORED, NOT COMPILED/LINKED/EXECUTED. A separate admitted native GO is required.
+// This extracted-owner revision is AUTHORED, NOT COMPILED/LINKED/EXECUTED.
+// J7 qualifies its older exact Source only. A new admitted native GO is required.
 // No fake parser, DB/SL/filesystem stub, builder, captured input or game entry.
 #include "weapon_pair_json_core.hpp"
 #include "native_pair_session.hpp"
+#include "native_pair_owned_input.hpp"
 #include "native_neutral_dependencies.hpp"
 #include <algorithm>
 #include <exception>
@@ -14,13 +16,14 @@ namespace authored_pair_fixture
     using namespace zonetool::iw7;
     namespace pq = zonetool::iw7::pair_json;
     namespace nd = zonetool::iw7::neutral_dependencies;
+    namespace input = player_pair_input;
     using Arena = zonetool::zone_memory;
     using Report = zonetool::checked_memory_report;
     using Release = zonetool::checked_memory_release;
     using Failure = zonetool::checked_memory_failure;
-    struct Pin { size_t bytes; std::string_view sha256; };
-    using Inputs = std::array<std::string_view, 4>;
-    using Pins = std::array<Pin, 4>;
+    using Pin = input::Pin;
+    using Inputs = input::Inputs;
+    using Pins = input::Pins;
     struct ExpectedReference { int type; std::string_view name; bool owned; };
     struct ExpectedEdge { size_t reference; nd::Owner owner; std::string_view path; };
     struct AuthoredCase
@@ -39,78 +42,34 @@ namespace authored_pair_fixture
 namespace authored_pair_fixture
 {
     void need(bool value) { if (!value) throw std::runtime_error("Authored real-core witness refused"); }
-    struct PinError : std::runtime_error { PinError() : std::runtime_error("Private copy Source pin differs") {} };
-    // Fixture-local SHA256, no extra SDK/crypto/engine dependency. Actual C++
-    // known-vector checks below must pass before trusting this implementation.
-    std::string sha256(std::string_view input)
+    using PinError = input::PinError;
+    using input::detail::sha256;
+    // The finite fixture alone selects parse cases; generic byte ownership
+    // cannot turn caller-supplied pins into PR216/native eligibility.
+    void require_approved_source(const AuthoredCase& source)
     {
-        static constexpr std::uint32_t k[] = {
-            0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
-            0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
-            0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
-            0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
-            0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
-            0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
-            0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
-            0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2};
-        need(input.size() <= 2097152);
-        std::vector<std::uint8_t> bytes(input.begin(), input.end());
-        const auto bits = static_cast<std::uint64_t>(bytes.size()) * 8;
-        bytes.push_back(0x80);
-        while (bytes.size() % 64 != 56) bytes.push_back(0);
-        for (unsigned i = 0; i < 8; ++i) bytes.push_back(static_cast<std::uint8_t>(bits >> (56 - 8*i)));
-        std::array<std::uint32_t,8> h{0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19};
-        const auto rotr=[](std::uint32_t n,unsigned count){return (n>>count)|(n<<(32-count));};
-        for(size_t at=0;at<bytes.size();at+=64)
-        {
-            std::uint32_t w[64]{};
-            for(unsigned i=0;i<16;++i) for(unsigned j=0;j<4;++j) w[i]=(w[i]<<8)|bytes[at+4*i+j];
-            for(unsigned i=16;i<64;++i) w[i]=w[i-16]+(rotr(w[i-15],7)^rotr(w[i-15],18)^(w[i-15]>>3))+w[i-7]+(rotr(w[i-2],17)^rotr(w[i-2],19)^(w[i-2]>>10));
-            auto a=h[0],b=h[1],c=h[2],d=h[3],e=h[4],f=h[5],g=h[6],v=h[7];
-            for(unsigned i=0;i<64;++i)
-            {
-                const auto t1=v+(rotr(e,6)^rotr(e,11)^rotr(e,25))+((e&f)^((~e)&g))+k[i]+w[i];
-                const auto t2=(rotr(a,2)^rotr(a,13)^rotr(a,22))+((a&b)^(a&c)^(b&c));
-                v=g;g=f;f=e;e=d+t1;d=c;c=b;b=a;a=t1+t2;
-            }
-            h[0]+=a;h[1]+=b;h[2]+=c;h[3]+=d;h[4]+=e;h[5]+=f;h[6]+=g;h[7]+=v;
-        }
-        static constexpr char digits[]="0123456789abcdef";
-        std::string result;result.reserve(64);
-        for(auto value:h) for(unsigned i=0;i<8;++i) result.push_back(digits[(value>>(28-4*i))&15]);
-        return result;
+        for (const auto& approved : approved_cases) if (&source == &approved) return;
+        throw PinError();
     }
     // Entry intervals only; reaching a phase never means its parser succeeded.
     enum class ParsePhase : unsigned { pair_construction, weapon_parse, attachment_parse, post_parse };
-    struct Stats
+    struct Stats : input::Counters
     {
-        unsigned copies{}, hashes{}, decodes{}, arenas{}, weapon_parses{}, attachment_parses{}, publications{};
+        unsigned decodes{}, arenas{}, weapon_parses{}, attachment_parses{}, publications{};
         ParsePhase phase = ParsePhase::pair_construction;
     };
-    // Ordinary private byte storage, not a transferable validation capability.
+    // Keep the raw owner and decoded JSON together for the whole OwnedPair.
     struct Buffers
     {
-        std::array<std::string,4> bytes;
+        input::OwnedInput raw;
         pq::ordered_json weapon, attachment;
         Buffers(const Inputs& incoming, const Pins& trusted, Stats& stats)
+            : raw(incoming, trusted, stats)
         {
-            const size_t caps[]{65536,2097152,2097152,66};
-            for(size_t i=0;i<4;++i)
-            {
-                if(incoming[i].empty()||incoming[i].size()>caps[i]||trusted[i].bytes>caps[i]) throw PinError();
-                bytes[i].assign(incoming[i]);++stats.copies;
-            }
-            // All four PRIVATE copies are checked before any JSON decode/arena.
-            for(size_t i=0;i<4;++i)
-            {
-                if(trusted[i].sha256.size()!=64||!std::all_of(trusted[i].sha256.begin(),trusted[i].sha256.end(),[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f');})) throw PinError();
-                ++stats.hashes;
-                if(bytes[i].size()!=trusted[i].bytes||sha256(bytes[i])!=trusted[i].sha256) throw PinError();
-            }
-            const auto report=pq::ordered_json::parse(bytes[0]);++stats.decodes;
+            const auto report=pq::ordered_json::parse(raw.bytes(input::Role::report));++stats.decodes;
             for(const char* flag:{"bo3_assets_authenticated","external_name_driven_gameplay_verified","native_parser_verified","ff_built","roundtrip_verified","runtime_abi_verified","lifetime_verified","weapon_granted","projectile_damage_verified","physics_qualified","retail_pap_transaction_verified","gameplay_accepted","ready"}) need(report.at(flag).is_boolean()&&!report.at(flag).get<bool>());
-            weapon=pq::ordered_json::parse(bytes[1]);++stats.decodes;
-            attachment=pq::ordered_json::parse(bytes[2]);++stats.decodes;
+            weapon=pq::ordered_json::parse(raw.bytes(input::Role::weapon));++stats.decodes;
+            attachment=pq::ordered_json::parse(raw.bytes(input::Role::attachment));++stats.decodes;
         }
     };
     struct ParserMaps { pq::ScriptStrings strings; };
@@ -160,6 +119,7 @@ namespace authored_pair_fixture
     }
     Result execute(const AuthoredCase& source,const Inputs& incoming,Report& report,Stats& stats,Mode mode=Mode::normal,size_t capacity=0)
     {
+        require_approved_source(source); // Before copies, decoding or arena.
         Factory factory(source,incoming,report,stats,capacity?capacity:source.capacity);
         Result result;
         {
@@ -296,6 +256,22 @@ namespace authored_pair_fixture
     }
     void bypass_real_core_refuses()
     {
+        // Author a fourth consistent raw/pin set solely to prove refusal.
+        // Leading JSON whitespace preserves the body; its report pins are updated.
+        auto fourth=approved_cases[0];
+        std::string weapon=" " + std::string(fourth.original[1]);
+        const auto weapon_hash=sha256(weapon);
+        auto report_json=pq::ordered_json::parse(fourth.original[0]);
+        for(auto& row:report_json["files"]) if(row["path"]=="weapons/sdk_shredder_clone_zm.json")
+        {row["bytes"]=weapon.size();row["sha256"]=weapon_hash;}
+        const auto report_raw=report_json.dump();const auto report_hash=sha256(report_raw);
+        fourth.original[0]=report_raw;fourth.original[1]=weapon;
+        fourth.trusted_source_pins[0]={report_raw.size(),report_hash};
+        fourth.trusted_source_pins[1]={weapon.size(),weapon_hash};
+        Report fourth_report;Stats fourth_stats;bool fourth_refused=false;
+        try{execute(fourth,fourth.original,fourth_report,fourth_stats);}catch(const PinError&){fourth_refused=true;}
+        need(fourth_refused&&fourth_stats.copies==0&&fourth_stats.hashes==0&&fourth_stats.decodes==0&&
+            fourth_stats.arenas==0&&fourth_stats.publications==0&&!fourth_report.bound());
         Report report;Stats stats;bool refused=false;
         try{execute(approved_cases[0],approved_cases[0].original,report,stats,Mode::bypass_core);}catch(const std::logic_error&){refused=true;}
         need(refused&&stats.weapon_parses==0&&stats.publications==0);released_once(report);

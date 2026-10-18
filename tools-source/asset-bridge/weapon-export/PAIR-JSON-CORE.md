@@ -1,12 +1,13 @@
 # Authored JSON pair through the real native cores
 
 This lot isolates the two pinned JSON-to-native implementations and authors a
-finite C++ fixture. J7 now supplies the bounded CPP-foundation result described
-below: both cores linked into the fixture, eight groups passed and three wrapper
-TUs compiled at Source `5e1207a41a2a0840a0ca97a1ddc525989d4fe99d`. Root reports
-that foundation passed with known closure; independent qualification peer review
-and PR completion remain separate. J1–J6 retain their original failed results.
-This documentation revision is not compiled Source or a downstream activation.
+finite C++ fixture. J7 supplies the bounded CPP-foundation result below at Source
+`5e1207a41a2a0840a0ca97a1ddc525989d4fe99d`. The later J8E checkpoint below
+compiled the extracted raw owner and both real cores at Source
+`40936235798697560f6d84ad585bd8f101050329`, passed helper6/core8 and reached
+Root-verified known closure. These are distinct cohorts; J1–J6 and J8C retain
+their failed results. This documentation revision is not compiled Source or a
+downstream activation; exact-head CI and PR completion remain separate.
 
 ## Pure Source renderer
 
@@ -442,3 +443,145 @@ or stock activation, arbitrary definitions, FILE/routes, CLI/FF, engine ABI,
 weapon grant/physics/PAP and gameplay remain unqualified; no BO3 demonstration
 is authorized. J1–J6 plans/results stay immutable. This DOC head and any later
 merge were not compiled by J7 and grant no new actual GO.
+
+## Inactive owned-input extraction, 2026-10-18
+
+The next Source revision extracts J7's actual four private copies, external pin
+binding and unchanged SHA256 algorithm into `native_pair_owned_input.hpp`.
+The helper checks every incoming and expected role length, canonical digest
+syntax and both checked aggregate totals before any private raw or pin copy.
+The role caps are 65536/2097152/2097152/66 bytes and their aggregate is 4259906.
+All four owned copies are hashed before returning to the fixture's JSON decoder.
+The helper copies external pin values and retains role-specific original bytes;
+it never hashes a reserialized report or derives its expected pins from input.
+
+The generic helper binds bytes only. It is not PR216/native eligibility, a token
+or a convertible capability. The fixture additionally requires the exact Source
+object from its unchanged three-case table before any owner/copy/decode/arena.
+A fourth authored set with updated consistent raw/report pins must refuse there.
+The three approved raw sets, literal oracles, capacities, parser order and eight
+group names remain unchanged. `Buffers` retains the raw owner alongside its two
+mutable decoded JSON objects for the existing `OwnedPair` lifetime.
+
+The raw interface is immutable under its caller contract, without a guarantee
+against const_cast, memory corruption or concurrent writers. Caller views must
+stay valid and unmodified during copy; this is not an OS sandbox. Standard
+member destruction unwinds partial copies and preserves ordinary exceptions;
+it supplies no native fatal allocator closure. The standalone authored fixture
+calls the production helper for role/pin/hash bounds, real checked addition,
+caller-storage lifetime and injected standard-allocation failure. All-role-valid
+sizes cannot exceed their summed cap; the addition boundary is tested directly.
+No new crypto/provider/SDK dependency is added.
+
+At this initial Source checkpoint, the extracted-owner revision and six-group
+fixture had not been compiled or executed. Source checks inspect actual
+extraction/order, finite allowlist and support closure; they are not C++ results.
+At this Source checkpoint, `python -B -m unittest -v test_pair_json_core_source`
+passed 26 tests in 0.168 seconds. No broader suite or C++ fixture was run.
+J7 remains tied to its older exact compiled head. New native compilation needs
+separate exact-head review, full admission, a distinct GO and original closure.
+Same-owner complete PR216 validation before arena remains absent for new inputs.
+FILE-before-byte identity, CWD/route/alias exclusion, real arena/base alignment,
+map/root lifetime and exception/fatal boundaries keep their previous gates.
+The three native hooks still reject; no CLI/FF/Game/ABI/grant/physics/PAP/BO3
+activation is added. `Ready`, `ActualPairParseActivated` and
+`FatalAllocatorClosure` remain false.
+
+## J8E owned-input CPP and known closure, 2026-10-18
+
+One separately authorized J8E invocation compiled exact asset Source
+`40936235798697560f6d84ad585bd8f101050329`, tree
+`4d04fdcb97f72e8eb681deb2bb42b82c349275e0`, with explicit Native provider Source
+`efe6761bc6a96581140767bde9f82816af579375` and parser Source
+`fab935826c898806855376662a8a03317b3ad8f1`. The new Source E packet was reviewed
+independently before the distinct CPP GO; its 437053-byte plan is SHA256
+`1ffcdc16de260a671720aac3f5306345657ec3dcf1d7cb061c26686dbec7e2c8`.
+Neither a later documentation/merge head nor an earlier cohort is the compiled
+identity. No build or probe was retried.
+
+All eight original stages exited 0 with tree closure confirmed:
+
+| Stage | Observed result |
+| --- | --- |
+| helper-compile | exit0 |
+| helper-link | exit0, fresh helper object linked |
+| helper-test | exit0, all six exact-output groups |
+| weapon-core | exit0 |
+| attachment-core | exit0 |
+| fixture-compile | exit0 |
+| fixture-link | exit0, this cohort's two cores and fixture object linked |
+| fixture-test | exit0, all eight exact-output groups |
+
+Root personally read the helper6/core8 stdout and own receipts. This is an
+authored fixture result, not validation of a real pair or an additional wrapper
+TU compilation. The maximum observed output was 55523369 bytes. The preexit
+observation retained 81 Source records, 733 input records and three publication
+records. These are observed record counts, not a new classification of the 733
+inputs or a replacement for the plan's typed declarations.
+
+The SAME original Root6/External7 witnesses, AppDomain roots, context and guard
+arrays were checked. All 817 saved FileStream/SFH pairs and all eight original
+owners were observed closed; the same inner guard list was empty and lease
+null. NativeInputsReverified, HelperLinked, CoresLinked, both final readback
+checks and CanExit were true. First error/exception were null, secondary count
+zero and ExternalUnknown false. The original clock was not reset. Its postflight
+elapsed 138415.0943ms and later preexit observation 243839.8845ms are different
+measurement times, not two group clocks or a measured total PTY duration.
+
+The helper probe also retained the scheduler registration error
+`Original process differs from scheduler observation.` and registration state
+`Original job already empty before CIM registration`. It is not erased or
+relabeled as successful registration. The separate original job, exit, stdout
+and closure observations support the bounded result; no cause is inferred from
+the probe's duration and no general scheduler fix is claimed.
+
+Own JSON receipts under the distinct J8E runtime root:
+
+| Receipt | Bytes | SHA256 |
+| --- | ---: | --- |
+| `measured-before-release.json` | 54172 | `48f22f3830930a97b8dc1b6258222af80924eab1e45449f9df18f3e6ba367546` |
+| `closure-before-release.json` | 14226 | `21afabd4dc3d457322efcc2e65e3c2fa3a6eb6c4f9f1ac3495ca6ea56d90a833` |
+| `final-closure.json` | 14413 | `44cd6657990710cdd36bf9bf2a2b3d53a61c57ccce6189e10892f734c466086b` |
+
+The disk final receipt honestly remains
+`ClosedReleasedGuardsHeldPendingPostflight`: lease released, GuardsDisposed
+false and 817 guards held at that publication. The subsequent original preexit
+inspection proves their later closure; the receipt is not rewritten to merge
+those times. `J8E-ACTUAL-PREEXIT.local.json` is 42241 bytes, SHA256
+`19808c5d7e0fcb7ac3be55b3823efec11d8199bbcd9aec6a66a5f514cc55f09c`.
+The external caller Source and host saved SFH were still honestly held then.
+After Root's separate terminal GO, that SAME caller stream was reverified and
+closed before the original host Process was disposed and the true exit0 was
+observed, terminal chunk `987b80`. Kernel CloseHandle's return was not separately
+measured. The terminal session must never be repolled or replayed.
+
+Two earlier own-proof snapshots refused before file creation at 1167186 and
+1151475 serialized bytes. `PublicationEntry.Bytes` was the original byte array;
+projecting its Length corrected only the metadata projection. The refused
+buffers and errors were retained until original exit; no runtime result, guard,
+clock or success flag was changed to obtain a smaller snapshot.
+
+Root's fresh 05:52:15 UTC observation found all 16 captured identities absent, an
+empty V1 lease registry and only the preserved Main with its same identity.
+Root then released the slot. The closed proof
+`root-j8e-cpp-closed-20261018T055215854Z-d8e2585b0f794c3595570e159f7c8f18.json`
+is 3591 bytes, SHA256
+`5d5c19b2ba26967760557d1da382c089df0bf758d7d1562f2ff58d4b0bd20ba7`.
+Only own metadata/stdout and Source were read for this documentation; no SDK,
+OBJ, EXE, PDB or opaque native output was reopened after release.
+
+Preserve the earlier J8C actual failure: its strict artifact seam rejected the
+canonical T7 link-plan shallow view before any probe. C later closed with exit1;
+it is not promoted by E. D's Source packet was never invoked: its real plan
+contract still required the historical unsuffixed runtime root and refused the
+new plan before a Source reader. E retained D's strict Link-view fix, changed
+one exact contract literal, and validated every operative consumer in memory
+before the first operative Source output. The true complete contract and runner
+gate were exercised with Source-buffer fakes; these are separately recorded
+Source causals, not a substitute for E's actual evidence.
+
+J8E qualifies this bounded authored CPP cohort and known closure only. No real
+pair, U1/T2/stock body, arbitrary definition, FILE/arena route, CLI/FF, engine
+ABI/lifetime, weapon grant, physics, retail PAP or game was tested or authorized.
+Ready, ActualPairParseActivated and FatalAllocatorClosure remain false. The
+result grants no next actual GO and no compiled credit to this DOC revision.

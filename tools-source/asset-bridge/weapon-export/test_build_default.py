@@ -1,6 +1,8 @@
 """Pure source/metadata preflight and before-native refusal checks. No CPP."""
 import hashlib
 import json
+import os
+import copy
 from pathlib import Path
 import shutil
 import subprocess
@@ -48,7 +50,8 @@ class DefaultTests(unittest.TestCase):
             Artifacts=['zonetool-iw7-player.exe','zonetool-iw7-player.pdb','zonetool-iw7-player.lib','zonetool-iw7-player.exp'])]
 
     def invoke(self, native=False):
-        name='cohort-source-plan.json' if self.plan['Schema']=='iw7.authored-pair-core-cpp-source/1' else 'plan.json'
+        name='cohort-source-plan.json' if self.plan['Schema'] in ('iw7.authored-pair-core-cpp-source/1',
+            'iw7.authored-owned-input-core-cpp-source/1') else 'plan.json'
         path=self.root/name;raw=(json.dumps(self.plan)+'\n').encode();path.write_bytes(raw)
         command=[shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(RUNNER),
             '-PlanPath',str(path),'-PlanSHA256',hashlib.sha256(raw).hexdigest()]
@@ -461,12 +464,249 @@ try{
         self.assertFalse((self.root/'unopened-opaque').exists())
         self.assertFalse(Path(self.plan['RunRoot']).exists())
 
+    def owned_input_plan(self):
+        # Real pinned provider Source AST; synthetic plan, never dot/import.
+        self.authored_plan()
+        native = Path(os.environ.get('IW7_SOURCE_PROVIDER_REPO',
+                      str(Path.home()/'Documents/IW7-Products/iw7-mod-components')))
+        if not (native/'.git').exists():
+            self.skipTest('Explicit Native efe Source Git repository unavailable; real graph unverified')
+        revision='efe6761bc6a96581140767bde9f82816af579375'
+        base='tools-source/asset-bridge/'
+        paths=[base+x for x in ('t7-iw7/Run-T7Build.ps1','t7-iw7/T7Build.Profile.ps1',
+            'h1-fixture/H1Native.Core.ps1','h1-fixture/H1Native.Compiler.ps1',
+            'h1-fixture/H1Native.JobMembers.cs','surfaces/MaterialV2.Compiler.ps1')]
+        paths += ['ops/'+x for x in ('Resource-Scheduler.Core.ps1','Resource-Memory.ps1',
+            'native/ResourceMemory.cs','Resource-RecorderOwnedProcess.Core.ps1','Resource-OwnedProcess.Core.ps1')]
+        asset=RUNNER.parents[3]; parents=[]; entries=[]
+        for path in paths:
+            raw=(subprocess.check_output(['git','-C',str(native),'show',revision+':'+path])
+                 if path.startswith('ops/') else (asset/path).read_bytes())
+            target=self.root/'providers'/path;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
+            pin=dict(Path=str(target),Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest(),IsText=True)
+            parents.append(pin);entries.append(dict(**pin,SourcePath=path,Revision=revision if path.startswith('ops/') else self.plan['SourceHead']))
+        mapping={e['SourcePath']:e['Path'] for e in entries}
+        self.plan['ParentBindings']=parents
+        self.plan['Providers']=dict(Core=mapping[base+'h1-fixture/H1Native.Core.ps1'],
+            CompilerCore=mapping[base+'h1-fixture/H1Native.Compiler.ps1'],ObserverSource=mapping[base+'h1-fixture/H1Native.JobMembers.cs'],
+            CompilerPolicySource=mapping[base+'surfaces/MaterialV2.Compiler.ps1'],Scheduler=mapping['ops/Resource-Scheduler.Core.ps1'],
+            Profile=mapping[base+'t7-iw7/T7Build.Profile.ps1'])
+        self.provider_snapshot=dict(CanonicalOwnerRevisions={'x64-zt-extensions':self.plan['SourceHead'],
+            'iw7-mod-components':revision},Entries=entries)
+        self.replace_metadata(self.plan['CurrentProviderSourceSnapshot'],self.provider_snapshot)
+        self.plan.update(Schema='iw7.authored-owned-input-core-cpp-source/1',HelperChecksAuthored=6,WrapperTUsRequested=0)
+        helper=['sha256_known_vectors','every_role_before_copy','actual_bounded_addition','pins_and_roles','private_storage_lifetime','standard_memory_unwind']
+        fixture=['sha256_known_vectors','real_pair_and_approved_mutants','same_length_mutant_old_source_pin_refuses',
+            'malformed_raw_old_pins_refuse_before_decode','real_maps_outlive_roots_first_pointer_wins',
+            'checked_capacity_failure_unwinds_once','real_second_parser_failure_keeps_primary','bypassed_core_cannot_publish_inventory']
+        self.plan.update(HelperCases=helper,FixtureCases=fixture)
+        prepared=Path(self.plan['PreparedRoot']);runtime=Path(self.plan['RunRoot'])
+        self.plan['HelperLinkInputs']=[str(runtime/'helper-compile/helper.obj')]
+        # Declaration-only synthetic library pins. Their files do not exist.
+        libraries=[runtime.parent/'unopened-opaque'/'lib'/name for name in
+            ('LIBCMT.LIB','LIBCPMT.LIB','LIBVCRUNTIME.LIB','OLDNAMES.LIB','LIBUCRT.LIB','KERNEL32.LIB','USER32.LIB')]
+        for path in libraries:
+            self.plan['RetainedInputPins'].append(dict(Path=str(path),Bytes=1,SHA256='e'*64,
+                InputRole='FixtureLinkInput',DeclaredRoleRoot=str(runtime.parent/'unopened-opaque'),
+                ParentPlanSHA256='a'*64,AdmissionRequired=True))
+        self.replace_metadata(self.plan['CompilerInputRoleManifest'],dict(
+            Schema='iw7.authored-core-compiler-input-roles/1',OpaqueFilesQueried=False,
+            InheritedQualification=False,AdmissionBeforeOpaqueIO=True,Selected=self.plan['RetainedInputPins']))
+        names=['helper-compile','helper-link','helper-test','weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test']
+        self.plan['Stages']=[]
+        for i,name in enumerate(names):
+            program='helper' if i < 3 else 'fixture'
+            if i in (2,7):
+                cases=helper if i==2 else fixture
+                marker='IW7_PAIR_OWNED_INPUT=6' if i==2 else 'IW7_AUTHORED_PAIR_REAL_CORE_FIXTURE=8'
+                self.plan['Stages'].append(dict(Name=name,Stage='Probe',Image=str(runtime/(program+'-link')/(program+'.exe')),
+                    Arguments=[],Artifacts=[],DeadlineSeconds=15,ExpectedChecks=len(cases),
+                    ExpectedStdout=''.join('PASS '+c+'\n' for c in cases)+marker+'\n'))
+            else:
+                response=prepared/(name+'.rsp')
+                text='/nologo /W4 /WX /c source-only.cpp\n'
+                if i in (1,6):
+                    objects=self.plan['HelperLinkInputs'] if i==1 else self.plan['GeneratedLinkInputs']
+                    # Real fixed linker Source syntax, not a compile-RSP stub.
+                    text=('/NOLOGO /INCREMENTAL:NO /DEBUG /MACHINE:X64 /SUBSYSTEM:CONSOLE /WX /NODEFAULTLIB '
+                          +'/OUT:"'+str(runtime/name/(program+'.exe'))+'" /PDB:"'
+                          +str(runtime/name/(program+'.pdb'))+'" '
+                          +' '.join('"'+str(path)+'"' for path in objects+libraries)+'\n')
+                pin=next((p for p in self.plan['PreparedBindings'] if p['Path']==str(response)),None)
+                if pin is None:
+                    pin=dict(Path=str(response),IsText=True);self.plan['PreparedBindings'].append(pin)
+                self.replace_source(pin,text)
+                artifacts=[program+'.exe',program+'.pdb'] if i in (1,6) else [
+                    'helper.obj' if i==0 else 'fixture.obj' if i==5 else name+'.obj','compile.pdb','dependencies.json']
+                self.plan['Stages'].append(dict(Name=name,Stage='Link' if i in (1,6) else 'Compile',
+                    Image=str(Path(self.plan['Compiler']).with_name('link.exe')) if i in (1,6) else self.plan['Compiler'],
+                    Arguments=['@'+str(response)],Artifacts=artifacts,DeadlineSeconds=120))
+        fixture_pin=self.plan['FixtureSourceClosure']; closure=json.loads(Path(fixture_pin['Path']).read_text())
+        closure['CanonicalSupportFiles']=['test_authored_pair_json.cpp','native_pair_session.hpp','native_pair_owned_input.hpp',
+            'native_neutral_dependencies.hpp','native_definition_access.hpp','native_weapon_dependencies.inc','native_attachment_dependencies.inc']
+        self.replace_metadata(fixture_pin,closure)
+        for name in ('test_pair_owned_input.cpp','native_pair_owned_input.hpp'):
+            raw=RUNNER.with_name(name).read_bytes();target=prepared/name;target.write_bytes(raw)
+            self.plan['PreparedBindings'].append(dict(Path=str(target),Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest(),IsText=True))
+
+    def replace_source(self,pin,text):
+        raw=text.encode();Path(pin['Path']).write_bytes(raw)
+        pin.update(Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest())
+
+    def replace_metadata(self,pin,value):
+        raw=(json.dumps(value)+'\n').encode();Path(pin['Path']).write_bytes(raw)
+        pin.update(Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest())
+
+    def test_j8_default_checks_real_eleven_provider_graph_without_import_or_opaque_io(self):
+        self.owned_input_plan()
+        result=self.invoke();self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        report=json.loads(result.stdout)
+        self.assertEqual((report['Stages'],report['ProviderSources'],report['HelperGroupsAuthored'],report['FixtureGroupsAuthored'],report['WrapperTUsRequested']),(8,11,6,8,0))
+        self.assertFalse(report['CPPExecuted']);self.assertFalse((self.root/'unopened-opaque').exists())
+        self.assertFalse(Path(self.plan['RunRoot']).exists())
+
+    def test_j8_link_family_probe_and_profile_mutants_refuse_before_import(self):
+        self.owned_input_plan();original=copy.deepcopy(self.plan)
+        mutations=[lambda p:p['HelperLinkInputs'].__setitem__(0,p['GeneratedLinkInputs'][0]),
+            lambda p:p['GeneratedLinkInputs'].__setitem__(0,p['HelperLinkInputs'][0]),
+            lambda p:p['Stages'][2].update(ExpectedChecks=8),lambda p:p['Stages'][7].update(ExpectedStdout=p['Stages'][2]['ExpectedStdout']),
+            lambda p:p['Stages'][1]['Artifacts'].append('extra.obj'),lambda p:p['Stages'][3].update(Name='weapondef'),
+            lambda p:p.update(HelperCases=['|'.join(p['HelperCases'])])]
+        for mutate in mutations:
+            self.plan=copy.deepcopy(original);mutate(self.plan)
+            result=self.invoke();self.assertNotEqual(result.returncode,0,result.stdout)
+            self.assertFalse((self.root/'unopened-opaque').exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
+
+    def test_j8_repinned_link_responses_bind_exact_fresh_objects_flags_libraries_and_outputs(self):
+        self.owned_input_plan()
+        pins={name:next(p for p in self.plan['PreparedBindings'] if p['Path']==str(Path(self.plan['PreparedRoot'])/(name+'-link.rsp')))
+              for name in ('helper','fixture')}
+        original={name:Path(pin['Path']).read_text() for name,pin in pins.items()}
+        for name in ('helper','fixture'):
+            text=original[name];other='fixture' if name=='helper' else 'helper'
+            objects=self.plan['HelperLinkInputs'] if name=='helper' else self.plan['GeneratedLinkInputs']
+            variants=dict(empty='',blank='\n',compile_rsp='/nologo /W4 /WX /c source-only.cpp\n',
+                missing_object=text.replace('"'+objects[0]+'" ',''),swapped_family=original[other],
+                old_object=text.replace(objects[0],str(self.root/'old-run'/'old.obj')),
+                extra_object=text.rstrip()+' "'+str(self.root/'old-run'/'extra.obj')+'"\n',
+                wrong_output=text.replace('/OUT:"','/OUT:"wrong-'),
+                wrong_pdb=text.replace('/PDB:"','/PDB:"wrong-'),
+                unknown_option=text.replace('/WX ','/WX /FORCE '),
+                missing_library=text[:text.rfind(' "')]+"\n")
+            for scenario,mutant in variants.items():
+                with self.subTest(program=name,scenario=scenario):
+                    for key,pin in pins.items():self.replace_source(pin,original[key])
+                    self.replace_source(pins[name],mutant)
+                    result=self.invoke();self.assertNotEqual(result.returncode,0,result.stdout)
+                    self.assertIn('Source tuple required' if not mutant else 'Exact J8 linker response',result.stderr)
+                    self.assertFalse((self.root/'unopened-opaque').exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
+
+    def test_j8_asset_provider_top_level_member_and_command_mutants_refuse_without_evaluation(self):
+        self.owned_input_plan()
+        paths=('h1-fixture/H1Native.Core.ps1','h1-fixture/H1Native.Compiler.ps1',
+               'surfaces/MaterialV2.Compiler.ps1','t7-iw7/T7Build.Profile.ps1')
+        for suffix in paths:
+            entry=next(e for e in self.provider_snapshot['Entries'] if e['SourcePath'].endswith('/'+suffix))
+            path=Path(entry['Path']);original=path.read_text()
+            parent=next(p for p in self.plan['ParentBindings'] if p['Path']==str(path))
+            # Parse/production DEFAULT only. NEVER import or evaluate these texts.
+            for addition in ("\n[Diagnostics.Process]::Start('source-only-never-run')\n",
+                             "\nInvoke-UnreviewedSourceOnly -NeverRun\n"):
+                with self.subTest(provider=suffix,addition=addition):
+                    self.replace_source(parent,original+addition)
+                    entry.update(Bytes=parent['Bytes'],SHA256=parent['SHA256'])
+                    self.replace_metadata(self.plan['CurrentProviderSourceSnapshot'],self.provider_snapshot)
+                    result=self.invoke();self.assertNotEqual(result.returncode,0,result.stdout)
+                    self.assertIn('unreviewed top-level activation',result.stderr)
+                    self.assertFalse((self.root/'unopened-opaque').exists());self.assertFalse(Path(self.plan['RunRoot']).exists())
+            self.replace_source(parent,original);entry.update(Bytes=parent['Bytes'],SHA256=parent['SHA256'])
+            self.replace_metadata(self.plan['CurrentProviderSourceSnapshot'],self.provider_snapshot)
+
+    def test_j8_ast_rejects_initializer_dynamic_fallback_load_and_factory_mutations(self):
+        self.owned_input_plan()
+        entry=next(e for e in self.provider_snapshot['Entries'] if e['SourcePath'].endswith('/H1Native.Core.ps1'))
+        path=Path(entry['Path']);original=path.read_text();parent=next(p for p in self.plan['ParentBindings'] if p['Path']==str(path))
+        for addition in ('\nfunction Unreviewed { Initialize-IW7ResourceOwnedProvider }\n',
+                         '\nfunction Unreviewed { & $unexpectedTarget }\n',
+                         '\nfunction Unreviewed { [DoomSkinBuild.SkinWriterProcess]::new() }\n',
+                         '\nfunction Unreviewed { [Reflection.Assembly]::LoadFrom($unexpected) }\n',
+                         '\nAdd-Type -TypeDefinition "inert_source_mutant"\n'):
+            raw=(original+addition).encode();path.write_bytes(raw)
+            entry.update(Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest());parent.update(Bytes=len(raw),SHA256=entry['SHA256'])
+            self.replace_metadata(self.plan['CurrentProviderSourceSnapshot'],self.provider_snapshot)
+            result=self.invoke();self.assertNotEqual(result.returncode,0,result.stdout)
+            self.assertRegex(result.stderr,'unreviewed|Forbidden fallback|replacement assembly')
+        raw=original.replace('[IW7.AnimationProbe.NativeJob]::new()','[object]::new()').encode();path.write_bytes(raw)
+        entry.update(Bytes=len(raw),SHA256=hashlib.sha256(raw).hexdigest());parent.update(Bytes=len(raw),SHA256=entry['SHA256'])
+        self.replace_metadata(self.plan['CurrentProviderSourceSnapshot'],self.provider_snapshot)
+        result=self.invoke();self.assertNotEqual(result.returncode,0);self.assertIn('Original H1 NativeJob factory',result.stderr)
+        self.assertFalse((self.root/'unopened-opaque').exists())
+
+    def test_j8_pure_ast_causal_closes_real_lock_body_and_transitive_definitions(self):
+        self.owned_input_plan()
+        source_map={entry['SourcePath']:Path(entry['Path']).read_text() for entry in self.provider_snapshot['Entries']}
+        (self.root/'provider-analysis-source.json').write_text(json.dumps(source_map),encoding='utf-8')
+        result=self.source_fragment(r'''
+$definition=$ast.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-PlayerOwnedInputProviderAst'},$true)
+. ([scriptblock]::Create($definition.Extent.Text))
+$sources=Get-Content -Raw -LiteralPath (Join-Path $Directory 'provider-analysis-source.json')|ConvertFrom-Json -AsHashtable
+Assert-PlayerOwnedInputProviderAst $sources
+# Inert name text is not an executed initializer/fallback call.
+$inert=$sources.Clone();$inert['tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1']+="`nfunction Inert { 'Initialize-IW7ResourceOwnedProvider SkinWriterProcess' }`n"
+Assert-PlayerOwnedInputProviderAst $inert
+$refused=0
+foreach($scenario in 0..3){
+ $mutant=$sources.Clone()
+ if($scenario-eq0){$mutant['ops/Resource-Scheduler.Core.ps1']=$mutant['ops/Resource-Scheduler.Core.ps1'].Replace('    $canonical = Get-IW7CanonicalScope $Scope',"    Initialize-IW7ResourceOwnedProvider`n    `$canonical = Get-IW7CanonicalScope `$Scope")}
+ if($scenario-eq1){$mutant['ops/Resource-Scheduler.Core.ps1']=$mutant['ops/Resource-Scheduler.Core.ps1'].Replace('& $Body','& $unreviewed')}
+ if($scenario-eq2){$mutant['ops/Resource-Scheduler.Core.ps1']=$mutant['ops/Resource-Scheduler.Core.ps1'].Replace('Invoke-IW7ResourceLock {','Invoke-IW7ResourceLock $unreviewed; & {')}
+ if($scenario-eq3){$mutant['ops/Resource-OwnedProcess.Core.ps1']+="`nInitialize-IW7ResourceOwnedProvider`n"}
+ try{Assert-PlayerOwnedInputProviderAst $mutant}catch{$refused++}
+}
+if($refused-ne4){throw 'AST initializer/lock-body/top-level causal lost'}
+if(('IW7.AnimationProbe.NativeJob' -as [type])-or('IW7ResourceMemoryV1' -as [type])){throw 'Pure AST causal imported a provider'}
+Write-Output 'j8-real-eleven-provider-pure-ast-causals'
+''')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertIn('j8-real-eleven-provider-pure-ast-causals',result.stdout)
+
+    def test_j8_passed_gate_needs_both_links_both_probes_and_all_original_stage_closures(self):
+        result=self.source_fragment(r'''
+$definition=$ast.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Assert-PlayerOwnedInputPassed'},$true)
+. ([scriptblock]::Create($definition.Extent.Text))
+$names=@('helper-compile','helper-link','helper-test','weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test')
+$plan=[pscustomobject]@{Schema='iw7.authored-owned-input-core-cpp-source/1'}
+$stages=@($names|ForEach-Object {[pscustomobject]@{Name=$_;TreeClosureConfirmed=$true;ExitCode=0;Checks=0}})
+$stages[2].Checks=6;$stages[7].Checks=8
+$state=[pscustomobject]@{HelperLinked=$true;CoresLinked=$true;Stages=$stages}
+Assert-PlayerOwnedInputPassed $plan $state
+$refused=0
+foreach($scenario in 0..4){
+ $copy=$state|ConvertTo-Json -Depth 8|ConvertFrom-Json
+ if($scenario-eq0){$copy.HelperLinked=$false};if($scenario-eq1){$copy.CoresLinked=$false}
+ if($scenario-eq2){$copy.Stages[2].Checks=8};if($scenario-eq3){$copy.Stages[7].Checks=6}
+ if($scenario-eq4){$copy.Stages[1].TreeClosureConfirmed=$false}
+ try{Assert-PlayerOwnedInputPassed $plan $copy}catch{$refused++}
+}
+if($refused-ne5){throw 'Incomplete original stages/links/probes accepted'}
+Write-Output 'j8-passed-gate-source-only'
+''')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertIn('j8-passed-gate-source-only',result.stdout)
+
     def test_authored_real_finalizer_publication_refusal_does_not_own_teardown(self):
         for scenario in range(7):
             with self.subTest(scenario=scenario):
                 result = self.source_fragment(r'''
 $core=Join-Path (Split-Path (Split-Path $Runner -Parent) -Parent) 'h1-fixture/H1Native.Core.ps1'
-. $core
+$coreTokens=$null;$coreErrors=$null
+$coreTree=[Management.Automation.Language.Parser]::ParseFile($core,[ref]$coreTokens,[ref]$coreErrors)
+if($coreErrors.Count){throw 'Core Source AST parse failed'}
+foreach($name in 'Assert-H1Path','Assert-H1OutputName','New-H1AuthoredOutputBudget','Assert-H1AuthoredOutputBudget',
+    'Measure-H1AuthoredOutput','Measure-H1Output','Get-H1Clock','Assert-H1Deadline','Complete-H1Stage'){
+    $definition=$coreTree.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $name},$true)
+    . ([scriptblock]::Create($definition.Extent.Text))
+}
 foreach($name in @('Get-PlayerAuthoredSafetyClock','Open-NeutralPublication','Write-NeutralPublication',
     'Read-NeutralPublication','New-NeutralPublication','Save-PlayerAuthoredGuardReferences',
     'Complete-NeutralPublication','Complete-PlayerAuthoredFinalization')){

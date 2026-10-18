@@ -16,6 +16,7 @@ from test_neutral_pair_inputs import CSV, encode, fixture
 FIXTURE_SOURCE_FILES = (
     'test_authored_pair_json.cpp',
     'native_pair_session.hpp',
+    'native_pair_owned_input.hpp',
     'native_neutral_dependencies.hpp',
     'native_definition_access.hpp',
     'native_weapon_dependencies.inc',

@@ -1,7 +1,15 @@
 # Light mocked lifecycle checks: no native types, leases, compiler or probe.
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
-. (Join-Path $PSScriptRoot 'H1Native.Core.ps1')
+$sourceTokens=$null;$sourceErrors=$null
+$sourceTree=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'H1Native.Core.ps1'),[ref]$sourceTokens,[ref]$sourceErrors)
+if($sourceErrors.Count){throw 'Core Source AST parse failed'}
+foreach($sourceName in 'Assert-H1Path','Open-H1Pin','Read-H1SmallJson','Assert-H1OutputName','New-H1AuthoredOutputBudget',
+    'Assert-H1AuthoredOutputBudget','Measure-H1AuthoredOutput','Measure-H1Output','Get-H1Clock','Assert-H1Deadline',
+    'Test-H1Budget','Invoke-H1OwnedStage','Complete-H1Stage','Assert-H1ReceiptBytes','Write-H1Receipt'){
+    $sourceDefinition=$sourceTree.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $sourceName},$true)
+    . ([scriptblock]::Create($sourceDefinition.Extent.Text))
+}
 $reviewedBudget=${function:Test-H1Budget}
 $passed=0
 function Check([bool]$Value,[string]$Message){if(!$Value){throw $Message};$script:passed++}
@@ -249,6 +257,51 @@ try{
         Check ($null -ne $forgedError -and $forgedError -like 'Authored * differ from the exact Source profile.') 'A forged48/8 budget reached filesystem IO or accepted an arbitrary path/type/alias.'
         Check (![IO.Directory]::Exists($absent)) 'Pure forged-budget rejection created its absent root.'
     }
+    # J8 is eight real phases, with a separate immutable44/8 output derivation.
+    $ownedNames=@('helper-compile','helper-link','helper-test','weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test')
+    $ownedStages=@(for($i=0;$i -lt 8;$i++){
+        $kind=if($i -in @(2,7)){'Probe'}elseif($i -in @(1,6)){'Link'}else{'Compile'}
+        $artifacts=if($kind -ceq 'Probe'){@()}elseif($i -eq 1){@('helper.exe','helper.pdb')}
+            elseif($i -eq 6){@('fixture.exe','fixture.pdb')}
+            else{@($(if($i -eq 0){'helper.obj'}elseif($i -eq 5){'fixture.obj'}else{$ownedNames[$i]+'.obj'}),'compile.pdb','dependencies.json')}
+        [pscustomobject]@{Name=$ownedNames[$i];Stage=$kind;Artifacts=$artifacts}
+    })
+    $ownedRun=Join-Path $authoredParent 'owned-input';New-AuthoredOwnedEntry $ownedRun $true
+    $ownedBudget=New-H1AuthoredOutputBudget $ownedRun $ownedStages
+    Check ($ownedBudget.Schema -ceq 'iw7.h1-owned-input-output-budget/1' -and $ownedBudget.Entries.Count -eq 44 -and
+        @($ownedBudget.Entries.Values|Where-Object {$_ -ceq 'File'}).Count -eq 36) 'J8 closed44/36 shape differs.'
+    foreach($entry in $ownedBudget.Entries.GetEnumerator()){
+        if([IO.Path]::GetDirectoryName($entry.Key) -ceq $ownedRun -and $entry.Value -ceq 'File'){continue}
+        New-AuthoredOwnedEntry $entry.Key ($entry.Value -ceq 'Directory')
+    }
+    for($i=0;$i -lt 65;$i++){
+        New-AuthoredOwnedEntry (Join-Path (Join-Path $ownedRun $ownedNames[$i%2]) ('residual-'+$i+'.tmp'))
+    }
+    $ownedResidualError=$null;try{$null=Measure-H1Output $ownedRun $ownedBudget}catch{$ownedResidualError=$_.Exception.Message}
+    Check ($ownedResidualError -ceq 'Authored group residual output entry count exceeded 64.') 'J8 residual65 at105 entries bypassed the shared64 before108 total.'
+    [IO.File]::Delete((Join-Path (Join-Path $ownedRun $ownedNames[0]) 'residual-64.tmp'))
+    Check ((Measure-H1Output $ownedRun $ownedBudget) -eq 96) 'J8 exact shared64 stage envelope differs.'
+    foreach($entry in $ownedBudget.Entries.GetEnumerator()){
+        if([IO.Path]::GetDirectoryName($entry.Key) -ceq $ownedRun -and $entry.Value -ceq 'File'){New-AuthoredOwnedEntry $entry.Key}
+    }
+    Check ((Measure-H1Output $ownedRun $ownedBudget) -eq 100) 'J8 all108 slots differ.'
+    $ownedAbsent=Join-Path $authoredParent 'owned-absent';$ownedAbsentBudget=New-H1AuthoredOutputBudget $ownedAbsent $ownedStages
+    foreach($mutation in 'root','type','case'){
+        $map=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
+        foreach($pair in $ownedAbsentBudget.Entries.GetEnumerator()){$map.Add($pair.Key,$pair.Value)}
+        if($mutation -ceq 'root'){$null=$map.Remove((Join-Path $ownedAbsent 'stop.request'));$map.Add((Join-Path $ownedAbsent 'rogue.txt'),'File')}
+        if($mutation -ceq 'type'){$map[(Join-Path $ownedAbsent 'helper-compile')]='File'}
+        if($mutation -ceq 'case'){$null=$map.Remove((Join-Path $ownedAbsent 'stop.request'));$map.Add((Join-Path $ownedAbsent 'helper-compile').ToUpperInvariant(),'Directory')}
+        $forged=[pscustomobject]@{Schema=$ownedAbsentBudget.Schema;Root=$ownedAbsent;Entries=$map;StageRoots=$ownedAbsentBudget.StageRoots;
+            Stages=$ownedStages;ResidualEntries=64;MaximumDepth=64}
+        Refuses {Measure-H1Output $ownedAbsent $forged} 'J8 forged44 map reached IO or accepted changed roots/types/aliases.'
+        Check (![IO.Directory]::Exists($ownedAbsent)) 'J8 forged map created its deliberately absent root.'
+    }
+    $wrongProfile=[pscustomobject]@{Schema='iw7.authored-pair-core-cpp-source/1';Stages=$ownedStages;
+        RunRoot=$ownedAbsent;AuthoredOutputBudget=$ownedAbsentBudget}
+    Refuses {& $reviewedBudget $wrongProfile ([ordered]@{MaxObservedOutputBytes=0L})} 'J7 schema selected J8 geometry.'
+    $wrongProfile.Schema='iw7.authored-owned-input-core-cpp-source/1';$wrongProfile.Stages=$authoredStages
+    Refuses {& $reviewedBudget $wrongProfile ([ordered]@{MaxObservedOutputBytes=0L})} 'J8 schema selected J7 geometry.'
     $depthRun=Join-Path $authoredParent 'depth';New-AuthoredOwnedEntry $depthRun $true
     $depthBudget=New-H1AuthoredOutputBudget $depthRun $authoredStages
     $deep=Join-Path $depthRun 'weapon-core';New-AuthoredOwnedEntry $deep $true

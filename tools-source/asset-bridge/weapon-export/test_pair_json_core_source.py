@@ -142,28 +142,13 @@ class PairJsonCoreSourceTests(unittest.TestCase):
 
 
 class AuthoredPairFixtureSourceTests(unittest.TestCase):
-    def test_unexpected_refusal_diagnostic_is_only_the_positive_boundary_delta(self):
+    def test_unexpected_refusal_diagnostic_and_positive_oracles_remain_byte_identical(self):
         source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
-        stats_start = source.index('    // Entry intervals only;')
-        stats_end = source.index('    // Ordinary private byte storage', stats_start)
-        source = source[:stats_start] + '    struct Stats { unsigned copies{}, hashes{}, decodes{}, arenas{}, weapon_parses{}, attachment_parses{}, publications{}; };\n' + source[stats_end:]
-        for marker in ('            stats.phase=ParsePhase::pair_construction;\n',
-                       'stats.phase=ParsePhase::weapon_parse;',
-                       '                stats.phase=ParsePhase::attachment_parse;\n',
-                       '                stats.phase=ParsePhase::post_parse;\n'):
-            self.assertEqual(source.count(marker), 1)
-            source = source.replace(marker, '', 1)
-        function = source.index('    void real_pair_variants()')
-        start = source.index('            Result actual;', function)
-        end = source.index('            need(stats.hashes==4', start)
-        original = (source[:start] +
-                    '            auto actual=execute(approved_cases[i],approved_cases[i].original,report,stats);\n' +
-                    source[end:])
-        # Removing only Stats phase metadata, four phase markers and the positive
-        # diagnostic boundary reconstructs all bbf2 bytes, including cleanup,
-        # parser calls/order, negative criteria and eight-group success output.
-        self.assertEqual(hashlib.sha256(original.encode('utf-8')).hexdigest(),
-                         '60ca6d94ac2a95695a26e0dba2febbcd8cfad0892f276692b1a654cc1cdbe176')
+        positive = function_body(source, 'void real_pair_variants()')
+        # The extraction is outside this entire positive function. Keep its exact
+        # c887 Source bytes, including diagnostics, parser-result checks/oracles.
+        self.assertEqual(hashlib.sha256(positive.encode()).hexdigest(),
+                         '4d7ef74cfd92a283ec77070c97827a11aee9a2eab61bb744a9cfcea2daa3c993')
 
     def test_unexpected_refusal_lines_bound_all_fields_and_preserve_same_rethrow(self):
         source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
@@ -290,7 +275,8 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
         old_four = {'test_authored_pair_json.cpp', 'native_pair_session.hpp',
                     'native_neutral_dependencies.hpp', 'native_definition_access.hpp'}
         self.assertEqual(missing_includes(old_four),
-                         {'native_weapon_dependencies.inc', 'native_attachment_dependencies.inc'})
+                         {'native_weapon_dependencies.inc', 'native_attachment_dependencies.inc',
+                          'native_pair_owned_input.hpp'})
         supplied = set(fixtures.FIXTURE_SOURCE_FILES)
         self.assertEqual(len(supplied), len(fixtures.FIXTURE_SOURCE_FILES))
         self.assertTrue(old_four <= supplied)
@@ -358,9 +344,10 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
         source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
         self.assertIn('pq::parse_weapon_json(', source); self.assertIn('pq::parse_attachment_json(', source)
         self.assertIn('nd::inventory_pair(', source); self.assertIn('OwnedPair<', source)
-        self.assertIn('sha256(bytes[i])!=trusted[i].sha256', source)
-        private = source.index('// All four PRIVATE copies')
-        self.assertLess(private, source.index('ordered_json::parse(bytes[0])'))
+        buffers = function_body(source, 'Buffers(const Inputs&')
+        self.assertIn(': raw(incoming, trusted, stats)', source)
+        self.assertIn('input::OwnedInput raw;', source)
+        self.assertIn('ordered_json::parse(raw.bytes(input::Role::report))', buffers)
         for forbidden in ('#define VirtualAlloc', '#define VirtualFree', 'FakeParser', 'DB_FindXAsset', 'filesystem::', 'LoadLibrary', 'system('): self.assertNotIn(forbidden, source)
         self.assertEqual(len(re.findall(r'\{"[a-z0-9_]+",[a-z0-9_]+\}', source)), 8)
         self.assertIn('IW7_AUTHORED_PAIR_REAL_CORE_FIXTURE=8', source)
@@ -371,6 +358,77 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
         # is required to reach its JSON get<bool>() rather than a later check.
         self.assertIn('attachment["papAttachment"]="authored_negative_type_fault"', source)
         self.assertNotIn('attachment.erase("papAttachment")', source)
+
+    def test_owned_input_extraction_retains_actual_sha_and_all_bounds_precede_private_copies(self):
+        header = (Path(__file__).parent/'native_pair_owned_input.hpp').read_text(encoding='utf-8')
+        sha = re.search(r'    inline std::string sha256\(.*?\n    \}\n', header, re.DOTALL)[0]
+        original = sha.replace('inline std::string sha256(', 'std::string sha256(', 1)
+        self.assertEqual(hashlib.sha256(original.encode()).hexdigest(),
+                         '3325efc215b91d9f41a30bdef4a31645ec2f222d466353ad0a4701098340361d')
+        caps = ast.literal_eval('[' + re.search(r'role_caps\{([^}]+)\}', header)[1] + ']')
+        self.assertEqual(caps, [65536, 2097152, 2097152, 66])
+        self.assertEqual(sum(caps), int(re.search(r'total_cap = (\d+);', header)[1]))
+        bounds = function_body(header, 'static void validate_before_copy(')
+        for expression in ('incoming[i].size() <= role_caps[i]', 'trusted[i].bytes > 0',
+                           'trusted[i].bytes <= role_caps[i]', 'incoming[i].size() == trusted[i].bytes',
+                           'detail::checked_total(actual_total, incoming[i].size())',
+                           'detail::checked_total(expected_total, trusted[i].bytes)',
+                           'trusted[i].sha256.size() == 64'):
+            self.assertIn(expression, bounds)
+        self.assertNotIn('.assign(', bounds)
+        constructor = function_body(header, 'OwnedInput(const Inputs&')
+        ordered = ['validate_before_copy(incoming, trusted);', 'pins_[i].sha256.assign(',
+                   'bytes_[i].assign(', '++counters.copies;', '++counters.hashes;', 'detail::sha256(bytes_[i])']
+        self.assertEqual([constructor.index(value) for value in ordered],
+                         sorted(constructor.index(value) for value in ordered))
+        addition = function_body(header, 'inline size_t checked_total(')
+        self.assertLess(addition.index('used <= total_cap && amount <= total_cap - used'),
+                        addition.index('return used + amount;'))
+
+    def test_generic_byte_owner_does_not_widen_finite_fixture_parse_allowlist(self):
+        source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        gate = function_body(source, 'void require_approved_source(')
+        self.assertIn('for (const auto& approved : approved_cases) if (&source == &approved) return;', gate)
+        self.assertIn('throw PinError();', gate)
+        execute = function_body(source, 'Result execute(')
+        self.assertLess(execute.index('require_approved_source(source);'), execute.index('Factory factory('))
+        fourth = function_body(source, 'void bypass_real_core_refuses(')
+        self.assertIn('row["bytes"]=weapon.size();row["sha256"]=weapon_hash;', fourth)
+        self.assertIn('fourth.trusted_source_pins[0]={report_raw.size(),report_hash};', fourth)
+        self.assertIn('fourth_stats.copies==0&&fourth_stats.hashes==0&&fourth_stats.decodes==0', fourth)
+        self.assertEqual(len(fixtures.cases()), 3)
+        header = (Path(__file__).parent/'native_pair_owned_input.hpp').read_text(encoding='utf-8')
+        code = re.sub(r'//[^\n]*', '', header)
+        for forbidden in ('ordered_json', 'parse(', 'zone_memory', 'OwnedPair', 'FILE', 'Windows.h',
+                          'LoadLibrary', 'VirtualAlloc', 'std::function', 'operator bool'):
+            self.assertNotIn(forbidden, code)
+        self.assertIn('const std::string& bytes(Role role) const', code)
+        self.assertIn('Pin pin(Role role) const', code)
+        for action in ('OwnedInput(const OwnedInput&)', 'OwnedInput(OwnedInput&&)',
+                       'operator=(const OwnedInput&)', 'operator=(OwnedInput&&)'):
+            self.assertIn(action + ' = delete;', code)
+
+    def test_owned_input_causals_call_production_helper_and_remain_authored_uncompiled(self):
+        here = Path(__file__).parent
+        code = (here/'test_pair_owned_input.cpp').read_text(encoding='utf-8')
+        self.assertIn('#include "native_pair_owned_input.hpp"', code)
+        self.assertNotIn('class OwnedInput', code)
+        self.assertNotIn('std::string sha256(', code)
+        self.assertGreater(code.count('input::OwnedInput owner('), 5)
+        for causal in ('input::detail::checked_total(input::total_cap, 1)',
+                       '(std::numeric_limits<std::size_t>::max)()', 'counters.copies == 0 && counters.hashes == 0',
+                       'mutation.copies == 4 && mutation.hashes == 3', 'std::swap(incoming[0], incoming[1])',
+                       'std::swap(pins[0], pins[1])', 'owner->pin(role).sha256',
+                       'catch (const allocation_fault::Failure&)', 'allocation_fault::live == before'):
+            self.assertIn(causal, code)
+        self.assertIn('AUTHORED, NOT COMPILED/EXECUTED', code)
+        self.assertIn('IW7_PAIR_OWNED_INPUT=6', code)
+        for forbidden in ('ordered_json', 'zone_memory', 'Windows.h', 'VirtualAlloc', 'LoadLibrary'):
+            self.assertNotIn(forbidden, code)
+        import json
+        exports = json.loads((here.parents[2]/'product.json').read_text(encoding='utf-8'))['exports']
+        for name in ('native_pair_owned_input.hpp', 'test_pair_owned_input.cpp'):
+            self.assertIn('tools-source/asset-bridge/weapon-export/' + name, exports)
 
 
 if __name__ == '__main__':
