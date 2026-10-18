@@ -442,3 +442,46 @@ or stock activation, arbitrary definitions, FILE/routes, CLI/FF, engine ABI,
 weapon grant/physics/PAP and gameplay remain unqualified; no BO3 demonstration
 is authorized. J1–J6 plans/results stay immutable. This DOC head and any later
 merge were not compiled by J7 and grant no new actual GO.
+
+## Inactive owned-input extraction, 2026-10-18
+
+The next Source revision extracts J7's actual four private copies, external pin
+binding and unchanged SHA256 algorithm into `native_pair_owned_input.hpp`.
+The helper checks every incoming and expected role length, canonical digest
+syntax and both checked aggregate totals before any private raw or pin copy.
+The role caps are 65536/2097152/2097152/66 bytes and their aggregate is 4259906.
+All four owned copies are hashed before returning to the fixture's JSON decoder.
+The helper copies external pin values and retains role-specific original bytes;
+it never hashes a reserialized report or derives its expected pins from input.
+
+The generic helper binds bytes only. It is not PR216/native eligibility, a token
+or a convertible capability. The fixture additionally requires the exact Source
+object from its unchanged three-case table before any owner/copy/decode/arena.
+A fourth authored set with updated consistent raw/report pins must refuse there.
+The three approved raw sets, literal oracles, capacities, parser order and eight
+group names remain unchanged. `Buffers` retains the raw owner alongside its two
+mutable decoded JSON objects for the existing `OwnedPair` lifetime.
+
+The raw interface is immutable under its caller contract, without a guarantee
+against const_cast, memory corruption or concurrent writers. Caller views must
+stay valid and unmodified during copy; this is not an OS sandbox. Standard
+member destruction unwinds partial copies and preserves ordinary exceptions;
+it supplies no native fatal allocator closure. The standalone authored fixture
+calls the production helper for role/pin/hash bounds, real checked addition,
+caller-storage lifetime and injected standard-allocation failure. All-role-valid
+sizes cannot exceed their summed cap; the addition boundary is tested directly.
+No new crypto/provider/SDK dependency is added.
+
+This extracted-owner revision and its six-group fixture are authored and have
+not been compiled or executed. Source checks inspect actual extraction/order,
+finite allowlist and support closure; they are not C++ behavioral results.
+At this Source checkpoint, `python -B -m unittest -v test_pair_json_core_source`
+passed 26 tests in 0.168 seconds. No broader suite or C++ fixture was run.
+J7 remains tied to its older exact compiled head. New native compilation needs
+separate exact-head review, full admission, a distinct GO and original closure.
+Same-owner complete PR216 validation before arena remains absent for new inputs.
+FILE-before-byte identity, CWD/route/alias exclusion, real arena/base alignment,
+map/root lifetime and exception/fatal boundaries keep their previous gates.
+The three native hooks still reject; no CLI/FF/Game/ABI/grant/physics/PAP/BO3
+activation is added. `Ready`, `ActualPairParseActivated` and
+`FatalAllocatorClosure` remain false.

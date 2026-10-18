@@ -22,6 +22,8 @@
     "tools-source/asset-bridge/weapon-export/test_native_body_schema.py",
     "tools-source/asset-bridge/weapon-export/NATIVE-BODY-SCHEMA.md",
     "tools-source/asset-bridge/weapon-export/native_pair_session.hpp",
+    "tools-source/asset-bridge/weapon-export/native_pair_owned_input.hpp",
+    "tools-source/asset-bridge/weapon-export/test_pair_owned_input.cpp",
     "tools-source/asset-bridge/weapon-export/prepare_pair_checked_parse.py",
     "tools-source/asset-bridge/weapon-export/test_pair_session.cpp",
     "tools-source/asset-bridge/weapon-export/test_pair_session_source.py",
