@@ -615,3 +615,59 @@ Only Source and own metadata/stdout were read after release, without reopening
 opaque native outputs. This DOC head is not the compiled head. Real pair/U1/T2/body,
 FILE/arena/CLI/FF, engine ABI/lifetime, physics/PAP and game stay unqualified;
 Ready and both activation flags remain false. No new actual GO follows.
+
+## Actual J9 standalone report CPP checkpoint, 2026-10-18
+
+The distinct J9 Source packet compiled exact Source
+`919b36d79dc44f9a7d87bca6d514a541d3213631`, tree
+`0dd9b370b24cb35badf9983583b1a708bd768758`, with explicitly retained Native
+provider Source `efe6761bc6a96581140767bde9f82816af579375`. This result does not
+adopt a newer provider or credit a later DOC/merge head. The 280642-byte plan is
+SHA256 `f1bef0862fd87ccb622db7d8840e0875727272ebd6d57ea02a3510b339a2ac1f`.
+
+One invocation reached exit0 and original tree closure in all three phases:
+standalone report fixture compile 3024.0457ms, fresh one-object link 976.7406ms,
+and the eight-group test 188.8604ms. There were no engine cores, wrapper TUs or
+full CLI. Complete compile/link responses, seven fixed libraries, original
+compiler/telemetry owners and the strict same-context link-plan view were used.
+The helper checked only the same owned report/pins, closed 30-key schema,
+13 false flags, three roles and CSV66; it did not decode the two bodies.
+
+Legacy Measure-H1Output retained 64 TOTAL entries, with AuthoredOutputBudget
+absent. The 18-entry recipe expectation was not an added allowance. The three
+publication streams were enrolled before the second 64-entry measurement and
+before writes/release. Existing 600s group,120/120/15s stage deadlines and 256MiB
+including 1MiB metadata reserve remained unchanged. Maximum observed output was
+28388995 bytes, measured while the original lease was held; no later opaque
+artifact rescan was performed.
+
+Root personally read the raw 271-byte CRLF stdout, its retained SHA and explicit
+CRLF-to-LF ordinal comparison with all eight fixed PASS names and the marker.
+Compile/link/test stderr were all empty. At preexit, SAME Root6/External7
+witnesses and original context/arrays were verified:32 Source records,
+499 input records, three publications, 534 closed original FileStream/saved-SFH
+pairs, three closed owners, empty inner guards and null lease. The plan's 491
+compiler declarations and four opaque parents are not asserted to be 495 unique
+physical inputs. Input reverify, both final readbacks, last deadline and CanExit
+were true. Preexit elapsed 115984.9368ms belongs to the unchanged original clock,
+not a measured total PTY duration.
+
+The final disk receipt keeps its earlier guards-held snapshot. Subsequent
+same-context preexit proves closure without rewriting it. External Source and
+host saved SFH remained held until the distinct terminal GO; the same Source
+was rechecked/closed before original Process disposal and true exit0. Roots
+were retained until death; kernel CloseHandle's return was not separately
+measured. Root observed terminal chunk `a2b58f` at 06:58:54 UTC and then fresh
+06:59:23.3431656 UTC absence of all seven captured identities, preserved Main
+identity and an empty V1 lease registry. Terminal-call latency 0.0000339s is not
+total PTY wall time. The original terminal must never be polled or replayed.
+
+The complete receipt/stdout/preexit/closed-proof pins and the preserved initial
+Source92/16-failure history are recorded in
+[NEUTRAL-PAIR-INPUTS.md](NEUTRAL-PAIR-INPUTS.md#j9-report-only-cpp-and-known-closure-2026-10-18).
+The corrected 144 contract/entry and 250 publication assertions are separately
+identified as Source-fake results, not C++ qualification. Only Source and own
+metadata/stdout were read after release, without reopening opaque native outputs.
+This bounded standalone result grants no real pair/U1/T2/body/stock, arena or
+fatal closure, engine ABI/lifetime, FILE/routes, CLI/FF, weapon/physics/PAP/Game
+or Ready qualification, and no new actual GO.
