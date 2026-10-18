@@ -246,6 +246,8 @@ static void partial_components_reverse_unwind() {
     }
 }
 static void stable_pair_view_and_builder_lifetime() {
+    static_assert(!std::is_constructible_v<owned::detail::Transfer<Guard,Components>,
+        std::unique_ptr<Ingress>&&,Components&>); // External code cannot split guards/raw.
     static_assert(!std::is_copy_constructible_v<Ingress>&&!std::is_move_constructible_v<Ingress>);
     static_assert(!std::is_copy_constructible_v<Session>&&!std::is_move_constructible_v<Session>);
     static_assert(std::is_same_v<decltype(std::declval<const Session&>().input()),const input::OwnedInput&>);

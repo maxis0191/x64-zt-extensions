@@ -63,6 +63,17 @@ class TypedIngressSource(unittest.TestCase):
             (66, 'f539cb31e182b7648cac4eb4da369e344d0a8da1a877c4fbed1dc23ef105f2c8'),
         ])
 
+    def test_transfer_constructor_is_private_and_only_complete_entry_is_friend(self):
+        text = (HERE / 'native_pair_owned_session.hpp').read_text(encoding='utf-8')
+        transfer = text.split('class Transfer final', 1)[1].split('template<class Guards, class Components> class TypedOwnedPair final', 1)[0]
+        private, public = transfer.split('public:', 1)
+        self.assertIn('Transfer(std::unique_ptr<OwnedIngress<Guards>>&&', private)
+        self.assertIn('friend auto player_pair_owned_session::make_validated_owned_pair(', private)
+        self.assertEqual(private.count('friend '), 1)
+        self.assertNotIn('Transfer(std::unique_ptr<OwnedIngress<Guards>>&&', public)
+        fixture = (HERE / 'test_pair_owned_session.cpp').read_text(encoding='utf-8')
+        self.assertIn('static_assert(!std::is_constructible_v<owned::detail::Transfer<Guard,Components>,', fixture)
+
     def test_authored_causals_are_present_but_not_execution_evidence(self):
         text = (HERE / 'test_pair_owned_session.cpp').read_text(encoding='utf-8')
         self.assertIn('AUTHORED, NOT COMPILED/LINKED/EXECUTED', text)

@@ -96,7 +96,11 @@ namespace player_pair_owned_session
             Components& components_; // Used during construction only; never stored in Pair.
             const Input* raw_view_ = nullptr;
             typename Components::Arena* arena_view_ = nullptr;
-        public:
+            template<class G, class C>
+            friend auto player_pair_owned_session::make_validated_owned_pair(
+                std::unique_ptr<OwnedIngress<G>>&&, C&) -> std::unique_ptr<TypedOwnedPair<G, C>>;
+            // detail is not an access boundary. Only the complete entry below
+            // may construct this adapter and perform its two pointer transfers.
             Transfer(std::unique_ptr<OwnedIngress<Guards>>&& ingress, Components& components)
                 : ingress_(std::move(ingress)), components_(components)
             {
@@ -107,6 +111,7 @@ namespace player_pair_owned_session
                 // callback/verdict and no validation between the later moves.
                 iw7::neutral::player_pair_bodies::validate_owned_pair_bodies(*raw_view_);
             }
+        public:
             Transfer(const Transfer&) = delete;
             Transfer& operator=(const Transfer&) = delete;
             std::unique_ptr<Guards> guards() noexcept { return std::move(ingress_->guards_); }
