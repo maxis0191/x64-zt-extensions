@@ -66,7 +66,7 @@ namespace
         for (const int type : recognized) check(inventory.asset(type, name, {"dependency[]", index++}));
         check(inventory.begin(nd::Owner::attachment, pair.attachment.name) && inventory.freeze());
         check(inventory.references().size() == 13 && inventory.edges().size() == 13 && inventory.occurrences() == 13);
-        check(inventory.frozen() && inventory.policy_blocked() && inventory.blocked_external_count() == 10);
+        check(inventory.frozen() && inventory.policy_blocked() && inventory.blocked_external_count() == 9);
         check(contract::assess(inventory).state == contract::InventoryState::complete_policy_blocked);
     }
     void real_walkers_continue_after_blocker()
@@ -100,12 +100,12 @@ namespace
         check(inventory.edges()[0].path == "models[2]" && inventory.edges()[1].path == "models[5]");
         check(inventory.edges()[2].path == "models[7]" && inventory.edges()[2].owner == nd::Owner::attachment);
     }
-    void strict_policy_unchanged()
+    void strict_reference_policy()
     {
         Pair pair; const char name[] = "fixture_external"; pair.memory.allow(name);
         for (const int type : recognized)
         {
-            const bool allowed = type == ASSET_TYPE_FX || type == ASSET_TYPE_VFX || type == ASSET_TYPE_RETICLE;
+            const bool allowed = type == ASSET_TYPE_FX || type == ASSET_TYPE_VFX || type == ASSET_TYPE_RETICLE || type == ASSET_TYPE_RUMBLE;
             check(nd::reference_supported(type) == allowed);
             nd::Collector strict(Memory::copy, &pair.memory);
             check(strict.begin(nd::Owner::weapon, pair.weapon.name));
@@ -117,6 +117,21 @@ namespace
             }
             else check(!strict.good() && !strict.frozen());
         }
+    }
+    void rumble_assessment_only()
+    {
+        Pair pair; RumbleInfo rumble{}; rumble.name = "fixture_rumble"; pair.memory.allow(rumble.name);
+        pair.fields.fireRumble = &rumble;
+        nd::Inventory allowed(Memory::copy, &pair.memory);
+        check(nd::inventory_pair(&pair.weapon, &pair.attachment, allowed));
+        check(allowed.frozen() && allowed.external_count() == 1 && allowed.blocked_external_count() == 0 && !allowed.policy_blocked());
+        check(contract::assess(allowed).state == contract::InventoryState::complete_no_policy_blockers);
+        Material material{}; material.name = "fixture_material"; pair.memory.allow(material.name); pair.weapon.killIcon = &material;
+        nd::Inventory blocked(Memory::copy, &pair.memory);
+        check(nd::inventory_pair(&pair.weapon, &pair.attachment, blocked));
+        check(blocked.external_count() == 2 && blocked.blocked_external_count() == 1 && blocked.policy_blocked());
+        check(contract::assess(blocked).state == contract::InventoryState::complete_policy_blocked);
+        // These assessments describe policy only; Inventory still has no rows or builder authority.
     }
     void incomplete_and_refused_are_blocked()
     {
@@ -182,6 +197,12 @@ namespace
         std::swap(claims[0], claims[1]);
         check(contract::check_identities(claims, 2).failure == contract::Failure::mixed_modes);
         claims[0] = claims[1]; check(contract::check_identities(claims, 2).failure == contract::Failure::duplicate_owned);
+        // Separate helper check, not a claim that Collector enforces arbitrary mixed modes.
+        contract::Claim rumble[]{{ASSET_TYPE_RUMBLE, "fixture_rumble", Mode::owned_full},
+            {ASSET_TYPE_RUMBLE, ",fixture_rumble", Mode::reference_shell}};
+        check(contract::check_identities(rumble, 2).failure == contract::Failure::mixed_modes);
+        std::swap(rumble[0], rumble[1]);
+        check(contract::check_identities(rumble, 2).failure == contract::Failure::mixed_modes);
     }
     void canonical_aliases_preserve_types()
     {
@@ -235,7 +256,8 @@ int main()
         {"all_recognized_descriptive", all_recognized_descriptive},
         {"real_walkers_continue_after_blocker", real_walkers_continue_after_blocker},
         {"dedup_preserves_owners_and_indices", dedup_preserves_owners_and_indices},
-        {"strict_policy_unchanged", strict_policy_unchanged},
+        {"strict_reference_policy", strict_reference_policy},
+        {"rumble_assessment_only", rumble_assessment_only},
         {"incomplete_and_refused_are_blocked", incomplete_and_refused_are_blocked},
         {"unknown_image_and_fx_refuse", unknown_image_and_fx_refuse},
         {"inherited_bounds_refuse", inherited_bounds_refuse},
@@ -250,6 +272,6 @@ int main()
         try { item.run(); std::printf("PASS %s\n", item.name); }
         catch (const std::exception& error) { std::printf("FAIL %s: %s\n", item.name, error.what()); return 1; }
     }
-    std::puts("12/12 INVENTORY PASS");
+    std::puts("13/13 INVENTORY PASS");
     return 0;
 }

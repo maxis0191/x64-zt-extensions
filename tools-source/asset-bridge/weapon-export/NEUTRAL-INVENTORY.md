@@ -6,6 +6,27 @@ module. No CLI, native builder, input parser/routing, serialized manifest,
 readback transaction or runtime caller is activated. No clone/T2, stock,
 opaque tool/SDK artifact, FF or game input was opened for this Source work.
 
+The 2026-10-18 inactive RUMBLE Source extension changes only the shared strict
+`reference_supported` policy. Inventory's interface, thirteen recognized
+families, records, budgets and nonconvertibility remain unchanged. Its policy
+assessment does change: RUMBLE is no longer counted as blocked; all thirteen
+external families together now have nine blockers rather than ten. A new
+authored case checks RUMBLE alone has no policy blocker and adding MATERIAL
+still blocks. This remains descriptive evidence, with no rows/token/builder
+authority. The separate canonical-claim helper tests mixed RUMBLE modes in both
+orders; Collector has no generic mixed-mode coupling and none is implied here.
+
+The distinct admitted CPP R1e at Source
+`2b34d6c6e2f5e7e6b1cf62e0dd57282a0f9737e4` passed **all 19 strict and 13 inventory
+cases and both patched native TU compiles**, with six phases at exit0 and
+Root-verified known closure. Exact pins, receipts, the original terminal exit0
+and fresh absence are recorded in [NEUTRAL-DEPENDENCIES.md](NEUTRAL-DEPENDENCIES.md).
+The fixtures were uncompiled at Source preparation; this later distinct result
+qualifies only that compiled Source/native/core tuple. Earlier F/E3/J7 evidence
+remains historical, and subsequent documentation/merge heads are not compiled.
+Ready, full CLI/FF/readback, engine availability and gameplay remain unqualified.
+Final-head review, CI disposition and Root audit are still required before merge.
+
 Actual CPP F at Source `a97bfc9f248c0c4e522175cb3a28261df714ca9d` passed the
 original sixteen cases, all twelve new inventory cases and both patched native
 TU compiles. Root independently verified ordinary closure and released its
@@ -15,7 +36,7 @@ unqualified. Later documentation/merge revisions are not newly compiled.
 PR213/E3 at `05c28704ff0af07ab08b5b35681356999d96b26a` remains a separate
 earlier foundation result. Python Source checks do not stand in for either CPP.
 
-## Complete description and unchanged strict policy
+## Complete description and finite strict policy
 
 `neutral_dependencies::Inventory` uses the same production typed walkers,
 name-copy/UTF-8 checks, owner/origin/index records and fixed budgets as the
@@ -42,16 +63,16 @@ accounting and conservative sparse-array refusal remain unchanged.
 surface exposes records and completeness, but has no `verify_rows` and cannot
 convert to the strict collector. The descriptive constructor selector is
 private, immutable and accessible only to `Inventory`. Ordinary `Collector`
-construction always retains the strict FX/VFX/RETICLE policy. There is no
+construction always retains the strict FX/VFX/RETICLE/RUMBLE policy. There is no
 caller-supplied predicate, widening flag or reset operation.
 
 `policy_blocked()` is true for an incomplete/refused inventory or any unique
-external reference outside FX/VFX/RETICLE. A complete inventory may therefore
+external reference outside FX/VFX/RETICLE/RUMBLE. A complete inventory may therefore
 remain blocked. `neutral_pair_contract::assess` reports incomplete, refused,
 complete-policy-blocked or complete-with-no-policy-blockers plus the blocked
 external count. The last state describes this finite type policy only; it
 does not authorize a builder, create rows/tokens or prove external resolution.
-The nine families covered by additional Source audits are still blocked, as
+The other eight families covered by additional Source audits are still blocked, as
 is external ATTACHMENT. No audit is adopted automatically.
 
 ## Pure typed identity contract
@@ -82,15 +103,16 @@ manifest framework or premature builder-token type is introduced here.
 ## Authored causals and Source checks
 
 `test_neutral_inventory.cpp` includes the actual production header and pinned
-native declarations. Its twelve cases cover all thirteen recognized families,
+native declarations. Its thirteen cases cover all thirteen recognized families,
 real walkers continuing after a model blocker, owner/index dedup, strict-policy
 parity, incomplete/refused poisoning, unknown/IMAGE/FX refusal, inherited bounds,
 compile-time API separation, canonical collisions in both orders, native typed
-aliases, malformed claims and preserved private owned edges. A poisoned FX
+aliases, malformed claims, preserved private owned edges and RUMBLE policy
+assessment. A poisoned FX
 payload ensures the visitor does not recursively inspect an external body.
 
-CPP F actually compiled and ran these twelve cases and the unchanged original
-sixteen-case fixture, then compiled both patched native TUs. All six phases
+CPP F actually compiled and ran its original twelve inventory cases and the
+unchanged sixteen-case fixture, then compiled both patched native TUs. All six phases
 closed with exit 0; all four compiler dependency reports passed. A full CLI
 link, FF/readback and gameplay require later distinct gates.
 
