@@ -223,7 +223,8 @@ static void null_and_consumed_ingress_refuse() {
         auto guard=missing_raw?std::make_unique<Guard>(report):std::unique_ptr<Guard>{};watch(report,raw.get());bool refused=false;
         try{auto value=owned::adopt_owned(std::move(guard),std::move(raw));(void)value;}
         catch(const std::logic_error&){refused=true;}
-        check(refused&&!raw&&!guard&&report.guard_destroys==(missing_raw?1u:0u));unwatch();
+        check(refused&&!raw&&!guard&&report.guard_destroys==(missing_raw?1u:0u));
+        check(allocation_fault::raw_deletes==(missing_raw?0u:1u));unwatch();
     }
     {Observation report;auto ingress=adopt(data,report);Components components(report);
         auto pair=owned::make_validated_owned_pair(std::move(ingress),components);check(!ingress);bool refused=false;
