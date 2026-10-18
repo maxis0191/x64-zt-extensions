@@ -36,6 +36,37 @@ allocate eight bytes, rather than a full external body. `unk0.material` instead
 allocates a full 280-byte `Material`. These are Source assumptions for later
 independent C++ checks; they are not a runtime ABI observation.
 
+## Offline C++ constants projection
+
+`native_pair_body_schema.hpp` is inactive Source data projected from the pinned
+Python literal: 239 type records, 41 structures, 1,213 ordered operations and 17
+operation tags. It does not decode input or construct native objects. Presence
+bits distinguish absent, false, zero and empty values; integers retain a sign
+and uint64 magnitude, including UINT64_MAX. Enum declaration aliases, shared
+count names/types, manual arguments, direct sites and Source provenance remain
+separate. Thirty pointer element labels are not expanded into layouts: known
+labels require a type-ID tag; only unknown pointer labels use the exact literal
+string tag. Unknown array element types refuse.
+
+The adopted bytes are the single reviewed Source emission at generator commit
+`cfd291253f8d836bb9e6b1d818272f5568990eef`, generator blob
+`cf33622aa09ccb871d92c059d3df4cfe19691a78`, 50,953 LF bytes/SHA256
+`35770c090a883e5edc2b28783a92d2954563b4fd1a62ca27949efbee54732939`.
+The header is 1,073,140 bytes, SHA256
+`dbedd4632d8bb20686c8c1355d4b0200fc2c6149ba141897007f41252f555b75`.
+Its four provenance roles preserve the historical extraction generator4717a82a,
+the new projection generator, the original SCHEMA and the body validator.
+The projection generator was frozen externally before header emission, avoiding
+a generator/output self-hash cycle. The transitive executable Source was pinned
+before execution; no SCHEMA module was imported.
+
+An independent Source aggregate reader reconstructs every field, required order,
+type and presence from the emitted text and compares it to the original literal.
+The adoption check also requires the exact raw header pin. This supplies Source
+fidelity, not compiled initializer/ABI evidence, an interpreter, body admission,
+arena ownership, builder/CLI/FF integration or runtime/game qualification. No C++
+compilation of this constants header has been performed by this Source lot.
+
 ## Exact input rules
 
 Objects have exact keys; booleans, integers, ranges and enum domains are checked

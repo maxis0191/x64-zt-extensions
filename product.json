@@ -18,6 +18,8 @@
     "tools-source/asset-bridge/weapon-export/NEUTRAL-PAIR-INPUTS.md",
     "tools-source/asset-bridge/weapon-export/generate_native_body_schema.py",
     "tools-source/asset-bridge/weapon-export/native_body_schema.py",
+    "tools-source/asset-bridge/weapon-export/native_pair_body_schema.hpp",
+    "tools-source/asset-bridge/weapon-export/test_native_body_schema_table_source.py",
     "tools-source/asset-bridge/weapon-export/neutral_pair_bodies.py",
     "tools-source/asset-bridge/weapon-export/test_native_body_schema.py",
     "tools-source/asset-bridge/weapon-export/NATIVE-BODY-SCHEMA.md",

@@ -1,8 +1,9 @@
-"""RAM-only constants projection tests; no SCHEMA import, header file or C++."""
+"""Source constants projection/adoption tests; no SCHEMA import, header write or C++."""
 import ast
 import copy
 import hashlib
 import importlib
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -11,6 +12,7 @@ import unittest
 from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
+PRODUCT_HEADER_PIN = (1073140, 'dbedd4632d8bb20686c8c1355d4b0200fc2c6149ba141897007f41252f555b75')
 IMPORT_PINS = {
     'generate_native_body_schema.py': (50953, '35770c090a883e5edc2b28783a92d2954563b4fd1a62ca27949efbee54732939'),
     'generate_definition_readset.py': (11568, '809598493e3c67cc45b5e20151408ad2778a7e74e8b42ec2c304ea65d59c836e'),
@@ -212,6 +214,22 @@ class TableSourceTests(unittest.TestCase):
             'body_validator': {'git_blob': '86f6f6c42840913bddeda864053475884ab493fc', 'bytes_lf': 17221,
                                'sha256_lf': '820c8580549c3d0e5022e58d5f5bfc120d23db64b9f9f6e4513e05494c178626'}}
         cls.text = G.render_cpp(cls.raw, G.CPP_SCHEMA_PIN, cls.provenance)
+
+    def test_adopted_header_raw_pin_and_every_field(self):
+        with (HERE / 'native_pair_body_schema.hpp').open('rb') as stream:
+            raw = stream.read(PRODUCT_HEADER_PIN[0] + 1)
+        self.assertIs(stream.closed, True)
+        self.assertEqual((len(raw), hashlib.sha256(raw).hexdigest()), PRODUCT_HEADER_PIN)
+        self.assertEqual(raw, self.text.encode('utf-8'))
+        schema, provenance, manual_pins = reconstruct(raw.decode('utf-8', errors='strict'))
+        same(self, schema, self.schema)
+        same(self, provenance, self.provenance)
+        same(self, manual_pins, G.MANUAL_BODY_SHA256)
+
+    def test_table_header_and_source_test_exported_once(self):
+        exports = json.loads((HERE.parents[2] / 'product.json').read_text(encoding='utf-8'))['exports']
+        for name in ('native_pair_body_schema.hpp', 'test_native_body_schema_table_source.py'):
+            self.assertEqual(exports.count('tools-source/asset-bridge/weapon-export/' + name), 1)
 
     def test_every_field_and_provenance_roundtrip(self):
         actual, provenance, manual_pins = reconstruct(self.text)
