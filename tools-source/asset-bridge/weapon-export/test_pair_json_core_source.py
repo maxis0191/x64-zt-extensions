@@ -396,7 +396,16 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
         self.assertIn('Buffers buffers(incoming,trusted,stats);', direct)
         self.assertIn('catch(const player_pair_report::ReportError& error)', direct)
         self.assertIn('"Report row does not bind SAME owned role"', direct)
-        self.assertIn('catch(const iw7::neutral::player_pair_bodies::BodyError& error)', direct)
+        body_raw = (Path(__file__).parent/'native_pair_bodies.hpp').read_bytes()
+        self.assertEqual((len(body_raw), hashlib.sha256(body_raw).hexdigest()),
+                         (33561, '46647a305dca84d8c5bdadbbc6c344387b37000ede41cb07c3c0657da259d52f'))
+        declaration = re.search(r'namespace ([\w:]+)\s*\{\s*namespace (\w+)\s*\{[^{}]*'
+                                r'struct BodyError\s*:\s*std::runtime_error', body_raw.decode('utf-8'))
+        self.assertIsNotNone(declaration)
+        declared_name = declaration[1] + '::' + declaration[2] + '::BodyError'
+        caught_name = re.search(r'catch\(const ([\w:]+::BodyError)& error\)', direct)[1]
+        self.assertEqual(caught_name, declared_name)
+        self.assertNotEqual(declared_name, 'iw7::neutral::player_pair_bodies::BodyError')
         self.assertIn('!report_mismatch&&std::string_view(error.what()).find("weapon:")==0', direct)
         for count in ('copies==4', 'hashes==4', 'decodes==0', 'arenas==0', 'weapon_parses==0',
                       'attachment_parses==0', 'publications==0'):

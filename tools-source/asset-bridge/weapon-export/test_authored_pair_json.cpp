@@ -272,7 +272,7 @@ namespace authored_pair_fixture
                 need(report_mismatch&&std::string_view(error.what())=="Report row does not bind SAME owned role");
                 refused=true;
             }
-            catch(const iw7::neutral::player_pair_bodies::BodyError& error)
+            catch(const iw7::neutral::player_pair_bodies::detail::BodyError& error)
             {
                 need(!report_mismatch&&std::string_view(error.what()).find("weapon:")==0);
                 refused=true;
