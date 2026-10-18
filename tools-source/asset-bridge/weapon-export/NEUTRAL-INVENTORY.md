@@ -16,10 +16,16 @@ still blocks. This remains descriptive evidence, with no rows/token/builder
 authority. The separate canonical-claim helper tests mixed RUMBLE modes in both
 orders; Collector has no generic mixed-mode coupling and none is implied here.
 
-Current fixtures have **19 strict and 13 inventory cases, AUTHORED and NOT
-COMPILED/RUN for this extension**. A new exact recipe, Source review, distinct CPP
-GO/admission, both complete fixture runs and both patched native TU compiles are
-required before merge/adoption. Earlier F/E3/J7 results remain historical.
+The distinct admitted CPP R1e at Source
+`2b34d6c6e2f5e7e6b1cf62e0dd57282a0f9737e4` passed **all 19 strict and 13 inventory
+cases and both patched native TU compiles**, with six phases at exit0 and
+Root-verified known closure. Exact pins, receipts, the original terminal exit0
+and fresh absence are recorded in [NEUTRAL-DEPENDENCIES.md](NEUTRAL-DEPENDENCIES.md).
+The fixtures were uncompiled at Source preparation; this later distinct result
+qualifies only that compiled Source/native/core tuple. Earlier F/E3/J7 evidence
+remains historical, and subsequent documentation/merge heads are not compiled.
+Ready, full CLI/FF/readback, engine availability and gameplay remain unqualified.
+Final-head review, CI disposition and Root audit are still required before merge.
 
 Actual CPP F at Source `a97bfc9f248c0c4e522175cb3a28261df714ca9d` passed the
 original sixteen cases, all twelve new inventory cases and both patched native
@@ -97,15 +103,16 @@ manifest framework or premature builder-token type is introduced here.
 ## Authored causals and Source checks
 
 `test_neutral_inventory.cpp` includes the actual production header and pinned
-native declarations. Its twelve cases cover all thirteen recognized families,
+native declarations. Its thirteen cases cover all thirteen recognized families,
 real walkers continuing after a model blocker, owner/index dedup, strict-policy
 parity, incomplete/refused poisoning, unknown/IMAGE/FX refusal, inherited bounds,
 compile-time API separation, canonical collisions in both orders, native typed
-aliases, malformed claims and preserved private owned edges. A poisoned FX
+aliases, malformed claims, preserved private owned edges and RUMBLE policy
+assessment. A poisoned FX
 payload ensures the visitor does not recursively inspect an external body.
 
-CPP F actually compiled and ran these twelve cases and the unchanged original
-sixteen-case fixture, then compiled both patched native TUs. All six phases
+CPP F actually compiled and ran its original twelve inventory cases and the
+unchanged sixteen-case fixture, then compiled both patched native TUs. All six phases
 closed with exit 0; all four compiler dependency reports passed. A full CLI
 link, FF/readback and gameplay require later distinct gates.
 

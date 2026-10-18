@@ -1,13 +1,12 @@
 # Neutral pair dependency Source foundation — 2026-10-15
 
 The next bounded Source lot is documented in [NEUTRAL-INVENTORY.md](NEUTRAL-INVENTORY.md).
-It adds a distinct descriptive inventory and pure identity contract. The current
-inactive Source policy is FX/VFX/RETICLE/RUMBLE; the RUMBLE addition below has
-not been compiled or run. Actual CPP F at Source `a97bfc9` passed the original
-16 cases, 12 new cases and both native TUs, with independently verified closure. The E3 result
-below qualifies only its earlier Source; F's exact pins/limits are in that note.
+It adds a distinct descriptive inventory and pure identity contract. The inactive
+policy is FX/VFX/RETICLE/RUMBLE. The distinct CPP R1e below passed all 19 strict
+and 13 inventory cases plus both native TU compiles, with Root-verified known
+closure. Earlier F/E3 results qualify only their recorded Source revisions.
 
-## RUMBLE Source-only extension — 2026-10-18
+## RUMBLE reference-only extension — 2026-10-18
 
 The only production change is adding RUMBLE to `reference_supported`. Existing
 typed walkers, constructors, names, budgets, freeze/row checks, legacy routing
@@ -26,11 +25,70 @@ sequence cases remain in the fixture. Inventory's separate canonical identity
 helper tests mixed RUMBLE modes in both orders; this is not Collector coupling.
 Such coupling is still required before any generalized builder.
 
-The current fixtures contain **19 strict and 13 inventory cases, AUTHORED and
-NOT COMPILED/RUN for this change**. Exact Source review must precede a separately
-reviewed CPP recipe and distinct GO/admission: compile/run both complete fixtures
-and compile both patched native TUs before merge/adoption. Earlier E3, F and J7
-results do not qualify this policy. Python Source checks do not execute C++.
+The **19 strict and 13 inventory cases** were authored and uncompiled at Source
+preparation. The separately reviewed and admitted R1e cohort subsequently ran
+both complete fixtures and compiled both patched native TUs. Earlier E3, F and
+J7 results are not inherited; Python Source checks do not execute C++.
+
+## Actual CPP R1e and known closure — 2026-10-18
+
+The compiled Source is `2b34d6c6e2f5e7e6b1cf62e0dd57282a0f9737e4`, with native
+parser pin `fab935826c898806855376662a8a03317b3ad8f1` and Native resource-core
+pin `9c4c975068418f9529737b12c13012b7291ae3de`. A later documentation or merge
+revision is not newly compiled. The exact R1e plan is 445,316 bytes / SHA256
+`bf11d931a105a49742d9c9d6ef11aaf0757bbfbcff70081934435641db2abc28`;
+caller 38,792 bytes / `bfcf83f0d52bc6a46a391a09b42fbcd9595171366bd582f58e93f50505763d2e`.
+
+All six phases exited 0: compile/link and run the 19-case Collector fixture,
+compile/link and run the 13-case inventory fixture, then compile the weapon and
+attachment TUs. Both probes emitted their exact expected stdout and zero stderr.
+All four compiler dependency bounds were 183 and passed; all six original native
+owners closed. Recorded TU durations were 67,430.0134 ms and 13,222.0279 ms,
+respectively; these are stage durations, not total cohort time.
+
+The original group clock remained bounded to 600 seconds, with 120-second
+compile and 15-second probe deadlines. The legacy 64-entry TOTAL includes the
+three publications; 256 MiB includes its 1 MiB metadata reserve. Maximum observed
+output was 41,793,799 bytes. The original in-memory context verified 181 Source
+records, 703 input records and three publications: all 887 retained inner
+FileStream/SafeFileHandle pairs closed, with owner/job closure, NULL lease,
+same-stream readbacks and the last deadline satisfied. This count excludes the
+external caller Source stream, which remained held at postflight and was closed
+through its original saved handle at the separately approved terminal frontier.
+
+Root personally parsed and hashed the three own-metadata publications, checked
+the real probe stdout/stderr, then read the preexit witness. Exact receipts are:
+
+| Own metadata | Bytes | SHA256 |
+| --- | ---: | --- |
+| `measured-before-release.json` | 44347 | `8964c90e4e4c68bc3ed921ac876fb7b24b8a27f426892f9c8ba1f597e3340ce6` |
+| `closure-before-release.json` | 289 | `174bf3854342286dec21900cda843edeee781f720a836db1e68969a52d4a1946` |
+| `final-closure.json` | 406 | `957eb9d928a203d11a2c1927e4475c04623c06d9f908e1c92621cd91ec72db7e` |
+| `R1E-ACTUAL-PREEXIT.local.json` | 20707 | `695c75d366bd28250ef5b05d81a8abd91baf5adcb4bc2f7b981fb58ca2ecfbd4` |
+| `root-r1e-cpp-closed-20261018T041121587Z.json` | 1679 | `1d668ca0255ce83cbe4b08282b5153224faa286ca2bf1a58864608fdbd72e6a8` |
+
+The disk final snapshot truthfully records guards held before disposal; the
+later preexit, terminal and fresh observations prove subsequent closure. Root
+observed the original NoExit terminal exit 0 (`ed7196`) and its fresh
+04:11:21.5787837Z snapshot found all twelve captured identities and leases absent,
+with the preserved Main unchanged. Root qualified this bounded CPP result and
+released the slot. No native output, OBJ/EXE/PDB or SDK input was reopened,
+statted or hashed after release. Post-release verification reads Source and own
+JSON metadata.
+
+Both probe CIM registration errors remain alongside the original-job-already-
+empty markers, actual exit0 and known native tree closure; no timing cause is
+inferred. R1d's earlier manual ParserError and typed-Pin SourceSetup refusal
+remain immutable failures, safety-known-closed and without CPP credit. Read-only
+postflight Keys/Witnesses inspection and dictionary-output truncation errors are
+retained; corrected inspection changed no original Root or CPP state.
+
+This qualifies the bounded authored-memory production fixtures and both native
+TU compiles only. Full CLI linking/execution, FF/readback, engine ABI/lifetime,
+RUMBLE engine availability or resolution, stock bodies and gameplay remain
+unqualified. Ready remains false. Next gate: Root review of the documentation
+head, exact-head CI disposition and Root audit before any merge. No new actual
+operation or builder activation follows from this result.
 
 This opt-in Source implementation owns two typed pure walkers, one local bounded
 collector, a public-parse seam and an in-memory native Source patch renderer.
