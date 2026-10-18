@@ -67,6 +67,12 @@ fidelity, not compiled initializer/ABI evidence, an interpreter, body admission,
 arena ownership, builder/CLI/FF integration or runtime/game qualification. No C++
 compilation of this constants header has been performed by this Source lot.
 
+`test_native_pair_body_schema.cpp` is AUTHORED, NOT COMPILED or executed. Its four
+standalone groups are `fixed_width_sign_magnitude`, `ids_spans_element_canonicality`,
+`utf8_pool_bytes` and `ordered_records_aliases_manual_sites`, with the authored
+stdout marker `IW7_BODY_SCHEMA_CONSTANTS=4`. These Source expectations are not
+observed PASS results. A separate reviewed CPP recipe and admission are required.
+
 ## Exact input rules
 
 Objects have exact keys; booleans, integers, ranges and enum domains are checked

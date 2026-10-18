@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 PRODUCT_HEADER_PIN = (1073140, 'dbedd4632d8bb20686c8c1355d4b0200fc2c6149ba141897007f41252f555b75')
+CPP_FIXTURE_PIN = (31185, 'b7128cb427ffcda9a1826946d448b0a092e94ce1dedee8823a4377f918c009a4')
 IMPORT_PINS = {
     'generate_native_body_schema.py': (50953, '35770c090a883e5edc2b28783a92d2954563b4fd1a62ca27949efbee54732939'),
     'generate_definition_readset.py': (11568, '809598493e3c67cc45b5e20151408ad2778a7e74e8b42ec2c304ea65d59c836e'),
@@ -228,8 +229,13 @@ class TableSourceTests(unittest.TestCase):
 
     def test_table_header_and_source_test_exported_once(self):
         exports = json.loads((HERE.parents[2] / 'product.json').read_text(encoding='utf-8'))['exports']
-        for name in ('native_pair_body_schema.hpp', 'test_native_body_schema_table_source.py'):
+        for name in ('native_pair_body_schema.hpp', 'test_native_pair_body_schema.cpp',
+                     'test_native_body_schema_table_source.py'):
             self.assertEqual(exports.count('tools-source/asset-bridge/weapon-export/' + name), 1)
+        with (HERE / 'test_native_pair_body_schema.cpp').open('rb') as stream:
+            raw = stream.read(CPP_FIXTURE_PIN[0] + 1)
+        self.assertIs(stream.closed, True)
+        self.assertEqual((len(raw), hashlib.sha256(raw).hexdigest()), CPP_FIXTURE_PIN)
 
     def test_every_field_and_provenance_roundtrip(self):
         actual, provenance, manual_pins = reconstruct(self.text)
