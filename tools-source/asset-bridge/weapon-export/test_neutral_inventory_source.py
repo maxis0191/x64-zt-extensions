@@ -31,7 +31,7 @@ class NeutralInventorySourceTests(unittest.TestCase):
         common = self.source('native_neutral_dependencies.hpp')
         policy = self.body(common, 'inline bool reference_supported(')
         self.assertEqual(set(re.findall(r'ASSET_TYPE_\w+', policy)),
-                         {'ASSET_TYPE_FX', 'ASSET_TYPE_VFX', 'ASSET_TYPE_RETICLE'})
+                         {'ASSET_TYPE_FX', 'ASSET_TYPE_VFX', 'ASSET_TYPE_RETICLE', 'ASSET_TYPE_RUMBLE'})
         private = common[common.index('    private:'):common.index('    // A distinct descriptive surface')]
         self.assertIn('friend class Inventory;', private)
         self.assertIn('Collector(bool descriptive, Copy copy, void* context)', private)
@@ -69,11 +69,11 @@ class NeutralInventorySourceTests(unittest.TestCase):
         for name, pin in expected.items():
             self.assertEqual(hashlib.sha256(self.source(name).encode()).hexdigest(), pin)
 
-    def test_authored_cpp_uses_production_code_and_covers_twelve_cases(self):
+    def test_authored_cpp_uses_production_code_and_covers_thirteen_cases(self):
         fixture = self.source('test_neutral_inventory.cpp')
         cases = re.findall(r'\{"([a-z_]+)", ([a-z_]+)\}', fixture)
-        self.assertEqual(len(cases), 12)
-        self.assertEqual(len(set(cases)), 12)
+        self.assertEqual(len(cases), 13)
+        self.assertEqual(len(set(cases)), 13)
         for name, function in cases:
             self.assertEqual(name, function)
             self.assertIn('void ' + function + '()', fixture)
@@ -84,6 +84,24 @@ class NeutralInventorySourceTests(unittest.TestCase):
         self.assertIn('std::swap(claims[0], claims[1])', fixture)
         for forbidden in ('bool visit_weapon(', 'bool visit_attachment(', 'bool check_identities('):
             self.assertNotIn(forbidden, fixture)
+
+    def test_rumble_assessment_and_mixed_claims_are_separate_authored_causals(self):
+        fixture = self.source('test_neutral_inventory.cpp')
+        assessment = self.body(fixture, 'void rumble_assessment_only()')
+        for required in ('nd::inventory_pair(', 'allowed.blocked_external_count() == 0',
+                         'blocked.blocked_external_count() == 1',
+                         'contract::InventoryState::complete_no_policy_blockers',
+                         'contract::InventoryState::complete_policy_blocked'):
+            self.assertIn(required, assessment)
+        self.assertNotIn('verify_rows', assessment)
+        collisions = self.body(fixture, 'void canonical_collisions_both_orders()')
+        for required in ('{ASSET_TYPE_RUMBLE, "fixture_rumble", Mode::owned_full}',
+                         '{ASSET_TYPE_RUMBLE, ",fixture_rumble", Mode::reference_shell}',
+                         'std::swap(rumble[0], rumble[1])'):
+            self.assertIn(required, collisions)
+        self.assertEqual(collisions.count('contract::check_identities(rumble, 2)'), 2)
+        self.assertNotIn('nd::collect_pair(', collisions)
+        self.assertIn('inventory.blocked_external_count() == 9', fixture)
 
 
 if __name__ == '__main__':

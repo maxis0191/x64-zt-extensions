@@ -1,10 +1,94 @@
 # Neutral pair dependency Source foundation — 2026-10-15
 
 The next bounded Source lot is documented in [NEUTRAL-INVENTORY.md](NEUTRAL-INVENTORY.md).
-It adds a distinct descriptive inventory and pure identity contract; the strict
-policy remains FX/VFX/RETICLE. Actual CPP F at Source `a97bfc9` passed the original
-16 cases, 12 new cases and both native TUs, with independently verified closure. The E3 result
-below qualifies only its earlier Source; F's exact pins/limits are in that note.
+It adds a distinct descriptive inventory and pure identity contract. The inactive
+policy is FX/VFX/RETICLE/RUMBLE. The distinct CPP R1e below passed all 19 strict
+and 13 inventory cases plus both native TU compiles, with Root-verified known
+closure. Earlier F/E3 results qualify only their recorded Source revisions.
+
+## RUMBLE reference-only extension — 2026-10-18
+
+The only production change is adding RUMBLE to `reference_supported`. Existing
+typed walkers, constructors, names, budgets, freeze/row checks, legacy routing
+and private-root ownership remain unchanged. No arbitrary owned RUMBLE, builder
+staging, CLI, token, activation, serialized manifest or export is added. The
+strict Collector can now describe a RUMBLE reference and verify its exact
+internal reference-only rows. Those rows do not authorize a builder.
+
+The three new authored strict cases use the actual walkers and Collector:
+weapon/attachment fireRumble deduplicate to one key with two owner/path edges;
+RUMBLE plus FX checks exact discovery-order rows and missing/extra/reordered or
+wrong type/name rows; invalid/default/comma/private-root RUMBLE names refuse.
+Poisoned graph pointers test that these walkers inspect only the direct name.
+MATERIAL and external ATTACHMENT remain refused. The original budgets and legacy
+sequence cases remain in the fixture. Inventory's separate canonical identity
+helper tests mixed RUMBLE modes in both orders; this is not Collector coupling.
+Such coupling is still required before any generalized builder.
+
+The **19 strict and 13 inventory cases** were authored and uncompiled at Source
+preparation. The separately reviewed and admitted R1e cohort subsequently ran
+both complete fixtures and compiled both patched native TUs. Earlier E3, F and
+J7 results are not inherited; Python Source checks do not execute C++.
+
+## Actual CPP R1e and known closure — 2026-10-18
+
+The compiled Source is `2b34d6c6e2f5e7e6b1cf62e0dd57282a0f9737e4`, with native
+parser pin `fab935826c898806855376662a8a03317b3ad8f1` and Native resource-core
+pin `9c4c975068418f9529737b12c13012b7291ae3de`. A later documentation or merge
+revision is not newly compiled. The exact R1e plan is 445,316 bytes / SHA256
+`bf11d931a105a49742d9c9d6ef11aaf0757bbfbcff70081934435641db2abc28`;
+caller 38,792 bytes / `bfcf83f0d52bc6a46a391a09b42fbcd9595171366bd582f58e93f50505763d2e`.
+
+All six phases exited 0: compile/link and run the 19-case Collector fixture,
+compile/link and run the 13-case inventory fixture, then compile the weapon and
+attachment TUs. Both probes emitted their exact expected stdout and zero stderr.
+All four compiler dependency bounds were 183 and passed; all six original native
+owners closed. Recorded TU durations were 67,430.0134 ms and 13,222.0279 ms,
+respectively; these are stage durations, not total cohort time.
+
+The original group clock remained bounded to 600 seconds, with 120-second
+compile and 15-second probe deadlines. The legacy 64-entry TOTAL includes the
+three publications; 256 MiB includes its 1 MiB metadata reserve. Maximum observed
+output was 41,793,799 bytes. The original in-memory context verified 181 Source
+records, 703 input records and three publications: all 887 retained inner
+FileStream/SafeFileHandle pairs closed, with owner/job closure, NULL lease,
+same-stream readbacks and the last deadline satisfied. This count excludes the
+external caller Source stream, which remained held at postflight and was closed
+through its original saved handle at the separately approved terminal frontier.
+
+Root personally parsed and hashed the three own-metadata publications, checked
+the real probe stdout/stderr, and read the preexit witness. Exact receipts are:
+
+| Own metadata | Bytes | SHA256 |
+| --- | ---: | --- |
+| `measured-before-release.json` | 44347 | `8964c90e4e4c68bc3ed921ac876fb7b24b8a27f426892f9c8ba1f597e3340ce6` |
+| `closure-before-release.json` | 289 | `174bf3854342286dec21900cda843edeee781f720a836db1e68969a52d4a1946` |
+| `final-closure.json` | 406 | `957eb9d928a203d11a2c1927e4475c04623c06d9f908e1c92621cd91ec72db7e` |
+| `R1E-ACTUAL-PREEXIT.local.json` | 20707 | `695c75d366bd28250ef5b05d81a8abd91baf5adcb4bc2f7b981fb58ca2ecfbd4` |
+| `root-r1e-cpp-closed-20261018T041121587Z.json` | 1679 | `1d668ca0255ce83cbe4b08282b5153224faa286ca2bf1a58864608fdbd72e6a8` |
+
+The disk final snapshot truthfully records guards held before disposal; the
+later preexit, terminal and fresh observations prove subsequent closure. Root
+observed the original NoExit terminal exit 0 (`ed7196`) and its fresh
+04:11:21.5787837Z snapshot found all twelve captured identities and leases absent,
+with the preserved Main unchanged. Root qualified this bounded CPP result and
+released the slot. No binary native output, OBJ/EXE/PDB or SDK input was reopened,
+statted or hashed after release. Post-release verification reads Source, own JSON
+metadata and bounded probe stdout/stderr only.
+
+Both probe CIM registration errors remain alongside the original-job-already-
+empty markers, actual exit0 and known native tree closure; no timing cause is
+inferred. R1d's earlier manual ParserError and typed-Pin SourceSetup refusal
+remain immutable failures, safety-known-closed and without CPP credit. Read-only
+postflight Keys/Witnesses inspection and dictionary-output truncation errors are
+retained; corrected inspection changed no original Root or CPP state.
+
+This qualifies the bounded authored-memory production fixtures and both native
+TU compiles only. Full CLI linking/execution, FF/readback, engine ABI/lifetime,
+RUMBLE engine availability or resolution, stock bodies and gameplay remain
+unqualified. Ready remains false. Next gate: Root review of the documentation
+head, exact-head CI disposition and Root audit before any merge. No new actual
+operation or builder activation follows from this result.
 
 This opt-in Source implementation owns two typed pure walkers, one local bounded
 collector, a public-parse seam and an in-memory native Source patch renderer.
@@ -69,8 +153,8 @@ projectile/charged paths share the same production helper.
 
 ## Closed external policy and its Source proof
 
-Only FX, VFX and RETICLE are admitted as external reference-only candidates in
-this initial Source step. This proves a native writer path for empty reference
+Only FX, VFX, RETICLE and RUMBLE are admitted as external reference-only
+candidates by the current Source policy. This proves a native writer path for empty reference
 placeholders, not retail-name resolution, availability or runtime acceptance.
 The future builder must apply the frozen ignore rows **before** either full
 owned root. `zone.cpp` adds a leading comma for ignored typed names, before
@@ -83,10 +167,17 @@ At the same pinned fork revision:
 | FX | `iw7/assets/fxeffectdef.hpp` detects leading comma. `fxeffectdef.cpp::init` allocates a zeroed struct, sets only name and returns before parse/DB fallback. `prepare` is empty; `load_depending` has zero element counts; `write` writes the struct/name and skips null `elemDefs`. |
 | VFX | `iw7/assets/particle_system.hpp` detects leading comma. `particle_system.cpp::init` returns after zeroed allocation/name. `prepare` is empty; `load_depending` skips null `emitterDefs`; `write` skips null emitter/scripted-input blocks. |
 | RETICLE | `iw7/assets/reticle.hpp` detects leading comma. `reticle.cpp::init` returns after zeroed allocation/name. `prepare` and `load_depending` are empty; `write` skips null `widgetName`. |
+| RUMBLE | `iw7/assets/rumble.hpp` detects leading comma. `rumble.cpp::init` allocates zeroed `RumbleInfo`, sets name and returns before parse/DB fallback. `prepare` is empty; `load_depending` and `write` skip the null high/low graph pointers; write emits shell/name. |
+
+RUMBLE's exact primary Git blobs at the native pin above are
+`rumble.hpp` = `4a95159064885c3e53286e467d8d382f40e9c53a` and
+`rumble.cpp` = `7ddf02027205952e67f2fa6d5292b6faa075d7bf`. This Source proof
+does not establish retail-name availability, native/runtime resolution or a
+writer/FF execution for this change.
 
 `utils/memory.hpp::manual_allocate` zeroes the requested allocation.
 `iw7/zonetool.cpp::dump_enemy_pack_asset` has a closed type set that excludes
-FX, VFX and RETICLE, so its intermediate callback does not dump these bodies.
+FX, VFX, RETICLE and RUMBLE, so its intermediate callback does not dump these bodies.
 All paths above are relative to `src/zonetool/zonetool/` at the pin, except
 `zone.cpp` and `zonetool.cpp`, which are under `iw7/`.
 
@@ -96,7 +187,7 @@ and its writer writes the full attachment/subblocks. This change preserves that
 legacy behavior. The owned private PAP remains a full definition, never an
 external reference placeholder.
 
-ANIM_PACKAGE, GESTURE, LASER, MATERIAL, RUMBLE, SFX_PACKAGE, TRACER, VFX_PACKAGE
+ANIM_PACKAGE, GESTURE, LASER, MATERIAL, SFX_PACKAGE, TRACER, VFX_PACKAGE
 and XMODEL are recognized and emitted by the pure walkers but refused by the
 collector until their entire reference path is separately proven/reviewed.
 Unknown types and IMAGE are refused. This initial refusal is a documented step,
