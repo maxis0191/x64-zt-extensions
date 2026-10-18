@@ -561,7 +561,8 @@ fake owners/leases and owned temporary Source handles, without importing Core
 or providers. These checks do not prove arbitrary code/race isolation or runtime
 closure and are not C++ results.
 
-This Source extension has not compiled or executed either fixture or core.
+At this initial Source checkpoint, the extension had not compiled or executed
+either fixture or core; the later distinct J8E result is recorded below.
 The J7 host/session, packets, clocks, outputs and results remain immutable. No
 runnable J8 packet is prepared by this change. Final exact-head review, complete
 Source/opaque declarations frozen before IO, distinct CPP GO and fresh atomic
@@ -587,3 +588,30 @@ mutants (two per asset provider). The positive contains two complete fixed
 linker responses; all opaque inputs remain nonexistent synthetic declarations
 in that fixture. Neither these metadata responses nor these tests are a build,
 SDK qualification, native execution result or new actual authorization.
+
+## Actual J8E owned-input CPP checkpoint, 2026-10-18
+
+One independently reviewed Source E packet compiled exact Source
+`40936235798697560f6d84ad585bd8f101050329` with provider NativeEFE and parser
+fab935. All eight phases above reached exit0 and original tree closure; the
+helper probe passed six groups and the real-core probe eight. Both links used
+their own fresh objects. No additional wrapper TU or full CLI was requested.
+
+Root personally read all three own receipts/stdout, checked the SAME original
+context/witnesses, 817 closed saved FileStream/SFH pairs, eight closed owners,
+empty inner guards and null lease, then separately authorized true exit0.
+The disk final receipt remains the honest earlier guards-held snapshot. Fresh
+05:52:15 UTC observation found all 16 captured identities absent, Main unchanged
+and the V1 lease registry empty before Root released the slot. The observed 733
+input records are not recategorized as declarations. Maximum observed output
+was 55523369 bytes; 108-entry/600s/120s/15s/256MiB including 1MiB reserve limits
+were unchanged.
+
+The exact Source/plan, receipt hashes, timing scopes, helper registration error,
+two refused metadata snapshots and preserved C FAILED/D unexecuted-refused
+history are recorded in
+[PAIR-JSON-CORE.md](PAIR-JSON-CORE.md#j8e-owned-input-cpp-and-known-closure-2026-10-18).
+Only Source and own metadata/stdout were read after release, without reopening
+native outputs. This DOC head is not the compiled head. Real pair/U1/T2/body,
+FILE/arena/CLI/FF, engine ABI/lifetime, physics/PAP and game stay unqualified;
+Ready and both activation flags remain false. No new actual GO follows.

@@ -1,5 +1,11 @@
 # Bounded IW7 player/PAP source export support
 
+The separate [owned-input CPP J8E checkpoint](PAIR-JSON-CORE.md#j8e-owned-input-cpp-and-known-closure-2026-10-18)
+passed its helper6/core8 probes and eight stage closures at exact Source 4093623,
+with Root-verified true exit and fresh known closure. It qualifies the authored
+cohort only; real pair/CLI/FF/game/ABI/Ready and downstream activation stay false.
+Earlier J8C FAILED and D's unexecuted Source refusal remain recorded.
+
 The separate [neutral dependency Source foundation](NEUTRAL-DEPENDENCIES.md)
 adds opt-in typed pure walkers and a local bounded collector. Actual CPP E3
 passed all sixteen fixtures and both native TU compiles, complete dependency
