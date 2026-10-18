@@ -19,10 +19,12 @@ PINS = {
     NATIVE + 'utils/io/filesystem.cpp': '580cdb455ad178b1cb14fcadecea1a7ec2738ecdd25b655aa12254b9098a76c2',
     NATIVE + 'utils/memory.hpp': '9025b835313ee45ba3418e3322210dec3b6d334e504a1dd3b59e9f38e2898f35',
     'tools-source/asset-bridge/weapon-export/native_neutral_dependencies.hpp': 'b5d4aa4f09db9eb28434e350e5cd9358ee522cd683882539476e2a0bb6e4c95e',
-    'tools-source/asset-bridge/weapon-export/neutral_pair_bodies.py': '2d6aa9bdd723bf1717c0b04bb9333aaf162c576212df88b827a30621cf9b1e4d',
-    'tools-source/asset-bridge/weapon-export/NATIVE-BODY-SCHEMA.md': '00b83ce302028d4fdfe1ed98c4aa7d6bb2e5a467db57fbf217f7194b7ff6cc64',
+    'tools-source/asset-bridge/weapon-export/neutral_pair_bodies.py': '820c8580549c3d0e5022e58d5f5bfc120d23db64b9f9f6e4513e05494c178626',
+    'tools-source/asset-bridge/weapon-export/NATIVE-BODY-SCHEMA.md': 'ac2980872c1ae97b76a998998e43b88601eb33ae14ab6a3677d3c6fb1b338809',
 }
 HEADER_DESTINATION = NATIVE + 'utils/native_pair_session.hpp'
+EXPLICIT_HEADER_BYTES = 8349
+EXPLICIT_HEADER_SHA256 = '65995c3552058107c572c70bd12f2b8134c81550edd87cf584fdbb5176dc7d93'
 
 
 def require(ok, message):
@@ -45,7 +47,7 @@ def validate_sources(sources):
                 'Pinned Source drift: ' + path)
 
 
-def render(sources, *, stage_inactive=False):
+def render(sources, *, stage_inactive=False, source_header=None):
     validate_sources(sources)
     require(type(stage_inactive) is bool, 'Literal Source staging selection required')
     result = dict(sources)
@@ -56,10 +58,17 @@ def render(sources, *, stage_inactive=False):
     if not stage_inactive:
         return result, metadata
     # Only our authored header is read; never a body, SDK or native artifact.
-    header_path = HERE / 'native_pair_session.hpp'
-    require(header_path.is_file() and not header_path.is_symlink(), 'Regular authored Source header required')
-    with header_path.open('rb') as stream:
-        raw = stream.read(2097153)
+    if source_header is None:
+        header_path = HERE / 'native_pair_session.hpp'
+        require(header_path.is_file() and not header_path.is_symlink(), 'Regular authored Source header required')
+        with header_path.open('rb') as stream:
+            raw = stream.read(2097153)
+    else:
+        require(type(source_header) is str and len(source_header) <= 2097152,
+                'Bounded explicit authored Source header required')
+        raw = source_header.replace('\r\n', '\n').encode('utf-8', errors='strict')
+        require(len(raw) == EXPLICIT_HEADER_BYTES and hashlib.sha256(raw).hexdigest() == EXPLICIT_HEADER_SHA256,
+                'Pinned explicit authored Source header drift')
     require(len(raw) <= 2097152 and b'\0' not in raw, 'Bounded authored Source header required')
     header = raw.decode('utf-8', errors='strict').replace('\r\n', '\n')
     require('[[noreturn]] inline void reject_native_activation()' in header, 'Inactive rejection contract absent')

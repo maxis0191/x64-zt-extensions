@@ -123,10 +123,78 @@ class CheckedMemorySourceTests(unittest.TestCase):
         self.assertLess(arithmetic.index('max)() / size'), arithmetic.index('size * count'))
         self.assertIn('used > capacity || bytes > capacity - used', arithmetic)
         self.assertIn('mem_pos_ += bytes', body)
-        self.assertNotRegex(body, r'align|padding|MessageBox|std::exit')
+        self.assertIn('failure.requested_type_alignment = alignof(T)', body)
+        self.assertIn('reinterpret_cast<char*>(memory_pool_) + mem_pos_', body)
+        self.assertNotRegex(body, r'align_up|padding\s*=|MessageBox|std::exit')
         primary = function_body(source, 'void checked_fail(')
         self.assertIn('primary_ == checked_memory_failure::none', primary)
         self.assertIn('checked_phase::primary_failed', primary)
+
+    def test_real_renderer_records_first_refusal_before_primary_or_cleanup(self):
+        source, _ = render_owned()
+
+        def contract(text):
+            body = function_body(text, 'T* checked_allocate(')
+            self.assertLess(body.index('checked_need_live();'), body.index('++checked_report_->allocation_ordinal_'))
+            self.assertLess(body.index('++checked_report_->allocation_ordinal_'), body.index('if (count == 0) return nullptr;'))
+            caught = function_body(body, 'catch (const checked_memory_error& error)')
+            sticky = function_body(caught, 'if (!checked_report_->allocation_failure_.available)')
+            for assignment in ('ordinal = checked_report_->allocation_ordinal_', 'element_bytes = size',
+                               'count = count', 'requested_type_alignment = alignof(T)',
+                               'used_before = mem_pos_', 'capacity = memory_size_'):
+                self.assertIn('failure.' + assignment + ';', sticky)
+            self.assertTrue(sticky.strip().endswith('failure.available = true;'))
+            self.assertLess(caught.index('failure.available = true;'), caught.index('checked_fail(error.reason());'))
+            self.assertEqual(text.count('failure.available = true;'), 1)
+            self.assertNotRegex(caught, r'fprintf|printf|GetLastError|Virtual|memory_pool_|mem_pos_\s*[+=]')
+            for signature in ('void checked_fail(', 'void checked_release_pool() noexcept', 'void free()', 'void clear()'):
+                self.assertNotIn('allocation_failure_', function_body(text, signature))
+
+        contract(source)
+        for before, after in [
+            ('if (!checked_report_->allocation_failure_.available)', 'if (true)'),
+            ('failure.available = true;', 'failure.available = false;'),
+            ('failure.used_before = mem_pos_;', 'failure.used_before = 0;'),
+            ('++checked_report_->allocation_ordinal_;', '/* no ordinal */'),
+        ]:
+            with self.subTest(delta=before), self.assertRaises((AssertionError, ValueError)):
+                contract(source.replace(before, after, 1))
+
+    def test_real_renderer_overflow_snapshot_never_multiplies_without_guard(self):
+        source, _ = render_owned()
+
+        def contract(text):
+            body = function_body(text, 'T* checked_allocate(')
+            caught = function_body(body, 'catch (const checked_memory_error& error)')
+            self.assertIn('failure.requested_bytes_valid = !size || count <= (std::numeric_limits<std::size_t>::max)() / size;', caught)
+            self.assertIn('if (failure.requested_bytes_valid) failure.requested_bytes = size * count;', caught)
+            self.assertEqual(caught.count('size * count'), 1)
+            self.assertLess(caught.index('requested_bytes_valid ='), caught.index('size * count'))
+            snapshot = function_body(text, 'struct checked_allocation_failure final')
+            self.assertIn('bool requested_bytes_valid{};', snapshot)
+            self.assertIn('requested_bytes{};', snapshot)
+
+        contract(source)
+        for before, after in [
+            ('if (failure.requested_bytes_valid) failure.requested_bytes', 'failure.requested_bytes'),
+            ('!size || count <= (std::numeric_limits<std::size_t>::max)() / size', 'true'),
+        ]:
+            with self.subTest(delta=before), self.assertRaises(AssertionError):
+                contract(source.replace(before, after, 1))
+
+    def test_snapshot_unavailable_without_request_and_one_readonly_accessor(self):
+        source, _ = render_owned()
+        snapshot = function_body(source, 'struct checked_allocation_failure final')
+        self.assertIn('bool available{};', snapshot)
+        self.assertNotRegex(snapshot, r'\*|LPVOID|DWORD|std::string|owner|pool')
+        report = function_body(source, 'class checked_memory_report final')
+        self.assertIn('checked_allocation_failure allocation_failure_{};', report)
+        self.assertEqual(report.count('const checked_allocation_failure& allocation_failure() const noexcept'), 1)
+        self.assertEqual(function_body(report, 'allocation_failure() const noexcept').strip(), 'return allocation_failure_;')
+        for signature in ('zone_memory(checked_memory_tag,', 'void checked_need_live() const', 'void checked_copy_source('):
+            self.assertNotIn('allocation_failure_', function_body(source, signature))
+        self.assertLess(function_body(source, 'T* checked_allocate(').index('checked_need_live();'),
+                        function_body(source, 'T* checked_allocate(').index('try {'))
 
     def test_one_release_attempt_is_shared_terminal_and_preserves_errors(self):
         source, _ = render_owned()

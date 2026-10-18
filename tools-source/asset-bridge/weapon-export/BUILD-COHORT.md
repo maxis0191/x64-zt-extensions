@@ -408,3 +408,86 @@ acceptance remain unqualified. Next: Source review of a separate neutral export
 packet through existing OwnedH1/Stock35 and producer/manifest/readers. Candidate
 tuples may be declared without opening them; Analysis, CLI, Extract, stock alias,
 Native or game execution require their own exact review and GO.
+
+
+## Authored eight-stage output and publication failure boundary
+
+The canonical Run-PlayerTemplateBuild.ps1 now has the explicit
+iw7.authored-pair-core-cpp-source/1 profile. Its six/eight/ten-stage CLI profiles
+keep their previous path. The authored path carries the reviewed J6 Source
+guards: all eleven direct/transitive provider Sources held before imports,
+the original factory bridge before post-factory deadline checks, the exact
+physical NoExit/dot capsule witness, admitted raw/LF JSON identity before native
+loading, three freshly produced link objects, and three same-stream normal
+publication readbacks. Capacity6208, one logical arena, native source cuts and
+body fixtures are unchanged.
+
+The legacy Measure-H1Output path still refuses entry65. Only the authored
+profile derives eight stage directories, twenty artifacts, sixteen logs,
+three publication slots and stop.request:48 declared entries, comprising
+8 directories and40 files. One residual64 envelope is shared by all eight
+stage roots, giving a finite112-entry tree. No residual root entry is allowed.
+The constructor validates the fixed stage shape; measurement rederives and
+compares the entire typed48-entry set and eight roots before filesystem IO.
+Forged maps with unchanged cardinalities, case aliases, wrong types, traversal,
+device/stream aliases, reparse descent and excessive depth refuse. A property
+alone cannot select this policy outside the authored profile. The256-MiB
+aggregate byte limit,1-MiB metadata reserve and original deadlines do not change.
+
+Normal publication and failed-publication safety cleanup are separate.
+Original and partially opened publication FileStreams and individual saved
+SafeFileHandles remain retained before disposal. The first primary error is
+preserved; publication and teardown errors are separate. A known-closed owner
+is not stopped again. An unknown owner or a refused release keeps the same
+actual owner/context/lease/references in NoExit; a refused release is not
+retried. A publication refusal cannot prevent cleanup of a proven closed
+owner through the existing lease API. Successful safety cleanup verifies and
+disposes the actual saved references, then clears the same guard list.
+
+Safety cleanup does not rescan or hash native inputs/outputs after original
+expiry or release. A distinct120-second teardown window and an optional
+in-memory Source attestation below256KiB do not extend native compute time.
+Attestation failure cannot prevent already-confirmed resource cleanup.
+Safety leaves normal qualification/readback facts honest and CanExit false;
+the physical NoExit host remains for approved Source postflight and Root's
+fresh checks. There is no automatic exit or retroactive Passed result.
+
+Light validation: the existing H1 Source suite passed90 assertions after
+independent review corrected full-set revalidation and the residual causal.
+The existing Python build-default suite passed21 tests; after that Core
+correction, its two affected real-finalizer tests passed again. They use real
+owned temporary Source FileStreams/SFHs with fake owned-job/lease APIs, never
+a NativeJob DLL, SDK, compiler, game or real resource lease. The two-root
+65-residual causal has109 total entries, below112, and requires the specific
+residual64 refusal. Publication-first/mid-write/readback refusals, original
+expiry, unknown owner closure and release refusal exercise the actual
+canonical finalizer. The synthetic authored DEFAULT verifies eleven Sources,
+JSON drift and the physical-host gate without importing providers or creating
+opaque inputs. These Source tests do not qualify a native cohort.
+
+## Actual authored CPP J7 foundation, 2026-10-18
+
+The separately authorized J7 run compiled Source
+`5e1207a41a2a0840a0ca97a1ddc525989d4fe99d` with the reviewed unchanged
+484289-byte plan `a77a51f814ea6a7fa7570bf5599180792a840c06ef32adc731e61977e72ebe98`.
+All eight authored stages exited 0 and closed their original trees: two real
+cores, fixture compilation/link/execution with eight verified groups, then all
+three wrapper TUs. Native inputs were reverified and ordinary readbacks passed.
+The one invocation used original PTY25008; its internal owner reports terminal
+chunk `59b968` / exit 0 after the selected Passed postflight and distinct Root exit GO.
+Root independently read own-metadata receipts and verified fresh absence of 17
+captured identities and an empty registry at 01:08:10 UTC before releasing the
+slot. Root did not directly observe the owner's execution API completion.
+
+The 1700 original FileStream/saved-SFH pairs closed in their own scope; the two
+inner postflight Source helpers and three parent/outer Source guards were
+separately observed closed at their later boundaries. No sum across these
+scopes is inferred. Disk pre-disposal guard facts remain unchanged; subsequent
+preexit/true-exit evidence supplies later closure. Exact receipt tuples and
+Root's bounded CPP-foundation qualification are in
+[PAIR-JSON-CORE.md](PAIR-JSON-CORE.md#j7-bounded-cpp-foundation-and-known-closure-2026-10-18).
+
+J1–J6 remain immutable failures. Only Source `5e1207` was compiled; this DOC head
+and any subsequent merge were not. Ready and downstream parse/allocator
+activation stay false. There is no new U1/T2/body, stock, CLI/FF, engine ABI,
+grant/physics/PAP, game or BO3-demo authorization, nor a new actual GO.

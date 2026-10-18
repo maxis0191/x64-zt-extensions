@@ -31,7 +31,7 @@ def authored(ty):
             elif op == 'graphs': result['accuracyGraphKnots'] = [None, None]
             elif op == 'definition': result['weapDef'] = authored('WeaponDef')
             elif op == 'original_graphs':
-                result['accuracyGraphName'] = ['', '']
+                result['accuracyGraphName'] = [None, None]
                 result['originalAccuracyGraphKnotCount'] = [0, 0]
             elif op == 'overrides':
                 for key, target in [('animOverrides', 'AnimOverride'), ('sfxOverrides', 'SFXOverride'), ('vfxOverrides', 'VFXOverride')]:
@@ -204,17 +204,58 @@ class NativeBodySchemaTests(unittest.TestCase):
         d['originalAccuracyGraphKnots'] = None
         with self.assertRaisesRegex(ValueError, 'closed'): production._walk('WeaponDef', d, 'def', production._Trace(), parent)
         d = authored('WeaponDef'); parent = {'accuracyGraphKnots': [None, [[1.0, 2.0]]]}
-        d.update(originalAccuracyGraphKnots=[None, [[3.0, 4.0]]], originalAccuracyGraphKnotCount=[0, 1])
+        d.update(accuracyGraphName=[None, 'aaaaaaa'], originalAccuracyGraphKnots=[None, [[3.0, 4.0]]], originalAccuracyGraphKnotCount=[0, 1])
         production._walk('WeaponDef', d, 'def', production._Trace(), parent)
         for knots, counts in [([None, []], [0, 1]), ([None, [[1, 2, 3]]], [0, 1]), ([None, [[1, 2]]], [0, 2])]:
             bad = copy.deepcopy(d); bad.update(originalAccuracyGraphKnots=knots, originalAccuracyGraphKnotCount=counts)
             with self.assertRaises(ValueError): production._walk('WeaponDef', bad, 'def', production._Trace(), parent)
+
+    def test_original_graph_empty_strings_each_allocate_the_nul_even_for_zero_count(self):
+        data = authored('WeaponDef'); data['accuracyGraphName'] = ['', '']
+        trace = production._Trace()
+        with patch.object(trace, 'allocate', wraps=trace.allocate) as allocate:
+            production._manual(['original_graphs'], data, 'def', trace, {'accuracyGraphKnots': [None, None]})
+        self.assertEqual(trace.offset, 2)
+        self.assertEqual(trace.events, [('def.accuracyGraphName[0]', 'char', 0, 1, 1),
+                                        ('def.accuracyGraphName[1]', 'char', 1, 1, 1)])
+        self.assertEqual([call.args[:2] for call in allocate.call_args_list],
+                         [('char', 1), ('vec2_t', 0), ('char', 1), ('vec2_t', 0)])
+
+    def test_original_graph_null_skips_only_the_name_with_correlated_literal_zero_counts(self):
+        data = authored('WeaponDef'); trace = production._Trace()
+        self.assertEqual(data['accuracyGraphName'], [None, None])
+        with patch.object(trace, 'allocate', wraps=trace.allocate) as allocate:
+            production._manual(['original_graphs'], data, 'def', trace, {'accuracyGraphKnots': [None, None]})
+        self.assertEqual((trace.offset, trace.events), (0, []))
+        self.assertEqual([call.args[:2] for call in allocate.call_args_list], [('vec2_t', 0), ('vec2_t', 0)])
+        for parent_count, original_count in [(0, 1), (1, 0), (1, 1), (0, False), (0, 0.0), (0, None), (0, -1)]:
+            bad = copy.deepcopy(data); bad['originalAccuracyGraphKnotCount'][0] = original_count
+            parent = {'accuracyGraphKnots': [[[1.0, 2.0]] if parent_count else None, None]}
+            if parent_count: bad['originalAccuracyGraphKnots'] = [[[3.0, 4.0]]]
+            with self.subTest(parent=parent_count, original=original_count), self.assertRaises(ValueError):
+                production._manual(['original_graphs'], bad, 'def', production._Trace(), parent)
+
+    def test_original_graph_name_types_shapes_and_nonempty_storage_stay_strict(self):
+        for names in ([None], [None, None, None], None, [False, None], [0, None], [{}, None],
+                      [[], None], [['x'], None], ['bad\0name', None], ['\ud800', None]):
+            data = authored('WeaponDef'); data['accuracyGraphName'] = names
+            with self.subTest(names=names), self.assertRaises(ValueError):
+                production._manual(['original_graphs'], data, 'def', production._Trace(), {'accuracyGraphKnots': [None, None]})
+        data = authored('WeaponDef'); data['accuracyGraphName'] = [None, 'aaaaaaa']
+        data['originalAccuracyGraphKnotCount'] = [0, 1]
+        data['originalAccuracyGraphKnots'] = [None, [[3.0, 4.0]]]
+        trace = production._Trace()
+        production._manual(['original_graphs'], data, 'def', trace, {'accuracyGraphKnots': [None, [[1.0, 2.0]]]})
+        self.assertEqual(trace.offset, 16)
+        self.assertEqual(trace.events, [('def.accuracyGraphName[1]', 'char', 0, 8, 1),
+                                        ('def.originalAccuracyGraphKnots[1]', 'vec2_t', 8, 8, 4)])
 
     def test_all_four_original_graph_emission_cases_and_no_extra_tail(self):
         for counts in ([0, 0], [1, 0], [0, 1], [1, 1]):
             d = authored('WeaponDef')
             parent = {'accuracyGraphKnots': [None if n == 0 else [[1.0, 2.0]] for n in counts]}
             d['originalAccuracyGraphKnotCount'] = list(counts)
+            d['accuracyGraphName'] = [None if n == 0 else 'aaaaaaa' for n in counts]
             highest = 2 if counts[1] else 1 if counts[0] else 0
             if highest: d['originalAccuracyGraphKnots'] = [None if not n else [[3.0, 4.0]] for n in counts[:highest]]
             with self.subTest(counts=counts):

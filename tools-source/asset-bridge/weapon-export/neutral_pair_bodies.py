@@ -222,8 +222,11 @@ def _manual(handler, data, path, trace, parent):
         if highest: _list(graphs, highest, path + '.originalAccuracyGraphKnots')
         for i, count in enumerate(counts):
             p = path + '.originalAccuracyGraphKnots[' + str(i) + ']'
-            _text(names[i], path + '.accuracyGraphName', nullable=False, empty=True)
-            if names[i]: trace.string(names[i], path + '.accuracyGraphName[' + str(i) + ']')
+            # Native tests JSON-value empty(), not std::string/Python emptiness:
+            # even "" is a nonempty JSON value and duplicates its NUL byte.
+            nullable = count == 0 and type(original_counts[i]) is int and original_counts[i] == 0
+            _text(names[i], path + '.accuracyGraphName', nullable=nullable, empty=True)
+            if names[i] is not None: trace.string(names[i], path + '.accuracyGraphName[' + str(i) + ']')
             trace.allocate('vec2_t', count, p, cells=True)
             if i < highest:
                 if not count: _need(graphs[i] is None, p, 'zero original graph hole must be null')

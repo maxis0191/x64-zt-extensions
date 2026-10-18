@@ -1,10 +1,12 @@
-# Specialized six/eight/ten-stage caller of existing H1 ownership and T7 artifact/link policies.
+# Canonical legacy CLI cohorts and the explicit authored eight-stage H1/T7 profile.
 # Default reads only bounded source/metadata. No tool/game/export entry exists.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$PlanPath,[Parameter(Mandatory)][string]$PlanSHA256,[switch]$Run)
 $ErrorActionPreference='Stop';Set-StrictMode -Version Latest
-function Read-PlayerSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$KeepGuards=$null) {
-    if([IO.Path]::GetExtension($Path).ToLowerInvariant() -cnotin @('.json','.py','.ps1','.cs','.hpp','.cpp','.inc','.rsp','.h','.hh','.inl','.vcxproj','.txt')){throw 'Source/metadata suffix required before filesystem IO.'}
+function Read-PlayerSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$KeepGuards=$null,[switch]$AllowMarkdown) {
+    $extensions=@('.json','.py','.ps1','.cs','.hpp','.cpp','.inc','.rsp','.h','.hh','.inl','.vcxproj','.txt')
+    if($AllowMarkdown){$extensions+=@('.md')}
+    if([IO.Path]::GetExtension($Path).ToLowerInvariant() -cnotin $extensions){throw 'Source/metadata suffix required before filesystem IO.'}
     if($SHA256 -cnotmatch '^[0-9a-f]{64}$' -or ![IO.Path]::IsPathFullyQualified($Path)){throw 'Exact source binding required.'}
     for($part=$Path;$part;$part=[IO.Path]::GetDirectoryName($part)){
         if((Get-Item -LiteralPath $part).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked source ancestry refused.'}
@@ -75,9 +77,446 @@ function Assert-PlayerDefinitionFixture($Plan){
         if(@($Plan.OwnDirectIncludeCoverage|Where-Object {$_.Path -ceq $path -and $_.Pinned -is [bool] -and $_.Pinned}).Count -ne 1){throw 'Exact guarded fixture Source include coverage required.'}
     }
 }
+
+function Read-PlayerAuthoredSource([string]$Path,[string]$SHA256,[long]$Bytes=-1,[Collections.Generic.List[object]]$KeepGuards=$null) {
+    Read-PlayerSource $Path $SHA256 $Bytes $KeepGuards -AllowMarkdown
+}
+function Get-PlayerAuthoredSafetyClock {
+    if(Get-Command Get-H1Clock -CommandType Function -ErrorAction SilentlyContinue){return Get-H1Clock}
+    # A Source guard may fail before Core import; teardown still needs a clock.
+    [Diagnostics.Stopwatch]::GetTimestamp()/([double][Diagnostics.Stopwatch]::Frequency)*1000
+}
+function Invoke-NeutralFactoryBridge($Factory,$Context,[double]$Started,[int]$Seconds,[double]$GroupStarted,[int]$GroupSeconds) {
+    Assert-H1Deadline $GroupStarted $GroupSeconds
+    Assert-H1Deadline $Started $Seconds
+    $owner=& $Factory
+    if(!$owner){throw 'Original factory returned no owner.'}
+    $Context.Owner=$owner
+    Assert-H1Deadline $GroupStarted $GroupSeconds
+    Assert-H1Deadline $Started $Seconds
+    $owner
+}
+function Open-NeutralPublication($Entry,$Context,$Guards) {
+    # Retain a partial entry before CreateNew; retain its stream before enrollment.
+    $Context.PublicationEntries.Add($Entry)
+    $Entry.Stream=[IO.FileStream]::new($Entry.Path,'CreateNew','ReadWrite','Read')
+    $Entry.SafeHandle=$Entry.Stream.SafeFileHandle
+    $Guards.Add($Entry.Stream)
+}
+function Write-NeutralPublication($Entry) {
+    if(!$Entry.Stream -or !$Entry.SafeHandle -or $Entry.SafeHandle.IsClosed){throw 'Original publication handle required.'}
+    $Entry.Stream.Position=0;$Entry.Stream.Write($Entry.Bytes,0,$Entry.Bytes.Length);$Entry.Stream.Flush($true)
+}
+function Read-NeutralPublication($Entry) {
+    $stream=$Entry.Stream
+    if(!$stream -or $Entry.SafeHandle.IsClosed -or $stream.Length -ne $Entry.Bytes.Length -or $stream.Length -gt 1MB){throw 'Same bounded publication stream required.'}
+    $stream.Position=0;$read=[byte[]]::new($Entry.Bytes.Length);$used=0
+    while($used -lt $read.Length){$count=$stream.Read($read,$used,$read.Length-$used);if($count -le 0){throw 'Publication shortened.'};$used+=$count}
+    if($stream.ReadByte() -ne -1){throw 'Publication grew.'}
+    for($index=0;$index -lt $read.Length;$index++){if($read[$index] -ne $Entry.Bytes[$index]){throw 'Same-stream publication bytes differ.'}}
+    $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($read)).ToLowerInvariant()
+    if($hash -cne $Entry.SHA256){throw 'Same-stream publication hash differs.'}
+    $decoded=[Text.UTF8Encoding]::new($false,$true).GetString($read)|ConvertFrom-Json -Depth 30
+    if(!$decoded){throw 'Publication JSON required.'}
+    $Entry.ReadBack=$true
+}
+function New-NeutralPublication([string]$Path,$Value,[int]$Depth=20) {
+    $text=($Value|ConvertTo-Json -Depth $Depth)+[string][char]10
+    if($text.Length -gt 1MB){throw 'Publication text exceeds metadata reserve.'}
+    $bytes=[Text.UTF8Encoding]::new($false,$true).GetBytes($text)
+    [pscustomobject]@{Path=$Path;Bytes=$bytes;SHA256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant();
+        Stream=$null;SafeHandle=$null;ReadBack=$false}
+}
+function Save-PlayerAuthoredGuardReferences($Context,$Guards) {
+    if($Context.PSObject.Properties['FinalGuardReferences']){
+        return [pscustomobject]@{Streams=$Context.FinalGuardReferences;Handles=$Context.FinalGuardSafeHandles}
+    }
+    $refs=[Collections.Generic.List[object]]::new()
+    foreach($guard in $Guards){$refs.Add($guard)}
+    if($Context.PSObject.Properties['PublicationEntries']){
+        foreach($entry in $Context.PublicationEntries){
+            if($null -eq $entry.Stream){continue}
+            $present=$false;foreach($ref in $refs){if([object]::ReferenceEquals($ref,$entry.Stream)){$present=$true;break}}
+            if(!$present){$refs.Add($entry.Stream)}
+        }
+    }
+    $streams=$refs.ToArray();$handles=[object[]]::new($streams.Count)
+    for($i=0;$i -lt $streams.Count;$i++){$handles[$i]=$streams[$i].SafeFileHandle}
+    Add-Member -InputObject $Context NoteProperty FinalGuardReferences $streams
+    Add-Member -InputObject $Context NoteProperty FinalGuardSafeHandles $handles
+    [pscustomobject]@{Streams=$streams;Handles=$handles}
+}
+function Complete-NeutralPublication($Plan,$State,$Context,$Guards,[double]$Started,$Failure) {
+    if(!$Context.Closed -or !$Context.Lease){throw 'Original closed owner and held lease required.'}
+    Assert-H1Deadline $Started $Plan.GroupDeadlineSeconds
+    $nativeBytes=Measure-H1Output $Plan.RunRoot $Plan.AuthoredOutputBudget
+    if($nativeBytes -gt $Plan.OutputLimitBytes-$Plan.MetadataReserveBytes){throw 'Native output exceeds reserved budget.'}
+    $State.MaxObservedOutputBytes=[math]::Max($State.MaxObservedOutputBytes,$nativeBytes)
+    $measured=New-NeutralPublication (Join-Path $Plan.RunRoot 'measured-before-release.json') $State
+    $beforeValue=[ordered]@{Schema='iw7.neutral-cpp-before-release/1';PlanSHA256=$State.PlanSHA256;MeasuredSHA256=$measured.SHA256;
+        Host=$State.Host;Status=$State.Status;OriginalRootAndJobClosed=$true;LeaseToken=$Context.Lease.Token;GuardsHeld=($Guards.Count+3);Ready=$false}
+    $before=New-NeutralPublication (Join-Path $Plan.RunRoot 'closure-before-release.json') $beforeValue
+    $finalValue=[ordered]@{Schema='iw7.neutral-cpp-closure/1';PlanSHA256=$State.PlanSHA256;MeasuredSHA256=$measured.SHA256;
+        BeforeReleaseSHA256=$before.SHA256;Host=$State.Host;Status='ClosedReleasedGuardsHeldPendingPostflight';
+        OriginalRootAndJobClosed=$true;LeaseReleased=$true;GuardsDisposed=$false;GuardsHeld=($Guards.Count+3);
+        PostReadbackDeadlineRequired=$true;CandidateExecuted=$false;Ready=$false}
+    $final=New-NeutralPublication (Join-Path $Plan.RunRoot 'final-closure.json') $finalValue
+    [long]$metadata=$measured.Bytes.Length+$before.Bytes.Length+$final.Bytes.Length
+    if($metadata -gt $Plan.MetadataReserveBytes -or $nativeBytes+$metadata -gt $Plan.OutputLimitBytes){throw 'Three preconstructed JSONs exceed reserved output.'}
+    if($Context.PSObject.Properties['PublicationEntries']){throw 'Publication already attempted; original entries must remain retained.'}
+    Add-Member -InputObject $Context NoteProperty PublicationEntries ([Collections.Generic.List[object]]::new())
+    foreach($entry in @($measured,$before,$final)){Open-NeutralPublication $entry $Context $Guards}
+    $original=Save-PlayerAuthoredGuardReferences $Context $Guards
+    Assert-H1Deadline $Started $Plan.GroupDeadlineSeconds
+    foreach($entry in @($measured,$before)){
+        Write-NeutralPublication $entry;Read-NeutralPublication $entry
+        Assert-H1Deadline $Started $Plan.GroupDeadlineSeconds
+    }
+    $State.MeasuredReadback=$true
+    Add-Member -InputObject $Context NoteProperty LeaseReleaseAttempted $true -Force
+    try{Exit-IW7ResourceLease -Token $Context.Lease.Token}
+    catch{Add-Member -InputObject $Context NoteProperty LeaseReleaseError $_.Exception.Message -Force;throw}
+    $Context.Lease=$null;$State.LeaseReleased=$true
+    Write-NeutralPublication $final;Read-NeutralPublication $final
+    $State.FinalReadback=$true
+    Assert-H1Deadline $Started $Plan.GroupDeadlineSeconds
+    $State.LastReadbackDeadlinePassed=$true
+    foreach($guard in $original.Streams){$guard.Dispose()}
+    for($i=0;$i -lt $original.Streams.Count;$i++){
+        if(!$original.Handles[$i].IsClosed -or $original.Streams[$i].CanRead -or $original.Streams[$i].CanWrite -or $original.Streams[$i].CanSeek){throw 'Original guard closure unconfirmed.'}
+    }
+    $Guards.Clear();$State.GuardsDisposed=$true
+    if(!$Context.Closed -or $null -ne $Context.Lease -or !$State.LeaseReleased -or !$State.FinalReadback -or
+       !$State.LastReadbackDeadlinePassed -or !$State.GuardsDisposed -or $Guards.Count){throw 'Actual final closure facts required.'}
+    $State.Status=if($Failure){'FailedClosed'}else{'Passed'};$State.CanExit=$true
+}
+function Complete-PlayerAuthoredFinalization($Plan,$State,$Context,$Guards,[Nullable[double]]$Started,$Failure,[bool]$Created) {
+    # This function is also exercised directly by the light Source causals.
+    $originalOwner=$Context.Owner;$originalLease=$Context.Lease
+    Add-Member -InputObject $Context NoteProperty FinalizationOwnerReference $originalOwner
+    Add-Member -InputObject $Context NoteProperty FinalizationLeaseReference $originalLease
+    if(!$Context.Closed -and $Context.Owner){
+        try{$Context.Owner.StopAndConfirm(5000);$Context.Closed=$Context.Owner.Closed}
+        catch{$State.ClosureError=$_.Exception.Message}
+    }
+    if($Created -and $Context.Closed -and $Context.Lease){
+        try{Complete-NeutralPublication $Plan $State $Context $Guards $Started $Failure}
+        catch{
+            $State.FinalizationError=$_.Exception.Message
+            if(!$State.Contains('Error')){$State.Error=$_.Exception.Message}
+        }
+    }
+    if($State.CanExit){return}
+    # A failed publication never owns cleanup of a known-closed original job.
+    # Retain a separate state: no normal flags are upgraded by safety teardown.
+    $safety=[ordered]@{Status='SafetyPending';LeaseToken=$(if($Context.Lease){$Context.Lease.Token}else{$null});
+        TreeClosureConfirmed=$false;LeaseReleased=$false;OriginalClock=$Started;Started=(Get-PlayerAuthoredSafetyClock);
+        TeardownSeconds=120;ResourcesClosed=$false;CanExit=$false;NoExitRequired=$true;QualifiesCPP=$false}
+    Add-Member -InputObject $Context NoteProperty SafetyClosure $safety
+    try{
+        if(!$Context.Closed -or ($Context.Owner -and !$Context.Owner.Closed)){throw 'Original owner closure unknown; retain actual job, guards and lease.'}
+        $original=Save-PlayerAuthoredGuardReferences $Context $Guards
+        $lease=$Context.Lease
+        if(![object]::ReferenceEquals($originalOwner,$Context.Owner)){throw 'Original owner reference changed.'}
+        if($lease -and (![object]::ReferenceEquals($lease,$originalLease) -or $lease.Token -cne $safety.LeaseToken)){throw 'Original admitted lease reference/token changed.'}
+        if($lease){
+            if($Context.PSObject.Properties['LeaseReleaseAttempted'] -and $Context.LeaseReleaseAttempted){throw 'Original release already refused; retain its actual lease without retry.'}
+            if((Get-PlayerAuthoredSafetyClock)-$safety.Started -ge 120000){throw 'Safety teardown window expired.'}
+            Add-Member -InputObject $Context NoteProperty LeaseReleaseAttempted $true -Force
+            Complete-H1Stage $Context $safety
+            if(!$safety.LeaseReleased -or $null -ne $Context.Lease){throw 'Original lease release refused; retain actual references.'}
+        }
+        if((Get-PlayerAuthoredSafetyClock)-$safety.Started -ge 120000){throw 'Safety teardown window expired.'}
+        foreach($guard in $original.Streams){$guard.Dispose()}
+        for($i=0;$i -lt $original.Streams.Count;$i++){
+            if(!$original.Handles[$i].IsClosed -or $original.Streams[$i].CanRead -or $original.Streams[$i].CanWrite -or $original.Streams[$i].CanSeek){throw 'Original safety FS/SFH closure unconfirmed.'}
+        }
+        $Guards.Clear();$safety.ResourcesClosed=$true;$safety.Status='SafetyResourcesClosedNoExitRetained'
+    }catch{$safety.TeardownError=$_.Exception.Message;$safety.Status='SafetyUnknownRetained'}
+    $State.Status=if($Context.Closed -and $null -eq $Context.Lease){'ClosedFinalizationIncomplete'}else{'UnknownRetained'}
+    $State.CanExit=$false
+    # Optional fallback is bounded in-memory Source metadata, never another disk
+    # dependency on the publication which just refused. No native scan/hash.
+    try{
+        $attestation=[ordered]@{Schema='iw7.authored-safety-attestation/1';Status=$safety.Status;
+            OriginalStatus=$State.Status;PrimaryError=$(if($State.Contains('Error')){([string]$State.Error).Substring(0,[math]::Min(4096,([string]$State.Error).Length))}else{$null});
+            OriginalClock=$Started;OriginalExpired=$(if($null -eq $Started){$null}else{(Get-PlayerAuthoredSafetyClock)-$Started -ge 600000});
+            OriginalOwnerClosed=$Context.Closed;LeaseNull=($null -eq $Context.Lease);GuardsRemaining=$Guards.Count;
+            ResourcesClosed=$safety.ResourcesClosed;NormalMeasuredReadback=$State.MeasuredReadback;NormalFinalReadback=$State.FinalReadback;
+            NativeInputsReverified=$State.NativeInputsReverified;CanExit=$false;NoExitRequired=$true;QualifiesCPP=$false}
+        $text=$attestation|ConvertTo-Json -Depth 6 -Compress
+        if($text.Length -ge 256KB -or [Text.Encoding]::UTF8.GetByteCount($text) -ge 256KB){throw 'Safety attestation exceeds Source bound.'}
+        Add-Member -InputObject $Context NoteProperty SafetyAttestation $attestation
+    }catch{$safety.AttestationError=$_.Exception.Message}
+}
+function Assert-PlayerAuthoredHost([string]$Capsule,[bool]$Dot) {
+    $argsNow=[Environment]::GetCommandLineArgs()
+    if(!$Dot -or !(Get-Variable cohortHostWitness -ErrorAction SilentlyContinue)){throw 'Exact physical NoExit/dot capsule witness required.'}
+    $witness=$cohortHostWitness;$command=". '"+$Capsule+"' -Run"
+    if($argsNow.Count -ne 6 -or $argsNow[0] -cne $witness.ManagedEntry -or $argsNow[1] -cne '-NoLogo' -or
+       $argsNow[2] -cne '-NoProfile' -or $argsNow[3] -cne '-NoExit' -or $argsNow[4] -cne '-Command' -or
+       $argsNow[5] -cne $command -or $witness.Command -cne $command -or $witness.Capsule -cne $Capsule -or
+       !$witness.NoExit -or !$witness.Dot -or $witness.PID -ne $PID -or
+       [Reflection.Assembly]::GetEntryAssembly().Location -cne $witness.ManagedEntry){throw 'Exact physical NoExit/dot capsule arguments required.'}
+    $physical=Get-CimInstance Win32_Process -Filter "ProcessId=$PID"
+    $process=[Diagnostics.Process]::GetCurrentProcess()
+    try{$image=$process.MainModule.FileName;$kernel=$process.StartTime.ToUniversalTime()}finally{$process.Dispose()}
+    if(!$physical -or $physical.ExecutablePath -cne $witness.PhysicalImage -or $image -cne $witness.PhysicalImage -or
+       $kernel.ToString('o',[cultureinfo]::InvariantCulture) -cne $witness.KernelCreatedUtc -or
+       ($physical.CreationDate.ToUniversalTime().Ticks-($physical.CreationDate.ToUniversalTime().Ticks%10)) -ne ($kernel.Ticks-($kernel.Ticks%10))){
+        throw 'Same original physical/kernel/CIM capsule identity required.'
+    }
+    $physical
+}
+
+function Assert-AuthoredSourceBindings($Value,[string[]]$Roots) {
+    # Pure lexical/tuple checks before a Source pathname can be queried. SDK and
+    # third-party declarations cannot be reclassified as DEFAULT-readable Source.
+    $all=@($Value.SourceBindings)+@($Value.PreparedBindings)+@($Value.ParentBindings|Where-Object IsText)+@($Value.RunnerBinding)
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($pin in $all){
+        if($pin.IsText -isnot [bool] -or !$pin.IsText -or $pin.SHA256 -cnotmatch '\A[0-9a-f]{64}\z' -or $pin.Bytes -lt 1 -or $pin.Bytes -gt 2MB -or
+           ![IO.Path]::IsPathFullyQualified($pin.Path) -or [IO.Path]::GetFullPath($pin.Path) -cne $pin.Path -or
+           [IO.Path]::GetExtension($pin.Path).ToLowerInvariant() -cnotin @('.json','.py','.ps1','.cs','.hpp','.cpp','.inc','.rsp','.h','.hh','.inl','.vcxproj','.txt','.md')){
+            throw 'Canonical bounded explicit Source tuple required before pathname IO.'
+        }
+        if(!@($roots|Where-Object {$pin.Path.StartsWith($_,[StringComparison]::OrdinalIgnoreCase)}).Count -or !$seen.Add($pin.Path)){
+            throw 'Unique owned Source scope required before pathname IO.'
+        }
+    }
+    foreach($name in 'CompilerInputRoleManifest','DirectIncludeClosure','NativeSourceProvenance','CurrentProviderSourceSnapshot','FixtureSourceClosure'){
+        $pin=$Value.$name
+        $matches=@($Value.PreparedBindings|Where-Object {$_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256 -and $_.IsText})
+        if($pin.IsText -isnot [bool] -or !$pin.IsText -or $matches.Count -ne 1){throw 'Every metadata Source must have one exact retained Prepared binding.'}
+    }
+}
+
 $plan=Read-PlayerSource $PlanPath $PlanSHA256 | ConvertFrom-Json -Depth 30
 if(!$plan.PSObject.Properties['RunnerBinding'] -or $plan.RunnerBinding.Path -cne $PSCommandPath){throw 'Exact specialized runner binding required.'}
 $null=Read-PlayerSource $plan.RunnerBinding.Path $plan.RunnerBinding.SHA256 $plan.RunnerBinding.Bytes
+if($plan.Schema -ceq 'iw7.authored-pair-core-cpp-source/1'){
+if([IO.Path]::GetFileName($PlanPath) -cne 'cohort-source-plan.json'){throw 'Exact authored Source plan filename required.'}
+Assert-AuthoredSourceBindings $plan @((([IO.Path]::GetDirectoryName([IO.Path]::GetDirectoryName($PlanPath)))+[IO.Path]::DirectorySeparatorChar),(([IO.Path]::GetDirectoryName($PSCommandPath))+[IO.Path]::DirectorySeparatorChar))
+if($plan.Schema -cne 'iw7.authored-pair-core-cpp-source/1' -or
+   $plan.SourceHead -cnotmatch '\A[0-9a-f]{40}\z' -or
+   $plan.NativeSourcePin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+   $plan.RunnerBinding.Path -cne $PSCommandPath -or $plan.Ready -or $plan.CandidateExecuted -or
+   $plan.ChecksExecuted -or $plan.TUsCompiled -or $plan.CoresLinked -or $plan.ParentCPPQualificationInherited -or
+   $plan.FatalAllocatorClosure -or $plan.ActualPairParseActivated -or
+   !$plan.NoHistoricalObjects -or !$plan.NoFullCLILink -or !$plan.RealOSAllocatorRequested -or
+   $plan.ChecksAuthored -ne 8 -or $plan.GroupDeadlineSeconds -ne 600 -or
+   $plan.OutputLimitBytes -ne 256MB -or $plan.MetadataReserveBytes -ne 1MB -or
+   $plan.PhysicalReservationBytes -ne 4GB -or $plan.CommitReservationBytes -ne 6GB -or
+   $plan.LogicalFixtureArenaBytes -ne 6208 -or $plan.MaximumSimultaneousFixtureArenas -ne 1 -or
+   !$plan.RequireActualDependenciesWithinGuardedSet -or $plan.FixtureCompileProfile -cne 'RealCoreJSONDiagnostics1RealArena'){
+    throw 'Exact unqualified authored pair core Source contract required.'
+}
+$null=Read-PlayerAuthoredSource $plan.RunnerBinding.Path $plan.RunnerBinding.SHA256 $plan.RunnerBinding.Bytes
+$names=@('weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test','weapondef','weaponattachment','filesystem')
+if((@($plan.Stages.Name)-join '|') -cne ($names-join '|') -or @($plan.FixtureCases).Count -ne 8 -or
+   @($plan.FixtureCases|Sort-Object -Unique).Count -ne 8){throw 'Exactly eight phases and eight distinct fixture groups required.'}
+$expectedObjects=@(
+    (Join-Path $plan.RunRoot 'weapon-core/weapon-core.obj'),
+    (Join-Path $plan.RunRoot 'attachment-core/attachment-core.obj'),
+    (Join-Path $plan.RunRoot 'fixture-compile/fixture.obj'))
+if((@($plan.GeneratedLinkInputs)-join '|') -cne ($expectedObjects-join '|')){throw 'Three exact fresh cohort link objects required.'}
+$expectedMarker=(@($plan.FixtureCases|ForEach-Object {'PASS '+$_}) -join "`n")+"`nIW7_AUTHORED_PAIR_REAL_CORE_FIXTURE=8`n"
+for($index=0;$index -lt 8;$index++){
+    $stage=$plan.Stages[$index];$probe=($index -eq 4);$link=($index -eq 3)
+    $kind=if($probe){'Probe'}elseif($link){'Link'}else{'Compile'}
+    $artifacts=if($probe){@()}elseif($link){@('fixture.exe','fixture.pdb')}
+        else{@($(if($index -eq 2){'fixture.obj'}else{$stage.Name+'.obj'}),'compile.pdb','dependencies.json')}
+    if($stage.Stage -cne $kind -or $stage.DeadlineSeconds -ne $(if($probe){15}else{120}) -or
+       (@($stage.Artifacts)-join '|') -cne ($artifacts-join '|')){throw 'Exact phase kind/deadline/artifacts required.'}
+    if($probe){
+        if($stage.Image -cne (Join-Path $plan.RunRoot 'fixture-link/fixture.exe') -or @($stage.Arguments).Count -ne 0 -or
+           $stage.ExpectedChecks -ne 8 -or $stage.ExpectedStdout -cne $expectedMarker){throw 'Full eight-group real-core stdout required.'}
+    }else{
+        $image=if($link){Join-Path (Split-Path $plan.Compiler -Parent) 'link.exe'}else{$plan.Compiler}
+        if($stage.Image -cne $image -or @($stage.Arguments).Count -ne 1 -or
+           $stage.Arguments[0] -cne ('@'+(Join-Path $plan.PreparedRoot ($stage.Name+'.rsp')))){throw 'Exact fixed response required.'}
+    }
+}
+foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)){
+    $null=Read-PlayerAuthoredSource $pin.Path $pin.SHA256 $pin.Bytes
+}
+$providers=$plan.Providers
+$providerPins=@(foreach($pin in @($plan.ParentBindings|Where-Object IsText)){
+    $null=Read-PlayerAuthoredSource $pin.Path $pin.SHA256 $pin.Bytes;$pin
+})
+if($providerPins.Count -ne 11){throw 'All eleven current direct/transitive provider Sources required before imports.'}
+foreach($name in 'Core','CompilerCore','ObserverSource','CompilerPolicySource','Scheduler','Profile'){
+    if(@($providerPins|Where-Object Path -CEQ $providers.$name).Count -ne 1){throw 'Exact Source provider binding required.'}
+}
+$rolePin=$plan.CompilerInputRoleManifest
+$roles=Read-PlayerAuthoredSource $rolePin.Path $rolePin.SHA256 $rolePin.Bytes|ConvertFrom-Json -Depth 40
+if($roles.Schema -cne 'iw7.authored-core-compiler-input-roles/1' -or $roles.OpaqueFilesQueried -or
+   $roles.InheritedQualification -or !$roles.AdmissionBeforeOpaqueIO -or
+   @($roles.Selected).Count -ne @($plan.RetainedInputPins).Count){throw 'Finite opaque declaration-only roles required.'}
+for($index=0;$index -lt @($roles.Selected).Count;$index++){
+    $expected=$roles.Selected[$index];$actual=$plan.RetainedInputPins[$index]
+    foreach($field in 'Path','Bytes','SHA256','InputRole','DeclaredRoleRoot','ParentPlanSHA256','AdmissionRequired'){
+        if($actual.$field -cne $expected.$field){throw 'Retained role/pin tuple differs.'}
+    }
+    if($actual.PSObject.Properties['IsText'] -or !$actual.AdmissionRequired -or
+       $actual.InputRole -cnotin @('CompilerInclude','CompilerRuntime','FixtureLinkInput')){throw 'Opaque input cannot become pre-admission Source.'}
+}
+$memory=$plan.CheckedMemoryOverlay
+if($memory.StagedBytes -ne 11393 -or $memory.StagedSHA256 -cne '8835b6da207f4fb872e199a5f6b86f0d98a8714a1d6a11421ac7e8d19ca766d4' -or
+   $memory.ActualActivation){throw 'Unchanged checked-memory overlay required.'}
+$fixtureClosurePin=$plan.FixtureSourceClosure
+$fixtureClosure=Read-PlayerAuthoredSource $fixtureClosurePin.Path $fixtureClosurePin.SHA256 $fixtureClosurePin.Bytes|ConvertFrom-Json -Depth 40
+if($fixtureClosure.Schema -cne 'iw7.authored-fixture-prepared-source-closure/1' -or $fixtureClosure.SourceHead -cne $plan.SourceHead -or
+   !$fixtureClosure.SourceOnly -or $fixtureClosure.OpaqueFilesQueried -or !$fixtureClosure.OldFourFileDeclarationSetRefuses -or
+   !$fixtureClosure.ActualCompilerDependencySubsetStillRequired -or $fixtureClosure.Ready -or
+   @($fixtureClosure.CanonicalSupportFiles).Count -ne 6 -or @($fixtureClosure.GeneratedHeaders).Count -ne 2){throw 'Exact six-source and two-generated-header preparation proof required.'}
+foreach($pin in @($fixtureClosure.VisitedSourceBindings)){
+    if(@($plan.PreparedBindings|Where-Object {$_.Path -ceq $pin.Path -and $_.Bytes -eq $pin.Bytes -and $_.SHA256 -ceq $pin.SHA256 -and $_.IsText}).Count -ne 1){throw 'Every prepared include Source must be retained before CPP.'}
+}
+$closurePin=$plan.DirectIncludeClosure
+$closure=Read-PlayerAuthoredSource $closurePin.Path $closurePin.SHA256 $closurePin.Bytes|ConvertFrom-Json -Depth 40
+if($closure.OpaqueFilesQueried -or !$closure.ActualCompilerDependencySubsetStillRequired -or
+   !$closure.NoPostcompileGuardAdds -or $closure.JSONDiagnostics -ne 1){throw 'Declaration-only include closure required.'}
+foreach($entry in $closure.DirectIncludeDeclarations){
+    $match=@($plan.RetainedInputPins|Where-Object Path -CEQ $entry.Declaration.Path)
+    if($match.Count -ne 1 -or $match[0].SHA256 -cne $entry.Declaration.SHA256 -or
+       $match[0].Bytes -ne $entry.Declaration.Bytes -or $match[0].InputRole -cne 'CompilerInclude'){throw 'Direct include lacks exact opaque declaration.'}
+}
+$jsonPin=$plan.JSONBinding.RawDeclaration
+$jsonMatch=@($plan.RetainedInputPins|Where-Object {$_.Path -ceq $jsonPin.Path -and $_.Bytes -eq $jsonPin.Bytes -and $_.SHA256 -ceq $jsonPin.SHA256 -and $_.InputRole -ceq 'CompilerInclude'})
+if($jsonMatch.Count -ne 1 -or $plan.JSONBinding.Diagnostics -ne 1 -or $plan.JSONBinding.IdentityVerified -or
+   $plan.JSONBinding.JSONRevision -cne '484483acad6d562306efc9b3c6d413404f1b1f8a' -or
+   $plan.JSONBinding.SourceExpectedLFHash -cne '53855e4a20d7bc92d9624bf0d83fba8e22d0d9de83f9480bd4895651602fa8cc' -or
+   $closure.JSONSourceExpectedLFHash -cne $plan.JSONBinding.SourceExpectedLFHash){throw 'Exact still-unverified JSON Source/opaque binding required.'}
+foreach($stage in $plan.Stages|Where-Object Stage -CEQ 'Compile'){
+    $pin=@($plan.PreparedBindings|Where-Object Path -CEQ (Join-Path $plan.PreparedRoot ($stage.Name+'.rsp')))
+    if($pin.Count -ne 1){throw 'One complete response Source pin required.'}
+    $text=Read-PlayerAuthoredSource $pin[0].Path $pin[0].SHA256 $pin[0].Bytes
+    if($text -cnotmatch '(?:^| )/W4(?: |$)' -or $text -cnotmatch '(?:^| )/WX(?: |$)' -or $text -cnotmatch '(?:^| )/c(?: |$)' -or
+       $text.Contains('/MP') -or $text.Contains('/wd4100')){throw 'Single compiler /W4 /WX /c with no warning bypass required.'}
+}
+if((@($plan.PostflightSources.PSObject.Properties.Name)-join '|') -cne 'Writer|Caller|Bootstrap'){throw 'Three exact postflight Source roles required.'}
+foreach($role in 'Writer','Caller','Bootstrap'){
+    $pin=$plan.PostflightSources.$role
+    if(@($plan.SourceBindings|Where-Object {$_.Path -ceq $pin.Path -and $_.SHA256 -ceq $pin.SHA256 -and $_.Bytes -eq $pin.Bytes}).Count -ne 1){throw 'Postflight Source pin absent.'}
+}
+if(Test-Path -LiteralPath $plan.RunRoot){throw 'Fresh exact owned runtime root required.'}
+if(!$Run){
+    [ordered]@{Schema='iw7.authored-pair-core-cpp-default/1';PlanSHA256=$PlanSHA256;SourceHead=$plan.SourceHead;
+        Stages=8;FixtureGroupsAuthored=8;ProviderSources=$providerPins.Count;OpaqueDeclarations=@($plan.RetainedInputPins).Count;
+        ExpectedNoEffects=$true;NativeTypesLoaded=$false;NativeInputsHashed=$false;RunRootCreated=$false;
+        LeaseAcquired=$false;CPPExecuted=$false;CoresLinked=$false;ActualPairParseActivated=$false;Ready=$false}|ConvertTo-Json
+    return
+}
+
+$capsule=Join-Path ([IO.Path]::GetDirectoryName($PlanPath)) 'invoke-cohort.local.ps1'
+if(@($plan.SourceBindings|Where-Object Path -CEQ $capsule).Count -ne 1){throw 'Exact reviewed capsule Source binding required.'}
+$physical=Assert-PlayerAuthoredHost $capsule ($MyInvocation.InvocationName -ceq '.')
+if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7.H1Diagnostics.JobMembers' -as [type])){throw 'Fresh host required.'}
+$guards=[Collections.Generic.List[object]]::new()
+$context=[pscustomobject]@{Owner=$null;Closed=$true;Lease=$null;Guards=$guards}
+$state=[ordered]@{Schema='iw7.player-template-build/1';PlanSHA256=$PlanSHA256;Status='Pending';Stages=[Collections.Generic.List[object]]::new();
+    MaxObservedOutputBytes=0L;NativeInputsReverified=$false;MeasuredReadback=$false;FinalReadback=$false;LeaseReleased=$false;GuardsDisposed=$false;CanExit=$false;CoresLinked=$false;Ready=$false;
+    Host=[ordered]@{PID=$PID;Image=$physical.ExecutablePath;CreatedUtc=$physical.CreationDate.ToUniversalTime().ToString('o');NoExit=$true;Dot=$true}}
+$global:IW7PlayerTemplateBuild=[pscustomobject]@{Context=$context;State=$state;Plan=$plan;Guards=$guards}
+$failure=$null;$created=$false;$authoredGroupStarted=$null
+try{
+    # Reverify and retain the SAME read/shareRead streams before source imports,
+    # scheduler effects or admission. The bounded source reader is unchanged
+    # except for transferring its verified stream to the original guard list.
+    foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)+$providerPins+@($plan.RunnerBinding)){
+        $null=Read-PlayerAuthoredSource $pin.Path $pin.SHA256 $pin.Bytes $guards
+    }
+    . $providers.Core
+    $plan|Add-Member NoteProperty AuthoredOutputBudget (New-H1AuthoredOutputBudget $plan.RunRoot $plan.Stages)
+    $neutralOriginalFactory=${function:New-H1Owner}
+    function New-H1Owner {
+        Invoke-NeutralFactoryBridge $neutralOriginalFactory $context $neutralStageStarted $stage.DeadlineSeconds $script:T7GroupStarted $plan.GroupDeadlineSeconds
+    }
+    . $providers.Scheduler
+    $context.Lease=Enter-IW7ResourceLease -Scope $plan.RunRoot -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'IW7 authored real pair core link and eight groups plus three TUs'
+    $state.LeaseToken=$context.Lease.Token;$script:T7GroupStarted=Get-H1Clock;$authoredGroupStarted=$script:T7GroupStarted
+    # The source guards acquired before imports remain held through release.
+    . $providers.CompilerCore
+    . $providers.CompilerPolicySource
+    . $providers.Profile
+    foreach($pin in $plan.RetainedInputPins){Open-T7Pin $pin $context}
+    foreach($pin in @($plan.ParentBindings|Where-Object {-not $_.IsText})){Open-T7Pin $pin $context}
+    $assembly=@($plan.ParentBindings|Where-Object Path -IEQ $plan.JobAssembly)
+    if($assembly.Count -ne 1){throw 'Exact original-job assembly binding required.'}
+    Open-T7Pin $assembly[0] $context
+    $jsonExpected=$plan.JSONBinding.RawDeclaration
+    $jsonGuards=@($guards|Where-Object {$_.Name -ieq $jsonExpected.Path})
+    if($jsonGuards.Count -ne 1){throw 'One original admitted JSON guard required.'}
+    $jsonStream=$jsonGuards[0];$jsonStream.Position=0
+    $jsonRaw=[byte[]]::new($jsonExpected.Bytes);$jsonUsed=0
+    while($jsonUsed -lt $jsonRaw.Length){$jsonRead=$jsonStream.Read($jsonRaw,$jsonUsed,$jsonRaw.Length-$jsonUsed);if($jsonRead -le 0){throw 'Admitted JSON shortened.'};$jsonUsed+=$jsonRead}
+    if($jsonStream.ReadByte() -ne -1 -or $jsonStream.Length -ne $jsonExpected.Bytes -or
+       [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($jsonRaw)).ToLowerInvariant() -cne $jsonExpected.SHA256){throw 'Same-held admitted JSON raw identity differs.'}
+    $jsonText=[Text.UTF8Encoding]::new($false,$true).GetString($jsonRaw).Replace("`r`n","`n")
+    if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($jsonText))).ToLowerInvariant() -cne $plan.JSONBinding.SourceExpectedLFHash){throw 'Admitted JSON LF identity differs from reviewed Source pin; no compiler may start.'}
+    $jsonStream.Position=0
+    [Reflection.Assembly]::LoadFrom($plan.JobAssembly)|Out-Null
+    Add-Type -LiteralPath $providers.ObserverSource
+    [IO.Directory]::CreateDirectory($plan.RunRoot)|Out-Null;$created=$true
+    # H1 compiler consumers use the existing provider fields; no API is changed.
+    $plan|Add-Member NoteProperty ObserverSource $providers.ObserverSource -Force
+    $plan|Add-Member NoteProperty CompilerPolicySource $providers.CompilerPolicySource -Force
+    $plan|Add-Member NoteProperty Bindings (@($plan.ParentBindings)+@($plan.SourceBindings)+@($plan.PreparedBindings)) -Force
+    $plan|Add-Member NoteProperty Inputs @($plan.RetainedInputPins) -Force
+    foreach($stage in $plan.Stages){
+        $neutralStageStarted=Get-H1Clock
+        Assert-H1Deadline $neutralStageStarted $stage.DeadlineSeconds
+        if(!$context.Closed){throw 'Previous original job must be closed.'}
+        # A failed new factory cannot inherit a prior closed owner's evidence.
+        $context.Owner=$null
+        $script:T7CurrentStage=$stage;$stageRoot=Join-Path $plan.RunRoot $stage.Name
+        [IO.Directory]::CreateDirectory($stageRoot)|Out-Null
+        $current=[ordered]@{Name=$stage.Name;Stage=$stage.Stage;PlanSHA256=$PlanSHA256;DeadlineSeconds=$stage.DeadlineSeconds;TreeClosureConfirmed=$false;
+            MaxObservedOutputBytes=$state.MaxObservedOutputBytes;CompilerTelemetry=[ordered]@{Completed=$false;Action=$null}}
+        $state.Stages.Add($current)
+        if($stage.Stage -ceq 'Link'){
+            foreach($expectedObject in $plan.GeneratedLinkInputs){
+                $produced=@($state.Stages|ForEach-Object {if($_.Contains('Artifacts')){$_.Artifacts}}|Where-Object Path -CEQ $expectedObject)
+                if($produced.Count -ne 1){throw 'Each linked object must be freshly produced by this exact cohort.'}
+                Open-T7Pin $produced[0] $context
+                $plan.Bindings+=@($produced[0])
+            }
+        }
+        $images=if($stage.Stage -ceq 'Probe'){@($state.Stages|ForEach-Object {if($_.Contains('Artifacts')){$_.Artifacts}}|Where-Object Path -IEQ $stage.Image)}
+            else{@($plan.Bindings|Where-Object Path -IEQ $stage.Image)}
+        if(@($images).Count -ne 1){throw 'One original stage image pin required.'}
+        $image=@($images)[0]
+        if(!$image){throw 'One original stage image pin required.'}
+        $start=New-T7Start $plan $stage $stageRoot
+        Invoke-T7OwnedStage $plan $current $context $start $image.SHA256 $stageRoot $neutralStageStarted
+        $current.Artifacts=@(Get-H1CompilerArtifacts $plan $context)
+        if($stage.Stage -ceq 'Compile'){Assert-T7Dependencies $plan $stageRoot}
+        if($stage.Stage -ceq 'Link'){$state.CoresLinked=$true}
+        if($stage.Stage -ceq 'Probe'){
+            $stdout=Join-Path $stageRoot 'stdout.log';$stderr=Join-Path $stageRoot 'stderr.log'
+            if((Get-Item -LiteralPath $stdout).Length -gt 2048 -or (Get-Item -LiteralPath $stderr).Length -ne 0 -or
+               [IO.File]::ReadAllText($stdout).Replace("`r`n","`n") -cne $stage.ExpectedStdout){throw 'Exact requested native fixture evidence required.'}
+            $current.Checks=$stage.ExpectedChecks
+        }
+        $state.MaxObservedOutputBytes=[math]::Max($state.MaxObservedOutputBytes,$current.MaxObservedOutputBytes)
+    }
+    foreach($pin in $plan.RetainedInputPins){Open-T7Pin $pin $context}
+    foreach($pin in @($plan.SourceBindings)+@($plan.PreparedBindings)+$providerPins){
+        Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+        $null=Read-PlayerAuthoredSource $pin.Path $pin.SHA256 $pin.Bytes
+        Assert-H1Deadline $script:T7GroupStarted $plan.GroupDeadlineSeconds
+    }
+    $state.NativeInputsReverified=$true;$state.Status='MeasuredPassed'
+}catch{$failure=$_;$state.Status='Failed';$state.Error=$_.Exception.Message}
+finally{
+    Complete-PlayerAuthoredFinalization $plan $state $context $guards $authoredGroupStarted $failure $created
+    $state|ConvertTo-Json -Depth 20
+}
+if($failure){throw $failure}
+if(!$state.CanExit){throw 'Original authored result is incomplete; retain physical NoExit and actual references.'}
+return
+}
 if($plan.Schema -cne 'iw7.player-template-cohort-source/1' -or $plan.Ready -or $plan.CandidateExecuted -or
    $plan.WeaponReady -or $plan.PhysicsQualified -or $plan.PAPTransactionQualified -or
    $plan.RetainedObjects -ne 412 -or $plan.LinkedObjectCount -ne 413){throw 'Exact unqualified source cohort required.'}

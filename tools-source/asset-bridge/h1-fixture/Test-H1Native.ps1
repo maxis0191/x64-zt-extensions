@@ -169,6 +169,109 @@ $context=New-Case;$state=New-State $context;$context.Owner=New-FakeOwner $false 
 $saved=$context.Lease;$script:beforeRelease=$false
 Complete-H1Stage $context $state {$script:beforeRelease=$true}
 Check (!$script:beforeRelease -and [object]::ReferenceEquals($saved,$context.Lease) -and !$state.LeaseReleased) 'Unknown original closure must retain admission without running guard-release callback.'
+# Real owned Source files exercise the group envelope, not a copy of its logic.
+$authoredParent=[IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('iw7-authored-output-'+[guid]::NewGuid().ToString('N'))))
+$authoredPrefix=$authoredParent+'\'
+$authoredFiles=[Collections.Generic.List[string]]::new()
+$authoredDirectories=[Collections.Generic.List[string]]::new()
+function New-AuthoredOwnedEntry([string]$Path,[bool]$Directory=$false){
+    $absolute=[IO.Path]::GetFullPath($Path)
+    if($absolute -cne $authoredParent -and !$absolute.StartsWith($authoredPrefix,[StringComparison]::OrdinalIgnoreCase)){throw 'Test-owned absolute cleanup scope differs.'}
+    if($Directory){[IO.Directory]::CreateDirectory($absolute)|Out-Null;$authoredDirectories.Add($absolute)}
+    else{[IO.File]::WriteAllText($absolute,'x');$authoredFiles.Add($absolute)}
+}
+$authoredNames=@('weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test','weapondef','weaponattachment','filesystem')
+$authoredStages=@(for($i=0;$i -lt 8;$i++){
+    [pscustomobject]@{Name=$authoredNames[$i];Stage=$(if($i -eq 4){'Probe'}elseif($i -eq 3){'Link'}else{'Compile'});
+        Artifacts=$(if($i -eq 4){@()}elseif($i -eq 3){@('fixture.exe','fixture.pdb')}
+            else{@($(if($i -eq 2){'fixture.obj'}else{$authoredNames[$i]+'.obj'}),'compile.pdb','dependencies.json')})}
+})
+try{
+    New-AuthoredOwnedEntry $authoredParent $true
+    $authoredRun=Join-Path $authoredParent 'run';New-AuthoredOwnedEntry $authoredRun $true
+    $derived=New-H1AuthoredOutputBudget $authoredRun $authoredStages
+    Check ($derived.Entries.Count -eq 48 -and $derived.ResidualEntries -eq 64) 'Derived eight-directory/forty-file plus single64 envelope differs.'
+    foreach($entry in $derived.Entries.GetEnumerator()){
+        if([IO.Path]::GetDirectoryName($entry.Key) -ceq $authoredRun -and $entry.Value -ceq 'File'){continue}
+        New-AuthoredOwnedEntry $entry.Key ($entry.Value -ceq 'Directory')
+    }
+    for($i=0;$i -lt 21;$i++){New-AuthoredOwnedEntry (Join-Path (Join-Path $authoredRun $authoredNames[$i%2]) ('temporary-'+$i+'.tmp'))}
+    Refuses {Measure-H1Output $authoredRun} 'Unchanged legacy64 accepted the owned65-entry shape.'
+    Check ((Measure-H1Output $authoredRun $derived) -eq 57) 'Real derived65-entry Source tree measured incorrectly.'
+    for($i=21;$i -lt 64;$i++){New-AuthoredOwnedEntry (Join-Path (Join-Path $authoredRun $authoredNames[$i%2]) ('temporary-'+$i+'.tmp'))}
+    # 44 declared +65 residual =109 TOTAL: below112, so only the SINGLE
+    # residual counter can reject this two-stage-root causal.
+    $extra=Join-Path (Join-Path $authoredRun $authoredNames[1]) 'temporary-64.tmp';New-AuthoredOwnedEntry $extra
+    $residualError=$null;try{$null=Measure-H1Output $authoredRun $derived}catch{$residualError=$_.Exception.Message}
+    Check ($residualError -ceq 'Authored group residual output entry count exceeded 64.') 'Two roots bypassed the SINGLE residual64 counter below the112 total.'
+    [IO.File]::Delete($extra)
+    foreach($entry in $derived.Entries.GetEnumerator()){
+        if([IO.Path]::GetDirectoryName($entry.Key) -ceq $authoredRun -and $entry.Value -ceq 'File'){New-AuthoredOwnedEntry $entry.Key}
+    }
+    Check ((Measure-H1Output $authoredRun $derived) -eq 104) 'All112 slots or the combined64 residual envelope differ.'
+    $rogue=Join-Path $authoredRun 'undeclared-root.txt';New-AuthoredOwnedEntry $rogue
+    Refuses {Measure-H1Output $authoredRun $derived} 'Undeclared root file accepted.'
+    [IO.File]::Delete($rogue)
+    $wrongType=Join-Path $authoredRun 'fixture-link\fixture.exe'
+    [IO.File]::Delete($wrongType);New-AuthoredOwnedEntry $wrongType $true
+    Refuses {Measure-H1Output $authoredRun $derived} 'Declared file replaced by directory accepted.'
+    [IO.Directory]::Delete($wrongType,$false);New-AuthoredOwnedEntry $wrongType
+    foreach($badName in @('..','name.','name ','AUX.txt','COM¹.tmp','CONOUT$','name:stream','a\b')){
+        Refuses {Assert-H1OutputName $badName} 'Win32 component alias/traversal accepted.'
+    }
+    $badStages=$authoredStages|ConvertTo-Json -Depth 8|ConvertFrom-Json
+    $badStages[1].Name=$badStages[0].Name.ToUpperInvariant()
+    Refuses {New-H1AuthoredOutputBudget $authoredRun $badStages} 'Case-overlapping declared stage roots accepted.'
+    $boundPlan=[pscustomobject]@{Schema='iw7.authored-pair-core-cpp-source/1';Stages=$authoredStages;
+        RunRoot=$authoredRun;AuthoredOutputBudget=$derived;OutputLimitBytes=104;MetadataReserveBytes=1}
+    Refuses {& $reviewedBudget $boundPlan ([ordered]@{MaxObservedOutputBytes=0L})} 'Derived entry policy bypassed the original aggregate byte reserve.'
+    $boundPlan.Schema='iw7.player-template-cohort-source/1'
+    $profileError=$null;try{& $reviewedBudget $boundPlan ([ordered]@{MaxObservedOutputBytes=0L})}catch{$profileError=$_.Exception.Message}
+    Check ($profileError -ceq 'Only the authored eight-stage cohort may select its output budget.') 'A property alone selected the authored policy outside its profile.'
+    # Forged maps preserve all cardinalities. They must fail by pure set/type
+    # validation BEFORE any IO of this deliberately absent owned output root.
+    $absent=Join-Path $authoredParent 'absent'
+    $absentBudget=New-H1AuthoredOutputBudget $absent $authoredStages
+    foreach($mutation in @('root-entry','type','stage-root','case-alias','lying-count')){
+        $map=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
+        foreach($pair in $absentBudget.Entries.GetEnumerator()){$map.Add($pair.Key,$pair.Value)}
+        $forged=[pscustomobject]@{Schema=$absentBudget.Schema;Root=$absent;Entries=$map;
+            StageRoots=@($absentBudget.StageRoots);Stages=$authoredStages;ResidualEntries=64;MaximumDepth=64}
+        if($mutation -ceq 'root-entry'){$null=$map.Remove((Join-Path $absent 'stop.request'));$map.Add((Join-Path $absent 'rogue.txt'),'File')}
+        if($mutation -ceq 'type'){$map[(Join-Path $absent 'weapon-core')]='File'}
+        if($mutation -ceq 'stage-root'){$forged.StageRoots[0]=Join-Path $absent 'rogue-stage'}
+        if($mutation -ceq 'case-alias'){$null=$map.Remove((Join-Path $absent 'stop.request'));$map.Add((Join-Path $absent 'weapon-core').ToUpperInvariant(),'Directory')}
+        if($mutation -ceq 'lying-count'){
+            $forged.Entries=[pscustomobject]@{Count=48}
+            $forged.Entries|Add-Member ScriptMethod GetEnumerator {return @()}
+        }
+        $forgedError=$null;try{$null=Measure-H1Output $absent $forged}catch{$forgedError=$_.Exception.Message}
+        Check ($null -ne $forgedError -and $forgedError -like 'Authored * differ from the exact Source profile.') 'A forged48/8 budget reached filesystem IO or accepted an arbitrary path/type/alias.'
+        Check (![IO.Directory]::Exists($absent)) 'Pure forged-budget rejection created its absent root.'
+    }
+    $depthRun=Join-Path $authoredParent 'depth';New-AuthoredOwnedEntry $depthRun $true
+    $depthBudget=New-H1AuthoredOutputBudget $depthRun $authoredStages
+    $deep=Join-Path $depthRun 'weapon-core';New-AuthoredOwnedEntry $deep $true
+    for($i=0;$i -lt 64;$i++){$deep=Join-Path $deep 'd';New-AuthoredOwnedEntry $deep $true}
+    Refuses {Measure-H1Output $depthRun $depthBudget} 'Bounded-depth refusal failed before descent.'
+    $outside=Join-Path $authoredParent 'outside';New-AuthoredOwnedEntry $outside $true
+    $reparseRun=Join-Path $authoredParent 'reparse';New-AuthoredOwnedEntry $reparseRun $true
+    $reparseBudget=New-H1AuthoredOutputBudget $reparseRun $authoredStages
+    $link=Join-Path $reparseRun 'weapon-core'
+    New-Item -ItemType Junction -Path $link -Target $outside|Out-Null
+    $authoredDirectories.Add($link)
+    $reparseError=$null;try{$null=Measure-H1Output $reparseRun $reparseBudget}catch{$reparseError=$_.Exception.Message}
+    Check ($reparseError -ceq 'Output reparse entry refused before descent.') 'A junction was not refused before descent.'
+}finally{
+    foreach($owned in $authoredFiles){
+        if(![IO.Path]::GetFullPath($owned).StartsWith($authoredPrefix,[StringComparison]::OrdinalIgnoreCase)){throw 'Owned Source file cleanup escaped its absolute scope.'}
+        if([IO.File]::Exists($owned)){[IO.File]::Delete($owned)}
+    }
+    foreach($owned in @($authoredDirectories|Select-Object -Unique|Sort-Object Length -Descending)){
+        if($owned -cne $authoredParent -and ![IO.Path]::GetFullPath($owned).StartsWith($authoredPrefix,[StringComparison]::OrdinalIgnoreCase)){throw 'Owned Source directory cleanup escaped its absolute scope.'}
+        if([IO.Directory]::Exists($owned)){[IO.Directory]::Delete($owned,$false)}
+    }
+}
 Check (!(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type]))) 'Light tests loaded native providers.'
 [ordered]@{Schema='iw7.h1-native-runner-source-tests/1';Assertions=$passed;NativeTypesLoaded=$false;
     RealJobsTested=$false;LeaseAcquired=$false;CompilerLaunched=$false}|ConvertTo-Json
