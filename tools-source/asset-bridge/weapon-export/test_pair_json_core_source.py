@@ -276,9 +276,12 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
                     'native_neutral_dependencies.hpp', 'native_definition_access.hpp'}
         self.assertEqual(missing_includes(old_four),
                          {'native_weapon_dependencies.inc', 'native_attachment_dependencies.inc',
-                          'native_pair_owned_input.hpp'})
+                          'native_pair_owned_input.hpp', 'native_pair_bodies.hpp'})
         supplied = set(fixtures.FIXTURE_SOURCE_FILES)
         self.assertEqual(len(supplied), len(fixtures.FIXTURE_SOURCE_FILES))
+        self.assertEqual(len(supplied), 10)
+        added = {'native_pair_bodies.hpp', 'native_pair_report.hpp', 'native_pair_body_schema.hpp'}
+        self.assertEqual(missing_includes(supplied - added), {'native_pair_bodies.hpp'})
         self.assertTrue(old_four <= supplied)
         self.assertEqual(missing_includes(supplied), set())
         import json
@@ -358,6 +361,50 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
         # is required to reach its JSON get<bool>() rather than a later check.
         self.assertIn('attachment["papAttachment"]="authored_negative_type_fault"', source)
         self.assertNotIn('attachment.erase("papAttachment")', source)
+
+    def test_real_body_preflight_keeps_same_raw_owner_before_all_explicit_core_dom_reads(self):
+        source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        buffers = function_body(source, 'Buffers(const Inputs&')
+        preflight = 'iw7::neutral::player_pair_bodies::validate_owned_pair_bodies(raw);'
+        self.assertIn('#include "native_pair_bodies.hpp"', source)
+        self.assertIn('input::OwnedInput raw;', source)
+        self.assertIn(': raw(incoming, trusted, stats)', source)
+        self.assertEqual(buffers.count(preflight), 1)
+        reads = re.findall(r'pq::ordered_json::parse\(raw.bytes\(input::Role::(\w+)\)\)', buffers)
+        self.assertEqual(reads, ['report', 'weapon', 'attachment'])
+        self.assertLess(buffers.index(preflight), buffers.index('pq::ordered_json::parse('))
+        self.assertNotIn('catch(', buffers)
+        self.assertIn('std::unique_ptr<Buffers> pending;', source)
+        self.assertIn('std::unique_ptr<Buffers> raw(){return std::move(pending);}', source)
+        execute = function_body(source, 'Result execute(')
+        order = ['require_approved_source(source);', 'Factory factory(',
+                 'const auto* const original_raw=&factory.raw_ref->raw;', 'Pair pair(factory);',
+                 'need(!factory.pending && &factory.raw_ref->raw == original_raw);']
+        self.assertEqual([execute.index(value) for value in order],
+                         sorted(execute.index(value) for value in order))
+        self.assertIn('preflight performs additional hashing/JSON work outside these counters.', source)
+
+    def test_repinned_buffers_refusals_use_real_preflight_before_core_dom_arena_and_parsers(self):
+        source = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        negatives = function_body(source, 'void malformed_inputs_refuse_before_decode()')
+        direct = negatives[negatives.index('for(const bool report_mismatch:'):]
+        self.assertIn('changed[1]="not-json-before-core-dom";', direct)
+        self.assertIn('row["bytes"]=changed[1].size();', direct)
+        self.assertIn('report_mismatch?std::string(64,\'0\'):sha256(changed[1])', direct)
+        self.assertIn('hashes[i]=sha256(changed[i]);incoming[i]=changed[i];', direct)
+        self.assertIn('trusted[i]={changed[i].size(),hashes[i]};', direct)
+        self.assertIn('Buffers buffers(incoming,trusted,stats);', direct)
+        self.assertIn('catch(const player_pair_report::ReportError& error)', direct)
+        self.assertIn('"Report row does not bind SAME owned role"', direct)
+        self.assertIn('catch(const iw7::neutral::player_pair_bodies::BodyError& error)', direct)
+        self.assertIn('!report_mismatch&&std::string_view(error.what()).find("weapon:")==0', direct)
+        for count in ('copies==4', 'hashes==4', 'decodes==0', 'arenas==0', 'weapon_parses==0',
+                      'attachment_parses==0', 'publications==0'):
+            self.assertIn('stats.' + count, direct)
+        self.assertIn('!report.bound()', direct)
+        for forbidden in ('execute(', 'Factory ', 'AuthoredCase ', 'catch(...)', 'parse_weapon_json(',
+                          'parse_attachment_json(', 'checked_memory_tag'):
+            self.assertNotIn(forbidden, direct)
 
     def test_owned_input_extraction_retains_actual_sha_and_all_bounds_precede_private_copies(self):
         header = (Path(__file__).parent/'native_pair_owned_input.hpp').read_text(encoding='utf-8')
@@ -506,20 +553,21 @@ class OwnedPairReportSourceTests(unittest.TestCase):
                           'native_pair_session.hpp', 'native_neutral_dependencies.hpp', 'zone_memory', 'LoadLibrary'):
             self.assertNotIn(forbidden, self.fixture)
 
-    def test_six_reference_sources_and_address_gate_are_unchanged(self):
+    def test_four_reference_sources_and_address_gate_are_unchanged(self):
         pins = {
             'neutral_pair_inputs.py': 'a722b66b55c2558951dbd481fd742e0f66a74cbefec97d3ddc69168eac29fcd3',
             'native_pair_owned_input.hpp': 'f5c31c73c4e5e5e152bb29bf9efd55008297f81ab7c4b4ec9e562cf2059a44ce',
             'test_neutral_pair_inputs.py': 'aa60cf2de06b88f2ad953f32da949b1c59ce2de8a1db09f19f686954af412565',
-            'test_authored_pair_json.cpp': 'b893b9aec10d7a3cba208f3d0d4a2f71943716986937c9fdaf3489b8f9159759',
-            'authored_pair_json_fixtures.py': 'c58a63ce0a95ad797e2789b533424900e7c5a09a6781390f4ade36e0642f34ac',
             'prepare_pair_json_core.py': 'ce24d250062cf7146738acfdb69e7842f51b05d4803b17df2dae83454c80d9cb',
         }
         for name, pin in pins.items():
             self.assertEqual(digest((self.here/name).read_text(encoding='utf-8')), pin, name)
-        old_fixture = (self.here/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
-        self.assertIn('if (&source == &approved)', old_fixture)
-        self.assertNotIn('native_pair_report.hpp', old_fixture)
+        # The two authored composition Sources deliberately evolve here; their
+        # raw payloads/pins and three-address gate have separate checks above.
+        fixture = (self.here/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        self.assertIn('if (&source == &approved)', fixture)
+        self.assertIn('#include "native_pair_bodies.hpp"', fixture)
+        self.assertNotIn('native_pair_report.hpp', fixture)
 
     def test_exact_two_new_declarative_exports(self):
         import json

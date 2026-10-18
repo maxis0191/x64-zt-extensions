@@ -45,8 +45,51 @@ The aggregate does not perform schema validation or qualify its factory.
 
 Cleanup drops inventory/borrowed root views, attachment parser/map, weapon
 parser/map, arena, route, raw buffers and original guards last. Borrowed const
-views must not outlive that owner. No native factory is supplied. Authored
-factories use only fakes and their constructor refusals are normal C++ throws.
+views must not outlive that owner. No production native factory is supplied.
+The generic lifetime fixture uses fakes and its constructor refusals are normal
+C++ throws.
+
+## Authored real-core preflight composition — TEST-ONLY
+
+The real-core fixture's `Buffers` constructs one `OwnedInput`, then calls the
+real `validate_owned_pair_bodies(raw)` on that same object before its three
+explicit report/weapon/attachment DOM reads. `Factory.pending` transfers the
+same `Buffers` pointee into `OwnedPair`; the fixture checks the raw member's
+address across that transfer. Arena construction, separate maps, real core
+parsers and copied Inventory remain later operations. The preflight returns no
+permission token, and no production caller selects this fixture.
+
+The existing address gate still admits exactly three authored `AuthoredCase`
+objects. Their twelve raw buffers, external Source pins and coalesced rendered
+header remain byte-identical. Two direct, freshly repinned `Buffers` negatives
+author a report-row mismatch plus malformed weapon, then a matching report plus
+the malformed weapon. They require the real `ReportError` or `BodyError`,
+respectively, before any explicit core DOM read, arena, parser or publication.
+They never enter `execute()` or add a fourth admitted case. These C++ cases and
+the new composition are **AUTHORED, NON-COMPILED** until a separate exact recipe
+and admitted compilation establish otherwise.
+
+The finite fixture support list grows from seven to ten files by adding only
+the already exported body-preflight, report and body-schema headers. This is a
+Source include closure, not a new compiler qualification. Existing generated
+case/core headers and the PRIMARY JSON dependency still require the future
+recipe's exact bindings. No older CPP result qualifies this composition.
+
+`Stats.hashes` counts the `OwnedInput` constructor's four hashes;
+`Stats.decodes` counts only the three explicit core DOM reads. The real preflight
+performs additional report binding, hashing, SAX/DOM decoding and trace work
+outside those counters. Its ordinary allocations can throw `std::bad_alloc`
+before the core parsers or arena exist. Such an exception propagates unchanged
+from `Buffers` construction, without calling arena free. Zero core decodes does
+not identify a particular allocation frontier, and prior parser/unwind credit
+is not reassigned to this earlier preflight.
+
+This test-only transfer does not retain live Source/FILE guards: the factory's
+later `guards()` copies `Pins`. A future product factory must also prevent the
+case where guards transfer first, `raw()` then throws, and a still-pending raw
+owner outlives those guards. The fixed constructor preflight happens before any
+such transfer here; it does not implement real guard/FILE ownership. The native
+hooks, legacy entry points and all activation boundaries below stay unchanged.
 
 ## Explicit uncovered boundaries
 
