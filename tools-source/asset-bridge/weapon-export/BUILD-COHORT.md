@@ -464,3 +464,30 @@ expiry, unknown owner closure and release refusal exercise the actual
 canonical finalizer. The synthetic authored DEFAULT verifies eleven Sources,
 JSON drift and the physical-host gate without importing providers or creating
 opaque inputs. These Source tests do not qualify a native cohort.
+
+## Actual authored CPP J7 foundation, 2026-10-18
+
+The separately authorized J7 run compiled Source
+`5e1207a41a2a0840a0ca97a1ddc525989d4fe99d` with the reviewed unchanged
+484289-byte plan `a77a51f814ea6a7fa7570bf5599180792a840c06ef32adc731e61977e72ebe98`.
+All eight authored stages exited 0 and closed their original trees: two real
+cores, fixture compilation/link/execution with eight verified groups, then all
+three wrapper TUs. Native inputs were reverified and ordinary readbacks passed.
+The one invocation used original PTY25008; its internal owner reports terminal
+chunk `59b968` / exit 0 after the selected Passed postflight and distinct Root exit GO.
+Root independently read own-metadata receipts and verified fresh absence of 17
+captured identities and an empty registry at 01:08:10 UTC before releasing the
+slot. Root did not directly observe the owner's execution API completion.
+
+The 1700 original FileStream/saved-SFH pairs closed in their own scope; the two
+inner postflight Source helpers and three parent/outer Source guards were
+separately observed closed at their later boundaries. No sum across these
+scopes is inferred. Disk pre-disposal guard facts remain unchanged; subsequent
+preexit/true-exit evidence supplies later closure. Exact receipt tuples and
+Root's bounded CPP-foundation qualification are in
+[PAIR-JSON-CORE.md](PAIR-JSON-CORE.md#j7-bounded-cpp-foundation-and-known-closure-2026-10-18).
+
+J1–J6 remain immutable failures. Only Source `5e1207` was compiled; this DOC head
+and any subsequent merge were not. Ready and downstream parse/allocator
+activation stay false. There is no new U1/T2/body, stock, CLI/FF, engine ABI,
+grant/physics/PAP, game or BO3-demo authorization, nor a new actual GO.

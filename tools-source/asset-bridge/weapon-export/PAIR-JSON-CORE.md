@@ -1,12 +1,12 @@
 # Authored JSON pair through the real native cores
 
-This Source lot isolates the two pinned JSON-to-native implementations and
-authors an end-to-end C++ fixture. **J5 compiled the cores and fixture and linked
-them, then execution exited two with a measured checked-capacity refusal.**
-The corrected graph-name model and new null-name Source identities are not yet
-natively qualified. A fresh gate must
-prove the complete real link and parse; earlier allocator fixtures and partial core compilation do not
-qualify the complete witness.
+This lot isolates the two pinned JSON-to-native implementations and authors a
+finite C++ fixture. J7 now supplies the bounded CPP-foundation result described
+below: both cores linked into the fixture, eight groups passed and three wrapper
+TUs compiled at Source `5e1207a41a2a0840a0ca97a1ddc525989d4fe99d`. Root reports
+that foundation passed with known closure; independent qualification peer review
+and PR completion remain separate. J1–J6 retain their original failed results.
+This documentation revision is not compiled Source or a downstream activation.
 
 ## Pure Source renderer
 
@@ -382,3 +382,63 @@ packet, independent exact-head review and distinct Root CPP authorization
 remain required for all eight groups, all three wrappers, full input reverify
 and ordinary original-host publication/closure. PR220 remains draft; neither
 a merge nor a native qualification is authorized by these Source changes.
+
+## J7 bounded CPP foundation and known closure, 2026-10-18
+
+J7 received a distinct CPP GO at `2026-10-18T01:00:24.8169823Z`. The only
+compiled Source is `5e1207a41a2a0840a0ca97a1ddc525989d4fe99d`, tree
+`e7ab3d508a27e162907b3dc7eaad9bf6c5cf4a5a`, with native Source pin
+`fab935826c898806855376662a8a03317b3ad8f1`. Its unchanged 484289-byte plan is
+SHA256 `a77a51f814ea6a7fa7570bf5599180792a840c06ef32adc731e61977e72ebe98`.
+The canonical runner was invoked once through the reviewed external parent and
+physical NoExit/dot capsule. No 225/68 Source suite was rerun.
+
+All eight stages exited 0 with original tree closure: weapon-core,
+attachment-core, fixture-compile, fixture-link, fixture-test, weapondef,
+weaponattachment and filesystem. The two real cores linked into the fixture;
+its exact-output gate verified all eight groups. All three wrapper TUs compiled.
+The same retained state reached `Passed`, NativeInputsReverified, CoresLinked,
+MeasuredReadback, FinalReadback, LastReadbackDeadlinePassed and CanExit true.
+The one group clock remained `328047365.9569`; no retry or clock reset occurred.
+
+The original guard arrays retained 1700 FileStreams and 1700 saved SFHs; their
+closure was inspected directly, with the same guard list empty and lease null.
+The original native owner was closed: job/process/input/output/error handles
+closed, thread null/unmeasured after the runner. The two inner postflight Source helpers
+were separately reverified and closed. The parent/outer Source protocol later
+confirmed its own three original Source guards closed after true child exit.
+These are observations in distinct scopes, not quantities to add together.
+
+Own-metadata publications, recorded from retained original bytes/readbacks:
+
+| Receipt under the J7 runtime root | Bytes | SHA256 |
+| --- | ---: | --- |
+| `measured-before-release.json` | 45387 | `96221e2f2405c08f0dcd8640f49e3e3e1e7242139ab4825ebfb3ef2f359f6bf0` |
+| `closure-before-release.json` | 643 | `d6feb886ef7bfacf8ef1a28f177b08741d3a7bd7eabc2553cf480f0d89dce6b1` |
+| `final-closure.json` | 830 | `1e93e4d2a419ee7da0938b4591155500f1b49e3fe98700961a618e99a7f8eb29` |
+
+The separate Source preexit receipt is 48908 bytes, SHA256
+`a71552d4937ab49886c39e045dd3167f59cee3f396422ca11afd22dcd4fb7a6e`.
+The final disk `GuardsHeld` snapshot remains an honest pre-disposal observation;
+the subsequent original preexit/reference checks and true exits establish the
+later closure. No receipt is rewritten to make those times identical, and no
+SDK, OBJ, EXE, PDB or native output was reopened after release.
+
+The internal execution owner reports original PTY25008 terminal completion:
+chunk `59b968`, exit 0, wall 0.4213263s. Root did not directly observe that execution
+API result. The original parent Process reported true child exit 0 and closed
+its saved process handle; the outer parent then reported all three Source
+guards reverified/closed and exited. Root personally read the own-metadata
+receipts, then independently checked fresh absence/registry at
+`2026-10-18T01:08:10Z`: no leases, all 17 captured identities absent, broad
+process observation showing only Main PID37296. This is that snapshot's Main
+identity, not a promise of a fixed identity. Root released the slot and recorded
+`root-j7-cpp-closed-20261018T010810650Z.json`, 5027 bytes, SHA256
+`a83a9a9779df89823265b7783d81ec311689a479d4ce05852eb3e26cd7a0fc07`.
+
+J7 qualifies this authored CPP foundation and known closure only. `Ready`,
+`ActualPairParseActivated` and `FatalAllocatorClosure` remain false. U1/T2/body
+or stock activation, arbitrary definitions, FILE/routes, CLI/FF, engine ABI,
+weapon grant/physics/PAP and gameplay remain unqualified; no BO3 demonstration
+is authorized. J1–J6 plans/results stay immutable. This DOC head and any later
+merge were not compiled by J7 and grant no new actual GO.
