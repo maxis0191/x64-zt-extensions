@@ -47,14 +47,23 @@ function New-H1AuthoredOutputBudget([string]$Root,$Stages) {
        $Root.EndsWith('\') -or $Root.Contains('/')){throw 'Canonical owned Win32 output root required.'}
     foreach($component in $Root.Substring(3).Split('\')){Assert-H1OutputName $component}
     $names=@('weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test','weapondef','weaponattachment','filesystem')
-    if(@($Stages).Count -ne 8 -or (@($Stages.Name)-join '|') -cne ($names-join '|')){throw 'Only the exact authored eight-stage output profile is supported.'}
+    $ownedNames=@('helper-compile','helper-link','helper-test','weapon-core','attachment-core','fixture-compile','fixture-link','fixture-test')
+    $owned=(@($Stages.Name)-join '|') -ceq ($ownedNames-join '|')
+    if(@($Stages).Count -ne 8 -or (!$owned -and (@($Stages.Name)-join '|') -cne ($names-join '|'))){throw 'Only the exact authored eight-stage output profiles are supported.'}
     $entries=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
     $roots=[Collections.Generic.List[string]]::new()
     for($i=0;$i -lt 8;$i++){
         $stage=$Stages[$i];Assert-H1OutputName $stage.Name
-        $expected=if($i -eq 4){@()}elseif($i -eq 3){@('fixture.exe','fixture.pdb')}
-            else{@($(if($i -eq 2){'fixture.obj'}else{$stage.Name+'.obj'}),'compile.pdb','dependencies.json')}
-        $kind=if($i -eq 4){'Probe'}elseif($i -eq 3){'Link'}else{'Compile'}
+        if($owned){
+            $kind=if($i -in @(2,7)){'Probe'}elseif($i -in @(1,6)){'Link'}else{'Compile'}
+            $expected=if($kind -ceq 'Probe'){@()}elseif($i -eq 1){@('helper.exe','helper.pdb')}
+                elseif($i -eq 6){@('fixture.exe','fixture.pdb')}
+                else{@($(if($i -eq 0){'helper.obj'}elseif($i -eq 5){'fixture.obj'}else{$stage.Name+'.obj'}),'compile.pdb','dependencies.json')}
+        }else{
+            $expected=if($i -eq 4){@()}elseif($i -eq 3){@('fixture.exe','fixture.pdb')}
+                else{@($(if($i -eq 2){'fixture.obj'}else{$stage.Name+'.obj'}),'compile.pdb','dependencies.json')}
+            $kind=if($i -eq 4){'Probe'}elseif($i -eq 3){'Link'}else{'Compile'}
+        }
         if($stage.Stage -cne $kind -or (@($stage.Artifacts)-join '|') -cne ($expected-join '|')){throw 'Exact declared authored output types/artifacts required.'}
         $stageRoot=Join-Path $Root $stage.Name
         $entries.Add($stageRoot,'Directory');$roots.Add($stageRoot)
@@ -66,25 +75,26 @@ function New-H1AuthoredOutputBudget([string]$Root,$Stages) {
     foreach($name in @('measured-before-release.json','closure-before-release.json','final-closure.json','stop.request')){
         $entries.Add((Join-Path $Root $name),'File')
     }
-    if($entries.Count -ne 48 -or @($entries.Values|Where-Object {$_ -ceq 'File'}).Count -ne 40){throw 'Authored output shape must be eight directories and forty files.'}
-    [pscustomobject]@{Schema='iw7.h1-authored-output-budget/1';Root=$Root;
+    $declared=if($owned){44}else{48};$files=if($owned){36}else{40}
+    if($entries.Count -ne $declared -or @($entries.Values|Where-Object {$_ -ceq 'File'}).Count -ne $files){throw 'Exact authored output shape required.'}
+    [pscustomobject]@{Schema=$(if($owned){'iw7.h1-owned-input-output-budget/1'}else{'iw7.h1-authored-output-budget/1'});Root=$Root;
         Entries=[Collections.ObjectModel.ReadOnlyDictionary[string,string]]::new($entries);
         StageRoots=$roots.AsReadOnly();Stages=$Stages;ResidualEntries=64;MaximumDepth=64}
 }
 function Assert-H1AuthoredOutputBudget([string]$Root,$Budget) {
-    if($Budget.Schema -cne 'iw7.h1-authored-output-budget/1' -or $Budget.Root -cne $Root -or
-       $Budget.Entries.Count -ne 48 -or $Budget.StageRoots.Count -ne 8 -or
-       $Budget.ResidualEntries -ne 64 -or $Budget.MaximumDepth -ne 64){throw 'Reviewed derived authored output budget required.'}
     $expected=New-H1AuthoredOutputBudget $Root $Budget.Stages
+    if($Budget.Schema -cne $expected.Schema -or $Budget.Root -cne $Root -or
+       $Budget.Entries.Count -ne $expected.Entries.Count -or $Budget.StageRoots.Count -ne 8 -or
+       $Budget.ResidualEntries -ne 64 -or $Budget.MaximumDepth -ne 64){throw 'Reviewed derived authored output budget required.'}
     $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($pair in $Budget.Entries.GetEnumerator()){
         if($pair.Key -isnot [string] -or $pair.Value -isnot [string] -or
-           [IO.Path]::GetFullPath($pair.Key) -cne $pair.Key -or !$seen.Add($pair.Key) -or $seen.Count -gt 48 -or
+           [IO.Path]::GetFullPath($pair.Key) -cne $pair.Key -or !$seen.Add($pair.Key) -or $seen.Count -gt $expected.Entries.Count -or
            !$expected.Entries.ContainsKey($pair.Key) -or $expected.Entries[$pair.Key] -cne $pair.Value){
             throw 'Authored declared output set/types/aliases differ from the exact Source profile.'
         }
     }
-    if($seen.Count -ne 48){throw 'Authored declared output set/types/aliases differ from the exact Source profile.'}
+    if($seen.Count -ne $expected.Entries.Count){throw 'Authored declared output set/types/aliases differ from the exact Source profile.'}
     $seen.Clear()
     foreach($stageRoot in $Budget.StageRoots){
         if($stageRoot -isnot [string] -or [IO.Path]::GetFullPath($stageRoot) -cne $stageRoot -or
@@ -105,7 +115,7 @@ function Measure-H1AuthoredOutput([string]$Root,$Budget) {
     while($pending.Count){
         $directory=$pending.Pop()
         foreach($entry in [IO.Directory]::EnumerateFileSystemEntries($directory[0])){
-            if(!$seen.Add($entry) -or $seen.Count -gt 112){throw 'Authored output entry total or case alias refused.'}
+            if(!$seen.Add($entry) -or $seen.Count -gt ($Budget.Entries.Count+64)){throw 'Authored output entry total or case alias refused.'}
             Assert-H1OutputName ([IO.Path]::GetFileName($entry))
             if([IO.Path]::GetFullPath($entry) -cne $entry){throw 'Canonical output entry required.'}
             $declared=$Budget.Entries.ContainsKey($entry)
@@ -147,10 +157,12 @@ function Assert-H1Deadline($Started,[int]$Seconds) {
 }
 function Test-H1Budget($Plan,$State) {
     if($Plan.PSObject.Properties['AuthoredOutputBudget']){
-        if(!$Plan.PSObject.Properties['Schema'] -or $Plan.Schema -cne 'iw7.authored-pair-core-cpp-source/1'){
+        if(!$Plan.PSObject.Properties['Schema'] -or $Plan.Schema -cnotin @('iw7.authored-pair-core-cpp-source/1','iw7.authored-owned-input-core-cpp-source/1')){
             throw 'Only the authored eight-stage cohort may select its output budget.'
         }
         $expected=New-H1AuthoredOutputBudget $Plan.RunRoot $Plan.Stages
+        $owned=$Plan.Schema -ceq 'iw7.authored-owned-input-core-cpp-source/1'
+        if(($expected.Schema -ceq 'iw7.h1-owned-input-output-budget/1') -ne $owned){throw 'Exact authored plan/output profile correspondence required.'}
         $null=Assert-H1AuthoredOutputBudget $Plan.RunRoot $Plan.AuthoredOutputBudget
         $bytes=Measure-H1Output $Plan.RunRoot $expected
     }else{$bytes=Measure-H1Output $Plan.RunRoot}

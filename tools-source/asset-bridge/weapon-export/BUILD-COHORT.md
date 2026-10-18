@@ -491,3 +491,70 @@ J1–J6 remain immutable failures. Only Source `5e1207` was compiled; this DOC h
 and any subsequent merge were not. Ready and downstream parse/allocator
 activation stay false. There is no new U1/T2/body, stock, CLI/FF, engine ABI,
 grant/physics/PAP, game or BO3-demo authorization, nor a new actual GO.
+
+## Inactive J8 owned-input profile, 2026-10-18
+
+`iw7.authored-owned-input-core-cpp-source/1` is a separate finite Source profile:
+helper-compile, helper-link, helper-test, weapon-core, attachment-core,
+fixture-compile, fixture-link, fixture-test. The helper probe requires its six
+literal groups; the real-core probe requires the unchanged eight groups and
+three Source-approved sets. Both stdout tables and the empty stderr requirement
+are exact. Helper link takes only its fresh helper object; fixture link takes
+only this cohort's two fresh core objects and fixture object. `HelperLinked`
+and `CoresLinked` are separate; only fixture-link sets the latter. Passed needs
+both links, both complete probes and all eight original stage closures/exit0.
+No previous object or J7 compiled credit is reused. No legacy wrapper TU is
+requested: those renderer/wrapper texts did not change for the owner extraction.
+
+J8 derives eight stage directories, sixteen artifacts, sixteen logs, three
+publication slots and stop.request: 44 entries, including 36 files. One shared
+64-entry stage residual gives 108 maximum entries. J7 retains its existing
+48/40/112 shape. Complete set/type/root/schema correspondence is rederived
+before output IO; neither a caller count nor a budget property selects a profile.
+Case/device/stream/traversal/reparse/depth and byte-reserve guards remain.
+The T7 profile adapter is unchanged; its captured Core budget gate checks the
+literal plan/schema correspondence. Fixture closure is exactly seven canonical
+support names plus two generated headers; helper TU/header bindings are retained.
+
+Before imports, J8 validates all eleven pinned provider Sources and their actual
+AST graph. Native provider Source remains explicitly selected at
+`efe6761bc6a96581140767bde9f82816af579375`; a later Native head is not adopted.
+The five Native Source hashes are fixed. The six asset providers bind the final
+reviewed asset Source head. Binding verification and pure AST analysis are
+separate functions; the latter is ordinary analysis, not an admission token.
+
+Scheduler really dot-sources Memory, OwnedProcess and Recorder. Their function
+definitions are evaluated; they are not retained-only or selectively imported.
+OwnedProcess's seven definitions include its initializer, but its invocation
+allowlist in Build is empty, as is Recorder's. The recursive Enter/Add/Exit graph
+has sixteen scheduler functions, Memory's snapshot leaf and the original literal
+lock bodies. H1 keeps the exact NativeJob factory. Unknown dynamic calls, new
+imports/assembly loads, initializer/fallback calls or replacement factories refuse.
+The forbidden fallback is never invoked, restored, compiled or adopted here.
+NativeJob DLL and other opaque inputs stay behind full fresh admission/guards.
+
+Light checks parse the real provider Sources and exercise the actual finite
+analyzer with initializer, lock-body, top-level, dynamic-call, fallback-type and
+factory mutants. They distinguish inert strings/definitions from calls. Budget
+and finalization tests evaluate explicitly selected Source function ASTs with
+fake owners/leases and owned temporary Source handles, without importing Core
+or providers. These checks do not prove arbitrary code/race isolation or runtime
+closure and are not C++ results.
+
+This Source extension has not compiled or executed either fixture or core.
+The J7 host/session, packets, clocks, outputs and results remain immutable. No
+runnable J8 packet is prepared by this change. Final exact-head review, complete
+Source/opaque declarations frozen before IO, distinct CPP GO and fresh atomic
+admission remain mandatory. Keep the same original NoExit/job/guards/clock,
+600/120/15-second deadlines, 256-MiB output/1-MiB metadata reserve, one compiler,
+same-stream publication/readbacks and distinct Root-reviewed exit/known closure.
+Unknown or expired states retain original references; safety never promotes them.
+Ready, ActualPairParseActivated and FatalAllocatorClosure remain false; there is
+no U1/T2/body/stock, CLI/FF/Game, engine ABI/grant/physics/PAP or BO3 authorization.
+
+At this Source checkpoint, `python -B -m unittest -v test_build_default` passed
+26 tests in 46.035 seconds, including real eleven-provider AST analysis and its
+pure lock/initializer mutants; no test skipped. The existing light
+`Test-H1Native.ps1` passed 102 assertions with NativeTypesLoaded, RealJobsTested,
+LeaseAcquired and CompilerLaunched all false. These runs used selected production
+function ASTs, fake ownership APIs and owned temporary Source files only.
