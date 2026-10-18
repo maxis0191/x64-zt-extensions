@@ -5,7 +5,7 @@ $sourceTokens=$null;$sourceErrors=$null
 $sourceTree=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'H1Native.Core.ps1'),[ref]$sourceTokens,[ref]$sourceErrors)
 if($sourceErrors.Count){throw 'Core Source AST parse failed'}
 foreach($sourceName in 'Assert-H1Path','Open-H1Pin','Read-H1SmallJson','Assert-H1OutputName','New-H1AuthoredOutputBudget',
-    'Assert-H1AuthoredOutputBudget','Measure-H1AuthoredOutput','Measure-H1Output','Get-H1Clock','Assert-H1Deadline',
+    'Assert-H1AuthoredOutputBudget','Resolve-H1AuthoredPlanOutputBudget','Measure-H1AuthoredOutput','Measure-H1Output','Get-H1Clock','Assert-H1Deadline',
     'Test-H1Budget','Invoke-H1OwnedStage','Complete-H1Stage','Assert-H1ReceiptBytes','Write-H1Receipt'){
     $sourceDefinition=$sourceTree.Find({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq $sourceName},$true)
     . ([scriptblock]::Create($sourceDefinition.Extent.Text))

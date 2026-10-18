@@ -817,4 +817,222 @@ try{
                 self.assertEqual(report['MeasuredReadback'], scenario == 5, report)
 
 
+class AuthoredBudgetContractTests(unittest.TestCase):
+    """Actual Core function bodies with Source-only measurement/telemetry fakes."""
+    def budget_fragment(self, body):
+        def stage(name, kind, *artifacts):
+            return dict(Name=name, Stage=kind, Artifacts=list(artifacts))
+        owned = [stage('helper-compile','Compile','helper.obj','compile.pdb','dependencies.json'),
+            stage('helper-link','Link','helper.exe','helper.pdb'), stage('helper-test','Probe'),
+            stage('weapon-core','Compile','weapon-core.obj','compile.pdb','dependencies.json'),
+            stage('attachment-core','Compile','attachment-core.obj','compile.pdb','dependencies.json'),
+            stage('fixture-compile','Compile','fixture.obj','compile.pdb','dependencies.json'),
+            stage('fixture-link','Link','fixture.exe','fixture.pdb'), stage('fixture-test','Probe')]
+        pair = [stage('weapon-core','Compile','weapon-core.obj','compile.pdb','dependencies.json'),
+            stage('attachment-core','Compile','attachment-core.obj','compile.pdb','dependencies.json'),
+            stage('fixture-compile','Compile','fixture.obj','compile.pdb','dependencies.json'),
+            stage('fixture-link','Link','fixture.exe','fixture.pdb'), stage('fixture-test','Probe'),
+            stage('weapondef','Compile','weapondef.obj','compile.pdb','dependencies.json'),
+            stage('weaponattachment','Compile','weaponattachment.obj','compile.pdb','dependencies.json'),
+            stage('filesystem','Compile','filesystem.obj','compile.pdb','dependencies.json')]
+        prefix = r'''param([string]$Core)
+$ErrorActionPreference='Stop';Set-StrictMode -Version Latest
+$script:Measurements=0;$script:Snapshots=0;$script:ObservedBytes=0L
+$script:ForbiddenCalls=0;$script:CollectionCalls=0;$script:Assertions=0;$script:Refusals=0;$script:LastBudget=$null
+# Fakes exist BEFORE any production body is defined or called. Never import Core.
+function Measure-H1Output($Root,$Budget=$null){$script:Measurements++;$script:LastBudget=$Budget;return $script:ObservedBytes}
+function Get-IW7ResourceSnapshot {$script:Snapshots++;[pscustomobject]@{CommitLimit=100L;Committed=10L}}
+function New-H1Owner {$script:ForbiddenCalls++;throw 'Source-only owner sentinel'}
+function Enter-IW7ResourceLease {$script:ForbiddenCalls++;throw 'Source-only admission sentinel'}
+function Open-H1Pin {$script:ForbiddenCalls++;throw 'Source-only input sentinel'}
+function Check([bool]$Value,[string]$Message){if(!$Value){throw $Message};$script:Assertions++}
+function Refuses([scriptblock]$Action,[string]$Pattern='*',[int]$MeasureDelta=0){
+    $before=$script:Measurements;$message=$null
+    try{& $Action|Out-Null}catch{$message=$_.Exception.Message}
+    Check ($null-ne$message-and$message-like$Pattern) ('Expected Source refusal '+$Pattern+'; got '+$message)
+    Check (($script:Measurements-$before)-eq$MeasureDelta) 'Refusal crossed the wrong measurement frontier'
+    $script:Refusals++
+}
+$tokens=$null;$errors=$null
+$tree=[Management.Automation.Language.Parser]::ParseFile($Core,[ref]$tokens,[ref]$errors)
+Check ($errors.Count-eq0) 'Core Source AST must parse'
+$functionPins=[ordered]@{}
+foreach($name in 'Assert-H1OutputName','New-H1AuthoredOutputBudget','Assert-H1AuthoredOutputBudget',
+    'Resolve-H1AuthoredPlanOutputBudget','Test-H1Budget'){
+    $definitions=@($tree.FindAll({param($n)$n-is[Management.Automation.Language.FunctionDefinitionAst]-and$n.Name-ceq$name},$true))
+    Check ($definitions.Count-eq1) ('One real production function required: '+$name)
+    $text=$definitions[0].Extent.Text
+    $functionPins[$name]=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($text))).ToLowerInvariant()
+    . ([scriptblock]::Create($text))
+}
+'''
+        prefix += "$script:OwnedStages='"+json.dumps(owned)+"'|ConvertFrom-Json\n"
+        prefix += "$script:PairStages='"+json.dumps(pair)+"'|ConvertFrom-Json\n"
+        prefix += r'''
+function New-SourcePlan([string]$Schema,[bool]$Owned=$true){
+    $stages=if($Owned){$script:OwnedStages}else{$script:PairStages}
+    $stages=@($stages|ConvertTo-Json -Depth 8|ConvertFrom-Json)
+    $root='C:\SourceOnly\never-open-output'
+    [pscustomobject]@{Schema=$Schema;RunRoot=$root;Stages=$stages;OutputLimitBytes=256MB;MetadataReserveBytes=1MB;
+        AuthoredOutputBudget=(New-H1AuthoredOutputBudget $root $stages)}
+}
+function New-SourceState {[ordered]@{MaxObservedOutputBytes=0L}}
+'''
+        suffix = r'''
+Check ($script:ForbiddenCalls-eq0) 'A provider/owner/admission/input sentinel was called'
+Check (!('IW7.AnimationProbe.NativeJob'-as[type])) 'Native owner type must remain unloaded'
+[ordered]@{Assertions=$script:Assertions;Refusals=$script:Refusals;Measurements=$script:Measurements;
+    CollectionSentinelCalls=$script:CollectionCalls;ForbiddenCalls=$script:ForbiddenCalls;Snapshots=$script:Snapshots;
+    FunctionPins=$functionPins;ProviderImported=$false;OpaqueIO=$false;CPPExecuted=$false}|ConvertTo-Json -Depth 4 -Compress
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            script=Path(directory)/'budget-source.ps1'
+            script.write_text(prefix+body+suffix,encoding='utf-8')
+            core=RUNNER.parent.parent/'h1-fixture'/'H1Native.Core.ps1'
+            result=subprocess.run([shutil.which('pwsh'),'-NoLogo','-NoProfile','-File',str(script),str(core)],
+                text=True,capture_output=True,timeout=15)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        report=json.loads(result.stdout)
+        self.assertFalse(any(report[key] for key in ('ProviderImported','OpaqueIO','CPPExecuted')))
+        print(result.stdout.strip())
+        return report
+
+    def test_closed_schema_mapping_and_legacy_no_budget(self):
+        report=self.budget_fragment(r'''
+foreach($row in @(@('iw7.authored-pair-core-cpp-source/1',$false,48,'iw7.h1-authored-output-budget/1'),
+    @('iw7.authored-owned-input-core-cpp-source/1',$true,44,'iw7.h1-owned-input-output-budget/1'),
+    @('iw7.authored-preflight-real-core-cpp-source/1',$true,44,'iw7.h1-owned-input-output-budget/1'))){
+    $plan=New-SourcePlan $row[0] $row[1]
+    $derived=Resolve-H1AuthoredPlanOutputBudget $plan
+    Check ($derived.Entries.Count-eq$row[2]-and$derived.Schema-ceq$row[3]) 'Literal profile correspondence lost'
+    Check ($derived.ResidualEntries-eq64-and$derived.MaximumDepth-eq64) 'Fixed shared bounds changed'
+    Check (![object]::ReferenceEquals($derived,$plan.AuthoredOutputBudget)) 'Supplied mutable budget was returned'
+    $before=$script:Measurements;Test-H1Budget $plan (New-SourceState)
+    Check ($script:Measurements-eq$before+1) 'Actual runtime budget gate must measure once'
+}
+foreach($schema in @('iw7.authored-pair-core-cpp-source/1','iw7.authored-owned-input-core-cpp-source/1','legacy')){
+    $plan=New-SourcePlan $schema;$plan.PSObject.Properties.Remove('AuthoredOutputBudget')
+    Check ($null-eq(Resolve-H1AuthoredPlanOutputBudget $plan)) 'Legacy no-budget selection changed'
+    Test-H1Budget $plan (New-SourceState)
+    Check ($null-eq$script:LastBudget) 'Legacy must retain its64TOTAL measurement path'
+}
+$plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1';$plan.PSObject.Properties.Remove('AuthoredOutputBudget')
+Refuses {Test-H1Budget $plan (New-SourceState)} '*requires its derived output budget*'
+foreach($value in @('unknown','IW7.authored-preflight-real-core-cpp-source/1',1,@('iw7.authored-preflight-real-core-cpp-source/1'))){
+    $plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1';$plan.Schema=$value
+    Refuses {Test-H1Budget $plan (New-SourceState)}
+}
+$plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1';$plan.PSObject.Properties.Remove('Schema')
+Refuses {Test-H1Budget $plan (New-SourceState)}
+foreach($row in @(@('iw7.authored-pair-core-cpp-source/1',$true),@('iw7.authored-owned-input-core-cpp-source/1',$false),
+    @('iw7.authored-preflight-real-core-cpp-source/1',$false))){
+    $plan=New-SourcePlan $row[0] $row[1]
+    Refuses {Test-H1Budget $plan (New-SourceState)} '*profile correspondence*'
+}
+$plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1'
+$plan.AuthoredOutputBudget=(New-SourcePlan 'iw7.authored-pair-core-cpp-source/1' $false).AuthoredOutputBudget
+Refuses {Test-H1Budget $plan (New-SourceState)} '*differs from the plan output profile*'
+''')
+        self.assertEqual(report['Refusals'],10)
+
+    def test_stage_budget_types_and_alias_mutants_refuse_before_measurement(self):
+        report=self.budget_fragment(r'''
+$mutants=@(
+    {$plan.Stages=@($plan.Stages|Select-Object -Skip 1)},
+    {$plan.Stages+=@($plan.Stages[0])},
+    {$first=$plan.Stages[0];$plan.Stages[0]=$plan.Stages[1];$plan.Stages[1]=$first},
+    {$plan.Stages[0].Name='Helper-compile'},
+    {$plan.Stages[0].Stage='Link'},
+    {$plan.Stages[0].Stage=@('Compile')},
+    {$plan.Stages[0].Artifacts+='extra.obj'},
+    {$plan.Stages[0].Artifacts[0]='old.obj'},
+    {$plan.Stages[2].Artifacts=''},
+    {$plan.Stages[0].Artifacts[0]=1},
+    {$plan.Stages='helper-compile'},
+    {$plan.AuthoredOutputBudget.Stages[0].Stage=@('Compile')},
+    {$plan.AuthoredOutputBudget.Schema='iw7.h1-authored-output-budget/1'},
+    {$plan.AuthoredOutputBudget.Schema=@('iw7.h1-owned-input-output-budget/1')},
+    {$plan.AuthoredOutputBudget.Root=@($plan.RunRoot)},
+    {$plan.AuthoredOutputBudget.ResidualEntries=65},
+    {$plan.AuthoredOutputBudget.ResidualEntries=64.0},
+    {$plan.AuthoredOutputBudget.MaximumDepth=65},
+    {$plan.AuthoredOutputBudget.MaximumDepth='64'},
+    {$plan.AuthoredOutputBudget.Root+='\changed'},
+    {$plan.RunRoot+='\..\alias'},
+    {$plan.RunRoot='C:\SourceOnly\CON\output'},
+    {$plan.PSObject.Properties.Remove('RunRoot');$plan|Add-Member ScriptProperty RunRoot {$script:ForbiddenCalls++;throw 'getter executed'}},
+    {$plan.AuthoredOutputBudget.PSObject.Properties.Remove('MaximumDepth');$plan.AuthoredOutputBudget|Add-Member ScriptProperty MaximumDepth {$script:ForbiddenCalls++;throw 'getter executed'}},
+    {$roots=[Collections.Generic.List[string]]::new();foreach($i in 0..7){$roots.Add($plan.AuthoredOutputBudget.StageRoots[0])}
+     $plan.AuthoredOutputBudget.StageRoots=$roots.AsReadOnly()},
+    {$roots=[Collections.Generic.List[string]]::new();foreach($root in $plan.AuthoredOutputBudget.StageRoots){$roots.Add($root)}
+     $roots[0]='C:\SourceOnly\other';$plan.AuthoredOutputBudget.StageRoots=$roots.AsReadOnly()},
+    {$map=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
+     foreach($entry in $plan.AuthoredOutputBudget.Entries.GetEnumerator()){$map.Add($entry.Key,$entry.Value)}
+     $key='C:\SourceOnly\never-open-output\helper-compile';$map[$key]='File'
+     $plan.AuthoredOutputBudget.Entries=[Collections.ObjectModel.ReadOnlyDictionary[string,string]]::new($map)},
+    {$map=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
+     foreach($entry in $plan.AuthoredOutputBudget.Entries.GetEnumerator()){$map.Add($entry.Key,$entry.Value)}
+     $key='C:\SourceOnly\never-open-output\helper-compile';$map.Remove($key)|Out-Null
+     $map.Add($key.ToUpperInvariant(),'Directory')
+     $plan.AuthoredOutputBudget.Entries=[Collections.ObjectModel.ReadOnlyDictionary[string,string]]::new($map)}
+)
+foreach($mutate in $mutants){
+    $plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1'
+    & $mutate
+    Refuses {Test-H1Budget $plan (New-SourceState)}
+}
+''')
+        self.assertEqual(report['Refusals'],28)
+
+    def test_nested_collection_sentinels_refuse_without_getters_or_enumeration(self):
+        report=self.budget_fragment(r'''
+$script:CollectionCalls=0
+$mutants=@(
+    {$value=[pscustomobject]@{};$value|Add-Member ScriptProperty Count {$script:CollectionCalls++;return 44}
+     $plan.AuthoredOutputBudget.Entries=$value},
+    {$value=[pscustomobject]@{Count=44};$value|Add-Member ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()}
+     $plan.AuthoredOutputBudget.Entries=$value},
+    {$value=[pscustomobject]@{};$value|Add-Member ScriptProperty Count {$script:CollectionCalls++;return 8}
+     $value|Add-Member ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()}
+     $plan.AuthoredOutputBudget.StageRoots=$value},
+    {$plan.AuthoredOutputBudget.Entries=@{}},
+    {$plan.AuthoredOutputBudget.StageRoots=@($plan.AuthoredOutputBudget.StageRoots)},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.Entries ScriptProperty Count {$script:CollectionCalls++;return 44} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.Entries ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.StageRoots ScriptProperty Count {$script:CollectionCalls++;return 8} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.StageRoots ScriptMethod GetEnumerator {$script:CollectionCalls++;return @()} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.Entries ScriptMethod GetType {$script:CollectionCalls++;return [Collections.ObjectModel.ReadOnlyDictionary[string,string]]} -Force},
+    {Add-Member -InputObject $plan.AuthoredOutputBudget.StageRoots ScriptMethod GetType {$script:CollectionCalls++;return [Collections.ObjectModel.ReadOnlyCollection[string]]} -Force}
+)
+foreach($mutate in $mutants){
+    $plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1'
+    & $mutate
+    Refuses {Resolve-H1AuthoredPlanOutputBudget $plan}
+    Refuses {Test-H1Budget $plan (New-SourceState)}
+    Check ($script:CollectionCalls-eq0) 'Nested collection code ran before refusal'
+}
+Check ($script:Snapshots-eq0) 'Nested collection refusal reached fake telemetry'
+''')
+        self.assertEqual(report['Refusals'],22)
+
+    def test_pure_preflight_and_existing_byte_reserve_boundary(self):
+        report=self.budget_fragment(r'''
+$plan=New-SourcePlan 'iw7.authored-preflight-real-core-cpp-source/1'
+$state=New-SourceState
+$beforeMeasure=$script:Measurements;$beforeSnapshots=$script:Snapshots
+$derived=Resolve-H1AuthoredPlanOutputBudget $plan
+Check ($script:Measurements-eq$beforeMeasure-and$script:Snapshots-eq$beforeSnapshots) 'Pure preflight called IO/telemetry'
+Check ($derived.Entries.Count-eq44-and$derived.Entries.Count+$derived.ResidualEntries-eq108) '44+shared64 envelope changed'
+$script:ObservedBytes=255MB
+Test-H1Budget $plan $state
+Check ($state.MaxObservedOutputBytes-eq255MB) 'Exact existing data bound was not accepted'
+Check (![object]::ReferenceEquals($script:LastBudget,$plan.AuthoredOutputBudget)) 'Runtime gate reused supplied map'
+Check ($script:Snapshots-eq$beforeSnapshots+1) 'Accepted runtime gate omitted existing telemetry'
+$script:ObservedBytes=255MB+1
+Refuses {Test-H1Budget $plan $state} '*Output budget exceeded*' 1
+Check ($script:Snapshots-eq$beforeSnapshots+1) 'Overflow crossed the telemetry frontier'
+''')
+        self.assertEqual(report['Refusals'],1)
+
+
 if __name__=='__main__': unittest.main()
