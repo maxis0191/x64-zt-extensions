@@ -267,3 +267,42 @@ route/alias/CWD authority, actual stock pairs, full CLI, engine TU/ABI, fatal
 allocator closure, FF, Game, Ready and demonstration acceptance remain gated.
 Only Source and own JSON metadata were read for this DOC update; this DOC head
 and any merge were not compiled and authorize no new actual.
+
+## Windows owned raw-file ingress, Source only
+
+The opt-in [file ingress companion](native_pair_file_ingress.hpp) adds
+`read_owned_files(const Files&, CleanupReport&, Counters&)`, returning the existing
+`OwnedIngress<Guards>`. Four ordered specs (report/weapon/attachment/csv) carry
+independent trusted byte lengths/SHA256 and expected volume/full128-bit file IDs.
+Caps remain 65536/2097152/2097152/66 bytes, total4259906. Caller metadata must stay
+immutable throughout validation and snapshot. All specs finish validation before
+any handle: finite drive-absolute UTF16 paths only, with no UNC/device/ADS path,
+NUL, relative/CWD search, dot components, normalization or fallback.
+The observed IDs are compared with the independent expected IDs; capturing an ID
+alone does not establish earlier identity or report provenance.
+
+Four privately owned original `CreateFileW` handles use GENERIC_READ,
+FILE_SHARE_READ and OPEN_EXISTING, are noninheritable and open the final reparse
+point for rejection. Ordinary disk/leaf attributes, all independent IDs/lengths
+and cross-role identity aliases are checked before the first content byte.
+Bounded `ReadFile` uses only those SAME handles; lengths are rechecked before
+real `copy_with_guards` copies and hashes the four buffers. No CRT FILE, reopen,
+handle adoption/detachment, body decoder, arena or native core is called.
+
+The caller's original noncopy/nonmove CleanupReport must outlive the ingress and
+guards. Each original row records its one close attempt and actual CloseHandle
+BOOL/error immediately; FALSE stays observable and unqualified, with no retry.
+Read completion and a noexcept destructor do not prove OS closure. Bare rethrow
+preserves the active primary separately from cleanup results; the captured
+exception_ptr is diagnostic and may copy on MSVC, not an exception-address proof.
+
+The [Windows fixture](test_pair_file_ingress.cpp) is authored, NONCOMPILED and
+NONEXECUTED. A future recipe must supply its own synthetic root under its lease
+and output budget. Its eight groups cover real handle/metadata ordering, copied
+bytes/pins, sharing refusal, partial acquire cleanup, independent IDs, physical
+role alias, size/pin refusal and original report lifetime. Short-read/ReadFile
+error, CloseHandle FALSE and allocation-failure branches have no executed proof;
+there is no public injection seam. Existing ownership/session/components bytes
+and the three-case parse gate remain unchanged. Ancestor reparse freedom, global
+aliases, preexisting mappings, native FILE/route authority, actual inputs, CLI,
+engine ABI, fatal closure, FF, Game and Ready remain unqualified; no new actual GO.
