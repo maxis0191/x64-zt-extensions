@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <cstdlib>
+#include <cstdio>
 #include <new>
 
 // Fixture-local ordinary-new observation only; never a production injection API.
@@ -91,7 +92,76 @@ namespace authored_pair_fixture
 
 namespace authored_pair_fixture
 {
-    void need(bool value) { if (!value) throw std::runtime_error("Authored real-core witness refused"); }
+    // Group-eight failure evidence only. Context borrows a live report while
+    // assertions run; the failure POD copies scalars before any unwind.
+    struct NativeDiagnosticContext
+    {
+        const char *block, *assertion;
+        const Report* report;
+        size_t phase, observed_bytes, expected_bytes;
+        unsigned destroyed;
+        bool refused, order_equal;
+    };
+    struct NativeDiagnosticFailure
+    {
+        const char *block, *assertion, *helper;
+        size_t phase, calls, deletes, fail_at, failed_bytes, release_attempts, observed_bytes, expected_bytes,
+            pair_at, weapon_at, wrapper_at;
+        unsigned destroyed, release;
+        bool available, failed_bound, refused, report_present, bound, release_available,
+            release_result, cleanup_exception, order_equal;
+    };
+    NativeDiagnosticContext native_diagnostic_context{};
+    NativeDiagnosticFailure native_diagnostic_failure{};
+    size_t native_diagnostic_phase_ordinals[3]{};
+    bool native_diagnostic_active{};
+    struct NativeDiagnosticScope final
+    {
+        NativeDiagnosticScope() noexcept
+        {native_diagnostic_context={};native_diagnostic_failure={};for(auto& ordinal:native_diagnostic_phase_ordinals)ordinal=0;native_diagnostic_active=true;}
+        ~NativeDiagnosticScope() noexcept{native_diagnostic_active=false;native_diagnostic_context={};}
+    };
+    void native_diagnostic_step(const char* block,const char* assertion,size_t phase,const Report* report=nullptr,
+        unsigned destroyed=0,bool refused=false,bool order_equal=false,size_t observed_bytes=0,size_t expected_bytes=0) noexcept
+    {native_diagnostic_context={block,assertion,report,phase,observed_bytes,expected_bytes,destroyed,refused,order_equal};}
+    void capture_native_diagnostic(const char* assertion=nullptr,const char* helper=nullptr) noexcept
+    {
+        if(!native_diagnostic_active)return;
+        const auto& context=native_diagnostic_context;
+        auto& failure=native_diagnostic_failure;
+        failure={};failure.available=true;failure.block=context.block;
+        failure.assertion=assertion?assertion:context.assertion;failure.helper=helper;
+        failure.phase=context.phase;failure.destroyed=context.destroyed;failure.refused=context.refused;
+        failure.order_equal=context.order_equal;failure.observed_bytes=context.observed_bytes;failure.expected_bytes=context.expected_bytes;
+        failure.calls=native_component_fault::calls;failure.deletes=native_component_fault::deletes;failure.fail_at=native_component_fault::fail_at;
+        failure.failed_bytes=native_component_fault::failed_bytes;failure.failed_bound=native_component_fault::failed_bound;
+        failure.pair_at=native_diagnostic_phase_ordinals[0];failure.weapon_at=native_diagnostic_phase_ordinals[1];
+        failure.wrapper_at=native_diagnostic_phase_ordinals[2];
+        if(context.report)
+        {
+            failure.report_present=true;failure.bound=context.report->bound();
+            failure.release_attempts=context.report->release_attempts();failure.release=static_cast<unsigned>(context.report->release());
+            failure.release_available=context.report->release_result_available();
+            failure.release_result=failure.release_available&&context.report->release_result();
+            failure.cleanup_exception=bool(context.report->cleanup_exception());
+        }
+    }
+    void emit_native_diagnostic() noexcept
+    {
+        const auto& failure=native_diagnostic_failure;if(!failure.available)return;
+        // Captured assertion-time values, not a claim about later cleanup.
+        char line[768];
+        const int count=std::snprintf(line,sizeof(line),
+            "G8_FAILURE block=%.32s assertion=%.48s helper=%.20s phase=%zu calls=%zu deletes=%zu fail_at=%zu failed_bytes=%zu failed_bound=%u refused=%u destroyed=%u report=%u bound=%u releases=%zu release=%u release_available=%u release_result=%u cleanup_exception=%u order_equal=%u observed_bytes=%zu expected_bytes=%zu pair_at=%zu weapon_at=%zu wrapper_at=%zu\n",
+            failure.block?failure.block:"NA",failure.assertion?failure.assertion:"NA",failure.helper?failure.helper:"NA",
+            failure.phase,failure.calls,failure.deletes,failure.fail_at,failure.failed_bytes,unsigned(failure.failed_bound),unsigned(failure.refused),
+            failure.destroyed,unsigned(failure.report_present),unsigned(failure.bound),failure.release_attempts,failure.release,
+            unsigned(failure.release_available),unsigned(failure.release_result),unsigned(failure.cleanup_exception),unsigned(failure.order_equal),
+            failure.observed_bytes,failure.expected_bytes,failure.pair_at,failure.weapon_at,failure.wrapper_at);
+        if(count>0)std::fwrite(line,1,std::min(static_cast<size_t>(count),sizeof(line)-1),stderr);
+    }
+    void need(bool value,const char* assertion=nullptr)
+    {if(!value){capture_native_diagnostic(assertion);throw std::runtime_error("Authored real-core witness refused");}}
     using PinError = input::PinError;
     using input::detail::sha256;
     // The finite fixture alone selects parse cases; generic byte ownership
@@ -120,7 +190,7 @@ namespace authored_pair_fixture
         {
             iw7::neutral::player_pair_bodies::validate_owned_pair_bodies(raw);
             const auto report=pq::ordered_json::parse(raw.bytes(input::Role::report));++stats.decodes;
-            for(const char* flag:{"bo3_assets_authenticated","external_name_driven_gameplay_verified","native_parser_verified","ff_built","roundtrip_verified","runtime_abi_verified","lifetime_verified","weapon_granted","projectile_damage_verified","physics_qualified","retail_pap_transaction_verified","gameplay_accepted","ready"}) need(report.at(flag).is_boolean()&&!report.at(flag).get<bool>());
+            for(const char* flag:{"bo3_assets_authenticated","external_name_driven_gameplay_verified","native_parser_verified","ff_built","roundtrip_verified","runtime_abi_verified","lifetime_verified","weapon_granted","projectile_damage_verified","physics_qualified","retail_pap_transaction_verified","gameplay_accepted","ready"}) need(report.at(flag).is_boolean()&&!report.at(flag).get<bool>(),flag);
             weapon=pq::ordered_json::parse(raw.bytes(input::Role::weapon));++stats.decodes;
             attachment=pq::ordered_json::parse(raw.bytes(input::Role::attachment));++stats.decodes;
         }
@@ -148,7 +218,7 @@ namespace authored_pair_fixture
         {
             ++stats.arenas;
             auto value=std::make_unique<Arena>(zonetool::checked_memory_tag{},capacity,report);
-            need(reinterpret_cast<std::uintptr_t>(report.original_pool())%alignof(WeaponDef)==0);
+            need(reinterpret_cast<std::uintptr_t>(report.original_pool())%alignof(WeaponDef)==0,"execute.pool_alignment");
             memory=value.get();return value;
         }
         std::unique_ptr<ParserMaps> weapon(){auto v=std::make_unique<ParserMaps>();weapon_map=v.get();return v;}
@@ -179,11 +249,12 @@ namespace authored_pair_fixture
         {
             stats.phase=ParsePhase::pair_construction;
             Pair pair(factory);
-            bool absent=false;try{pair.roots();}catch(const std::logic_error&){absent=true;}need(absent);
+            bool absent=false;try{pair.roots();}catch(const std::logic_error&){absent=true;}need(absent,"execute.roots_absent");
+            if(native_diagnostic_active)native_diagnostic_context.assertion="execute.same_raw";
             need(!factory.pending && &factory.raw_ref->raw == original_raw);
             try
             {
-                need(factory.weapon_map!=factory.attachment_map);
+                need(factory.weapon_map!=factory.attachment_map,"execute.distinct_maps");
                 const auto base=reinterpret_cast<std::uintptr_t>(report.original_pool());
                 if(mode==Mode::preseed_maps)
                 {
@@ -264,16 +335,18 @@ namespace authored_pair_fixture
         if(observer)*observer=guards.get(); // Borrowed address for deletion observation only.
         return owned::copy_with_guards(std::move(guards),incoming,pins,counters);
     }
-    size_t last_delete(const void* pointer)
+    size_t last_delete(const void* pointer,const char* label="last_delete")
     {
         for(size_t i=native_component_fault::deletes;i>0;--i)
             if(native_component_fault::deletions[i-1]==pointer)return i;
+        capture_native_diagnostic(nullptr,label);
         throw std::runtime_error("Expected original owner deletion missing");
     }
-    size_t allocation_of(const void* pointer)
+    size_t allocation_of(const void* pointer,const char* label="allocation_of")
     {
         for(size_t i=native_component_fault::calls;i>0;--i)
             if(native_component_fault::allocations[i-1].pointer==pointer)return i;
+        capture_native_diagnostic(nullptr,label);
         throw std::runtime_error("Expected original allocation missing");
     }
     void native_components_variants()
@@ -346,25 +419,41 @@ namespace authored_pair_fixture
             auto ingress=native_ingress(source,source.original,source.trusted_source_pins,counters,destroyed,&guards);
             const auto* raw=&ingress->input();
             native_component_fault::Watch watch(report);
+            native_diagnostic_step("storage.calibration","maker",3,&report,destroyed);
             auto owner=owned::make_in_memory_owned_pair(std::move(ingress),source.capacity,report);
             const auto* wrapper=owner.get();
-            phases[2]=allocation_of(wrapper);
+            native_diagnostic_step("storage.calibration","wrapper.allocation",3,&report,destroyed);
+            phases[2]=allocation_of(wrapper,"allocation.wrapper");native_diagnostic_phase_ordinals[2]=phases[2];
             // First ordinary allocation after checked arena binding is the
             // first role's storage (before its DOM). Check its actual size too.
             for(size_t i=0;i<native_component_fault::calls;++i)
-                if(native_component_fault::allocations[i].arena_bound){phases[1]=i+1;break;}
+                if(native_component_fault::allocations[i].arena_bound){phases[1]=i+1;native_diagnostic_phase_ordinals[1]=phases[1];break;}
+            native_diagnostic_step("storage.calibration","weapon.storage_size",3,&report,destroyed,false,false,
+                phases[1]?native_component_fault::allocations[phases[1]-1].bytes:0,sizeof(Native::WeaponMap));
             need(phases[1]&&native_component_fault::allocations[phases[1]-1].bytes==sizeof(Native::WeaponMap));
             const void* weapon_component=native_component_fault::allocations[phases[1]-1].pointer;
             const void* arena=report.owner();
             owner.reset();
+            native_diagnostic_step("storage.calibration","deletion_count",3,&report,destroyed);
             need(native_component_fault::deletes>=2);
             const void* pair=native_component_fault::deletions[native_component_fault::deletes-2];
-            phases[0]=allocation_of(pair);
+            native_diagnostic_step("storage.calibration","pair.allocation",3,&report,destroyed);
+            phases[0]=allocation_of(pair,"allocation.pair");native_diagnostic_phase_ordinals[0]=phases[0];
+            native_diagnostic_step("storage.calibration","pair.storage_size",3,&report,destroyed,false,false,
+                native_component_fault::allocations[phases[0]-1].bytes,sizeof(owned::detail::Pair<NativeGuards,Native>));
             need(native_component_fault::allocations[phases[0]-1].bytes==sizeof(owned::detail::Pair<NativeGuards,Native>));
-            need(last_delete(weapon_component)<last_delete(arena)&&last_delete(arena)<last_delete(raw)&&
-                last_delete(raw)<last_delete(guards)&&last_delete(guards)<last_delete(pair)&&last_delete(pair)<last_delete(wrapper));
+            native_diagnostic_step("storage.calibration","deletion_order",3,&report,destroyed);
+            const bool order_equal=last_delete(weapon_component,"last_delete.weapon")<last_delete(arena,"last_delete.arena")&&
+                last_delete(arena,"last_delete.arena")<last_delete(raw,"last_delete.raw")&&
+                last_delete(raw,"last_delete.raw")<last_delete(guards,"last_delete.guards")&&
+                last_delete(guards,"last_delete.guards")<last_delete(pair,"last_delete.pair")&&
+                last_delete(pair,"last_delete.pair")<last_delete(wrapper,"last_delete.wrapper");
+            native_diagnostic_step("storage.calibration","deletion_order",3,&report,destroyed,false,order_equal);
+            need(order_equal);
             native_component_fault::active=false;
-            need(destroyed==1&&phases[0]<phases[1]&&phases[1]<phases[2]);released_once(report);
+            native_diagnostic_step("storage.calibration","phase_order_and_owner",3,&report,destroyed);
+            need(destroyed==1&&phases[0]<phases[1]&&phases[1]<phases[2]);
+            native_diagnostic_step("storage.calibration","release_once",3,&report,destroyed);released_once(report);
         }
         for(size_t phase=0;phase<phases.size();++phase)
         {
@@ -372,18 +461,24 @@ namespace authored_pair_fixture
             auto ingress=native_ingress(source,source.original,source.trusted_source_pins,counters,destroyed);
             const auto* raw=&ingress->input();
             native_component_fault::Watch watch(report,phases[phase]);
+            native_diagnostic_step("storage.fault","maker",phase,&report,destroyed);
             try{auto value=owned::make_in_memory_owned_pair(std::move(ingress),source.capacity,report);static_cast<void>(value);}
             catch(const std::bad_alloc& error)
             {
+                native_diagnostic_step("storage.fault","same_live_primary",phase,&report,destroyed,refused);
                 need(&error==native_component_fault::primary); // SAME live exception, not current_exception() copies.
                 native_component_fault::primary=nullptr;refused=true;
             }
             native_component_fault::active=false;
+            native_diagnostic_step("storage.fault","ownership_and_ordinal",phase,&report,destroyed,refused);
             need(refused&&!ingress&&destroyed==1&&native_component_fault::calls==phases[phase]&&
-                native_component_fault::primary==nullptr&&last_delete(raw)>0&&report.primary()==Failure::none);
+                native_component_fault::primary==nullptr&&last_delete(raw,"last_delete.raw")>0&&report.primary()==Failure::none);
             const std::array<size_t,3> expected_sizes{sizeof(owned::detail::Pair<NativeGuards,Native>),
                 sizeof(Native::WeaponMap),sizeof(NativeOwner)};
+            native_diagnostic_step("storage.fault","failed_storage_size_and_bound",phase,&report,destroyed,refused,false,
+                native_component_fault::failed_bytes,expected_sizes[phase]);
             need(native_component_fault::failed_bytes==expected_sizes[phase]&&native_component_fault::failed_bound==(phase!=0));
+            native_diagnostic_step("storage.fault",phase==0?"no_arena_release":"release_once",phase,&report,destroyed,refused);
             if(phase==0)need(!report.bound()&&report.release_attempts()==0);
             else released_once(report);
         }
@@ -518,6 +613,7 @@ namespace authored_pair_fixture
     }
     void bypass_real_core_refuses()
     {
+        NativeDiagnosticScope diagnostic_scope;
         // Author a fourth consistent raw/pin set solely to prove refusal.
         // Leading JSON whitespace preserves the body; its report pins are updated.
         auto fourth=approved_cases[0];
@@ -531,16 +627,23 @@ namespace authored_pair_fixture
         fourth.trusted_source_pins[0]={report_raw.size(),report_hash};
         fourth.trusted_source_pins[1]={weapon.size(),weapon_hash};
         Report fourth_report;Stats fourth_stats;bool fourth_refused=false;
+        native_diagnostic_step("fourth_address.legacy","execute",0,&fourth_report);
         try{execute(fourth,fourth.original,fourth_report,fourth_stats);}catch(const PinError&){fourth_refused=true;}
+        native_diagnostic_step("fourth_address.legacy","refused_before_copy",0,&fourth_report,0,fourth_refused);
         need(fourth_refused&&fourth_stats.copies==0&&fourth_stats.hashes==0&&fourth_stats.decodes==0&&
             fourth_stats.arenas==0&&fourth_stats.publications==0&&!fourth_report.bound());
         input::Counters fourth_counters;unsigned fourth_destroyed=0;bool native_fourth_refused=false;
+        native_diagnostic_step("fourth_address.native","ingress",0,nullptr,fourth_destroyed);
         try{auto ingress=native_ingress(fourth,fourth.original,fourth.trusted_source_pins,fourth_counters,fourth_destroyed);static_cast<void>(ingress);}
         catch(const PinError&){native_fourth_refused=true;}
+        native_diagnostic_step("fourth_address.native","refused_before_copy",0,nullptr,fourth_destroyed,native_fourth_refused);
         need(native_fourth_refused&&fourth_counters.copies==0&&fourth_counters.hashes==0&&fourth_destroyed==0);
         Report report;Stats stats;bool refused=false;
+        native_diagnostic_step("bypass_core","execute",0,&report);
         try{execute(approved_cases[0],approved_cases[0].original,report,stats,Mode::bypass_core);}catch(const std::logic_error&){refused=true;}
-        need(refused&&stats.weapon_parses==0&&stats.publications==0);released_once(report);
+        native_diagnostic_step("bypass_core","no_publication",0,&report,0,refused);
+        need(refused&&stats.weapon_parses==0&&stats.publications==0);
+        native_diagnostic_step("bypass_core","release_once",0,&report,0,refused);released_once(report);
         native_storage_failures_and_order();
     }
 }
@@ -553,5 +656,5 @@ int main()
         {"real_maps_outlive_roots_first_pointer_wins",map_lifetime_and_first_pointer_wins},{"checked_capacity_failure_unwinds_once",capacity_failure_unwinds},
         {"real_second_parser_failure_keeps_primary",real_second_parse_error_keeps_primary},{"bypassed_core_cannot_publish_inventory",bypass_real_core_refuses}};
     try{for(const auto& c:tests){c.run();std::cout<<"PASS "<<c.name<<'\n';}std::cout<<"IW7_AUTHORED_PAIR_REAL_CORE_FIXTURE=8\n";return 0;}
-    catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 2;}
+    catch(const std::exception& e){std::cerr<<e.what()<<'\n';emit_native_diagnostic();return 2;}
 }
