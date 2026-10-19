@@ -760,3 +760,48 @@ this later DOC head or a merge. See the
 Full CLI, engine TU/ABI, real pair/stock input, actual native arena, fatal-allocator
 closure, FILE/routes, FF and Game remain unqualified; Ready remains false.
 No new actual or NativeComponents implementation authorization follows.
+
+## Actual J21 native-components CPP and known closure, 2026-10-19
+
+J21 compiled exact Source `e2f184ae7b4ad27d2f505aae59d04ce270114ee6`, retaining
+Asset H1 Core EA364 and Native provider
+`efe6761bc6a96581140767bde9f82816af579375`. All eight original stage trees closed
+with exit0: typed helper compile/link/test8, fresh weapon and attachment cores,
+then native-components fixture compile/link/test8. Both links used fresh objects.
+Raw 338/386-byte helper/native stdout was hashed before strict UTF8 and explicit
+CRLF-to-LF ordinal comparison with the eight PASS names and final markers; both
+probe stderr files were empty.
+
+J19 and J20 remain failed, consumed and immutable. J20 on `85bc531` reached seven
+native PASS lines before exit2. Its G8 diagnostic localized
+`storage.fault/ownership_and_ordinal`, phase2: total calls22106 versus fail_at22096.
+Observation remained active through an allocating JSON cleanup window; the ten
+additional calls have not been individually attributed. The fixture-only e2f
+correction records the first actual refusal's ordinal/cause/bytes/arena binding,
+requires exactly one requested refusal at the calibrated ordinal before the
+live-exception identity check, and keeps the total count monotone through unwind.
+Ownership, destruction, raw deletion, size/binding and release checks remain strict.
+
+The final disk JSON truthfully retains its earlier guards-held snapshot. Later
+SAME-context postflight/scalars verified 790 closed original FileStream/saved-SFH
+pairs:55 Source records,732 input records and three publications; all eight owners
+closed, inner guards empty, lease/errors null and NativeInputsReverified true.
+Root6/External7 retained SAME read-only PSVariables, values and original arrays;
+these counts do not establish unique physical identities. Root directed checks
+through the internal owner and read own metadata, without direct child-memory or
+child-PTY access. Maximum observed output was 79678849 bytes while the lease was
+held, not a global or post-release peak.
+
+After distinct Root terminal GO, original tool `51539b` reported true exit0.
+SAME external Source and host saved SFH closed before exit; the original parent
+then rechecked its SAME held literal's raw hash/bytes, observed saved-SFH closure
+and propagated exit0. Root's fresh check found all sixteen original identities
+absent and V1 leases empty. The parent clock includes Root review waits; exit UTC,
+total PTY wall time and kernel CloseHandle return were not separately measured.
+The definitive terminal and consumed packets must never be polled or replayed.
+
+This qualifies only the bounded authored composition and first-refusal witness
+at e2f, not this later DOC head or a merge. See the
+[component contract and proof pin](NEUTRAL-PAIR-INPUTS.md#native-parser-components-and-j21-validation-2026-10-19).
+Full CLI, real stock pairs, engine TU/ABI, fatal allocator closure, FILE/routes,
+FF, Game, Ready and demonstration acceptance remain unqualified; no new actual GO.

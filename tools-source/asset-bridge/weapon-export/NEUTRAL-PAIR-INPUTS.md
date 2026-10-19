@@ -240,3 +240,30 @@ retains the J15 compile failure, J17 oracle failure, corrected exception-identit
 witness and later postflight/true-exit/freshness evidence. This DOC revision and
 any merge were not compiled. No full CLI/engine TU/ABI, real pair, FF, Game or
 Ready qualification, new input permission or NativeComponents Code GO follows.
+
+## Native parser components and J21 validation, 2026-10-19
+
+The opt-in `make_in_memory_owned_pair` retains the SAME guards and OwnedInput
+through the real report/body preflight before creating the arena or either
+component role DOM. Each native parser component owns its DOM, script-string map
+and actual returned root, using the SAME arena and raw owner. The private bridge
+registers roots once after both real parser returns; no temporary builder storage
+is borrowed. The caller's original cleanup report must outlive the pair. Roots
+remain const lvalue-only borrowed views whose lifetime is bounded by that owner.
+The three authored Source-case address gate and rejecting legacy hooks remain.
+
+The distinct J21 cohort compiled only
+`e2f184ae7b4ad27d2f505aae59d04ce270114ee6`: typed helper8 and native fixture8
+passed, both real cores were fresh, and all eight stages reached exit0/tree closure.
+The [J21 build checkpoint](BUILD-COHORT.md#actual-j21-native-components-cpp-and-known-closure-2026-10-19)
+records the preserved J20 failure, corrected first-refusal oracle and later
+postflight/true-exit/freshness sequence. Root's canonical 10305-byte own proof is
+`root-j21-cpp-knownclosed-b-20261019T055915040Z-1278c3df2deb4747a824c169948452e5.json`,
+SHA256 `3a7a002beccf1e7e9116969516075f7c2bdd62250d883f609e1d54e18adf6b5e`.
+
+This validates the finite authored in-memory composition and ordinary known
+closure, without admitting any new input. Live FILE-before-first-byte binding,
+route/alias/CWD authority, actual stock pairs, full CLI, engine TU/ABI, fatal
+allocator closure, FF, Game, Ready and demonstration acceptance remain gated.
+Only Source and own JSON metadata were read for this DOC update; this DOC head
+and any merge were not compiled and authorize no new actual.
