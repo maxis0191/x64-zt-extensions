@@ -1,15 +1,18 @@
 #pragma once
 // Inactive ordinary ownership only. A Guards object is not an OS/FILE authority.
-// No native components, parser invocation, admission or activation is supplied.
+// The opt-in concrete components live separately; this header performs no core call.
 #include "native_pair_session.hpp"
 #include "native_pair_bodies.hpp"
 #include <type_traits>
+
+namespace zonetool { class checked_memory_report; }
 
 namespace player_pair_owned_session
 {
     using Input = player_pair_input::OwnedInput;
     template<class Guards> class OwnedIngress;
     template<class Guards, class Components> class TypedOwnedPair;
+    class NativeComponents;
     namespace detail
     {
         template<class Guards, class Components> class Transfer;
@@ -33,6 +36,9 @@ namespace player_pair_owned_session
     template<class Guards, class Components>
     std::unique_ptr<TypedOwnedPair<Guards, Components>> make_validated_owned_pair(
         std::unique_ptr<OwnedIngress<Guards>>&&, Components&);
+    template<class Guards>
+    std::unique_ptr<TypedOwnedPair<Guards, NativeComponents>> make_in_memory_owned_pair(
+        std::unique_ptr<OwnedIngress<Guards>>&&, std::size_t, zonetool::checked_memory_report&);
 
     template<class Guards> class OwnedIngress final
     {
@@ -133,6 +139,10 @@ namespace player_pair_owned_session
 
     template<class Guards, class Components> class TypedOwnedPair final
     {
+    public:
+        using Roots = player_pair_session::BorrowedRoots<
+            typename Components::Weapon, typename Components::Attachment>;
+    private:
         static_assert(std::is_nothrow_destructible_v<typename Components::Route> &&
             std::is_nothrow_destructible_v<typename Components::Arena> &&
             std::is_nothrow_destructible_v<typename Components::WeaponMap> &&
@@ -144,6 +154,12 @@ namespace player_pair_owned_session
             : pair_(std::move(pair)), raw_view_(raw) {}
         template<class G, class C> friend std::unique_ptr<TypedOwnedPair<G, C>> make_validated_owned_pair(
             std::unique_ptr<OwnedIngress<G>>&&, C&);
+        template<class G> friend std::unique_ptr<TypedOwnedPair<G, NativeComponents>> make_in_memory_owned_pair(
+            std::unique_ptr<OwnedIngress<G>>&&, std::size_t, zonetool::checked_memory_report&);
+        void register_component_returns(const Roots& roots)
+        {
+            pair_->retain_returned_roots(roots.weapon, roots.attachment);
+        }
     public:
         ~TypedOwnedPair() noexcept = default;
         TypedOwnedPair(const TypedOwnedPair&) = delete;
@@ -152,6 +168,8 @@ namespace player_pair_owned_session
         TypedOwnedPair& operator=(TypedOwnedPair&&) = delete;
         const Input& input() const & noexcept { return *raw_view_; }
         const Input& input() const && = delete;
+        const Roots& roots() const & { return pair_->roots(); }
+        const Roots& roots() const && = delete;
     };
 
     template<class Guards, class Components>

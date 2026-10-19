@@ -203,7 +203,8 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
         cleanup = function_body(body, 'catch(...)')
         self.assertIn('const auto primary=std::current_exception();factory.memory->free();std::rethrow_exception(primary);', cleanup)
         self.assertNotIn('phase=', cleanup)
-        self.assertEqual(source.count('report.allocation_failure()'), 1)
+        self.assertEqual(body.count('report.allocation_failure()'), 0)
+        self.assertEqual(function_body(source, 'void real_pair_variants()').count('report.allocation_failure()'), 1)
 
     def test_actual_emission_reconstructs_all_twelve_new_source_pins_and_retained_oracles(self):
         import json
@@ -276,17 +277,63 @@ class AuthoredPairFixtureSourceTests(unittest.TestCase):
                     'native_neutral_dependencies.hpp', 'native_definition_access.hpp'}
         self.assertEqual(missing_includes(old_four),
                          {'native_weapon_dependencies.inc', 'native_attachment_dependencies.inc',
-                          'native_pair_owned_input.hpp', 'native_pair_bodies.hpp'})
+                          'native_pair_owned_input.hpp', 'native_pair_bodies.hpp', 'native_pair_native_components.hpp'})
         supplied = set(fixtures.FIXTURE_SOURCE_FILES)
         self.assertEqual(len(supplied), len(fixtures.FIXTURE_SOURCE_FILES))
-        self.assertEqual(len(supplied), 10)
+        self.assertEqual(len(supplied), 12)
         added = {'native_pair_bodies.hpp', 'native_pair_report.hpp', 'native_pair_body_schema.hpp'}
         self.assertEqual(missing_includes(supplied - added), {'native_pair_bodies.hpp'})
         self.assertTrue(old_four <= supplied)
         self.assertEqual(missing_includes(supplied), set())
+        for new_header in ('native_pair_owned_session.hpp', 'native_pair_native_components.hpp'):
+            self.assertEqual(missing_includes(supplied - {new_header}), {new_header})
         import json
         exports = json.loads((here.parents[2]/'product.json').read_text(encoding='utf-8'))['exports']
         self.assertTrue(all('tools-source/asset-bridge/weapon-export/' + name in exports for name in supplied))
+
+    def test_opt_in_components_use_real_returns_and_owned_role_storage(self):
+        here = Path(__file__).parent
+        companion = (here/'native_pair_native_components.hpp').read_text(encoding='utf-8')
+        typed = (here/'native_pair_owned_session.hpp').read_text(encoding='utf-8')
+        for role, function in (('WeaponMap', 'parse_weapon_json'), ('AttachmentMap', 'parse_attachment_json')):
+            body = function_body(companion, f'class {role} final')
+            self.assertLess(body.index('Json dom_;'), body.index('Strings strings_;'))
+            self.assertEqual(body.count('root_ = zonetool::iw7::pair_json::' + function + '(dom_, &arena, strings_);'), 1)
+            self.assertIn('need(root_ != nullptr);', body)
+            self.assertLess(body.index(f'{role}(const Input& raw, Arena& arena)'), body.index('public:'))
+            self.assertIn('new ' + role + '(raw, arena)', companion)
+            self.assertNotIn('make_unique<' + role + '>', companion)
+        config = function_body(companion, 'NativeComponents(std::size_t capacity,')
+        self.assertEqual(config.strip(), '')
+        maker = function_body(companion, 'std::unique_ptr<TypedOwnedPair<Guards, NativeComponents>> make_in_memory_owned_pair(')
+        self.assertLess(maker.index('make_validated_owned_pair(std::move(ingress), components)'),
+                        maker.index('register_component_returns(components.completed_returns(value->input()))'))
+        self.assertEqual(maker.count('register_component_returns('), 1)
+        self.assertIn('weapon_->raw_ == &raw && attachment_->raw_ == &raw', companion)
+        self.assertIn('&weapon_->dom_ != &attachment_->dom_', companion)
+        self.assertIn('&weapon_->strings_ != &attachment_->strings_', companion)
+        self.assertIn('const Roots& roots() const & { return pair_->roots(); }', typed)
+        self.assertIn('const Roots& roots() const && = delete;', typed)
+        for banned in ('parse_weapon_json(std::string', 'parse_attachment_json(std::string',
+                       'FILE*', 'fopen(', 'DB_Find', 'SL_GetString', 'std::function', 'builder_'):
+            self.assertNotIn(banned, companion)
+
+    def test_component_cpp_causals_are_authored_not_native_execution(self):
+        code = (Path(__file__).parent/'test_authored_pair_json.cpp').read_text(encoding='utf-8')
+        self.assertIn('AUTHORED, NOT COMPILED/LINKED/EXECUTED', code)
+        self.assertIn('static_assert(!std::is_constructible_v<Native,size_t,Report&>);', code)
+        self.assertIn('!exposes_completion<NativeOwner>::value&&!exposes_rvalue_roots<NativeOwner>::value', code)
+        gate = function_body(code, 'native_ingress(const AuthoredCase& source,')
+        self.assertLess(gate.index('require_approved_source(source)'), gate.index('std::make_unique<NativeGuards>'))
+        self.assertIn('owner.reset();need(destroyed==1);released_once(report);need(oracle(source,result));', code)
+        self.assertIn('failure.used_before==source.attachment_offset', code)
+        self.assertIn('failure.element_bytes==sizeof(WeaponAttachment)&&failure.count==1', code)
+        self.assertIn('need(&error==native_component_fault::primary);', code)
+        self.assertIn('native_component_fault::primary=nullptr;refused=true;', code)
+        self.assertIn('native_component_fault::failed_bytes==expected_sizes[phase]', code)
+        for name in ('native_components_variants', 'native_preflight_refusals',
+                     'native_second_role_capacity_failure', 'native_storage_failures_and_order'):
+            self.assertEqual(code.count(name + '();'), 1)
 
     def test_three_approved_originals_pass_production_validation_and_13_flags_stay_false(self):
         for case in fixtures.cases():
