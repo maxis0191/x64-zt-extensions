@@ -20,30 +20,47 @@
 namespace native_component_fault
 {
     struct Allocation { void* pointer; size_t bytes; bool arena_bound; };
+    enum class RefusalCause : unsigned { none, requested, observer_limit, malloc_null };
+    struct RefusalEvent { size_t ordinal; RefusalCause cause; size_t bytes; bool arena_bound; };
     inline Allocation allocations[65536]{};
     inline void* deletions[65536]{};
-    inline size_t calls{}, deletes{}, fail_at{}, failed_bytes{};
+    inline size_t calls{}, deletes{}, fail_at{}, failed_bytes{}, refusal_count{};
+    inline RefusalEvent first_refusal{};
     inline bool active{}, failed_bound{};
     inline const zonetool::checked_memory_report* report{};
     inline const std::bad_alloc* primary{};
     void begin(const zonetool::checked_memory_report& value, size_t failure = 0) noexcept
-    { calls=deletes=failed_bytes=0;failed_bound=false;fail_at=failure;report=&value;primary=nullptr;active=true; }
+    { calls=deletes=failed_bytes=refusal_count=0;first_refusal={};failed_bound=false;fail_at=failure;report=&value;primary=nullptr;active=true; }
     struct Watch final
     {
         explicit Watch(const zonetool::checked_memory_report& value,size_t failure=0) noexcept{begin(value,failure);}
         ~Watch() noexcept{active=false;primary=nullptr;report=nullptr;}
     };
+    [[noreturn]] void refuse_active(size_t ordinal,RefusalCause cause,size_t bytes)
+    {
+        const bool first=++refusal_count==1;
+        if(first)
+        {
+            // Only begin() resets this event; later refusals cannot replace it.
+            first_refusal={ordinal,cause,bytes,report->bound()};
+            failed_bytes=first_refusal.bytes;failed_bound=first_refusal.arena_bound;
+        }
+        try{throw std::bad_alloc();}
+        catch(const std::bad_alloc& error){if(first)primary=&error;throw;}
+    }
     void* allocate(size_t bytes)
     {
         const auto ordinal=active?++calls:0;
         if(active&&(ordinal>65536||ordinal==fail_at))
         {
-            failed_bytes=bytes;failed_bound=report->bound();
-            try{throw std::bad_alloc();}
-            catch(const std::bad_alloc& error){primary=&error;throw;}
+            refuse_active(ordinal,ordinal>65536?RefusalCause::observer_limit:RefusalCause::requested,bytes);
         }
         void* pointer=std::malloc(bytes?bytes:1);
-        if(!pointer)throw std::bad_alloc();
+        if(!pointer)
+        {
+            if(active)refuse_active(ordinal,RefusalCause::malloc_null,bytes);
+            throw std::bad_alloc();
+        }
         if(active)allocations[ordinal-1]={pointer,bytes,report->bound()};
         return pointer;
     }
@@ -105,9 +122,9 @@ namespace authored_pair_fixture
     struct NativeDiagnosticFailure
     {
         const char *block, *assertion, *helper;
-        size_t phase, calls, deletes, fail_at, failed_bytes, release_attempts, observed_bytes, expected_bytes,
+        size_t phase, calls, deletes, fail_at, failed_bytes, refusal_count, refusal_ordinal, release_attempts, observed_bytes, expected_bytes,
             pair_at, weapon_at, wrapper_at;
-        unsigned destroyed, release;
+        unsigned destroyed, release, refusal_cause;
         bool available, failed_bound, refused, report_present, bound, release_available,
             release_result, cleanup_exception, order_equal;
     };
@@ -135,6 +152,8 @@ namespace authored_pair_fixture
         failure.order_equal=context.order_equal;failure.observed_bytes=context.observed_bytes;failure.expected_bytes=context.expected_bytes;
         failure.calls=native_component_fault::calls;failure.deletes=native_component_fault::deletes;failure.fail_at=native_component_fault::fail_at;
         failure.failed_bytes=native_component_fault::failed_bytes;failure.failed_bound=native_component_fault::failed_bound;
+        failure.refusal_count=native_component_fault::refusal_count;failure.refusal_ordinal=native_component_fault::first_refusal.ordinal;
+        failure.refusal_cause=static_cast<unsigned>(native_component_fault::first_refusal.cause);
         failure.pair_at=native_diagnostic_phase_ordinals[0];failure.weapon_at=native_diagnostic_phase_ordinals[1];
         failure.wrapper_at=native_diagnostic_phase_ordinals[2];
         if(context.report)
@@ -150,11 +169,12 @@ namespace authored_pair_fixture
     {
         const auto& failure=native_diagnostic_failure;if(!failure.available)return;
         // Captured assertion-time values, not a claim about later cleanup.
-        char line[768];
+        char line[896];
         const int count=std::snprintf(line,sizeof(line),
-            "G8_FAILURE block=%.32s assertion=%.48s helper=%.20s phase=%zu calls=%zu deletes=%zu fail_at=%zu failed_bytes=%zu failed_bound=%u refused=%u destroyed=%u report=%u bound=%u releases=%zu release=%u release_available=%u release_result=%u cleanup_exception=%u order_equal=%u observed_bytes=%zu expected_bytes=%zu pair_at=%zu weapon_at=%zu wrapper_at=%zu\n",
+            "G8_FAILURE block=%.32s assertion=%.48s helper=%.20s phase=%zu calls=%zu deletes=%zu fail_at=%zu failed_bytes=%zu failed_bound=%u refusal_count=%zu refusal_ordinal=%zu refusal_cause=%u refused=%u destroyed=%u report=%u bound=%u releases=%zu release=%u release_available=%u release_result=%u cleanup_exception=%u order_equal=%u observed_bytes=%zu expected_bytes=%zu pair_at=%zu weapon_at=%zu wrapper_at=%zu\n",
             failure.block?failure.block:"NA",failure.assertion?failure.assertion:"NA",failure.helper?failure.helper:"NA",
-            failure.phase,failure.calls,failure.deletes,failure.fail_at,failure.failed_bytes,unsigned(failure.failed_bound),unsigned(failure.refused),
+            failure.phase,failure.calls,failure.deletes,failure.fail_at,failure.failed_bytes,unsigned(failure.failed_bound),
+            failure.refusal_count,failure.refusal_ordinal,failure.refusal_cause,unsigned(failure.refused),
             failure.destroyed,unsigned(failure.report_present),unsigned(failure.bound),failure.release_attempts,failure.release,
             unsigned(failure.release_available),unsigned(failure.release_result),unsigned(failure.cleanup_exception),unsigned(failure.order_equal),
             failure.observed_bytes,failure.expected_bytes,failure.pair_at,failure.weapon_at,failure.wrapper_at);
@@ -465,13 +485,18 @@ namespace authored_pair_fixture
             try{auto value=owned::make_in_memory_owned_pair(std::move(ingress),source.capacity,report);static_cast<void>(value);}
             catch(const std::bad_alloc& error)
             {
+                native_diagnostic_step("storage.fault","first_requested_refusal",phase,&report,destroyed,refused);
+                need(native_component_fault::refusal_count==1&&
+                    native_component_fault::first_refusal.cause==native_component_fault::RefusalCause::requested&&
+                    native_component_fault::first_refusal.ordinal==native_component_fault::fail_at&&
+                    native_component_fault::first_refusal.ordinal==phases[phase]);
                 native_diagnostic_step("storage.fault","same_live_primary",phase,&report,destroyed,refused);
                 need(&error==native_component_fault::primary); // SAME live exception, not current_exception() copies.
                 native_component_fault::primary=nullptr;refused=true;
             }
             native_component_fault::active=false;
-            native_diagnostic_step("storage.fault","ownership_and_ordinal",phase,&report,destroyed,refused);
-            need(refused&&!ingress&&destroyed==1&&native_component_fault::calls==phases[phase]&&
+            native_diagnostic_step("storage.fault","ownership_after_refusal",phase,&report,destroyed,refused);
+            need(refused&&!ingress&&destroyed==1&&
                 native_component_fault::primary==nullptr&&last_delete(raw,"last_delete.raw")>0&&report.primary()==Failure::none);
             const std::array<size_t,3> expected_sizes{sizeof(owned::detail::Pair<NativeGuards,Native>),
                 sizeof(Native::WeaponMap),sizeof(NativeOwner)};
