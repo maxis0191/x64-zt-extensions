@@ -1,52 +1,69 @@
-"""Approximate Kino player collision with cloned IW7 stock collision plates.
+"""Approximate BO3 map collision with cloned IW7 stock collision brushmodels.
 
-Voxelizes BO3 clip brushes (player-blocking contents), the clip triangle soup
-and selected static-model bounds; flood-fills the player-reachable space near
-the BO3 pathnodes; then greedily covers the floor and wall faces bordering that
-space with axis-aligned plates whose volume never enters reachable cells.
-Output: collision.json, a list of {donor, origin, angles} in BO3 coordinates.
+1. Voxelize player-blocking clip brushes and the clip triangle soup (props are
+   left passable) and flood-fill the space reachable from the BO3 pathnodes.
+2. Sample exact walkable heights on a 16-unit grid from upward clip triangles
+   and brush top planes; keep heights with 64 units of clearance in reachable
+   space.
+3. Group cells into sheets (4-neighbours within 20 units) and cover each sheet
+   with plates fitted to its local plane (slopes and stairs become ramps).
+4. Trace each sheet's boundary against blocked space into loops, simplify them
+   and stand yaw-rotated plates/pillars along the segments.
+
+Output kino.collision/3: donor targetname, origin and angles per piece in BO3
+coordinates. Donor origins are bottom-face centers (measured on cp_zmb).
 """
-import argparse, array, json, math, re
+import argparse, json, math
 import numpy as np
-from scipy import ndimage
-
-R = 16.0  # voxel size
-# Measured cp_zmb donors: size (x, y, z), local offset of geometry center from origin.
-DONORS = {
-    "playerai512x512x8": ((256, 256, 8), (0, 0, 4)),
-    "playerai128x128x8": ((128, 128, 8), (0, 0, 4)),
-    "player64x64x8": ((64, 64, 8), (0, 0, 4)),
-    "player32x32x8": ((32, 32, 8), (0, 0, 4)),
-}
-PLATES = ["playerai512x512x8", "playerai128x128x8", "player64x64x8", "player32x32x8"]
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--export", required=True)
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--reach", type=float, default=260.0)
-    a = ap.parse_args()
-    E = a.export
+R = 16.0
+SIMPLIFY = 12.0
+MIN_LOOP_EXTENT = 96.0
+MIN_SEGMENT = 20.0
+SHEET_STEP = 20.0
+MIN_SHEET_CELLS = 12
+PLANE_TOL = 7.0
+FLOOR_DONORS = (("playerai512x512x8", 256), ("playerai128x128x8", 128), ("player64x64x8", 64))
+WALL_PLATES = (("playerai128x128x8", 128, 128), ("playerai512x512x8", 256, 256))
+
+
+def brushes_and_tris(E):
     clip = json.load(open(E + "/clip.json"))
-    pn = json.load(open(E + "/pathnodes.json"))
-    ents = open(E + "/mapents.txt", encoding="latin-1").read()
-    nodes = np.array([n["origin"] for n in pn], dtype=np.float64)
-    lo = nodes.min(0) - np.array([700, 700, 300]); hi = nodes.max(0) + np.array([700, 700, 900])
-    dims = np.ceil((hi - lo) / R).astype(int)
-    print("grid", dims, dims.prod())
-    solid = np.zeros(dims, dtype=bool)
-
-    def idx(p):
-        return np.floor((np.asarray(p) - lo) / R).astype(int)
-
-    centers = [lo[k] + (np.arange(dims[k]) + 0.5) * R for k in range(3)]
-
-    # Brushes.
-    used = 0
+    v = np.frombuffer(open(E + "/clip_verts.f32", "rb").read(), dtype=np.float32).reshape(-1, 3).astype(np.float64)
+    t = np.frombuffer(open(E + "/clip_tris.u32", "rb").read(), dtype=np.uint32).reshape(-1, 3)
+    nodes = np.array([n["origin"] for n in json.load(open(E + "/pathnodes.json"))], dtype=np.float64)
+    brushes = []
+    dropped = {"local": 0, "holds_node": 0}
     for b in clip["brushes"]:
-        if not (b["contents"] & 0x10001):
+        if not b["contents"] & 0x10001:
             continue
+        mn, mx = np.array(b["mins"]), np.array(b["maxs"])
+        # Origin-centred boxes are submodel brushes in local space, not world.
+        if np.all(np.abs(mn + mx) < 6) and np.min(mx - mn) > 32:
+            dropped["local"] += 1
+            continue
+        # AI walks pathnodes, so a brush enclosing one at body height is not
+        # player/AI blocking (volumes and other non-colliding solids).
+        body = nodes + np.array([0.0, 0.0, 24.0])
+        hit = np.all((body >= mn + 2) & (body <= mx - 2), axis=1)
+        if hit.any() and all(brush_contains(b, q) for q in body[hit][:4]):
+            dropped["holds_node"] += 1
+            continue
+        brushes.append(b)
+    print("brushes", len(brushes), dropped)
+    return brushes, v[t[:, 0]], v[t[:, 1]], v[t[:, 2]]
+
+
+def brush_contains(b, q):
+    return all(s["plane"] is None or q[0] * s["plane"][0] + q[1] * s["plane"][1] + q[2] * s["plane"][2] <= s["plane"][3] - 2 for s in b["sides"])
+
+
+def voxelize(brushes, A, B, C, lo, dims):
+    solid = np.zeros(dims, dtype=bool)
+    centers = [lo[k] + (np.arange(dims[k]) + 0.5) * R for k in range(3)]
+    idx = lambda p: np.floor((np.asarray(p) - lo) / R).astype(int)
+    for b in brushes:
         mn = np.maximum(idx(b["mins"]), 0); mx = np.minimum(idx(b["maxs"]) + 1, dims)
         if np.any(mx <= mn):
             continue
@@ -57,154 +74,335 @@ def main():
             if pl:
                 inside &= (X * pl[0] + Y * pl[1] + Z * pl[2]) <= pl[3] + R * 0.5
         solid[mn[0]:mx[0], mn[1]:mx[1], mn[2]:mx[2]] |= inside
-        used += 1
-    print("brushes used", used, "solid", int(solid.sum()))
-
-    # Triangle soup: dense barycentric samples.
-    v = np.frombuffer(open(E + "/clip_verts.f32", "rb").read(), dtype=np.float32).reshape(-1, 3).astype(np.float64)
-    t = np.frombuffer(open(E + "/clip_tris.u32", "rb").read(), dtype=np.uint32).reshape(-1, 3)
-    A, B, C = v[t[:, 0]], v[t[:, 1]], v[t[:, 2]]
     span = np.maximum(np.maximum(np.linalg.norm(B - A, axis=1), np.linalg.norm(C - A, axis=1)), np.linalg.norm(C - B, axis=1))
-    for steps in (2, 4, 8, 16, 32, 64, 128, 256):
-        sel = (span <= steps * R * 0.5) & (span > (steps // 2) * R * 0.5) if steps > 2 else (span <= steps * R * 0.5)
-        if not sel.any():
+    prev = 0.0
+    for steps in (2, 4, 8, 16, 32, 64, 128, 256, 512):
+        lim = steps * R * 0.5
+        sel = np.nonzero((span <= lim) & (span > prev))[0]
+        prev = lim
+        if not len(sel):
             continue
         uu, vv = np.meshgrid(np.linspace(0, 1, steps + 1), np.linspace(0, 1, steps + 1))
         m = (uu + vv) <= 1.0
         uu, vv = uu[m], vv[m]
-        a_, b_, c_ = A[sel], B[sel], C[sel]
-        pts = a_[:, None, :] + (b_ - a_)[:, None, :] * uu[None, :, None] + (c_ - a_)[:, None, :] * vv[None, :, None]
-        ii = idx(pts.reshape(-1, 3))
-        ok = np.all((ii >= 0) & (ii < dims), axis=1)
-        ii = ii[ok]
-        solid[ii[:, 0], ii[:, 1], ii[:, 2]] = True
-    big = span > 128 * R * 0.5
-    print("tris", len(t), "oversized skipped", int(big.sum()), "solid", int(solid.sum()))
+        for chunk in np.array_split(sel, len(sel) // 20000 + 1):
+            a_, b_, c_ = A[chunk], B[chunk], C[chunk]
+            pts = a_[:, None, :] + (b_ - a_)[:, None, :] * uu[None, :, None] + (c_ - a_)[:, None, :] * vv[None, :, None]
+            ii = idx(pts.reshape(-1, 3))
+            ii = ii[np.all((ii >= 0) & (ii < dims), axis=1)]
+            solid[ii[:, 0], ii[:, 1], ii[:, 2]] = True
+    return solid
 
-    # Static models with player-blocking contents (bounds, skipping tiny debris).
-    smc = 0
-    for s in clip["static_models"]:
-        if not (s["contents"] & 0x10001):
-            continue
-        mn_, mx_ = np.array(s["absmin"]), np.array(s["absmax"])
-        size = mx_ - mn_
-        if size[2] < 24 or max(size[0], size[1]) < 12 or max(size) > 600:
-            continue
-        a0 = np.maximum(idx(mn_ + 2), 0); a1 = np.minimum(idx(mx_ - 2) + 1, dims)
-        if np.any(a1 <= a0):
-            continue
-        solid[a0[0]:a1[0], a0[1]:a1[1], a0[2]:a1[2]] = True
-        smc += 1
-    print("static model boxes", smc)
 
-    # Reachable space: empty cells within reach of a pathnode, connected to them.
+def surface_heights(brushes, A, B, C, lo, dims):
+    """Exact candidate floor heights per grid column: list of z per (i, j)."""
+    H = {}
+    cx = lo[0] + (np.arange(dims[0]) + 0.5) * R
+    cy = lo[1] + (np.arange(dims[1]) + 0.5) * R
+    n = np.cross(B - A, C - A)
+    nl = np.linalg.norm(n, axis=1)
+    up = np.abs(n[:, 2]) > 0.5 * np.maximum(nl, 1e-9)
+    for a, b, c in zip(A[up], B[up], C[up]):
+        x0, x1 = min(a[0], b[0], c[0]), max(a[0], b[0], c[0])
+        y0, y1 = min(a[1], b[1], c[1]), max(a[1], b[1], c[1])
+        i0 = max(int((x0 - lo[0]) // R), 0); i1 = min(int((x1 - lo[0]) // R) + 1, dims[0])
+        j0 = max(int((y0 - lo[1]) // R), 0); j1 = min(int((y1 - lo[1]) // R) + 1, dims[1])
+        if i1 <= i0 or j1 <= j0:
+            continue
+        X, Y = np.meshgrid(cx[i0:i1], cy[j0:j1], indexing="ij")
+        d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+        if abs(d) < 1e-9:
+            continue
+        w0 = ((b[1] - c[1]) * (X - c[0]) + (c[0] - b[0]) * (Y - c[1])) / d
+        w1 = ((c[1] - a[1]) * (X - c[0]) + (a[0] - c[0]) * (Y - c[1])) / d
+        w2 = 1 - w0 - w1
+        ins = (w0 >= -0.01) & (w1 >= -0.01) & (w2 >= -0.01)
+        Z = w0 * a[2] + w1 * b[2] + w2 * c[2]
+        for i, j in np.argwhere(ins):
+            H.setdefault((i0 + i, j0 + j), []).append(float(Z[i, j]))
+    for bsh in brushes:
+        tops = [s["plane"] for s in bsh["sides"] if s["plane"] and s["plane"][2] > 0.5]
+        i0 = max(int((bsh["mins"][0] - lo[0]) // R), 0); i1 = min(int((bsh["maxs"][0] - lo[0]) // R) + 1, dims[0])
+        j0 = max(int((bsh["mins"][1] - lo[1]) // R), 0); j1 = min(int((bsh["maxs"][1] - lo[1]) // R) + 1, dims[1])
+        for i in range(i0, i1):
+            for j in range(j0, j1):
+                x, y = cx[i], cy[j]
+                if not (bsh["mins"][0] <= x <= bsh["maxs"][0] and bsh["mins"][1] <= y <= bsh["maxs"][1]):
+                    continue
+                z = bsh["maxs"][2]
+                for pl in tops:
+                    z = min(z, (pl[3] - pl[0] * x - pl[1] * y) / pl[2])
+                if z >= bsh["mins"][2]:
+                    H.setdefault((i, j), []).append(float(z))
+    return H
+
+
+def rdp(points, eps):
+    if len(points) < 3:
+        return points
+    a, b = np.array(points[0]), np.array(points[-1])
+    d = b - a
+    n = np.hypot(*d)
+    best, k = 0.0, 0
+    for i in range(1, len(points) - 1):
+        p = np.array(points[i]) - a
+        dist = abs(d[0] * p[1] - d[1] * p[0]) / n if n > 1e-9 else np.hypot(*p)
+        if dist > best:
+            best, k = dist, i
+    if best > eps:
+        return rdp(points[:k + 1], eps)[:-1] + rdp(points[k:], eps)
+    return [points[0], points[-1]]
+
+
+def plane_angles(nx, ny, nz):
+    """Angles that tilt a horizontal plate onto the plane with unit normal n."""
+    # IW7 angles (pitch, yaw, 0) map local +z to (sin p cos y, sin p sin y, cos p).
+    pitch = math.degrees(math.atan2(math.hypot(nx, ny), nz))
+    yaw = math.degrees(math.atan2(ny, nx))
+    return [pitch, yaw, 0.0] if pitch > 0.5 else [0.0, 0.0, 0.0]
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--export", required=True)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--reach", type=float, default=260.0)
+    a = ap.parse_args()
+    E = a.export
+    nodes = np.array([n["origin"] for n in json.load(open(E + "/pathnodes.json"))], dtype=np.float64)
+    lo = nodes.min(0) - np.array([700, 700, 300]); hi = nodes.max(0) + np.array([700, 700, 900])
+    dims = np.ceil((hi - lo) / R).astype(int)
+    idx = lambda p: np.floor((np.asarray(p) - lo) / R).astype(int)
+    brushes, A, B, C = brushes_and_tris(E)
+    solid = voxelize(brushes, A, B, C, lo, dims)
     near = np.zeros(dims, dtype=bool)
     rr = int(math.ceil(a.reach / R))
     for n in nodes:
         c = idx(n)
-        x0, x1 = max(c[0] - rr, 0), min(c[0] + rr + 1, dims[0])
-        y0, y1 = max(c[1] - rr, 0), min(c[1] + rr + 1, dims[1])
-        z0, z1 = max(c[2] - 3, 0), min(c[2] + 10, dims[2])
-        near[x0:x1, y0:y1, z0:z1] = True
-    empty = near & ~solid
-    lab, count = ndimage.label(empty)
+        near[max(c[0] - rr, 0):c[0] + rr + 1, max(c[1] - rr, 0):c[1] + rr + 1, max(c[2] - 3, 0):c[2] + 10] = True
+    from scipy import ndimage  # only the generator itself needs scipy
+    lab, _ = ndimage.label(near & ~solid)
     seeds = set()
     for n in nodes:
         c = idx(n) + np.array([0, 0, 1])
         if np.all(c >= 0) and np.all(c < dims) and lab[tuple(c)]:
             seeds.add(lab[tuple(c)])
     reach = np.isin(lab, list(seeds))
-    print("reachable cells", int(reach.sum()), "components", len(seeds))
+    H = surface_heights(brushes, A, B, C, lo, dims)
 
-    plates = []
-
-    def cover(mask, notreach, place_fn):
-        """Greedy cover of a 2D mask with square plates whose footprint stays in non-reachable cells."""
-        todo = mask.copy()
-        h, w = mask.shape
-        ii_nr = np.zeros((h + 1, w + 1), dtype=np.int32)
-        ii_nr[1:, 1:] = np.cumsum(np.cumsum(notreach.astype(np.int32), 0), 1)
-        for donor in PLATES:
-            (sx, sy, _), _ = DONORS[donor]
-            n = int(sx // R)
-            if n < 1 or n > min(h, w):
+    # Walkable samples: reachable just above, 64 units clear above, deduplicated.
+    cells = {}
+    for (i, j), zs in H.items():
+        for z in sorted(set(round(z, 1) for z in zs)):
+            k = int((z + 17 - lo[2]) // R)  # first voxel clear of the R/2 inflation
+            if k < 0 or k + 4 >= dims[2] or not reach[i, j, k]:
                 continue
-            ok = (ii_nr[n:, n:] - ii_nr[:-n, n:] - ii_nr[n:, :-n] + ii_nr[:-n, :-n]) == n * n  # anchor (i0,j0) valid
-            offs = sorted({0, n // 2, n - 1})
-            cells = np.argwhere(todo)
-            for i, j in cells:
-                if not todo[i, j]:
-                    continue
-                best = None
-                for di in offs:
-                    for dj in offs:
-                        i0, j0 = i - di, j - dj
-                        if i0 < 0 or j0 < 0 or i0 + n > h or j0 + n > w or not ok[i0, j0]:
-                            continue
-                        gain = int(todo[i0:i0 + n, j0:j0 + n].sum())
-                        if best is None or gain > best[0]:
-                            best = (gain, i0, j0)
-                if best and (best[0] >= max(1, (n * n) // 4) or donor == PLATES[-1]):
-                    _, i0, j0 = best
-                    todo[i0:i0 + n, j0:j0 + n] = False
-                    place_fn(donor, i0, j0, n)
-        return int(todo.sum())
+            if solid[i, j, k + 1:k + 4].any():
+                continue
+            lst = cells.setdefault((i, j), [])
+            if all(abs(z - q) > SHEET_STEP for q in lst):
+                lst.append(z)
+    # Sheets: union-find over (i, j, z) samples.
+    keys = [(i, j, z) for (i, j), zs in cells.items() for z in zs]
+    pos = {k: n for n, k in enumerate(keys)}
+    parent = list(range(len(keys)))
 
-    # Floors: solid cell with reachable cell directly above.
-    floor = solid[:, :, :-1] & reach[:, :, 1:]
-    left_floor = 0
-    for z in range(dims[2] - 1):
-        m = floor[:, :, z]
-        if not m.any():
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for (i, j, z), n in pos.items():
+        for di, dj in ((1, 0), (0, 1)):
+            for z2 in cells.get((i + di, j + dj), ()):
+                if abs(z2 - z) <= SHEET_STEP:
+                    ra, rb = find(n), find(pos[(i + di, j + dj, z2)])
+                    if ra != rb:
+                        parent[ra] = rb
+    sheets = {}
+    for k, n in pos.items():
+        sheets.setdefault(find(n), []).append(k)
+    pieces = []
+    stats = {"sheets": 0, "small_sheets": 0}
+    for members in sheets.values():
+        if len(members) < MIN_SHEET_CELLS:
+            stats["small_sheets"] += 1
             continue
-        notreach = ~reach[:, :, z]
-
-        def place(donor, i0, j0, n, z=z):
-            cx = lo[0] + (i0 + n / 2.0) * R; cy = lo[1] + (j0 + n / 2.0) * R
-            top = lo[2] + (z + 1) * R
-            plates.append({"donor": donor, "kind": "floor", "origin": [cx, cy, top - 8.0], "angles": [0, 0, 0]})
-        left_floor += cover(m, notreach, place)
-
-    # Walls: solid cell with a reachable horizontal neighbour; plate stands in the solid cell.
-    left_wall = 0
-    for axis, sign in ((0, 1), (0, -1), (1, 1), (1, -1)):
-        sh = np.roll(reach, -sign, axis=axis)
-        if sign > 0:
-            sl = [slice(None)] * 3; sl[axis] = slice(-1, None); sh[tuple(sl)] = False
-        else:
-            sl = [slice(None)] * 3; sl[axis] = slice(0, 1); sh[tuple(sl)] = False
-        face = solid & sh
-        for k in range(dims[axis]):
-            if axis == 0:
-                m = face[k, :, :]; nr = ~reach[k, :, :]
-            else:
-                m = face[:, k, :]; nr = ~reach[:, k, :]
-            if not m.any():
-                continue
-
-            def place(donor, i0, j0, n, k=k, axis=axis, sign=sign):
-                # Plate face flush with the reachable side of the solid cell.
-                faceplane = lo[axis] + (k + (1 if sign > 0 else 0)) * R
-                mid_h = lo[1 - axis] + (i0 + n / 2.0) * R
-                mid_z = lo[2] + (j0 + n / 2.0) * R
-                c = [0.0, 0.0, mid_z]
-                c[axis] = faceplane - sign * 4.0
-                c[1 - axis] = mid_h
-                if axis == 0:
-                    ang = [90, 0, 0]       # thin along x
-                    # pitch 90: local +z -> world +x; geometry center offset (0,0,4) -> (4,0,0)
-                    off = [4.0, 0.0, 0.0]
-                else:
-                    ang = [0, 0, 90]       # roll 90: thin along y
-                    off = [0.0, -4.0, 0.0]
-                plates.append({"donor": donor, "kind": "wall", "origin": [c[0] - off[0], c[1] - off[1], c[2] - off[2]], "angles": ang})
-            left_wall += cover(m, nr, place)
-
+        stats["sheets"] += 1
+        hmap = {(i, j): z for i, j, z in members}
+        cover_floor(pieces, hmap, lo, cells)
+        trace_walls(pieces, hmap, lo, solid, dims)
     kinds = {}
-    for p in plates:
+    for p in pieces:
         kinds[(p["kind"], p["donor"])] = kinds.get((p["kind"], p["donor"]), 0) + 1
-    print("plates", len(plates), kinds, "uncovered floor", left_floor, "wall", left_wall)
-    json.dump({"schema": "kino.collision/1", "voxel": R, "plates": plates}, open(a.out, "w"))
+    print("pieces", len(pieces), stats, kinds)
+    json.dump({"schema": "kino.collision/3", "voxel": R, "pieces": pieces}, open(a.out, "w"))
+
+
+def cover_floor(pieces, hmap, lo, cells):
+    todo = set(hmap)
+    for donor, size in FLOOR_DONORS:
+        n = int(size // R)
+        offs = sorted({0, n // 2, n - 1})
+        for (i, j) in sorted(todo):
+            if (i, j) not in todo:
+                continue
+            best = None
+            for di in offs:
+                for dj in offs:
+                    i0, j0 = i - di, j - dj
+                    foot = [(i0 + u, j0 + v) for u in range(n) for v in range(n)]
+                    inside = [c for c in foot if c in hmap]
+                    if len(inside) < 0.7 * len(foot) and donor != FLOOR_DONORS[-1][0]:
+                        continue
+                    if len(inside) < 0.3 * len(foot):
+                        continue
+                    P = np.array([[lo[0] + (c[0] + 0.5) * R, lo[1] + (c[1] + 0.5) * R, hmap[c]] for c in inside])
+                    M = np.c_[P[:, 0], P[:, 1], np.ones(len(P))]
+                    coef, *_ = np.linalg.lstsq(M, P[:, 2], rcond=None)
+                    res = np.abs(M @ coef - P[:, 2]).max()
+                    if res > PLANE_TOL:
+                        continue
+                    # An overhang must not become a low ceiling over another
+                    # walkable level (stacked floors, stair landings).
+                    ztop_c = coef[0] * (lo[0] + (i0 + n / 2) * R) + coef[1] * (lo[1] + (j0 + n / 2) * R) + coef[2]
+                    if any(0 < ztop_c - z2 < 130 for c in foot if c not in hmap for z2 in cells.get(c, ())):
+                        continue
+                    gain = sum(1 for c in inside if c in todo)
+                    if best is None or gain > best[0]:
+                        best = (gain, i0, j0, coef)
+            if best and (best[0] * 4 >= n * n or donor == FLOOR_DONORS[-1][0]):
+                _, i0, j0, coef = best
+                for u in range(n):
+                    for v in range(n):
+                        todo.discard((i0 + u, j0 + v))
+                cxy = (lo[0] + (i0 + n / 2) * R, lo[1] + (j0 + n / 2) * R)
+                ztop = coef[0] * cxy[0] + coef[1] * cxy[1] + coef[2]
+                nrm = np.array([-coef[0], -coef[1], 1.0]); nrm /= np.linalg.norm(nrm)
+                # Plate top through the fitted plane at the footprint center.
+                origin = np.array([cxy[0], cxy[1], ztop]) - nrm * 8.0
+                pieces.append({"donor": donor, "kind": "floor", "origin": [float(x) for x in origin],
+                               "angles": plane_angles(*nrm)})
+    # Uneven cells no plane fit accepted (seat rows, rubble): flat 64 plates at
+    # the local top so no walkable cell is left without a floor.
+    donor, size = FLOOR_DONORS[-1]
+    for (i, j) in sorted(todo):
+        if (i, j) not in todo:
+            continue
+        z0 = hmap[(i, j)]
+        for u in range(-1, 3):
+            for v in range(-1, 3):
+                c = (i + u, j + v)
+                if c in todo and abs(hmap[c] - z0) <= 12:
+                    todo.discard(c)
+        cxy = (lo[0] + (i + 1) * R, lo[1] + (j + 1) * R)
+        pieces.append({"donor": donor, "kind": "floor", "origin": [cxy[0], cxy[1], z0 - 8.0], "angles": [0.0, 0.0, 0.0]})
+
+
+def trace_walls(pieces, hmap, lo, solid, dims):
+    nxt = {}
+    edge_top = {}
+    for (i, j), z in hmap.items():
+        for (dx, dy) in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nb = (i + dx, j + dy)
+            if nb in hmap and abs(hmap[nb] - z) <= SHEET_STEP:
+                continue
+            ni, nj = nb
+            if not (0 <= ni < dims[0] and 0 <= nj < dims[1]):
+                continue
+            k = int((z + 17 - lo[2]) // R)  # first voxel clear of the R/2 inflation
+            if not solid[ni, nj, max(k + 1, 0):k + 6].any():
+                continue  # open edge (ledge/drop): BO3 has no wall there either
+            # Wall top: end of the neighbour's solid run, so a platform side
+            # never rises through the walkable top of that platform.
+            run = 0
+            for kk in range(k, min(k + 16, dims[2])):
+                if solid[ni, nj, kk]:
+                    run = kk - k + 1
+                elif run:
+                    break
+            if dx == 1:
+                e = ((i + 1, j), (i + 1, j + 1))
+            elif dx == -1:
+                e = ((i, j + 1), (i, j))
+            elif dy == 1:
+                e = ((i + 1, j + 1), (i, j + 1))
+            else:
+                e = ((i, j), (i + 1, j))
+            nxt.setdefault(e[0], []).append(e[1])
+            edge_top[e[0]] = (z, lo[2] + (k + run) * R - 8.0)
+    while nxt:
+        start = next(iter(nxt))
+        loop = [start]
+        cur = start
+        while cur in nxt:
+            n2 = nxt[cur].pop()
+            if not nxt[cur]:
+                del nxt[cur]
+            loop.append(n2)
+            cur = n2
+            if cur == start:
+                break
+        pts = [(lo[0] + px * R, lo[1] + py * R) for px, py in loop]
+        xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+        if (max(xs) - min(xs)) + (max(ys) - min(ys)) < MIN_LOOP_EXTENT:
+            continue
+        where = {}
+        for n, q in enumerate(pts):
+            where.setdefault(q, n)
+        simple = rdp(pts, SIMPLIFY)
+        for k in range(len(simple) - 1):
+            a0, a1 = np.array(simple[k]), np.array(simple[k + 1])
+            d = a1 - a0
+            L = float(np.hypot(*d))
+            if L < MIN_SEGMENT:
+                continue
+            n0, n1 = where[tuple(simple[k])], where[tuple(simple[k + 1])]
+            span = [edge_top[loop[n]] for n in range(n0, n1 if n1 > n0 else len(loop) - 1) if loop[n] in edge_top]
+            if not span:
+                continue
+            floor_h = min(f for f, _ in span)
+            # Players jump about 40 units: walls need not rise past floor + 96.
+            top = min(max(t for _, t in span), floor_h + 96.0)
+            place_wall(pieces, a0, a1, (d[1] / L, -d[0] / L), floor_h, top)
+
+
+PILLARS = (("player64x64x64", 64), ("player64x64x128", 128), ("player64x64x256", 256))
+
+
+def place_wall(pieces, a0, a1, nrm, floor_h, top):
+    """Vertical pieces along a0-a1 from the floor to the obstacle top,
+    thickness into the wall (right side), no overhang past the segment ends."""
+    # Cell borders sit 0-16 units in front of the real surface (R/2 voxel
+    # inflation); move the wall face 8 units into the obstacle.
+    shift = np.array(nrm) * 8.0
+    a0, a1 = a0 + shift, a1 + shift
+    d = a1 - a0
+    length = float(np.hypot(*d))
+    u = d / length
+    yaw = math.degrees(math.atan2(nrm[1], nrm[0]))
+    need = max(top - (floor_h - 16), 32.0)
+    plate = None
+    for cand in WALL_PLATES:
+        if length >= cand[1] * 0.75:
+            plate = cand
+            break
+    if plate:
+        donor, width, height = plate
+    else:
+        donor, height = next(((n, h) for n, h in PILLARS if h >= need), PILLARS[-1])
+        width = 64
+    count = max(1, int(math.ceil(length / width)))
+    for k in range(count):
+        c = min(k * width + width / 2.0, length - width / 2.0) if length >= width else length / 2.0
+        p = a0 + u * c
+        # One piece per column, ending at the obstacle top (it may reach below
+        # the floor, never above the obstacle).
+        if plate:
+            # Pitch 90 stands the plate up: local +z (thickness) -> yaw, local x -> down.
+            pieces.append({"donor": donor, "kind": "wall", "origin": [p[0], p[1], top - height / 2.0], "angles": [90, yaw, 0]})
+        else:
+            pieces.append({"donor": donor, "kind": "wall", "origin": [p[0] + nrm[0] * 32, p[1] + nrm[1] * 32, top - height], "angles": [0, yaw, 0]})
 
 
 if __name__ == "__main__":

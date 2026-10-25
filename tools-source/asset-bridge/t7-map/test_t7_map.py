@@ -9,6 +9,9 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import t7_xpak  # noqa: E402
 import kino_compose as kc  # noqa: E402
+import kino_collision as kcol  # noqa: E402
+import kino_collision_check as kchk  # noqa: E402
+import numpy as np  # noqa: E402
 
 
 def lz4_literals(data):
@@ -118,6 +121,29 @@ class EncodingTests(unittest.TestCase):
     def test_material_names_are_flat(self):
         self.assertEqual(kc.sanitize("wc/t7_Wood-Planks"), "t7_wood_planks")
         self.assertNotIn("/", "kino_t_" + kc.sanitize("i_t7_x/y"))
+
+
+class CollisionTests(unittest.TestCase):
+    def test_plate_tilt_matches_normal(self):
+        n = np.array([0.3, -0.2, 0.93]); n /= np.linalg.norm(n)
+        f, l, u = kchk.frame(*kcol.plane_angles(*n)[:2])
+        self.assertTrue(np.allclose(u, n, atol=1e-6))
+        self.assertEqual(kcol.plane_angles(0, 0, 1), [0.0, 0.0, 0.0])
+
+    def test_standing_wall_frame(self):
+        # Pitch 90 stands a plate up: thickness (local z) along the yaw, local x down.
+        f, l, u = kchk.frame(90, 0)
+        self.assertTrue(np.allclose(u, (1, 0, 0), atol=1e-6))
+        self.assertTrue(np.allclose(f, (0, 0, -1), atol=1e-6))
+
+    def test_check_support_and_clearance(self):
+        node = np.array([[0.0, 0.0, 30.0]])
+        floor = {"donor": "playerai128x128x8", "kind": "floor", "origin": [0, 0, -8], "angles": [0, 0, 0]}
+        self.assertEqual(kchk.check([floor], node), ([], []))
+        wall = {"donor": "playerai128x128x8", "kind": "wall", "origin": [5, 0, 64], "angles": [90, 0, 0]}
+        un, bl = kchk.check([floor, wall], node)
+        self.assertEqual((len(un), len(bl)), (0, 1))
+        self.assertEqual(len(kchk.check([wall], node)[0]), 1)
 
 
 if __name__ == "__main__":

@@ -20,6 +20,8 @@ never committed.
 | 7. Serialize | `kino-writer.exe` (`build-writer.ps1 -ZoneToolSource <pinned x64-zt>`) | `xmodel/*.xmb`, `xsurface/*.xsb`, `images/*.iw7Image` |
 | 8. Fastfile | `Build-KinoFF.ps1` (`ff-work-profile.json`) | measured community ZoneTool `-buildzone kino` |
 | Material template | `make_unlit_template.py <dumpasset output> <dir>` | stock `mopw/zmb_neon_light_blue` -> unlit template |
+| Collision | `kino_collision.py --export <export> --out <json>` | clip brushes + triangle soup -> `kino.collision/3` pieces (stock cp_zmb donor, origin, angles) |
+| Collision check | `kino_collision_check.py --export <export> --collision <json>` | floor support / body clearance at every BO3 pathnode |
 
 `build.sh <name> [compose args]` chains steps 6-8 (environment variables
 documented in the script). Steps 1-4 run once per BO3 export; BO3 can be closed
@@ -62,6 +64,27 @@ dedicated (`ops/Test-KinoVisual.ps1` in the server product).
   `mopw_unlit_replace_lin_ct_nocast` with a white color tint shows the textures.
 - `setsunlight` changes the network sun; vision-set rawfiles and
   `enableouterspacemodellighting` had no visible effect on these models.
+
+## Collision approximation
+
+IW7 cannot load BO3 clip data, so walkable space is rebuilt from clones of
+stock `cp_zmb` collision brushmodels (`playerai512x512x8` is 258x258x10,
+`playerai128x128x8`, `player64x64x8`, `player64x64x64/128/256`; origin at the
+bottom-face center). The generator voxelizes player-blocking brushes and the
+triangle soup at 16 units, keeps space reachable from the pathnodes, fits
+floor plates to each walkable sheet (slopes and stairs become ramps) and stands
+plates/pillars along sheet boundaries up to the obstacle top (at most floor +
+96). Brushes with origin-centred bounds (submodel local space) or enclosing a
+pathnode are not world blockers and are ignored.
+
+In-engine findings (private witnesses): clones block players and
+`playerphysicstrace`, not bullets; `hide()` unlinks them (no collision); about
+240 extra visible entities above the Spaceland baseline drop the server
+(`sv_running 0`, no message), including deleted entities still pending, so the
+server streams a fixed pool of clones near players instead of spawning all
+pieces. Current set: 4,451 pieces; 1,362 nodes, 138 without a floor within
+reach and 169 with a piece inside the body margin (mostly the theatre centre
+and stage props).
 
 ## Current limits
 
