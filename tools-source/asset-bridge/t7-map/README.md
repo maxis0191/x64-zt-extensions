@@ -22,10 +22,16 @@ never committed.
 | Material template | `make_unlit_template.py <dumpasset output> <dir>` | stock `mopw/zmb_neon_light_blue` -> unlit template |
 | Collision | `kino_collision.py --export <export> --out <json>` | clip brushes + triangle soup -> `kino.collision/3` pieces (stock cp_zmb donor, origin, angles) |
 | Collision check | `kino_collision_check.py --export <export> --collision <json>` | floor support / body clearance at every BO3 pathnode |
+| BO3 sound banks | `t7_sab.py list <bank.sabs> [--min-seconds N]`, `t7_sab.py extract <bank> <index> <out.flac>` | T7 v15 `.sabs` entries (format 8 = whole FLAC files) |
+| Mod sound bank | `kino_sound.py --out <zonetool work> --zone mod --template <stock aliases.csv> --music alias=file.flac` | ZoneTool `soundbank/`, `sound/` alias table and `sound_assets/`; the build then writes `mod.sabl`/`mod.sabs` |
 
 `build.sh <name> [compose args]` chains steps 6-8 (environment variables
 documented in the script). Steps 1-4 run once per BO3 export; BO3 can be closed
 after step 4 because all streamed geometry/pixels are read from the xpak files.
+`Build-KinoFF.ps1` copies `soundbank/`, `sound/` and `sound_assets/` from the
+build root when present. The bank zone name names the output files, so a mod
+uses zone `mod` to ship `mods/<mod>/mod.sabl`/`mod.sabs` beside `mod.ff`; the
+Aurora client downloads all three automatically.
 
 The memory layouts were checked against this boiii-launched `BlackOps3.exe`
 (asset pool RVA `0x93883F0`; Husky lists `0x94073F0` for another build). The

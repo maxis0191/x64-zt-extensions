@@ -217,11 +217,18 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--reach", type=float, default=260.0)
     ap.add_argument("--zone-dir", default="", help="BO3 zone directory (xpak) for static-model collision")
+    ap.add_argument("--gameplay", default="", help="kino.gameplay/1 JSON: seed teleport-only rooms")
     a = ap.parse_args()
     global ZONE_DIR
     ZONE_DIR = a.zone_dir or None
     E = a.export
     nodes = np.array([n["origin"] for n in json.load(open(E + "/pathnodes.json"))], dtype=np.float64)
+    if a.gameplay:
+        # Teleport-only places (projection room, bonus rooms) have no path
+        # nodes; seed walkable space there too.
+        g = json.load(open(a.gameplay))
+        extra = [it["origin"] for key in ("bonus_spots", "pack_a_punch") for it in g.get(key, [])]
+        nodes = np.vstack([nodes, np.array(extra, dtype=np.float64) + np.array([0.0, 0.0, 30.0])])
     lo = nodes.min(0) - np.array([700, 700, 300]); hi = nodes.max(0) + np.array([700, 700, 900])
     dims = np.ceil((hi - lo) / R).astype(int)
     idx = lambda p: np.floor((np.asarray(p) - lo) / R).astype(int)

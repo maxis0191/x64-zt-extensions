@@ -3,11 +3,11 @@
 Writes kino.gameplay/1: player starts and zone respawns, zombie spawners by
 zone, window goals, perk machines, wall buys, box (magic wheel) locations,
 GobbleGum (Fate & Fortune) machines, Pack-a-Punch, power switch, teleporter
-pad, doors and the three 115 meteors. Each BO3 item carries its IW7 Zombies
+pad, doors, the three 115 meteors and the post-teleport bonus spots. Each BO3 item carries its IW7 Zombies
 equivalent so the server can stage a lore-consistent Willard Wyler remake
 with retail IW7 systems. Coordinates stay in BO3 map space.
 """
-import argparse, json, re
+import argparse, json, os, re
 from collections import OrderedDict
 
 # BO3 perk -> IW7 Zombies perk machine interaction (same role in the game).
@@ -94,12 +94,44 @@ def extract(ents):
                                                     electric=e.get("script_noteworthy") == "electric_door",
                                                     flag=e.get("script_flag", ""), target=vec(e.get("targetOrigin")), triggers=[]))
         d["triggers"].append(vec(e["origin"]))
+    for e in ents:
+        if e.get("classname") == "script_model" and e.get("targetname") in doors and e.get("model"):
+            doors[e["targetname"]].setdefault("models", []).append(
+                item(e, model=e["model"], motion="rotate" if e.get("script_string") == "rotate" else "move"))
     g["doors"] = list(doors.values())
     g["meteors"] = [item(e) for e in by("songstructs")]
+    g["bonus_spots"] = [item(e) for e in by("struct_random_powerup_post_teleport")]
     return g
 
 
-def add_facing(g, nodes):
+def extra_model_spec(g, meshes):
+    """kino_compose --extra-models spec for the door models; meshes missing
+    from the export use their mirrored counterpart or the closest variant."""
+    family = (("_01b_", "_01a_"), ("_dressing_room_", "_closet_"))
+    specs = []
+    for name in sorted({m["model"] for d in g["doors"] for m in d.get("models", [])}):
+        if name in meshes:
+            specs.append(name)
+            continue
+        twin = name.replace("_lt", "_rt") if "_lt" in name else name.replace("_rt", "_lt")
+        twin = twin.replace("_left_", "_right_") if "_left_" in name else twin.replace("_right_", "_left_")
+        if twin in meshes:
+            specs.append("%s=~%s" % (name, twin))
+            continue
+        for a, b in family:
+            alt = name.replace(a, b)
+            if alt in meshes:
+                specs.append("%s=%s" % (name, alt))
+                break
+            if alt.replace("_lt", "_rt") in meshes:
+                specs.append("%s=~%s" % (name, alt.replace("_lt", "_rt")))
+                break
+        else:
+            print("no mesh for door model", name)
+    return ",".join(specs)
+
+
+def add_facing(g, nodes, floors=None):
     """Yaw from each machine toward the walkable room (mean direction to the
     path nodes within 220 units, snapped to the BO3 yaw plus a multiple of
     90 degrees); machines are placed facing that way."""
@@ -108,11 +140,17 @@ def add_facing(g, nodes):
         for it in g[key]:
             o = it["origin"]
             vx = vy = 0.0
-            for n in nodes:
-                dx, dy = n[0] - o[0], n[1] - o[1]
-                d = math.hypot(dx, dy)
-                if 24 < d < 220 and abs(n[2] - o[2]) < 120:
-                    vx += dx / d; vy += dy / d
+            # Path nodes mark the walkable room; teleport-only rooms have none,
+            # so fall back to collision floor at the machine's own height.
+            # Nodes float above their floor: accept 40 below to 120 above.
+            for src, lo_z, hi_z, reach in ((nodes, -40, 120, 220), (floors or [], -40, 40, 160)):
+                for n in src:
+                    dx, dy = n[0] - o[0], n[1] - o[1]
+                    d = math.hypot(dx, dy)
+                    if 24 < d < reach and lo_z < n[2] - o[2] < hi_z:
+                        vx += dx / d; vy += dy / d
+                if vx or vy:
+                    break
             raw = math.degrees(math.atan2(vy, vx)) if (vx or vy) else it["angles"][1]
             # BO3 machines stand square to their wall: keep the BO3 yaw grid.
             base = it["angles"][1]
@@ -124,10 +162,18 @@ def main():
     ap.add_argument("--export", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--navgraph", default="")
+    ap.add_argument("--collision", default="", help="kino.collision/3: floors decide machine facing")
     a = ap.parse_args()
     g = extract(parse(open(a.export + "/mapents.txt", encoding="utf-8", errors="replace").read()))
+    meta = os.path.join(a.export, "assets_meta.json")
+    if os.path.exists(meta):
+        g["extra_models"] = extra_model_spec(g, json.load(open(meta))["meshes"])
     if a.navgraph:
-        add_facing(g, json.load(open(a.navgraph))["nodes"])
+        floors = None
+        if a.collision:
+            # Floor top centers (piece origins are bottom-face centers).
+            floors = [[p["origin"][0], p["origin"][1], p["origin"][2] + 8] for p in json.load(open(a.collision))["pieces"] if p["kind"] == "floor"]
+        add_facing(g, json.load(open(a.navgraph))["nodes"], floors)
     json.dump(g, open(a.out, "w"), indent=1)
     print(json.dumps({k: (len(v) if isinstance(v, (list, dict)) else v) for k, v in g.items()}))
 
