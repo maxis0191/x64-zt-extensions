@@ -158,6 +158,27 @@ class Chunk:
         cur[0].extend(tri)
 
 
+def write_kmsh(kdir, name, group):
+    """KMSH v2: name, surfaces (material, positions, normal/tangent words, uv, color, u16 indices)."""
+    with open(os.path.join(kdir, name + ".kmsh"), "wb") as f:
+        f.write(struct.pack("<II", 0x48534D4B, 2))
+        nb = name.encode(); f.write(struct.pack("<H", len(nb)) + nb)
+        f.write(struct.pack("<I", len(group)))
+        for mat, P, N, U, C, I in group:
+            mb = mat.encode(); f.write(struct.pack("<H", len(mb)) + mb)
+            f.write(struct.pack("<II", len(C), len(I) // 3))
+            f.write(struct.pack("<%df" % len(P), *P)); f.write(struct.pack("<%dI" % len(N), *N))
+            f.write(struct.pack("<%df" % len(U), *U)); f.write(struct.pack("<%dI" % len(C), *C))
+            f.write(struct.pack("<%dH" % len(I), *I))
+
+
+def tint_col(col, k):
+    if k == 1.0:
+        return col
+    b = [int(min(255, ((col >> (8 * i)) & 0xFF) * k)) for i in range(3)]
+    return (col & 0xFF000000) | b[0] | (b[1] << 8) | (b[2] << 16)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--export", required=True)
@@ -171,6 +192,8 @@ def main():
     ap.add_argument("--only-mat", default="", help="substring filter on the IW7 material name")
     ap.add_argument("--one-cell", action="store_true", help="group all geometry by material (fewer rendered surfaces)")
     ap.add_argument("--anchor", default="", help="BO3-space x,y,z shared model origin (lighting anchor)")
+    ap.add_argument("--tint", type=float, default=1.0, help="scale vertex color RGB (vertex-color technique test)")
+    ap.add_argument("--extra-models", default="", help="standalone models: target[=source|=~mirrored source],...")
     a = ap.parse_args()
     E = a.export
     os.makedirs(a.out, exist_ok=False)
@@ -341,28 +364,51 @@ def main():
                     kk = (p, uv, pn, pt)
                     if kk not in remap:
                         remap[kk] = len(P) // 3
-                        P += [p[0] - center[0], p[1] - center[1], p[2] - center[2]]; N += [pn, pt]; U += [uv[0], uv[1]]; C.append(col)
+                        P += [p[0] - center[0], p[1] - center[1], p[2] - center[2]]; N += [pn, pt]; U += [uv[0], uv[1]]; C.append(tint_col(col, a.tint))
                     I.append(remap[kk])
                 surfaces.append((mat, P, N, U, C, I))
         for part in range(0, len(surfaces), MAX_SURFS_PER_MODEL):
             name = "kino_c_%s_%d" % (key.replace("-", "m"), part // MAX_SURFS_PER_MODEL)
-            with open(os.path.join(kdir, name + ".kmsh"), "wb") as f:
-                f.write(struct.pack("<II", 0x48534D4B, 2))
-                nb = name.encode(); f.write(struct.pack("<H", len(nb)) + nb)
-                group = surfaces[part:part + MAX_SURFS_PER_MODEL]
-                f.write(struct.pack("<I", len(group)))
-                for mat, P, N, U, C, I in group:
-                    mb = mat.encode(); f.write(struct.pack("<H", len(mb)) + mb)
-                    f.write(struct.pack("<II", len(C), len(I) // 3))
-                    f.write(struct.pack("<%df" % len(P), *P)); f.write(struct.pack("<%dI" % len(N), *N))
-                    f.write(struct.pack("<%df" % len(U), *U)); f.write(struct.pack("<%dI" % len(C), *C))
-                    f.write(struct.pack("<%dH" % len(I), *I))
+            write_kmsh(kdir, name, surfaces[part:part + MAX_SURFS_PER_MODEL])
             model_names.append(name)
             layout["chunks"].append({"model": name, "cell": [cx, cy], "origin": center,
                                      "materials": sorted({s[0] for s in surfaces[part:part + MAX_SURFS_PER_MODEL]})})
 
-    # Images and materials for the materials actually used by written chunks.
-    used = sorted({m for c in layout["chunks"] for m in c["materials"]})
+    # Standalone models (doors and other movers) in model-local space.
+    # Spec: target[=source] or target=~source (source mirrored across local Y,
+    # for a missing left/right variant).
+    layout["models"] = []
+    for spec in filter(None, a.extra_models.split(",")):
+        target, _, source = spec.partition("=")
+        mirror = source.startswith("~")
+        source = source.lstrip("~") or target
+        surfs = prop_surfaces(source)
+        if not surfs:
+            print("extra model has no mesh:", source)
+            stats["extra_models_missing"] += 1
+            continue
+        surfaces = []
+        for mat, verts, ii in surfs:
+            P, N, U, C, I = [], [], [], [], []
+            for (p, n, tg, ts, uv, col) in verts:
+                if mirror:
+                    p, n, tg = (p[0], -p[1], p[2]), (n[0], -n[1], n[2]), (tg[0], -tg[1], tg[2])
+                P += [p[0], p[1], p[2]]; N += [encode_n(n) | 0xC0000000, encode_n(tg) | (ts << 30)]
+                U += [uv[0], uv[1]]; C.append(col)
+            for t in range(len(ii) // 3):
+                a0, a1, a2 = (ii[t * 3 + k] for k in WIND)
+                if len({a0, a1, a2}) < 3:
+                    continue
+                I += [a0, a2, a1] if mirror else [a0, a1, a2]
+            surfaces.append((mat, P, N, U, C, I))
+        name = "kino_m_" + sanitize(target)
+        write_kmsh(kdir, name, surfaces[:MAX_SURFS_PER_MODEL])
+        model_names.append(name)
+        layout["models"].append({"model": name, "bo3": target, "source": source, "mirrored": mirror,
+                                 "materials": sorted({sf[0] for sf in surfaces[:MAX_SURFS_PER_MODEL]})})
+
+    # Images and materials for the materials actually used by written models.
+    used = sorted({m for c in layout["chunks"] + layout["models"] for m in c["materials"]})
     for d in ("images", "materials", "techsets", "zone_source", "netconststrings"):
         os.makedirs(os.path.join(a.out, d))
     tmpl = json.load(open(os.path.join(a.template, "materials", "sdk_author_platform_material.json")))

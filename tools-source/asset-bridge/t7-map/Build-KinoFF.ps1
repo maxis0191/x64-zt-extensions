@@ -27,6 +27,8 @@ try{
     Copy-Item -LiteralPath $ZoneTool -Destination (Join-Path $Work 'zonetool.exe')
     foreach($d in @('zone_source','materials','techsets','netconststrings','vision')|Where-Object {Test-Path (Join-Path $BuildRoot $_)}){Copy-Item -LiteralPath (Join-Path $BuildRoot $d) -Destination (Join-Path $Work $d) -Recurse}
     foreach($d in 'xmodel','xsurface','images'){Copy-Item -LiteralPath (Join-Path $BuildRoot "assets/$d") -Destination (Join-Path $Work $d) -Recurse}
+    # Optional sound bank source (kino_sound.py): ZoneTool writes the .sabl/.sabs.
+    foreach($d in 'soundbank','sound','sound_assets'){if(Test-Path (Join-Path $BuildRoot $d)){Copy-Item -LiteralPath (Join-Path $BuildRoot $d) -Destination (Join-Path $Work $d) -Recurse}}
     $p=Start-Process -FilePath (Join-Path $Work 'zonetool.exe') -ArgumentList '-headless','-unbuffered-io','-strict-content-sources','-buildzone',$Zone -WorkingDirectory $Work -RedirectStandardOutput (Join-Path $Work 'build.stdout.log') -RedirectStandardError (Join-Path $Work 'build.stderr.log') -PassThru -NoNewWindow
     Add-IW7ResourceProcess -Token $lease.Token -ProcessId $p.Id
     if(!$p.WaitForExit(1800000)){Stop-Process -Id $p.Id;throw 'ZoneTool build deadline exceeded.'}
