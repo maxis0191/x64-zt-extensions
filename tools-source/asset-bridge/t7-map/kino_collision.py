@@ -1,7 +1,7 @@
 """Approximate BO3 map collision with cloned IW7 stock collision brushmodels.
 
-1. Voxelize player-blocking clip brushes and the clip triangle soup (props are
-   left passable) and flood-fill the space reachable from the BO3 pathnodes.
+1. Voxelize player-blocking clip brushes, the clip triangle soup and (with
+   --zone-dir) collidable static models of 32+ units, and flood-fill the space reachable from the BO3 pathnodes.
 2. Sample exact walkable heights on a 16-unit grid from upward clip triangles
    and brush top planes; keep heights with 64 units of clearance in reachable
    space.
@@ -24,6 +24,7 @@ MIN_SEGMENT = 20.0
 SHEET_STEP = 20.0
 MIN_SHEET_CELLS = 12
 PLANE_TOL = 7.0
+ZONE_DIR = None  # BO3 zone directory: adds collidable static-model triangles
 FLOOR_DONORS = (("playerai512x512x8", 256), ("playerai128x128x8", 128), ("player64x64x8", 64))
 WALL_PLATES = (("playerai128x128x8", 128, 128), ("playerai512x512x8", 256, 256))
 
@@ -33,12 +34,20 @@ def brushes_and_tris(E):
     v = np.frombuffer(open(E + "/clip_verts.f32", "rb").read(), dtype=np.float32).reshape(-1, 3).astype(np.float64)
     t = np.frombuffer(open(E + "/clip_tris.u32", "rb").read(), dtype=np.uint32).reshape(-1, 3)
     nodes = np.array([n["origin"] for n in json.load(open(E + "/pathnodes.json"))], dtype=np.float64)
+    # Submodel (door, trap) brushes are stored in their entity's local space,
+    # so they pile up around the map origin; drop any brush that fits inside a
+    # door or other small submodel's local bounds. Doors are emitted separately.
+    small = [m for m in clip["submodels"][1:] if max(np.subtract(m["maxs"], m["mins"])) < 400]
+    subs = [(np.array(m["mins"]) - 1, np.array(m["maxs"]) + 1) for m in door_submodels(E, clip) + small]
     brushes = []
-    dropped = {"local": 0, "holds_node": 0}
+    dropped = {"local": 0, "submodel": 0, "holds_node": 0}
     for b in clip["brushes"]:
         if not b["contents"] & 0x10001:
             continue
         mn, mx = np.array(b["mins"]), np.array(b["maxs"])
+        if any(np.all(mn >= smn) and np.all(mx <= smx) for smn, smx in subs):
+            dropped["submodel"] += 1
+            continue
         # Origin-centred boxes are submodel brushes in local space, not world.
         if np.all(np.abs(mn + mx) < 6) and np.min(mx - mn) > 32:
             dropped["local"] += 1
@@ -51,8 +60,14 @@ def brushes_and_tris(E):
             dropped["holds_node"] += 1
             continue
         brushes.append(b)
+    A, B, C = v[t[:, 0]], v[t[:, 1]], v[t[:, 2]]
+    if ZONE_DIR:
+        import kino_props_geom
+        pa, pb, pc = kino_props_geom.prop_triangles(E, ZONE_DIR)
+        A, B, C = np.concatenate([A, pa]), np.concatenate([B, pb]), np.concatenate([C, pc])
+        dropped["prop_tris"] = len(pa)
     print("brushes", len(brushes), dropped)
-    return brushes, v[t[:, 0]], v[t[:, 1]], v[t[:, 2]]
+    return brushes, A, B, C
 
 
 def brush_contains(b, q):
@@ -137,6 +152,40 @@ def surface_heights(brushes, A, B, C, lo, dims):
     return H
 
 
+def door_entities(E):
+    import re
+    text = open(E + "/mapents.txt", encoding="utf-8", errors="replace").read()
+    ents = [dict(re.findall(r'"([^"]+)" "([^"]*)"', blk)) for blk in re.findall(r"\{(.*?)\}", text, re.S)]
+    names = {e["target"] for e in ents if e.get("targetname") == "zombie_door"}
+    return [e for e in ents if e.get("targetname") in names and e.get("classname") == "script_brushmodel"
+            and e.get("model", "").startswith("*")]
+
+
+def door_submodels(E, clip):
+    sub = {m["index"]: m for m in clip["submodels"]}
+    return [sub[int(e["model"][1:])] for e in door_entities(E)]
+
+
+def doors(E):
+    """One standing plate per door brushmodel, tagged with the door name, at
+    the entity origin plus the submodel's local bounds (closed position)."""
+    clip = json.load(open(E + "/clip.json"))
+    sub = {m["index"]: m for m in clip["submodels"]}
+    out = []
+    for e in door_entities(E):
+        b = sub[int(e["model"][1:])]
+        o = np.array([float(v) for v in e["origin"].split()])
+        mn, mx = o + np.array(b["mins"]), o + np.array(b["maxs"])
+        c, ext = (mn + mx) / 2, mx - mn
+        thin = 0 if ext[0] < ext[1] else 1          # plate thickness along the thin axis
+        yaw = 0.0 if thin == 0 else 90.0
+        donor, size = ("playerai128x128x8", 128.0)
+        base = c.copy(); base[thin] -= 4.0          # center the 8-unit thickness on the brush
+        out.append({"donor": donor, "kind": "door", "door": e["targetname"],
+                    "origin": [float(base[0]), float(base[1]), float(mx[2] - size / 2.0)], "angles": [90, yaw, 0]})
+    return out
+
+
 def rdp(points, eps):
     if len(points) < 3:
         return points
@@ -167,7 +216,10 @@ def main():
     ap.add_argument("--export", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--reach", type=float, default=260.0)
+    ap.add_argument("--zone-dir", default="", help="BO3 zone directory (xpak) for static-model collision")
     a = ap.parse_args()
+    global ZONE_DIR
+    ZONE_DIR = a.zone_dir or None
     E = a.export
     nodes = np.array([n["origin"] for n in json.load(open(E + "/pathnodes.json"))], dtype=np.float64)
     lo = nodes.min(0) - np.array([700, 700, 300]); hi = nodes.max(0) + np.array([700, 700, 900])
@@ -232,6 +284,7 @@ def main():
         hmap = {(i, j): z for i, j, z in members}
         cover_floor(pieces, hmap, lo, cells)
         trace_walls(pieces, hmap, lo, solid, dims)
+    pieces += doors(E)
     kinds = {}
     for p in pieces:
         kinds[(p["kind"], p["donor"])] = kinds.get((p["kind"], p["donor"]), 0) + 1
