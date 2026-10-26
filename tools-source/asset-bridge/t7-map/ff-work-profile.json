@@ -1,0 +1,630 @@
+{
+ "schema": "kino.ff-work-profile/1",
+ "note": "Authored-FF ZoneTool work profile (same 104 inputs as the measured af6 build): stock FFs/paks hard-linked read-only, executable/DLLs copied.",
+ "inputs": [
+  {
+   "relative": "main/code_post_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "code_post_gfx.ff"
+  },
+  {
+   "relative": "zone/code_post_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "code_post_gfx.ff"
+  },
+  {
+   "relative": "main/code_pre_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "code_pre_gfx.ff"
+  },
+  {
+   "relative": "zone/code_pre_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "code_pre_gfx.ff"
+  },
+  {
+   "relative": "main/common_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common_core_mp.ff"
+  },
+  {
+   "relative": "zone/common_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common_core_mp.ff"
+  },
+  {
+   "relative": "main/common_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common_cp.ff"
+  },
+  {
+   "relative": "zone/common_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common_cp.ff"
+  },
+  {
+   "relative": "main/common_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common_mp.ff"
+  },
+  {
+   "relative": "zone/common_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common_mp.ff"
+  },
+  {
+   "relative": "main/common.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common.ff"
+  },
+  {
+   "relative": "zone/common.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "common.ff"
+  },
+  {
+   "relative": "main/cp_zmb.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "cp_zmb.ff"
+  },
+  {
+   "relative": "zone/cp_zmb.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "cp_zmb.ff"
+  },
+  {
+   "relative": "main/global_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global_core_mp.ff"
+  },
+  {
+   "relative": "zone/global_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global_core_mp.ff"
+  },
+  {
+   "relative": "main/global_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global_cp.ff"
+  },
+  {
+   "relative": "zone/global_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global_cp.ff"
+  },
+  {
+   "relative": "main/global_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global_mp.ff"
+  },
+  {
+   "relative": "zone/global_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global_mp.ff"
+  },
+  {
+   "relative": "main/global.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global.ff"
+  },
+  {
+   "relative": "zone/global.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "global.ff"
+  },
+  {
+   "relative": "main/patch_code_post_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_code_post_gfx.ff"
+  },
+  {
+   "relative": "zone/patch_code_post_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_code_post_gfx.ff"
+  },
+  {
+   "relative": "main/patch_code_pre_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_code_pre_gfx.ff"
+  },
+  {
+   "relative": "zone/patch_code_pre_gfx.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_code_pre_gfx.ff"
+  },
+  {
+   "relative": "main/patch_common_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common_core_mp.ff"
+  },
+  {
+   "relative": "zone/patch_common_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common_core_mp.ff"
+  },
+  {
+   "relative": "main/patch_common_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common_cp.ff"
+  },
+  {
+   "relative": "zone/patch_common_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common_cp.ff"
+  },
+  {
+   "relative": "main/patch_common_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common_mp.ff"
+  },
+  {
+   "relative": "zone/patch_common_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common_mp.ff"
+  },
+  {
+   "relative": "main/patch_common.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common.ff"
+  },
+  {
+   "relative": "zone/patch_common.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_common.ff"
+  },
+  {
+   "relative": "main/patch_cp_zmb.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_cp_zmb.ff"
+  },
+  {
+   "relative": "zone/patch_cp_zmb.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_cp_zmb.ff"
+  },
+  {
+   "relative": "main/patch_global_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global_core_mp.ff"
+  },
+  {
+   "relative": "zone/patch_global_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global_core_mp.ff"
+  },
+  {
+   "relative": "main/patch_global_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global_cp.ff"
+  },
+  {
+   "relative": "zone/patch_global_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global_cp.ff"
+  },
+  {
+   "relative": "main/patch_global_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global_mp.ff"
+  },
+  {
+   "relative": "zone/patch_global_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global_mp.ff"
+  },
+  {
+   "relative": "main/patch_global.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global.ff"
+  },
+  {
+   "relative": "zone/patch_global.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "patch_global.ff"
+  },
+  {
+   "relative": "main/techsets_common_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common_core_mp.ff"
+  },
+  {
+   "relative": "zone/techsets_common_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common_core_mp.ff"
+  },
+  {
+   "relative": "main/techsets_common_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common_cp.ff"
+  },
+  {
+   "relative": "zone/techsets_common_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common_cp.ff"
+  },
+  {
+   "relative": "main/techsets_common_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common_mp.ff"
+  },
+  {
+   "relative": "zone/techsets_common_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common_mp.ff"
+  },
+  {
+   "relative": "main/techsets_common.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common.ff"
+  },
+  {
+   "relative": "zone/techsets_common.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_common.ff"
+  },
+  {
+   "relative": "main/techsets_cp_zmb.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_cp_zmb.ff"
+  },
+  {
+   "relative": "zone/techsets_cp_zmb.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_cp_zmb.ff"
+  },
+  {
+   "relative": "main/techsets_global_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global_core_mp.ff"
+  },
+  {
+   "relative": "zone/techsets_global_core_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global_core_mp.ff"
+  },
+  {
+   "relative": "main/techsets_global_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global_cp.ff"
+  },
+  {
+   "relative": "zone/techsets_global_cp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global_cp.ff"
+  },
+  {
+   "relative": "main/techsets_global_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global_mp.ff"
+  },
+  {
+   "relative": "zone/techsets_global_mp.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global_mp.ff"
+  },
+  {
+   "relative": "main/techsets_global.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global.ff"
+  },
+  {
+   "relative": "zone/techsets_global.ff",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "techsets_global.ff"
+  },
+  {
+   "relative": "zone/assetfile1.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile1.pak"
+  },
+  {
+   "relative": "zone/assetfile17.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile17.pak"
+  },
+  {
+   "relative": "zone/assetfile19.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile19.pak"
+  },
+  {
+   "relative": "zone/assetfile21.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile21.pak"
+  },
+  {
+   "relative": "zone/assetfile25.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile25.pak"
+  },
+  {
+   "relative": "zone/assetfile26.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile26.pak"
+  },
+  {
+   "relative": "zone/assetfile36.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile36.pak"
+  },
+  {
+   "relative": "zone/assetfile37.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile37.pak"
+  },
+  {
+   "relative": "zone/assetfile52.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile52.pak"
+  },
+  {
+   "relative": "zone/assetfile53.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile53.pak"
+  },
+  {
+   "relative": "zone/assetfile68.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile68.pak"
+  },
+  {
+   "relative": "zone/assetfile69.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile69.pak"
+  },
+  {
+   "relative": "zone/assetfile84.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile84.pak"
+  },
+  {
+   "relative": "zone/assetfile85.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile85.pak"
+  },
+  {
+   "relative": "zone/assetfile100.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile100.pak"
+  },
+  {
+   "relative": "zone/assetfile101.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile101.pak"
+  },
+  {
+   "relative": "zone/assetfile116.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile116.pak"
+  },
+  {
+   "relative": "zone/assetfile117.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile117.pak"
+  },
+  {
+   "relative": "zone/assetfile132.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile132.pak"
+  },
+  {
+   "relative": "zone/assetfile133.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile133.pak"
+  },
+  {
+   "relative": "zone/assetfile148.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile148.pak"
+  },
+  {
+   "relative": "zone/assetfile149.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile149.pak"
+  },
+  {
+   "relative": "zone/assetfile164.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile164.pak"
+  },
+  {
+   "relative": "zone/assetfile165.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile165.pak"
+  },
+  {
+   "relative": "zone/assetfile180.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile180.pak"
+  },
+  {
+   "relative": "zone/assetfile181.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile181.pak"
+  },
+  {
+   "relative": "zone/assetfile196.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile196.pak"
+  },
+  {
+   "relative": "zone/assetfile197.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile197.pak"
+  },
+  {
+   "relative": "zone/assetfile212.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile212.pak"
+  },
+  {
+   "relative": "zone/assetfile213.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile213.pak"
+  },
+  {
+   "relative": "zone/assetfile228.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile228.pak"
+  },
+  {
+   "relative": "zone/assetfile229.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile229.pak"
+  },
+  {
+   "relative": "zone/assetfile244.pak",
+   "mode": "HardLink",
+   "role": "stock",
+   "stock_name": "assetfile244.pak"
+  },
+  {
+   "relative": "iw7_ship.exe",
+   "mode": "Copy",
+   "role": "stock",
+   "stock_name": "iw7_ship.exe"
+  },
+  {
+   "relative": "amd_ags_x64.dll",
+   "mode": "Copy",
+   "role": "stock",
+   "stock_name": "amd_ags_x64.dll"
+  },
+  {
+   "relative": "bink2w64.dll",
+   "mode": "Copy",
+   "role": "stock",
+   "stock_name": "bink2w64.dll"
+  },
+  {
+   "relative": "d3dcompiler_46.dll",
+   "mode": "Copy",
+   "role": "stock",
+   "stock_name": "d3dcompiler_46.dll"
+  },
+  {
+   "relative": "steam_api.dll",
+   "mode": "Copy",
+   "role": "stock",
+   "stock_name": "steam_api.dll"
+  },
+  {
+   "relative": "steam_api64.dll",
+   "mode": "Copy",
+   "role": "stock",
+   "stock_name": "steam_api64.dll"
+  },
+  {
+   "relative": "Steam.dll",
+   "mode": "Copy",
+   "role": "stock",
+   "stock_name": "Steam.dll"
+  },
+  {
+   "relative": "tlsdll.dll",
+   "mode": "Copy",
+   "role": "tlsdll",
+   "stock_name": null
+  },
+  {
+   "relative": "main/fileSysCheck.cfg",
+   "mode": "Copy",
+   "role": "sentinel",
+   "stock_name": null
+  }
+ ]
+}

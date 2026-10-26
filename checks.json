@@ -2,6 +2,10 @@
   "product": "x64-zt-extensions",
   "checks": [
     {
+      "id": "tools-source-asset-bridge-t7-map",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/t7-map", "-v"]
+    },
+    {
       "id": "iw7-player-template-source-support",
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-v"]
     },
