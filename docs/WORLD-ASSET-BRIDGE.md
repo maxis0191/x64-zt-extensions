@@ -2,6 +2,24 @@
 
 ## First actual observer attempt: signature refusal, 2026-10-27
 
+### Bounded follow-up: ZoneTool's own five-byte patch
+
+A second owned offline process was stopped after a bounded read of the 432-byte
+window, without loading a zone. Its image and creation time were checked on the
+read handle; the original process closed and the lease was released. The live
+SHA-256 was `fc15e431ef1dec1e2c8a8115eb40abbd82268e7ebe43b3d9d9b441eaaaccb67e`.
+Only offsets 383–387 differ from the captured reference. In that reference they
+cover the call at `0x140571ecf`; the pinned ZoneTool source explicitly replaces
+that call with five NOPs. Replacing exactly those five reference bytes with NOPs
+produces the measured live hash. No other difference in that window was observed.
+
+`prepare_world_observer_build.py --zonetool-nop-profile` produces a separate
+header retaining the full 432-byte hash check, now matched to this exact patched
+profile. It preserves the baseline header and its historical receipt. The
+remaining signatures and all inspection guards remain unchanged. This is a
+source candidate: it still requires a fresh build and real observation; the
+five-NOP finding alone does not prove collision, root layout or gameplay.
+
 The candidate including `world-observer-zonetool.cpp` built with 413 compiler
 records, zero warnings/errors and a confirmed original-job closure and lease
 release. Its executable SHA-256 is

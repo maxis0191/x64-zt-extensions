@@ -12,8 +12,17 @@ WORLD = Path(__file__).resolve().parent.parent / 'world'
 sys.path.insert(0, str(WORLD))
 import verify_observer_patch as observer
 
+REFERENCE_SIGNATURE = b'12d99ba73e2078af560f1096c03c84b0a994c457fe7238cd79bb1793bcba35b6'
+ZONETOOL_SIGNATURE = b'fc15e431ef1dec1e2c8a8115eb40abbd82268e7ebe43b3d9d9b441eaaaccb67e'
 
-def prepare_observer(source, output):
+
+def apply_zonetool_signature(header):
+    if header.count(REFERENCE_SIGNATURE) != 1 or ZONETOOL_SIGNATURE in header:
+        raise ValueError('Expected unique original world-consumer signature')
+    return header.replace(REFERENCE_SIGNATURE, ZONETOOL_SIGNATURE, 1)
+
+
+def prepare_observer(source, output, zonetool_nop_profile=False):
     source = source.resolve(strict=True)
     output = output.resolve()
     # This checks the pinned source, patch, header and forward-once source seam.
@@ -31,6 +40,11 @@ def prepare_observer(source, output):
         raise ValueError('Expected one IW7 ZoneTool compilation unit')
     source_bytes = observer.read_source(original)
     header_bytes = observer.read_source(WORLD / 'world_clipmap_observer.hpp')
+    if zonetool_nop_profile:
+        receipt['baseline_header_lf_sha256'] = receipt['header_lf_sha256']
+        header_bytes = apply_zonetool_signature(header_bytes)
+        receipt['header_lf_sha256'] = observer.sha(header_bytes)
+        receipt['signature_profile'] = 'zonetool-fab9358-nop-140571ecf'
     patched = observer.transform(source_bytes.decode()).encode()
     if observer.sha(patched) != receipt['patched_lf_sha256']:
         raise ValueError('Observer source identity differs')
@@ -61,5 +75,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--zonetool-nop-profile', action='store_true',
+                        help='Use the observed ZoneTool five-NOP world-consumer signature')
     args = parser.parse_args()
-    prepare_observer(args.source, args.output)
+    prepare_observer(args.source, args.output, args.zonetool_nop_profile)
