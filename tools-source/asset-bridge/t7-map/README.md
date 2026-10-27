@@ -28,6 +28,13 @@ never committed.
 `build.sh <name> [compose args]` chains steps 6-8 (environment variables
 documented in the script). Steps 1-4 run once per BO3 export; BO3 can be closed
 after step 4 because all streamed geometry/pixels are read from the xpak files.
+The extraction and metadata steps can target a map other than Kino; they must run
+in the same BO3 process generation. Metadata collection compares the recorded
+process creation time, PID, module base, GfxWorld address and exact world/map names,
+and checks retained static-model names before using their pointers. Old exports
+without these identity fields must be re-extracted. This does not prove the map
+was not reloaded in the same process, validate every pointer's lifetime, or produce
+an IW7 world, collision or navigation asset. Only Kino has a recorded runtime test.
 `Build-KinoFF.ps1` copies `soundbank/`, `sound/` and `sound_assets/` from the
 build root when present. The bank zone name names the output files, so a mod
 uses zone `mod` to ship `mods/<mod>/mod.sabl`/`mod.sabs` beside `mod.ff`; the
