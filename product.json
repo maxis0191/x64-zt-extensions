@@ -378,6 +378,7 @@
     "tools-source/asset-bridge/model/packed_frame_audit.py",
     "tools-source/asset-bridge/model/prepare_full_build.py",
     "tools-source/asset-bridge/model/prepare_world_observer_build.py",
+    "tools-source/asset-bridge/model/test_world_observer_profile.py",
     "tools-source/asset-bridge/model/prepare_native_fixture.py",
     "tools-source/asset-bridge/model/prepare_zonetool_patch.py",
     "tools-source/asset-bridge/model/retail-frame-probe-2026-10-12.json",
