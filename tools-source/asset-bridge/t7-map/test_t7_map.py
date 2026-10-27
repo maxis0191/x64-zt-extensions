@@ -11,7 +11,31 @@ import t7_xpak  # noqa: E402
 import kino_compose as kc  # noqa: E402
 import kino_collision as kcol  # noqa: E402
 import kino_collision_check as kchk  # noqa: E402
+import t7_assets_meta  # noqa: E402
 import numpy as np  # noqa: E402
+
+
+class MapIdentityTests(unittest.TestCase):
+    def test_exact_process_and_world_identity_for_any_map(self):
+        meta = {"schema": "t7.loaded-map-export/1", "pid": 42, "module_base": "0x1000",
+                "process_creation_filetime": 123456, "gfxworld_address": "0x2000",
+                "gfxworld": {"name": "maps/zm/zm_small.d3dbsp", "map": "zm_small"}}
+        args = (42, 0x1000, 123456, 0x2000, "maps/zm/zm_small.d3dbsp", "zm_small")
+        t7_assets_meta.validate_identity(meta, *args)
+        for index, replacement in enumerate((43, 0x1001, 123457, 0x2001,
+                                               "maps/zm/zm_other.d3dbsp", "zm_other")):
+            changed = list(args)
+            changed[index] = replacement
+            with self.subTest(field=index), self.assertRaises(ValueError):
+                t7_assets_meta.validate_identity(meta, *changed)
+        for key in ("process_creation_filetime", "gfxworld_address"):
+            old = dict(meta)
+            old.pop(key)
+            with self.subTest(missing=key), self.assertRaises(ValueError):
+                t7_assets_meta.validate_identity(old, *args)
+        failed = dict(meta, errors=["export_world failed"])
+        with self.assertRaises(ValueError):
+            t7_assets_meta.validate_identity(failed, *args)
 
 
 def lz4_literals(data):

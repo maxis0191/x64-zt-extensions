@@ -48,6 +48,8 @@ class MODULEENTRY32W(ctypes.Structure):
 k32.CreateToolhelp32Snapshot.restype = wt.HANDLE
 k32.OpenProcess.restype = wt.HANDLE
 k32.ReadProcessMemory.argtypes = [wt.HANDLE, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
+k32.GetProcessTimes.argtypes = [wt.HANDLE, ctypes.POINTER(wt.FILETIME), ctypes.POINTER(wt.FILETIME),
+                                ctypes.POINTER(wt.FILETIME), ctypes.POINTER(wt.FILETIME)]
 
 
 def find_process(name):
@@ -82,6 +84,13 @@ class Reader:
         self.h = k32.OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, False, pid)
         if not self.h:
             raise OSError("OpenProcess failed: %d" % ctypes.get_last_error())
+
+    def creation_time(self):
+        created, exited, kernel, user = (wt.FILETIME() for _ in range(4))
+        if not k32.GetProcessTimes(self.h, ctypes.byref(created), ctypes.byref(exited),
+                                   ctypes.byref(kernel), ctypes.byref(user)):
+            raise OSError("GetProcessTimes failed: %d" % ctypes.get_last_error())
+        return (created.dwHighDateTime << 32) | created.dwLowDateTime
 
     def read(self, addr, size):
         if size <= 0:
@@ -354,7 +363,8 @@ def main():
     if a.expect_map and a.expect_map not in loaded:
         raise SystemExit("Map not loaded yet: %r" % loaded)
     os.makedirs(a.out, exist_ok=False)
-    meta = {"schema": "t7.loaded-map-export/1", "pid": pid, "module_base": hex(base)}
+    meta = {"schema": "t7.loaded-map-export/1", "pid": pid, "module_base": hex(base),
+            "process_creation_filetime": r.creation_time(), "gfxworld_address": hex(g)}
     for step in (export_world, export_clip, export_paths, export_ents):
         try:
             step(r, base, a.out, meta)

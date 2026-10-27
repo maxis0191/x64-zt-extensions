@@ -1,7 +1,7 @@
 """Read-only T7 metadata export: every material used by the loaded GfxWorld
 surfaces and by its static models, each image's streamed xpak parts, and the
 xpak entries/layouts of static-model LOD0 meshes. GPL-3.0-or-later."""
-import os, sys, json, struct
+import argparse, os, sys, json, struct
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import t7_map_extract as t
 
@@ -54,14 +54,40 @@ def material_meta(r, addr, images):
     return {"name": name, "techset": tname, "images": slots}
 
 
+def validate_identity(meta, pid, base, creation, world_address, world_name, map_name):
+    expected_world = meta.get("gfxworld", {})
+    if (meta.get("schema") != "t7.loaded-map-export/1" or meta.get("errors") or
+            meta.get("pid") != pid or meta.get("module_base") != hex(base) or
+            meta.get("process_creation_filetime") != creation or
+            meta.get("gfxworld_address") != hex(world_address) or
+            not world_name or not map_name or expected_world.get("name") != world_name or
+            expected_world.get("map") != map_name):
+        raise ValueError("Export identity does not match the loaded process/world; re-export this map")
+
+
 def main():
-    export = sys.argv[1]
-    pid = t.find_process("boiii.exe")[0]
-    base = t.module_base(pid, "BlackOps3.exe")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("export", help="directory produced by t7_map_extract.py in this process session")
+    parser.add_argument("--process", default="boiii.exe")
+    parser.add_argument("--module", default="BlackOps3.exe")
+    args = parser.parse_args()
+    export = args.export
+    pids = t.find_process(args.process)
+    if len(pids) != 1:
+        raise SystemExit("Expected exactly one %s, found %r" % (args.process, pids))
+    pid = pids[0]
+    base = t.module_base(pid, args.module)
+    if not base:
+        raise SystemExit("module base not found")
     r = t.Reader(pid)
     g = t.pool(r, base, t.T_GFXWORLD)
-    if "zm_theater" not in r.cstr_safe(r.i64(g + 8)):
-        raise SystemExit("zm_theater not loaded")
+    with open(os.path.join(export, "meta.json"), encoding="utf-8") as stream:
+        meta = json.load(stream)
+    try:
+        validate_identity(meta, pid, base, r.creation_time(), g,
+                          r.cstr_safe(r.i64(g)), r.cstr_safe(r.i64(g + 8)))
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     images, materials = {}, {}
     surf_count = r.i32(g + 24)
     sptr = r.i64(g + 0x430)
@@ -70,11 +96,18 @@ def main():
         mp, = struct.unpack_from("<q", raw, i * 96 + 0x48)
         if mp and mp not in materials:
             materials[mp] = material_meta(r, mp, images)
-    w = json.load(open(os.path.join(export, "world.json")))
+    with open(os.path.join(export, "world.json"), encoding="utf-8") as stream:
+        w = json.load(stream)
     ptrs = {}
     for s in w["static_models"]:
         if s["model"] and not s["model"].startswith("*"):
             ptrs.setdefault(s["model"], s["model_ptr"])
+    for name, address in ptrs.items():
+        try:
+            if r.cstr_safe(r.i64(address)) != name:
+                raise ValueError("model name changed")
+        except (OSError, ValueError) as error:
+            raise SystemExit("Stale static-model pointer; re-export this map") from error
     meshes = {}
     for name, a in ptrs.items():
         try:
@@ -115,4 +148,5 @@ def main():
           "mesh errors", sum(1 for m in meshes.values() if "error" in m))
 
 
-main()
+if __name__ == "__main__":
+    main()
