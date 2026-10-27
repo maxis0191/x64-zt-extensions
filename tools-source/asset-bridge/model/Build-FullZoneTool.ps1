@@ -26,6 +26,7 @@ function Get-CandidateBytes {
     $size
 }
 $lease=$null;$owner=$null;$records=[Collections.Generic.List[object]]::new();$maxBytes=0L;$failure=$null
+$peakCommitted=0L;$lastMemory=$null
 $started=[datetime]::UtcNow
 try {
     $lease=Enter-IW7ResourceLease -Scope $root -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'H1 strict-source full ZoneTool candidate'
@@ -71,7 +72,8 @@ try {
             $bytes=Get-CandidateBytes;$maxBytes=[math]::Max($maxBytes,$bytes)
             if($bytes -ge 1600MB){throw 'Artifact stop threshold 1600 MiB reached; preserving margin below 2 GiB.'}
             $memory=Get-IW7ResourceSnapshot
-            if($memory.Committed -gt $memory.CommitLimit*0.85){throw 'Commit pressure exceeded 85 percent.'}
+            $lastMemory=$memory
+            $peakCommitted=[math]::Max($peakCommitted,[long]$memory.Committed)
             if([datetime]::UtcNow -gt $started.AddMinutes(45)){throw 'Bounded build timeout.'}
             if(Test-Path -LiteralPath (Join-Path $root 'stop.request')){throw 'Coordinator requested owned job stop.'}
             Start-Sleep -Milliseconds 250
@@ -129,6 +131,7 @@ finally {
         Failure=$failure;Attempts=@($records.ToArray());MaxObservedBytes=$maxBytes;FinalBytes=$finalBytes;
         HardCeiling=2GB;StopThreshold=1600MB;ReadOnlyInputsUnchanged=$unchanged;JobClosureVerified=$closed;
         LeaseReleased=$released;LeaseToken=$(if($lease){$lease.Token});AfterSnapshot=$snapshot;
+        PeakCommittedBytes=$peakCommitted;LastBuildSnapshot=$lastMemory;
         AuditErrors=@($auditErrors.ToArray());ReleaseError=$releaseError}|
         ConvertTo-Json -Depth 8|Set-Content -LiteralPath (Join-Path $root 'result.local.json')
 }

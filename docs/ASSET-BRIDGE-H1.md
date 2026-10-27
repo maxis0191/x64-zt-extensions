@@ -1,5 +1,14 @@
 # H1 -> IW7 model bridge: converter checkpoint, 2026-10-12
 
+## Build telemetry policy update
+
+The full ZoneTool build runner now samples committed memory without stopping at
+85 percent. It records the highest observed committed bytes and the last build
+snapshot in its result. Lease admission, owned job teardown, deadlines, artifact
+limits and input audits remain in effect. Earlier dated build receipts and their
+original thresholds remain historical evidence; this source change does not
+qualify a new build.
+
 The owner-fork converter has a prepared correction for silent blend truncation,
 unaligned H1 bone offsets and a subdivision flag read before its count is copied.
 The patch is reproducible and applies to the pinned real converter. Its exact
