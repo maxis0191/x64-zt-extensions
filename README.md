@@ -70,6 +70,12 @@ CI secret. Offline use: supply `-DependencyArchive <downloaded dependencies.zip>
 The archive contains selected text sources, never tools, game data or binaries.
 A missing archive fails clearly; no fallback version is selected.
 
+The source composer accepts the reviewed generated body-schema header by its
+exact owner, path, blob and byte digest. Other files retain the normal 1 MiB
+limit, and the package retains the 32 MiB total limit. An older dependency
+archive lacked this qualification and refused the current source tree. The
+current archive updates the native source pin without changing old receipts.
+
 Run an authorized operation from the generated package, or use
 `bootstrap.ps1 -Entry ops/<entry>.ps1 -Arguments @(...)`. Canonical repositories
 are editing locations; operations requiring another product must use prepared
