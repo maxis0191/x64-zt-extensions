@@ -9,6 +9,10 @@ def verify(directory):
     directory = directory.resolve(strict=True)
     prep = json.loads((directory / 'preparation.local.json').read_text())
     source = Path(prep['source']).resolve(strict=True)
+    if prep.get('world_observer'):
+        receipt = prep['world_observer']
+        assert digest(directory / 'world-observer-zonetool.cpp') == receipt['patched_lf_sha256']
+        assert digest(directory / 'common' / 'world_clipmap_observer.hpp') == receipt['header_lf_sha256']
     project = directory / 'zonetool-community.vcxproj'
     assert digest(project) == prep['project_sha256'], 'Prepared project changed'
     root = ET.parse(project).getroot()
@@ -26,10 +30,14 @@ def verify(directory):
             if node.tag == q('ClCompile') and directory in path.parents:
                 patched += 1
                 includes = node.find(q('AdditionalIncludeDirectories')).text.split(';')
-                assert Path(includes[0]).is_relative_to(source)
+                if prep.get('world_observer') and path.name == 'world-observer-zonetool.cpp':
+                    assert Path(includes[0]).resolve() == directory
+                    assert Path(includes[1]).is_relative_to(source)
+                else:
+                    assert Path(includes[0]).is_relative_to(source)
         if node.tag == q('ObjectFileName'):
             assert node.text.startswith('$(IntDir)') and '..' not in node.text, node.text
-    assert patched == prep['patched_units'] == 5
+    assert patched == prep['patched_units'] == (6 if prep.get('world_observer') else 5)
     for group in root.findall(q('PropertyGroup')):
         if group.find(q('IntDir')) is not None:
             assert Path(group.find(q('IntDir')).text).resolve() == directory / 'obj'
