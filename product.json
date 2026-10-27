@@ -1019,7 +1019,7 @@
     {
       "id": "iw7-mod-components",
       "repository": "https://github.com/maxis0191/iw7-mod-components.git",
-      "revision": "2f9462db806bbd3ab51f9ecb2f3b25ae54ae10f1",
+      "revision": "447c1ad1a7e3f7e006501bd0d89e80976c6c40c8",
       "files": [
         "ops/Apply-DebuggerOverlay.ps1",
         "ops/Apply-DownloadCacheOverlay.ps1",
