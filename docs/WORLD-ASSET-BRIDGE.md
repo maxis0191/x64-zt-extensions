@@ -1,5 +1,37 @@
 # World asset bridge: source preparation
 
+## First actual observer attempt: signature refusal, 2026-10-27
+
+The candidate including `world-observer-zonetool.cpp` built with 413 compiler
+records, zero warnings/errors and a confirmed original-job closure and lease
+release. Its executable SHA-256 is
+`8d8235c47905c44862bc234a5f50180eafbb23a7fc9d4eaa578c17de07558cda`;
+the corresponding PDB is
+`c1d50e05d81510326459c6fc0cb4cbd8673c0000f6c9b8ef7fa425f1f18a85fa`.
+The local build result receipt has SHA-256
+`3b15d5290b029b628ce339b5850b6c04f3cc83c776a6d5a97fcd0510619f797d`.
+
+An existing `cp_zmb` asset inventory identifies the collision asset as
+`maps/cp/cp_zmb.d3dbsp`. One isolated offline invocation used the candidate and
+that exact name, with staged stock aliases, copied mutable cache files and the
+existing original-job owner under the account-wide lease. The observer refused
+before zone loading with `signature_mismatch`, `reads=437` and
+`signature_checked=false`; it did not inspect a CLIPMAP or report a root class.
+The 5-byte first signature and 432-byte second signature account for those reads,
+so the failure occurred at the second signature, but the actual digest and cause
+were not recorded. The loaded retail image hash was
+`a883ee28ee9f552c63d8ed1e352f60501b2e256d8857ca178c6dd3aae622723b`;
+the original reference was an already patched snapshot.
+Do not infer that the addresses or a relaxed check are valid.
+
+The original job closed, staged hardlinks were removed, and the scheduler
+registry was empty afterward. The local stdout digest is
+`b66ae61298993da06b51e622ef5be2e0ea7f30b93421f9aad76720b5e27c2daa`;
+stderr was empty. This is a failed real observation, not a collision or map
+validation. Next investigate the exact live code difference with a bounded,
+identity-bound diagnostic; preserve the signature gate until the difference is
+explained and a revised profile is independently qualified.
+
 ## Isolated world-observer build overlay
 
 `model/prepare_world_observer_build.py` composes the existing full ZoneTool
