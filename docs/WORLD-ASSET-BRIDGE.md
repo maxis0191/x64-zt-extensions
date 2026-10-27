@@ -1,5 +1,18 @@
 # World asset bridge: source preparation
 
+## Isolated world-observer build overlay
+
+`model/prepare_world_observer_build.py` composes the existing full ZoneTool
+overlay with the pinned CLIPMAP observer. It verifies the observer patch and
+source first, redirects one additional translation unit to the isolated output,
+includes the observer header from that output, and records both files in the
+build's read-only input audit. The project retains 413 compile units and 18
+existing dependency libraries. `verify_full_overlay.py` also checks the observer
+source and header digests when this profile is selected. Prepare and run from a
+verified source package; keep the original source checkout and old receipts.
+Preparation is source evidence only: compilation, a real world observation,
+collision generation and gameplay remain unproven.
+
 ## Future resource regression contract - 2026-10-14
 
 The full product source run at `965188d` failed `test_observer_stages` because
