@@ -78,3 +78,38 @@ template with Microsoft texconv May 2026 (SHA-256 `dcfdec10...`, valid Microsoft
 signature): 7.9 MB of BC7 DDS with `--max-size 1024` (16 MB at source size).
 Material JSONs bind the packed colour/specular, normal/occlusion/gloss, alpha
 and emissive images. Rendering: NOT_PROVEN.
+
+## 2026-11-06: more WeaponDef fields and the first Ray Gun fastfile
+
+Fields located by cross-weapon comparison (Ray Gun, Ray Gun PaP, Thundergun,
+Wunderwaffe, MR6, Kuda), PROVEN_LOCAL as memory values; semantic names are
+inferences consistent with every compared weapon:
+
+| WeaponDef offset | Ray Gun / PaP / Thundergun / Wunderwaffe / MR6 / Kuda | Meaning |
+| --- | --- | --- |
+| `+0xA1C` i32 | 330 / 330 / 950 / 1000 / 120 / 83 | fire time ms (Ray Gun ~181 RPM, Kuda ~720 RPM) |
+| `+0xFB4` i32 | 1500 / 2000 / 0 / 1 / 0 / - | explosion inner damage |
+| `+0xFB8` i32 | 64 / 64 / 0 / 110 / 0 / - | explosion radius |
+| `+0xFC0` i32 | 300 / 300 / 0 / 1 / 0 / - | explosion outer damage |
+| `+0xFEC` i32 | 3200 / 4200 / 2000 / 2250 / 0 / - | projectile speed |
+| `+0x1004` f32 | 10 / 10 / 0.5 / 30 / 0 / - | projectile lifetime s |
+| `+0xB14` i32 | 1900 (Ray Gun) | candidate reload add time; the reload anim's `battery_in` notetrack is at 1833 ms |
+
+Converted Ray Gun anims pass the independent IW7 `.xab` envelope check
+(`animation/xab_preflight.py`): reload 115 frames / 30 fps (3833 ms) with
+`wpn_ray_reload_open`, `..._battery_out`, `..._battery_in`, `..._close`
+notetracks; first raise keeps `wpn_ray_1straise`.
+
+`iw7_weapon_author.py` turns a spec (models, anims, clip 20, ammo 160, fire
+330 ms, projectile 1500/300 damage, radius 64, speed 3200, 10 s) into an IW7
+weapon and anim package from stock templates (`iw7_facemelter_zm`,
+`iw7_zapper_mp_package`, projectile fields from `iw7_zapper_grey`); timers
+come from the anim durations.
+
+The owner-fork ZoneTool in IW7 mode built `bo3wpn.ff` (6,608,548 bytes) from
+these sources, referencing stock assets through `ignore,<csv>` lists of
+`cp_zmb` and the techset zones; with `common_cp` and `cp_zmb` loaded, the IW7
+engine (in ZoneTool) registered every asset of the zone, including the weapon
+`iw7_raygun_zm`, without errors (PROVEN_LOCAL, offline). Not yet established:
+loading on a client, rendering, animation playback, firing, sound, the
+auto-download, and other maps (stock references are Spaceland-only).
