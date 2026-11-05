@@ -69,3 +69,12 @@ Models found by GrayWolf / weapon assets seen by ZoneTool:
 
 Weapon-asset names for the map-specific entries are confirmed per zone when
 that zone is scanned.
+
+## 2026-11-05: Ray Gun materials packed
+
+`t7_material_pack.py` packed the six Ray Gun view materials (plastic, metal,
+power, meter, reticle, glass) against the stock `weapon_zappers_dischord_camo`
+template with Microsoft texconv May 2026 (SHA-256 `dcfdec10...`, valid Microsoft
+signature): 7.9 MB of BC7 DDS with `--max-size 1024` (16 MB at source size).
+Material JSONs bind the packed colour/specular, normal/occlusion/gloss, alpha
+and emissive images. Rendering: NOT_PROVEN.
