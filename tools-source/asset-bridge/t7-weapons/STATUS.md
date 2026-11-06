@@ -127,3 +127,21 @@ then the last key: `((keys - 2) >> 8) + 2` entries) and its index list in
 this: 27 of 27 long stock cp_zmb animations pass, the converted idle fails
 (12 large channels, no index list). Fix: ZoneTool converter, owner fork.
 Short animations (under 256 frames) have the same layout in both games.
+
+## 2026-11-06: black Ray Gun viewmodel (vertex normal high bits)
+
+With the crash fixed, the Ray Gun drew black on the client while the IW7 arms
+next to it were lit. Albedo, packing and texture slots were correct (packed
+albedo matches the BO3 source in sRGB). The vertex normals decode the same way
+in both games and agree with the triangles, but IW7 sets the two high bits of
+every model vertex normal (180,445 of 180,445 vertices in 300 stock cp_zmb
+surfaces) and BO3 leaves them clear. Fix in the ZoneTool converter (owner fork
+PR7); `iw7_xsurface_check.py` checks this: 4531 stock surface files pass, 0
+fail (126 special-format files are not parsed); the old Ray Gun fails, the
+reconverted Ray Gun and BO3 Dempsey view hands pass.
+
+Placement: BO3 view hands have no clavicle (`tag_torso` -> `j_shoulder_*`);
+IW7's have `tag_torso` -> `j_clavicle_*` -> `j_shoulder_*`, so BO3 weapon
+animations played on IW7 arms put bones under the wrong parents. The witness
+now shows the BO3 hands model with the BO3 weapon (server `setviewmodel`);
+retargeting to IW7 arms is a separate option.
