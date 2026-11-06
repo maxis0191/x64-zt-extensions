@@ -250,3 +250,22 @@ parts the stock emissive weapon technique (`m2o_l_sm_replace_i0c0s0o0n0e0p0_vm`,
 `emissivePara` 1), both loaded by cp_zmb. Client witness: blue animated
 energy tube, red/yellow/green gauge and red reticle lit. PROVEN_LOCAL. BO3's
 scrolling of the tube texture is not reproduced (no scroll in the template).
+
+## 2026-11-06: BO3 effects, reading (step 1 of the converter)
+
+GrayWolf has no FX kind and the BO3 mod tools (with .efx sources) are not
+installed, so effects are read from the zone held resident by the ZoneTool
+fork. `t7_fx_read.py` reads every FxEffectDef: header 0x90, elements 0x260
+(stride confirmed on all 582 effects / 5809 elements of zm_levelcommon:
+count * 0x260 <= totalSize for every effect). Element type at +0xc8 matches
+the visual it carries: material for types 0-6 (5 = geometry trail), xmodel
+7, light description 8 (325/326), effect 14 (234/234). PROVEN_LOCAL.
+
+Ray Gun (base and upgraded): 10 effects (1p/3p muzzle, geotrail, ring
+emitter, impact), 100 elements, 13 particle materials (ei/gfx_ring_thin,
+ei/gfx_water_splash_em, ei/gfx_light_phosphorous_em, ...) and 3 omni lights.
+BO3 tints neutral textures through colour samples, so the colour/size/velocity
+samples (pointers at +0xd0..+0xe8, interval counts after the type byte) are
+the next step, then BO3 particle materials, then an IW7 ParticleSystemDef
+writer (planned as a ZoneTool fork converter, reusing its IW7 particle dump).
+NOT_PROVEN in game: the Ray Gun still uses IW7 placeholder effects.
