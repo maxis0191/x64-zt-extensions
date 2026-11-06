@@ -172,3 +172,13 @@ IW7 animations keep `tag_weapon` equal to `tag_weapon_right` (0.00 degrees,
 not have it. The retargeted Ray Gun animations put both IW7 wrists and the gun
 exactly on the BO3 ones (0.001 units, 0.0 degrees; fingers within 0.2) on every
 frame of all 11 Ray Gun animations. Client confirmation is pending.
+
+Translation scale: the stored animated-translation size is the step per key
+unit (range / 255 or range / 65535; stock medians 0.0074 and 0.0005), and the
+value is mins + step * key. A codec version that treated it as the full range
+also round-tripped perfectly (symmetric error) but made the engine place
+translated bones thousands of units away: the client showed no view model with
+re-encoded stock zapper animations. The discriminating check is now the stock
+IW7 convention itself: decoded with this codec, tag_weapon equals
+tag_weapon_right on every frame of stock view animations (within 0.1 units and
+0.2 degrees of quantization).

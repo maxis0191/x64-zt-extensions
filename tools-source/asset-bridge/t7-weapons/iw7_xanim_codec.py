@@ -18,8 +18,9 @@ within the frame count; a channel may stop before the last frame):
 * randomDataShort: rotation keys (2 shorts z,w or 4 shorts x,y,z,w; /32767),
   then precise translation keys (3 unsigned shorts).
 * randomDataByte: small translation keys (3 bytes).
-* dataInt (floats): per animated translation channel mins then size, then
-  static translations.
+* dataInt (floats): per animated translation channel mins then the step per
+  key unit (range / 255 for small, range / 65535 for precise keys; the value
+  is mins + step * key), then static translations.
 
 Keys between indices are interpolated (nlerp for rotations, lerp for
 translations). Notetracks and the root delta part are carried over raw.
@@ -173,11 +174,11 @@ def decode(path):
             if c < b[5]:
                 raw = rb[pos['rb']:pos['rb'] + 3]
                 pos['rb'] += 3
-                vec = tuple(mins[i] + size[i] * raw[i] / 255.0 for i in range(3))
+                vec = tuple(mins[i] + size[i] * raw[i] for i in range(3))
             else:
                 raw = struct.unpack('<3H', struct.pack('<3h', *rs[pos['rs']:pos['rs'] + 3]))
                 pos['rs'] += 3
-                vec = tuple(mins[i] + size[i] * raw[i] / 65535.0 for i in range(3))
+                vec = tuple(mins[i] + size[i] * raw[i] for i in range(3))
             keys.append((f, vec))
         anim.translations[bone(order[c])] = keys
     base = 6 * (b[5] + b[6])
@@ -288,7 +289,8 @@ def encode(anim, path):
         values = [sample(anim.translations[n], f, False) for f in frames]
         mins = [min(v[i] for v in values) for i in range(3)]
         size = [max(v[i] for v in values) - mins[i] for i in range(3)]
-        ints.extend(mins + size)
+        # The stored size is the step per key unit: range / 65535.
+        ints.extend(mins + [x / 65535.0 for x in size])
         for v in values:
             for i in range(3):
                 unsigned = int(round((v[i] - mins[i]) / size[i] * 65535)) if size[i] else 0
