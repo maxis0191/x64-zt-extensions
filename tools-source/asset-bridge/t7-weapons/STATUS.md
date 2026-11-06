@@ -269,3 +269,17 @@ samples (pointers at +0xd0..+0xe8, interval counts after the type byte) are
 the next step, then BO3 particle materials, then an IW7 ParticleSystemDef
 writer (planned as a ZoneTool fork converter, reusing its IW7 particle dump).
 NOT_PROVEN in game: the Ray Gun still uses IW7 placeholder effects.
+
+## 2026-11-06: BO3 effect curves decoded (step 2)
+
+Element counts: +0xc9 visuals, +0xca velocity intervals, +0xcd visual-state
+intervals (samples = intervals + 1); established by reading 5 velocity
+samples where +0xca = 4 and 6 visual samples where +0xcd = 5, with the next
+element's data right after. Velocity samples (+0xd0) are BO2's 0x60 layout;
+visual-state samples (+0xe0) are 0x50: base and amplitude of colour RGBA
+bytes, rotation delta/total, size[2], scale and 4 more dwords. Spawn (looping
+interval/count or one-shot count) at dwords 2-3 and lifespan (int ms) at
+15-16 match the Ray Gun's behaviour (rings every 50 ms during the 1p muzzle,
+150 ms life). Ray Gun: lime green (64,255,0) fading to alpha 0; impact
+(128,255,0); smoke cyan-green. PROVEN_LOCAL (decode); arrays at +0xd8/+0xe8
+and dwords 7-14 are not named yet.
