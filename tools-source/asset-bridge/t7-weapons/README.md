@@ -13,6 +13,7 @@ Game data, dumps and built fastfiles stay local and are never committed.
 | 1. Load a BO3 zone resident | owner-fork ZoneTool in T7 mode: `zonetool.exe -assetlog <log.tsv> -holdzone <zone> <release-file>` next to `BlackOps3_UnrankedDedicatedServer.exe` and the BO3 `zone/` folder | `log.tsv`: type, type name, asset name, header address of every registered asset |
 | 2. Scan weapon definitions | `t7_weapon_scan.py --pid <zonetool pid> --assetlog <log.tsv> --out scan.json` | read-only, bounded, annotated memory of each `weapon` asset (asset references, strings, nested blocks) |
 | 3. Convert models/anims | ZoneTool `-dumpzoneto iw7 <zone> xmodel,xmodelmesh,xanim` | IW7 ZoneTool sources (`xmodel/`, `xsurface/`, `xanim/`) |
+| 3b. Check long animations | `iw7_xanim_layout.py <xanim/*.xab>` | exit 1 when an animation of 256+ frames keeps a 64+ key rotation channel inline (BO3 layout): the IW7 client then reads a null index list and crashes |
 | 4. Infer fields | `t7_weapon_fields.py` | per weapon: anim slots, models, FX, sounds, numeric stats |
 | 4b. Materials | `t7_material_pack.py <materials.json> --template <stock IW7 weapon material> --texconv <texconv.exe> --out <build> [--max-size 1024]` | BC7 `images/*.dds` + `materials/*.json` |
 | 5. Author IW7 weapon | template from a stock IW7 Zombies weapon dump | `weapons/*.json`, `animpkg/`, `sfxpkg/`, `vfxpkg/` |

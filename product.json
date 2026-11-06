@@ -29,6 +29,8 @@
     "tools-source/asset-bridge/t7-weapons/README.md",
     "tools-source/asset-bridge/t7-weapons/STATUS.md",
     "tools-source/asset-bridge/t7-weapons/iw7_weapon_author.py",
+    "tools-source/asset-bridge/t7-weapons/iw7_xanim_layout.py",
+    "tools-source/asset-bridge/t7-weapons/test_iw7_xanim_layout.py",
     "tools-source/asset-bridge/t7-weapons/t7_material_pack.py",
     "tools-source/asset-bridge/t7-weapons/t7_weapon_fields.py",
     "tools-source/asset-bridge/t7-weapons/t7_weapon_scan.py",
