@@ -768,6 +768,7 @@ class _Dumper:
     def __init__(self):
         self.out = bytearray()
         self.entries = []   # [start, end, kind, blob]
+        self.offsets = 0
 
     def _find(self, start, end, size):
         for i, (s, e, kind, blob) in enumerate(self.entries):
@@ -776,6 +777,7 @@ class _Dumper:
         return None
 
     def _offset(self, index, element):
+        self.offsets += 1
         self.out += struct.pack("<BII", T_OFFSET, index, element)
 
     def string(self, holder, key, value):
@@ -957,30 +959,36 @@ def _encode_once(model):
     nodes = system["scriptedInputNodeDefs"]
     w.array(system, "scriptedInputNodeDefs", None if nodes is None else
             _encode_elements(SCRIPTED_INPUT_NODE, nodes, "scriptedInputNodes"), SCRIPTED_INPUT_NODE.size)
-    return bytes(w.out)
+    return w
 
 
 FRESH_POINTER_BASE = 0x7F0000000000
 
 
-def encode(model, strict=False):
+def encode(model, strict=False, stats=None):
     """Encode a model (from decode() or JSON) into .iw7VFX bytes.
 
     strict=True raises PointerConflict instead of assigning fresh pointers
-    (used by the round trip: a stock file never needs one).
+    (used by the round trip: a stock file never needs one). `stats`, when a
+    dict, receives the number of OFFSET tokens and of reassigned pointers.
     """
     if model.get("format") != FORMAT:
         raise ValueError("not a %s model" % FORMAT)
     model = copy.deepcopy(model)
     fresh = FRESH_POINTER_BASE
-    for _ in range(100000):
+    for attempt in range(100000):
         try:
-            return _encode_once(model)
+            w = _encode_once(model)
         except PointerConflict as c:
             if strict:
                 raise
             c.holder[c.key + "@ptr"] = "0x%x" % fresh
             fresh += 0x10000
+            continue
+        if stats is not None:
+            stats["offsets"] = w.offsets
+            stats["reassigned"] = attempt
+        return bytes(w.out)
     raise RuntimeError("pointer conflicts did not converge")
 
 
@@ -1129,7 +1137,8 @@ def color_samples(model):
             for base in (0, 4):
                 rgb = []
                 for c in curves[base:base + 3]:
-                    vals = [p["value"] * c["scale"] for p in (c["controlPoints"] or [])
+                    scale = c["scale"] if not isinstance(c["scale"], str) else 1.0
+                    vals = [p["value"] * scale for p in (c["controlPoints"] or [])
                             if not isinstance(p["value"], str)]
                     rgb.append(max(vals) if vals else 0.0)
                 out.append(rgb)
@@ -1155,13 +1164,13 @@ def _files(paths):
             yield p
 
 
-def roundtrip_file(path):
+def roundtrip_file(path, stats=None):
     """(ok, reason, model): bytes -> model -> JSON text -> model -> bytes must be identical."""
     with open(path, "rb") as f:
         data = f.read()
     try:
         model = decode(data)
-        again = encode(json.loads(json.dumps(model)), strict=True)
+        again = encode(json.loads(json.dumps(model)), strict=True, stats=stats)
     except (FormatError, PointerConflict, ValueError, KeyError) as exc:
         return False, "%s: %s" % (type(exc).__name__, exc), None
     if again != data:
@@ -1174,8 +1183,9 @@ def cmd_roundtrip(paths, verbose):
     passed, failed = 0, []
     modules, elements, files_with = Counter(), Counter(), Counter()
     offsets = 0
+    stats = {}
     for path in _files(paths):
-        ok, why, model = roundtrip_file(path)
+        ok, why, model = roundtrip_file(path, stats)
         if ok:
             passed += 1
             seen = set()
@@ -1187,8 +1197,7 @@ def cmd_roundtrip(paths, verbose):
             for e in model["system"]["emitterDefs"] or []:
                 for s in e["stateDefs"] or []:
                     elements[s["elementType"]] += 1
-            with open(path, "rb") as f:
-                offsets += f.read().count(bytes((T_OFFSET,)))  # rough, for information only
+            offsets += stats["offsets"]
             if verbose:
                 print("PASS", path)
         else:
@@ -1196,6 +1205,7 @@ def cmd_roundtrip(paths, verbose):
             print("FAIL", path, why)
     total = passed + len(failed)
     print("round trip: %d/%d byte-identical, %d failed" % (passed, total, len(failed)))
+    print("OFFSET tokens (pointer de-duplication) in passing files: %d" % offsets)
     print("module types (instances, files):")
     for name, n in sorted(modules.items(), key=lambda kv: -kv[1]):
         print("  %-45s %6d %5d" % (name, n, files_with[name]))
