@@ -145,3 +145,25 @@ IW7's have `tag_torso` -> `j_clavicle_*` -> `j_shoulder_*`, so BO3 weapon
 animations played on IW7 arms put bones under the wrong parents. The witness
 now shows the BO3 hands model with the BO3 weapon (server `setviewmodel`);
 retargeting to IW7 arms is a separate option.
+
+## 2026-11-06: animation codec and view-hand retargeting
+
+`iw7_xanim_codec.py` decodes every IW7 animation channel (all frames) and
+encodes a valid layout (every animated channel keyed each frame: full
+quaternions, unsigned-short translations). It consumes all data arrays of
+4029/4029 stock cp_zmb animations exactly; a decode/encode/decode round trip
+of stock and converted animations stays within 0.004 degrees and 0 units.
+Untranslated-group entries of the translation order are not reliable bone
+indices (out of range in converted BO3 animations); the engine-relevant groups
+are. A few stock character animations list a channel past their names.
+
+Witness findings that drove `t7_vm_retarget.py`: the converted Ray Gun was
+drawn at the view origin with IW7 hands and with BO3 hands alike. BO3 frame 0
+on the BO3 hands is a normal hip pose relative to `tag_camera` (wrist about
+10 units ahead, 5 right, 6 down), as is IW7 stock frame 0 on IW7 hands, but
+IW7 animations keep `tag_weapon` equal to `tag_weapon_right` (0.00 degrees,
+0 units in stock) while BO3 animations leave it unanimated, and BO3 hands do
+not have it. The retargeted Ray Gun animations put both IW7 wrists and the gun
+exactly on the BO3 ones (0.001 units, 0.0 degrees; fingers within 0.2) except
+where the BO3 arm reaches beyond the IW7 arm length (first raise 6.5, reload
+2.1, sprint loop 0.8 units). Client confirmation is pending.
