@@ -113,3 +113,17 @@ engine (in ZoneTool) registered every asset of the zone, including the weapon
 `iw7_raygun_zm`, without errors (PROVEN_LOCAL, offline). Not yet established:
 loading on a client, rendering, animation playback, firing, sound, the
 auto-download, and other maps (stock references are Spaceland-only).
+
+## 2026-11-06: client crash on the Ray Gun idle (long-animation layout)
+
+The first client witness (stock iw7-mod client, mod downloaded automatically)
+crashed the moment the player switched to the Ray Gun: access violation
+reading `0x200` in `iw7_ship+0xd7b545`, a word read from a null index list at
+key 256 of a 273-key channel. `vm_raygun_t7_idle` has 300 frames; BO3 keeps
+every key frame index inline in dataShort, but IW7 does so only below 64 keys.
+A larger channel keeps a lookup table inline (the key at every 256th position,
+then the last key: `((keys - 2) >> 8) + 2` entries) and its index list in
+`XAnimParts::indices`, rotation channels first. `iw7_xanim_layout.py` checks
+this: 27 of 27 long stock cp_zmb animations pass, the converted idle fails
+(12 large channels, no index list). Fix: ZoneTool converter, owner fork.
+Short animations (under 256 frames) have the same layout in both games.
