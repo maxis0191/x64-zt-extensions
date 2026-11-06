@@ -182,3 +182,11 @@ re-encoded stock zapper animations. The discriminating check is now the stock
 IW7 convention itself: decoded with this codec, tag_weapon equals
 tag_weapon_right on every frame of stock view animations (within 0.1 units and
 0.2 degrees of quantization).
+
+Image formats: stock weapon material images are BC7_UNORM (`_packed_cs`,
+`_packed_nog`; colour stored as sRGB values without an sRGB format) and
+BC4_UNORM for `_packed_a` (single red channel), read from the GfxImage headers
+of stock images. The first packer wrote `_packed_a` as BC7 with the alpha in A
+and red 8/255, and `_packed_cs` as BC7_UNORM_SRGB: the Ray Gun drew black even
+with stock animations holding it normally in the IW7 hand. `t7_material_pack.py`
+now writes the stock formats with the alpha in red.
