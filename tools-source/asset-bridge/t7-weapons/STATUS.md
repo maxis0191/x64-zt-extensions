@@ -197,3 +197,14 @@ bones drew the arms collapsed onto the view origin; with every hand bone
 listed (bind values for the still ones), the client shows the IW7 arms holding
 the Ray Gun in the right hand at the BO3 position, firing and reloading through
 client input (private witness 2026-11-06). The gun itself still draws black.
+
+Black gun, resolved: with stock Facemelter images bound to the Ray Gun
+materials the gun still drew black, so the images were not the cause. The camo
+template's technique (`..._2uvt_...`) reads a second UV set (stock weapon
+surfaces with it carry SURF_FLAG_SECONDUV); BO3 weapon meshes have one. With
+single-UV templates (`m2o_l_sm_replace_i0c0s0o0n0p0_vm`, alpha parts
+`..._i0c0s0o0n0pa0_bsted_vm`) the client draws the Ray Gun textured and lit in
+the IW7 hand, with the BO3 hip pose, fire and reload animations (private
+witness 2026-11-06). Setting SURF_FLAG_VERTCOL_NONE (which stock surfaces
+carry) made no visible difference and is not part of the pipeline.
+`t7_material_pack.py` refuses two-UV templates.

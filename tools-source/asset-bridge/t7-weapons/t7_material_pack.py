@@ -144,6 +144,12 @@ def main():
         mats = json.load(f)["materials"]
     with open(args.template, encoding="utf-8") as f:
         template = json.load(f)
+    technique = template.get("techniqueSet->name", "")
+    if "2uvt" in technique:
+        # Two-UV (camo) techniques read a second UV set BO3 weapon meshes do
+        # not have: the client drew the converted Ray Gun black with them.
+        raise SystemExit("template technique %s needs a second UV set; use a single-UV weapon template "
+                         "(for example m2o_l_sm_replace_i0c0s0o0n0p0_vm)" % technique)
     img_dir = os.path.join(args.out, "images")
     mat_dir = os.path.join(args.out, "materials")
     os.makedirs(img_dir, exist_ok=True)
