@@ -45,6 +45,8 @@
     "tools-source/asset-bridge/t7-weapons/test_t7_material_pack.py",
     "tools-source/asset-bridge/t7-weapons/t7_fx_read.py",
     "tools-source/asset-bridge/t7-weapons/test_t7_fx_read.py",
+    "tools-source/asset-bridge/t7-weapons/t7_fx_material_pack.py",
+    "tools-source/asset-bridge/t7-weapons/test_t7_fx_material_pack.py",
     "tools-source/asset-bridge/t7-weapons/iw7_vfx.py",
     "tools-source/asset-bridge/t7-weapons/test_iw7_vfx.py",
     "tools-source/asset-bridge/weapon-export/Run-PlayerTemplateExport.ps1",

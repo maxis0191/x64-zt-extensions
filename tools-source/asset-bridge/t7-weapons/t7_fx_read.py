@@ -22,6 +22,20 @@ Layout established on all 582 effects / 5809 elements of zm_levelcommon
          description or klf
   Element types (by the visual kind they carry): 0-6 sprites/tails/trails
   (5 = geometry trail), 7 model, 8 omni light, 12 klf, 13 array, 14 runner.
+    0xc9 visual count, 0xca velocity interval count, 0xcd visual-state
+    interval count (samples = intervals + 1)
+    0xd0 velocity samples, 0x60 each: local velocity, local total delta, world
+         velocity, world total delta; each 3 floats base + 3 floats amplitude
+    0xe0 visual-state samples, 0x50 each: base then amplitude, 10 dwords:
+         colour RGBA bytes, rotation delta, rotation total, size[2], scale,
+         4 more (unnamed, kept)
+    Scalars (dword index, BO2 order; spawn and life confirmed on the Ray Gun):
+    1 flags2, 2-3 spawn (looping: interval ms, count; one-shot: count base,
+    amplitude), 7-14 integers (fade/delay ranges, unconfirmed), 15-16 lifespan ms
+    (int) base/amplitude,
+    17-22 spawn origin x/y/z base/amplitude, 48 atlas bytes.
+  Sample arrays that are not inside the effect block are shared (deduplicated)
+  arrays; the counts above still apply.
 
 Nothing is written to the target process. GPL-3.0-or-later (ZoneTool lineage).
 """
@@ -82,6 +96,56 @@ def ref(assets, value):
     return None
 
 
+def range_pairs(values):
+    return [{"base": values[i], "amplitude": values[i + 1]} for i in range(0, len(values), 2)]
+
+
+def parse_scalars(raw):
+    f = struct.unpack_from("<50f", raw, 0)
+    i = struct.unpack_from("<50i", raw, 0)
+    return {
+        "flags2": i[1],
+        "spawn": {"a": i[2], "b": i[3]},
+        "ints_7_14": list(i[7:15]),
+        "lifespan_msec": {"base": i[15], "amplitude": i[16]},
+        "spawn_origin": range_pairs(list(f[17:23])),
+        "atlas": list(raw[48 * 4:49 * 4 + 4]),
+    }
+
+
+def parse_vel_sample(raw):
+    v = struct.unpack_from("<24f", raw, 0)
+    vec = lambda k: {"base": list(v[k:k + 3]), "amplitude": list(v[k + 3:k + 6])}  # noqa: E731
+    return {"local_velocity": vec(0), "local_total_delta": vec(6), "world_velocity": vec(12), "world_total_delta": vec(18)}
+
+
+def parse_visual_state(raw):
+    f = struct.unpack_from("<10f", raw, 0)
+    return {"color": list(raw[0:4]), "rotation_delta": f[1], "rotation_total": f[2], "size": [f[3], f[4]],
+            "scale": f[5], "extra": list(f[6:10])}
+
+
+def parse_vis_sample(raw):
+    return {"base": parse_visual_state(raw[0:0x28]), "amplitude": parse_visual_state(raw[0x28:0x50])}
+
+
+VEL_SAMPLE_SIZE = 0x60
+VIS_SAMPLE_SIZE = 0x50
+
+
+def read_samples(proc, raw_elem):
+    out = {}
+    for key, ptr_off, count_off, size, parse in (("vel_samples", 0xD0, 0xCA, VEL_SAMPLE_SIZE, parse_vel_sample),
+                                                  ("vis_samples", 0xE0, 0xCD, VIS_SAMPLE_SIZE, parse_vis_sample)):
+        ptr = struct.unpack_from("<Q", raw_elem, ptr_off)[0]
+        count = raw_elem[count_off] + 1
+        if not ptr or not proc.readable(ptr, count * size):
+            continue
+        blob = proc.read(ptr, count * size)
+        out[key] = [parse(blob[k * size:(k + 1) * size]) for k in range(count)]
+    return out
+
+
 def parse_element(raw, assets):
     if len(raw) != ELEM_SIZE:
         raise ValueError("element must be 0x%x bytes" % ELEM_SIZE)
@@ -95,6 +159,8 @@ def parse_element(raw, assets):
             out[key] = r
         elif key == "visual" and value:
             out["visual_array_ptr"] = value
+    out["counts"] = {"visual": raw[0xC9], "vel_intervals": raw[0xCA], "vis_intervals": raw[0xCD]}
+    out["scalars"] = parse_scalars(raw)
     out["raw"] = raw.hex()
     return out
 
@@ -105,7 +171,14 @@ def read_effect(proc, assets, address):
     if count < 0 or count * ELEM_SIZE > head["total_size"]:
         raise ValueError("element count %d does not fit totalSize %d" % (count, head["total_size"]))
     raw = proc.read(head.pop("elements_ptr"), count * ELEM_SIZE)
-    head["elements"] = [parse_element(raw[i * ELEM_SIZE:(i + 1) * ELEM_SIZE], assets) for i in range(count)]
+    elements = []
+    for i in range(count):
+        chunk = raw[i * ELEM_SIZE:(i + 1) * ELEM_SIZE]
+        e = parse_element(chunk, assets)
+        e["spawn_kind"] = "looping" if i < head["looping"] else ("one_shot" if i < head["looping"] + head["one_shot"] else "emission")
+        e.update(read_samples(proc, chunk))
+        elements.append(e)
+    head["elements"] = elements
     return head
 
 
