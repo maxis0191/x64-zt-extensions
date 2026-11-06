@@ -365,3 +365,10 @@ BILLBOARD_SPRITE with INIT_MATERIAL, COLOR_GRAPH, SIZE_GRAPH; trail ->
 GEO_TRAIL; light -> INIT_LIGHT_OMNI), build a candidate into the mod zone and
 compare in game. Whether ZoneTool `-buildzone` and the client accept an edited
 `.iw7VFX` is NOT_PROVEN.
+
+## 2026-11-06: owner texture cap 512 px
+
+Owner decision: weapon and effect textures capped at 512 px (and no hero
+weapons). `t7_fx_material_pack.py --max-size` keeps atlas grids aligned
+(the whole sheet scales). Ray Gun at 512: weapon images 9.7 -> 2.9 MB, effect
+images 12 -> 2.0 MB (DDS on disk).
