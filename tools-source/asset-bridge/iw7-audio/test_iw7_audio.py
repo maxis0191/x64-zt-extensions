@@ -1,0 +1,145 @@
+"""Synthetic tests for iw7_sab.py and iwz_audio_bank.py (no game data)."""
+import csv
+import json
+import os
+import struct
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import iw7_sab  # noqa: E402
+import iwz_audio_bank as bank  # noqa: E402
+
+
+def flac_bytes(rate=48000, channels=2, frames=96000, block=1024, payload=b'\xff\xf8frames'):
+    info = struct.pack('>HH', block, block) + b'\0' * 6
+    info += bytes([(rate >> 12) & 0xFF, (rate >> 4) & 0xFF, (((channels - 1) << 1) | ((rate << 4) & 0xF0)) & 0xFF])
+    info += bytes([(15 << 4) | ((frames >> 32) & 0x0F)]) + struct.pack('>I', frames & 0xFFFFFFFF) + b'\0' * 16
+    return b'fLaC' + bytes([0x80]) + len(info).to_bytes(3, 'big') + info + payload
+
+
+def write_bank(path, entries):
+    """entries: list of (name, payload bytes, rate, channels, frames, looping)."""
+    data_off = 0x1000
+    blob = b''
+    rows = []
+    for name, payload, rate, ch, frames, loop in entries:
+        rows.append((iw7_sab.snd_hash_name(name), len(payload), 0, frames, 0, data_off + len(blob), rate, ch, loop, 8,
+                     0, 0, 0, 0, 0, 0, 0))
+        blob += payload
+    entry_off = data_off + len(blob)
+    table = b''.join(iw7_sab.ENTRY.pack(*r) for r in rows)
+    names_off = entry_off + len(table)
+    names = b''.join(n.encode().ljust(128, b'\0') for n, *_ in entries)
+    header = iw7_sab.HEADER.pack(iw7_sab.MAGIC, 0x17, 44, 16, 64, len(entries), 8, 0x17, 0, entry_off, 0, b'\0' * 16,
+                                 b'\0' * 512, 0, names_off, b'testzone', b'pc', b'all', 0x17, len(blob), b'\0' * 5)
+    with open(path, 'wb') as f:
+        f.write(header.ljust(data_off, b'\0') + blob + table + names)
+
+
+class SabTest(unittest.TestCase):
+    def test_hash_is_case_insensitive_and_matches_engine_seed(self):
+        self.assertEqual(iw7_sab.snd_hash_name('AMB\\X'), iw7_sab.snd_hash_name('amb\\x'))
+        self.assertEqual(iw7_sab.snd_hash_name(''), 0)
+        self.assertEqual(iw7_sab.snd_hash_name('a'), (65599 * 5381 + ord('a')) & 0xFFFFFFFF)
+
+    def test_list_and_extract_rebuild_a_flac_container(self):
+        root = tempfile.mkdtemp()
+        p = os.path.join(root, 'test.sabl')
+        write_bank(p, [('amb\\hum_lp', b'\xff\xf8abc', 48000, 2, 4800, 1), ('evt\\one', b'\xff\xf8de', 36000, 1, 360, 0)])
+        b = iw7_sab.Bank(p)
+        self.assertEqual(b.zone, 'testzone')
+        names = [e['name'] for e in b.entries()]
+        self.assertEqual(names, ['amb\\hum_lp', 'evt\\one'])
+        self.assertAlmostEqual(b.entries()[0]['seconds'], 0.1)
+        out = os.path.join(root, 'out')
+        self.assertEqual(iw7_sab.main(['extract', p, '--name', 'evt\\one', '--out', out]), 0)
+        f = os.path.join(out, 'evt', 'one.flac')
+        info = bank.flac_info(f)
+        self.assertEqual((info['rate'], info['channels'], info['frames'], info['bits']), (36000, 1, 360, 16))
+        with open(f, 'rb') as h:
+            self.assertTrue(h.read().endswith(b'\xff\xf8de'))
+
+    def test_missing_name_fails(self):
+        root = tempfile.mkdtemp()
+        p = os.path.join(root, 'test.sabl')
+        write_bank(p, [('a', b'\xff\xf8', 48000, 1, 10, 0)])
+        self.assertEqual(iw7_sab.main(['extract', p, '--name', 'b', '--out', os.path.join(root, 'o')]), 1)
+
+
+HEADER = ['Name', 'SecondaryAliasName', 'StopAliasName', 'Subtitle', 'File', 'vol_min', 'vol_max', 'dist_min', 'dist_max',
+          'channel', 'type', 'loop', 'volumefalloffcurve', 'MusicContent', 'duck']
+
+
+class BankTest(unittest.TestCase):
+    def setUp(self):
+        self.root = tempfile.mkdtemp()
+        self.tpl = os.path.join(self.root, 'stock.aliases.csv')
+        with open(self.tpl, 'w', newline='') as f:
+            csv.writer(f).writerows([
+                HEADER,
+                ['mus_wave', '', 'stop', 'sub', 'music\\wave', '0.4', '0.4', '5000', '25000', 'music_lr', 'streamed', 'nonlooping', 'default', 'none', 'duck_a'],
+                ['emt_hum', '', '', '', 'amb\\hum_lp', '0.2', '0.2', '35', '450', 'amb_elm_unres_3d', 'loaded', 'rlooping', 'reaction', 'none', ''],
+                ['emt_creak', '', '', '', 'amb\\creak_1', '0.1', '0.1', '55', '350', 'amb_elm_unres_3d', 'loaded', 'nonlooping', 'default', 'music', ''],
+                ['emt_creak', '', '', '', 'amb\\creak_2', '0.1', '0.1', '55', '350', 'amb_elm_unres_3d', 'loaded', 'nonlooping', 'default', 'none', ''],
+            ])
+        self.sabl = os.path.join(self.root, 'stock.sabl')
+        write_bank(self.sabl, [('amb\\hum_lp', b'\xff\xf8h', 48000, 2, 48000, 1), ('amb\\creak_1', b'\xff\xf8c1', 48000, 2, 4800, 0),
+                               ('amb\\creak_2', b'\xff\xf8c2', 48000, 2, 4800, 0)])
+        self.song = os.path.join(self.root, 'song.flac')
+        with open(self.song, 'wb') as f:
+            f.write(flac_bytes(frames=48000 * 300))
+        self.out = os.path.join(self.root, 'out')
+
+    def spec(self, **over):
+        s = {'bank': 'cp_test.all', 'zone': 'cp_test', 'template_aliases': self.tpl, 'stock_banks': [self.sabl],
+             'aliases': [
+                 {'name': 'mus_song', 'template': 'mus_wave', 'source': self.song, 'file': 'iwz\\mus\\song',
+                  'set': {'vol_max': 0.5, 'vol_min': 0.5, 'MusicContent': 'music'}},
+                 {'name': 'emt_hum', 'source': 'stock'},
+                 {'name': 'emt_creak', 'source': 'stock'},
+             ]}
+        s.update(over)
+        return s
+
+    def test_builds_bank_sources_and_manifest(self):
+        r = bank.build(self.spec(), self.out)
+        self.assertEqual(r['errors'], [])
+        with open(os.path.join(self.out, 'sound', 'cp_test.all.aliases.csv'), newline='') as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual([x['Name'] for x in rows], ['mus_song', 'emt_hum', 'emt_creak', 'emt_creak'])
+        song = rows[0]
+        self.assertEqual((song['File'], song['channel'], song['type'], song['vol_max']), ('iwz\\mus\\song', 'music_lr', 'streamed', '0.500000'))
+        self.assertEqual((song['duck'], song['StopAliasName'], song['Subtitle']), ('', '', ''))
+        self.assertTrue(os.path.isfile(os.path.join(self.out, 'sound_assets', 'amb', 'creak_2.flac')))
+        with open(os.path.join(self.out, 'soundbank', 'cp_test.all.json')) as f:
+            sb = json.load(f)
+        self.assertEqual((sb['name'], sb['zone'], sb['aliases']), ('cp_test.all', 'cp_test', ['sound/cp_test.all.aliases.csv']))
+        self.assertEqual(r['expected_files'], {'sabl': 'cp_test.sabl', 'sabs': 'cp_test.sabs'})
+        with open(os.path.join(self.out, 'zone_rows.csv')) as f:
+            self.assertEqual(f.read().strip(), 'soundbank,cp_test.all')
+
+    def test_rejects_values_stock_never_uses(self):
+        s = self.spec()
+        s['aliases'][0]['set']['channel'] = 'music_bogus'
+        self.assertTrue(any('music_bogus' in e for e in bank.build(s, self.out, check_only=True)['errors']))
+
+    def test_long_loaded_audio_must_stream(self):
+        s = self.spec()
+        s['aliases'][0]['set']['type'] = 'loaded'
+        self.assertTrue(any('stream it' in e for e in bank.build(s, self.out)['errors']))
+
+    def test_3d_alias_needs_a_falloff_range(self):
+        s = self.spec()
+        s['aliases'][1]['set'] = {'dist_min': 500.0, 'dist_max': 100.0}
+        self.assertTrue(any('dist_max' in e for e in bank.build(s, self.out, check_only=True)['errors']))
+
+    def test_variables_expand(self):
+        self.assertEqual(bank.expand({'a': ['${X}/y']}, {'X': 'root'}), {'a': ['root/y']})
+        with self.assertRaises(SystemExit):
+            bank.expand('${MISSING}', {})
+
+
+if __name__ == '__main__':
+    unittest.main()
