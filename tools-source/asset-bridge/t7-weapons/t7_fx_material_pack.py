@@ -60,6 +60,26 @@ def atlas_of(effects):
     return out
 
 
+def scaled_size(width, height, max_size):
+    """Size after the cap: the larger side becomes max_size, aspect kept (each
+    atlas cell scales the same way, so the grid stays aligned)."""
+    if not max_size or max(width, height) <= max_size:
+        return width, height
+    scale = max_size / float(max(width, height))
+    return max(4, int(round(width * scale))), max(4, int(round(height * scale)))
+
+
+def stage_image(src, dst, max_size):
+    from PIL import Image
+    with Image.open(src) as im:
+        size = scaled_size(im.width, im.height, max_size)
+        out = im.convert("RGBA")
+        if size != (im.width, im.height):
+            out = out.resize(size, Image.Resampling.LANCZOS)
+        out.save(dst)
+    return list(size)
+
+
 def bind(template, image, cols, rows):
     m = copy.deepcopy(template)
     for t in m["textureTable"]:
@@ -85,6 +105,8 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--prefix", default="eq", help="material folder (asset name prefix)")
     ap.add_argument("--name-prefix", default="bo3wpn_")
+    ap.add_argument("--max-size", type=int, default=0,
+                    help="downscale images whose larger side exceeds this (download budget); atlas grids are kept")
     args = ap.parse_args(argv)
 
     with open(args.effects, encoding="utf-8") as f:
@@ -122,15 +144,14 @@ def main(argv=None):
         image = new_name + "_c"
         with tempfile.TemporaryDirectory() as tmp:
             staged = os.path.join(tmp, image + ".png")
-            with open(png, "rb") as fi, open(staged, "wb") as fo:
-                fo.write(fi.read())
+            size = stage_image(png, staged, args.max_size)
             subprocess.run([args.texconv, "-nologo", "-y", "-m", "0", "-f", "BC7_UNORM", "-o",
                             os.path.join(args.out, "images"), staged], check=True, stdout=subprocess.DEVNULL)
         template = templates[kind + ("_atlas" if cols * rows > 1 else "")]
         with open(os.path.join(args.out, "materials", args.prefix, new_name + ".json"), "w", encoding="utf-8") as f:
             json.dump(bind(template, image, cols, rows), f, indent=4)
         report["materials"].append({"bo3": name, "iw7": "%s/%s" % (args.prefix, new_name), "mode": kind,
-                                    "atlas": [cols, rows], "technique": template["techniqueSet->name"]})
+                                    "atlas": [cols, rows], "size": size, "technique": template["techniqueSet->name"]})
     print(json.dumps(report, indent=1))
     return 0
 

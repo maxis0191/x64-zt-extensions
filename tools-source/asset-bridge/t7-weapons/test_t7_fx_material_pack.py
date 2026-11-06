@@ -32,6 +32,11 @@ class FxMaterialTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             pack.atlas_of(clash)
 
+    def test_size_cap_keeps_aspect(self):
+        self.assertEqual(pack.scaled_size(2048, 1024, 512), (512, 256))
+        self.assertEqual(pack.scaled_size(256, 256, 512), (256, 256))
+        self.assertEqual(pack.scaled_size(1024, 2048, 0), (1024, 2048))
+
     def test_bind(self):
         m = pack.bind(TEMPLATE, "bo3wpn_x_c", 8, 4)
         self.assertEqual(m["textureTable"][0]["image"], "bo3wpn_x_c")
