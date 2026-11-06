@@ -18,6 +18,14 @@ Spec (JSON):
       "set": {"vol_min": 0.5, "vol_max": 0.5, "MusicContent": "music"}},
      {"name": "emt_water_drip_lp", "template": "emt_water_drip_lp", "source": "stock"}]}
 
+Optional "zones" (sound zones: the 2D ambience bed, reverb, mix, filter and occlusion of a place):
+  "zones": {"defs": "<stock dump>/sound", "defs_bank": "cp_zmb.all",
+            "rows": [{"name": "cp_iwz", "copy": "cp_zmb_basement_lg_room"}, ...]}
+copies the stock definition tables (reverbs, mixes, filters, occlusion, ADSR, ...) unchanged, so the
+indices of the copied zone rows stay valid, and writes a zone table holding only the listed rows, renamed.
+Every zone's Ambience bed must be an alias of this bank. The engine streams a zone's bed itself: a 2D bed
+alias (channel amb_bed_2d) played with playlocalsound stays silent (run w4).
+
 Output under --out: sound/<bank>.aliases.csv, soundbank/<bank>.json,
 sound_assets/<File>.flac, iwz_audio_manifest.json (alias, file, sha256,
 seconds, channels, rate) and zone_rows.csv (`soundbank,<bank>` for the zone
@@ -204,6 +212,10 @@ def build(spec, out, check_only=False):
                 'FilterDefs', 'MixDefs', 'NPCAdsrZoneEntry', 'PLRAdsrZoneEntry', 'OccludeDefs',
                 'ReverbDefs', 'TimescaleEntrys', 'ZoneDefs', 'Unks', 'FullOcclusionDefs', 'PlayerBreathStateDefs'):
         sb[key] = []
+    if spec.get('zones'):
+        zone_result = write_zones(spec['zones'], bank, out, {m['alias'] for m in manifest}, sb)
+        if zone_result['errors']:
+            return {'errors': zone_result['errors']}
     with open(os.path.join(out, 'soundbank', bank + '.json'), 'w') as f:
         json.dump(sb, f, indent=4)
     with open(os.path.join(out, 'zone_rows.csv'), 'w', newline='\n') as f:
@@ -211,11 +223,60 @@ def build(spec, out, check_only=False):
     loaded = sum(m['bytes'] for m in manifest if m['type'] not in STREAMED_TYPES)
     streamed = sum(m['bytes'] for m in manifest if m['type'] in STREAMED_TYPES)
     result = {'bank': bank, 'zone': spec['zone'], 'aliases': manifest,
+              'sound_zones': zone_result['zones'] if spec.get('zones') else [],
               'expected_files': {'sabl': spec['zone'] + '.sabl', 'sabs': spec['zone'] + '.sabs'},
               'loaded_audio_bytes': loaded, 'streamed_audio_bytes': streamed, 'errors': []}
     with open(os.path.join(out, 'iwz_audio_manifest.json'), 'w') as f:
         json.dump(result, f, indent=1)
     return result
+
+
+DEF_TABLES = (('sendEffectParams', 'sendEffectParams'), ('ADSRSettings', 'adsr'), ('AmbientDefs', 'ambient'),
+              ('AmbientEvents', 'ambientEvent'), ('AmbientElements', 'ambientElement'), ('FilterDefs', 'filters'),
+              ('MixDefs', 'mixes'), ('NPCAdsrZoneEntry', 'adsrZoneNPC'), ('PLRAdsrZoneEntry', 'adsrZonePlayer'),
+              ('OccludeDefs', 'occlusionFilters'), ('ReverbDefs', 'reverbs'), ('TimescaleEntrys', 'timescales'),
+              ('FullOcclusionDefs', 'fullOcclusions'), ('PlayerBreathStateDefs', 'playerBreathStates'))
+
+
+def write_zones(z, bank, out, aliases, sb):
+    """Copy the stock definition tables and write the selected, renamed zone rows (see the module doc)."""
+    errors, zones = [], []
+    src, stock = z['defs'], z.get('defs_bank', 'cp_zmb.all')
+    for key, suffix in DEF_TABLES:
+        path = os.path.join(src, '%s.%s.csv' % (stock, suffix))
+        if not os.path.isfile(path):
+            errors.append('missing stock table %s' % path)
+            continue
+        shutil.copyfile(path, os.path.join(out, 'sound', '%s.%s.csv' % (bank, suffix)))
+        sb[key] = ['sound/%s.%s.csv' % (bank, suffix)]
+    unk = os.path.join(src, 'unk', stock + '.json')
+    if os.path.isfile(unk):
+        os.makedirs(os.path.join(out, 'sound', 'unk'), exist_ok=True)
+        shutil.copyfile(unk, os.path.join(out, 'sound', 'unk', bank + '.json'))
+        sb['Unks'] = ['sound/unk/%s.json' % bank]
+    with open(os.path.join(src, '%s.zone.csv' % stock), newline='', encoding='utf-8') as f:
+        rows = list(csv.reader(f))
+    header = rows[0]
+    col = {n: i for i, n in enumerate(header)}
+    by_name = {r[col['Zone_Name']]: r for r in rows[1:] if len(r) == len(header)}
+    picked = []
+    for row in z['rows']:
+        base = by_name.get(row['copy'])
+        if not base:
+            errors.append('zone %s: stock zone %s not found' % (row['name'], row['copy']))
+            continue
+        r = list(base)
+        r[col['Zone_Name']] = row['name']
+        bed = r[col['Ambience']]
+        if bed and bed not in aliases:
+            errors.append('zone %s: ambience bed %s is not an alias of this bank' % (row['name'], bed))
+        picked.append(r)
+        zones.append({'zone': row['name'], 'copy': row['copy'], 'ambience': bed, 'reverb': r[col['Reverb']],
+                      'mix': r[col['Mix']], 'filter': r[col['Filter']], 'occlusion': r[col['Occlusion']]})
+    with open(os.path.join(out, 'sound', '%s.zone.csv' % bank), 'w', newline='', encoding='utf-8') as f:
+        csv.writer(f).writerows([header] + picked)
+    sb['ZoneDefs'] = ['sound/%s.zone.csv' % bank]
+    return {'errors': errors, 'zones': zones}
 
 
 def expand(value, env):

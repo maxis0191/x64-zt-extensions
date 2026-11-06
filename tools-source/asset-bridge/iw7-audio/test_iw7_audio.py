@@ -120,6 +120,35 @@ class BankTest(unittest.TestCase):
         with open(os.path.join(self.out, 'zone_rows.csv')) as f:
             self.assertEqual(f.read().strip(), 'soundbank,cp_test.all')
 
+    def test_sound_zones_copy_tables_and_rename_rows(self):
+        defs = os.path.join(self.root, 'defs')
+        os.makedirs(os.path.join(defs, 'unk'))
+        for key, suffix in bank.DEF_TABLES:
+            with open(os.path.join(defs, 'stock.all.%s.csv' % suffix), 'w') as f:
+                f.write('col' + chr(10) + suffix + chr(10))
+        with open(os.path.join(defs, 'unk', 'stock.all.json'), 'w') as f:
+            f.write('[]')
+        head = ['ReverbIndex', 'Zone_Name', 'Ambience', 'Mix', 'Reverb', 'Filter', 'Occlusion']
+        with open(os.path.join(defs, 'stock.all.zone.csv'), 'w', newline='') as f:
+            csv.writer(f).writerows([head, ['5', 'stock_room', 'emt_hum', 'mix_a', 'lg_room', 'default', 'occ'],
+                                     ['6', 'stock_ext', 'amb_missing', '', 'ext', 'default', 'occ']])
+        z = {'defs': defs, 'defs_bank': 'stock.all', 'rows': [{'name': 'cp_test', 'copy': 'stock_room'}]}
+        r = bank.build(self.spec(zones=z), self.out)
+        self.assertEqual(r['errors'], [])
+        self.assertEqual(r['sound_zones'][0]['reverb'], 'lg_room')
+        with open(os.path.join(self.out, 'sound', 'cp_test.all.zone.csv'), newline='') as f:
+            rows = list(csv.reader(f))
+        self.assertEqual(rows[1:], [['5', 'cp_test', 'emt_hum', 'mix_a', 'lg_room', 'default', 'occ']])
+        with open(os.path.join(self.out, 'soundbank', 'cp_test.all.json')) as f:
+            sb = json.load(f)
+        self.assertEqual(sb['ReverbDefs'], ['sound/cp_test.all.reverbs.csv'])
+        self.assertEqual(sb['Unks'], ['sound/unk/cp_test.all.json'])
+        self.assertTrue(os.path.isfile(os.path.join(self.out, 'sound', 'cp_test.all.mixes.csv')))
+        z['rows'] = [{'name': 'cp_test', 'copy': 'stock_ext'}, {'name': 'x', 'copy': 'nope'}]
+        errors = chr(10).join(bank.build(self.spec(zones=z), os.path.join(self.root, 'out2'))['errors'])
+        self.assertIn('ambience bed amb_missing is not an alias', errors)
+        self.assertIn('stock zone nope not found', errors)
+
     def test_rejects_values_stock_never_uses(self):
         s = self.spec()
         s['aliases'][0]['set']['channel'] = 'music_bogus'
