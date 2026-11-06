@@ -1,14 +1,15 @@
 """Decode and encode ZoneTool IW7 .xab animations (stdlib only).
 
-Layout (verified by exact consumption of every data array on stock cp_zmb
-animations and on converted BO3 animations):
+Layout (verified on every stock cp_zmb animation: each data array consumed
+exactly, and every decoded key index sequence starts at 0 and rises strictly
+within the frame count; a channel may stop before the last frame):
 
 * names: bones grouped by rotation part type: none, half (2D), full,
   half static, full static (boneCount[0..4]).
-* dataByte: the translation order (one name index per bone, groups small,
-  precise, static, none = boneCount[5..8]); for animations under 256 frames
-  it is followed by every animated channel's key frame indices (bytes,
-  rotation channels then translation channels).
+* dataByte: for animations under 256 frames, first every animated channel's
+  key frame indices (bytes, rotation channels then translation channels);
+  then, in all animations, the translation order (one name index per bone,
+  groups small, precise, static, none = boneCount[5..8]).
 * dataShort: per animated rotation channel its key count - 1 (n); for 256+
   frames followed inline by its n + 1 indices when n < 64, else by a lookup
   table (the index at every 256th key, then the last; ((n - 1) >> 8) + 2
@@ -99,14 +100,19 @@ def decode(path):
     rb = arrays['randomDataByte']
     width = 2 if F >= 256 else 1
     idx = struct.unpack('<%d%s' % (len(arrays['indices']) // width, 'H' if width == 2 else 'B'), arrays['indices'])
-    pos = {'ds': 0, 'db': b[9], 'idx': 0, 'rs': 0, 'rb': 0}
+    pos = {'ds': 0, 'db': 0, 'idx': 0, 'rs': 0, 'rb': 0}
 
-    def counts_and_indices(channels):
+    def counts_and_indices(channels, bones=None):
         out = []
         if F < 256:
             ns = list(ds[pos['ds']:pos['ds'] + channels])
             pos['ds'] += channels
             for n in ns:
+                if bones is not None:
+                    # Short animations: each translation channel's bone byte
+                    # precedes its index bytes.
+                    bones.append(db[pos['db']])
+                    pos['db'] += 1
                 out.append(list(db[pos['db']:pos['db'] + n + 1]))
                 pos['db'] += n + 1
             return out
@@ -144,13 +150,22 @@ def decode(path):
             anim.rotations[names[k]] = [(0, _q(raw, size == 2))]
             anim.rotation_kind[names[k]] = 'half' if size == 2 else 'full'
             k += 1
-    order = list(db[:b[9]])
-
     def bone(index):
         # Some stock character animations list a channel past the names.
         return names[index] if index < len(names) else '#%d' % index
 
-    animated_trans = counts_and_indices(b[5] + b[6])
+    animated = b[5] + b[6]
+    trans_bones = []
+    if F < 256:
+        animated_trans = counts_and_indices(animated, trans_bones)
+        rest = list(db[pos['db']:pos['db'] + b[7] + b[8]])
+        pos['db'] += b[7] + b[8]
+    else:
+        animated_trans = counts_and_indices(animated)
+        trans_bones = list(db[:animated])
+        rest = list(db[animated:animated + b[7] + b[8]])
+        pos['db'] = animated + b[7] + b[8]
+    order = trans_bones + rest
     for c, frames in enumerate(animated_trans):
         mins, size = ints[6 * c:6 * c + 3], ints[6 * c + 3:6 * c + 6]
         keys = []
@@ -173,6 +188,12 @@ def decode(path):
     # are the ones no other group lists, and they keep their bind translation.
     for name in names:
         anim.translations.setdefault(name, None)
+    for name in names:
+        for keys in (anim.rotations.get(name), anim.translations.get(name)):
+            if keys and len(keys) > 1:
+                frames_seen = [k[0] for k in keys]
+                if frames_seen[0] != 0 or frames_seen[-1] > F or any(x >= y for x, y in zip(frames_seen, frames_seen[1:])):
+                    raise ValueError('key indices of %s do not rise from 0 within %d frames' % (name, F))
     consumed = {'dataShort': pos['ds'] == len(ds), 'dataByte': pos['db'] == len(db),
                 'indices': pos['idx'] == len(idx), 'randomDataShort': pos['rs'] == len(rs),
                 'randomDataByte': pos['rb'] == len(rb), 'dataInt': base + 3 * b[7] == len(ints)}
@@ -221,7 +242,7 @@ def encode(anim, path):
     order = [names.index(n) for n in anim_tr + static_tr + none_tr]
     if len(names) > 255 or len(order) != len(names):
         raise ValueError('bone set')
-    data_short, data_byte, indices, rand_short, ints = [], list(order), [], [], []
+    data_short, data_byte, indices, rand_short, ints = [], [], [], [], []
     key_count = F  # n = keys - 1
 
     def put_indices():
@@ -256,7 +277,8 @@ def encode(anim, path):
         data_short.extend(v & 0xFFFF for v in q16(anim.rotations[n][0][1]))
     if F < 256:
         data_short.extend([key_count] * len(anim_tr))
-        for _ in anim_tr:
+        for n in anim_tr:
+            data_byte.append(names.index(n))   # bone byte before its indices
             put_indices()
     else:
         for _ in anim_tr:
@@ -274,6 +296,9 @@ def encode(anim, path):
     for n in static_tr:
         ints.extend(anim.translations[n][0][1])
 
+    # Translation order: short animations already placed each animated channel's
+    # bone before its indices; the static and untranslated groups follow.
+    data_byte.extend(order if F >= 256 else order[len(anim_tr):])
     head = bytearray(anim.header)
     counts = {
         'dataByte': (len(data_byte), 16, 108, 'H'), 'dataShort': (len(data_short), 24, 110, 'H'),

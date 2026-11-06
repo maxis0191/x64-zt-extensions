@@ -150,12 +150,18 @@ retargeting to IW7 arms is a separate option.
 
 `iw7_xanim_codec.py` decodes every IW7 animation channel (all frames) and
 encodes a valid layout (every animated channel keyed each frame: full
-quaternions, unsigned-short translations). It consumes all data arrays of
-4029/4029 stock cp_zmb animations exactly; a decode/encode/decode round trip
-of stock and converted animations stays within 0.004 degrees and 0 units.
-Untranslated-group entries of the translation order are not reliable bone
-indices (out of range in converted BO3 animations); the engine-relevant groups
-are. A few stock character animations list a channel past their names.
+quaternions, unsigned-short translations). On 4029/4029 stock cp_zmb
+animations it consumes every data array exactly and every key index sequence
+starts at 0 and rises strictly (a channel may stop before the last frame); a
+decode/encode/decode round trip stays within 0.004 degrees and 0 units.
+dataByte: under 256 frames, rotation index bytes, then per animated
+translation channel its bone byte followed by its index bytes, then the static
+and untranslated bone groups; at 256+ frames, the animated translation bones
+then those two groups. A first version that put the whole order list first
+passed the consumption check alone (same total length) but misread short
+animations and crashed the client on the retargeted fire animation
+(`iw7_ship+0xd7a002`, translation index search); the index-sequence check now
+catches it. A few stock character animations list a channel past their names.
 
 Witness findings that drove `t7_vm_retarget.py`: the converted Ray Gun was
 drawn at the view origin with IW7 hands and with BO3 hands alike. BO3 frame 0
@@ -164,6 +170,5 @@ on the BO3 hands is a normal hip pose relative to `tag_camera` (wrist about
 IW7 animations keep `tag_weapon` equal to `tag_weapon_right` (0.00 degrees,
 0 units in stock) while BO3 animations leave it unanimated, and BO3 hands do
 not have it. The retargeted Ray Gun animations put both IW7 wrists and the gun
-exactly on the BO3 ones (0.001 units, 0.0 degrees; fingers within 0.2) except
-where the BO3 arm reaches beyond the IW7 arm length (first raise 6.5, reload
-2.1, sprint loop 0.8 units). Client confirmation is pending.
+exactly on the BO3 ones (0.001 units, 0.0 degrees; fingers within 0.2) on every
+frame of all 11 Ray Gun animations. Client confirmation is pending.
