@@ -235,3 +235,18 @@ the ADS key held (scenario hold_start): zoomed view, the Ray Gun's rear sight
 on the reticle; hip pose unchanged. PROVEN_LOCAL. The scenario runner's
 `press` is a 200 ms tap: earlier ADS captures were taken after the weapon was
 lowered, including a stock Facemelter control.
+
+## 2026-11-06: lit Ray Gun (emissive parts and glass)
+
+The converted Ray Gun looked switched off. Its BO3 lit parts (energy tube
+`power`, rear gauge `meter`, sight `reticle`) bind emissive maps, and the tube
+and gauge sit under `glass`, a BO3 `blend` material. The glass had been built
+from an opaque `replace` template: drawn solid and dark, it hid both; emissive
+intensity x8 and a fully transparent glass alpha changed nothing (client
+probes), a z-buffered projection of the model by material from the hip
+camera showed the glass in front of them. Glass now uses the stock
+Headcutter glass technique (`m2o_l_sm_ndw_blend_i0c0s0n0pa0_vm`) and the lit
+parts the stock emissive weapon technique (`m2o_l_sm_replace_i0c0s0o0n0e0p0_vm`,
+`emissivePara` 1), both loaded by cp_zmb. Client witness: blue animated
+energy tube, red/yellow/green gauge and red reticle lit. PROVEN_LOCAL. BO3's
+scrolling of the tube texture is not reproduced (no scroll in the template).

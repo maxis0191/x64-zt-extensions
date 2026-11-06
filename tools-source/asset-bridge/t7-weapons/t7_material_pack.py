@@ -8,7 +8,7 @@ Output, under ``--out`` (ZoneTool IW7 source layout):
   images/<mat>_packed_cs.dds   RGB albedo, A specular (luminance of BO3 spec)
   images/<mat>_packed_nog.dds  R gloss, G normal Y, B occlusion, A normal X
   images/<mat>_packed_a.dds    R alpha (opacity), BC4
-  images/<mat>_e.dds           emissive (only when BO3 binds one)
+  images/<mat>_e.dds           emissive (only when BO3 binds one; tint baked, BC7_UNORM)
   materials/<mat>.json         template with the texture table rebound
 
 Channel layouts follow measured stock IW7 weapon textures (see STATUS.md);
@@ -32,7 +32,18 @@ from PIL import Image
 SEM_CS = 14       # *_packed_cs
 SEM_NOG = 15      # *_packed_nog
 SEM_ALPHA = 16    # *_packed_a
+SEM_EMISSIVE = 2          # colour-map semantic; the emissive slot holds a *_e image
 SEM_EMISSIVE_CANDIDATES = ("blank_e",)
+
+
+def emissive_tint(mat):
+    """BO3 emissive tint: the emissive colour, else the material colour tint
+    (the reticle glows in its tint). None when the map is used as is."""
+    for key in ("emissive", "color_tint"):
+        b = mat.get(key)
+        if isinstance(b, dict) and b.get("color"):
+            return [float(c) for c in b["color"][:3]]
+    return None
 
 
 def load_rgba(path, size=None):
@@ -81,6 +92,13 @@ def pack_material(mat, base, max_size=0):
     rough, rb = opt("roughness")
     spec, _ = opt("specular")
     emis, _ = opt("emissive")
+    if emis is not None:
+        # The BO3 map is a mask/colour multiplied by a tint; bake the tint's
+        # hue, peak channel 1 (the IW7 material has no emissive colour).
+        tint = emissive_tint(mat)
+        if tint and max(tint) > 0:
+            emis = emis.copy()
+            emis[..., :3] *= np.array(tint, np.float32) / max(tint)
 
     cs = np.empty((h, w, 4), np.float32)
     cs[..., :3] = albedo[..., :3]
@@ -110,7 +128,11 @@ def safe(name):
     return re.sub(r"[^A-Za-z0-9_]", "_", name)
 
 
-def rebind(template, mat_name, images):
+def is_emissive_slot(t):
+    return t["image"] in SEM_EMISSIVE_CANDIDATES or (t["semantic"] == SEM_EMISSIVE and t["image"].endswith("_e"))
+
+
+def rebind(template, mat_name, images, emissive_scale=1.0):
     m = copy.deepcopy(template)
     table = []
     for t in m["textureTable"]:
@@ -121,17 +143,30 @@ def rebind(template, mat_name, images):
             t["image"] = images["nog"]
         elif t["semantic"] == SEM_ALPHA:
             t["image"] = images.get("alpha", t["image"])
-        elif t["image"] in SEM_EMISSIVE_CANDIDATES and images.get("emissive"):
+        elif is_emissive_slot(t) and images.get("emissive"):
             t["image"] = images["emissive"]
         table.append(t)
     m["textureTable"] = table
+    for c in m.get("constantTable", []):
+        if c.get("name") == "emissivePara":
+            c["literal"][0] = emissive_scale
     return m
+
+
+def has_emissive_slot(template):
+    return any(is_emissive_slot(t) for t in template.get("textureTable", []))
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("materials_json")
     ap.add_argument("--template", required=True, help="stock IW7 weapon material JSON")
+    ap.add_argument("--emissive-template", help="stock IW7 weapon material JSON with an emissive slot, for BO3 "
+                    "materials that bind an emissive map (e.g. m2o/attachment_thermalhybrid.json)")
+    ap.add_argument("--emissive-scale", type=float, default=1.0, help="emissivePara intensity")
+    ap.add_argument("--blend-template", help="stock IW7 alpha-blended weapon material JSON, for BO3 materials "
+                    "whose alpha mode is blend (glass), e.g. m2o/weapon_zappers_headcutter_glass.json; an opaque "
+                    "'replace' template draws them solid and hides what is behind them")
     ap.add_argument("--texconv", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--only", nargs="*", help="BO3 material names to convert")
@@ -144,12 +179,25 @@ def main():
         mats = json.load(f)["materials"]
     with open(args.template, encoding="utf-8") as f:
         template = json.load(f)
-    technique = template.get("techniqueSet->name", "")
-    if "2uvt" in technique:
-        # Two-UV (camo) techniques read a second UV set BO3 weapon meshes do
-        # not have: the client drew the converted Ray Gun black with them.
-        raise SystemExit("template technique %s needs a second UV set; use a single-UV weapon template "
-                         "(for example m2o_l_sm_replace_i0c0s0o0n0p0_vm)" % technique)
+    emissive_template = None
+    if args.emissive_template:
+        with open(args.emissive_template, encoding="utf-8") as f:
+            emissive_template = json.load(f)
+        if not has_emissive_slot(emissive_template):
+            raise SystemExit("emissive template has no emissive (*_e) slot")
+    blend_template = None
+    if args.blend_template:
+        with open(args.blend_template, encoding="utf-8") as f:
+            blend_template = json.load(f)
+        if "_blend" not in blend_template.get("techniqueSet->name", ""):
+            raise SystemExit("blend template technique is not a blend technique")
+    for t in (template, emissive_template, blend_template):
+        technique = (t or {}).get("techniqueSet->name", "")
+        if "2uvt" in technique:
+            # Two-UV (camo) techniques read a second UV set BO3 weapon meshes do
+            # not have: the client drew the converted Ray Gun black with them.
+            raise SystemExit("template technique %s needs a second UV set; use a single-UV weapon template "
+                             "(for example m2o_l_sm_replace_i0c0s0o0n0p0_vm)" % technique)
     img_dir = os.path.join(args.out, "images")
     mat_dir = os.path.join(args.out, "materials")
     os.makedirs(img_dir, exist_ok=True)
@@ -172,16 +220,22 @@ def main():
             alpha[..., 3] = 255.0
             jobs = [("cs", packed["cs"], "BC7_UNORM", False), ("nog", packed["nog"], "BC7_UNORM", False),
                     ("alpha", alpha, "BC4_UNORM", False)]
+            use = template
+            if mat.get("alpha") == "blend" and blend_template is not None:
+                use = blend_template
             if packed["emissive"] is not None:
                 images["emissive"] = stem + "_e"
-                jobs.append(("emissive", packed["emissive"], "BC7_UNORM_SRGB", True))
+                # Stock *_e weapon images are BC7_UNORM, colour stored as is.
+                jobs.append(("emissive", packed["emissive"], "BC7_UNORM", False))
+                if emissive_template is not None:
+                    use = emissive_template
             for key, data, fmt, srgb in jobs:
                 png = os.path.join(tmp, images[key] + ".png")
                 Image.fromarray(np.clip(data + 0.5, 0, 255).astype(np.uint8), "RGBA").save(png)
                 texconv(args.texconv, png, img_dir, fmt, srgb)
             with open(os.path.join(mat_dir, name + ".json"), "w", encoding="utf-8") as f:
-                json.dump(rebind(template, name, images), f, indent=4)
-            report.append({"material": name, "images": images,
+                json.dump(rebind(use, name, images, args.emissive_scale), f, indent=4)
+            report.append({"material": name, "images": images, "technique": use.get("techniqueSet->name"),
                            "size": list(packed["cs"].shape[1::-1])})
     print(json.dumps({"materials": report}, indent=1))
 
