@@ -127,3 +127,84 @@ then the last key: `((keys - 2) >> 8) + 2` entries) and its index list in
 this: 27 of 27 long stock cp_zmb animations pass, the converted idle fails
 (12 large channels, no index list). Fix: ZoneTool converter, owner fork.
 Short animations (under 256 frames) have the same layout in both games.
+
+## 2026-11-06: black Ray Gun viewmodel (vertex normal high bits)
+
+With the crash fixed, the Ray Gun drew black on the client while the IW7 arms
+next to it were lit. Albedo, packing and texture slots were correct (packed
+albedo matches the BO3 source in sRGB). The vertex normals decode the same way
+in both games and agree with the triangles, but IW7 sets the two high bits of
+every model vertex normal (180,445 of 180,445 vertices in 300 stock cp_zmb
+surfaces) and BO3 leaves them clear. Fix in the ZoneTool converter (owner fork
+PR7); `iw7_xsurface_check.py` checks this: 4531 stock surface files pass, 0
+fail (126 special-format files are not parsed); the old Ray Gun fails, the
+reconverted Ray Gun and BO3 Dempsey view hands pass.
+
+Placement: BO3 view hands have no clavicle (`tag_torso` -> `j_shoulder_*`);
+IW7's have `tag_torso` -> `j_clavicle_*` -> `j_shoulder_*`, so BO3 weapon
+animations played on IW7 arms put bones under the wrong parents. The witness
+now shows the BO3 hands model with the BO3 weapon (server `setviewmodel`);
+retargeting to IW7 arms is a separate option.
+
+## 2026-11-06: animation codec and view-hand retargeting
+
+`iw7_xanim_codec.py` decodes every IW7 animation channel (all frames) and
+encodes a valid layout (every animated channel keyed each frame: full
+quaternions, unsigned-short translations). On 4029/4029 stock cp_zmb
+animations it consumes every data array exactly and every key index sequence
+starts at 0 and rises strictly (a channel may stop before the last frame); a
+decode/encode/decode round trip stays within 0.004 degrees and 0 units.
+dataByte: under 256 frames, rotation index bytes, then per animated
+translation channel its bone byte followed by its index bytes, then the static
+and untranslated bone groups; at 256+ frames, the animated translation bones
+then those two groups. A first version that put the whole order list first
+passed the consumption check alone (same total length) but misread short
+animations and crashed the client on the retargeted fire animation
+(`iw7_ship+0xd7a002`, translation index search); the index-sequence check now
+catches it. A few stock character animations list a channel past their names.
+
+Witness findings that drove `t7_vm_retarget.py`: the converted Ray Gun was
+drawn at the view origin with IW7 hands and with BO3 hands alike. BO3 frame 0
+on the BO3 hands is a normal hip pose relative to `tag_camera` (wrist about
+10 units ahead, 5 right, 6 down), as is IW7 stock frame 0 on IW7 hands, but
+IW7 animations keep `tag_weapon` equal to `tag_weapon_right` (0.00 degrees,
+0 units in stock) while BO3 animations leave it unanimated, and BO3 hands do
+not have it. The retargeted Ray Gun animations put both IW7 wrists and the gun
+exactly on the BO3 ones (0.001 units, 0.0 degrees; fingers within 0.2) on every
+frame of all 11 Ray Gun animations. Client confirmation is pending.
+
+Translation scale: the stored animated-translation size is the step per key
+unit (range / 255 or range / 65535; stock medians 0.0074 and 0.0005), and the
+value is mins + step * key. A codec version that treated it as the full range
+also round-tripped perfectly (symmetric error) but made the engine place
+translated bones thousands of units away: the client showed no view model with
+re-encoded stock zapper animations. The discriminating check is now the stock
+IW7 convention itself: decoded with this codec, tag_weapon equals
+tag_weapon_right on every frame of stock view animations (within 0.1 units and
+0.2 degrees of quantization).
+
+Image formats: stock weapon material images are BC7_UNORM (`_packed_cs`,
+`_packed_nog`; colour stored as sRGB values without an sRGB format) and
+BC4_UNORM for `_packed_a` (single red channel), read from the GfxImage headers
+of stock images. The first packer wrote `_packed_a` as BC7 with the alpha in A
+and red 8/255, and `_packed_cs` as BC7_UNORM_SRGB: the Ray Gun drew black even
+with stock animations holding it normally in the IW7 hand. `t7_material_pack.py`
+now writes the stock formats with the alpha in red.
+
+Bone list: stock view animations list every hand bone (static values for the
+ones that do not move). A retargeted animation that listed only the animated
+bones drew the arms collapsed onto the view origin; with every hand bone
+listed (bind values for the still ones), the client shows the IW7 arms holding
+the Ray Gun in the right hand at the BO3 position, firing and reloading through
+client input (private witness 2026-11-06). The gun itself still draws black.
+
+Black gun, resolved: with stock Facemelter images bound to the Ray Gun
+materials the gun still drew black, so the images were not the cause. The camo
+template's technique (`..._2uvt_...`) reads a second UV set (stock weapon
+surfaces with it carry SURF_FLAG_SECONDUV); BO3 weapon meshes have one. With
+single-UV templates (`m2o_l_sm_replace_i0c0s0o0n0p0_vm`, alpha parts
+`..._i0c0s0o0n0pa0_bsted_vm`) the client draws the Ray Gun textured and lit in
+the IW7 hand, with the BO3 hip pose, fire and reload animations (private
+witness 2026-11-06). Setting SURF_FLAG_VERTCOL_NONE (which stock surfaces
+carry) made no visible difference and is not part of the pipeline.
+`t7_material_pack.py` refuses two-UV templates.

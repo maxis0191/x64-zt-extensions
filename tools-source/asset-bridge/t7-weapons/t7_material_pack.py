@@ -7,12 +7,14 @@ weapon material JSON used as template (techset, constants, sampler states).
 Output, under ``--out`` (ZoneTool IW7 source layout):
   images/<mat>_packed_cs.dds   RGB albedo, A specular (luminance of BO3 spec)
   images/<mat>_packed_nog.dds  R gloss, G normal Y, B occlusion, A normal X
+  images/<mat>_packed_a.dds    R alpha (opacity), BC4
   images/<mat>_e.dds           emissive (only when BO3 binds one)
   materials/<mat>.json         template with the texture table rebound
 
 Channel layouts follow measured stock IW7 weapon textures (see STATUS.md);
 they are a design until a rendered comparison confirms them. Compression uses
-Microsoft texconv (BC7, sRGB for colour, linear for data).
+Microsoft texconv in the stock formats: BC7_UNORM colour (sRGB values stored
+as is) and data, BC4_UNORM packed_a.
 """
 import argparse
 import copy
@@ -142,6 +144,12 @@ def main():
         mats = json.load(f)["materials"]
     with open(args.template, encoding="utf-8") as f:
         template = json.load(f)
+    technique = template.get("techniqueSet->name", "")
+    if "2uvt" in technique:
+        # Two-UV (camo) techniques read a second UV set BO3 weapon meshes do
+        # not have: the client drew the converted Ray Gun black with them.
+        raise SystemExit("template technique %s needs a second UV set; use a single-UV weapon template "
+                         "(for example m2o_l_sm_replace_i0c0s0o0n0p0_vm)" % technique)
     img_dir = os.path.join(args.out, "images")
     mat_dir = os.path.join(args.out, "materials")
     os.makedirs(img_dir, exist_ok=True)
@@ -156,11 +164,14 @@ def main():
             packed = pack_material(mat, base, args.max_size)
             stem = safe(name)
             images = {"cs": stem + "_packed_cs", "nog": stem + "_packed_nog", "alpha": stem + "_packed_a"}
-            alpha = np.empty(packed["cs"].shape, np.float32)
-            alpha[..., :3] = 8.0  # stock packed_a colour channels are constant
-            alpha[..., 3] = packed["alpha"] if packed["alpha"].shape == alpha.shape[:2] else 255.0
-            jobs = [("cs", packed["cs"], "BC7_UNORM_SRGB", True), ("nog", packed["nog"], "BC7_UNORM", False),
-                    ("alpha", alpha, "BC7_UNORM", False)]
+            # Stock formats (GfxImage headers of stock weapon materials): packed_cs
+            # and packed_nog BC7_UNORM, packed_a BC4_UNORM, a single red channel.
+            # sRGB colour is stored as is; packed_a's red channel holds the alpha.
+            alpha = np.zeros(packed["cs"].shape, np.float32)
+            alpha[..., 0] = packed["alpha"] if packed["alpha"].shape == alpha.shape[:2] else 255.0
+            alpha[..., 3] = 255.0
+            jobs = [("cs", packed["cs"], "BC7_UNORM", False), ("nog", packed["nog"], "BC7_UNORM", False),
+                    ("alpha", alpha, "BC4_UNORM", False)]
             if packed["emissive"] is not None:
                 images["emissive"] = stem + "_e"
                 jobs.append(("emissive", packed["emissive"], "BC7_UNORM_SRGB", True))
