@@ -30,6 +30,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 import shutil
 import struct
 import sys
@@ -69,6 +70,16 @@ def sha256(path):
         for chunk in iter(lambda: f.read(1 << 20), b''):
             h.update(chunk)
     return h.hexdigest().upper()
+
+
+ESCAPES = re.compile(r'\\[tn]')    # the only sequences ZoneTool utils/csv.cpp unescapes
+
+
+def zonetool_safe_file(name):
+    """ZoneTool's CSV reader unescapes \\n and \\t: stock 'cp\\trolley_movement_lp' reads as
+    'cp<TAB>rolley...'. Such names use '/' separators instead; the alias and its bank entry are both
+    hashed from the parsed name, so they still match (the audio is shipped in the map bank)."""
+    return name.replace('\\', '/') if ESCAPES.search(name) else name
 
 
 def load_template(path):
@@ -137,10 +148,11 @@ def build(spec, out, check_only=False):
                     continue
                 row[col[k]] = fmt(value)
             check_row(name, row, col, enums, errors)
-            asset = row[col['File']]
-            dest = os.path.join(out, 'sound_assets', *asset.split('\\')) + '.flac'
+            original = row[col['File']]
+            asset = row[col['File']] = zonetool_safe_file(original)
+            dest = os.path.join(out, 'sound_assets', *asset.replace('/', '\\').split('\\')) + '.flac'
             if source == 'stock':
-                h = iw7_sab.snd_hash_name(asset)
+                h = iw7_sab.snd_hash_name(original)
                 hit = next(((b, ids[h]) for b, ids in index if h in ids), None)
                 if not hit:
                     errors.append('%s: stock audio %s is in none of the stock banks' % (name, asset))

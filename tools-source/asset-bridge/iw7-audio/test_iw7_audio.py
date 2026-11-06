@@ -135,6 +135,22 @@ class BankTest(unittest.TestCase):
         s['aliases'][1]['set'] = {'dist_min': 500.0, 'dist_max': 100.0}
         self.assertTrue(any('dist_max' in e for e in bank.build(s, self.out, check_only=True)['errors']))
 
+    def test_file_names_survive_zonetool_csv_escapes(self):
+        # ZoneTool's CSV reader turns "\t" into a tab: stock "cp\trolley_movement_lp" broke a build
+        self.assertEqual(bank.zonetool_safe_file('cp\\trolley_movement_lp.LL.75.0.all'), 'cp/trolley_movement_lp.LL.75.0.all')
+        self.assertEqual(bank.zonetool_safe_file('amb_emitters\\emt_hum'), 'amb_emitters\\emt_hum')
+        with open(self.tpl, 'a', newline='') as f:
+            csv.writer(f).writerow(['coaster_low', '', '', '', 'cp\\trolley_lp', '0', '0', '150', '1000', 'amb_elm_unres_3d',
+                                    'loaded', 'rlooping', 'default', 'none', ''])
+        write_bank(self.sabl, [('cp\\trolley_lp', b'\xff\xf8t', 48000, 1, 4800, 1)])
+        s = self.spec(aliases=[{'name': 'amb_train', 'template': 'coaster_low', 'source': 'stock', 'set': {'vol_min': 0.3, 'vol_max': 0.3}}])
+        r = bank.build(s, self.out)
+        self.assertEqual(r['errors'], [])
+        with open(os.path.join(self.out, 'sound', 'cp_test.all.aliases.csv'), newline='') as f:
+            row = list(csv.DictReader(f))[0]
+        self.assertEqual(row['File'], 'cp/trolley_lp')
+        self.assertTrue(os.path.isfile(os.path.join(self.out, 'sound_assets', 'cp', 'trolley_lp.flac')))
+
     def test_variables_expand(self):
         self.assertEqual(bank.expand({'a': ['${X}/y']}, {'X': 'root'}), {'a': ['root/y']})
         with self.assertRaises(SystemExit):
