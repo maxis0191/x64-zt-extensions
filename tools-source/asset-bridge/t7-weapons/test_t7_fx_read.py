@@ -60,5 +60,35 @@ class LayoutTest(unittest.TestCase):
             fx.parse_element(b"\0" * 8, {})
 
 
+class SampleTest(unittest.TestCase):
+    def test_visual_state_sample(self):
+        base = bytes([64, 255, 0, 115]) + struct.pack("<9f", 0.0, 0.0, 0.83, 0.83, 0.0, 1.0, 0.0, 0.0, 1.0)
+        amp = bytes([0, 0, 0, 0]) + struct.pack("<9f", 0.0, 0.0, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0)
+        s = fx.parse_vis_sample(base + amp)
+        self.assertEqual(s["base"]["color"], [64, 255, 0, 115])
+        self.assertAlmostEqual(s["base"]["size"][0], 0.83, places=5)
+        self.assertAlmostEqual(s["amplitude"]["size"][1], 0.1, places=5)
+        self.assertEqual(len(base + amp), fx.VIS_SAMPLE_SIZE)
+
+    def test_velocity_sample(self):
+        values = [0.1, 0, 0, 0, 0, 0] + [0] * 6 + [0, 0, 1, 0, 0, 0.5] + [0] * 6
+        s = fx.parse_vel_sample(struct.pack("<24f", *values))
+        self.assertAlmostEqual(s["local_velocity"]["base"][0], 0.1, places=6)
+        self.assertEqual(s["world_velocity"]["base"], [0.0, 0.0, 1.0])
+        self.assertEqual(s["world_velocity"]["amplitude"][2], 0.5)
+
+    def test_scalars_and_counts(self):
+        raw = bytearray(element(2))
+        struct.pack_into("<ii", raw, 2 * 4, 50, 3)
+        struct.pack_into("<ii", raw, 15 * 4, 150, 0)
+        struct.pack_into("<6f", raw, 17 * 4, -2, 2, 0, 0, 0, 0)
+        raw[0xC9], raw[0xCA], raw[0xCD] = 1, 4, 5
+        e = fx.parse_element(bytes(raw), {})
+        self.assertEqual(e["counts"], {"visual": 1, "vel_intervals": 4, "vis_intervals": 5})
+        self.assertEqual(e["scalars"]["spawn"], {"a": 50, "b": 3})
+        self.assertEqual(e["scalars"]["lifespan_msec"], {"base": 150, "amplitude": 0})
+        self.assertEqual(e["scalars"]["spawn_origin"][0], {"base": -2.0, "amplitude": 2.0})
+
+
 if __name__ == "__main__":
     unittest.main()
