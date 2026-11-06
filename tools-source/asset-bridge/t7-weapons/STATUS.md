@@ -283,3 +283,13 @@ interval/count or one-shot count) at dwords 2-3 and lifespan (int ms) at
 150 ms life). Ray Gun: lime green (64,255,0) fading to alpha 0; impact
 (128,255,0); smoke cyan-green. PROVEN_LOCAL (decode); arrays at +0xd8/+0xe8
 and dwords 7-14 are not named yet.
+
+Atlas: dword 48 bytes 0/1 of a sprite element are log2 columns/rows (Ray
+Gun: smoke and bubbles 8x4 on 2048x1024 images, splash 4x4 on 1024x1024,
+splash 2x1 on 1024x512, debris 2x2 on 512x512; static 1x1).
+Effect materials: all Ray Gun BO3 particle materials are
+`effect_lit_emissive_blend` (one `effect_lit_specular_blend`, one
+`effect_distortion`). `t7_fx_material_pack.py` maps them to stock IW7
+`eq_effectunlit_*_evc` techniques loaded by cp_zmb (additive for glows,
+blend for smoke/debris, `zfeather_*_tab` for atlases). 11 of 12 Ray Gun
+materials converted; heat distortion skipped. Not yet drawn in game.
