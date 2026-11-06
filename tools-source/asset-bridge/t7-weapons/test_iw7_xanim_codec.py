@@ -75,5 +75,56 @@ class RetargetMathTest(unittest.TestCase):
             self.assertAlmostEqual(a, b, places=6)
 
 
+def view_rig():
+    """IW7-like view hands: tag_view at the eye, tag_ads the hands root under
+    it, tag_camera beside it, the gun on tag_weapon under tag_torso."""
+    rig = object.__new__(retarget.Skeleton)
+    rig.names = ['tag_origin', 'tag_view', 'tag_ads', 'tag_torso', 'tag_cambone', 'tag_camera', 'tag_weapon']
+    rig.parent = [None, 0, 1, 2, 1, 4, 3]
+    ident = (0.0, 0.0, 0.0, 1.0)
+    rig.local = [(ident, (0.0, 0.0, 0.0)), (ident, (0.0, 0.0, 64.0)), (ident, (0.0, 0.0, 0.0)),
+                 (ident, (-1.0, 0.0, -12.0)), (ident, (0.0, 0.0, 0.0)), (ident, (0.0, 0.0, 0.0)),
+                 (ident, (14.0, 0.0, 0.0))]
+    rig.index = {n: i for i, n in enumerate(rig.names)}
+    rig.world = rig.pose({}, {}, 0)
+    return rig
+
+
+class RootAdsTest(unittest.TestCase):
+    def test_ads_moves_only_tag_ads_onto_the_camera_axis(self):
+        rig = view_rig()
+        hip = codec.Animation()
+        yaw = math.radians(12.0)
+        hip.rotations = {'tag_weapon': [(0, (0.0, 0.0, math.sin(yaw / 2), math.cos(yaw / 2)))]}
+        hip.translations = {'tag_weapon': [(0, (13.0, -4.0, 6.0))]}
+        source = codec.Animation()
+        source.name, source.frames, source.header = 'vm_ads_up', 8, header()
+        source.rate, source.frequency, source.flags, source.tail = 30.0, 3.75, 0, b''
+        source.notify, source.notify_count = [('end', 1.0)], 1
+        gun = (8.0, 0.0, -5.75)
+        up, info = retarget.root_ads(source, hip, rig, gun, 'up')
+        down, _ = retarget.root_ads(source, hip, rig, gun, 'down')
+        self.assertEqual(set(up.rotations), {'tag_ads'})
+        self.assertEqual(set(up.translations), {'tag_ads'})
+        self.assertEqual(up.header[130], 1)
+        rot, tr = dict(hip.rotations), dict(hip.translations)
+        rot['tag_ads'] = [(0, codec.sample(up.rotations['tag_ads'], 8, True))]
+        tr['tag_ads'] = [(0, codec.sample(up.translations['tag_ads'], 8, False))]
+        pose = rig.pose(rot, tr, 0)
+        gq, gt = pose[rig.index['tag_weapon']]
+        cq, ct = rig.world[rig.index['tag_camera']]
+        local = retarget.qrot(retarget.qinv(cq), retarget.vsub(gt, ct))
+        for a, b in zip(local, gun):
+            self.assertAlmostEqual(a, b, places=4)
+        self.assertGreater(abs(retarget.qmul(retarget.qinv(cq), gq)[3]), 0.99999)
+        # Lowering ends on the identity: the hip pose is left untouched.
+        self.assertGreater(abs(codec.sample(down.rotations['tag_ads'], 8, True)[3]), 0.99999)
+        self.assertAlmostEqual(retarget.vlen(codec.sample(down.translations['tag_ads'], 8, False)), 0.0, places=5)
+        self.assertEqual(codec.sample(up.translations['tag_ads'], 0, False), (0.0, 0.0, 0.0))
+
+    def test_engine_roots_are_not_hand_channels(self):
+        self.assertEqual(retarget.ENGINE_ROOTS, ('tag_view', 'tag_ads'))
+
+
 if __name__ == '__main__':
     unittest.main()

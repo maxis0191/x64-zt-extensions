@@ -10,8 +10,10 @@ For every frame this evaluates the BO3 pose on the BO3 hands, aligns the BO3
 camera (tag_camera) with the IW7 one, then poses the IW7 hands:
 * each arm by two-bone IK: the IW7 wrist lands on the BO3 wrist, the elbow
   bends toward the BO3 elbow; IW7 bone lengths are kept;
-* hands and fingers take the BO3 world orientation relative to each rig's
-  bind pose;
+* arm, hand and finger bones take the BO3 world orientation through the
+  per-side axis convention difference measured at the wrist bind pose, so
+  the IW7 hand grips the gun as the BO3 hand does (BO3 gun origins sit in the
+  palm; IW7 stock grip offsets do not apply to them);
 * tag_weapon follows the BO3 tag_weapon_right (gun root), so the gun keeps
   its BO3 placement relative to the camera;
 * channels of bones only the gun has (tag_*_animate...) are copied.
@@ -36,6 +38,7 @@ sys.path.insert(0, os.path.join(HERE, '..', 'animation'))
 import iw7_xanim_codec as codec  # noqa: E402
 import xab_preflight as xab  # noqa: E402
 
+ENGINE_ROOTS = ('tag_view', 'tag_ads')
 ARMS = (('le', 'j_shoulder_le', 'j_elbow_le', 'j_wrist_le'), ('ri', 'j_shoulder_ri', 'j_elbow_ri', 'j_wrist_ri'))
 
 
@@ -171,7 +174,94 @@ def two_bone(shoulder, a, b, target, pole):
     return vadd(shoulder, vadd(vscale(u, a * cos_a), vscale(v, a * sin_a)))
 
 
-def retarget(anim, src, dst):
+def qslerp(a, b, t):
+    d = sum(x * y for x, y in zip(a, b))
+    if d < 0:
+        b, d = tuple(-x for x in b), -d
+    if d > 0.9995:
+        return qnorm(tuple(x + (y - x) * t for x, y in zip(a, b)))
+    th = math.acos(d)
+    s0, s1 = math.sin((1 - t) * th) / math.sin(th), math.sin(t * th) / math.sin(th)
+    return qnorm(tuple(s0 * x + s1 * y for x, y in zip(a, b)))
+
+
+def aim_down_sight(sp, src, ads, frame, frames):
+    """IW7 aims with the pose its ADS animations reach (BO3 aims in the engine,
+    so BO3 ADS animations stay near the hip). Move the gun and the arm holding
+    it (default the right arm) rigidly, in camera space, so the gun ends with its sight line on the
+    camera axis: gun axes along the camera, gun origin at `ads['gun']`.
+    ads['mode']: 'up' ramps 0->1 over the animation, 'down' 1->0, 'hold' 1."""
+    cam = src.index.get('tag_camera', 0)
+    cq, ct = sp[cam]
+    gun = src.index['tag_weapon_right']
+    t = {'up': frame / max(frames, 1), 'down': 1 - frame / max(frames, 1)}.get(ads['mode'], 1.0)
+    t = t * t * (3 - 2 * t)   # ease in and out
+    # Correction measured at the reference frame (end of up, start of down,
+    # first frame of hold: a held animation keeps its own recoil).
+    ref = ads['ref_pose']
+    gq, gt = ref[gun]
+    target_q = cq
+    target_t = vadd(ct, qrot(cq, ads['gun']))
+    full_q = qnorm(qmul(target_q, qinv(gq)))
+    corr_q = qslerp((0.0, 0.0, 0.0, 1.0), full_q, t)
+    # Rotate about the gun origin, then translate it toward the target.
+    pivot = gt
+    move = vscale(vsub(target_t, gt), t)
+    out = list(sp)
+    # Only the gun and the arm that holds it move; the free hand stays put.
+    moved = {gun}
+    for i in range(len(src.names)):
+        j = i
+        while j is not None:
+            if src.names[j] == ads.get('arm', 'j_shoulder_ri'):
+                moved.add(i)
+                break
+            j = src.parent[j]
+    for i in moved:
+        q, p = sp[i]
+        out[i] = (qnorm(qmul(corr_q, q)), vadd(vadd(pivot, qrot(corr_q, vsub(p, pivot))), move))
+    return out
+
+
+def root_ads(anim, hip, dst, gun, mode):
+    """ADS raise/lower as stock IW7 writes them: one channel, tag_ads (the
+    hands root under tag_view; stock vm_*_ads_up/down animate only it, and the
+    engine overrides that bone with them). The whole view model moves rigidly
+    about the eye so the hip gun (`hip` frame 0) ends with its axes on the
+    camera axes and its origin at `gun` in camera space. Listing other bones
+    replaced the hip pose by their values (client-verified)."""
+    pose = dst.pose(hip.rotations, hip.translations, 0)
+    gq, gt = pose[dst.index['tag_weapon']]
+    cq, ct = dst.world[dst.index['tag_camera']]
+    vq, vt = dst.world[dst.index['tag_view']]
+    target_q = cq
+    target_t = vadd(ct, qrot(cq, gun))
+    # World correction C with C * hip_gun = target: rotation tq*gq^-1, then a
+    # translation; expressed in tag_view's frame (tag_ads local).
+    cw_q = qnorm(qmul(target_q, qinv(gq)))
+    cw_t = vsub(target_t, qrot(cw_q, gt))
+    # local = V^-1 * C * V
+    lq = qnorm(qmul(qmul(qinv(vq), cw_q), vq))
+    lt = qrot(qinv(vq), vsub(vadd(cw_t, qrot(cw_q, vt)), vt))
+    out = codec.Animation()
+    out.__dict__.update({k: getattr(anim, k) for k in ('name', 'frames', 'rate', 'frequency', 'flags', 'header', 'tail', 'notify', 'notify_count')})
+    header = bytearray(out.header)
+    header[130] = 1
+    out.header = bytes(header)
+    rot, tr = [], []
+    for f in range(anim.frames + 1):
+        t = f / max(anim.frames, 1)
+        t = t if mode == 'up' else 1 - t
+        t = t * t * (3 - 2 * t)
+        rot.append((f, qslerp((0.0, 0.0, 0.0, 1.0), lq, t)))
+        tr.append((f, vscale(lt, t)))
+    out.rotations = {'tag_ads': rot}
+    out.translations = {'tag_ads': tr}
+    return out, {'tag_ads_rotation': [round(x, 5) for x in lq], 'tag_ads_translation': [round(x, 3) for x in lt],
+                 'hip_gun': [round(x, 3) for x in gt]}
+
+
+def retarget(anim, src, dst, ads=None):
     out = codec.Animation()
     out.__dict__.update({k: getattr(anim, k) for k in ('name', 'frames', 'rate', 'frequency', 'flags', 'header', 'tail', 'notify', 'notify_count')})
     frames = range(anim.frames + 1)
@@ -184,14 +274,43 @@ def retarget(anim, src, dst):
     gun_only = [n for n in anim.rotations if n not in dst.index and n not in src.index]
     cam_src = src.index.get('tag_camera', 0)
     cam_dst = dst.index['tag_camera']
+    # Each arm's bones share one axis convention difference between the rigs
+    # (right side: about 180 degrees around Z; left: none), measured at the
+    # wrist bind pose. Arm, hand and finger bones take the BO3 world
+    # orientation through it, so the IW7 hand holds the gun the way the BO3
+    # hand does. (Mapping each bone through its own bind pose bent the IW7
+    # fingers differently, up to 38 degrees for the thumb.)
+    def side_of(i):
+        while i is not None:
+            n = dst.names[i]
+            if n.endswith('_ri') and n.startswith(('j_shoulder', 'j_clavicle')):
+                return 'ri'
+            if n.endswith('_le') and n.startswith(('j_shoulder', 'j_clavicle')):
+                return 'le'
+            i = dst.parent[i]
+        return None
+    side_map = {}
+    for side in ('le', 'ri'):
+        w = 'j_wrist_' + side
+        if w in src.index and w in dst.index:
+            side_map[side] = qnorm(qmul(qinv(dst.world[dst.index[w]][0]), src.world[src.index[w]][0]))
+    bone_side = {n: side_of(dst.index[n]) for n in mapped}
     for f in frames:
         sp = src.pose(anim.rotations, anim.translations, f)
+        if ads is not None:
+            sp = aim_down_sight(sp, src, ads, f, anim.frames)
         offset = vsub(dst.world[cam_dst][1], sp[cam_src][1])
         want = {}
         for n in mapped:
             q, t = sp[src.index[n]]
-            # BO3 world orientation, expressed relative to each rig's bind pose.
-            want[n] = (qnorm(qmul(qmul(q, qinv(bind_src[n][0])), bind_dst[n][0])), vadd(t, offset))
+            side = bone_side.get(n)
+            if side in side_map:
+                want[n] = (qnorm(qmul(q, qinv(side_map[side]))), vadd(t, offset))
+            else:
+                # BO3 world orientation, expressed relative to each rig's bind pose.
+                want[n] = (qnorm(qmul(qmul(q, qinv(bind_src[n][0])), bind_dst[n][0])), vadd(t, offset))
+        gun_q, gun_t = sp[src.index['tag_weapon_right']]
+        gun_t = vadd(gun_t, offset)
         world = {}
         local = {}
         for i, n in enumerate(dst.names):
@@ -233,8 +352,7 @@ def retarget(anim, src, dst):
             pq, pt = world2[dst.names[p]] if p is not None else ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
             world2[n] = (qnorm(qmul(pq, local[n])), vadd(pt, qrot(pq, dst.local[i][1])))
         if 'tag_weapon' in dst.index and 'tag_weapon_right' in src.index:
-            gq, gt = sp[src.index['tag_weapon_right']]
-            gt = vadd(gt, offset)
+            gq, gt = gun_q, gun_t
             parent = dst.names[dst.parent[dst.index['tag_weapon']]]
             pq, pt = world2[parent]
             rot_keys.setdefault('tag_weapon', []).append((f, qnorm(qmul(qinv(pq), gq))))
@@ -246,7 +364,9 @@ def retarget(anim, src, dst):
     # bones left out of the animation collapsed onto the view origin. Bones
     # that do not move get static channels with their bind values.
     for i, n in enumerate(dst.names):
-        if dst.parent[i] is None:
+        # tag_view/tag_ads belong to the engine's ADS layer (stock view
+        # animations never list them).
+        if dst.parent[i] is None or n in ENGINE_ROOTS:
             continue
         bind_q, bind_t = dst.local[i]
         out.rotations[n] = rot_keys.get(n) or [(0, bind_q)]
@@ -269,19 +389,56 @@ def main(argv=None):
     ap.add_argument('--source-hands', required=True)
     ap.add_argument('--target-hands', required=True)
     ap.add_argument('--out', required=True)
+    ap.add_argument('--ads-gun', help='x,y,z: gun origin in camera space when aiming (sight line on the camera axis)')
+    ap.add_argument('--ads-up', help='ADS raise animation name (ramps the aim correction in)')
+    ap.add_argument('--ads-down', help='ADS lower animation name (ramps it out)')
+    ap.add_argument('--ads-idle', help='idle animation the hip pose is taken from (frame 0)')
+    ap.add_argument('--ads-hold', action='append', default=[],
+                    help='SOURCE:NEW writes NEW from SOURCE with the full aim correction (e.g. an ADS fire)')
     ap.add_argument('anims', nargs='+')
     args = ap.parse_args(argv)
     src = Skeleton(args.source_hands)
     dst = Skeleton(args.target_hands)
     os.makedirs(args.out, exist_ok=True)
-    for path in args.anims:
+    by_name = {os.path.splitext(os.path.basename(p))[0]: p for p in args.anims}
+    jobs = [(p, os.path.splitext(os.path.basename(p))[0], None) for p in args.anims]
+    ads_jobs = []
+    if args.ads_gun:
+        gun = tuple(float(x) for x in args.ads_gun.split(','))
+        # IW7 aims with tag_ads: the ADS raise/lower animations move only the
+        # hands root (see root_ads). Their BO3 sources only give frame counts
+        # and notetracks.
+        ads_jobs = [(n, m) for n, m in ((args.ads_up, 'up'), (args.ads_down, 'down')) if n]
+        jobs = [j for j in jobs if j[1] not in (args.ads_up, args.ads_down)]
+        for spec in args.ads_hold:
+            raise SystemExit('--ads-hold is not used: ADS animations move tag_ads only')
+    for path, name, mode in jobs:
         anim = codec.decode(path)
-        out, report = retarget(anim, src, dst)
-        target = os.path.join(args.out, os.path.basename(path))
+        ads = None
+        if mode:
+            # Reference pose of the correction: the end of the raise, the start of the lowering.
+            ref_frame = anim.frames if mode == 'up' else 0
+            ads = {'mode': mode, 'gun': gun, 'ref_pose': src.pose(anim.rotations, anim.translations, ref_frame)}
+        out, report = retarget(anim, src, dst, ads)
+        out.name = name
+        target = os.path.join(args.out, name + '.xab')
         codec.encode(out, target)
-        report['name'] = anim.name
+        report['name'] = name
+        report['ads'] = mode
         report['bytes'] = os.path.getsize(target)
         print(json.dumps(report))
+    if ads_jobs:
+        idle = codec.decode(by_name[args.ads_idle])
+        hip, _ = retarget(idle, src, dst)
+        for name, mode in ads_jobs:
+            anim = codec.decode(by_name[name])
+            out, info = root_ads(anim, hip, dst, gun, mode)
+            out.name = name
+            target = os.path.join(args.out, name + '.xab')
+            codec.encode(out, target)
+            info.update({'name': name, 'ads': 'tag_ads-' + mode, 'frames': anim.frames,
+                         'bytes': os.path.getsize(target)})
+            print(json.dumps(info))
     return 0
 
 
