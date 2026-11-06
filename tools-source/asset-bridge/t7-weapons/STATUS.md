@@ -208,3 +208,30 @@ the IW7 hand, with the BO3 hip pose, fire and reload animations (private
 witness 2026-11-06). Setting SURF_FLAG_VERTCOL_NONE (which stock surfaces
 carry) made no visible difference and is not part of the pipeline.
 `t7_material_pack.py` refuses two-UV templates.
+
+## 2026-11-06: grip, sounds and aiming
+
+Grip: mapping each IW7 hand bone through its own bind pose bent the fingers
+up to 38 degrees from BO3's. Each arm now takes the BO3 world orientation
+through one axis map measured at the wrist binds (right side about 180
+degrees around Z, left side none; constant within 4 degrees over the hand).
+Client witness: the IW7 hand holds the Ray Gun as BO3 does. PROVEN_LOCAL.
+
+Sounds: `t7_weapon_sound.py` writes the bank for the BO3 Ray Gun aliases
+(fire, secondary layers, reload notetracks, projectile loop, impact). Stock
+alias rows carry duck references that the mod build cannot resolve (ZoneTool
+FATAL), so the duck column is cleared. Built mod.sabl/mod.sabs are
+auto-downloaded with mod.ff (byte-identical). Audible playback is NOT_PROVEN:
+the witness has no audio capture.
+
+Aiming: stock IW7 ADS raise/lower animations animate one bone, `tag_ads`
+(hands root under `tag_view`); stock idle + ads_up end puts the gun on the
+camera axis (y = 0.00) for the zapper, G18 and AR57. Earlier attempts that
+listed every hand bone in the ADS animations replaced the hip pose with their
+values in game (the engine plays them as an absolute override of the listed
+bones, also at hip after lowering). `root_ads` writes `tag_ads` only; the base
+animations leave `tag_view`/`tag_ads` out as stock does. Client witness with
+the ADS key held (scenario hold_start): zoomed view, the Ray Gun's rear sight
+on the reticle; hip pose unchanged. PROVEN_LOCAL. The scenario runner's
+`press` is a 200 ms tap: earlier ADS captures were taken after the weapon was
+lowered, including a stock Facemelter control.
