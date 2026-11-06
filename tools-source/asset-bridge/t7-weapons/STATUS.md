@@ -190,3 +190,10 @@ of stock images. The first packer wrote `_packed_a` as BC7 with the alpha in A
 and red 8/255, and `_packed_cs` as BC7_UNORM_SRGB: the Ray Gun drew black even
 with stock animations holding it normally in the IW7 hand. `t7_material_pack.py`
 now writes the stock formats with the alpha in red.
+
+Bone list: stock view animations list every hand bone (static values for the
+ones that do not move). A retargeted animation that listed only the animated
+bones drew the arms collapsed onto the view origin; with every hand bone
+listed (bind values for the still ones), the client shows the IW7 arms holding
+the Ray Gun in the right hand at the BO3 position, firing and reloading through
+client input (private witness 2026-11-06). The gun itself still draws black.

@@ -242,12 +242,15 @@ def retarget(anim, src, dst):
         for n in dict.fromkeys(mapped + [x for _, *chain in ARMS for x in chain]):
             if n in local:
                 rot_keys.setdefault(n, []).append((f, local[n]))
-    # Only animated bones are listed: a listed bone without a rotation channel
-    # is held at identity, an unlisted one keeps its bind pose.
-    for n in dst.names:
-        if n in rot_keys:
-            out.rotations[n] = rot_keys[n]
-            out.translations[n] = trans_keys.get(n)
+    # Every hand bone is listed, as stock view animations do: the client showed
+    # bones left out of the animation collapsed onto the view origin. Bones
+    # that do not move get static channels with their bind values.
+    for i, n in enumerate(dst.names):
+        if dst.parent[i] is None:
+            continue
+        bind_q, bind_t = dst.local[i]
+        out.rotations[n] = rot_keys.get(n) or [(0, bind_q)]
+        out.translations[n] = trans_keys.get(n) or [(0, bind_t)]
     for n in gun_only:
         out.rotations[n] = anim.rotations[n]
         out.translations[n] = anim.translations.get(n)
