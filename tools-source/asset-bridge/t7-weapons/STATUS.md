@@ -293,3 +293,75 @@ Effect materials: all Ray Gun BO3 particle materials are
 `eq_effectunlit_*_evc` techniques loaded by cp_zmb (additive for glows,
 blend for smoke/debris, `zfeather_*_tab` for atlases). 11 of 12 Ray Gun
 materials converted; heat distortion skipped. Not yet drawn in game.
+
+## 2026-11-06: IW7 particle systems, read and write (`iw7_vfx.py`)
+
+`iw7_vfx.py` decodes the ZoneTool `.iw7VFX` stream (`vfx::binary` in the
+fork's `iw7/assets/particle_system.cpp`) into JSON named after `structs.hpp`
+and encodes it back. The writer replays `assetmanager::dumper`, including its
+pointer de-duplication (OFFSET tokens are recomputed from the pointer values
+kept in the structs, not copied). Bytes that no named field covers are kept
+in `_gaps`. This replaces the planned ZoneTool-side writer: the converter can
+emit `.iw7VFX` from Python.
+
+| Check | Result | Level |
+| --- | --- | --- |
+| Round trip, bytes -> model -> JSON text -> model -> bytes, strict (no pointer reassigned) | 1195 / 1195 stock dumps byte-identical (cp_zmb 1164, patch_cp_zmb 31) | PROVEN_LOCAL |
+| De-duplication in stock | 2617 OFFSET tokens, all to an earlier asset (shared material, light, sub-system); no string or array offsets; no offset to the root entry | PROVEN_LOCAL |
+| JSON edit (material rename in `vfx_muz_ark_green_v_a`) -> `--from-json` -> decode | renamed material read back, other data unchanged | PROVEN_LOCAL (file level; not built into a fastfile, not seen in game) |
+
+Module types seen (instances / files): INIT_SPAWN 6998/1193, INIT_MATERIAL
+6046/1047, INIT_ATTRIBUTES 5971/1139, COLOR_GRAPH 5660/934,
+INIT_RELATIVE_VELOCITY 5053/1005, SIZE_GRAPH 4326/879, INIT_ATLAS 3685/797,
+INIT_SPAWN_SHAPE_BOX 3487/793, INTENSITY_GRAPH 3361/700, INIT_ROTATION
+3346/778, INIT_MIRROR_TEXTURE 2417/521, VELOCITY_GRAPH 1832/576, INIT_TAIL
+1215/499, INIT_SPAWN_SHAPE_SPHERE 1130/367, SIZE_LERP 958/421,
+INIT_ORIENTED_SPRITE 935/254, INIT_SPAWN_SHAPE_CYLINDER 851/252,
+ROTATION_GRAPH 694/314, GRAVITY 645/315, INIT_ROTATION_3D 626/237,
+INIT_LIGHT_OMNI 523/489, FORCE 522/205, INIT_MODEL 503/203, COLOR_LERP
+382/208, INIT_RUNNER 378/248, INIT_SPAWN_SHAPE_ELLIPSOID 128/40,
+PHYSICS_RAY_CAST 124/79, INIT_BEAM 116/27, INIT_OCCLUSION_QUERY 115/65,
+POSITION_GRAPH 110/27, INIT_CAMERA_OFFSET 105/29, EMISSIVE_GRAPH 104/35,
+TEST_IMPACT 93/54, INIT_FLARE 85/46, INIT_GEO_TRAIL 68/48, INIT_DECAL 55/49,
+EMISSION_GRAPH 51/26, TEST_DEATH 45/24, PHYSICS_LIGHT 44/26,
+ROTATION_GRAPH_3D 36/15, INIT_CLOUD 34/28, INIT_SPAWN_SHAPE_MESH 15/6,
+INIT_SOUND 14/14, INIT_PLAYER_FACING 8/8, INIT_LIGHT_SPOT 2/2, TEST_AGE 2/2,
+ATTRACTOR 1/1, INIT_PARTICLE_SIM 1/1, TEST_BIRTH 1/1. Never seen:
+INIT_VECTOR_FIELD, PARENT_VELOCITY_GRAPH, TEST_GRAVITY, TEST_POS (their
+layouts are untested).
+
+Struct layouts that the data contradicts (bytes kept through `_gaps`, field
+meaning NOT_PROVEN):
+
+* INIT_ATLAS: 1 or 2 byte flags (0/1) after `m_loopCount`, past ZoneTool's
+  20-byte struct (3284 of 3685 modules).
+* TEST_AGE: the age is a float at union `+12` (0.2, 0.03), overlapping
+  `m_useVelocityOptions` and padding; ZoneTool's `m_age` at `+48` reads 0.
+* INIT_SPAWN_SHAPE_MESH: a byte flag at union `+36`, between
+  `m_numMeshAssets` and the linked asset list (1 module).
+
+### Ray Gun effect templates (stock cp_zmb, read-only)
+
+Screened with `iw7_vfx.py --summary` (names, Wonder Weapon packages
+`vfxpkg/iw7_zmb_wor_*`, the Grey zapper's `projTrailEffect` and
+`projExplosionEffect`, colour graph samples). The green mostly comes from the
+materials; colour graphs and lerps scale it.
+
+| Role | Particle system | Emitters (element types) | Module types | Materials |
+| --- | --- | --- | --- | --- |
+| Muzzle flash, view | `vfx/iw7/core/muzflash/ark/vfx_muz_ark_green_v_a` | 4 (3 sprite, 1 omni light) | INIT_SPAWN, INIT_SPAWN_SHAPE_BOX, INIT_ATTRIBUTES, INIT_MATERIAL, INIT_ATLAS, INIT_ROTATION, INIT_RELATIVE_VELOCITY, INIT_LIGHT_OMNI, COLOR_GRAPH, COLOR_LERP, SIZE_GRAPH | `eq/vfx_pyro_flash_ark_green_01`, `eq/vfx_vol_light_glow_blobby_soft_z10_eye20`, `eq/vfx_vol_smk_wispy_swirl_lg`; light `light_fx_default` |
+| Muzzle flash, world | `vfx/iw7/core/muzflash/ark/vfx_muz_ark_green_w_a` | 5 (3 sprite, 1 tail, 1 light) | as above + INIT_TAIL | as above + `eq/vfx_pyro_flash_ark_green_p` |
+| Muzzle flash, view (Dischord) | `vfx/iw7/core/muzflash/zmb/vfx_muz_zmb_dchord_v_a` | 8 (3 sprite, 4 oriented, 1 light) | as the Ark flash + INIT_ORIENTED_SPRITE, INIT_MIRROR_TEXTURE, INIT_SPAWN_SHAPE_SPHERE, SIZE_LERP | Ark green flash set + `eq/vfx_energy_shockwave_04`, `eq/vfx_dist_ring_fade`, `eq/vfx_energy_elec_ring_loop_int` |
+| Trail, minimal | `vfx/iw7/_requests/mp/vfx_plasma_trail_friendly` | 2 (sprite, geo trail) | INIT_SPAWN, INIT_GEO_TRAIL, INIT_ATTRIBUTES, INIT_MATERIAL, INIT_RELATIVE_VELOCITY, COLOR_GRAPH, INTENSITY_GRAPH, SIZE_GRAPH | `eq/vfx_pyro_muzflash_vfx_muzzle_flash_glow`, `ev/vfx_vol_smk_geotrl_wispy_01_ul_ng` |
+| Trail, energy | `vfx/iw7/_requests/mp/vfx_sentry_shock_proj_trail` | 3 (2 sprite, geo trail) | INIT_SPAWN, INIT_SPAWN_SHAPE_BOX, INIT_GEO_TRAIL, INIT_ATTRIBUTES, INIT_MATERIAL, INIT_ROTATION, INIT_RELATIVE_VELOCITY, COLOR_GRAPH, SIZE_GRAPH | `ev/vfx_energy_elec_trail_01_gray`, `eq/vfx_vol_light_glow_lensflare_noring_z10` |
+| Trail, Grey zapper projectile | `vfx/iw7/core/zombie/ufo/weapon/vfx_ufo_alien_weapon` | 12 (9 sprite, 2 geo trail, 1 tail) | INIT_SPAWN, INIT_SPAWN_SHAPE_SPHERE, INIT_GEO_TRAIL, INIT_TAIL, INIT_ATTRIBUTES, INIT_MATERIAL, INIT_ATLAS, INIT_ROTATION, INIT_MIRROR_TEXTURE, INIT_RELATIVE_VELOCITY, COLOR_GRAPH, INTENSITY_GRAPH, SIZE_GRAPH, SIZE_LERP, VELOCITY_GRAPH, GRAVITY | `eq/vfx_energy_tesla_bolt_stretch_anim`, `eq/vfx_energy_elec_blast_anim`, `eq/vfx_energy_elec_core_exp_anim_16f_01`, `eq/vfx_energy_rim_atlas_01`, `eq/vfx_energy_shockwave_blast_anim_01_z100`, `ev/vfx_vol_smk_geotrl_hot_core_01`, `ev/vfx_vol_smk_geotrl_billow_02`, `eq/vfx_alien_glow_kraken_cone`, 3 glow/smoke |
+| Impact, green energy | `vfx/iw7/core/zombie/weapon/impact/vfx_zmb_impact_green_ch1` | 7 (3 sprite, 3 tail, 1 light) | INIT_SPAWN, INIT_SPAWN_SHAPE_BOX/CYLINDER, INIT_TAIL, INIT_ATTRIBUTES, INIT_MATERIAL, INIT_ATLAS, INIT_MIRROR_TEXTURE, INIT_ROTATION, INIT_RELATIVE_VELOCITY, INIT_LIGHT_OMNI, COLOR_GRAPH, INTENSITY_GRAPH, SIZE_GRAPH, VELOCITY_GRAPH, GRAVITY | `eq/vfx_energy_plasma_tendrils`, `eq/vfx_energy_plasma_ball_loop`, `eq/vfx_pyro_flash_energy_plasmic_ds`, `eq/vfx_pyro_flash_ark_blue_p`, `eq/vfx_pyro_spark_single`, `eq/vfx_dist_ripple`, `el/gfx_test01` |
+| Impact, green burst | `vfx/iw7/core/zombie/weapon/ark/vfx_zmb_ark_green_s` | 7 (6 sprite, 1 tail) | INIT_SPAWN, INIT_SPAWN_SHAPE_BOX/SPHERE, INIT_TAIL, INIT_ATTRIBUTES, INIT_MATERIAL, INIT_ATLAS, INIT_MIRROR_TEXTURE, INIT_ROTATION, INIT_RELATIVE_VELOCITY, COLOR_GRAPH, INTENSITY_GRAPH, SIZE_GRAPH, VELOCITY_GRAPH | `eq/vfx_energy_plasma_explosion_anim_64f`, `eq/vfx_energy_plasma_ball_loop`, `eq/vfx_zmb_energy_wave`, `eq/vfx_energy_rim_atlas_01`, `eq/vfx_vol_smk_wispy_01_anim_unlit` |
+| Impact, Grey zapper | `vfx/iw7/core/zombie/ufo/weapon/vfx_ufo_alien_weapon_impact` | 11 (7 sprite, model, oriented, spark cloud, light) | the impact set above + INIT_CLOUD, INIT_MODEL, INIT_ROTATION_3D, EMISSION_GRAPH, FORCE, ROTATION_GRAPH | `eq/vfx_energy_emp_bolt_02_atl` (+`_z20_int1`), `eq/vfx_alien_cortex_blast_center`, `eq/vfx_alien_mist_a_lp_add_z40_dlc`, `eq/vfx_glow_hard_white_streaks_uncmp_nf_z100`, `el/vfx_spkcld_spark_simple_gray`, 2 smoke; models `vfx_energy_emp_bolt_b_01..06` |
+| Impact, small energy (Facemelter, Headcutter) | `vfx/iw7/core/zombie/vfx_zmb_facemelter_imp`, `vfx/iw7/core/zombie/vfx_zmb_headcutter_imp` | 3 sprites | INIT_SPAWN, INIT_SPAWN_SHAPE_SPHERE, INIT_ATTRIBUTES, INIT_MATERIAL, INIT_ATLAS, INIT_MIRROR_TEXTURE, INIT_ROTATION, INIT_RELATIVE_VELOCITY, COLOR_GRAPH, SIZE_GRAPH | `eq/vfx_energy_elec_blast_anim`, `eq/vfx_energy_elec_core_exp_anim_16f_01`, `eq/vfx_dist_fire_flames_01_anim` |
+
+Next: map BO3 FxElemDefs (`t7_fx_read.py`) onto these templates (sprite ->
+BILLBOARD_SPRITE with INIT_MATERIAL, COLOR_GRAPH, SIZE_GRAPH; trail ->
+GEO_TRAIL; light -> INIT_LIGHT_OMNI), build a candidate into the mod zone and
+compare in game. Whether ZoneTool `-buildzone` and the client accept an edited
+`.iw7VFX` is NOT_PROVEN.
