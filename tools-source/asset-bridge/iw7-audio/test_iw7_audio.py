@@ -197,6 +197,7 @@ class BankTest(unittest.TestCase):
         self.assertIn('emt_bed_b', rows)
         self.assertNotIn('emt_hum_b', rows)
         self.assertEqual(rows['emt_bed_b']['File'], rows['emt_bed']['File'])
+        self.assertEqual((rows['emt_bed']['channel'], rows['emt_bed_b']['channel']), ('amb_elm_unres_3d', 'amb_elm_unres_2d'))
 
     def test_ambience_volmod_is_accepted(self):
         # vol_mod ambience is the stock bed row's value; it is not what kept the Station Zero beds silent

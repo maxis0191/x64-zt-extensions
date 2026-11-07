@@ -32,7 +32,8 @@ stays silent in a usermap (runs f3/f5), so a per-player 2D bed is a NONLOOPING c
 "retrigger_overlap": F appends the first F seconds of the (seamless) loop to its end and fades the clip in over
 its first F and out over its last F seconds; started again every (length - F) seconds, the two copies of the
 same audio cross-fade back into the loop (alias loop must be "nonlooping"). Such an alias also gets a twin row
-"<name>_b" (same audio): a second playlocalsound of the same alias restarts it, so the script alternates the two.
+"<name>_b" (same audio, another 2D channel: "retrigger_twin_channel", default amb_elm_unres_2d): a new
+playlocalsound on the same channel replaces the player's voice there, so the script alternates the two.
 
 Output under --out: sound/<bank>.aliases.csv, soundbank/<bank>.json,
 sound_assets/<File>.flac, iwz_audio_manifest.json (alias, file, sha256,
@@ -182,10 +183,13 @@ def build(spec, out, check_only=False):
                 copies.append(('file', source, dest, (a.get('loop_seconds'), a.get('retrigger_overlap'))))
             rows.append(row)
             if a.get('retrigger_overlap'):
-                # playlocalsound of an alias already playing for that player restarts it (run f7: the outgoing
-                # tail was cut at every re-trigger), so the clip also ships as <name>_b and the script alternates
+                # a new playlocalsound on the same 2D channel replaces the player's voice there (runs f7/f9: the
+                # outgoing tail was cut at every re-trigger, even from a second alias on amb_bed_2d), so the clip
+                # also ships as <name>_b on another 2D channel and the script alternates the two
                 twin = list(row)
                 twin[col['Name']] = name + '_b'
+                twin[col['channel']] = a.get('retrigger_twin_channel') or (
+                    'amb_elm_unres_2d' if row[col['channel']] != 'amb_elm_unres_2d' else 'amb_bed_2d')
                 twins.append(twin)
                 if name + '_b' in names:
                     errors.append('%s: %s_b is reserved for the re-trigger twin' % (name, name))
