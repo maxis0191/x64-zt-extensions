@@ -372,3 +372,17 @@ Owner decision: weapon and effect textures capped at 512 px (and no hero
 weapons). `t7_fx_material_pack.py --max-size` keeps atlas grids aligned
 (the whole sheet scales). Ray Gun at 512: weapon images 9.7 -> 2.9 MB, effect
 images 12 -> 2.0 MB (DDS on disk).
+
+## 2026-11-07: BO3 recoil (gun kick, view kick)
+
+Owner: the weapon must kick as in BO3, not with the IW7 template's values.
+Two WeaponDef blocks follow BO2's order (reduced-kick bullets/percent, gun
+kick pitch/yaw min/max, accel, speed max, speed decay, static decay, view kick
+pitch min/max, min magnitude, yaw min/max): ADS at +0x1208, hip at +0x1268.
+Evidence: the hip block of every zm_levelcommon Wonder Weapon reads accel
+1000 / speed max 1200 / decay 100 / static 2, the values IW7 carries in the
+same fields; the Thundergun and Wunderwaffe differ only by a stronger hip view
+kick (100-110). Ray Gun: hip gun kick pitch -30..-35, yaw -2..18, view kick
+40..45; ADS gun kick -35..-40, accel 825, speed max 2000. `t7_weapon_kick.py`
+copies them. PROVEN_LOCAL (decode); in-game feel NOT_PROVEN. View-kick centre
+speed and idle/sway blocks are not mapped yet.
