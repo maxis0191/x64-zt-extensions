@@ -168,16 +168,25 @@ class BankTest(unittest.TestCase):
         s['aliases'][1]['set'] = {'dist_min': 500.0, 'dist_max': 100.0}
         self.assertTrue(any('dist_max' in e for e in bank.build(s, self.out, check_only=True)['errors']))
 
-    def test_ambience_volmod_is_refused(self):
-        # every vol_mod ambience alias was silent in the Station Zero usermap (runs b1/b4); emitter plays
+    def test_retrigger_clip_crossfades_back_into_the_loop(self):
+        import array
+        loop = array.array('h', [1000 + (i % 7) * 10 for i in range(40)])   # 20 stereo frames
+        clip = bank.retrigger_samples(loop, 2, 4)                            # 4-frame overlap
+        self.assertEqual(len(clip), len(loop) + 8)
+        self.assertEqual(clip[0], 0)
+        # started again every len(loop) samples: tail of the old copy + head of the new copy == the loop
+        for i in range(8):
+            self.assertLessEqual(abs(clip[len(loop) + i] + clip[i] - loop[i]), 1)
+        self.assertEqual(clip[8:len(loop)].tolist(), loop[8:].tolist())
+
+    def test_ambience_volmod_is_accepted(self):
+        # vol_mod ambience is the stock bed row's value; it is not what kept the Station Zero beds silent
         tpl = os.path.join(self.root, 'beds.aliases.csv')
         with open(tpl, 'w', newline='') as f:
             csv.writer(f).writerows([HEADER + ['vol_mod'],
                                      ['amb_bed', '', '', '', 'amb\\hum_lp', '0.27', '0.27', '5000', '25000', 'amb_bed_2d', 'loaded', 'looping', 'default', 'none', '', 'ambience'],
                                      ['emt_x', '', '', '', 'amb\\hum_lp', '0.2', '0.2', '35', '450', 'amb_elm_unres_3d', 'loaded', 'rlooping', 'default', 'none', '', 'emitter']])
         s = self.spec(template_aliases=tpl, aliases=[{'name': 'amb_bed', 'source': 'stock'}])
-        self.assertTrue(any('vol_mod ambience is silent' in e for e in bank.build(s, self.out, check_only=True)['errors']))
-        s['aliases'][0]['set'] = {'vol_mod': 'emitter'}
         self.assertEqual(bank.build(s, self.out, check_only=True)['errors'], [])
 
     def test_file_names_survive_zonetool_csv_escapes(self):
