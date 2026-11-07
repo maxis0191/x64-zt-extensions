@@ -31,7 +31,8 @@ alias (script runtime error, nothing plays: runs b4/f5 with developer_script 1) 
 stays silent in a usermap (runs f3/f5), so a per-player 2D bed is a NONLOOPING clip re-triggered by script:
 "retrigger_overlap": F appends the first F seconds of the (seamless) loop to its end and fades the clip in over
 its first F and out over its last F seconds; started again every (length - F) seconds, the two copies of the
-same audio cross-fade back into the loop (alias loop must be "nonlooping").
+same audio cross-fade back into the loop (alias loop must be "nonlooping"). Such an alias also gets a twin row
+"<name>_b" (same audio): a second playlocalsound of the same alias restarts it, so the script alternates the two.
 
 Output under --out: sound/<bank>.aliases.csv, soundbank/<bank>.json,
 sound_assets/<File>.flac, iwz_audio_manifest.json (alias, file, sha256,
@@ -134,7 +135,7 @@ def build(spec, out, check_only=False):
     header, col, stock, enums = load_template(spec['template_aliases'])
     banks = [iw7_sab.Bank(p) for p in spec.get('stock_banks', [])]
     index = [(b, b.by_id()) for b in banks]
-    errors, rows, manifest, copies = [], [], [], []
+    errors, rows, manifest, copies, twins = [], [], [], [], []
     names = set()
     for a in spec['aliases']:
         name = a['name']
@@ -180,6 +181,14 @@ def build(spec, out, check_only=False):
                     continue
                 copies.append(('file', source, dest, (a.get('loop_seconds'), a.get('retrigger_overlap'))))
             rows.append(row)
+            if a.get('retrigger_overlap'):
+                # playlocalsound of an alias already playing for that player restarts it (run f7: the outgoing
+                # tail was cut at every re-trigger), so the clip also ships as <name>_b and the script alternates
+                twin = list(row)
+                twin[col['Name']] = name + '_b'
+                twins.append(twin)
+                if name + '_b' in names:
+                    errors.append('%s: %s_b is reserved for the re-trigger twin' % (name, name))
             manifest.append({'alias': name, 'file': asset, 'type': row[col['type']], 'loop': row[col['loop']],
                              'channel': row[col['channel']], 'dist_min': row[col['dist_min']],
                              'dist_max': row[col['dist_max']], 'vol_max': row[col['vol_max']],
@@ -218,7 +227,7 @@ def build(spec, out, check_only=False):
 
     bank = spec['bank']
     with open(os.path.join(out, 'sound', bank + '.aliases.csv'), 'w', newline='') as f:
-        csv.writer(f).writerows([header] + rows)
+        csv.writer(f).writerows([header] + rows + twins)
     sb = {'name': bank, 'zone': spec['zone'], 'gameLanguage': 'all', 'soundLanguage': 'all',
           'aliases': ['sound/%s.aliases.csv' % bank]}
     for key in ('sendEffectParams', 'ADSRSettings', 'AmbientDefs', 'AmbientEvents', 'AmbientElements',

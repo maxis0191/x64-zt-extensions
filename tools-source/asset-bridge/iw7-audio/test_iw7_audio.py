@@ -179,6 +179,25 @@ class BankTest(unittest.TestCase):
             self.assertLessEqual(abs(clip[len(loop) + i] + clip[i] - loop[i]), 1)
         self.assertEqual(clip[8:len(loop)].tolist(), loop[8:].tolist())
 
+    def test_retrigger_alias_gets_a_twin_row(self):
+        s = self.spec()
+        s['aliases'].append({'name': 'emt_bed', 'template': 'emt_hum', 'source': 'stock', 'retrigger_overlap': 0.01,
+                             'set': {'loop': 'nonlooping'}})
+        r = bank.build(s, self.out, check_only=True)
+        self.assertEqual(r['errors'], [])
+        orig = bank.make_retrigger
+        bank.make_retrigger = lambda path, overlap: None
+        try:
+            r = bank.build(s, self.out)
+        finally:
+            bank.make_retrigger = orig
+        self.assertEqual(r['errors'], [])
+        with open(os.path.join(self.out, 'sound', 'cp_test.all.aliases.csv'), newline='') as f:
+            rows = {x['Name']: x for x in csv.DictReader(f)}
+        self.assertIn('emt_bed_b', rows)
+        self.assertNotIn('emt_hum_b', rows)
+        self.assertEqual(rows['emt_bed_b']['File'], rows['emt_bed']['File'])
+
     def test_ambience_volmod_is_accepted(self):
         # vol_mod ambience is the stock bed row's value; it is not what kept the Station Zero beds silent
         tpl = os.path.join(self.root, 'beds.aliases.csv')
