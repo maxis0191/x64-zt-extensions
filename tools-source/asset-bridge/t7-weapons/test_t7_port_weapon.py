@@ -77,6 +77,12 @@ class BehaviourTest(unittest.TestCase):
             "iw7_thundergun_zm_pap1|zm_weap_thundergun|thundergun_cylinder_radius=180,thundergun_fling_range=480|"
             "thundergun_smoke_cloud=vfx/t7/zombie/fx_thundergun_smoke_cloud|fly_thundergun_forcehit"])
 
+    def test_alias_passed_as_parameter_is_carried(self):
+        found = {"t.gsc": {"namespace": "_zm_weap_tesla", "zombie_vars": {"tesla_max_arcs": 5}, "effects": {},
+                           "sounds": [], "literals": ["tesla_gun", "wpn_tesla_bounce"]}}
+        self.assertEqual(port.behaviour_lines(["w"], found, set(), {"wpn_tesla_bounce"}),
+                         ["w|_zm_weap_tesla|tesla_max_arcs=5||wpn_tesla_bounce"])
+
     def test_scripts_without_namespace_or_data_add_nothing(self):
         found = {"a.gsc": {"namespace": None, "zombie_vars": {"x": 1}, "effects": {}},
                  "b.csc": {"namespace": "zm_weap_x", "zombie_vars": {}, "effects": {}}}

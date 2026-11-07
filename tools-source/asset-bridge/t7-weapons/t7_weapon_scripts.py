@@ -30,8 +30,10 @@ USING = re.compile(r'^#using\s+([\w\\/]+);', re.M)
 ZOMBIE_VAR = re.compile(r'set_zombie_var\(\s*"([a-z0-9_]+)"\s*,\s*(-?[0-9.]+)')
 EFFECT = re.compile(r'level\._effect\[\s*"([a-z0-9_]+)"\s*\]\s*=\s*"([a-z0-9_/]+)"')
 NAMESPACE = re.compile(r'^#namespace\s+([a-z0-9_]+);', re.M)
-# literal aliases the script plays (world sounds: blast hits, arcs, idle loops)
+# literal aliases the script plays (world sounds: blast hits, arcs, idle loops); an alias can also be
+# passed as a parameter (the DG-2 arc sound), so every literal is kept for matching against the alias table
 SOUND = re.compile(r'\b(?:playsound|playsoundatposition|playloopsound|playsoundtoplayer)\(\s*"([a-z0-9_]+)"')
+LITERAL = re.compile(r'"([a-z0-9_]+)"')
 
 
 def number(text):
@@ -64,6 +66,7 @@ def extract(text):
         "zombie_vars": {name: number(value) for name, value in ZOMBIE_VAR.findall(text)},
         "effects": dict(EFFECT.findall(text)),
         "sounds": list(dict.fromkeys(SOUND.findall(text))),
+        "literals": sorted(set(LITERAL.findall(text))),
         "weapons": list(dict.fromkeys(GETWEAPON.findall(text))),
     }
 

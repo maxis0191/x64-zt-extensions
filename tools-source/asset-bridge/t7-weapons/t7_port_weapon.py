@@ -486,7 +486,8 @@ class Port:
         """Aliases the weapon's scripts play that the zone's alias table defines."""
         rows = alias_rows(self.alias_table())
         found = self.manifest["stages"].get("scripts", {}).get("found", {})
-        return [a for info in found.values() for a in info.get("sounds", []) if a in rows]
+        names = [a for info in found.values() for a in info.get("sounds", []) + info.get("literals", [])]
+        return list(dict.fromkeys(a for a in names if a in rows))
 
     def sound_roles(self):
         """IW7 sound role of each alias, from the WeaponDef slot naming it; anim notetracks are foley;
@@ -634,7 +635,7 @@ def behaviour_lines(weapons, found, built_effects, sounds=()):
         tuning = ",".join("%s=%s" % kv for kv in info.get("zombie_vars", {}).items())
         fx = ",".join("%s=%s" % (k, t7_weapon_spec.iw7_fx_name(v)) for k, v in info.get("effects", {}).items()
                       if v in built_effects)
-        snd = ",".join(a for a in info.get("sounds", []) if a in sounds)
+        snd = ",".join(dict.fromkeys(a for a in info.get("sounds", []) + info.get("literals", []) if a in sounds))
         lines += ["%s|%s|%s|%s|%s" % (w, ns, tuning, fx, snd) for w in weapons]
     return list(dict.fromkeys(lines))
 
