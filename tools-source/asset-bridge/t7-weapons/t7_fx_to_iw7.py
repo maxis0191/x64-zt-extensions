@@ -154,8 +154,10 @@ def rewrite(emitter, element, fx, material, intensity):
     vel = (element.get("vel_samples") or [None])[0]
     if attrs is not None and vel:
         v = vel["local_velocity"]
-        attrs["m_velocityMin"] = [vfx.f32(x * 1000.0) for x in v["base"]] + [0.0]
-        attrs["m_velocityMax"] = [vfx.f32((x + y) * 1000.0) for x, y in zip(v["base"], v["amplitude"])] + [0.0]
+        lo = [min(x, x + y) * 1000.0 for x, y in zip(v["base"], v["amplitude"])]
+        hi = [max(x, x + y) * 1000.0 for x, y in zip(v["base"], v["amplitude"])]
+        attrs["m_velocityMin"] = [vfx.f32(x) for x in lo] + [0.0]   # BO3 amplitude may be negative
+        attrs["m_velocityMax"] = [vfx.f32(x) for x in hi] + [0.0]
     return emitter
 
 
@@ -180,6 +182,7 @@ def convert(name, fx, templates, materials, intensity):
         model["system"]["emitterDefs"].append(emitter)
         report["emitters"] += 1
     model["system"]["numEmitters"] = len(model["system"]["emitterDefs"])
+    model["system"]["flags"] = vfx.system_flags(model)
     return model, report
 
 
