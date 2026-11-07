@@ -133,6 +133,20 @@ def bo3_gloss_to_r(texel, gloss_range):
     return (1.0 - (1.0 - e) ** 2) * 255.0
 
 
+CAMO_MASK_SEMANTIC = "0x77151208"   # BO3 camoMaskMap (Ray Gun camo_upg: plastic_r; else $white_reveal)
+
+
+def camo_mask(mat, base, size):
+    """BO3 camo mask (0..255) at the albedo size: where a Pack-a-Punch camo may show. IW7 camo-ready
+    weapon materials read it from packed_a (stock Dischord: 0 or 255, the weapon being opaque)."""
+    for src in mat.get("sources", []):
+        if src.get("semantic", "").upper() == CAMO_MASK_SEMANTIC.upper():
+            path = resolve(base, src)
+            if path:
+                return load_rgba(path, size)[..., 0]
+    return np.full((size[1], size[0]), 255.0, np.float32)
+
+
 def lookup_constants(constants, name):
     """Compiled BO3 constants of a material (t7_material_read): weapon materials are named "mc/<name>"."""
     if not constants:
@@ -264,6 +278,10 @@ def main():
     ap.add_argument("--blend-template", help="stock IW7 alpha-blended weapon material JSON, for BO3 materials "
                     "whose alpha mode is blend (glass), e.g. m2o/weapon_zappers_headcutter_glass.json; an opaque "
                     "'replace' template draws them solid and hides what is behind them")
+    ap.add_argument("--camo-template", help="stock camo-ready weapon material JSON (a _2uvt technique, e.g. "
+                    "m2o/weapon_zappers_dischord_camo.json): opaque lit materials take it, so a Pack-a-Punch "
+                    "camo can show; their packed_a holds the BO3 camo mask. Surfaces need the camo UV records "
+                    "(iw7_xsurface_uv2.py)")
     ap.add_argument("--texconv", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--only", nargs="*", help="BO3 material names to convert")
@@ -286,6 +304,12 @@ def main():
             emissive_template = json.load(f)
         if not has_emissive_slot(emissive_template):
             raise SystemExit("emissive template has no emissive (*_e) slot")
+    camo_template = None
+    if args.camo_template:
+        with open(args.camo_template, encoding="utf-8") as f:
+            camo_template = json.load(f)
+        if "_2uvt" not in camo_template.get("techniqueSet->name", ""):
+            raise SystemExit("camo template technique is not a camo (_2uvt) technique")
     blend_template = None
     if args.blend_template:
         with open(args.blend_template, encoding="utf-8") as f:
@@ -295,10 +319,11 @@ def main():
     for t in (template, emissive_template, blend_template):
         technique = (t or {}).get("techniqueSet->name", "")
         if "2uvt" in technique:
-            # Two-UV (camo) techniques read a second UV set BO3 weapon meshes do
-            # not have: the client drew the converted Ray Gun black with them.
-            raise SystemExit("template technique %s needs a second UV set; use a single-UV weapon template "
-                             "(for example m2o_l_sm_replace_i0c0s0o0n0p0_vm)" % technique)
+            # Camo (_2uvt) techniques read the camo UV records converted BO3 surfaces only have after
+            # iw7_xsurface_uv2.py (without them the client drew the Ray Gun black); they belong in
+            # --camo-template, which the port pairs with that surface step.
+            raise SystemExit("template technique %s reads camo UV records; pass it as --camo-template "
+                             "or use a single-UV weapon template" % technique)
     img_dir = os.path.join(args.out, "images")
     mat_dir = os.path.join(args.out, "materials")
     os.makedirs(img_dir, exist_ok=True)
@@ -326,8 +351,12 @@ def main():
             jobs = [("cs", packed["cs"], "BC7_UNORM", False), ("nog", packed["nog"], "BC7_UNORM", False),
                     ("alpha", alpha, "BC4_UNORM", False)]
             use = template
+            camo = False
             if mat.get("alpha") == "blend" and blend_template is not None:
                 use = blend_template
+            elif camo_template is not None and packed["emissive"] is None:
+                use, camo = camo_template, True
+                alpha[..., 0] = camo_mask(mat, base, tuple(packed["cs"].shape[1::-1]))
             if packed["emissive"] is not None:
                 images["emissive"] = stem + "_e"
                 # Stock *_e weapon images are BC7_UNORM, colour stored as is.
@@ -343,7 +372,7 @@ def main():
             report.append({"material": name, "images": images, "technique": use.get("techniqueSet->name"),
                            "size": list(packed["cs"].shape[1::-1]), "gloss_range": consts.get("glossRange"),
                            "emissive_scale": scale if packed["emissive"] is not None else None,
-                           "bo3_constants": bool(consts)})
+                           "bo3_constants": bool(consts), "camo": camo})
     print(json.dumps({"materials": report}, indent=1))
 
 

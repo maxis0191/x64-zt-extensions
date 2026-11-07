@@ -153,6 +153,17 @@ class ModelSurfacesTest(unittest.TestCase):
                          ["wpn_hd_gun_view4b01d4fb.xsb"])
 
 
+class OverrideTest(unittest.TestCase):
+    def test_values_are_typed(self):
+        self.assertEqual(port.weapon_overrides(["penetrateType=3", "penetrateMultiplier=2.5", "bBoltAction=false",
+                                                "szAltWeaponName=x"]),
+                         {"penetrateType": 3, "penetrateMultiplier": 2.5, "bBoltAction": False, "szAltWeaponName": "x"})
+
+    def test_malformed_refused(self):
+        with self.assertRaises(SystemExit):
+            port.weapon_overrides(["penetrateType"])
+
+
 class SnapshotConfigTest(unittest.TestCase):
     def test_snapshot_folder_supplies_scan_and_effects(self):
         cfg = port.with_snapshot({"snapshots": "snap", "zone": "zm_island"})

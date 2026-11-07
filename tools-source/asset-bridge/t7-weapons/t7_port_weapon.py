@@ -57,6 +57,7 @@ MATERIAL_TEMPLATES = {   # relative to the stock material root
     "opaque": "m2o/weapon_ar57_sight.json",
     "emissive": "m2o/attachment_thermalhybrid.json",
     "blend": "m2o/weapon_zappers_headcutter_glass.json",
+    "camo": "m2o/weapon_zappers_dischord_camo.json",
     "fx_add": "eq/gfx_flare_wtr.json",
     "fx_blend": "eq/vfx_pyro_flash_ark_green_p.json",
     "fx_add_atlas": "eq/vfx_pyro_fire_inferno_burst_short_1_anim_0z.json",
@@ -87,6 +88,30 @@ def save(path, data):
 def run(cmd, **kw):
     print("+ " + " ".join(str(c) for c in cmd), flush=True)
     return subprocess.run([str(c) for c in cmd], check=True, **kw)
+
+
+def weapon_overrides(items):
+    """--override field=value pairs (or a dict) as weapDef values: ints, floats, true/false, text."""
+    if isinstance(items, dict):
+        return dict(items)
+    out = {}
+    for item in items or []:
+        key, _, raw = item.partition("=")
+        if not key or not _:
+            raise SystemExit("override %r is not field=value" % item)
+        low = raw.lower()
+        if low in ("true", "false"):
+            value = low == "true"
+        else:
+            try:
+                value = int(raw)
+            except ValueError:
+                try:
+                    value = float(raw)
+                except ValueError:
+                    value = raw
+        out[key] = value
+    return out
 
 
 def with_snapshot(cfg):
@@ -273,16 +298,18 @@ class Port:
 
     def stage_materials(self):
         root = self.cfg["iw7_materials"]
-        written = []
+        written, camo = [], set()
         for mj in sorted(glob.glob(os.path.join(self.out, "gw", "models", "**", "*_LOD0.materials.json"), recursive=True)):
-            run(self.py("t7_material_pack.py") + [
+            report = run(self.py("t7_material_pack.py") + [
                 mj, "--template", os.path.join(root, MATERIAL_TEMPLATES["opaque"]),
                 "--emissive-template", os.path.join(root, MATERIAL_TEMPLATES["emissive"]),
                 "--blend-template", os.path.join(root, MATERIAL_TEMPLATES["blend"]),
+                "--camo-template", os.path.join(root, MATERIAL_TEMPLATES["camo"]),
                 "--texconv", self.cfg["texconv"], "--out", self.zone, "--max-size", self.cfg.get("max_texture", 512)]
                 + (["--constants", self.cfg["material_constants"]]
                    if os.path.exists(self.cfg.get("material_constants") or "") else []),
-                stdout=subprocess.DEVNULL)
+                stdout=subprocess.PIPE, text=True).stdout
+            camo.update(r["material"] for r in json.loads(report)["materials"] if r.get("camo"))
             written.append(os.path.relpath(mj, self.out))
         # The asset name is the file path under materials/: put each one where the converted models
         # reference it (BO3 weapon models name their materials "mc/<name>").
@@ -293,7 +320,7 @@ class Port:
             if folder and os.path.exists(flat):
                 os.makedirs(os.path.join(mdir, folder), exist_ok=True)
                 os.replace(flat, os.path.join(mdir, folder, base + ".json"))
-        self.record("materials", {"from": written, "materials": sorted(
+        self.record("materials", {"from": written, "camo": sorted(camo), "materials": sorted(
             os.path.relpath(p, os.path.join(self.zone, "materials")).replace("\\", "/")[:-5]
             for p in glob.glob(os.path.join(self.zone, "materials", "**", "*.json"), recursive=True))})
 
@@ -313,8 +340,11 @@ class Port:
                 raise SystemExit("model %s references no converted surface under %s" % (m, src))
             for xsb in surfaces:
                 os.makedirs(os.path.join(self.zone, "xsurface"), exist_ok=True)
-                shutil.copy2(xsb, os.path.join(self.zone, "xsurface"))
+                dst_xsb = os.path.join(self.zone, "xsurface", os.path.basename(xsb))
+                shutil.copy2(xsb, dst_xsb)
                 run(self.py("iw7_xsurface_check.py") + [xsb], stdout=subprocess.DEVNULL)
+                # camo UV records, read by the camo-ready (_2uvt) materials a Pack-a-Punch camo uses
+                run(self.py("iw7_xsurface_uv2.py") + [dst_xsb], stdout=subprocess.DEVNULL)
             copied.append(m)
             surfaces_of[m] = [os.path.basename(s) for s in surfaces]
         self.record("models", {"models": copied, "surfaces": surfaces_of})
@@ -403,6 +433,17 @@ class Port:
             w, pkg = author.author(spec, tpl["weapon"], tpl["animpkg"], tpl["projectile"])
             d = w["weapDef"]
             d.update(spec["kick"])
+            # Owner-requested departures from BO3 (e.g. a Ray Gun Mark II whose bullets pierce):
+            # weapDef fields set on the base and upgraded weapon alike, recorded in the manifest.
+            d.update(weapon_overrides(self.cfg.get("weapon_overrides")))
+            camo = set(self.manifest["stages"].get("materials", {}).get("camo", []))
+            for key, model in (("camoViewModelMaterialOverride", spec.get("view_model")),
+                               ("camoWorldModelMaterialOverride", spec.get("world_model"))):
+                # The materials a camo attachment ("+camoNN", the map's Pack-a-Punch camo) may replace:
+                # the model's camo-ready ones, as the stock Dischord lists its own (16 slots).
+                names = [r for r in self.model_material_refs([model]) if r.rsplit("/", 1)[-1] in camo][:16]
+                if isinstance(d.get(key), list):
+                    d[key] = names + [""] * (len(d[key]) - len(names))
             d["vfxPackage"] = spec["name"] + "_vfxpackage"
             d["sfxPackage"] = spec["name"] + "_sfxpackage"
             save(os.path.join(self.zone, "weapons", spec["name"] + ".json"), w)
@@ -464,16 +505,18 @@ class Port:
         self.record("zone", {"lines": len(lines), "catalog": entry, "behaviours": behaviours})
 
     # -- data ------------------------------------------------------------------------------
-    def model_material_refs(self):
-        """Material names the ZoneTool-converted models reference (strings in the .xmb)."""
+    def model_material_refs(self, models=None):
+        """Material names the ZoneTool-converted models reference (strings in the .xmb); all the
+        specs' view and world models unless named."""
+        if models is None:
+            models = [s.get(k) for s in self.specs() for k in ("view_model", "world_model")]
         refs = set()
-        for s in self.specs():
-            for key in ("view_model", "world_model"):
-                path = os.path.join(self.cfg["t7_models"], "xmodel", (s.get(key) or "") + ".xmb")
-                if s.get(key) and os.path.exists(path):
-                    with open(path, "rb") as f:
-                        data = f.read()
-                    refs.update(m.decode() for m in re.findall(rb"[a-z0-9_]+/mtl_[a-z0-9_]+", data))
+        for model in models:
+            path = os.path.join(self.cfg["t7_models"], "xmodel", (model or "") + ".xmb")
+            if model and os.path.exists(path):
+                with open(path, "rb") as f:
+                    data = f.read()
+                refs.update(m.decode() for m in re.findall(rb"[a-z0-9_]+/mtl_[a-z0-9_]+", data))
         return sorted(refs)
 
     _effects = None
@@ -720,12 +763,17 @@ def main(argv=None):
     ap.add_argument("--weapon", required=True, help="BO3 weapon asset, e.g. thundergun_zm")
     ap.add_argument("--name", help="IW7 weapon name (default iw7_<bo3 weapon>)")
     ap.add_argument("--display", help="name shown in game, as BO3 shows it (e.g. DG-2)")
+    ap.add_argument("--override", action="append", default=[], metavar="FIELD=VALUE",
+                    help="weapDef field set on the base and upgraded weapon (owner-requested departures from "
+                    "BO3, e.g. penetrateType=3 for bullets that pierce)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--stages", default=",".join(STAGES), help="comma list, in order: " + ",".join(STAGES))
     args = ap.parse_args(argv)
     cfg = load(args.config)
     if args.display:
         cfg["display"] = args.display
+    if args.override:
+        cfg["weapon_overrides"] = weapon_overrides(args.override)
     port = Port(cfg, args.weapon, args.out, args.name)
     for stage in args.stages.split(","):
         if stage not in STAGES:
