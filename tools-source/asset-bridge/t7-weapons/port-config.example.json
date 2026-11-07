@@ -8,7 +8,7 @@
  "gsc_tool": "<xensik gsc-tool.exe (T7 decompiler)>",
  "texconv": "<Microsoft texconv.exe>",
  "python": "<python with Pillow, for the material packs>",
- "snapshots": "<t7_zone_snapshot.py output folder: <zone>.weapons.json and <zone>.effects.json>",
+ "snapshots": "<t7_zone_snapshot.py output folder: <zone>.weapons.json, <zone>.effects.json and <zone>.materials.json>",
  "t7_models": "<ZoneTool -dumpzoneto iw7 <zone> xmodel,xmodelmesh output (xmodel/, xsurface/)>",
  "t7_anims": "<ZoneTool -dumpzoneto iw7 <zone> xanim output (xanim/)>",
  "bo3_hands_xmb": "<converted BO3 view hands .xmb>",

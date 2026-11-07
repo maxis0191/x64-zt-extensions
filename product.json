@@ -63,6 +63,8 @@
     "tools-source/asset-bridge/t7-weapons/port-config.example.json",
     "tools-source/asset-bridge/t7-weapons/t7_mod_assemble.py",
     "tools-source/asset-bridge/t7-weapons/test_t7_mod_assemble.py",
+    "tools-source/asset-bridge/t7-weapons/t7_material_read.py",
+    "tools-source/asset-bridge/t7-weapons/test_t7_material_read.py",
     "tools-source/asset-bridge/t7-weapons/t7_zone_snapshot.py",
     "tools-source/asset-bridge/t7-weapons/test_t7_zone_snapshot.py",
     "tools-source/asset-bridge/weapon-export/Run-PlayerTemplateExport.ps1",
