@@ -118,6 +118,23 @@ class ConvertTest(unittest.TestCase):
         (em,), _ = self.convert([e])
         self.assertEqual((em["spawnRangeSq"]["min"], em["spawnRangeSq"]["max"]), (0.0, 0.0))
 
+    def test_line_becomes_tail_with_width_and_length(self):
+        # BO3 type 4 is a LINE: width in size[0], full length in size[1] (Ray Gun 1p streak: 2.5 wide, 100 long).
+        e = element("one_shot", 1, 0)
+        e["type"], e["type_name"] = 4, "line"
+        for sample, (w, length) in zip(e["vis_samples"], [(2.5, 0.0), (0.0, 100.0)]):
+            sample["base"]["size"] = [w, length]
+        tail = template_emitter()
+        tail["stateDefs"][0]["elementType"] = "PARTICLE_ELEMENT_TYPE_TAIL"
+        model, report = conv.convert("vfx/test/fx", {"elements": [e]}, {"sprite": template_emitter(), "tail": tail},
+                                     MATERIALS, {"add": 1.0, "blend": 1.0, "light": 1.0})
+        em = vfx.decode(vfx.encode(model))["system"]["emitterDefs"][0]
+        self.assertEqual(em["stateDefs"][0]["elementType"], "PARTICLE_ELEMENT_TYPE_TAIL")
+        size = [m for m in em["stateDefs"][0]["moduleGroupDefs"][1]["moduleDefs"]
+                if m["moduleType"] == "PARTICLE_MODULE_SIZE_GRAPH"][0]
+        scales = [c["scale"] for c in vfx.module_data(size)["m_curves"][:3]]
+        self.assertEqual(scales, [5.0, 100.0, 1.0])   # width as a diameter, length as is, no depth
+
     def test_unconverted_material_is_reported(self):
         e = element("one_shot", 1, 0)
         e["visual"] = {"kind": "material", "name": "ei/gfx_distort_heat"}
