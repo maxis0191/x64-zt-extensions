@@ -109,6 +109,14 @@ def rewrite(emitter, element, fx, material, intensity):
     life = sc["lifespan_msec"]
     emitter["particleLife"] = {"min": vfx.f32(life["base"] / 1000.0),
                                "max": vfx.f32((life["base"] + max(0, life["amplitude"])) / 1000.0)}
+    rng = sc.get("spawn_range")
+    if rng and rng["max"] > 0:
+        # BO3 repeats elements per camera distance tier; IW7 keeps the band squared.
+        emitter["spawnRangeSq"] = {"min": vfx.f32(rng["min"] ** 2), "max": vfx.f32(rng["max"] ** 2)}
+    delay = sc.get("spawn_delay_msec")
+    if delay:
+        emitter["emitterDelay"] = {"min": vfx.f32(delay["base"] / 1000.0),
+                                   "max": vfx.f32((delay["base"] + max(0, delay["amplitude"])) / 1000.0)}
     a, b = sc["spawn"]["a"], sc["spawn"]["b"]
     if element["spawn_kind"] == "looping" and b >= INT_MAX:
         emitter["particleSpawnRate"] = {"min": vfx.f32(1000.0 / max(1, a)), "max": vfx.f32(1000.0 / max(1, a))}

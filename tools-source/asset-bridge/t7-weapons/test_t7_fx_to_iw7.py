@@ -103,6 +103,21 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(s["flags"], 0x40001)
         self.assertEqual((s["drawFrustumCullRadius"], s["updateFrustumCullRadius"]), (-1.0, -1.0))
 
+    def test_spawn_range_and_delay(self):
+        e = element("one_shot", 2, 1)
+        e["scalars"]["spawn_range"] = {"min": 600.0, "max": 1400.0}
+        e["scalars"]["spawn_delay_msec"] = {"base": 100, "amplitude": 50}
+        (em,), _ = self.convert([e])
+        self.assertEqual((em["spawnRangeSq"]["min"], em["spawnRangeSq"]["max"]), (360000.0, 1960000.0))
+        self.assertAlmostEqual(em["emitterDelay"]["min"], 0.1, places=6)
+        self.assertAlmostEqual(em["emitterDelay"]["max"], 0.15, places=6)
+
+    def test_unbounded_spawn_range_stays_unlimited(self):
+        e = element("one_shot", 2, 1)
+        e["scalars"]["spawn_range"] = {"min": 0.0, "max": 0.0}
+        (em,), _ = self.convert([e])
+        self.assertEqual((em["spawnRangeSq"]["min"], em["spawnRangeSq"]["max"]), (0.0, 0.0))
+
     def test_unconverted_material_is_reported(self):
         e = element("one_shot", 1, 0)
         e["visual"] = {"kind": "material", "name": "ei/gfx_distort_heat"}

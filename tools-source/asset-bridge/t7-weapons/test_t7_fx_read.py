@@ -89,6 +89,17 @@ class SampleTest(unittest.TestCase):
         self.assertEqual(e["scalars"]["lifespan_msec"], {"base": 150, "amplitude": 0})
         self.assertEqual(e["scalars"]["spawn_origin"][0], {"base": -2.0, "amplitude": 2.0})
 
+    def test_spawn_range_cull_radius_delay(self):
+        # Distance LOD tiers: the Ray Gun impact repeats its sprites for 0-600, 600-1400 and 2000-2500.
+        raw = bytearray(element(2))
+        struct.pack_into("<2f", raw, 6 * 4, 600.1, 1399.9)
+        struct.pack_into("<f2i", raw, 12 * 4, 332.5, 100, 20)
+        e = fx.parse_element(bytes(raw), {})["scalars"]
+        self.assertAlmostEqual(e["spawn_range"]["min"], 600.1, places=3)
+        self.assertAlmostEqual(e["spawn_range"]["max"], 1399.9, places=3)
+        self.assertEqual(e["cull_radius"], 332.5)
+        self.assertEqual(e["spawn_delay_msec"], {"base": 100, "amplitude": 20})
+
 
 if __name__ == "__main__":
     unittest.main()

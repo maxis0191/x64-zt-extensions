@@ -107,6 +107,10 @@ def parse_scalars(raw):
         "flags2": i[1],
         "spawn": {"a": i[2], "b": i[3]},
         "ints_7_14": list(i[7:15]),
+        # camera distance band where the element spawns (BO3 distance LOD tiers), 0..0 unbounded
+        "spawn_range": {"min": f[6], "max": f[7]},
+        "cull_radius": f[12],
+        "spawn_delay_msec": {"base": i[13], "amplitude": i[14]},
         "lifespan_msec": {"base": i[15], "amplitude": i[16]},
         "spawn_origin": range_pairs(list(f[17:23])),
         "atlas": list(raw[48 * 4:49 * 4 + 4]),
