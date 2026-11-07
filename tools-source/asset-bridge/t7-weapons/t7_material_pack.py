@@ -65,12 +65,46 @@ def load_rgba(path, size=None):
     return np.asarray(im).astype(np.float32)
 
 
+SOURCE_ART = {}        # image stem -> authored file, from --source-art (BO3 mod tools)
+SUBSTITUTED = []       # images taken from the authored sources, for the report
+
+
+def index_source_art(root):
+    """Authored BO3 textures (mod tools texture_assets/model_export) by lower-case file stem."""
+    for folder, _, files in os.walk(root):
+        for name in files:
+            stem, ext = os.path.splitext(name)
+            if ext.lower() in (".tif", ".tiff", ".png", ".tga"):
+                SOURCE_ART.setdefault(stem.lower(), os.path.join(folder, name))
+
+
+def source_art_for(image):
+    """The authored file of a compiled BO3 image: i_<x> is built from mtl_<x>, <x> or a numbered
+    variant (i_wpn_t7_camo_ice_e from mtl_wpn_t7_camo_ice_e2.tif)."""
+    stem = image.lower()
+    core = stem[2:] if stem.startswith("i_") else stem
+    for key in (stem, "mtl_" + core, core):
+        if key in SOURCE_ART:
+            return SOURCE_ART[key]
+    for key in sorted(SOURCE_ART):
+        if key.startswith("mtl_" + core) and key[len("mtl_" + core):].isdigit():
+            return SOURCE_ART[key]
+    return None
+
+
 def resolve(base, binding):
     if not binding:
         return None
     path = binding["path"] if isinstance(binding, dict) else binding
     full = os.path.normpath(os.path.join(base, path))
-    return full if os.path.exists(full) else None
+    if os.path.exists(full):
+        return full
+    # GrayWolf could not export it (no zone it indexes holds it): the authored source, if given
+    found = source_art_for(os.path.splitext(os.path.basename(full))[0]) if SOURCE_ART else None
+    entry = {"image": os.path.basename(full), "source": found}
+    if found and entry not in SUBSTITUTED:
+        SUBSTITUTED.append(entry)
+    return found
 
 
 def channel(img, binding, default):
@@ -285,11 +319,17 @@ def main():
     ap.add_argument("--texconv", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--only", nargs="*", help="BO3 material names to convert")
+    ap.add_argument("--source-art", help="BO3 mod tools root: authored textures stand in for images "
+                    "the game export lacks (reported)")
     ap.add_argument("--max-size", type=int, default=0,
                     help="downscale images whose larger side exceeds this (download budget)")
     args = ap.parse_args()
 
     base = os.path.dirname(os.path.abspath(args.materials_json))
+    if args.source_art:
+        for sub in ("texture_assets", "model_export"):
+            if os.path.isdir(os.path.join(args.source_art, sub)):
+                index_source_art(os.path.join(args.source_art, sub))
     constants = {}
     if args.constants:
         with open(args.constants, encoding="utf-8") as f:
@@ -373,7 +413,7 @@ def main():
                            "size": list(packed["cs"].shape[1::-1]), "gloss_range": consts.get("glossRange"),
                            "emissive_scale": scale if packed["emissive"] is not None else None,
                            "bo3_constants": bool(consts), "camo": camo})
-    print(json.dumps({"materials": report}, indent=1))
+    print(json.dumps({"materials": report, "substituted_from_source_art": SUBSTITUTED}, indent=1))
 
 
 if __name__ == "__main__":

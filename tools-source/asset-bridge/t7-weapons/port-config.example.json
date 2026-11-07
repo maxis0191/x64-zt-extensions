@@ -2,8 +2,13 @@
  "bo3_install": "<BO3 install folder holding zone/>",
  "zone": "zm_levelcommon",
  "model_zone": "zone/zm_levelcommon.ff",
- "sound_zones": ["zone/zm_levelcommon.ff", "zone/zm_common.ff"],
- "script_zones": ["zone/zm_levelcommon.ff"],
+ "sound_zones": [
+  "zone/zm_levelcommon.ff",
+  "zone/zm_common.ff"
+ ],
+ "script_zones": [
+  "zone/zm_levelcommon.ff"
+ ],
  "graywolf": "<GrayWolf.exe (0.8.0+; driven over MCP stdio)>",
  "gsc_tool": "<xensik gsc-tool.exe (T7 decompiler)>",
  "texconv": "<Microsoft texconv.exe>",
@@ -17,5 +22,6 @@
  "iw7_materials": "<IW7 material templates root (m2o/, eq/)>",
  "script_cache": "<folder for decompiled zone scripts, shared by every port>",
  "max_texture": 512,
- "fx_intensity_add": 2.0
+ "fx_intensity_add": 2.0,
+ "bo3_mod_tools": "<optional: BO3 mod tools root (Steam app 455130); authored textures stand in for images the game export lacks>"
 }

@@ -260,6 +260,10 @@ class Port:
             d, _ = self.gw_export(gw, "scripts", {"zones": [zone], "kinds": ["script"]})
         if os.path.isdir(cache):
             shutil.rmtree(cache)
+        if not os.path.isdir(os.path.join(d, "scripts")):
+            # a zone without scripts (zm_prototype): its weapons carry no script behaviour of their own
+            os.makedirs(done)
+            return done
         shutil.copytree(os.path.join(d, "scripts"), cache)
         # one pass decompiles both .gscc and .cscc (gsc-tool exits non-zero with -i client)
         run([self.cfg["gsc_tool"], "-m", "decomp", "-g", "t7", "-s", "pc", "."], cwd=cache, stdout=subprocess.DEVNULL)
@@ -298,7 +302,7 @@ class Port:
 
     def stage_materials(self):
         root = self.cfg["iw7_materials"]
-        written, camo = [], set()
+        written, camo, substituted = [], set(), []
         for mj in sorted(glob.glob(os.path.join(self.out, "gw", "models", "**", "*_LOD0.materials.json"), recursive=True)):
             report = run(self.py("t7_material_pack.py") + [
                 mj, "--template", os.path.join(root, MATERIAL_TEMPLATES["opaque"]),
@@ -307,9 +311,12 @@ class Port:
                 "--camo-template", os.path.join(root, MATERIAL_TEMPLATES["camo"]),
                 "--texconv", self.cfg["texconv"], "--out", self.zone, "--max-size", self.cfg.get("max_texture", 512)]
                 + (["--constants", self.cfg["material_constants"]]
-                   if os.path.exists(self.cfg.get("material_constants") or "") else []),
+                   if os.path.exists(self.cfg.get("material_constants") or "") else [])
+                + (["--source-art", self.cfg["bo3_mod_tools"]] if self.cfg.get("bo3_mod_tools") else []),
                 stdout=subprocess.PIPE, text=True).stdout
-            camo.update(r["material"] for r in json.loads(report)["materials"] if r.get("camo"))
+            parsed = json.loads(report)
+            camo.update(r["material"] for r in parsed["materials"] if r.get("camo"))
+            substituted.extend(parsed.get("substituted_from_source_art", []))
             written.append(os.path.relpath(mj, self.out))
         # The asset name is the file path under materials/: put each one where the converted models
         # reference it (BO3 weapon models name their materials "mc/<name>").
@@ -320,7 +327,7 @@ class Port:
             if folder and os.path.exists(flat):
                 os.makedirs(os.path.join(mdir, folder), exist_ok=True)
                 os.replace(flat, os.path.join(mdir, folder, base + ".json"))
-        self.record("materials", {"from": written, "camo": sorted(camo), "materials": sorted(
+        self.record("materials", {"from": written, "camo": sorted(camo), "source_art": substituted, "materials": sorted(
             os.path.relpath(p, os.path.join(self.zone, "materials")).replace("\\", "/")[:-5]
             for p in glob.glob(os.path.join(self.zone, "materials", "**", "*.json"), recursive=True))})
 
