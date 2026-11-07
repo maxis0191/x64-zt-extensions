@@ -56,5 +56,16 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertEqual(d["iProjectileSpeed"], 2000)
 
 
+class SnapshotConfigTest(unittest.TestCase):
+    def test_snapshot_folder_supplies_scan_and_effects(self):
+        cfg = port.with_snapshot({"snapshots": "snap", "zone": "zm_island"})
+        self.assertEqual(cfg["scan"], os.path.join("snap", "zm_island.weapons.json"))
+        self.assertEqual(cfg["effects"], os.path.join("snap", "zm_island.effects.json"))
+
+    def test_explicit_paths_win(self):
+        cfg = port.with_snapshot({"snapshots": "snap", "zone": "zm_island", "scan": "mine.json"})
+        self.assertEqual(cfg["scan"], "mine.json")
+
+
 if __name__ == "__main__":
     unittest.main()

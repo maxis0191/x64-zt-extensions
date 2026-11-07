@@ -22,7 +22,8 @@ asset family. Stages write under ``--out``:
   zone     zone.csv (lines for the mod zone) and catalog.txt (module entry)
 
 The config file names the machine's inputs (BO3 install, GrayWolf, texconv,
-scan, effects JSON, ZoneTool T7->IW7 dumps, stock IW7 dumps, hands); see
+the zone snapshot folder of t7_zone_snapshot.py, ZoneTool T7->IW7 dumps,
+stock IW7 dumps, hands); see
 port-config.example.json. Stages can be run alone (--stages) and each one
 records what it wrote in manifest.json.
 """
@@ -87,8 +88,19 @@ def run(cmd, **kw):
     return subprocess.run([str(c) for c in cmd], check=True, **kw)
 
 
+def with_snapshot(cfg):
+    """``snapshots`` (t7_zone_snapshot.py output folder) supplies ``scan``/``effects`` for ``zone``."""
+    cfg = dict(cfg)
+    if cfg.get("snapshots") and cfg.get("zone"):
+        base = os.path.join(cfg["snapshots"], cfg["zone"])
+        cfg.setdefault("scan", base + ".weapons.json")
+        cfg.setdefault("effects", base + ".effects.json")
+    return cfg
+
+
 class Port:
     def __init__(self, cfg, weapon, out, name=None):
+        cfg = with_snapshot(cfg)
         self.cfg, self.weapon, self.out = cfg, weapon, os.path.abspath(out)
         self.zone = os.path.join(self.out, "zone")
         self.name = name

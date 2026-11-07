@@ -8,9 +8,18 @@ Game data, dumps and built fastfiles stay local and are never committed.
 
 ## Port a weapon in one command
 
+Once per BO3 zone (zm_levelcommon, a DLC map zone, ...), snapshot every weapon
+and every effect it holds; the snapshot folder then serves every port from
+that zone (config key `snapshots`):
+
 ```
+python t7_zone_snapshot.py --zonetool <zt-t7>/zonetool.exe --zone zm_levelcommon --out <snapshots>
 python t7_port_weapon.py --config port-config.json --weapon thundergun_zm --out <dir>
 ```
+
+The snapshot starts ZoneTool with `-holdzone`, runs `t7_weapon_scan.py` and
+`t7_fx_read.py` on the holding process as soon as it prints
+`ZONETOOL_HOLD <zone> <pid>`, then releases it.
 
 Every stage is data-driven: no weapon name appears in the tools. The spec
 (`t7_weapon_spec.py`) reads every role from the BO3 WeaponDef at fixed offsets
