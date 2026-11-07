@@ -421,7 +421,8 @@ class Port:
         lines += ["weapon," + s["name"] for s in specs]
         with open(os.path.join(self.out, "zone.csv"), "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-        entry = "%s=%s" % (specs[0]["sounds"].get("fire_plr", ""), specs[0]["name"])
+        # weapon[:pap weapon:pap1 attachment:pap2 attachment], one module catalog string
+        entry = specs[0]["name"]
         if pap:
             entry += ":%s:%s:%s" % (pap["weapon"], pap["attachments"][0], pap["attachments"][1])
         with open(os.path.join(self.out, "catalog.txt"), "w", encoding="utf-8") as f:

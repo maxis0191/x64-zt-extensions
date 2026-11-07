@@ -27,15 +27,33 @@ class AssembleTest(unittest.TestCase):
         write(os.path.join(port, "zone", "sound", "iw7_tg_zm.aliases.csv"), "Name\n")
         write(os.path.join(port, "zone", "soundbank", "iw7_tg_zm.json"), "{}")
         write(os.path.join(port, "zone.csv"), "xmodel,tg_view\nweapon,iw7_tg_zm\n")
-        write(os.path.join(port, "catalog.txt"), "wpn_tg_fire_plr=iw7_tg_zm\n")
-        out = asm.assemble(mod, csv, "mod.all", "mod", [port])
+        write(os.path.join(port, "catalog.txt"), "iw7_tg_zm:iw7_tg_zm_pap1:tgpap1:tgpap2\n")
+        gsc = os.path.join(root, "mod.gsc")
+        write(gsc, 'catalog()\n{\n    // BEGIN t7_mod_assemble catalog\n    return ["iw7_raygun_zm:iw7_raygun_zm_pap1"];\n'
+                   '    // END t7_mod_assemble catalog\n}\n')
+        out = asm.assemble(mod, csv, "mod.all", "mod", [port], gsc=gsc)
         self.assertTrue(os.path.exists(os.path.join(mod, "weapons", "iw7_tg_zm.json")))
         self.assertFalse(os.path.exists(os.path.join(mod, "soundbank", "iw7_tg_zm.json")))
         self.assertEqual(out["bank_aliases"], ["sound/mod.all.aliases.csv", "sound/iw7_tg_zm.aliases.csv"])
         self.assertEqual(out["added_lines"], ["xmodel,tg_view", "weapon,iw7_tg_zm"])
-        self.assertEqual(out["catalog"], ["wpn_tg_fire_plr=iw7_tg_zm"])
-        again = asm.assemble(mod, csv, "mod.all", "mod", [port])       # idempotent
+        # the hand-built weapon already in the module stays, the port is appended
+        self.assertEqual(out["catalog"], ["iw7_raygun_zm:iw7_raygun_zm_pap1", "iw7_tg_zm:iw7_tg_zm_pap1:tgpap1:tgpap2"])
+        with open(gsc, encoding="utf-8") as f:
+            text = f.read()
+        self.assertIn('    return [\n        "iw7_raygun_zm:iw7_raygun_zm_pap1",\n        "iw7_tg_zm:iw7_tg_zm_pap1:tgpap1:tgpap2"\n    ];\n'
+                      '    // END t7_mod_assemble catalog\n}\n', text)
+        again = asm.assemble(mod, csv, "mod.all", "mod", [port], gsc=gsc)       # idempotent
         self.assertEqual(again["added_lines"], [])
+        self.assertEqual(len(again["catalog"]), 2)
+        with open(gsc, encoding="utf-8") as f:
+            self.assertEqual(f.read(), text)
+
+    def test_gsc_without_block_is_refused(self):
+        root = tempfile.mkdtemp()
+        gsc = os.path.join(root, "x.gsc")
+        write(gsc, "catalog() { return []; }\n")
+        with self.assertRaises(SystemExit):
+            asm.update_gsc(gsc, ["a"])
 
 
 if __name__ == "__main__":

@@ -42,7 +42,11 @@ twin becomes the Pack-a-Punch variant. Then:
 `t7_mod_assemble.py --mod-zone zonetool/<zone> --csv zone_source/<zone>.csv
 --bank <zone>.all --zone <zone> --port <dir> [--port ...]` merges ports into
 one mod zone: assets, the lines its CSV lacks, and one sound bank listing every
-weapon's alias table. The author stage references only the effects the fx stage
+weapon's alias table. It keeps the mod catalog (`<mod zone>/catalog.txt`,
+`weapon[:pap weapon:pap1 attachment:pap2 attachment]` per line) and, with
+`--gsc <server module>`, rewrites the module's catalog between
+`// BEGIN t7_mod_assemble catalog` and `// END t7_mod_assemble catalog`, so a
+ported weapon reaches the magic wheel with no hand edit. The author stage references only the effects the fx stage
 built and never keeps a template's stock effect (BO3's effect or none).
 
 `port-config.example.json` lists the machine inputs. Behaviour that BO3 keeps

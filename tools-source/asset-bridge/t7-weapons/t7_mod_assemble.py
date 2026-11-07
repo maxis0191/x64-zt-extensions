@@ -13,12 +13,57 @@ mod.sabl/mod.sabs). The per-weapon bank JSONs are not copied.
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 
 BANK_LISTS = ('sendEffectParams', 'ADSRSettings', 'AmbientDefs', 'AmbientEvents', 'AmbientElements',
               'FilterDefs', 'MixDefs', 'NPCAdsrZoneEntry', 'PLRAdsrZoneEntry', 'OccludeDefs',
               'ReverbDefs', 'TimescaleEntrys', 'ZoneDefs', 'Unks', 'FullOcclusionDefs', 'PlayerBreathStateDefs')
+
+
+GSC_BEGIN = "// BEGIN t7_mod_assemble catalog"
+GSC_END = "// END t7_mod_assemble catalog"
+GSC_ENTRY = re.compile(r'"([^"]+)"')
+
+
+def merge_catalog(existing, new):
+    """Entries keyed by weapon (first field); a new entry replaces the old one in place."""
+    out = {}
+    for entry in list(existing) + list(new):
+        out[entry.split(":")[0]] = entry
+    return list(out.values())
+
+
+def gsc_block(text):
+    """(start, end, entries) of the generated catalog block, or None."""
+    begin, end = text.find(GSC_BEGIN), text.find(GSC_END)
+    if begin < 0 or end < begin:
+        return None
+    body_start = text.index("\n", begin) + 1
+    body_end = text.rindex("\n", 0, end) + 1
+    return body_start, body_end, GSC_ENTRY.findall(text[body_start:body_end])
+
+
+def render_gsc(entries, indent="    "):
+    if not entries:
+        return indent + "return [];\n"
+    rows = (",\n" + indent * 2).join('"%s"' % e for e in entries)
+    return "%sreturn [\n%s%s\n%s];\n" % (indent, indent * 2, rows, indent)
+
+
+def update_gsc(path, new):
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    block = gsc_block(text)
+    if block is None:
+        raise SystemExit("%s has no '%s' ... '%s' block" % (path, GSC_BEGIN, GSC_END))
+    start, end, existing = block
+    entries = merge_catalog(existing, new)
+    indent = re.match(r"[ \t]*", text[text.rindex("\n", 0, text.find(GSC_BEGIN)) + 1:]).group(0)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text[:start] + render_gsc(entries, indent or "    ") + text[end:])
+    return entries
 
 
 def read_lines(path):
@@ -28,7 +73,7 @@ def read_lines(path):
         return [line.rstrip("\r\n") for line in f]
 
 
-def assemble(mod_zone, csv_path, bank, zone, ports):
+def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
     bank_path = os.path.join(mod_zone, "soundbank", bank + ".json")
     if os.path.exists(bank_path):
         with open(bank_path, encoding="utf-8") as f:
@@ -67,7 +112,13 @@ def assemble(mod_zone, csv_path, bank, zone, ports):
         json.dump(bank_def, f, indent=1)
     with open(csv_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
-    return {"added_lines": added, "bank_aliases": bank_def["aliases"], "catalog": catalog}
+    catalog_path = os.path.join(mod_zone, "catalog.txt")
+    full = merge_catalog([c for c in read_lines(catalog_path) if c], catalog)
+    if gsc:
+        full = update_gsc(gsc, full)
+    with open(catalog_path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("".join(c + "\n" for c in full))
+    return {"added_lines": added, "bank_aliases": bank_def["aliases"], "catalog": full}
 
 
 def main(argv=None):
@@ -77,8 +128,9 @@ def main(argv=None):
     ap.add_argument("--bank", required=True, help="the mod zone's sound bank name (e.g. bo3wpn.all)")
     ap.add_argument("--zone", required=True, help="mod zone name")
     ap.add_argument("--port", action="append", required=True, help="t7_port_weapon.py output folder")
+    ap.add_argument("--gsc", help="server module whose generated catalog block to rewrite")
     args = ap.parse_args(argv)
-    print(json.dumps(assemble(args.mod_zone, args.csv, args.bank, args.zone, args.port), indent=1))
+    print(json.dumps(assemble(args.mod_zone, args.csv, args.bank, args.zone, args.port, args.gsc), indent=1))
     return 0
 
 
