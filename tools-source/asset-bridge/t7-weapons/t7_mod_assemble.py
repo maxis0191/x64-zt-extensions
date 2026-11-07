@@ -12,7 +12,7 @@ with ``--gsc``, rewritten in the module between
 ``// BEGIN t7_mod_assemble <block>`` and ``// END t7_mod_assemble <block>``
 (entries already there, such as hand-built weapons, are kept):
 
-  catalog     weapon[:pap weapon:pap1 attachment:pap2 attachment] (catalog.txt)
+  catalog     probe alias=weapon[:pap weapon:pap1 attachment:pap2 attachment] (catalog.txt)
   behaviours  weapon|BO3 script namespace|tuning|effects|sounds (behaviour.txt)
 
     python t7_mod_assemble.py --mod-zone zonetool/bo3wpn --csv zone_source/bo3wpn.csv
@@ -33,7 +33,7 @@ BANK_LISTS = ('sendEffectParams', 'ADSRSettings', 'AmbientDefs', 'AmbientEvents'
 GSC_ENTRY = re.compile(r'"([^"]+)"')
 # generated GSC blocks: name -> key of an entry (a new entry replaces the one with the same key)
 BLOCK_KEYS = {
-    "catalog": lambda e: e.split(":")[0],                    # weapon[:pap weapon:pap1:pap2]
+    "catalog": lambda e: e.split("=", 1)[-1].split(":")[0],  # probe alias=weapon[:pap weapon:pap1:pap2]
     "behaviours": lambda e: "|".join(e.split("|")[:2]),      # weapon|namespace|tuning|effects|sounds
 }
 

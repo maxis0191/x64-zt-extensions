@@ -209,6 +209,15 @@ class ViewEffectTest(unittest.TestCase):
                 p.notetrack_effects(False)
 
 
+class ProbeAliasTest(unittest.TestCase):
+    def test_player_fire_sound_first_and_built_only(self):
+        spec = {"sounds": {"proj_loop": "wpn_loop", "fire_npc": "wpn_fire_npc", "fire_plr": "wpn_fire_plr"}}
+        self.assertEqual(port.probe_alias(spec, {"wpn_loop", "wpn_fire_npc", "wpn_fire_plr"}), "wpn_fire_plr")
+        self.assertEqual(port.probe_alias(spec, {"wpn_loop", "wpn_fire_npc"}), "wpn_fire_npc")
+        self.assertEqual(port.probe_alias(spec, {"wpn_loop"}), "wpn_loop")
+        self.assertIsNone(port.probe_alias(spec, set()))
+
+
 class OverrideTest(unittest.TestCase):
     def test_values_are_typed(self):
         self.assertEqual(port.weapon_overrides(["penetrateType=3", "penetrateMultiplier=2.5", "bBoltAction=false",
