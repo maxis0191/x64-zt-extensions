@@ -511,3 +511,39 @@ stock animations use a lookup table plus the index list.
 `iw7_xanim_codec.decode` reads both (commit cb6f500 carries it with the
 material change); re-encoding the idle matches every frame (rotation 2e-5,
 translation 8e-7). In-game rendered comparison: pending.
+
+## 2026-11-07: BO3 mod tools as ground truth; shoulders follow BO3
+
+The BO3 mod tools (Steam app 455130) ship the Ray Gun's authored sources
+(`model_export/weapons_t7/zmb_raygun`: c/g/n/o/s TIFs, materials in
+`model_export/wpn_t7_zmb_weapons.gdt`), also the Apothicon Servant
+(`zmb_zod_idg`). Findings:
+
+* The textures GrayWolf reads from the compiled game match the authored
+  TIFs (channel means within 1/255; gloss 16-bit sources, same values):
+  extraction is faithful. The compiled normal map stores Z differently
+  (only X/Y are used).
+* Each material has its own `glossRangeMin/Max` (metal 0-17, plastic 4-13,
+  glass 6-17), but only the decal techsets bind `glossRange`
+  (`share/raw/techsetdefs_stable/decal/*`); `lit_weapon` declares only the
+  gloss map (`include/gloss_base.techsetdef`) and the compiled gloss texels
+  equal the source. Weapon gloss is therefore the texel value, unscaled by
+  the range. The BO3 gloss-to-specular curve lives in the deferred lighting
+  shader, which the mod tools ship only as cache keys
+  (`share/assetconvert/preshader`, 16 bytes each): still NOT_PROVEN.
+
+In-game hip frames showed the DG-2's left hand off the gun and its right
+arm folded in front of the camera. BO3 animations place the shoulders per
+weapon (DG-2: left shoulder 9 units forward, right one above the eye); the
+retargeter kept the IW7 bind shoulders, so the left wrist was 7.3 units
+out of reach. The IW7 shoulders now take the BO3 positions (translation
+channels); all 39 Ray Gun / Thundergun / DG-2 animations reach both
+wrists exactly (test `ShoulderTest`). The Ray Gun's upright hip pose (gauge
+facing the player) keeps the BO3 gun placement relative to the BO3 camera
+by construction; no rendered BO3 frame has been compared (the view model
+FOV of the two engines may differ).
+
+Also: the display name no longer comes from the template (`--display`, else
+the BO3 key made readable), and the notetrack sound table grows past the
+template's four slots (the Ray Gun had lost reload_close, the DG-2 clip_in
+and handle_release).
