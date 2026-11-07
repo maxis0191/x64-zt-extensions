@@ -6,7 +6,9 @@ table. Each BO3 alias takes the stock row of its role (channel, type,
 distance and curves come from IW7), keeps its BO3 secondary-alias chain, and
 scales the stock volume by its BO3 volume relative to the role's reference.
 
-Roles (from the BO3 alias name):
+Roles: given per alias with --role alias=role (the port takes them from the
+WeaponDef slot that names the alias; secondaries inherit the role of their
+chain), otherwise from the BO3 alias name:
   player fire (*_plr with fire/act/flux)  weap_plr_fire_1_2d row
   npc fire    (*_npc)                     weap_npc_main_3d row
   foley       (reload/raise)              scn_fx_unres_2d row
@@ -36,7 +38,22 @@ ROLES = (
     ('npc', lambda n: n.endswith('_npc'), 'weap_npc_main_3d'),
     ('player', lambda n: n.endswith('_plr'), 'weap_plr_fire_1_2d'),
 )
+ROLE_CHANNELS = {role: channel for role, _, channel in ROLES}
 BO3_REFERENCE_VOLUME = 75.0   # fallback when a BO3 row has no volume
+
+
+def resolve_flac(root, spec):
+    """A BO3 FileSpec under an export root. GrayWolf writes every sound under all/, while alias
+    tables name some files with that prefix and some without."""
+    parts = [p for p in spec.replace('/', '\\').split('\\') if p]
+    if parts:
+        parts[-1] = os.path.splitext(parts[-1])[0] + '.flac'   # tables also name .opus/.wav; exports are FLAC
+    for cand in (parts, ['all'] + parts, parts[1:] if parts[:1] == ['all'] else None):
+        if cand:
+            path = os.path.join(root, *cand)
+            if os.path.isfile(path):
+                return path
+    return None
 
 
 def role_of(name):
@@ -69,6 +86,8 @@ def main(argv=None):
     ap.add_argument('--zone', default='bo3wpn')
     ap.add_argument('--prefix', default='bo3wpn')
     ap.add_argument('--alias', nargs='+', required=True, help='BO3 aliases to include (secondaries are followed)')
+    ap.add_argument('--role', action='append', default=[],
+                    help='alias=role, role in %s (default: from the alias name)' % ', '.join(ROLE_CHANNELS))
     args = ap.parse_args(argv)
 
     with open(args.bo3_aliases, newline='', encoding='utf-8', errors='replace') as f:
@@ -76,6 +95,7 @@ def main(argv=None):
     bcol = {n: i for i, n in enumerate(bo3[0])}
     source = {r[0]: r for r in bo3[1:] if r}
     header, col, by_channel = template_rows(args.template)
+    roles = dict(r.split('=', 1) for r in args.role)
 
     wanted, root, queue = [], {}, [(a, a) for a in args.alias]
     while queue:
@@ -94,14 +114,23 @@ def main(argv=None):
     report = []
     for name in wanted:
         r = source[name]
-        role, channel = role_of(name)
+        if not r[bcol['FileSpec']]:
+            # BO3 keeps empty aliases for silent roles (the Thundergun's projectile loop): nothing to play.
+            report.append({'alias': name, 'silent': True})
+            continue
+        given = roles.get(name) or roles.get(root[name])
+        if given:
+            if given not in ROLE_CHANNELS:
+                raise SystemExit('unknown role %s for %s' % (given, name))
+            role, channel = given, ROLE_CHANNELS[given]
+        else:
+            role, channel = role_of(name)
         if channel not in by_channel:
             raise SystemExit('template has no %s row' % channel)
         row = list(by_channel[channel])
-        spec = r[bcol['FileSpec']].replace('/', '\\')
-        flac = os.path.join(args.flac_root, *spec.split('\\'))
-        if not os.path.isfile(flac):
-            raise SystemExit('missing FLAC %s' % flac)
+        flac = resolve_flac(args.flac_root, r[bcol['FileSpec']])
+        if flac is None:
+            raise SystemExit('missing FLAC %s under %s' % (r[bcol['FileSpec']], args.flac_root))
         rel = '%s\\%s' % (args.prefix.replace('/', '\\'), name)
         dest = os.path.join(args.out, 'sound_assets', *rel.split('\\')) + '.flac'
         os.makedirs(os.path.dirname(dest), exist_ok=True)
