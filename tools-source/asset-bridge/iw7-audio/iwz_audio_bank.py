@@ -23,10 +23,12 @@ Optional "zones" (sound zones: the 2D ambience bed, reverb, mix, filter and occl
             "rows": [{"name": "cp_iwz", "copy": "cp_zmb_basement_lg_room"}, ...]}
 copies the stock definition tables (reverbs, mixes, filters, occlusion, ADSR, ...) unchanged, so the
 indices of the copied zone rows stay valid, and writes a zone table holding only the listed rows, renamed.
-Every zone's Ambience bed must be an alias of this bank ("ambience" in a row replaces the stock bed).
+Every zone's Ambience bed must be an alias of this bank ("ambience" in a row replaces the stock bed;
+"no_mix": true drops the stock mix: copied basement rows with basement_mix played their bed silent, run f1).
 An alias may take "file" (a new asset name, also for stock audio) and "loop_seconds" (a seamless loop of
-that length cut from the source, so a long streamed bed can ship loaded). The engine streams a zone's bed itself: a 2D bed
-alias (channel amb_bed_2d) played with playlocalsound stays silent (run w4).
+that length cut from the source, so a long streamed bed can ship loaded). In a usermap vol_mod ambience is
+digitally silent (any channel, loaded or streamed, playlocalsound or zone bed: runs b1/b4); the tool refuses it,
+beds use vol_mod emitter.
 
 Output under --out: sound/<bank>.aliases.csv, soundbank/<bank>.json,
 sound_assets/<File>.flac, iwz_audio_manifest.json (alias, file, sha256,
@@ -314,6 +316,12 @@ def write_zones(z, bank, out, aliases, sb):
         r[col['Zone_Name']] = row['name']
         if 'ambience' in row:
             r[col['Ambience']] = row['ambience']
+        if row.get('no_mix'):
+            # measured in the Station Zero usermap (run f1, 2026-11-07): zones copied from Spaceland's basement
+            # rows (Mix basement_mix) play their 2D bed digitally silent, zones without a mix play it
+            for k, v in (('Mix', ''), ('MixIndex', '-1'), ('NumMix', '0')):
+                if k in col:
+                    r[col[k]] = v
         bed = r[col['Ambience']]
         if bed and bed not in aliases:
             errors.append('zone %s: ambience bed %s is not an alias of this bank' % (row['name'], bed))

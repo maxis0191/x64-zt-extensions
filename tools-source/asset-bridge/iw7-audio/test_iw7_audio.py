@@ -148,6 +148,10 @@ class BankTest(unittest.TestCase):
         errors = chr(10).join(bank.build(self.spec(zones=z), os.path.join(self.root, 'out2'))['errors'])
         self.assertIn('ambience bed amb_missing is not an alias', errors)
         self.assertIn('stock zone nope not found', errors)
+        # no_mix: the zone keeps its bed, reverb, filter and occlusion without the stock mix
+        z['rows'] = [{'name': 'cp_test', 'copy': 'stock_room', 'no_mix': True}]
+        r = bank.build(self.spec(zones=z), os.path.join(self.root, 'out3'))
+        self.assertEqual((r['errors'], r['sound_zones'][0]['mix'], r['sound_zones'][0]['ambience']), ([], '', 'emt_hum'))
 
     def test_rejects_values_stock_never_uses(self):
         s = self.spec()
