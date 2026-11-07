@@ -89,6 +89,20 @@ class BehaviourTest(unittest.TestCase):
         self.assertEqual(port.behaviour_lines(["w"], found, set()), [])
 
 
+class ModelSurfacesTest(unittest.TestCase):
+    def test_surfaces_are_the_ones_the_model_names(self):
+        root = tempfile.mkdtemp()
+        surf = os.path.join(root, "xsurface")
+        os.makedirs(surf)
+        for name in ("wpn_hd_gun_view4b01d4fb", "wpn_hd_gun_lod0c315ca95", "wpn_gun_view_other"):
+            open(os.path.join(surf, name + ".xsb"), "wb").close()
+        xmb = os.path.join(root, "wpn_gun_view.xmb")
+        with open(xmb, "wb") as f:
+            f.write(b"\x06\x01wpn_gun_view\x00\x10\x00wpn_hd_gun_view4b01d4fb\x00mc/mtl_gun\x00")
+        self.assertEqual([os.path.basename(p) for p in port.model_surfaces(xmb, surf)],
+                         ["wpn_hd_gun_view4b01d4fb.xsb"])
+
+
 class SnapshotConfigTest(unittest.TestCase):
     def test_snapshot_folder_supplies_scan_and_effects(self):
         cfg = port.with_snapshot({"snapshots": "snap", "zone": "zm_island"})

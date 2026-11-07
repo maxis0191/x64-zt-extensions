@@ -279,7 +279,7 @@ class Port:
     def stage_models(self):
         src = self.cfg["t7_models"]
         models = sorted({s[k] for s in self.specs() for k in ("view_model", "world_model") if s.get(k)})
-        copied = []
+        copied, surfaces_of = [], {}
         for m in models:
             xmb = os.path.join(src, "xmodel", m + ".xmb")
             if not os.path.exists(xmb):
@@ -287,12 +287,16 @@ class Port:
             dst = os.path.join(self.zone, "xmodel")
             os.makedirs(dst, exist_ok=True)
             shutil.copy2(xmb, dst)
-            for xsb in glob.glob(os.path.join(src, "xsurface", m + "*.xsb")):
+            surfaces = model_surfaces(xmb, os.path.join(src, "xsurface"))
+            if not surfaces:
+                raise SystemExit("model %s references no converted surface under %s" % (m, src))
+            for xsb in surfaces:
                 os.makedirs(os.path.join(self.zone, "xsurface"), exist_ok=True)
                 shutil.copy2(xsb, os.path.join(self.zone, "xsurface"))
                 run(self.py("iw7_xsurface_check.py") + [xsb], stdout=subprocess.DEVNULL)
             copied.append(m)
-        self.record("models", {"models": copied})
+            surfaces_of[m] = [os.path.basename(s) for s in surfaces]
+        self.record("models", {"models": copied, "surfaces": surfaces_of})
 
     def stage_anims(self):
         specs = self.specs()
@@ -617,6 +621,23 @@ def sfx_package(spec, template):
         if key in sounds and spec["sounds"].get(role):
             sounds[key] = spec["sounds"][role]
     return pkg
+
+
+def model_surfaces(xmb, surface_dir):
+    """Converted surface files (.xsb) a converted model (.xmb) names.
+
+    Surfaces carry BO3's surface asset name plus a hash (the Thundergun view model
+    wpn_t7_zmb_thundergun_view uses wpn_t7_zmb_hd_thundergun_view4b01d4fb), so they are
+    matched by the strings the model holds, not by the model name."""
+    with open(xmb, "rb") as f:
+        data = f.read()
+    names = {s.decode("ascii") for s in re.findall(rb"[\x21-\x7e]{4,}", data)}
+    out = []
+    for name in sorted(names):
+        path = os.path.join(surface_dir, name + ".xsb")
+        if os.path.exists(path):
+            out.append(path)
+    return out
 
 
 def behaviour_lines(weapons, found, built_effects, sounds=()):
