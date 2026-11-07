@@ -299,6 +299,11 @@ def retarget(anim, src, dst, ads=None):
         if w in src.index and w in dst.index:
             side_map[side] = qnorm(qmul(qinv(dst.world[dst.index[w]][0]), src.world[src.index[w]][0]))
     bone_side = {n: side_of(dst.index[n]) for n in mapped}
+    carried = {}
+    for s in SHOULDERS:
+        if s in dst.index and s in mapped:
+            p = dst.parent[dst.index[s]]
+            carried[dst.names[p] if p is not None and dst.names[p].startswith('j_clavicle') else s] = s
     for f in frames:
         sp = src.pose(anim.rotations, anim.translations, f)
         if ads is not None:
@@ -324,11 +329,17 @@ def retarget(anim, src, dst, ads=None):
             pq, pt = world[dst.names[p]] if p is not None else ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
             if n in want:
                 lq = qnorm(qmul(qinv(pq), want[n][0]))
-            if n in SHOULDERS and n in want:
-                # BO3 animations place the shoulders per weapon (the DG-2 raises the right one above
-                # the eye and brings the left one forward); at the IW7 bind shoulders its hands could
-                # not reach the gun (7.3 units short) and the right arm folded in front of the camera.
-                lt = qrot(qinv(pq), vsub(want[n][1], pt))
+            # BO3 animations place the shoulders per weapon (the DG-2 raises the right one above the
+            # eye and brings the left one forward); at the IW7 bind shoulders its hands could not
+            # reach the gun (7.3 units short) and the right arm folded in front of the camera.
+            # The shoulder's carrier moves: the clavicle when the rig has one, so clavicle, shoulder
+            # and arm keep their bind spacing (moving the shoulder alone stretched the sleeve skin
+            # between them in view); the stretch goes to the torso, behind the camera.
+            shoulder = carried.get(n)
+            if shoulder is not None:
+                wq = qnorm(qmul(pq, lq))
+                child_lt = dst.local[dst.index[shoulder]][1] if shoulder != n else (0.0, 0.0, 0.0)
+                lt = qrot(qinv(pq), vsub(vsub(want[shoulder][1], qrot(wq, child_lt)), pt))
                 moved[n] = lt
             wq = qnorm(qmul(pq, lq))
             wt = vadd(pt, qrot(pq, lt))

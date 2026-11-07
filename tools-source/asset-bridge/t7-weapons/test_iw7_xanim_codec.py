@@ -178,6 +178,10 @@ class ShoulderTest(unittest.TestCase):
             self.assertAlmostEqual(got, want, places=4)
         for got, want in zip(pose[dst.index['j_wrist_le']][1], (32.0, 8.0, -6.0)):
             self.assertAlmostEqual(got, want, places=3)
+        # The clavicle carries the shoulder: their spacing (and the sleeve skin between them) stays bind.
+        self.assertEqual(out.translations['j_shoulder_le'], [(0, (0, 4, 0))])
+        for got, want in zip(pose[dst.index['j_clavicle_le']][1], (12.0, 4.0, -6.0)):
+            self.assertAlmostEqual(got, want, places=4)
 
 
 if __name__ == '__main__':
