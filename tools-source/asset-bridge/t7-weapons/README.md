@@ -30,6 +30,12 @@ twin becomes the Pack-a-Punch variant. Then:
 | author | weapon, anim/vfx/sfx packages, BO3 kick, `_pap1` weapon and its two attachments | `iw7_weapon_author.py` |
 | zone | `zone.csv` lines and the module catalog entry | |
 
+`t7_mod_assemble.py --mod-zone zonetool/<zone> --csv zone_source/<zone>.csv
+--bank <zone>.all --zone <zone> --port <dir> [--port ...]` merges ports into
+one mod zone: assets, the lines its CSV lacks, and one sound bank listing every
+weapon's alias table. The author stage references only the effects the fx stage
+built and never keeps a template's stock effect (BO3's effect or none).
+
 `port-config.example.json` lists the machine inputs. Behaviour that BO3 keeps
 in script (Thundergun blast, DG-2 chain lightning, view-model effects played by
 client script) is extracted with its tuning but still needs an IW7 module;

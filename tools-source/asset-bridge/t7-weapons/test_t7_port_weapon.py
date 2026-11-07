@@ -37,5 +37,24 @@ class PackageTest(unittest.TestCase):
         self.assertEqual(s["pickupSound"], "weap_pickup_npc")
 
 
+class AuthorEffectsTest(unittest.TestCase):
+    def test_template_effects_never_leak(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "projTrailEffect": None, "projExplosionEffect": None}}
+        projectile = {"weapDef": {"projTrailEffect": {"type": 1, "fx": "vfx/iw7/stock_trail"},
+                                  "projExplosionEffect": {"type": 1, "fx": "vfx/iw7/stock_impact"},
+                                  "projDudEffect": {"type": 1, "fx": "vfx/iw7/stock_dud"}, "iProjectileSpeed": 1}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w",
+                "projectile": {"iProjectileSpeed": 2000, "projTrailEffect": "vfx/t7/zombie/trail"}}
+        w, _ = author.author(spec, weapon, {"anims": {}, "timers": {}}, projectile)
+        d = w["weapDef"]
+        self.assertEqual(d["projTrailEffect"], {"type": 1, "fx": "vfx/t7/zombie/trail"})
+        self.assertIsNone(d["projExplosionEffect"])      # BO3 has none: no stock impact either
+        self.assertIsNone(d["projDudEffect"])
+        self.assertEqual(d["iProjectileSpeed"], 2000)
+
+
 if __name__ == "__main__":
     unittest.main()

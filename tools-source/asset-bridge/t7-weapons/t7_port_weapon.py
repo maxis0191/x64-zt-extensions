@@ -349,10 +349,19 @@ class Port:
         import iw7_weapon_author as author
         specs = self.specs()
         tpl = {k: load(self.stock(v)) for k, v in TEMPLATES.items() if k != "aliases"}
-        written = []
+        written, missing = [], set()
         for i, spec in enumerate(specs):
             silent = set(self.manifest["stages"].get("sounds", {}).get("silent", []))
-            spec = dict(spec, xab_dir=os.path.join(self.zone, "xanim"),
+            # only effects the fx stage wrote are referenced: a dangling name fails the zone build
+            built = {r: f for r, f in spec["fx"].items() if os.path.exists(
+                os.path.join(self.zone, "particlesystem", *f["iw7"].split("/")) + ".iw7VFX")}
+            missing.update(f["bo3"] for r, f in spec["fx"].items() if r not in built)
+            proj = {k: v for k, v in spec["projectile"].items()
+                    if not (k.endswith("Effect") and v not in {f["iw7"] for f in built.values()})}
+            # BO3 anim notetracks carry the alias name: IW7 maps notetrack -> alias per weapon
+            notetracks = {a: a for a in self.notetrack_sounds([spec]) if a not in silent}
+            spec = dict(spec, xab_dir=os.path.join(self.zone, "xanim"), fx=built, projectile=proj,
+                        notetrack_sounds=notetracks,
                         sounds={k: v for k, v in spec["sounds"].items() if v not in silent})
             w, pkg = author.author(spec, tpl["weapon"], tpl["animpkg"], tpl["projectile"])
             d = w["weapDef"]
@@ -377,7 +386,7 @@ class Port:
                 save(os.path.join(self.zone, "attachments", att + ".json"),
                      pap_attachment(tpl["pap_attachment"], att, weapons[up["name"]]))
             self.manifest["pap"] = {"weapon": up["name"], "attachments": atts}
-        self.record("author", {"weapons": written})
+        self.record("author", {"weapons": written, "effects_not_built": sorted(missing)})
 
     def stage_zone(self):
         lines = []

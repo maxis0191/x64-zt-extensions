@@ -124,7 +124,8 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
             if low.startswith(("proj", "iprojectile", "iexplosion")) or key in (
                     "projectileModel", "bProjImpactExplode", "vProjectileColor", "parallelBounce",
                     "perpendicularBounce", "weapType"):
-                d[key] = copy.deepcopy(value)
+                # the template's own effects never reach a ported weapon: BO3's or nothing
+                d[key] = None if key.endswith("Effect") else copy.deepcopy(value)
         for key in PROJECTILE_FIELDS:
             if key in proj:
                 d[key] = proj[key]
