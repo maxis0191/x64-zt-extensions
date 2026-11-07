@@ -55,6 +55,15 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertIsNone(d["projDudEffect"])
         self.assertEqual(d["iProjectileSpeed"], 2000)
 
+    def test_burst_weapon_fires_bursts(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "fireType": 1, "burstCount": 0}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 21, "max_ammo": 162, "fire_time_ms": 120,
+                "view_model": "v", "world_model": "w", "burst_count": 3}
+        w, _ = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})
+        self.assertEqual((w["weapDef"]["fireType"], w["weapDef"]["burstCount"]), (2, 3))
+
     def test_template_tracer_never_leaks(self):
         # shredder_bullet exists on Spaceland only: the Ray Gun faulted the client on Rave.
         import iw7_weapon_author as author

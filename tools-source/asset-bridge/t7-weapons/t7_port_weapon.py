@@ -297,6 +297,19 @@ class Port:
                     "zones": [zone], "kinds": ["sound"], "audio_format": "flac",
                     "name_filter": sorted({sound_stem(p) for p in paths})})
                 shutil.copytree(os.path.join(d, "sounds"), root, dirs_exist_ok=True)
+            # An alias table and the bank holding its file can be different zones (zm_prototype names
+            # wpn_generic_dryfire_*, whose files sit in another zone's bank): look for the files still
+            # missing in every other sound zone.
+            wanted = {p for ps in files.values() for p in ps}
+            for i, zone in enumerate(self.cfg.get("sound_zones") or []):
+                missing = sorted(p for p in wanted if not self.sound_file_exported(root, p))
+                if not missing:
+                    break
+                d, _ = self.gw_export(gw, "sounds_more_%d" % i, {
+                    "zones": [zone], "kinds": ["sound"], "audio_format": "flac",
+                    "name_filter": sorted({sound_stem(p) for p in missing})})
+                if os.path.isdir(os.path.join(d, "sounds")):
+                    shutil.copytree(os.path.join(d, "sounds"), root, dirs_exist_ok=True)
         self.record("export", {"models": models, "fx_materials": fx_materials, "aliases": aliases,
                                "sound_files": sorted(p for ps in files.values() for p in ps)})
 
@@ -593,6 +606,11 @@ class Port:
                                              capture_output=True, text=True).stdout or "{}")
             out += [nt["name"] for nt in info.get("notetracks", []) if nt["name"] in aliases]
         return out
+
+    @staticmethod
+    def sound_file_exported(root, path):
+        import t7_weapon_sound
+        return t7_weapon_sound.resolve_flac(root, path) is not None
 
     def sound_files(self, aliases):
         """(alias, FileSpec) of every alias and of the secondary aliases they chain to."""

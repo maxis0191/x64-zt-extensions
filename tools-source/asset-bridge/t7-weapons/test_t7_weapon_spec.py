@@ -45,7 +45,7 @@ def scan(anims, upgraded=True):
         string(0x378, "wpn_thundergun_fire_npc"),
         string(0x380, "wpn_thundergun_fire_plr"),
         string(0x1088, "wpn_thundergun_proj_impact"),
-    ], children={"96": anim_table(anims)}, ints=[(0x8F8, 12), (0x8FC, 12), (0xA1C, 950), (0xFEC, 2000)],
+    ], children={"96": anim_table(anims)}, ints=[(0x8F8, 12), (0x8FC, 12), (0xA1C, 950), (0xFEC, 2000), (0xEF8, 1)],
         floats=[(0x1004, 0.5), (0x1268 + 8, -30.0)])
     root = block(0x400, [string(0x0, "thundergun_zm"), string(0x8, "thundergun"), string(0x20, "WEAPON_THUNDERGUN")],
                  children={"24": weapdef}, ints=[(0x194, 2)])
@@ -64,6 +64,7 @@ class SpecTest(unittest.TestCase):
         self.assertEqual(s["view_model"], "wpn_t7_zmb_thundergun_view")
         self.assertEqual(s["world_model"], "wpn_t7_zmb_thundergun_world")
         self.assertEqual((s["clip"], s["max_ammo"], s["start_ammo"], s["fire_time_ms"]), (2, 12, 12, 950))
+        self.assertEqual(s["burst_count"], 1)
         self.assertEqual(s["fx"]["trail"], {"bo3": "zombie/fx_trail_thundergun", "iw7": "vfx/t7/zombie/fx_trail_thundergun"})
         self.assertEqual(s["sounds"]["fire_plr"], "wpn_thundergun_fire_plr")
         self.assertEqual(s["projectile"]["iProjectileSpeed"], 2000)
@@ -88,6 +89,14 @@ class SpecTest(unittest.TestCase):
         self.assertEqual(a["sprint_in"], "vm_dg2_sprint_in")
         self.assertNotIn("crawl_in", a)
         self.assertIn("vm_dg2_fire_ads", s["all_anims"])
+
+    def test_burst_fire_sounds_come_from_their_own_slots(self):
+        data = scan(["vm_x_idle"])
+        refs = data["weapons"]["thundergun_zm"]["children"]["24"]["refs"]
+        refs[:] = [r for r in refs if r["off"] not in (0x378, 0x380)]
+        refs += [string(0x388, "wpn_rgunmk2_fire_npc"), string(0x390, "wpn_rgunmk2_fire_plr")]
+        s = spec.build(data, "thundergun_zm")
+        self.assertEqual((s["sounds"]["fire_npc"], s["sounds"]["fire_plr"]), ("wpn_rgunmk2_fire_npc", "wpn_rgunmk2_fire_plr"))
 
     def test_missing_upgrade_is_none(self):
         s = spec.build(scan(["vm_x_idle"], upgraded=False), "thundergun_zm")

@@ -10,9 +10,13 @@ faulted holding it on Rave in the Redwoods.
 This collects every asset-like string in the mod zone's ZoneTool sources and
 reports those that are neither the mod's own assets, nor in the zones every
 map loads (--common: ZoneTool zone csvs or "type,name" lists), nor in every
-listed map zone (--map). Exit 1 when such references exist.
+listed map zone (--map). A map can name several lists separated by ";": its
+level zone and its techsets zone (techsets_cp_zmb holds the weapon glass and
+effect techniques Spaceland alone loads; a level-zone-only audit missed them).
+Exit 1 when such references exist.
 
-    python iw7_mod_reference_audit.py <zonetool/<zone>> --common <csv> [...] --map cp_zmb=<csv> --map cp_rave=<csv>
+    python iw7_mod_reference_audit.py <zonetool/<zone>> --common <csv> [...]
+        --map "cp_zmb=<cp_zmb csv>;<techsets_cp_zmb csv>" --map "cp_rave=<cp_rave csv>;<techsets_cp_rave csv>"
 """
 import argparse
 import glob
@@ -91,8 +95,10 @@ def main(argv=None):
         common |= csv_names(path)
     maps = {}
     for item in args.map:
-        name, _, path = item.partition("=")
-        maps[name] = csv_names(path)
+        name, _, paths = item.partition("=")
+        maps[name] = set()
+        for path in paths.split(";"):
+            maps[name] |= csv_names(path)
     if len(maps) < 2:
         raise SystemExit("list at least two map zones (--map name=csv)")
     found = audit(references(args.zone_dir), own_assets(args.zone_dir), common, maps)

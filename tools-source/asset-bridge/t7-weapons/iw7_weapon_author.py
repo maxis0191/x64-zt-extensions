@@ -103,6 +103,10 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     d["iMaxAmmo"] = spec["max_ammo"]
     d["iStartAmmo"] = spec.get("start_ammo", spec["max_ammo"])
     d["iFireTime"] = spec["fire_time_ms"]
+    if (spec.get("burst_count") or 1) > 1:
+        # BO3 burst weapons (Ray Gun Mark II: 3 bolts per pull)
+        d["fireType"] = 2               # WEAPON_FIRETYPE_BURST
+        d["burstCount"] = spec["burst_count"]
     d["gunXModel"] = d["defaultViewModel"] = spec["view_model"]
     d["worldModel"] = d["defaultWorldModel"] = spec["world_model"]
     for key in ("complexWorldModel", "complexGunXModel", "camoWorldModelMaterialOverride",
