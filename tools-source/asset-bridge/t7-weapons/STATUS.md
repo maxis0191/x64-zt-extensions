@@ -403,3 +403,11 @@ and ADS poses correct. PROVEN_LOCAL. Two fixes came out of it:
   bind `tag_weapon_right` off-axis. The Thundergun idle is the first
   animation seen leaving that bone unkeyed. Fixed in `Skeleton.pose`, test
   added; converted idle now matches fire frame 0. Client recheck pending.
+
+Effects with visual arrays: a BO3 element with several visuals (one picked
+per particle) now keeps all of them. Export and material packing take every
+array material, and the converter lists one INIT_MATERIAL linked asset per
+converted material, as 771 of 5932 stock IW7 material modules do (survey of
+the 1164 stock cp_zmb particle systems). Partly converted arrays are reported
+(`partial`). Thundergun smoke cloud now builds; knockback ground pending the
+re-export.

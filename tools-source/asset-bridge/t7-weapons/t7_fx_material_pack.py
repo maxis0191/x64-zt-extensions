@@ -26,6 +26,9 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from t7_fx_read import element_visuals  # noqa: E402
+
 ALPHA_BLEND_HINTS = ("smk", "smoke", "debris", "bubble", "dust")
 
 
@@ -48,15 +51,17 @@ def atlas_of(effects):
     out = {}
     for fx in effects.values():
         for e in fx.get("elements", []):
-            visual = e.get("visual")
             atlas = e.get("scalars", {}).get("atlas")
-            if not visual or visual.get("kind") != "material" or not atlas or len(atlas) < 2:
+            if not atlas or len(atlas) < 2:
                 continue
             cols, rows = 1 << atlas[0], 1 << atlas[1]
-            prev = out.get(visual["name"])
-            if prev and prev != (cols, rows):
-                raise SystemExit("material %s used with two atlas layouts %s / %s" % (visual["name"], prev, (cols, rows)))
-            out[visual["name"]] = (cols, rows)
+            for visual in element_visuals(e):
+                if visual.get("kind") != "material":
+                    continue
+                prev = out.get(visual["name"])
+                if prev and prev != (cols, rows):
+                    raise SystemExit("material %s used with two atlas layouts %s / %s" % (visual["name"], prev, (cols, rows)))
+                out[visual["name"]] = (cols, rows)
     return out
 
 

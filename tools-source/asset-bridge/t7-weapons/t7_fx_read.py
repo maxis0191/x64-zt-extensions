@@ -183,6 +183,13 @@ def read_visuals(proc, element, assets):
         element["visual"] = visuals[0]
 
 
+def element_visuals(element):
+    """Every visual an element draws: its visual array, or its single visual."""
+    if element.get("visuals"):
+        return list(element["visuals"])
+    return [element["visual"]] if element.get("visual") else []
+
+
 def read_effect(proc, assets, address):
     head = parse_header(proc.read(address, HEADER_SIZE))
     count = head["looping"] + head["one_shot"] + head["emission"]

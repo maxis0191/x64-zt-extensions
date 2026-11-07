@@ -41,6 +41,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import t7_weapon_scripts  # noqa: E402
 import t7_weapon_spec  # noqa: E402
+from t7_fx_read import element_visuals  # noqa: E402
 
 STAGES = ["spec", "scripts", "export", "materials", "models", "anims", "sounds", "fx", "author", "zone"]
 # Stock IW7 templates (relative to the stock dump root), chosen once for every weapon.
@@ -226,8 +227,9 @@ class Port:
         specs = self.specs()
         models = sorted({s[k] for s in specs for k in ("view_model", "world_model") if s.get(k)})
         effects = self.effect_closure(specs)
-        fx_materials = sorted({e["visual"]["name"] for name in effects for e in self.effects()[name]["elements"]
-                               if (e.get("visual") or {}).get("kind") == "material"})
+        # every material of an element's visual array (BO3 picks one per particle)
+        fx_materials = sorted({v["name"] for name in effects for e in self.effects()[name]["elements"]
+                               for v in element_visuals(e) if v.get("kind") == "material"})
         with self.graywolf() as gw:
             mdir, _ = self.gw_export(gw, "models", {
                 "zones": [self.cfg["model_zone"]], "assets": ["model:" + m for m in models],

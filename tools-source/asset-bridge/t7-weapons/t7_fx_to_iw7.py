@@ -34,6 +34,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import iw7_vfx as vfx  # noqa: E402
+from t7_fx_read import element_visuals  # noqa: E402
 
 INT_MAX = 2147483647
 # T7 element types follow T6: 0 billboard, 1 oriented, 2 rotated, 3 tail, 4 line, 5 trail, 6 cloud,
@@ -110,7 +111,7 @@ def size_curves(samples, radius_to_size=2.0, line=False):
     return out * 2
 
 
-def rewrite(emitter, element, fx, material, intensity):
+def rewrite(emitter, element, fx, material, intensity, extra_materials=()):
     sc = element["scalars"]
     life = sc["lifespan_msec"]
     emitter["particleLife"] = {"min": vfx.f32(life["base"] / 1000.0),
@@ -140,8 +141,12 @@ def rewrite(emitter, element, fx, material, intensity):
     if material:
         mat = find(emitter, "INIT_MATERIAL")
         if mat is not None:
-            mat["m_linkedAssetList"]["assetList"] = [vfx.new_linked_asset("PARTICLE_MODULE_INIT_MATERIAL", material=material["iw7"])]
-            mat["m_linkedAssetList"]["numAssets"] = 1
+            # One linked asset per material: IW7 picks one per particle, as BO3 does from a visual array
+            # (771 of 5932 stock INIT_MATERIAL modules list several).
+            names = [material["iw7"]] + [m["iw7"] for m in extra_materials]
+            mat["m_linkedAssetList"]["assetList"] = [vfx.new_linked_asset("PARTICLE_MODULE_INIT_MATERIAL", material=n)
+                                                     for n in names]
+            mat["m_linkedAssetList"]["numAssets"] = len(names)
             mat["m_linkedAssetList"]["assetList@ptr"] = "0x0"
         if material["atlas"][0] * material["atlas"][1] <= 1:
             drop(emitter, "INIT_ATLAS")
@@ -180,19 +185,25 @@ def convert(name, fx, templates, materials, intensity):
     report = {"effect": name, "emitters": 0, "skipped": []}
     for i, e in enumerate(fx["elements"]):
         kind = KIND_OF_TYPE.get(e["type"])
-        visual = e.get("visual") or {}
-        material = None
+        visuals = element_visuals(e)
+        material, extra = None, []
         if kind in ("sprite", "tail", "trail"):
-            material = materials.get(visual.get("name"))
-            if material is None:
-                report["skipped"].append({"element": i, "reason": "material %s not converted" % visual.get("name")})
+            found = [materials[v["name"]] for v in visuals if v.get("name") in materials]
+            missing = [v.get("name") for v in visuals if v.get("name") not in materials]
+            if not found:
+                report["skipped"].append({"element": i, "reason": "material %s not converted" % ", ".join(
+                    str(m) for m in missing or [None])})
                 continue
+            material, extra = found[0], found[1:]
+            if missing:
+                report.setdefault("partial", []).append({"element": i, "materials_not_converted": missing})
             if material["atlas"][0] * material["atlas"][1] > 1 and kind == "sprite":
                 kind = "sprite_atlas"
         if kind is None or kind not in templates:
             report["skipped"].append({"element": i, "reason": "type %s (%s) has no template" % (e["type"], e["type_name"])})
             continue
-        emitter = rewrite(copy.deepcopy(templates[kind]), e, fx, material, intensity.get(material["mode"] if material else "light", 1.0))
+        emitter = rewrite(copy.deepcopy(templates[kind]), e, fx, material,
+                          intensity.get(material["mode"] if material else "light", 1.0), extra)
         model["system"]["emitterDefs"].append(emitter)
         report["emitters"] += 1
     model["system"]["numEmitters"] = len(model["system"]["emitterDefs"])
