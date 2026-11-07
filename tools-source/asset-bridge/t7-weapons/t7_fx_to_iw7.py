@@ -182,6 +182,7 @@ def convert(name, fx, templates, materials, intensity):
         model["system"]["emitterDefs"].append(emitter)
         report["emitters"] += 1
     model["system"]["numEmitters"] = len(model["system"]["emitterDefs"])
+    model["system"]["flags"] = vfx.system_flags(model)
     return model, report
 
 

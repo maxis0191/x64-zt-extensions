@@ -89,6 +89,29 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(back["system"]["emitterDefs"], None)
 
 
+class HeaderTest(unittest.TestCase):
+    def test_new_model_has_stock_header(self):
+        # Zeroed cull radii and sun distance draw nothing in game: every stock system reads -1/-1/100000.
+        s = vfx.new_model("vfx/x")["system"]
+        self.assertEqual((s["drawFrustumCullRadius"], s["updateFrustumCullRadius"], s["sunDistance"]),
+                         (-1.0, -1.0, 100000.0))
+        self.assertEqual(s["editorRotation"], [0.0, 0.0, 0.0, 1.0])
+        self.assertEqual(s["flags"], 0x40000)
+
+    def test_system_flags_follow_element_types(self):
+        def model(*types):
+            m = vfx.new_model("vfx/x")
+            for t in types:
+                e = vfx.new_emitter()
+                e["stateDefs"] = [vfx.new_state("PARTICLE_ELEMENT_TYPE_" + t)]
+                m["system"]["emitterDefs"].append(e)
+            return m
+        self.assertEqual(vfx.system_flags(model("BILLBOARD_SPRITE")), 0x40001)
+        self.assertEqual(vfx.system_flags(model("TAIL", "LIGHT_OMNI")), 0x40007)
+        self.assertEqual(vfx.system_flags(model("MODEL")), 0x40002)
+        self.assertEqual(vfx.system_flags(model("RUNNER")), 0x41000)
+
+
 class RoundTripTest(unittest.TestCase):
     def test_build_encode_decode_encode(self):
         data = vfx.encode(sample_model())

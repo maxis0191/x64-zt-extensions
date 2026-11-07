@@ -95,6 +95,14 @@ class ConvertTest(unittest.TestCase):
             self.assertLessEqual(lo, hi)
         self.assertAlmostEqual(attrs["m_velocityMin"][1], -100.0, places=3)
 
+    def test_system_header_is_drawable(self):
+        fx = {"elements": [element("one_shot", 2, 1)]}
+        model, _ = conv.convert("vfx/test/fx", fx, {"sprite": template_emitter()}, MATERIALS,
+                                {"add": 20.0, "blend": 1.0, "light": 1.0})
+        s = vfx.decode(vfx.encode(model))["system"]
+        self.assertEqual(s["flags"], 0x40001)
+        self.assertEqual((s["drawFrustumCullRadius"], s["updateFrustumCullRadius"]), (-1.0, -1.0))
+
     def test_unconverted_material_is_reported(self):
         e = element("one_shot", 1, 0)
         e["visual"] = {"kind": "material", "name": "ei/gfx_distort_heat"}

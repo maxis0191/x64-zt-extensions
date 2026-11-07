@@ -1001,10 +1001,39 @@ def new_model(name, version=15):
     system = decode_struct(SYSTEM, bytes(SYSTEM.size))
     system["version"] = version
     system["occlusionOverrideEmitterIndex"] = -1
+    # Stock header values: with zeroed cull radii and sun distance the game draws nothing.
+    system["flags"] = SYSTEM_FLAG_BASE
+    system["drawFrustumCullRadius"] = -1.0
+    system["updateFrustumCullRadius"] = -1.0
+    system["sunDistance"] = 100000.0
+    system["editorRotation"] = [0.0, 0.0, 0.0, 1.0]
     _attach(system, "name", name)
     _attach(system, "emitterDefs", [])
     _attach(system, "scriptedInputNodeDefs", None)
     return {"format": FORMAT, "rootPtr": None, "system": system}
+
+
+# System flag bits, derived from the content as the cp_zmb systems set them. Under mask 0x41007 the
+# rule reproduces 1139 of the 1162 non-empty stock systems; the other 23 differ only by 0x1000:
+# 0x40000 always, 0x1 particles (sprites, tails, beams...), 0x2 models and clouds, 0x6 omni lights,
+# 0x1000 runners, decals and physics (ray cast) modules.
+SYSTEM_FLAG_BASE = 0x40000
+SYSTEM_FLAGS_BY_TYPE = {"MODEL": 0x2, "CLOUD": 0x2, "SPARK_CLOUD": 0x2, "LIGHT_OMNI": 0x6, "LIGHT_SPOT": 0x6,
+                        "RUNNER": 0x1000, "DECAL": 0x1000}
+
+
+def system_flags(model):
+    """System flags derived from the element types and modules of a model's emitters."""
+    flags = SYSTEM_FLAG_BASE
+    for e in model["system"].get("emitterDefs") or []:
+        for st in e.get("stateDefs") or []:
+            t = st["elementType"].replace("PARTICLE_ELEMENT_TYPE_", "")
+            flags |= SYSTEM_FLAGS_BY_TYPE.get(t, 0x1)
+            for g in st.get("moduleGroupDefs") or []:
+                for m in g.get("moduleDefs") or []:
+                    if m["moduleType"].startswith("PARTICLE_MODULE_PHYSICS"):
+                        flags |= 0x1000
+    return flags
 
 
 def new_emitter():
