@@ -63,6 +63,8 @@
     "tools-source/asset-bridge/t7-weapons/port-config.example.json",
     "tools-source/asset-bridge/t7-weapons/t7_mod_assemble.py",
     "tools-source/asset-bridge/t7-weapons/test_t7_mod_assemble.py",
+    "tools-source/asset-bridge/t7-weapons/iw7_mod_reference_audit.py",
+    "tools-source/asset-bridge/t7-weapons/test_iw7_mod_reference_audit.py",
     "tools-source/asset-bridge/t7-weapons/iw7_xsurface_uv2.py",
     "tools-source/asset-bridge/t7-weapons/test_iw7_xsurface_uv2.py",
     "tools-source/asset-bridge/t7-weapons/t7_material_read.py",

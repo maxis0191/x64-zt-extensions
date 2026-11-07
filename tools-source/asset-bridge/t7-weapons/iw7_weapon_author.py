@@ -143,6 +143,9 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
         for key in ("projTrailEffect", "projExplosionEffect"):
             if key in proj:
                 d[key] = {"type": 1, "fx": proj[key]}
+    # The template's tracer is a map's own asset (the zapper's shredder_bullet exists on Spaceland
+    # only: on Rave the client faulted holding the Ray Gun); BO3 Wonder Weapons draw no tracer.
+    d["tracerType"] = spec.get("tracer", "")
     return w, pkg
 
 

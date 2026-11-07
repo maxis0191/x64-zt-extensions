@@ -55,6 +55,16 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertIsNone(d["projDudEffect"])
         self.assertEqual(d["iProjectileSpeed"], 2000)
 
+    def test_template_tracer_never_leaks(self):
+        # shredder_bullet exists on Spaceland only: the Ray Gun faulted the client on Rave.
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "tracerType": "shredder_bullet"}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w"}
+        w, _ = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {"tracerType": "shredder_bullet"}})
+        self.assertEqual(w["weapDef"]["tracerType"], "")
+
     def test_template_weapon_anims_never_leak(self):
         # An upgraded BO3 weapon with no anims of its own had kept the IW7 zapper's idle and fire.
         import iw7_weapon_author as author
