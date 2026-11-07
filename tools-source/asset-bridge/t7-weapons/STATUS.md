@@ -452,3 +452,14 @@ View-model effects, what BO3 does and what IW7 offers (2026-11-07):
   subset (the rail when the gun switches on: first raise, pullout, end of
   reload). The tube's look is carried by the emissive tube materials; its
   lights and clip-count tint are not.
+
+## 2026-11-07: projectile launch components
+
+The author copied every `proj*`/`iProjectile*` field of the IW7 projectile
+template (`iw7_zapper_grey`, an AI lob: `iProjectileSpeedUp` 500) and
+overwrote only the speed, explosion and lifetime from BO3. BO3 keeps the
+launch components after the speed, in BO2's order: +0xFF0 up, +0xFF4
+forward (zm_levelcommon: Cymbal Monkey and Octobomb up 100, Mustang & Sally
+up 50, frag forward 120; Ray Gun, DG-2, Thundergun 0). The spec now reads
+both and the author writes them. In game the DG-2 projectile had hit no
+zombie in its path; the rerun with the fix is the check.
