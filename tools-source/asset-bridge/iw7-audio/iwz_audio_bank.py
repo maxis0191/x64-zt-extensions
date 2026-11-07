@@ -99,17 +99,54 @@ def zonetool_safe_file(name):
     return name.replace('\\', '/') if ESCAPES.search(name) else name
 
 
-def load_template(path):
-    with open(path, newline='', encoding='utf-8', errors='replace') as f:
-        rows = list(csv.reader(f))
-    header = rows[0]
+def load_template(paths):
+    """One or several stock alias tables (same columns): the first table defining an alias wins."""
+    if isinstance(paths, str):
+        paths = [paths]
+    header, by_name = None, {}
+    for path in paths:
+        with open(path, newline='', encoding='utf-8', errors='replace') as f:
+            rows = list(csv.reader(f))
+        if header is None:
+            header = rows[0]
+        elif rows[0] != header:
+            raise SystemExit('%s: alias columns differ from %s' % (path, paths[0]))
+        col = {n: i for i, n in enumerate(header)}
+        seen = {}
+        for r in rows[1:]:
+            if len(r) == len(header):
+                seen.setdefault(r[col['Name']], []).append(r)
+        for k, v in seen.items():
+            by_name.setdefault(k, v)
     col = {n: i for i, n in enumerate(header)}
-    by_name = {}
-    for r in rows[1:]:
-        if len(r) == len(header):
-            by_name.setdefault(r[col['Name']], []).append(r)
     enums = {k: set(r[col[k]] for rr in by_name.values() for r in rr) for k in ENUM_COLUMNS if k in col}
     return header, col, by_name, enums
+
+
+def alias_rows(a, base, stock, col, errors):
+    """(template row, source, file override, extra set) for every row an alias spec produces.
+    Without "variants": the stock rows (source "stock") or one row from the template (a file source).
+    "variants": [{"stock": <alias>} | {"source": <file>, "file": <asset name>}, optional "set"]: one row per
+    variant on the alias's template row (a stock variant contributes every row of that stock alias); the
+    engine picks one row at random per play."""
+    source = a.get('source', 'stock')
+    if 'variants' not in a:
+        for v in (base if source == 'stock' else base[:1]):
+            yield v, source, (a.get('file') if source == 'stock' else a.get('file', 'iwz\\' + a['name'])), {}
+        return
+    for i, var in enumerate(a['variants']):
+        extra = var.get('set', {})
+        if 'stock' in var:
+            rows = stock.get(var['stock'])
+            if not rows:
+                errors.append('%s: variant stock alias %s not in the templates' % (a['name'], var['stock']))
+                continue
+            for r in rows:
+                t = list(base[0])
+                t[col['File']] = r[col['File']]
+                yield t, 'stock', None, extra
+        else:
+            yield base[0], var['source'], var.get('file', 'iwz\\%s_%02d' % (a['name'], i)), extra
 
 
 def check_row(name, row, col, enums, errors):
@@ -147,9 +184,7 @@ def build(spec, out, check_only=False):
         if not base:
             errors.append('%s: template alias %s not in %s' % (name, a.get('template', name), spec['template_aliases']))
             continue
-        source = a.get('source', 'stock')
-        variants = base if source == 'stock' else base[:1]
-        for v in variants:
+        for v, source, file_override, extra in list(alias_rows(a, base, stock, col, errors)):
             row = list(v)
             row[col['Name']] = name
             for k in ('StopAliasName', 'Subtitle'):
@@ -158,9 +193,9 @@ def build(spec, out, check_only=False):
                 row[col['duck']] = ''           # duck assets of the stock bank are not shipped
             row[col['SecondaryAliasName']] = a.get('secondary', '')
             stock_file = row[col['File']]
-            if source != 'stock' or a.get('file'):
-                row[col['File']] = a.get('file', 'iwz\\' + name)
-            for k, value in a.get('set', {}).items():
+            if file_override:
+                row[col['File']] = file_override
+            for k, value in list(a.get('set', {}).items()) + list(extra.items()):
                 if k not in col:
                     errors.append('%s: unknown column %s' % (name, k))
                     continue

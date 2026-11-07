@@ -199,6 +199,26 @@ class BankTest(unittest.TestCase):
         self.assertEqual(rows['emt_bed_b']['File'], rows['emt_bed']['File'])
         self.assertEqual((rows['emt_bed']['channel'], rows['emt_bed_b']['channel']), ('amb_elm_unres_3d', 'amb_elm_unres_2d'))
 
+    def test_variants_from_stock_aliases_and_files(self):
+        # one alias, several rows: every row of a stock alias of a second template table, plus a file
+        tpl2 = os.path.join(self.root, 'other.aliases.csv')
+        with open(tpl2, 'w', newline='') as f:
+            csv.writer(f).writerows([HEADER, ['other_creak', '', '', '', 'amb\\creak_2', '0.3', '0.3', '55', '350',
+                                              'amb_elm_unres_3d', 'loaded', 'nonlooping', 'default', 'none', '']])
+        s = self.spec(template_aliases=[self.tpl, tpl2])
+        s['aliases'].append({'name': 'amb_mix', 'template': 'emt_creak', 'set': {'vol_max': 0.2, 'vol_min': 0.2},
+                             'variants': [{'stock': 'emt_creak'}, {'stock': 'other_creak'},
+                                          {'source': self.song, 'file': 'iwz\\amb\\x', 'set': {'type': 'streamed'}}]})
+        r = bank.build(s, self.out)
+        self.assertEqual(r['errors'], [])
+        with open(os.path.join(self.out, 'sound', 'cp_test.all.aliases.csv'), newline='') as f:
+            rows = [x for x in csv.DictReader(f) if x['Name'] == 'amb_mix']
+        self.assertEqual([x['File'] for x in rows], ['amb\\creak_1', 'amb\\creak_2', 'amb\\creak_2', 'iwz\\amb\\x'])
+        self.assertEqual([x['vol_max'] for x in rows], ['0.200000'] * 4)
+        self.assertEqual(rows[-1]['type'], 'streamed')
+        s['aliases'][-1]['variants'].append({'stock': 'nope'})
+        self.assertTrue(any('nope' in e for e in bank.build(s, self.out, check_only=True)['errors']))
+
     def test_ambience_volmod_is_accepted(self):
         # vol_mod ambience is the stock bed row's value; it is not what kept the Station Zero beds silent
         tpl = os.path.join(self.root, 'beds.aliases.csv')
