@@ -122,6 +122,13 @@ class RootAdsTest(unittest.TestCase):
         self.assertAlmostEqual(retarget.vlen(codec.sample(down.translations['tag_ads'], 8, False)), 0.0, places=5)
         self.assertEqual(codec.sample(up.translations['tag_ads'], 0, False), (0.0, 0.0, 0.0))
 
+    def test_listed_no_rotation_channel_is_identity_not_bind(self):
+        rig = view_rig()
+        half = math.radians(40.0) / 2
+        rig.local[6] = ((0.0, math.sin(half), 0.0, math.cos(half)), (14.0, 0.0, 0.0))
+        self.assertLess(abs(rig.pose({}, {}, 0)[6][0][3]), 0.99)              # absent: bind rotation
+        self.assertGreater(abs(rig.pose({'tag_weapon': None}, {}, 0)[6][0][3]), 0.99999)  # listed None: identity
+
     def test_engine_roots_are_not_hand_channels(self):
         self.assertEqual(retarget.ENGINE_ROOTS, ('tag_view', 'tag_ads'))
 

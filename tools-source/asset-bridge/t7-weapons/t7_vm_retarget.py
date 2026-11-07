@@ -141,13 +141,16 @@ class Skeleton:
                 self.local.append((qmul(qinv(pq), q), qrot(qinv(pq), vsub(t, pt))))
 
     def pose(self, rotations, translations, frame):
-        """World transforms with an animation frame applied over the bind pose."""
+        """World transforms with an animation frame applied over the bind pose.
+        A bone listed with a None rotation is a no-rotation channel: identity,
+        not the bind rotation (the BO3 Thundergun idle leaves tag_weapon_right
+        so; reading it as bind turned the gun 40 degrees in the hands)."""
         out = [None] * len(self.names)
         for i, name in enumerate(self.names):
             lq, lt = self.local[i]
-            keys = rotations.get(name)
-            if keys is not None:
-                lq = codec.sample(keys, frame, True)
+            if name in rotations:
+                keys = rotations[name]
+                lq = (0.0, 0.0, 0.0, 1.0) if keys is None else codec.sample(keys, frame, True)
             keys = translations.get(name)
             if keys is not None:
                 lt = codec.sample(keys, frame, False)

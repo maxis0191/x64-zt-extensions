@@ -386,3 +386,20 @@ kick (100-110). Ray Gun: hip gun kick pitch -30..-35, yaw -2..18, view kick
 40..45; ADS gun kick -35..-40, accel 825, speed max 2000. `t7_weapon_kick.py`
 copies them. PROVEN_LOCAL (decode); in-game feel NOT_PROVEN. View-kick centre
 speed and idle/sway blocks are not mapped yet.
+
+## 2026-11-07: Thundergun, first generic port in game
+
+`t7_port_weapon.py` ported the Thundergun end to end (no weapon-specific
+code). Client witness (fire, reload, ADS, burst): textured, lit model (orange
+grilles, red sight), BO3 muzzle blast and shockwave ring, clip 2/12, reload
+and ADS poses correct. PROVEN_LOCAL. Two fixes came out of it:
+
+* Surfaces: converted `.xsb` are named after BO3 surface assets plus a hash,
+  not after the model; `model_surfaces()` takes every name the `.xmb` lists
+  that has a surface file (the first build drew stretched spikes).
+* Idle pose: the hip idle held the gun turned about 40 degrees in the hands.
+  A bone listed with no rotation channel is identity in XAnim; the
+  retargeter's skeleton pose read it as the bind rotation, and the BO3 hands
+  bind `tag_weapon_right` off-axis. The Thundergun idle is the first
+  animation seen leaving that bone unkeyed. Fixed in `Skeleton.pose`, test
+  added; converted idle now matches fire frame 0. Client recheck pending.
