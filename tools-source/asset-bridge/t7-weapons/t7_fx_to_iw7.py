@@ -36,7 +36,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import iw7_vfx as vfx  # noqa: E402
 
 INT_MAX = 2147483647
-KIND_OF_TYPE = {0: "sprite", 1: "sprite", 2: "sprite", 4: "sprite", 6: "sprite", 3: "tail", 5: "trail",
+# T7 element types follow T6: 0 billboard, 1 oriented, 2 rotated, 3 tail, 4 line, 5 trail, 6 cloud,
+# 7 model, 8 omni light. A LINE (velocity-aligned streak) maps to the IW7 tail.
+LINE_TYPE = 4
+KIND_OF_TYPE = {0: "sprite", 1: "sprite", 2: "sprite", 4: "tail", 6: "sprite", 3: "tail", 5: "trail",
                 8: "light"}
 
 
@@ -94,11 +97,14 @@ def colour_curves(samples):
     return [curve(ch, 1.0) for ch in channels] * 2
 
 
-def size_curves(samples, radius_to_size=2.0):
+def size_curves(samples, radius_to_size=2.0, line=False):
+    """x, y, z size curves (min then max). A BO3 LINE keeps its width in size[0] and its full
+    length in size[1]: the IW7 tail gets the width as a diameter, the length as is, no depth."""
     t = times(len(samples))
     out = []
-    for axis in (0, 1, 1):
-        values = [max(0.0, s["base"]["size"][axis]) * radius_to_size for s in samples]
+    axes = [(0, radius_to_size), (1, 1.0), (None, 0.0)] if line else [(0, radius_to_size), (1, radius_to_size), (1, radius_to_size)]
+    for axis, factor in axes:
+        values = [0.0 if axis is None else max(0.0, s["base"]["size"][axis]) * factor for s in samples]
         scale = max(values) or 1.0
         out.append(curve([(t[i], v / scale) for i, v in enumerate(values)], scale))
     return out * 2
@@ -109,6 +115,14 @@ def rewrite(emitter, element, fx, material, intensity):
     life = sc["lifespan_msec"]
     emitter["particleLife"] = {"min": vfx.f32(life["base"] / 1000.0),
                                "max": vfx.f32((life["base"] + max(0, life["amplitude"])) / 1000.0)}
+    rng = sc.get("spawn_range")
+    if rng and rng["max"] > 0:
+        # BO3 repeats elements per camera distance tier; IW7 keeps the band squared.
+        emitter["spawnRangeSq"] = {"min": vfx.f32(rng["min"] ** 2), "max": vfx.f32(rng["max"] ** 2)}
+    delay = sc.get("spawn_delay_msec")
+    if delay:
+        emitter["emitterDelay"] = {"min": vfx.f32(delay["base"] / 1000.0),
+                                   "max": vfx.f32((delay["base"] + max(0, delay["amplitude"])) / 1000.0)}
     a, b = sc["spawn"]["a"], sc["spawn"]["b"]
     if element["spawn_kind"] == "looping" and b >= INT_MAX:
         emitter["particleSpawnRate"] = {"min": vfx.f32(1000.0 / max(1, a)), "max": vfx.f32(1000.0 / max(1, a))}
@@ -139,7 +153,7 @@ def rewrite(emitter, element, fx, material, intensity):
             cg["m_flags"] = 0
         sg = find(emitter, "SIZE_GRAPH")
         if sg is not None:
-            set_curves(sg, size_curves(samples))
+            set_curves(sg, size_curves(samples, line=element["type"] == LINE_TYPE))
             sg["m_flags"] = 0
     ig = find(emitter, "INTENSITY_GRAPH")
     if ig is not None:
