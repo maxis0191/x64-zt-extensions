@@ -28,9 +28,12 @@ class AssembleTest(unittest.TestCase):
         write(os.path.join(port, "zone", "soundbank", "iw7_tg_zm.json"), "{}")
         write(os.path.join(port, "zone.csv"), "xmodel,tg_view\nweapon,iw7_tg_zm\n")
         write(os.path.join(port, "catalog.txt"), "iw7_tg_zm:iw7_tg_zm_pap1:tgpap1:tgpap2\n")
+        write(os.path.join(port, "behaviour.txt"), "iw7_tg_zm|zm_weap_thundergun|tg_fling_range=480||\n")
         gsc = os.path.join(root, "mod.gsc")
         write(gsc, 'catalog()\n{\n    // BEGIN t7_mod_assemble catalog\n    return ["iw7_raygun_zm:iw7_raygun_zm_pap1"];\n'
-                   '    // END t7_mod_assemble catalog\n}\n')
+                   '    // END t7_mod_assemble catalog\n}\n'
+                   'behaviours()\n{\n    // BEGIN t7_mod_assemble behaviours\n    return [];\n'
+                   '    // END t7_mod_assemble behaviours\n}\n')
         out = asm.assemble(mod, csv, "mod.all", "mod", [port], gsc=gsc)
         self.assertTrue(os.path.exists(os.path.join(mod, "weapons", "iw7_tg_zm.json")))
         self.assertFalse(os.path.exists(os.path.join(mod, "soundbank", "iw7_tg_zm.json")))
@@ -42,6 +45,9 @@ class AssembleTest(unittest.TestCase):
             text = f.read()
         self.assertIn('    return [\n        "iw7_raygun_zm:iw7_raygun_zm_pap1",\n        "iw7_tg_zm:iw7_tg_zm_pap1:tgpap1:tgpap2"\n    ];\n'
                       '    // END t7_mod_assemble catalog\n}\n', text)
+        self.assertEqual(out["behaviours"], ["iw7_tg_zm|zm_weap_thundergun|tg_fling_range=480||"])
+        self.assertIn('    return [\n        "iw7_tg_zm|zm_weap_thundergun|tg_fling_range=480||"\n    ];\n'
+                      '    // END t7_mod_assemble behaviours\n', text)
         again = asm.assemble(mod, csv, "mod.all", "mod", [port], gsc=gsc)       # idempotent
         self.assertEqual(again["added_lines"], [])
         self.assertEqual(len(again["catalog"]), 2)

@@ -427,7 +427,13 @@ class Port:
             entry += ":%s:%s:%s" % (pap["weapon"], pap["attachments"][0], pap["attachments"][1])
         with open(os.path.join(self.out, "catalog.txt"), "w", encoding="utf-8") as f:
             f.write(entry + "\n")
-        self.record("zone", {"lines": len(lines), "catalog": entry})
+        built = {e for e in m.get("fx", {}).get("effects", []) if os.path.exists(
+            os.path.join(self.zone, "particlesystem", *t7_weapon_spec.iw7_fx_name(e).split("/")) + ".iw7VFX")}
+        sounds = set(m.get("sounds", {}).get("aliases", []))
+        behaviours = behaviour_lines([s["name"] for s in specs], m.get("scripts", {}).get("found", {}), built, sounds)
+        with open(os.path.join(self.out, "behaviour.txt"), "w", encoding="utf-8") as f:
+            f.write("".join(b + "\n" for b in behaviours))
+        self.record("zone", {"lines": len(lines), "catalog": entry, "behaviours": behaviours})
 
     # -- data ------------------------------------------------------------------------------
     def model_material_refs(self):
@@ -473,16 +479,26 @@ class Port:
         names = [a for s in specs for a in s["sounds"].values()]
         for n in self.notetrack_sounds(specs):
             names.append(n)
+        names += self.script_sounds()
         return list(dict.fromkeys(n for n in names if n))
 
+    def script_sounds(self):
+        """Aliases the weapon's scripts play that the zone's alias table defines."""
+        rows = alias_rows(self.alias_table())
+        found = self.manifest["stages"].get("scripts", {}).get("found", {})
+        return [a for info in found.values() for a in info.get("sounds", []) if a in rows]
+
     def sound_roles(self):
-        """IW7 sound role of each alias, from the WeaponDef slot naming it; anim notetracks are foley."""
+        """IW7 sound role of each alias, from the WeaponDef slot naming it; anim notetracks are foley;
+        sounds the scripts play are world (3D) sounds."""
         roles = {}
         for s in self.specs():
             for slot, alias in s["sounds"].items():
                 roles.setdefault(alias, SOUND_ROLES.get(slot, "foley"))
             for alias in self.notetrack_sounds([s]):
                 roles.setdefault(alias, "foley")
+        for alias in self.script_sounds():
+            roles.setdefault(alias, "impact")
         return roles
 
     def notetrack_sounds(self, specs):
@@ -600,6 +616,27 @@ def sfx_package(spec, template):
         if key in sounds and spec["sounds"].get(role):
             sounds[key] = spec["sounds"][role]
     return pkg
+
+
+def behaviour_lines(weapons, found, built_effects, sounds=()):
+    """One ``weapon|namespace|tuning|effects|sounds`` line per weapon and BO3 behaviour script.
+
+    The namespace (zm_weap_thundergun) names the behaviour family the IW7 module implements once;
+    tuning is the script's zombie vars (``name=value``), effects its ``level._effect`` keys mapped to
+    the converted IW7 effects (``key=vfx/t7/...``, built ones only), sounds the aliases it plays that
+    the port carries. Scripts without a namespace or without tuning/effects add nothing."""
+    lines = []
+    for rel in sorted(found):
+        info = found[rel]
+        ns = info.get("namespace")
+        if not ns or not (info.get("zombie_vars") or info.get("effects")):
+            continue
+        tuning = ",".join("%s=%s" % kv for kv in info.get("zombie_vars", {}).items())
+        fx = ",".join("%s=%s" % (k, t7_weapon_spec.iw7_fx_name(v)) for k, v in info.get("effects", {}).items()
+                      if v in built_effects)
+        snd = ",".join(a for a in info.get("sounds", []) if a in sounds)
+        lines += ["%s|%s|%s|%s|%s" % (w, ns, tuning, fx, snd) for w in weapons]
+    return list(dict.fromkeys(lines))
 
 
 def pap_attachment(template, name, upgraded):

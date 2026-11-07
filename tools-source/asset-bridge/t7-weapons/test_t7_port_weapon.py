@@ -56,6 +56,33 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertEqual(d["iProjectileSpeed"], 2000)
 
 
+class BehaviourTest(unittest.TestCase):
+    FOUND = {
+        "scripts/zm/_zm_weap_thundergun.csc": {"namespace": "zm_weap_thundergun", "zombie_vars": {}, "effects": {},
+                                               "sounds": []},
+        "scripts/zm/_zm_weap_thundergun.gsc": {
+            "namespace": "zm_weap_thundergun",
+            "zombie_vars": {"thundergun_cylinder_radius": 180, "thundergun_fling_range": 480},
+            "effects": {"thundergun_smoke_cloud": "zombie/fx_thundergun_smoke_cloud",
+                        "thundergun_knockdown_ground": "zombie/fx_thundergun_knockback_ground"},
+            "sounds": ["fly_thundergun_forcehit", "tesla_idle"]},
+    }
+
+    def test_one_line_per_weapon_with_built_effects_and_carried_sounds(self):
+        lines = port.behaviour_lines(["iw7_thundergun_zm", "iw7_thundergun_zm_pap1"], self.FOUND,
+                                     {"zombie/fx_thundergun_smoke_cloud"}, {"fly_thundergun_forcehit"})
+        self.assertEqual(lines, [
+            "iw7_thundergun_zm|zm_weap_thundergun|thundergun_cylinder_radius=180,thundergun_fling_range=480|"
+            "thundergun_smoke_cloud=vfx/t7/zombie/fx_thundergun_smoke_cloud|fly_thundergun_forcehit",
+            "iw7_thundergun_zm_pap1|zm_weap_thundergun|thundergun_cylinder_radius=180,thundergun_fling_range=480|"
+            "thundergun_smoke_cloud=vfx/t7/zombie/fx_thundergun_smoke_cloud|fly_thundergun_forcehit"])
+
+    def test_scripts_without_namespace_or_data_add_nothing(self):
+        found = {"a.gsc": {"namespace": None, "zombie_vars": {"x": 1}, "effects": {}},
+                 "b.csc": {"namespace": "zm_weap_x", "zombie_vars": {}, "effects": {}}}
+        self.assertEqual(port.behaviour_lines(["w"], found, set()), [])
+
+
 class SnapshotConfigTest(unittest.TestCase):
     def test_snapshot_folder_supplies_scan_and_effects(self):
         cfg = port.with_snapshot({"snapshots": "snap", "zone": "zm_island"})

@@ -10,8 +10,11 @@ gsc-tool (``-g t7``; server and ``-i client``), then keeps:
   upgrade (``base`` is the variant name at WeaponVariantDef +0x8);
 * the zone scripts those ``#using`` (the DG-2 pulls _zm_lightning_chain).
 
-From each it reads the tuning (``set_zombie_var( "name", value )``), the
-effects it plays (``level._effect[key] = "path"``) and the weapons it names.
+From each it reads its ``#namespace`` (the behaviour family the IW7 module
+implements once, e.g. zm_weap_thundergun), the tuning
+(``set_zombie_var( "name", value )``), the effects it plays
+(``level._effect[key] = "path"``), the sound aliases it plays and the weapons
+it names.
 The decompiled sources are the reference for the IW7 behaviour module.
 
     python t7_weapon_scripts.py --decompiled <dir> --base thundergun [--base thundergun_upgraded]
@@ -26,6 +29,9 @@ GETWEAPON = re.compile(r'getweapon\(\s*"([a-z0-9_]+)"\s*\)')
 USING = re.compile(r'^#using\s+([\w\\/]+);', re.M)
 ZOMBIE_VAR = re.compile(r'set_zombie_var\(\s*"([a-z0-9_]+)"\s*,\s*(-?[0-9.]+)')
 EFFECT = re.compile(r'level\._effect\[\s*"([a-z0-9_]+)"\s*\]\s*=\s*"([a-z0-9_/]+)"')
+NAMESPACE = re.compile(r'^#namespace\s+([a-z0-9_]+);', re.M)
+# literal aliases the script plays (world sounds: blast hits, arcs, idle loops)
+SOUND = re.compile(r'\b(?:playsound|playsoundatposition|playloopsound|playsoundtoplayer)\(\s*"([a-z0-9_]+)"')
 
 
 def number(text):
@@ -52,9 +58,12 @@ def select(sources, bases):
 
 
 def extract(text):
+    ns = NAMESPACE.search(text)
     return {
+        "namespace": ns.group(1) if ns else None,
         "zombie_vars": {name: number(value) for name, value in ZOMBIE_VAR.findall(text)},
         "effects": dict(EFFECT.findall(text)),
+        "sounds": list(dict.fromkeys(SOUND.findall(text))),
         "weapons": list(dict.fromkeys(GETWEAPON.findall(text))),
     }
 

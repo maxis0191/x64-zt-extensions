@@ -7,8 +7,16 @@ lines the zone CSV lacks, and lists every weapon's alias table in the mod's
 single sound bank (``soundbank/<bank>.json``; ZoneTool then writes one
 mod.sabl/mod.sabs). The per-weapon bank JSONs are not copied.
 
+The server module reads two generated lists, kept in the mod zone root and,
+with ``--gsc``, rewritten in the module between
+``// BEGIN t7_mod_assemble <block>`` and ``// END t7_mod_assemble <block>``
+(entries already there, such as hand-built weapons, are kept):
+
+  catalog     weapon[:pap weapon:pap1 attachment:pap2 attachment] (catalog.txt)
+  behaviours  weapon|BO3 script namespace|tuning|effects|sounds (behaviour.txt)
+
     python t7_mod_assemble.py --mod-zone zonetool/bo3wpn --csv zone_source/bo3wpn.csv
-        --bank bo3wpn.all --zone bo3wpn --port port/thundergun_zm [--port ...]
+        --bank bo3wpn.all --zone bo3wpn --port port/thundergun_zm [--port ...] [--gsc paris_bo3wpn.gsc]
 """
 import argparse
 import json
@@ -22,22 +30,35 @@ BANK_LISTS = ('sendEffectParams', 'ADSRSettings', 'AmbientDefs', 'AmbientEvents'
               'ReverbDefs', 'TimescaleEntrys', 'ZoneDefs', 'Unks', 'FullOcclusionDefs', 'PlayerBreathStateDefs')
 
 
-GSC_BEGIN = "// BEGIN t7_mod_assemble catalog"
-GSC_END = "// END t7_mod_assemble catalog"
 GSC_ENTRY = re.compile(r'"([^"]+)"')
+# generated GSC blocks: name -> key of an entry (a new entry replaces the one with the same key)
+BLOCK_KEYS = {
+    "catalog": lambda e: e.split(":")[0],                    # weapon[:pap weapon:pap1:pap2]
+    "behaviours": lambda e: "|".join(e.split("|")[:2]),      # weapon|namespace|tuning|effects|sounds
+}
 
 
-def merge_catalog(existing, new):
-    """Entries keyed by weapon (first field); a new entry replaces the old one in place."""
+def gsc_markers(block):
+    return "// BEGIN t7_mod_assemble " + block, "// END t7_mod_assemble " + block
+
+
+def merge_entries(existing, new, block="catalog"):
+    """Entries keyed per block; a new entry replaces the old one in place."""
+    key = BLOCK_KEYS[block]
     out = {}
     for entry in list(existing) + list(new):
-        out[entry.split(":")[0]] = entry
+        out[key(entry)] = entry
     return list(out.values())
 
 
-def gsc_block(text):
-    """(start, end, entries) of the generated catalog block, or None."""
-    begin, end = text.find(GSC_BEGIN), text.find(GSC_END)
+def merge_catalog(existing, new):
+    return merge_entries(existing, new, "catalog")
+
+
+def gsc_block(text, block="catalog"):
+    """(start, end, entries) of a generated block, or None."""
+    begin_marker, end_marker = gsc_markers(block)
+    begin, end = text.find(begin_marker), text.find(end_marker)
     if begin < 0 or end < begin:
         return None
     body_start = text.index("\n", begin) + 1
@@ -52,15 +73,16 @@ def render_gsc(entries, indent="    "):
     return "%sreturn [\n%s%s\n%s];\n" % (indent, indent * 2, rows, indent)
 
 
-def update_gsc(path, new):
+def update_gsc(path, new, block="catalog"):
     with open(path, encoding="utf-8") as f:
         text = f.read()
-    block = gsc_block(text)
-    if block is None:
-        raise SystemExit("%s has no '%s' ... '%s' block" % (path, GSC_BEGIN, GSC_END))
-    start, end, existing = block
-    entries = merge_catalog(existing, new)
-    indent = re.match(r"[ \t]*", text[text.rindex("\n", 0, text.find(GSC_BEGIN)) + 1:]).group(0)
+    found = gsc_block(text, block)
+    if found is None:
+        raise SystemExit("%s has no '%s' ... '%s' block" % ((path,) + gsc_markers(block)))
+    start, end, existing = found
+    entries = merge_entries(existing, new, block)
+    begin = text.find(gsc_markers(block)[0])
+    indent = re.match(r"[ \t]*", text[text.rindex("\n", 0, begin) + 1:]).group(0)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write(text[:start] + render_gsc(entries, indent or "    ") + text[end:])
     return entries
@@ -83,7 +105,7 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
         bank_def.update({k: [] for k in BANK_LISTS})
     lines = read_lines(csv_path)
     present = set(lines)
-    added, catalog = [], []
+    added, catalog, behaviours = [], [], []
     for port in ports:
         src = os.path.join(port, "zone")
         for folder, _, files in os.walk(src):
@@ -104,6 +126,7 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
                 present.add(line)
                 added.append(line)
         catalog += [c for c in read_lines(os.path.join(port, "catalog.txt")) if c]
+        behaviours += [b for b in read_lines(os.path.join(port, "behaviour.txt")) if b]
     if bank_def["aliases"] and "soundbank," + bank not in present:
         lines.append("soundbank," + bank)
         added.append("soundbank," + bank)
@@ -112,13 +135,16 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
         json.dump(bank_def, f, indent=1)
     with open(csv_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
-    catalog_path = os.path.join(mod_zone, "catalog.txt")
-    full = merge_catalog([c for c in read_lines(catalog_path) if c], catalog)
-    if gsc:
-        full = update_gsc(gsc, full)
-    with open(catalog_path, "w", encoding="utf-8", newline="\n") as f:
-        f.write("".join(c + "\n" for c in full))
-    return {"added_lines": added, "bank_aliases": bank_def["aliases"], "catalog": full}
+    out = {"added_lines": added, "bank_aliases": bank_def["aliases"]}
+    for block, new in (("catalog", catalog), ("behaviours", behaviours)):
+        path = os.path.join(mod_zone, block + ".txt")
+        full = merge_entries([c for c in read_lines(path) if c], new, block)
+        if gsc:
+            full = update_gsc(gsc, full, block)
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write("".join(c + "\n" for c in full))
+        out[block] = full
+    return out
 
 
 def main(argv=None):
@@ -128,7 +154,7 @@ def main(argv=None):
     ap.add_argument("--bank", required=True, help="the mod zone's sound bank name (e.g. bo3wpn.all)")
     ap.add_argument("--zone", required=True, help="mod zone name")
     ap.add_argument("--port", action="append", required=True, help="t7_port_weapon.py output folder")
-    ap.add_argument("--gsc", help="server module whose generated catalog block to rewrite")
+    ap.add_argument("--gsc", help="server module whose generated catalog and behaviours blocks to rewrite")
     args = ap.parse_args(argv)
     print(json.dumps(assemble(args.mod_zone, args.csv, args.bank, args.zone, args.port, args.gsc), indent=1))
     return 0

@@ -37,7 +37,7 @@ twin becomes the Pack-a-Punch variant. Then:
 | sounds | IW7 bank rows, role from the WeaponDef slot naming the alias (notetracks are foley); empty BO3 aliases stay silent | `t7_weapon_sound.py --role` |
 | fx | weapon and script effects plus linked effects | `t7_fx_material_pack.py`, `t7_fx_to_iw7.py` |
 | author | weapon, anim/vfx/sfx packages, BO3 kick, `_pap1` weapon and its two attachments | `iw7_weapon_author.py` |
-| zone | `zone.csv` lines and the module catalog entry | |
+| zone | `zone.csv` lines, the module catalog entry and one behaviour line per BO3 behaviour script (`weapon\|namespace\|tuning\|effects\|sounds`) | |
 
 `t7_mod_assemble.py --mod-zone zonetool/<zone> --csv zone_source/<zone>.csv
 --bank <zone>.all --zone <zone> --port <dir> [--port ...]` merges ports into
@@ -46,7 +46,10 @@ weapon's alias table. It keeps the mod catalog (`<mod zone>/catalog.txt`,
 `weapon[:pap weapon:pap1 attachment:pap2 attachment]` per line) and, with
 `--gsc <server module>`, rewrites the module's catalog between
 `// BEGIN t7_mod_assemble catalog` and `// END t7_mod_assemble catalog`, so a
-ported weapon reaches the magic wheel with no hand edit. The author stage references only the effects the fx stage
+ported weapon reaches the magic wheel with no hand edit. The `behaviours` block
+works the same way: the module implements each BO3 behaviour family once (by
+script namespace, e.g. `zm_weap_thundergun`) and every weapon of that family,
+base or upgraded, gets its tuning, effects and sounds from the BO3 script data. The author stage references only the effects the fx stage
 built and never keeps a template's stock effect (BO3's effect or none).
 
 `port-config.example.json` lists the machine inputs. Behaviour that BO3 keeps

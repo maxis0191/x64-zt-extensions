@@ -8,6 +8,15 @@ import t7_weapon_scripts as scripts  # noqa: E402
 
 TESLA = '''#using scripts\\shared\\util_shared;
 #using scripts\\zm\\_zm_lightning_chain;
+
+#namespace zm_weap_tesla;
+
+function arc_hit()
+{
+    self playsound( "wpn_tesla_bounce" );
+    playsoundatposition( "wpn_tesla_impact", self.origin );
+    self playsound( "wpn_tesla_bounce" );
+}
 function __init__()
 {
     level.weaponzmteslagun = getweapon( "tesla_gun" );
@@ -42,6 +51,9 @@ class ScriptsTest(unittest.TestCase):
         self.assertEqual(info["zombie_vars"], {"tesla_max_arcs": 5, "tesla_radius_decay": 20.5})
         self.assertEqual(info["effects"], {"tesla_viewmodel_rail": "zombie/fx_tesla_rail_view_zmb"})
         self.assertEqual(info["weapons"], ["tesla_gun", "tesla_gun_upgraded"])
+        self.assertEqual(info["namespace"], "zm_weap_tesla")
+        self.assertEqual(info["sounds"], ["wpn_tesla_bounce", "wpn_tesla_impact"])
+        self.assertIsNone(scripts.extract(CHAIN)["namespace"])
 
     def test_no_reference_no_script(self):
         self.assertEqual(scripts.select(self.sources, ["ray_gun"]), [])
