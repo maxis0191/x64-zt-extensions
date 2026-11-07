@@ -386,3 +386,196 @@ kick (100-110). Ray Gun: hip gun kick pitch -30..-35, yaw -2..18, view kick
 40..45; ADS gun kick -35..-40, accel 825, speed max 2000. `t7_weapon_kick.py`
 copies them. PROVEN_LOCAL (decode); in-game feel NOT_PROVEN. View-kick centre
 speed and idle/sway blocks are not mapped yet.
+
+## 2026-11-07: Thundergun, first generic port in game
+
+`t7_port_weapon.py` ported the Thundergun end to end (no weapon-specific
+code). Client witness (fire, reload, ADS, burst): textured, lit model (orange
+grilles, red sight), BO3 muzzle blast and shockwave ring, clip 2/12, reload
+and ADS poses correct. PROVEN_LOCAL. Two fixes came out of it:
+
+* Surfaces: converted `.xsb` are named after BO3 surface assets plus a hash,
+  not after the model; `model_surfaces()` takes every name the `.xmb` lists
+  that has a surface file (the first build drew stretched spikes).
+* Idle pose: the hip idle held the gun turned about 40 degrees in the hands.
+  A bone listed with no rotation channel is identity in XAnim; the
+  retargeter's skeleton pose read it as the bind rotation, and the BO3 hands
+  bind `tag_weapon_right` off-axis. The Thundergun idle is the first
+  animation seen leaving that bone unkeyed. Fixed in `Skeleton.pose`, test
+  added; converted idle now matches fire frame 0. Client recheck pending.
+
+Effects with visual arrays: a BO3 element with several visuals (one picked
+per particle) now keeps all of them. Export and material packing take every
+array material, and the converter lists one INIT_MATERIAL linked asset per
+converted material, as 771 of 5932 stock IW7 material modules do (survey of
+the 1164 stock cp_zmb particle systems). Partly converted arrays are reported
+(`partial`). Thundergun smoke cloud now builds; knockback ground pending the
+re-export.
+
+## 2026-11-07: DG-2, second generic port
+
+`t7_port_weapon.py --weapon tesla_gun_zm` ran every stage with no
+DG-2-specific code (62 zone lines, Pack-a-Punch weapon and attachments,
+19 effects built). Two generic fixes came out of it:
+
+* Sounds: a weapon may name generic BO3 aliases kept outside the zones the
+  port reads (`dryfire_rifle`). An alias found in no exported table is now
+  reported (`unresolved`) and left silent instead of stopping the port;
+  `core_common.ff` joined the machine's sound zones. The DG-2 dry fire stays
+  unresolved, and that is faithful: `dryfire_rifle` is a legacy name that no
+  BO3 alias table defines (zm_levelcommon, zm_common, core_common,
+  core_patch, core_all, zm_common_all, mp_common all searched by name; BO3
+  weapons use `wpn_<weapon>_dryfire_plr`), so BO3 plays nothing for it either.
+* Behaviours: BO3 splits a namespace across scripts (server `.gsc`, client
+  `.csc`); one line per script let a later line replace an earlier one's
+  data in the assembled module (the `lightning_chain` electrocute sound).
+  Lines are now merged per namespace.
+
+Not converted yet: heat-distortion materials, a nested effect-array element
+(type 13) in the ground shock, and the BO3 client-side view-model effects
+(`tesla_viewmodel_rail/tube`, played by the `.csc` on view-model tags).
+
+View-model effects, what BO3 does and what IW7 offers (2026-11-07):
+
+* BO3 `_zm_weap_tesla.csc` plays the rail (`fx_tesla_rail_view_zmb`, a
+  one-shot of about 0.8 s) on `tag_flash` every 8 to 12 s (random), while
+  the weapon's own notetracks `tesla_play_fx_on/off` allow it, not in ADS
+  and with ammo in the clip. The tube effect on `tag_brass` is four endless
+  omni lights whose variant follows the clip count, plus a shader tint.
+* An IW7 weapon can trigger view effects only from animation notetracks
+  (`notetrackFXMapKeys/Values/TagValues`, as stock `iw7_spaceland_wmd`).
+  The converted DG-2 anims keep BO3's notetracks, but the idle is a 2-frame
+  pose: a notetrack there fires many times a second, not every 8 to 12 s.
+* So a faithful rail needs client-side timing that IW7 assets lack. Two
+  routes: a generic native client hook (an ambient view-effect table in the
+  mod: effect, tag, random period, gate notetracks), or the asset-only
+  subset (the rail when the gun switches on: first raise, pullout, end of
+  reload). The tube's look is carried by the emissive tube materials; its
+  lights and clip-count tint are not.
+
+## 2026-11-07: projectile launch components
+
+The author copied every `proj*`/`iProjectile*` field of the IW7 projectile
+template (`iw7_zapper_grey`, an AI lob: `iProjectileSpeedUp` 500) and
+overwrote only the speed, explosion and lifetime from BO3. BO3 keeps the
+launch components after the speed, in BO2's order: +0xFF0 up, +0xFF4
+forward (zm_levelcommon: Cymbal Monkey and Octobomb up 100, Mustang & Sally
+up 50, frag forward 120; Ray Gun, DG-2, Thundergun 0). The spec now reads
+both and the author writes them. In game the DG-2 projectile had hit no
+zombie in its path; the rerun with the fix is the check.
+
+## 2026-11-07: BO3 ribbon trails (DG-2 white shards)
+
+In game the DG-2 shot filled the screen with white jagged shards and long
+blue bolts. A trail A/B (the same shot with the projectile trail removed,
+then with only its lines, only its sprites and light, only its ribbon)
+traced them to the ribbon element (BO3 type 5) of
+`fx_tesla_electric_bolt_zmb`. The converter had applied BO3's emission to
+it: "every 1 ms, endless" became 1000 IW7 trail particles a second, up to
+402 at once, each a whole ribbon (INIT_GEO_TRAIL). In BO3 that interval
+samples one ribbon's points. A BO3 trail now keeps the IW7 trail
+template's life, emission (one particle) and ribbon geometry, and takes
+material, colour and size from BO3. The muzzle effect's own elements were
+probed in the world and draw correctly.
+
+## 2026-11-07: materials packed for the shaders' own reads; Ray Gun ported generically
+
+Owner review: the Ray Gun's red did not read as in BO3 and the DG-2 looked
+grey. The colour maps were intact (identical channel means), so the
+shading data was checked against the real consumer: the stock weapon pixel
+shaders, disassembled with d3dcompiler_47 (opaque `m2o_l_sm_replace_..._vm`
+ps 0170a07b0cc77bc0, emissive ps e9fc6ee4b98ae873, glass
+`m2o_l_sm_ndw_blend_..._vm` ps c726a0599d2222d2). The channel design above
+("NOT_PROVEN") was wrong in three places:
+
+* packed_cs alpha: reflectance F0 up to 0.1, then metalness; stock
+  dielectrics read 0.04 (wood stool, IW Ray Gun glass), metals ~0.97
+  (Dischord, IW Ray Gun), measured on GrayWolf exports of the stock
+  textures. We stored BO3's sRGB specular luminance (~0.22): every surface
+  became ~13 % metal at the highest dielectric reflectance.
+* packed_nog G/A: an octahedral normal rotated 45 degrees, not raw x/y.
+* colour and emissive are squared on read (gamma 2.0).
+
+`t7_material_pack.py` now converts BO3's specular-colour maps to
+reflectance/metalness, encodes octahedral normals, applies the emissive
+tint in linear light and honours scalar roughness/metalness (Ray Gun power
+cell, meter, reticle). Tests decode the packed texels with the shaders'
+formulas. The Ray Gun / DG-2 packed alphas now read 0.03 to 0.08 like the
+stock dielectrics. Gloss: same channel; BO3's gloss-to-power curve is not
+yet compared with IW7's 2^(20 (1 - sqrt(1 - R))) + 2 (NOT_PROVEN).
+
+The Ray Gun now goes through `t7_port_weapon.py` (it was hand-built). The
+first run stopped on its 300-frame idle: ZoneTool's T7 conversion keeps
+long channels' key indices inline in dataShort with no index list, where
+stock animations use a lookup table plus the index list.
+`iw7_xanim_codec.decode` reads both (commit cb6f500 carries it with the
+material change); re-encoding the idle matches every frame (rotation 2e-5,
+translation 8e-7). In-game rendered comparison: pending.
+
+## 2026-11-07: BO3 mod tools as ground truth; shoulders follow BO3
+
+The BO3 mod tools (Steam app 455130) ship the Ray Gun's authored sources
+(`model_export/weapons_t7/zmb_raygun`: c/g/n/o/s TIFs, materials in
+`model_export/wpn_t7_zmb_weapons.gdt`), also the Apothicon Servant
+(`zmb_zod_idg`). Findings:
+
+* The textures GrayWolf reads from the compiled game match the authored
+  TIFs (channel means within 1/255; gloss 16-bit sources, same values):
+  extraction is faithful. The compiled normal map stores Z differently
+  (only X/Y are used).
+* Each material has its own `glossRangeMin/Max` (metal 0-17, plastic 4-13,
+  glass 6-17). The mod tools' techset sources declare `glossRange` only in
+  the decal techsets, which first suggested weapons ignore it; the compiled
+  materials prove otherwise (below): every weapon material carries its
+  range in its pixel shader constants. (Corrected the same day.)
+
+`t7_material_read.py` (run by `t7_zone_snapshot.py`, output
+`<zone>.materials.json`) reads every material's compiled constants from the
+held zone: weapon materials keep them in per-technique static `$Globals`
+buffers, named by the technique's own pixel shader (DXBC RDEF chunk).
+zm_levelcommon: 2181 of 2322 materials resolved, e.g. Ray Gun power cell
+hdrScale 16, emissiveTint1 0.026 0.151 0.672 (blue, the GDT's colorTint1 in
+linear light), reticle 64, DG-2 bulbs 120 (orange; violet when upgraded),
+DG-2 wood glossRange 2-10, Thundergun glows 50. The mod tools GDT agrees
+wherever it covers the material. Techsets whose techniques a zone leaves as
+stubs (lit_emissive, lit_weapon_camo, lit_advanced_fullspec) are resolved
+for lit_emissive by a layout checked on two GDT materials; the other two
+stay unread (none of the three ported weapons uses them).
+
+`t7_material_pack.py --constants` now scales each gloss texel into the
+material's glossRange and stores R so that IW7's exponent
+20 (1 - sqrt(1 - R)) equals BO3's log2 specular power (assumed 2^gloss as
+published for BO2, 8192^gloss with range 13; BO3's deferred lighting shader
+is not in the mod tools, so the curve itself stays NOT_PROVEN), and sets
+each emissive material's intensity from its hdrScale (Ray Gun power cell 16
+is the reference of --emissive-scale). The base Ray Gun power cell glows
+blue in BO3 itself (GDT colorTint1), red when upgraded.
+
+In-game hip frames showed the DG-2's left hand off the gun and its right
+arm folded in front of the camera. BO3 animations place the shoulders per
+weapon (DG-2: left shoulder 9 units forward, right one above the eye); the
+retargeter kept the IW7 bind shoulders, so the left wrist was 7.3 units
+out of reach. The IW7 shoulders now take the BO3 positions (translation
+channels); all 39 Ray Gun / Thundergun / DG-2 animations reach both
+wrists exactly (test `ShoulderTest`). The Ray Gun's upright hip pose (gauge
+facing the player) keeps the BO3 gun placement relative to the BO3 camera
+by construction; no rendered BO3 frame has been compared (the view model
+FOV of the two engines may differ).
+
+Also: the display name no longer comes from the template (`--display`, else
+the BO3 key made readable), and the notetrack sound table grows past the
+template's four slots (the Ray Gun had lost reload_close, the DG-2 clip_in
+and handle_release).
+
+At IW7's widest field of view (cg_fov 120, the owner's setting) the BO3
+shoulder placement of long two-handed guns put the open end of the IW7 arm
+mesh in the lower-left corner (Thundergun left shoulder 16 forward and 14
+below the eye; BO3's own field of view keeps it out of view). The retarget
+lowers such a shoulder until its mesh end is out of view at 120 degrees, as
+far as the wrist stays within reach: hands and gun keep their BO3
+placement (51 of 93 animations lowered, wrists exact). The witnesses' FOV
+120 also explains why every weapon, stock Dischord included, looks small.
+
+Witness recovery: a witness stopped from outside left its test client image
+in the game folder and later runs waited on it;
+`ops/bo3wpn/Restore-WeaponVisual.ps1` (server repo) replays its transactions.

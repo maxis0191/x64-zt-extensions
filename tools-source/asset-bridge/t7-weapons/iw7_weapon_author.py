@@ -36,6 +36,8 @@ SLOT_MAP = {
     "sprint_loop": ["WEAP_ANIM_SPRINT_LOOP"],
     "sprint_out": ["WEAP_ANIM_SPRINT_OUT"],
 }
+# The template weapon's third-person finger poses (hm_fingers_zapper_*).
+TEMPLATE_WEAPON_SLOTS = ("WEAP_ANIM_3P_FINGER_POSE_LEFT", "WEAP_ANIM_3P_FINGER_POSE_RIGHT")
 # Slots whose stock additive/finger-pose anims would fight a full BO3 pose.
 CLEAR_SLOTS = ("WEAP_ANIM_ADDITIVE_SPRINT_OFFSET", "WEAP_ANIM_ADDITIVE_FINGER_POSE_LEFT",
                "WEAP_ANIM_ADDITIVE_FINGER_POSE_RIGHT", "WEAP_ANIM_ADDITIVE_SETTLE_ADS",
@@ -49,7 +51,7 @@ TIMER_MAP = {
     "sprintInTime": "sprint_in", "sprintLoopTime": "sprint_loop", "sprintOutTime": "sprint_out",
 }
 PROJECTILE_FIELDS = ("iExplosionRadius", "iExplosionInnerDamage", "iExplosionOuterDamage",
-                     "iProjectileSpeed", "projLifetime")
+                     "iProjectileSpeed", "iProjectileSpeedUp", "iProjectileSpeedForward", "projLifetime")
 
 
 def anim_info(xab_dir, name):
@@ -68,7 +70,10 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     infos = {k: anim_info(spec["xab_dir"], v) for k, v in anims.items()}
 
     pkg = copy.deepcopy(animpkg_tpl)
-    for slot in CLEAR_SLOTS:
+    # Every weapon-specific slot starts empty: a slot BO3 does not fill must not keep the template
+    # weapon's motion (the upgraded ports had played the IW7 zapper's idle, fire and reload).
+    # Engine-wide generic additives (jump, walk, crawl, melee knife) stay.
+    for slot in CLEAR_SLOTS + TEMPLATE_WEAPON_SLOTS + tuple(s for slots in SLOT_MAP.values() for s in slots):
         if slot in pkg["anims"]:
             pkg["anims"][slot] = ""
     for suffix, slots in SLOT_MAP.items():
@@ -90,7 +95,10 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     w = copy.deepcopy(weapon_tpl)
     d = w["weapDef"]
     w["szInternalName"] = spec["name"]
-    w["szDisplayName"] = spec.get("display", w["szDisplayName"])
+    # Never the template's name (the generic ports had shown the IW7 facemelter's): the configured
+    # BO3 name, else the BO3 display key made readable (WEAPON_THUNDERGUN -> Thundergun).
+    key = spec.get("display_key") or spec["name"]
+    w["szDisplayName"] = spec.get("display") or key.split("WEAPON_", 1)[-1].replace("_", " ").title()
     w["iClipSize"] = spec["clip"]
     d["iMaxAmmo"] = spec["max_ammo"]
     d["iStartAmmo"] = spec.get("start_ammo", spec["max_ammo"])
@@ -112,9 +120,12 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     d["szXAnims"] = spec["name"] + "_package"
 
     sounds = spec.get("notetrack_sounds", {})
-    keys = list(sounds)[:len(w["notetrackSoundMapKeys"])]
-    w["notetrackSoundMapKeys"] = keys + [""] * (len(w["notetrackSoundMapKeys"]) - len(keys))
-    w["notetrackSoundMapValues"] = [sounds[k] for k in keys] + [""] * (len(w["notetrackSoundMapValues"]) - len(keys))
+    # The table grows with the weapon (stock IW7 weapons carry 1 to 20 entries): the template's four
+    # slots had dropped the Ray Gun's reload_close.
+    keys = list(sounds)
+    size = max(len(w["notetrackSoundMapKeys"] or []), len(keys))
+    w["notetrackSoundMapKeys"] = keys + [""] * (size - len(keys))
+    w["notetrackSoundMapValues"] = [sounds[k] for k in keys] + [""] * (size - len(keys))
 
     proj = spec.get("projectile")
     if proj:
@@ -124,7 +135,8 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
             if low.startswith(("proj", "iprojectile", "iexplosion")) or key in (
                     "projectileModel", "bProjImpactExplode", "vProjectileColor", "parallelBounce",
                     "perpendicularBounce", "weapType"):
-                d[key] = copy.deepcopy(value)
+                # the template's own effects never reach a ported weapon: BO3's or nothing
+                d[key] = None if key.endswith("Effect") else copy.deepcopy(value)
         for key in PROJECTILE_FIELDS:
             if key in proj:
                 d[key] = proj[key]

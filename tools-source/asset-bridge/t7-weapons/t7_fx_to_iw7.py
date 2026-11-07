@@ -7,6 +7,8 @@ element kind. Each BO3 element becomes one IW7 emitter cloned from the
 template of its kind, then rewritten:
 
 * life: particleLife = lifespan ms / 1000 (base, base + amplitude);
+* trail (type 5): one ribbon; the IW7 trail template's life, emission and
+  ribbon geometry stay (BO3's interval samples the ribbon's points);
 * spawn: one-shot -> burst (count base, base + amplitude); a looping element
   with a finite count (BO3: one particle batch every interval ms, count in
   total) -> burst of `count`, particleDelay spread over count * interval; an
@@ -34,11 +36,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import iw7_vfx as vfx  # noqa: E402
+from t7_fx_read import element_visuals  # noqa: E402
 
 INT_MAX = 2147483647
 # T7 element types follow T6: 0 billboard, 1 oriented, 2 rotated, 3 tail, 4 line, 5 trail, 6 cloud,
 # 7 model, 8 omni light. A LINE (velocity-aligned streak) maps to the IW7 tail.
 LINE_TYPE = 4
+TRAIL_TYPE = 5
 KIND_OF_TYPE = {0: "sprite", 1: "sprite", 2: "sprite", 4: "tail", 6: "sprite", 3: "tail", 5: "trail",
                 8: "light"}
 
@@ -110,11 +114,17 @@ def size_curves(samples, radius_to_size=2.0, line=False):
     return out * 2
 
 
-def rewrite(emitter, element, fx, material, intensity):
+def rewrite(emitter, element, fx, material, intensity, extra_materials=()):
     sc = element["scalars"]
     life = sc["lifespan_msec"]
-    emitter["particleLife"] = {"min": vfx.f32(life["base"] / 1000.0),
-                               "max": vfx.f32((life["base"] + max(0, life["amplitude"])) / 1000.0)}
+    # A BO3 trail is one ribbon: its spawn interval samples the ribbon's points and its lifespan is a
+    # point's. An IW7 trail particle carries the whole ribbon (INIT_GEO_TRAIL), so the trail template's
+    # emission (one particle at a time) and ribbon geometry stay; mapping BO3's 1 ms interval to a spawn
+    # rate made the DG-2 trail 1000 ribbons a second, up to 402 at once.
+    ribbon = element["type"] == TRAIL_TYPE
+    if not ribbon:
+        emitter["particleLife"] = {"min": vfx.f32(life["base"] / 1000.0),
+                                   "max": vfx.f32((life["base"] + max(0, life["amplitude"])) / 1000.0)}
     rng = sc.get("spawn_range")
     if rng and rng["max"] > 0:
         # BO3 repeats elements per camera distance tier; IW7 keeps the band squared.
@@ -124,7 +134,9 @@ def rewrite(emitter, element, fx, material, intensity):
         emitter["emitterDelay"] = {"min": vfx.f32(delay["base"] / 1000.0),
                                    "max": vfx.f32((delay["base"] + max(0, delay["amplitude"])) / 1000.0)}
     a, b = sc["spawn"]["a"], sc["spawn"]["b"]
-    if element["spawn_kind"] == "looping" and b >= INT_MAX:
+    if ribbon:
+        pass
+    elif element["spawn_kind"] == "looping" and b >= INT_MAX:
         emitter["particleSpawnRate"] = {"min": vfx.f32(1000.0 / max(1, a)), "max": vfx.f32(1000.0 / max(1, a))}
         emitter["particleBurstCount"] = {"min": 1, "max": 1}
         emitter["particleDelay"] = {"min": 0.0, "max": 0.0}
@@ -140,8 +152,12 @@ def rewrite(emitter, element, fx, material, intensity):
     if material:
         mat = find(emitter, "INIT_MATERIAL")
         if mat is not None:
-            mat["m_linkedAssetList"]["assetList"] = [vfx.new_linked_asset("PARTICLE_MODULE_INIT_MATERIAL", material=material["iw7"])]
-            mat["m_linkedAssetList"]["numAssets"] = 1
+            # One linked asset per material: IW7 picks one per particle, as BO3 does from a visual array
+            # (771 of 5932 stock INIT_MATERIAL modules list several).
+            names = [material["iw7"]] + [m["iw7"] for m in extra_materials]
+            mat["m_linkedAssetList"]["assetList"] = [vfx.new_linked_asset("PARTICLE_MODULE_INIT_MATERIAL", material=n)
+                                                     for n in names]
+            mat["m_linkedAssetList"]["numAssets"] = len(names)
             mat["m_linkedAssetList"]["assetList@ptr"] = "0x0"
         if material["atlas"][0] * material["atlas"][1] <= 1:
             drop(emitter, "INIT_ATLAS")
@@ -180,19 +196,25 @@ def convert(name, fx, templates, materials, intensity):
     report = {"effect": name, "emitters": 0, "skipped": []}
     for i, e in enumerate(fx["elements"]):
         kind = KIND_OF_TYPE.get(e["type"])
-        visual = e.get("visual") or {}
-        material = None
+        visuals = element_visuals(e)
+        material, extra = None, []
         if kind in ("sprite", "tail", "trail"):
-            material = materials.get(visual.get("name"))
-            if material is None:
-                report["skipped"].append({"element": i, "reason": "material %s not converted" % visual.get("name")})
+            found = [materials[v["name"]] for v in visuals if v.get("name") in materials]
+            missing = [v.get("name") for v in visuals if v.get("name") not in materials]
+            if not found:
+                report["skipped"].append({"element": i, "reason": "material %s not converted" % ", ".join(
+                    str(m) for m in missing or [None])})
                 continue
+            material, extra = found[0], found[1:]
+            if missing:
+                report.setdefault("partial", []).append({"element": i, "materials_not_converted": missing})
             if material["atlas"][0] * material["atlas"][1] > 1 and kind == "sprite":
                 kind = "sprite_atlas"
         if kind is None or kind not in templates:
             report["skipped"].append({"element": i, "reason": "type %s (%s) has no template" % (e["type"], e["type_name"])})
             continue
-        emitter = rewrite(copy.deepcopy(templates[kind]), e, fx, material, intensity.get(material["mode"] if material else "light", 1.0))
+        emitter = rewrite(copy.deepcopy(templates[kind]), e, fx, material,
+                          intensity.get(material["mode"] if material else "light", 1.0), extra)
         model["system"]["emitterDefs"].append(emitter)
         report["emitters"] += 1
     model["system"]["numEmitters"] = len(model["system"]["emitterDefs"])
@@ -228,7 +250,10 @@ def main(argv=None):
             raise SystemExit("effect %s not in %s" % (bo3, args.effects))
         model, report = convert(iw7, effects[bo3], templates, materials, intensity)
         if not report["emitters"]:
-            raise SystemExit("%s: no element could be converted %s" % (iw7, report["skipped"]))
+            # reported, not written: the port references only the effects that were built
+            report["not_built"] = True
+            reports.append(report)
+            continue
         data = vfx.encode(model)
         check = vfx.decode(data)
         if len(check["system"]["emitterDefs"]) != report["emitters"]:

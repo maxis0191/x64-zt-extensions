@@ -3,6 +3,8 @@ import os
 import sys
 import unittest
 
+import numpy as np
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import t7_material_pack as pack  # noqa: E402
 
@@ -47,6 +49,80 @@ class BindingTest(unittest.TestCase):
         self.assertEqual(pack.emissive_tint({"emissive": {"path": "x"}, "color_tint": {"color": [1.0, 0.0, 0.0]}}),
                          [1.0, 0.0, 0.0])
         self.assertIsNone(pack.emissive_tint({"emissive": {"path": "x"}}))
+
+
+def shader_cs(cs):
+    """What the stock weapon pixel shader (ps 0170a07b0cc77bc0) makes of a packed_cs texel (0..255):
+    colour squared; alpha up to 0.1 is the dielectric reflectance, above it a metalness ramp."""
+    rgb = (np.asarray(cs[:3], np.float64) / 255.0) ** 2
+    a = cs[3] / 255.0
+    m = min(max((a - 0.1) * 1.111111, 0.0), 1.0)
+    return rgb * max(1.0 - m, 0.0), m * rgb + min(a, 0.1)
+
+
+def shader_normal(g, a):
+    """The same shader's normal: G and A are a 45-degree rotated octahedral encoding."""
+    z, w = g / 255.0 * 2 - 1, a / 255.0 * 2 - 1
+    x, y = (z + w) / 2, (z - w) / 2
+    n = np.array([x, y, 1 - abs(x) - abs(y)])
+    return n / np.linalg.norm(n)
+
+
+class ShaderPackingTest(unittest.TestCase):
+    def test_dielectric_keeps_albedo_and_low_reflectance(self):
+        albedo = np.array([[[200.0, 60.0, 50.0, 255.0]]])
+        spec = np.array([[[56.0, 56.0, 56.0, 255.0]]])   # BO3 dielectric: F0 0.04 in sRGB
+        cs = pack.pack_cs(albedo, spec, None)[0, 0]
+        diffuse, specular = shader_cs(cs)
+        np.testing.assert_allclose(diffuse, pack.srgb_to_linear(albedo[0, 0, :3] / 255.0), atol=0.01)
+        np.testing.assert_allclose(specular, [0.04] * 3, atol=0.005)
+        self.assertLessEqual(cs[3], 0.1 * 255)   # no metal: the old luminance packing gave 0.22
+
+    def test_metal_moves_colour_into_specular(self):
+        albedo = np.array([[[20.0, 20.0, 20.0, 255.0]]])
+        spec = np.array([[[230.0, 170.0, 110.0, 255.0]]])  # copper-like BO3 specular colour
+        cs = pack.pack_cs(albedo, spec, None)[0, 0]
+        diffuse, specular = shader_cs(cs)
+        self.assertGreater(cs[3], 0.5 * 255)
+        np.testing.assert_allclose(specular, pack.srgb_to_linear(spec[0, 0, :3] / 255.0), atol=0.06)
+        np.testing.assert_allclose(diffuse, pack.srgb_to_linear(albedo[0, 0, :3] / 255.0), atol=0.06)
+
+    def test_scalar_metalness_without_specular_map(self):
+        albedo = np.array([[[128.0, 128.0, 128.0, 255.0]]])
+        self.assertAlmostEqual(pack.pack_cs(albedo, None, 0.0)[0, 0, 3], 0.04 * 255, delta=0.5)
+        self.assertAlmostEqual(pack.pack_cs(albedo, None, 1.0)[0, 0, 3], 255.0, delta=0.5)
+
+    def test_emissive_is_linear_tint_stored_squared(self):
+        emis = np.array([[[255.0, 255.0, 255.0, 255.0], [128.0, 128.0, 128.0, 255.0]]])
+        out = pack.pack_emissive(emis, [0.026, 0.151, 0.672])
+        # the shader squares the stored value: full white under the Ray Gun's blue tint
+        np.testing.assert_allclose((out[0, 0, :3] / 255.0) ** 2, np.array([0.026, 0.151, 0.672]) / 0.672, atol=0.002)
+        np.testing.assert_allclose((out[0, 1, :3] / 255.0) ** 2,
+                                   pack.srgb_to_linear(128 / 255.0) * np.array([0.026, 0.151, 0.672]) / 0.672, atol=0.002)
+
+    def test_normals_round_trip_through_the_shader_decode(self):
+        for x, y in [(0.0, 0.0), (0.5, 0.2), (-0.3, 0.6), (0.7, -0.7)]:
+            z = np.sqrt(max(0.0, 1 - x * x - y * y))
+            src = np.array([[[(x + 1) / 2 * 255, (y + 1) / 2 * 255, 0.0, 255.0]]])
+            g, a = pack.octahedral_ga(src)
+            want = np.array([x, y, z]) / np.linalg.norm([x, y, z])
+            np.testing.assert_allclose(shader_normal(g[0, 0], a[0, 0]), want, atol=0.02)
+
+
+
+class Bo3ConstantsTest(unittest.TestCase):
+    def test_gloss_range_sets_the_iw7_exponent(self):
+        # Ray Gun plastic: glossRange 4..13. The IW7 shader's exponent equals the BO3 log2 power.
+        for texel, rng in ((0, (4.0, 13.0)), (255, (4.0, 13.0)), (83, (4.0, 13.0)), (255, (0.0, 17.0))):
+            r = float(pack.bo3_gloss_to_r(np.float32(texel), rng)) / 255.0
+            exponent = 20 * (1 - np.sqrt(1 - r))
+            self.assertAlmostEqual(exponent, rng[0] + (rng[1] - rng[0]) * texel / 255.0, places=3)
+
+    def test_constants_found_under_the_model_prefix(self):
+        table = {"mc/mtl_x": {"hdrScale": [64.0]}}
+        self.assertEqual(pack.lookup_constants(table, "mtl_x"), {"hdrScale": [64.0]})
+        self.assertEqual(pack.lookup_constants(table, "mtl_y"), {})
+        self.assertEqual(pack.lookup_constants(None, "mtl_x"), {})
 
 
 if __name__ == "__main__":

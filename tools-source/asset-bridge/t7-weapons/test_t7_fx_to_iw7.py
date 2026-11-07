@@ -62,6 +62,22 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(em["particleBurstCount"], {"min": 3, "max": 3})
         self.assertAlmostEqual(em["particleDelay"]["max"], 0.1, places=5)
 
+    def test_visual_array_lists_every_converted_material(self):
+        e = element("one_shot", 2, 1)
+        e["visuals"] = [{"kind": "material", "name": "ei/gfx_ring_thin"}, {"kind": "material", "name": "ei/missing"},
+                        {"kind": "material", "name": "ei/gfx_ring_b"}]
+        extra = dict(MATERIALS, **{"ei/gfx_ring_b": dict(MATERIALS["ei/gfx_ring_thin"], bo3="ei/gfx_ring_b",
+                                                         iw7="eq/bo3wpn_gfx_ring_b")})
+        model, report = conv.convert("vfx/test/fx", {"elements": [e]}, {"sprite": template_emitter()}, extra,
+                                     {"add": 20.0, "blend": 1.0, "light": 1.0})
+        (em,) = vfx.decode(vfx.encode(model))["system"]["emitterDefs"]
+        mods = [vfx.module_data(m) for g in em["stateDefs"][0]["moduleGroupDefs"] for m in (g.get("moduleDefs") or [])
+                if m["moduleType"] == "PARTICLE_MODULE_INIT_MATERIAL"]
+        ll = mods[0]["m_linkedAssetList"]
+        self.assertEqual([a["material"] for a in ll["assetList"]], ["eq/bo3wpn_gfx_ring_thin", "eq/bo3wpn_gfx_ring_b"])
+        self.assertEqual(ll["numAssets"], 2)
+        self.assertEqual(report["partial"], [{"element": 0, "materials_not_converted": ["ei/missing"]}])
+
     def test_endless_looping_becomes_rate(self):
         (em,), _ = self.convert([element("looping", 200, conv.INT_MAX, life=1000)])
         self.assertAlmostEqual(em["particleSpawnRate"]["min"], 5.0, places=4)
@@ -134,6 +150,26 @@ class ConvertTest(unittest.TestCase):
                 if m["moduleType"] == "PARTICLE_MODULE_SIZE_GRAPH"][0]
         scales = [c["scale"] for c in vfx.module_data(size)["m_curves"][:3]]
         self.assertEqual(scales, [5.0, 100.0, 1.0])   # width as a diameter, length as is, no depth
+
+    def test_trail_keeps_one_ribbon_from_the_template(self):
+        # BO3 type 5 is one ribbon: "every 1 ms, endless" samples its points and the lifespan is a point's.
+        # An IW7 trail particle carries the whole ribbon (GEO_TRAIL), so the template's emission stays: the
+        # DG-2 trail had become 1000 ribbons a second, up to 402 at once (white shards in game).
+        e = element("looping", 1, conv.INT_MAX, life=300)
+        e["type"], e["type_name"] = 5, "trail"
+        trail = template_emitter()
+        trail["particleSpawnRate"] = {"min": 1.0, "max": 1.0}
+        trail["particleLife"] = {"min": 0.5, "max": 0.7}
+        trail["particleBurstCount"] = {"min": 1, "max": 1}   # vfx_plasma_trail_friendly's emission
+        model, report = conv.convert("vfx/test/fx", {"elements": [e]}, {"sprite": template_emitter(), "trail": trail},
+                                     MATERIALS, {"add": 1.0, "blend": 1.0, "light": 1.0})
+        em = vfx.decode(vfx.encode(model))["system"]["emitterDefs"][0]
+        self.assertEqual((em["particleSpawnRate"]["min"], em["particleCountMax"]), (1.0, 1))
+        self.assertEqual(em["particleBurstCount"], {"min": 1, "max": 1})
+        self.assertAlmostEqual(em["particleLife"]["max"], 0.7, places=5)
+        mat = [vfx.module_data(m) for g in em["stateDefs"][0]["moduleGroupDefs"] for m in (g.get("moduleDefs") or [])
+               if m["moduleType"] == "PARTICLE_MODULE_INIT_MATERIAL"][0]
+        self.assertEqual(mat["m_linkedAssetList"]["assetList"][0]["material"], "eq/bo3wpn_gfx_ring_thin")
 
     def test_unconverted_material_is_reported(self):
         e = element("one_shot", 1, 0)

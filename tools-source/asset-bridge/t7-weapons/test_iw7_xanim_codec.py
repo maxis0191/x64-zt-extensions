@@ -59,6 +59,22 @@ class CodecTest(unittest.TestCase):
     def test_long_animation_uses_index_list(self):
         self.check(300)
 
+    def test_long_channels_inline_without_index_list(self):
+        # ZoneTool's T7 conversions (the 300-frame Ray Gun idle) keep every channel's indices in
+        # dataShort and write no index list; the encoder makes that layout when no channel is "large".
+        path = os.path.join(tempfile.mkdtemp(), 'a.xab')
+        large = codec.LARGE
+        codec.LARGE = 10 ** 9
+        try:
+            codec.encode(animation(300), path)
+        finally:
+            codec.LARGE = large
+        back = codec.decode(path)
+        for f in (0, 150, 300):
+            q0 = codec.sample(animation(300).rotations['j_gun'], f, True)
+            self.assertGreater(abs(sum(a * b for a, b in zip(q0, codec.sample(back.rotations['j_gun'], f, True)))), 0.99999)
+            self.assertAlmostEqual(codec.sample(back.translations['j_gun'], f, False)[0], f * 0.5, places=2)
+
 
 class RetargetMathTest(unittest.TestCase):
     def test_two_bone_reaches_target(self):
@@ -122,8 +138,67 @@ class RootAdsTest(unittest.TestCase):
         self.assertAlmostEqual(retarget.vlen(codec.sample(down.translations['tag_ads'], 8, False)), 0.0, places=5)
         self.assertEqual(codec.sample(up.translations['tag_ads'], 0, False), (0.0, 0.0, 0.0))
 
+    def test_listed_no_rotation_channel_is_identity_not_bind(self):
+        rig = view_rig()
+        half = math.radians(40.0) / 2
+        rig.local[6] = ((0.0, math.sin(half), 0.0, math.cos(half)), (14.0, 0.0, 0.0))
+        self.assertLess(abs(rig.pose({}, {}, 0)[6][0][3]), 0.99)              # absent: bind rotation
+        self.assertGreater(abs(rig.pose({'tag_weapon': None}, {}, 0)[6][0][3]), 0.99999)  # listed None: identity
+
     def test_engine_roots_are_not_hand_channels(self):
         self.assertEqual(retarget.ENGINE_ROOTS, ('tag_view', 'tag_ads'))
+
+
+def arm_rig(names, parents, offsets):
+    rig = object.__new__(retarget.Skeleton)
+    rig.names, rig.parent = names, parents
+    rig.local = [((0.0, 0.0, 0.0, 1.0), t) for t in offsets]
+    rig.index = {n: i for i, n in enumerate(names)}
+    rig.world = rig.pose({}, {}, 0)
+    return rig
+
+
+class ShoulderTest(unittest.TestCase):
+    def test_shoulders_follow_the_bo3_animation(self):
+        # The BO3 DG-2 brings the left shoulder forward; at the IW7 bind shoulder the hand fell
+        # 7.3 units short of the gun.
+        src = arm_rig(['tag_origin', 'tag_camera', 'tag_torso', 'j_shoulder_le', 'j_elbow_le', 'j_wrist_le',
+                       'tag_weapon_right'], [None, 0, 0, 2, 3, 4, 2],
+                      [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 8, -6), (10, 0, 0), (10, 0, 0), (12, -4, -5)])
+        dst = arm_rig(['tag_origin', 'tag_camera', 'tag_torso', 'j_clavicle_le', 'j_shoulder_le', 'j_elbow_le',
+                       'j_wrist_le', 'tag_weapon'], [None, 0, 0, 2, 3, 4, 5, 2],
+                      [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 4, -6), (0, 4, 0), (11, 0, 0), (11, 0, 0), (0, 0, 0)])
+        anim = codec.Animation()
+        anim.frames, anim.notify = 1, []
+        anim.translations = {'j_shoulder_le': [(0, (12.0, 8.0, -6.0))]}
+        out, report = retarget.retarget(anim, src, dst, fov=1.0)   # shoulder out of view: kept
+        self.assertEqual(report['wrist_error_max'], 0.0)
+        pose = dst.pose(out.rotations, out.translations, 0)
+        for got, want in zip(pose[dst.index['j_shoulder_le']][1], (12.0, 8.0, -6.0)):
+            self.assertAlmostEqual(got, want, places=4)
+        for got, want in zip(pose[dst.index['j_wrist_le']][1], (32.0, 8.0, -6.0)):
+            self.assertAlmostEqual(got, want, places=3)
+        # The clavicle carries the shoulder: their spacing (and the sleeve skin between them) stays bind.
+        self.assertEqual(out.translations['j_shoulder_le'], [(0, (0, 4, 0))])
+        for got, want in zip(pose[dst.index['j_clavicle_le']][1], (12.0, 4.0, -6.0)):
+            self.assertAlmostEqual(got, want, places=4)
+
+
+class HideShoulderTest(unittest.TestCase):
+    CAM = ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
+
+    def test_shoulder_in_view_is_lowered_within_reach(self):
+        # BO3 Thundergun left arm: shoulder 16 forward, 14 down, wrist 35 forward.
+        s = retarget.hide_shoulder((15.9, 0.9, -14.3), (34.8, -5.0, -14.5), 22.57, self.CAM)
+        self.assertEqual(s[:2], (15.9, 0.9))
+        self.assertLess(s[2], -14.3)
+        self.assertLessEqual(retarget.vlen(retarget.vsub((34.8, -5.0, -14.5), s)), 0.98 * 22.57 + 1e-6)
+
+    def test_shoulder_out_of_view_is_kept(self):
+        self.assertEqual(retarget.hide_shoulder((-5.5, 11.5, -9.5), (8.2, 7.6, -18.6), 22.57, self.CAM),
+                         (-5.5, 11.5, -9.5))
+        self.assertEqual(retarget.hide_shoulder((8.0, 0.0, -40.0), (20.0, 0.0, -30.0), 22.57, self.CAM),
+                         (8.0, 0.0, -40.0))
 
 
 if __name__ == '__main__':

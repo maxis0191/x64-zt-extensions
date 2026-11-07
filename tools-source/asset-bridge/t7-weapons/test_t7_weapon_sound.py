@@ -30,6 +30,7 @@ class WeaponSoundTest(unittest.TestCase):
             ['wpn_rgun_sweet_plr', 'wpn/fire_sweet.flac', '', '70', '70'],
             ['wpn_rgun_reload_open', 'wpn/reload.flac', '', '80', '80'],
             ['wpn_rgun_exp', 'wpn/exp.flac', '', '', ''],
+            ['wpn_rgun_loop', '', '', '', ''],
         ])
         write_csv(os.path.join(self.root, 'stock.csv'), [
             TEMPLATE,
@@ -42,7 +43,7 @@ class WeaponSoundTest(unittest.TestCase):
         sound.main(['--bo3-aliases', os.path.join(self.root, 'bo3.csv'), '--flac-root', os.path.join(self.root, 'flac'),
                     '--template', os.path.join(self.root, 'stock.csv'), '--out', self.out, '--bank', 'test.all',
                     '--zone', 'test', '--prefix', 'test/rgun',
-                    '--alias', 'wpn_rgun_fire_plr', 'wpn_rgun_reload_open', 'wpn_rgun_exp'])
+                    '--alias', 'wpn_rgun_fire_plr', 'wpn_rgun_reload_open', 'wpn_rgun_exp', 'wpn_rgun_loop'])
         with open(os.path.join(self.out, 'sound', 'test.all.aliases.csv'), newline='') as f:
             rows = list(csv.DictReader(f))
         self.rows = {r['Name']: r for r in rows}
@@ -75,10 +76,41 @@ class WeaponSoundTest(unittest.TestCase):
         self.assertEqual(bank['aliases'], ['sound/test.all.aliases.csv'])
         self.assertEqual(bank['zone'], 'test')
 
-    def test_unknown_alias_is_refused(self):
-        with self.assertRaises(SystemExit):
+    def test_filespec_with_or_without_all_prefix(self):
+        # GrayWolf writes every sound under all/; BO3 alias tables name some with the prefix, some without.
+        root = os.path.join(self.root, 'gw')
+        os.makedirs(os.path.join(root, 'all', 'wpn'))
+        with open(os.path.join(root, 'all', 'wpn', 'a.flac'), 'wb') as f:
+            f.write(b'fLaCa')
+        for spec in ('wpn\\a.flac', 'all\\wpn\\a.flac', 'all/wpn/a.flac', 'wpn\\a.opus'):
+            self.assertEqual(sound.resolve_flac(root, spec), os.path.join(root, 'all', 'wpn', 'a.flac'))
+        self.assertIsNone(sound.resolve_flac(root, 'wpn\\missing.flac'))
+
+    def test_explicit_role_reaches_the_chain(self):
+        out = os.path.join(self.root, 'out2')
+        sound.main(['--bo3-aliases', os.path.join(self.root, 'bo3.csv'), '--flac-root', os.path.join(self.root, 'flac'),
+                    '--template', os.path.join(self.root, 'stock.csv'), '--out', out, '--bank', 'b', '--zone', 'z',
+                    '--prefix', 'p', '--alias', 'wpn_rgun_reload_open', '--role', 'wpn_rgun_reload_open=impact'])
+        with open(os.path.join(out, 'sound', 'b.aliases.csv'), newline='') as f:
+            rows = {r['Name']: r for r in csv.DictReader(f)}
+        self.assertEqual(rows['wpn_rgun_reload_open']['channel'], 'explo_1_3d')
+
+    def test_empty_bo3_alias_is_silent(self):
+        self.assertNotIn('wpn_rgun_loop', self.rows)
+
+    def test_unknown_alias_is_reported_silent(self):
+        import contextlib
+        import io
+        import json
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
             sound.main(['--bo3-aliases', os.path.join(self.root, 'bo3.csv'), '--flac-root', os.path.join(self.root, 'flac'),
-                        '--template', os.path.join(self.root, 'stock.csv'), '--out', self.out, '--alias', 'wpn_missing'])
+                        '--template', os.path.join(self.root, 'stock.csv'), '--out', os.path.join(self.root, 'out3'),
+                        '--bank', 'b', '--zone', 'z', '--prefix', 'p', '--alias', 'wpn_missing', 'wpn_rgun_reload_open',
+                        '--role', 'wpn_rgun_reload_open=impact'])
+        report = {r['alias']: r for r in json.loads(buf.getvalue())['aliases']}
+        self.assertEqual(report['wpn_missing'], {'alias': 'wpn_missing', 'silent': True, 'unresolved': True})
+        self.assertNotIn('silent', report['wpn_rgun_reload_open'])
 
 
 if __name__ == '__main__':

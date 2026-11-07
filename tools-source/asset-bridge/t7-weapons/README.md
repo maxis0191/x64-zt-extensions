@@ -6,6 +6,57 @@ iw7-mod client downloads by itself (`mods/<mod>/mod.ff`, `mod.sabl`,
 `mod.sabs`; see the server product's KINO.md). No client-side native change.
 Game data, dumps and built fastfiles stay local and are never committed.
 
+## Port a weapon in one command
+
+Once per BO3 zone (zm_levelcommon, a DLC map zone, ...), snapshot every weapon
+and every effect it holds; the snapshot folder then serves every port from
+that zone (config key `snapshots`):
+
+```
+python t7_zone_snapshot.py --zonetool <zt-t7>/zonetool.exe --zone zm_levelcommon --out <snapshots>
+python t7_port_weapon.py --config port-config.json --weapon thundergun_zm --out <dir>
+```
+
+The snapshot starts ZoneTool with `-holdzone`, runs `t7_weapon_scan.py` and
+`t7_fx_read.py` on the holding process as soon as it prints
+`ZONETOOL_HOLD <zone> <pid>`, then releases it.
+
+Every stage is data-driven: no weapon name appears in the tools. The spec
+(`t7_weapon_spec.py`) reads every role from the BO3 WeaponDef at fixed offsets
+(models, flash/impact/trail effects, sound aliases, clip, ammo, fire time,
+projectile values, gun/view kick, anim names by suffix). Its `_upgraded_zm`
+twin becomes the Pack-a-Punch variant. Then:
+
+| Stage | Does | Tool |
+| --- | --- | --- |
+| scripts | exports the zone's scripts, decompiles them, keeps those calling `getweapon("<base>")` and the zone scripts they `#using`; reads their tuning (`set_zombie_var`) and the effects they play | GrayWolf, gsc-tool `-g t7`, `t7_weapon_scripts.py` |
+| export | view/world models with PNG images, the effects' materials, one alias table per sound zone, then exactly the sound files of the weapon's aliases, their secondaries and its anim notetracks | `graywolf_mcp.py` (GrayWolf over MCP stdio; `assets` is ignored for sounds, `name_filter` matches file base names) |
+| materials | IW7 weapon materials, placed where the converted models reference them (`mc/`) | `t7_material_pack.py` |
+| models | ZoneTool-converted models, normals checked | `iw7_xsurface_check.py` |
+| anims | retarget onto the IW7 hands; ADS aim from the mesh (camera on the sight line from the rear third's top to the front third's top; Ray Gun 5.78 against 5.75 tuned in game) | `t7_vm_retarget.py`, `iw7_xanim_layout.py` |
+| sounds | IW7 bank rows, role from the WeaponDef slot naming the alias (notetracks are foley); empty BO3 aliases stay silent | `t7_weapon_sound.py --role` |
+| fx | weapon and script effects plus linked effects | `t7_fx_material_pack.py`, `t7_fx_to_iw7.py` |
+| author | weapon, anim/vfx/sfx packages, BO3 kick, `_pap1` weapon and its two attachments | `iw7_weapon_author.py` |
+| zone | `zone.csv` lines, the module catalog entry and one behaviour line per BO3 behaviour script (`weapon\|namespace\|tuning\|effects\|sounds`) | |
+
+`t7_mod_assemble.py --mod-zone zonetool/<zone> --csv zone_source/<zone>.csv
+--bank <zone>.all --zone <zone> --port <dir> [--port ...]` merges ports into
+one mod zone: assets, the lines its CSV lacks, and one sound bank listing every
+weapon's alias table. It keeps the mod catalog (`<mod zone>/catalog.txt`,
+`weapon[:pap weapon:pap1 attachment:pap2 attachment]` per line) and, with
+`--gsc <server module>`, rewrites the module's catalog between
+`// BEGIN t7_mod_assemble catalog` and `// END t7_mod_assemble catalog`, so a
+ported weapon reaches the magic wheel with no hand edit. The `behaviours` block
+works the same way: the module implements each BO3 behaviour family once (by
+script namespace, e.g. `zm_weap_thundergun`) and every weapon of that family,
+base or upgraded, gets its tuning, effects and sounds from the BO3 script data. The author stage references only the effects the fx stage
+built and never keeps a template's stock effect (BO3's effect or none).
+
+`port-config.example.json` lists the machine inputs. Behaviour that BO3 keeps
+in script (Thundergun blast, DG-2 chain lightning, view-model effects played by
+client script) is extracted with its tuning but still needs an IW7 module;
+IW7 has no client scripts.
+
 ## Pipeline
 
 | Step | Tool | Input -> output |

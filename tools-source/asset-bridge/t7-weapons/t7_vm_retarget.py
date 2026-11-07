@@ -40,6 +40,7 @@ import xab_preflight as xab  # noqa: E402
 
 ENGINE_ROOTS = ('tag_view', 'tag_ads')
 ARMS = (('le', 'j_shoulder_le', 'j_elbow_le', 'j_wrist_le'), ('ri', 'j_shoulder_ri', 'j_elbow_ri', 'j_wrist_ri'))
+SHOULDERS = {arm[1] for arm in ARMS}
 
 
 # --- quaternion helpers (x, y, z, w) ---
@@ -141,13 +142,16 @@ class Skeleton:
                 self.local.append((qmul(qinv(pq), q), qrot(qinv(pq), vsub(t, pt))))
 
     def pose(self, rotations, translations, frame):
-        """World transforms with an animation frame applied over the bind pose."""
+        """World transforms with an animation frame applied over the bind pose.
+        A bone listed with a None rotation is a no-rotation channel: identity,
+        not the bind rotation (the BO3 Thundergun idle leaves tag_weapon_right
+        so; reading it as bind turned the gun 40 degrees in the hands)."""
         out = [None] * len(self.names)
         for i, name in enumerate(self.names):
             lq, lt = self.local[i]
-            keys = rotations.get(name)
-            if keys is not None:
-                lq = codec.sample(keys, frame, True)
+            if name in rotations:
+                keys = rotations[name]
+                lq = (0.0, 0.0, 0.0, 1.0) if keys is None else codec.sample(keys, frame, True)
             keys = translations.get(name)
             if keys is not None:
                 lt = codec.sample(keys, frame, False)
@@ -261,7 +265,45 @@ def root_ads(anim, hip, dst, gun, mode):
                  'hip_gun': [round(x, 3) for x in gt]}
 
 
-def retarget(anim, src, dst, ads=None):
+MAX_FOV = 120.0          # widest IW7 cg_fov (horizontal at 4:3, widened for wider screens)
+SHOULDER_RADIUS = 5.0    # the arm mesh's cut end around the shoulder
+
+
+def hide_shoulder(shoulder, wrist, reach, cam, fov=MAX_FOV):
+    """BO3 places some shoulders in front of the camera (Thundergun left: 16 forward, 14 down),
+    out of view at BO3's field of view; at IW7's widest one the open end of the IW7 arm mesh
+    showed in the lower corner. A shoulder whose mesh end would be in view is lowered (camera
+    down) until it is not, as far as the wrist stays within 98 % of the arm's reach, so hands
+    and gun keep their BO3 placement. Positions are world; cam = (rotation, position)."""
+    cq, cp = cam
+    local = qrot(qinv(cq), vsub(shoulder, cp))   # x forward, y left, z up
+    x, y, z = local
+    dist = vlen(local)
+    if x <= 0 or dist < 1e-6:
+        return shoulder
+    pad = math.asin(min(1.0, SHOULDER_RADIUS / dist))
+    half_h = math.radians(fov / 2)
+    half_v = math.atan(math.tan(half_h) * 0.75)
+    if abs(math.atan2(y, x)) >= half_h + pad or math.atan2(-z, math.hypot(x, y)) >= half_v + pad:
+        return shoulder
+    want_z = -math.hypot(x, y) * math.tan(min(half_v + pad, math.radians(85)))
+    wrist_local = qrot(qinv(cq), vsub(wrist, cp))
+    limit = 0.98 * reach
+
+    def reachable(zz):
+        return vlen(vsub(wrist_local, (x, y, zz))) <= limit
+    if not reachable(z):
+        return shoulder
+    if not reachable(want_z):
+        lo, hi = want_z, z          # lo unreachable, hi reachable
+        for _ in range(40):
+            mid = (lo + hi) / 2
+            lo, hi = (lo, mid) if reachable(mid) else (mid, hi)
+        want_z = hi
+    return vadd(cp, qrot(cq, (x, y, want_z)))
+
+
+def retarget(anim, src, dst, ads=None, fov=MAX_FOV):
     out = codec.Animation()
     out.__dict__.update({k: getattr(anim, k) for k in ('name', 'frames', 'rate', 'frequency', 'flags', 'header', 'tail', 'notify', 'notify_count')})
     frames = range(anim.frames + 1)
@@ -295,6 +337,11 @@ def retarget(anim, src, dst, ads=None):
         if w in src.index and w in dst.index:
             side_map[side] = qnorm(qmul(qinv(dst.world[dst.index[w]][0]), src.world[src.index[w]][0]))
     bone_side = {n: side_of(dst.index[n]) for n in mapped}
+    carried = {}
+    for s in SHOULDERS:
+        if s in dst.index and s in mapped:
+            p = dst.parent[dst.index[s]]
+            carried[dst.names[p] if p is not None and dst.names[p].startswith('j_clavicle') else s] = s
     for f in frames:
         sp = src.pose(anim.rotations, anim.translations, f)
         if ads is not None:
@@ -309,16 +356,37 @@ def retarget(anim, src, dst, ads=None):
             else:
                 # BO3 world orientation, expressed relative to each rig's bind pose.
                 want[n] = (qnorm(qmul(qmul(q, qinv(bind_src[n][0])), bind_dst[n][0])), vadd(t, offset))
+        cam = (sp[cam_src][0], dst.world[cam_dst][1])
+        for _, s, e, w in ARMS:
+            if s in want and w in want and e in dst.index and w in dst.index:
+                reach = vlen(dst.local[dst.index[e]][1]) + vlen(dst.local[dst.index[w]][1])
+                lowered = hide_shoulder(want[s][1], want[w][1], reach, cam, fov)
+                if lowered != want[s][1]:
+                    report['shoulders_lowered'] = report.get('shoulders_lowered', 0) + 1
+                want[s] = (want[s][0], lowered)
         gun_q, gun_t = sp[src.index['tag_weapon_right']]
         gun_t = vadd(gun_t, offset)
         world = {}
         local = {}
+        moved = {}
         for i, n in enumerate(dst.names):
             lq, lt = dst.local[i]
             p = dst.parent[i]
             pq, pt = world[dst.names[p]] if p is not None else ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
             if n in want:
                 lq = qnorm(qmul(qinv(pq), want[n][0]))
+            # BO3 animations place the shoulders per weapon (the DG-2 raises the right one above the
+            # eye and brings the left one forward); at the IW7 bind shoulders its hands could not
+            # reach the gun (7.3 units short) and the right arm folded in front of the camera.
+            # The shoulder's carrier moves: the clavicle when the rig has one, so clavicle, shoulder
+            # and arm keep their bind spacing (moving the shoulder alone stretched the sleeve skin
+            # between them in view); the stretch goes to the torso, behind the camera.
+            shoulder = carried.get(n)
+            if shoulder is not None:
+                wq = qnorm(qmul(pq, lq))
+                child_lt = dst.local[dst.index[shoulder]][1] if shoulder != n else (0.0, 0.0, 0.0)
+                lt = qrot(qinv(pq), vsub(vsub(want[shoulder][1], qrot(wq, child_lt)), pt))
+                moved[n] = lt
             wq = qnorm(qmul(pq, lq))
             wt = vadd(pt, qrot(pq, lt))
             world[n] = (wq, wt)
@@ -350,7 +418,7 @@ def retarget(anim, src, dst, ads=None):
         for i, n in enumerate(dst.names):
             p = dst.parent[i]
             pq, pt = world2[dst.names[p]] if p is not None else ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
-            world2[n] = (qnorm(qmul(pq, local[n])), vadd(pt, qrot(pq, dst.local[i][1])))
+            world2[n] = (qnorm(qmul(pq, local[n])), vadd(pt, qrot(pq, moved.get(n, dst.local[i][1]))))
         if 'tag_weapon' in dst.index and 'tag_weapon_right' in src.index:
             gq, gt = gun_q, gun_t
             parent = dst.names[dst.parent[dst.index['tag_weapon']]]
@@ -360,6 +428,8 @@ def retarget(anim, src, dst, ads=None):
         for n in dict.fromkeys(mapped + [x for _, *chain in ARMS for x in chain]):
             if n in local:
                 rot_keys.setdefault(n, []).append((f, local[n]))
+        for n, lt in moved.items():
+            trans_keys.setdefault(n, []).append((f, lt))
     # Every hand bone is listed, as stock view animations do: the client showed
     # bones left out of the animation collapsed onto the view origin. Bones
     # that do not move get static channels with their bind values.

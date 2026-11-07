@@ -169,6 +169,27 @@ def parse_element(raw, assets):
     return out
 
 
+def read_visuals(proc, element, assets):
+    """An element with several visuals (counts.visual > 1: one picked per particle) points at an array
+    of visual pointers; resolve it into ``visuals`` and keep the first as ``visual``."""
+    ptr, count = element.get("visual_array_ptr"), element["counts"]["visual"]
+    if not ptr or count < 2 or not proc.readable(ptr, count * 8):
+        return
+    blob = proc.read(ptr, count * 8)
+    visuals = [ref(assets, struct.unpack_from("<Q", blob, i * 8)[0]) for i in range(count)]
+    visuals = [v for v in visuals if v]
+    if visuals:
+        element["visuals"] = visuals
+        element["visual"] = visuals[0]
+
+
+def element_visuals(element):
+    """Every visual an element draws: its visual array, or its single visual."""
+    if element.get("visuals"):
+        return list(element["visuals"])
+    return [element["visual"]] if element.get("visual") else []
+
+
 def read_effect(proc, assets, address):
     head = parse_header(proc.read(address, HEADER_SIZE))
     count = head["looping"] + head["one_shot"] + head["emission"]
@@ -181,6 +202,7 @@ def read_effect(proc, assets, address):
         e = parse_element(chunk, assets)
         e["spawn_kind"] = "looping" if i < head["looping"] else ("one_shot" if i < head["looping"] + head["one_shot"] else "emission")
         e.update(read_samples(proc, chunk))
+        read_visuals(proc, e, assets)
         elements.append(e)
     head["elements"] = elements
     return head

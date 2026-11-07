@@ -1,0 +1,21 @@
+{
+ "bo3_install": "<BO3 install folder holding zone/>",
+ "zone": "zm_levelcommon",
+ "model_zone": "zone/zm_levelcommon.ff",
+ "sound_zones": ["zone/zm_levelcommon.ff", "zone/zm_common.ff"],
+ "script_zones": ["zone/zm_levelcommon.ff"],
+ "graywolf": "<GrayWolf.exe (0.8.0+; driven over MCP stdio)>",
+ "gsc_tool": "<xensik gsc-tool.exe (T7 decompiler)>",
+ "texconv": "<Microsoft texconv.exe>",
+ "python": "<python with Pillow, for the material packs>",
+ "snapshots": "<t7_zone_snapshot.py output folder: <zone>.weapons.json, <zone>.effects.json and <zone>.materials.json>",
+ "t7_models": "<ZoneTool -dumpzoneto iw7 <zone> xmodel,xmodelmesh output (xmodel/, xsurface/)>",
+ "t7_anims": "<ZoneTool -dumpzoneto iw7 <zone> xanim output (xanim/)>",
+ "bo3_hands_xmb": "<converted BO3 view hands .xmb>",
+ "iw7_hands_xmb": "<IW7 viewmodel_base_viewhands_iw7.xmb from a stock dump>",
+ "iw7_dump": "<ZoneTool dump of IW7 cp_zmb (weapons/, animpkg/, sfxpkg/, attachments/, sound/, particlesystem/)>",
+ "iw7_materials": "<IW7 material templates root (m2o/, eq/)>",
+ "script_cache": "<folder for decompiled zone scripts, shared by every port>",
+ "max_texture": 512,
+ "fx_intensity_add": 2.0
+}

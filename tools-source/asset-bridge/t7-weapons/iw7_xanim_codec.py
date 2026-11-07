@@ -13,7 +13,9 @@ within the frame count; a channel may stop before the last frame):
 * dataShort: per animated rotation channel its key count - 1 (n); for 256+
   frames followed inline by its n + 1 indices when n < 64, else by a lookup
   table (the index at every 256th key, then the last; ((n - 1) >> 8) + 2
-  entries) while the indices go to the index list. Then static rotations
+  entries) while the indices go to the index list; animations with no index
+  list (ZoneTool's T7 conversions, e.g. the 300-frame Ray Gun idle) keep long
+  channels inline too. The encoder writes the stock form. Then static rotations
   (2 or 4 shorts), then the same per animated translation channel.
 * randomDataShort: rotation keys (2 shorts z,w or 4 shorts x,y,z,w; /32767),
   then precise translation keys (3 unsigned shorts).
@@ -120,7 +122,9 @@ def decode(path):
         for _ in range(channels):
             n = ds[pos['ds']]
             pos['ds'] += 1
-            if n >= LARGE:
+            # Stock animations put a long channel's indices in the index list behind a lookup
+            # table; ZoneTool's T7 conversions (no index list) keep every channel inline.
+            if n >= LARGE and idx:
                 pos['ds'] += ((n - 1) >> 8) + 2
                 out.append(list(idx[pos['idx']:pos['idx'] + n + 1]))
                 pos['idx'] += n + 1
