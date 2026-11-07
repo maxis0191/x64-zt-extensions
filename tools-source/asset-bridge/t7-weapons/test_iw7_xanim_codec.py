@@ -59,6 +59,22 @@ class CodecTest(unittest.TestCase):
     def test_long_animation_uses_index_list(self):
         self.check(300)
 
+    def test_long_channels_inline_without_index_list(self):
+        # ZoneTool's T7 conversions (the 300-frame Ray Gun idle) keep every channel's indices in
+        # dataShort and write no index list; the encoder makes that layout when no channel is "large".
+        path = os.path.join(tempfile.mkdtemp(), 'a.xab')
+        large = codec.LARGE
+        codec.LARGE = 10 ** 9
+        try:
+            codec.encode(animation(300), path)
+        finally:
+            codec.LARGE = large
+        back = codec.decode(path)
+        for f in (0, 150, 300):
+            q0 = codec.sample(animation(300).rotations['j_gun'], f, True)
+            self.assertGreater(abs(sum(a * b for a, b in zip(q0, codec.sample(back.rotations['j_gun'], f, True)))), 0.99999)
+            self.assertAlmostEqual(codec.sample(back.translations['j_gun'], f, False)[0], f * 0.5, places=2)
+
 
 class RetargetMathTest(unittest.TestCase):
     def test_two_bone_reaches_target(self):
