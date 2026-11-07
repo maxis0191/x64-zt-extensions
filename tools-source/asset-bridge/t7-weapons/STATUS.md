@@ -477,3 +477,37 @@ samples one ribbon's points. A BO3 trail now keeps the IW7 trail
 template's life, emission (one particle) and ribbon geometry, and takes
 material, colour and size from BO3. The muzzle effect's own elements were
 probed in the world and draw correctly.
+
+## 2026-11-07: materials packed for the shaders' own reads; Ray Gun ported generically
+
+Owner review: the Ray Gun's red did not read as in BO3 and the DG-2 looked
+grey. The colour maps were intact (identical channel means), so the
+shading data was checked against the real consumer: the stock weapon pixel
+shaders, disassembled with d3dcompiler_47 (opaque `m2o_l_sm_replace_..._vm`
+ps 0170a07b0cc77bc0, emissive ps e9fc6ee4b98ae873, glass
+`m2o_l_sm_ndw_blend_..._vm` ps c726a0599d2222d2). The channel design above
+("NOT_PROVEN") was wrong in three places:
+
+* packed_cs alpha: reflectance F0 up to 0.1, then metalness; stock
+  dielectrics read 0.04 (wood stool, IW Ray Gun glass), metals ~0.97
+  (Dischord, IW Ray Gun), measured on GrayWolf exports of the stock
+  textures. We stored BO3's sRGB specular luminance (~0.22): every surface
+  became ~13 % metal at the highest dielectric reflectance.
+* packed_nog G/A: an octahedral normal rotated 45 degrees, not raw x/y.
+* colour and emissive are squared on read (gamma 2.0).
+
+`t7_material_pack.py` now converts BO3's specular-colour maps to
+reflectance/metalness, encodes octahedral normals, applies the emissive
+tint in linear light and honours scalar roughness/metalness (Ray Gun power
+cell, meter, reticle). Tests decode the packed texels with the shaders'
+formulas. The Ray Gun / DG-2 packed alphas now read 0.03 to 0.08 like the
+stock dielectrics. Gloss: same channel; BO3's gloss-to-power curve is not
+yet compared with IW7's 2^(20 (1 - sqrt(1 - R))) + 2 (NOT_PROVEN).
+
+The Ray Gun now goes through `t7_port_weapon.py` (it was hand-built). The
+first run stopped on its 300-frame idle: ZoneTool's T7 conversion keeps
+long channels' key indices inline in dataShort with no index list, where
+stock animations use a lookup table plus the index list.
+`iw7_xanim_codec.decode` reads both (commit cb6f500 carries it with the
+material change); re-encoding the idle matches every frame (rotation 2e-5,
+translation 8e-7). In-game rendered comparison: pending.
