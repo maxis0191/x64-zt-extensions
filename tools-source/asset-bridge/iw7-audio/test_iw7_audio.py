@@ -164,6 +164,18 @@ class BankTest(unittest.TestCase):
         s['aliases'][1]['set'] = {'dist_min': 500.0, 'dist_max': 100.0}
         self.assertTrue(any('dist_max' in e for e in bank.build(s, self.out, check_only=True)['errors']))
 
+    def test_ambience_volmod_is_refused(self):
+        # every vol_mod ambience alias was silent in the Station Zero usermap (runs b1/b4); emitter plays
+        tpl = os.path.join(self.root, 'beds.aliases.csv')
+        with open(tpl, 'w', newline='') as f:
+            csv.writer(f).writerows([HEADER + ['vol_mod'],
+                                     ['amb_bed', '', '', '', 'amb\\hum_lp', '0.27', '0.27', '5000', '25000', 'amb_bed_2d', 'loaded', 'looping', 'default', 'none', '', 'ambience'],
+                                     ['emt_x', '', '', '', 'amb\\hum_lp', '0.2', '0.2', '35', '450', 'amb_elm_unres_3d', 'loaded', 'rlooping', 'default', 'none', '', 'emitter']])
+        s = self.spec(template_aliases=tpl, aliases=[{'name': 'amb_bed', 'source': 'stock'}])
+        self.assertTrue(any('vol_mod ambience is silent' in e for e in bank.build(s, self.out, check_only=True)['errors']))
+        s['aliases'][0]['set'] = {'vol_mod': 'emitter'}
+        self.assertEqual(bank.build(s, self.out, check_only=True)['errors'], [])
+
     def test_file_names_survive_zonetool_csv_escapes(self):
         # ZoneTool's CSV reader turns "\t" into a tab: stock "cp\trolley_movement_lp" broke a build
         self.assertEqual(bank.zonetool_safe_file('cp\\trolley_movement_lp.LL.75.0.all'), 'cp/trolley_movement_lp.LL.75.0.all')

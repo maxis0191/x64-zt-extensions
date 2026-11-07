@@ -105,6 +105,9 @@ def load_template(path):
     return header, col, by_name, enums
 
 
+SILENT_VOLMODS = {'ambience'}
+
+
 def check_row(name, row, col, enums, errors):
     for k, allowed in enums.items():
         if row[col[k]] not in allowed:
@@ -119,6 +122,12 @@ def check_row(name, row, col, enums, errors):
         errors.append('%s: 3D alias needs dist_max > dist_min' % name)
     if float(row[col['vol_max']]) > 1.0 or float(row[col['vol_min']]) > float(row[col['vol_max']]):
         errors.append('%s: volumes must satisfy vol_min <= vol_max <= 1' % name)
+    if 'vol_mod' in col and row[col['vol_mod']] in SILENT_VOLMODS:
+        # measured in a usermap (Station Zero runs b1/b4, 2026-11-07): every alias on vol_mod ambience plays
+        # digitally silent, whatever the channel (amb_bed_2d, music_lr, amb_elm_unres_2d), speaker map, loaded or
+        # streamed, by playlocalsound or as a sound-zone bed; the same loop on vol_mod emitter is audible
+        errors.append('%s: vol_mod %s is silent in a usermap; use emitter (2D beds: set vol_mod emitter)'
+                      % (name, row[col['vol_mod']]))
 
 
 def fmt(value):
