@@ -434,3 +434,21 @@ DG-2-specific code (62 zone lines, Pack-a-Punch weapon and attachments,
 Not converted yet: heat-distortion materials, a nested effect-array element
 (type 13) in the ground shock, and the BO3 client-side view-model effects
 (`tesla_viewmodel_rail/tube`, played by the `.csc` on view-model tags).
+
+View-model effects, what BO3 does and what IW7 offers (2026-11-07):
+
+* BO3 `_zm_weap_tesla.csc` plays the rail (`fx_tesla_rail_view_zmb`, a
+  one-shot of about 0.8 s) on `tag_flash` every 8 to 12 s (random), while
+  the weapon's own notetracks `tesla_play_fx_on/off` allow it, not in ADS
+  and with ammo in the clip. The tube effect on `tag_brass` is four endless
+  omni lights whose variant follows the clip count, plus a shader tint.
+* An IW7 weapon can trigger view effects only from animation notetracks
+  (`notetrackFXMapKeys/Values/TagValues`, as stock `iw7_spaceland_wmd`).
+  The converted DG-2 anims keep BO3's notetracks, but the idle is a 2-frame
+  pose: a notetrack there fires many times a second, not every 8 to 12 s.
+* So a faithful rail needs client-side timing that IW7 assets lack. Two
+  routes: a generic native client hook (an ambient view-effect table in the
+  mod: effect, tag, random period, gate notetracks), or the asset-only
+  subset (the rail when the gun switches on: first raise, pullout, end of
+  reload). The tube's look is carried by the emissive tube materials; its
+  lights and clip-count tint are not.
