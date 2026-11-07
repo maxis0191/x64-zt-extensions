@@ -23,7 +23,9 @@ Optional "zones" (sound zones: the 2D ambience bed, reverb, mix, filter and occl
             "rows": [{"name": "cp_iwz", "copy": "cp_zmb_basement_lg_room"}, ...]}
 copies the stock definition tables (reverbs, mixes, filters, occlusion, ADSR, ...) unchanged, so the
 indices of the copied zone rows stay valid, and writes a zone table holding only the listed rows, renamed.
-Every zone's Ambience bed must be an alias of this bank. The engine streams a zone's bed itself: a 2D bed
+Every zone's Ambience bed must be an alias of this bank ("ambience" in a row replaces the stock bed).
+An alias may take "file" (a new asset name, also for stock audio) and "loop_seconds" (a seamless loop of
+that length cut from the source, so a long streamed bed can ship loaded). The engine streams a zone's bed itself: a 2D bed
 alias (channel amb_bed_2d) played with playlocalsound stays silent (run w4).
 
 Output under --out: sound/<bank>.aliases.csv, soundbank/<bank>.json,
@@ -148,7 +150,8 @@ def build(spec, out, check_only=False):
             if not a.get('keep_duck'):
                 row[col['duck']] = ''           # duck assets of the stock bank are not shipped
             row[col['SecondaryAliasName']] = a.get('secondary', '')
-            if source != 'stock':
+            stock_file = row[col['File']]
+            if source != 'stock' or a.get('file'):
                 row[col['File']] = a.get('file', 'iwz\\' + name)
             for k, value in a.get('set', {}).items():
                 if k not in col:
@@ -160,17 +163,17 @@ def build(spec, out, check_only=False):
             asset = row[col['File']] = zonetool_safe_file(original)
             dest = os.path.join(out, 'sound_assets', *asset.replace('/', '\\').split('\\')) + '.flac'
             if source == 'stock':
-                h = iw7_sab.snd_hash_name(original)
+                h = iw7_sab.snd_hash_name(stock_file)
                 hit = next(((b, ids[h]) for b, ids in index if h in ids), None)
                 if not hit:
                     errors.append('%s: stock audio %s is in none of the stock banks' % (name, asset))
                     continue
-                copies.append(('stock', hit, dest))
+                copies.append(('stock', hit, dest, a.get('loop_seconds')))
             else:
                 if not os.path.isfile(source):
                     errors.append('%s: missing source %s' % (name, source))
                     continue
-                copies.append(('file', source, dest))
+                copies.append(('file', source, dest, a.get('loop_seconds')))
             rows.append(row)
             manifest.append({'alias': name, 'file': asset, 'type': row[col['type']], 'loop': row[col['loop']],
                              'channel': row[col['channel']], 'dist_min': row[col['dist_min']],
@@ -183,7 +186,7 @@ def build(spec, out, check_only=False):
     for d in ('sound', 'soundbank'):
         os.makedirs(os.path.join(out, d), exist_ok=True)
     done = {}
-    for (kind, src, dest), m in zip(copies, manifest):
+    for (kind, src, dest, loop_seconds), m in zip(copies, manifest):
         if dest not in done:
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             if kind == 'stock':
@@ -192,6 +195,8 @@ def build(spec, out, check_only=False):
                     f.write(iw7_sab.flac_container(e, b.read(e)))
             else:
                 shutil.copyfile(src, dest)
+            if loop_seconds:
+                make_loop(dest, float(loop_seconds))
             info = flac_info(dest)
             if info['bits'] != 16 or info['min_block'] != info['max_block']:
                 errors.append('%s: IW7 banks hold fixed-block 16-bit FLAC (%s)' % (dest, info))
@@ -238,6 +243,37 @@ DEF_TABLES = (('sendEffectParams', 'sendEffectParams'), ('ADSRSettings', 'adsr')
               ('FullOcclusionDefs', 'fullOcclusions'), ('PlayerBreathStateDefs', 'playerBreathStates'))
 
 
+def make_loop(path, seconds, fade=1.5):
+    """Rewrite a FLAC file as a seamless loop of `seconds`: the first `fade` seconds cross-fade with the audio
+    that follows the cut (ffmpeg decodes and encodes 16-bit FLAC in 1024-frame blocks like the stock banks; the cross-fade is stdlib Python). A long
+    streamed bed shortened this way can ship as loaded audio."""
+    import array
+    import subprocess
+    probe = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a:0', '-show_entries',
+                            'stream=sample_rate,channels', '-of', 'csv=p=0', path], capture_output=True, text=True, check=True)
+    rate, channels = (int(v) for v in probe.stdout.strip().split(',')[:2])
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-f', 's16le', '-acodec', 'pcm_s16le', '-'],
+                         capture_output=True, check=True).stdout
+    x = array.array('h')
+    x.frombytes(raw)
+    n, f = int(seconds * rate) * channels, int(fade * rate) * channels
+    if len(x) < n + f:
+        raise ValueError('%s: %.1f s is too short for a %.1f s loop' % (path, len(x) / channels / rate, seconds))
+    out = x[:n]
+    frames = f // channels
+    for i in range(f):
+        w = (i // channels) / frames
+        out[i] = max(-32768, min(32767, int(round(x[i] * w + x[n + i] * (1.0 - w)))))
+    tmp = path + '.pcm'
+    with open(tmp, 'wb') as fh:
+        fh.write(out.tobytes())
+    try:
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 's16le', '-ar', str(rate), '-ac', str(channels), '-i', tmp,
+                        '-c:a', 'flac', '-sample_fmt', 's16', '-frame_size', '1024', path], check=True)
+    finally:
+        os.remove(tmp)
+
+
 def write_zones(z, bank, out, aliases, sb):
     """Copy the stock definition tables and write the selected, renamed zone rows (see the module doc)."""
     errors, zones = [], []
@@ -267,6 +303,8 @@ def write_zones(z, bank, out, aliases, sb):
             continue
         r = list(base)
         r[col['Zone_Name']] = row['name']
+        if 'ambience' in row:
+            r[col['Ambience']] = row['ambience']
         bed = r[col['Ambience']]
         if bed and bed not in aliases:
             errors.append('zone %s: ambience bed %s is not an alias of this bank' % (row['name'], bed))
