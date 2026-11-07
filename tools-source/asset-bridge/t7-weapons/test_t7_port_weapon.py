@@ -172,6 +172,43 @@ class ModelSurfacesTest(unittest.TestCase):
                          ["wpn_hd_gun_view4b01d4fb.xsb"])
 
 
+class ViewEffectTest(unittest.TestCase):
+    def test_author_writes_notetrack_effects(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "notetrackFXMapKeys": ["stock_nt", ""],
+                              "notetrackFXMapValues": [{"type": 1, "fx": "vfx/iw7/stock"}, None],
+                              "notetrackFXMapTagValues": ["j_stock", ""]}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w",
+                "notetrack_fx": {"switch_on": ["vfx/t7/zombie/fx_rail", "tag_flash"]}}
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["notetrackFXMapKeys"], ["switch_on", ""])
+        self.assertEqual(d["notetrackFXMapValues"], [{"type": 1, "fx": "vfx/t7/zombie/fx_rail"}, None])
+        self.assertEqual(d["notetrackFXMapTagValues"], ["tag_flash", ""])
+        spec["notetrack_fx"] = {}                       # the template's entries never reach a port
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["notetrackFXMapKeys"], ["", ""])
+
+    def test_port_resolves_script_effect_keys(self):
+        with tempfile.TemporaryDirectory() as zone:
+            p = object.__new__(port.Port)
+            p.zone = zone
+            p.cfg = {"view_effects": ["switch_on=tesla_viewmodel_rail@tag_flash"]}
+            p.manifest = {"stages": {"scripts": {"found": {"scripts/zm/_zm_weap_tesla.csc": {"effects": {
+                "tesla_viewmodel_rail": "zombie/fx_rail", "tesla_viewmodel_rail_upgraded": "zombie/fx_rail_ug"}}}}}}
+            for name in ("fx_rail", "fx_rail_ug"):
+                os.makedirs(os.path.join(zone, "particlesystem", "vfx", "t7", "zombie"), exist_ok=True)
+                open(os.path.join(zone, "particlesystem", "vfx", "t7", "zombie", name + ".iw7VFX"), "wb").close()
+            self.assertEqual(p.notetrack_effects(False), {"switch_on": ["vfx/t7/zombie/fx_rail", "tag_flash"]})
+            self.assertEqual(p.notetrack_effects(True), {"switch_on": ["vfx/t7/zombie/fx_rail_ug", "tag_flash"]})
+            os.remove(os.path.join(zone, "particlesystem", "vfx", "t7", "zombie", "fx_rail.iw7VFX"))
+            self.assertEqual(p.notetrack_effects(False), {})          # not built: never referenced
+            p.cfg = {"view_effects": ["switch_on=nope@tag_flash"]}
+            with self.assertRaises(SystemExit):
+                p.notetrack_effects(False)
+
+
 class OverrideTest(unittest.TestCase):
     def test_values_are_typed(self):
         self.assertEqual(port.weapon_overrides(["penetrateType=3", "penetrateMultiplier=2.5", "bBoltAction=false",

@@ -131,6 +131,17 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     w["notetrackSoundMapKeys"] = keys + [""] * (size - len(keys))
     w["notetrackSoundMapValues"] = [sounds[k] for k in keys] + [""] * (size - len(keys))
 
+    # View-model effects played on an anim notetrack: {notetrack: [IW7 effect, tag]} (the DG-2 rail
+    # when the gun switches on). The template's own entries never reach a ported weapon.
+    fx_map = spec.get("notetrack_fx") or {}
+    if isinstance(d.get("notetrackFXMapKeys"), list) or fx_map:
+        keys = list(fx_map)
+        size = max(len(d.get("notetrackFXMapKeys") or []), len(keys))
+        pad = size - len(keys)
+        d["notetrackFXMapKeys"] = keys + [""] * pad
+        d["notetrackFXMapValues"] = [{"type": 1, "fx": fx_map[k][0]} for k in keys] + [None] * pad
+        d["notetrackFXMapTagValues"] = [fx_map[k][1] for k in keys] + [""] * pad
+
     proj = spec.get("projectile")
     if proj:
         pd = projectile_tpl["weapDef"]

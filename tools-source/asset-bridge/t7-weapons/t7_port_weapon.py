@@ -432,6 +432,32 @@ class Port:
             run(cmd, stdout=f)
         self.record("fx", {"effects": effects})
 
+    def notetrack_effects(self, upgraded):
+        """{notetrack: [IW7 effect, tag]} from the configured view effects.
+
+        BO3 client scripts play view-model effects on their own timers (the DG-2 rail every 8 to 12 s
+        on tag_flash); an IW7 weapon can only tie an effect to an anim notetrack. Each configured
+        ``notetrack=effect key@tag`` names a ``level._effect`` key of the weapon's scripts; the upgraded
+        weapon takes the ``<key>_upgraded`` effect when the scripts define one. Only effects the fx stage
+        built are used (a dangling name fails the zone build)."""
+        effects = {}
+        for info in self.manifest["stages"].get("scripts", {}).get("found", {}).values():
+            effects.update(info.get("effects", {}))
+        out = {}
+        for item in self.cfg.get("view_effects", []):
+            notetrack, _, rest = item.partition("=")
+            key, _, tag = rest.partition("@")
+            if not (notetrack and key and tag):
+                raise SystemExit("view effect %r is not notetrack=effect key@tag" % item)
+            bo3 = effects.get(key + "_upgraded") if upgraded else None
+            bo3 = bo3 or effects.get(key)
+            if not bo3:
+                raise SystemExit("view effect %r: the scripts define no level._effect[%r]" % (item, key))
+            iw7 = t7_weapon_spec.iw7_fx_name(bo3)
+            if os.path.exists(os.path.join(self.zone, "particlesystem", *iw7.split("/")) + ".iw7VFX"):
+                out[notetrack] = [iw7, tag]
+        return out
+
     def stage_author(self):
         import iw7_weapon_author as author
         specs = self.specs()
@@ -448,7 +474,7 @@ class Port:
             # BO3 anim notetracks carry the alias name: IW7 maps notetrack -> alias per weapon
             notetracks = {a: a for a in self.notetrack_sounds([spec]) if a not in silent}
             spec = dict(spec, xab_dir=os.path.join(self.zone, "xanim"), fx=built, projectile=proj,
-                        notetrack_sounds=notetracks,
+                        notetrack_sounds=notetracks, notetrack_fx=self.notetrack_effects(i == 1),
                         sounds={k: v for k, v in spec["sounds"].items() if v not in silent})
             w, pkg = author.author(spec, tpl["weapon"], tpl["animpkg"], tpl["projectile"])
             d = w["weapDef"]
@@ -791,6 +817,9 @@ def main(argv=None):
     ap.add_argument("--override", action="append", default=[], metavar="FIELD=VALUE",
                     help="weapDef field set on the base and upgraded weapon (owner-requested departures from "
                     "BO3, e.g. penetrateType=3 for bullets that pierce)")
+    ap.add_argument("--view-effect", action="append", default=[], metavar="NOTETRACK=KEY@TAG",
+                    help="play the scripts' level._effect[KEY] on TAG at an anim notetrack (BO3 view-model "
+                    "effects on client timers, e.g. switch_on=tesla_viewmodel_rail@tag_flash)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--stages", default=",".join(STAGES), help="comma list, in order: " + ",".join(STAGES))
     args = ap.parse_args(argv)
@@ -799,6 +828,8 @@ def main(argv=None):
         cfg["display"] = args.display
     if args.override:
         cfg["weapon_overrides"] = weapon_overrides(args.override)
+    if args.view_effect:
+        cfg["view_effects"] = args.view_effect
     port = Port(cfg, args.weapon, args.out, args.name)
     for stage in args.stages.split(","):
         if stage not in STAGES:
