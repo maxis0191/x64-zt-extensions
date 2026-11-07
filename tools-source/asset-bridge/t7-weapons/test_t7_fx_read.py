@@ -53,6 +53,21 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(fx.parse_element(element(8), {})["type_name"], "omni_light")
         self.assertEqual(fx.parse_element(element(14), {})["type_name"], "runner")
 
+    def test_visual_array_is_resolved(self):
+        class Memory:
+            def readable(self, addr, size=1):
+                return addr == 0x5000
+
+            def read(self, addr, size):
+                return struct.pack("<3Q", 0x10, 0x11, 0x12)[:size]
+        raw = bytearray(element(0, 0x5000))
+        raw[0xC9] = 3
+        assets = {0x10: ("material", "smoke_a"), 0x11: ("material", "smoke_b"), 0x12: ("material", "smoke_c")}
+        e = fx.parse_element(bytes(raw), assets)
+        fx.read_visuals(Memory(), e, assets)
+        self.assertEqual([v["name"] for v in e["visuals"]], ["smoke_a", "smoke_b", "smoke_c"])
+        self.assertEqual(e["visual"]["name"], "smoke_a")
+
     def test_wrong_sizes_are_refused(self):
         with self.assertRaises(ValueError):
             fx.parse_header(b"\0" * 8)

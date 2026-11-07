@@ -414,7 +414,10 @@ class Port:
         for a in m.get("anims", {}).get("anims", []):
             lines.append("xanim," + a)
         for e in m.get("fx", {}).get("effects", []):
-            lines.append("vfx," + t7_weapon_spec.iw7_fx_name(e))
+            name = t7_weapon_spec.iw7_fx_name(e)
+            # an effect the converter could not build is reported in fx_report.json, never referenced
+            if os.path.exists(os.path.join(self.zone, "particlesystem", *name.split("/")) + ".iw7VFX"):
+                lines.append("vfx," + name)
         specs = self.specs()
         for s in specs:
             lines += ["animpkg,%s_package" % s["name"], "sfxpkg,%s_sfxpackage" % s["name"],

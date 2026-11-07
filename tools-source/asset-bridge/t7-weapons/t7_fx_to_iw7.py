@@ -228,7 +228,10 @@ def main(argv=None):
             raise SystemExit("effect %s not in %s" % (bo3, args.effects))
         model, report = convert(iw7, effects[bo3], templates, materials, intensity)
         if not report["emitters"]:
-            raise SystemExit("%s: no element could be converted %s" % (iw7, report["skipped"]))
+            # reported, not written: the port references only the effects that were built
+            report["not_built"] = True
+            reports.append(report)
+            continue
         data = vfx.encode(model)
         check = vfx.decode(data)
         if len(check["system"]["emitterDefs"]) != report["emitters"]:
