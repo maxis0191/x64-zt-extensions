@@ -98,10 +98,19 @@ class WeaponSoundTest(unittest.TestCase):
     def test_empty_bo3_alias_is_silent(self):
         self.assertNotIn('wpn_rgun_loop', self.rows)
 
-    def test_unknown_alias_is_refused(self):
-        with self.assertRaises(SystemExit):
+    def test_unknown_alias_is_reported_silent(self):
+        import contextlib
+        import io
+        import json
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
             sound.main(['--bo3-aliases', os.path.join(self.root, 'bo3.csv'), '--flac-root', os.path.join(self.root, 'flac'),
-                        '--template', os.path.join(self.root, 'stock.csv'), '--out', self.out, '--alias', 'wpn_missing'])
+                        '--template', os.path.join(self.root, 'stock.csv'), '--out', os.path.join(self.root, 'out3'),
+                        '--bank', 'b', '--zone', 'z', '--prefix', 'p', '--alias', 'wpn_missing', 'wpn_rgun_reload_open',
+                        '--role', 'wpn_rgun_reload_open=impact'])
+        report = {r['alias']: r for r in json.loads(buf.getvalue())['aliases']}
+        self.assertEqual(report['wpn_missing'], {'alias': 'wpn_missing', 'silent': True, 'unresolved': True})
+        self.assertNotIn('silent', report['wpn_rgun_reload_open'])
 
 
 if __name__ == '__main__':

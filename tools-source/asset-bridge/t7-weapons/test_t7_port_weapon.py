@@ -83,6 +83,17 @@ class BehaviourTest(unittest.TestCase):
         self.assertEqual(port.behaviour_lines(["w"], found, set(), {"wpn_tesla_bounce"}),
                          ["w|_zm_weap_tesla|tesla_max_arcs=5||wpn_tesla_bounce"])
 
+    def test_scripts_of_one_namespace_merge_into_one_line(self):
+        found = {"lc.csc": {"namespace": "lightning_chain", "zombie_vars": {}, "effects": {"tesla_bolt": "z/bolt"},
+                            "sounds": []},
+                 "lc.gsc": {"namespace": "lightning_chain", "zombie_vars": {}, "effects": {"tesla_bolt": "z/bolt"},
+                            "sounds": ["zmb_electrocute_zombie"]},
+                 "t.csc": {"namespace": "_zm_weap_tesla", "zombie_vars": {}, "effects": {"rail": "z/rail"}},
+                 "t.gsc": {"namespace": "_zm_weap_tesla", "zombie_vars": {"tesla_max_arcs": 5}, "effects": {}}}
+        lines = port.behaviour_lines(["w"], found, {"z/bolt", "z/rail"}, {"zmb_electrocute_zombie"})
+        self.assertEqual(sorted(lines), ["w|_zm_weap_tesla|tesla_max_arcs=5|rail=vfx/t7/z/rail|",
+                                         "w|lightning_chain||tesla_bolt=vfx/t7/z/bolt|zmb_electrocute_zombie"])
+
     def test_scripts_without_namespace_or_data_add_nothing(self):
         found = {"a.gsc": {"namespace": None, "zombie_vars": {"x": 1}, "effects": {}},
                  "b.csc": {"namespace": "zm_weap_x", "zombie_vars": {}, "effects": {}}}

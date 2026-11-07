@@ -646,24 +646,35 @@ def model_surfaces(xmb, surface_dir):
 
 
 def behaviour_lines(weapons, found, built_effects, sounds=()):
-    """One ``weapon|namespace|tuning|effects|sounds`` line per weapon and BO3 behaviour script.
+    """One ``weapon|namespace|tuning|effects|sounds`` line per weapon and BO3 behaviour namespace.
 
     The namespace (zm_weap_thundergun) names the behaviour family the IW7 module implements once;
     tuning is the script's zombie vars (``name=value``), effects its ``level._effect`` keys mapped to
     the converted IW7 effects (``key=vfx/t7/...``, built ones only), sounds the aliases it plays that
     the port carries. Scripts without a namespace or without tuning/effects add nothing."""
-    lines = []
+    # BO3 splits a namespace across scripts (server .gsc, client .csc, shared helpers): merge them into one
+    # line per namespace, so a later script cannot replace an earlier one's data downstream. Sorted order
+    # puts .csc before .gsc: on a tuning name both define, the server script's value wins.
+    merged = {}
     for rel in sorted(found):
         info = found[rel]
         ns = info.get("namespace")
-        if not ns or not (info.get("zombie_vars") or info.get("effects")):
+        if not ns:
             continue
-        tuning = ",".join("%s=%s" % kv for kv in info.get("zombie_vars", {}).items())
-        fx = ",".join("%s=%s" % (k, t7_weapon_spec.iw7_fx_name(v)) for k, v in info.get("effects", {}).items()
-                      if v in built_effects)
-        snd = ",".join(dict.fromkeys(a for a in info.get("sounds", []) + info.get("literals", []) if a in sounds))
+        m = merged.setdefault(ns, {"vars": {}, "fx": {}, "sounds": []})
+        m["vars"].update(info.get("zombie_vars", {}))
+        m["fx"].update({k: v for k, v in info.get("effects", {}).items() if v in built_effects})
+        m["data"] = m.get("data") or bool(info.get("zombie_vars") or info.get("effects"))
+        m["sounds"] += [a for a in info.get("sounds", []) + info.get("literals", []) if a in sounds]
+    lines = []
+    for ns, m in merged.items():
+        if not m.get("data"):
+            continue
+        tuning = ",".join("%s=%s" % kv for kv in m["vars"].items())
+        fx = ",".join("%s=%s" % (k, t7_weapon_spec.iw7_fx_name(v)) for k, v in m["fx"].items())
+        snd = ",".join(dict.fromkeys(m["sounds"]))
         lines += ["%s|%s|%s|%s|%s" % (w, ns, tuning, fx, snd) for w in weapons]
-    return list(dict.fromkeys(lines))
+    return lines
 
 
 def pap_attachment(template, name, upgraded):

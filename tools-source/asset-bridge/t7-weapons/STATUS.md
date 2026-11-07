@@ -411,3 +411,23 @@ converted material, as 771 of 5932 stock IW7 material modules do (survey of
 the 1164 stock cp_zmb particle systems). Partly converted arrays are reported
 (`partial`). Thundergun smoke cloud now builds; knockback ground pending the
 re-export.
+
+## 2026-11-07: DG-2, second generic port
+
+`t7_port_weapon.py --weapon tesla_gun_zm` ran every stage with no
+DG-2-specific code (62 zone lines, Pack-a-Punch weapon and attachments,
+19 effects built). Two generic fixes came out of it:
+
+* Sounds: a weapon may name generic BO3 aliases kept outside the zones the
+  port reads (`dryfire_rifle`). An alias found in no exported table is now
+  reported (`unresolved`) and left silent instead of stopping the port;
+  `core_common.ff` joined the machine's sound zones. The DG-2 dry fire stays
+  unresolved (not in zm_levelcommon, zm_common or core_common tables).
+* Behaviours: BO3 splits a namespace across scripts (server `.gsc`, client
+  `.csc`); one line per script let a later line replace an earlier one's
+  data in the assembled module (the `lightning_chain` electrocute sound).
+  Lines are now merged per namespace.
+
+Not converted yet: heat-distortion materials, a nested effect-array element
+(type 13) in the ground shock, and the BO3 client-side view-model effects
+(`tesla_viewmodel_rail/tube`, played by the `.csc` on view-model tags).

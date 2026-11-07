@@ -97,13 +97,16 @@ def main(argv=None):
     header, col, by_channel = template_rows(args.template)
     roles = dict(r.split('=', 1) for r in args.role)
 
-    wanted, root, queue = [], {}, [(a, a) for a in args.alias]
+    wanted, root, queue, unresolved = [], {}, [(a, a) for a in args.alias], []
     while queue:
         name, chain = queue.pop(0)
-        if name in wanted or not name:
+        if name in wanted or name in unresolved or not name:
             continue
         if name not in source:
-            raise SystemExit('BO3 alias %s not found' % name)
+            # In none of the exported alias tables (a generic alias kept in a zone the port does not read):
+            # reported and left silent, so the weapon references nothing missing.
+            unresolved.append(name)
+            continue
         wanted.append(name)
         root[name] = chain
         queue.append((source[name][bcol['Secondary']], chain))
@@ -111,7 +114,7 @@ def main(argv=None):
     os.makedirs(os.path.join(args.out, 'sound'), exist_ok=True)
     os.makedirs(os.path.join(args.out, 'soundbank'), exist_ok=True)
     out = [header]
-    report = []
+    report = [{'alias': name, 'silent': True, 'unresolved': True} for name in unresolved]
     for name in wanted:
         r = source[name]
         if not r[bcol['FileSpec']]:
