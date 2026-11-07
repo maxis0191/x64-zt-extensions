@@ -67,6 +67,8 @@ class SpecTest(unittest.TestCase):
         self.assertEqual(s["fx"]["trail"], {"bo3": "zombie/fx_trail_thundergun", "iw7": "vfx/t7/zombie/fx_trail_thundergun"})
         self.assertEqual(s["sounds"]["fire_plr"], "wpn_thundergun_fire_plr")
         self.assertEqual(s["projectile"]["iProjectileSpeed"], 2000)
+        # a straight shot carries its zero launch components, so no template lob survives
+        self.assertEqual((s["projectile"]["iProjectileSpeedUp"], s["projectile"]["iProjectileSpeedForward"]), (0, 0))
         self.assertAlmostEqual(s["projectile"]["projLifetime"], 0.5)
         self.assertEqual(s["upgrade"], "thundergun_upgraded_zm")
         self.assertEqual(s["display_key"], "WEAPON_THUNDERGUN")

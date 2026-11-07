@@ -33,8 +33,11 @@ ROLE_SOUNDS = {"proj_loop": 0x358, "fire_npc": 0x378, "fire_plr": 0x380, "fire_n
                "fire_plr_last": 0x420, "dryfire_npc": 0x428, "dryfire_plr": 0x430, "proj_impact": 0x1088}
 CLIP = 0x194              # in the variant
 INTS = {"max_ammo": 0x8F8, "start_ammo": 0x8FC, "fire_time_ms": 0xA1C}
+# Launch speeds follow BO2's order: forward speed, then the up and forward components added at launch
+# (zm_levelcommon: Cymbal Monkey and Octobomb up 100, Mustang & Sally 50, frag forward 120; the Ray Gun,
+# DG-2 and Thundergun 0, a straight shot). Without them an IW7 template's lob (zapper: up 500) remains.
 PROJECTILE_INTS = {"iExplosionInnerDamage": 0xFB4, "iExplosionRadius": 0xFB8, "iExplosionOuterDamage": 0xFC0,
-                   "iProjectileSpeed": 0xFEC}
+                   "iProjectileSpeed": 0xFEC, "iProjectileSpeedUp": 0xFF0, "iProjectileSpeedForward": 0xFF4}
 PROJECTILE_FLOATS = {"projLifetime": 0x1004}
 # role -> accepted suffixes, first match wins
 ANIM_ROLES = {

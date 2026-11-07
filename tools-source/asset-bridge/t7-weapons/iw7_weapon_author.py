@@ -49,7 +49,7 @@ TIMER_MAP = {
     "sprintInTime": "sprint_in", "sprintLoopTime": "sprint_loop", "sprintOutTime": "sprint_out",
 }
 PROJECTILE_FIELDS = ("iExplosionRadius", "iExplosionInnerDamage", "iExplosionOuterDamage",
-                     "iProjectileSpeed", "projLifetime")
+                     "iProjectileSpeed", "iProjectileSpeedUp", "iProjectileSpeedForward", "projLifetime")
 
 
 def anim_info(xab_dir, name):
