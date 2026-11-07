@@ -85,6 +85,16 @@ class ConvertTest(unittest.TestCase):
         self.assertAlmostEqual(by["PARTICLE_MODULE_INIT_ATTRIBUTES"]["m_velocityMin"][0], 100.0, places=3)
         self.assertAlmostEqual(by["PARTICLE_MODULE_INTENSITY_GRAPH"]["m_curves"][0]["scale"], 20.0)
 
+    def test_negative_velocity_amplitude_keeps_min_below_max(self):
+        e = element("one_shot", 1, 0)
+        e["vel_samples"][0]["local_velocity"] = {"base": [0.2, 0.1, 0.0], "amplitude": [-0.15, -0.2, 0.0]}
+        (em,), _ = self.convert([e])
+        attrs = [vfx.module_data(m) for g in em["stateDefs"][0]["moduleGroupDefs"] for m in (g.get("moduleDefs") or [])
+                 if m["moduleType"] == "PARTICLE_MODULE_INIT_ATTRIBUTES"][0]
+        for lo, hi in zip(attrs["m_velocityMin"][:3], attrs["m_velocityMax"][:3]):
+            self.assertLessEqual(lo, hi)
+        self.assertAlmostEqual(attrs["m_velocityMin"][1], -100.0, places=3)
+
     def test_unconverted_material_is_reported(self):
         e = element("one_shot", 1, 0)
         e["visual"] = {"kind": "material", "name": "ei/gfx_distort_heat"}
