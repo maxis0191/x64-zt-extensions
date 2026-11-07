@@ -90,12 +90,14 @@ def run(cmd, **kw):
 
 
 def with_snapshot(cfg):
-    """``snapshots`` (t7_zone_snapshot.py output folder) supplies ``scan``/``effects`` for ``zone``."""
+    """``snapshots`` (t7_zone_snapshot.py output folder) supplies ``scan``/``effects``/``material_constants``
+    for ``zone``."""
     cfg = dict(cfg)
     if cfg.get("snapshots") and cfg.get("zone"):
         base = os.path.join(cfg["snapshots"], cfg["zone"])
         cfg.setdefault("scan", base + ".weapons.json")
         cfg.setdefault("effects", base + ".effects.json")
+        cfg.setdefault("material_constants", base + ".materials.json")
     return cfg
 
 
@@ -277,7 +279,9 @@ class Port:
                 mj, "--template", os.path.join(root, MATERIAL_TEMPLATES["opaque"]),
                 "--emissive-template", os.path.join(root, MATERIAL_TEMPLATES["emissive"]),
                 "--blend-template", os.path.join(root, MATERIAL_TEMPLATES["blend"]),
-                "--texconv", self.cfg["texconv"], "--out", self.zone, "--max-size", self.cfg.get("max_texture", 512)],
+                "--texconv", self.cfg["texconv"], "--out", self.zone, "--max-size", self.cfg.get("max_texture", 512)]
+                + (["--constants", self.cfg["material_constants"]]
+                   if os.path.exists(self.cfg.get("material_constants") or "") else []),
                 stdout=subprocess.DEVNULL)
             written.append(os.path.relpath(mj, self.out))
         # The asset name is the file path under materials/: put each one where the converted models

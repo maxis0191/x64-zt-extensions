@@ -11,6 +11,7 @@ serves every weapon of that zone (zm_levelcommon, a DLC map zone, ...):
     <out>/<zone>.assets.tsv    ZoneTool asset log
     <out>/<zone>.weapons.json  t7.weapon-scan/1, all weapons
     <out>/<zone>.effects.json  t7.fx-read/1, all effects with samples
+    <out>/<zone>.materials.json t7.material-read/1, every material's constants
 
     python t7_zone_snapshot.py --zonetool <zt-t7>/zonetool.exe --zone zm_levelcommon --out <dir>
 
@@ -32,7 +33,8 @@ HOLD = re.compile(r"ZONETOOL_HOLD\s+(\S+)\s+(\d+)")
 
 def outputs(out_dir, zone):
     base = os.path.join(os.path.abspath(out_dir), zone)
-    return {"assetlog": base + ".assets.tsv", "weapons": base + ".weapons.json", "effects": base + ".effects.json"}
+    return {"assetlog": base + ".assets.tsv", "weapons": base + ".weapons.json", "effects": base + ".effects.json",
+            "materials": base + ".materials.json"}
 
 
 def reader_commands(python, pid, paths):
@@ -41,6 +43,8 @@ def reader_commands(python, pid, paths):
          "--assetlog", paths["assetlog"], "--out", paths["weapons"]],
         [python, "-B", os.path.join(HERE, "t7_fx_read.py"), "--pid", str(pid),
          "--assetlog", paths["assetlog"], "--out", paths["effects"]],
+        [python, "-B", os.path.join(HERE, "t7_material_read.py"), "--pid", str(pid),
+         "--assetlog", paths["assetlog"], "--out", paths["materials"]],
     ]
 
 

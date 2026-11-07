@@ -158,6 +158,7 @@ class SnapshotConfigTest(unittest.TestCase):
         cfg = port.with_snapshot({"snapshots": "snap", "zone": "zm_island"})
         self.assertEqual(cfg["scan"], os.path.join("snap", "zm_island.weapons.json"))
         self.assertEqual(cfg["effects"], os.path.join("snap", "zm_island.effects.json"))
+        self.assertEqual(cfg["material_constants"], os.path.join("snap", "zm_island.materials.json"))
 
     def test_explicit_paths_win(self):
         cfg = port.with_snapshot({"snapshots": "snap", "zone": "zm_island", "scan": "mine.json"})

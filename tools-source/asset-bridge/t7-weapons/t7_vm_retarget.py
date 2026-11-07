@@ -265,7 +265,45 @@ def root_ads(anim, hip, dst, gun, mode):
                  'hip_gun': [round(x, 3) for x in gt]}
 
 
-def retarget(anim, src, dst, ads=None):
+MAX_FOV = 120.0          # widest IW7 cg_fov (horizontal at 4:3, widened for wider screens)
+SHOULDER_RADIUS = 5.0    # the arm mesh's cut end around the shoulder
+
+
+def hide_shoulder(shoulder, wrist, reach, cam, fov=MAX_FOV):
+    """BO3 places some shoulders in front of the camera (Thundergun left: 16 forward, 14 down),
+    out of view at BO3's field of view; at IW7's widest one the open end of the IW7 arm mesh
+    showed in the lower corner. A shoulder whose mesh end would be in view is lowered (camera
+    down) until it is not, as far as the wrist stays within 98 % of the arm's reach, so hands
+    and gun keep their BO3 placement. Positions are world; cam = (rotation, position)."""
+    cq, cp = cam
+    local = qrot(qinv(cq), vsub(shoulder, cp))   # x forward, y left, z up
+    x, y, z = local
+    dist = vlen(local)
+    if x <= 0 or dist < 1e-6:
+        return shoulder
+    pad = math.asin(min(1.0, SHOULDER_RADIUS / dist))
+    half_h = math.radians(fov / 2)
+    half_v = math.atan(math.tan(half_h) * 0.75)
+    if abs(math.atan2(y, x)) >= half_h + pad or math.atan2(-z, math.hypot(x, y)) >= half_v + pad:
+        return shoulder
+    want_z = -math.hypot(x, y) * math.tan(min(half_v + pad, math.radians(85)))
+    wrist_local = qrot(qinv(cq), vsub(wrist, cp))
+    limit = 0.98 * reach
+
+    def reachable(zz):
+        return vlen(vsub(wrist_local, (x, y, zz))) <= limit
+    if not reachable(z):
+        return shoulder
+    if not reachable(want_z):
+        lo, hi = want_z, z          # lo unreachable, hi reachable
+        for _ in range(40):
+            mid = (lo + hi) / 2
+            lo, hi = (lo, mid) if reachable(mid) else (mid, hi)
+        want_z = hi
+    return vadd(cp, qrot(cq, (x, y, want_z)))
+
+
+def retarget(anim, src, dst, ads=None, fov=MAX_FOV):
     out = codec.Animation()
     out.__dict__.update({k: getattr(anim, k) for k in ('name', 'frames', 'rate', 'frequency', 'flags', 'header', 'tail', 'notify', 'notify_count')})
     frames = range(anim.frames + 1)
@@ -318,6 +356,14 @@ def retarget(anim, src, dst, ads=None):
             else:
                 # BO3 world orientation, expressed relative to each rig's bind pose.
                 want[n] = (qnorm(qmul(qmul(q, qinv(bind_src[n][0])), bind_dst[n][0])), vadd(t, offset))
+        cam = (sp[cam_src][0], dst.world[cam_dst][1])
+        for _, s, e, w in ARMS:
+            if s in want and w in want and e in dst.index and w in dst.index:
+                reach = vlen(dst.local[dst.index[e]][1]) + vlen(dst.local[dst.index[w]][1])
+                lowered = hide_shoulder(want[s][1], want[w][1], reach, cam, fov)
+                if lowered != want[s][1]:
+                    report['shoulders_lowered'] = report.get('shoulders_lowered', 0) + 1
+                want[s] = (want[s][0], lowered)
         gun_q, gun_t = sp[src.index['tag_weapon_right']]
         gun_t = vadd(gun_t, offset)
         world = {}

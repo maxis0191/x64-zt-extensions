@@ -118,6 +118,28 @@ def pack_cs(albedo, spec, metalness):
     return out
 
 
+IW7_GLOSS_EXPONENT = 20.0   # packed_nog R: specular power 2^(20 (1 - sqrt(1 - R))) + 2
+EMISSIVE_REFERENCE = 16.0   # BO3 hdrScale that --emissive-scale stands for (Ray Gun power cell)
+
+
+def bo3_gloss_to_r(texel, gloss_range):
+    """packed_nog R for a BO3 gloss texel (0..255). BO3 materials scale the gloss map into their own
+    glossRange (compiled constant; Ray Gun plastic 4..13, metal 0..17, DG-2 wood 2..10) and read it
+    as a log2 specular power, as published for BO2 (8192^gloss, range 13). IW7 decodes R into the
+    exponent 20 (1 - sqrt(1 - R)); R is chosen so the exponents match."""
+    lo, hi = gloss_range
+    g = lo + (hi - lo) * (np.asarray(texel, np.float32) / 255.0)
+    e = np.clip(g / IW7_GLOSS_EXPONENT, 0.0, 1.0)
+    return (1.0 - (1.0 - e) ** 2) * 255.0
+
+
+def lookup_constants(constants, name):
+    """Compiled BO3 constants of a material (t7_material_read): weapon materials are named "mc/<name>"."""
+    if not constants:
+        return {}
+    return constants.get(name) or constants.get("mc/" + name) or {}
+
+
 def pack_emissive(emis, tint):
     """The *_e image as the emissive weapon shader (ps e9fc6ee4b98ae873) reads it: rgb squared, times
     emissivePara. The BO3 map (sRGB) is a mask/colour multiplied by a tint: the tint's hue is applied in
@@ -141,7 +163,7 @@ def octahedral_ga(normal):
     return (px + py + 1) / 2 * 255.0, (px - py + 1) / 2 * 255.0
 
 
-def pack_material(mat, base, max_size=0):
+def pack_material(mat, base, max_size=0, constants=None):
     albedo_path = resolve(base, mat.get("albedo"))
     if not albedo_path:
         raise ValueError("material %s has no albedo" % mat["name"])
@@ -170,8 +192,11 @@ def pack_material(mat, base, max_size=0):
     nog = np.empty((h, w, 4), np.float32)
     # BO3 roughness binding is inverted gloss; undo the inversion for IW7 gloss. A scalar roughness
     # (BO3 metalness-workflow materials) gives a constant gloss.
+    gloss_range = (constants or {}).get("glossRange")
     if rough is not None:
         gloss = 255.0 - channel(rough, rb, np.full((h, w), 127.0, np.float32))
+        if gloss_range:
+            gloss = bo3_gloss_to_r(gloss, gloss_range[:2])
     elif mat.get("roughness_value") is not None:
         gloss = np.full((h, w), (1.0 - float(mat["roughness_value"])) * 255.0, np.float32)
     else:
@@ -231,7 +256,11 @@ def main():
     ap.add_argument("--template", required=True, help="stock IW7 weapon material JSON")
     ap.add_argument("--emissive-template", help="stock IW7 weapon material JSON with an emissive slot, for BO3 "
                     "materials that bind an emissive map (e.g. m2o/attachment_thermalhybrid.json)")
-    ap.add_argument("--emissive-scale", type=float, default=1.0, help="emissivePara intensity")
+    ap.add_argument("--emissive-scale", type=float, default=1.0,
+                    help="emissivePara for a BO3 hdrScale of %g; other materials scale with their hdrScale"
+                    % EMISSIVE_REFERENCE)
+    ap.add_argument("--constants", help="t7_material_read output (<zone>.materials.json): compiled BO3 "
+                    "glossRange and hdrScale per material")
     ap.add_argument("--blend-template", help="stock IW7 alpha-blended weapon material JSON, for BO3 materials "
                     "whose alpha mode is blend (glass), e.g. m2o/weapon_zappers_headcutter_glass.json; an opaque "
                     "'replace' template draws them solid and hides what is behind them")
@@ -243,6 +272,10 @@ def main():
     args = ap.parse_args()
 
     base = os.path.dirname(os.path.abspath(args.materials_json))
+    constants = {}
+    if args.constants:
+        with open(args.constants, encoding="utf-8") as f:
+            constants = {k: v.get("constants", {}) for k, v in json.load(f)["materials"].items()}
     with open(args.materials_json, encoding="utf-8") as f:
         mats = json.load(f)["materials"]
     with open(args.template, encoding="utf-8") as f:
@@ -277,7 +310,11 @@ def main():
             if args.only and mat["name"] not in args.only:
                 continue
             name = mat["name"]
-            packed = pack_material(mat, base, args.max_size)
+            consts = lookup_constants(constants, name)
+            packed = pack_material(mat, base, args.max_size, consts)
+            scale = args.emissive_scale
+            if consts.get("hdrScale"):
+                scale = args.emissive_scale * consts["hdrScale"][0] / EMISSIVE_REFERENCE
             stem = safe(name)
             images = {"cs": stem + "_packed_cs", "nog": stem + "_packed_nog", "alpha": stem + "_packed_a"}
             # Stock formats (GfxImage headers of stock weapon materials): packed_cs
@@ -302,9 +339,11 @@ def main():
                 Image.fromarray(np.clip(data + 0.5, 0, 255).astype(np.uint8), "RGBA").save(png)
                 texconv(args.texconv, png, img_dir, fmt, srgb)
             with open(os.path.join(mat_dir, name + ".json"), "w", encoding="utf-8") as f:
-                json.dump(rebind(use, name, images, args.emissive_scale), f, indent=4)
+                json.dump(rebind(use, name, images, scale), f, indent=4)
             report.append({"material": name, "images": images, "technique": use.get("techniqueSet->name"),
-                           "size": list(packed["cs"].shape[1::-1])})
+                           "size": list(packed["cs"].shape[1::-1]), "gloss_range": consts.get("glossRange"),
+                           "emissive_scale": scale if packed["emissive"] is not None else None,
+                           "bo3_constants": bool(consts)})
     print(json.dumps({"materials": report}, indent=1))
 
 

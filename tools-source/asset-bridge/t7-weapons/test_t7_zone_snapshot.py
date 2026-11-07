@@ -52,7 +52,8 @@ class SnapshotTest(unittest.TestCase):
 
     def test_reader_commands_target_the_holder(self):
         cmds = snap.reader_commands("py", 42, snap.outputs("o", "zm_x"))
-        self.assertEqual([c[2].rsplit(os.sep, 1)[-1] for c in cmds], ["t7_weapon_scan.py", "t7_fx_read.py"])
+        self.assertEqual([c[2].rsplit(os.sep, 1)[-1] for c in cmds], ["t7_weapon_scan.py", "t7_fx_read.py",
+                                                                         "t7_material_read.py"])
         self.assertTrue(all(c[c.index("--pid") + 1] == "42" for c in cmds))
 
 

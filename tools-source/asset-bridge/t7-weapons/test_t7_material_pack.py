@@ -109,5 +109,21 @@ class ShaderPackingTest(unittest.TestCase):
             np.testing.assert_allclose(shader_normal(g[0, 0], a[0, 0]), want, atol=0.02)
 
 
+
+class Bo3ConstantsTest(unittest.TestCase):
+    def test_gloss_range_sets_the_iw7_exponent(self):
+        # Ray Gun plastic: glossRange 4..13. The IW7 shader's exponent equals the BO3 log2 power.
+        for texel, rng in ((0, (4.0, 13.0)), (255, (4.0, 13.0)), (83, (4.0, 13.0)), (255, (0.0, 17.0))):
+            r = float(pack.bo3_gloss_to_r(np.float32(texel), rng)) / 255.0
+            exponent = 20 * (1 - np.sqrt(1 - r))
+            self.assertAlmostEqual(exponent, rng[0] + (rng[1] - rng[0]) * texel / 255.0, places=3)
+
+    def test_constants_found_under_the_model_prefix(self):
+        table = {"mc/mtl_x": {"hdrScale": [64.0]}}
+        self.assertEqual(pack.lookup_constants(table, "mtl_x"), {"hdrScale": [64.0]})
+        self.assertEqual(pack.lookup_constants(table, "mtl_y"), {})
+        self.assertEqual(pack.lookup_constants(None, "mtl_x"), {})
+
+
 if __name__ == "__main__":
     unittest.main()

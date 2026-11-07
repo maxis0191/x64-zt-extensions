@@ -171,7 +171,7 @@ class ShoulderTest(unittest.TestCase):
         anim = codec.Animation()
         anim.frames, anim.notify = 1, []
         anim.translations = {'j_shoulder_le': [(0, (12.0, 8.0, -6.0))]}
-        out, report = retarget.retarget(anim, src, dst)
+        out, report = retarget.retarget(anim, src, dst, fov=1.0)   # shoulder out of view: kept
         self.assertEqual(report['wrist_error_max'], 0.0)
         pose = dst.pose(out.rotations, out.translations, 0)
         for got, want in zip(pose[dst.index['j_shoulder_le']][1], (12.0, 8.0, -6.0)):
@@ -182,6 +182,23 @@ class ShoulderTest(unittest.TestCase):
         self.assertEqual(out.translations['j_shoulder_le'], [(0, (0, 4, 0))])
         for got, want in zip(pose[dst.index['j_clavicle_le']][1], (12.0, 4.0, -6.0)):
             self.assertAlmostEqual(got, want, places=4)
+
+
+class HideShoulderTest(unittest.TestCase):
+    CAM = ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
+
+    def test_shoulder_in_view_is_lowered_within_reach(self):
+        # BO3 Thundergun left arm: shoulder 16 forward, 14 down, wrist 35 forward.
+        s = retarget.hide_shoulder((15.9, 0.9, -14.3), (34.8, -5.0, -14.5), 22.57, self.CAM)
+        self.assertEqual(s[:2], (15.9, 0.9))
+        self.assertLess(s[2], -14.3)
+        self.assertLessEqual(retarget.vlen(retarget.vsub((34.8, -5.0, -14.5), s)), 0.98 * 22.57 + 1e-6)
+
+    def test_shoulder_out_of_view_is_kept(self):
+        self.assertEqual(retarget.hide_shoulder((-5.5, 11.5, -9.5), (8.2, 7.6, -18.6), 22.57, self.CAM),
+                         (-5.5, 11.5, -9.5))
+        self.assertEqual(retarget.hide_shoulder((8.0, 0.0, -40.0), (20.0, 0.0, -30.0), 22.57, self.CAM),
+                         (8.0, 0.0, -40.0))
 
 
 if __name__ == '__main__':

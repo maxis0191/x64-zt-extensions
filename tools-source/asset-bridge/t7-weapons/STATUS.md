@@ -524,13 +524,32 @@ The BO3 mod tools (Steam app 455130) ship the Ray Gun's authored sources
   extraction is faithful. The compiled normal map stores Z differently
   (only X/Y are used).
 * Each material has its own `glossRangeMin/Max` (metal 0-17, plastic 4-13,
-  glass 6-17), but only the decal techsets bind `glossRange`
-  (`share/raw/techsetdefs_stable/decal/*`); `lit_weapon` declares only the
-  gloss map (`include/gloss_base.techsetdef`) and the compiled gloss texels
-  equal the source. Weapon gloss is therefore the texel value, unscaled by
-  the range. The BO3 gloss-to-specular curve lives in the deferred lighting
-  shader, which the mod tools ship only as cache keys
-  (`share/assetconvert/preshader`, 16 bytes each): still NOT_PROVEN.
+  glass 6-17). The mod tools' techset sources declare `glossRange` only in
+  the decal techsets, which first suggested weapons ignore it; the compiled
+  materials prove otherwise (below): every weapon material carries its
+  range in its pixel shader constants. (Corrected the same day.)
+
+`t7_material_read.py` (run by `t7_zone_snapshot.py`, output
+`<zone>.materials.json`) reads every material's compiled constants from the
+held zone: weapon materials keep them in per-technique static `$Globals`
+buffers, named by the technique's own pixel shader (DXBC RDEF chunk).
+zm_levelcommon: 2181 of 2322 materials resolved, e.g. Ray Gun power cell
+hdrScale 16, emissiveTint1 0.026 0.151 0.672 (blue, the GDT's colorTint1 in
+linear light), reticle 64, DG-2 bulbs 120 (orange; violet when upgraded),
+DG-2 wood glossRange 2-10, Thundergun glows 50. The mod tools GDT agrees
+wherever it covers the material. Techsets whose techniques a zone leaves as
+stubs (lit_emissive, lit_weapon_camo, lit_advanced_fullspec) are resolved
+for lit_emissive by a layout checked on two GDT materials; the other two
+stay unread (none of the three ported weapons uses them).
+
+`t7_material_pack.py --constants` now scales each gloss texel into the
+material's glossRange and stores R so that IW7's exponent
+20 (1 - sqrt(1 - R)) equals BO3's log2 specular power (assumed 2^gloss as
+published for BO2, 8192^gloss with range 13; BO3's deferred lighting shader
+is not in the mod tools, so the curve itself stays NOT_PROVEN), and sets
+each emissive material's intensity from its hdrScale (Ray Gun power cell 16
+is the reference of --emissive-scale). The base Ray Gun power cell glows
+blue in BO3 itself (GDT colorTint1), red when upgraded.
 
 In-game hip frames showed the DG-2's left hand off the gun and its right
 arm folded in front of the camera. BO3 animations place the shoulders per
@@ -547,3 +566,16 @@ Also: the display name no longer comes from the template (`--display`, else
 the BO3 key made readable), and the notetrack sound table grows past the
 template's four slots (the Ray Gun had lost reload_close, the DG-2 clip_in
 and handle_release).
+
+At IW7's widest field of view (cg_fov 120, the owner's setting) the BO3
+shoulder placement of long two-handed guns put the open end of the IW7 arm
+mesh in the lower-left corner (Thundergun left shoulder 16 forward and 14
+below the eye; BO3's own field of view keeps it out of view). The retarget
+lowers such a shoulder until its mesh end is out of view at 120 degrees, as
+far as the wrist stays within reach: hands and gun keep their BO3
+placement (51 of 93 animations lowered, wrists exact). The witnesses' FOV
+120 also explains why every weapon, stock Dischord included, looks small.
+
+Witness recovery: a witness stopped from outside left its test client image
+in the game folder and later runs waited on it;
+`ops/bo3wpn/Restore-WeaponVisual.ps1` (server repo) replays its transactions.
