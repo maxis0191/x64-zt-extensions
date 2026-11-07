@@ -422,7 +422,10 @@ DG-2-specific code (62 zone lines, Pack-a-Punch weapon and attachments,
   port reads (`dryfire_rifle`). An alias found in no exported table is now
   reported (`unresolved`) and left silent instead of stopping the port;
   `core_common.ff` joined the machine's sound zones. The DG-2 dry fire stays
-  unresolved (not in zm_levelcommon, zm_common or core_common tables).
+  unresolved, and that is faithful: `dryfire_rifle` is a legacy name that no
+  BO3 alias table defines (zm_levelcommon, zm_common, core_common,
+  core_patch, core_all, zm_common_all, mp_common all searched by name; BO3
+  weapons use `wpn_<weapon>_dryfire_plr`), so BO3 plays nothing for it either.
 * Behaviours: BO3 splits a namespace across scripts (server `.gsc`, client
   `.csc`); one line per script let a later line replace an earlier one's
   data in the assembled module (the `lightning_chain` electrocute sound).
