@@ -84,6 +84,25 @@ def anim_roles(names):
     return roles
 
 
+def fill_roles(roles, table_names, available):
+    """Roles the weapon's own anim table leaves empty, taken from the zone's other animations of the
+    same weapon (same name prefix): the DG-2 table lists no ADS raise/lower, while the zone holds
+    vm_dg2_ads_base_up/down. Returns the roles added."""
+    prefix = common_prefix(table_names)
+    if not prefix:
+        return {}
+    by_suffix = {n[len(prefix):]: n for n in available if n.startswith(prefix)}
+    added = {}
+    for role, suffixes in ANIM_ROLES.items():
+        if role in roles:
+            continue
+        for s in suffixes:
+            if s in by_suffix:
+                roles[role] = added[role] = by_suffix[s]
+                break
+    return added
+
+
 def iw7_fx_name(bo3):
     return "vfx/t7/" + bo3
 

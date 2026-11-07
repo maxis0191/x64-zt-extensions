@@ -55,6 +55,21 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertIsNone(d["projDudEffect"])
         self.assertEqual(d["iProjectileSpeed"], 2000)
 
+    def test_template_weapon_anims_never_leak(self):
+        # An upgraded BO3 weapon with no anims of its own had kept the IW7 zapper's idle and fire.
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": ""}}
+        pkg_tpl = {"timers": {}, "anims": {"WEAP_ANIM_IDLE": "vm_zapper_idle", "WEAP_ANIM_FIRE": "vm_zapper_fire",
+                                           "WEAP_ANIM_3P_FINGER_POSE_LEFT": "hm_fingers_zapper_l",
+                                           "WEAP_ANIM_ADDITIVE_JUMP": "viewmodel_jump_additive"}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w"}
+        _, pkg = author.author(spec, weapon, pkg_tpl, {"weapDef": {}})
+        self.assertEqual((pkg["anims"]["WEAP_ANIM_IDLE"], pkg["anims"]["WEAP_ANIM_FIRE"]), ("", ""))
+        self.assertEqual(pkg["anims"]["WEAP_ANIM_3P_FINGER_POSE_LEFT"], "")
+        self.assertEqual(pkg["anims"]["WEAP_ANIM_ADDITIVE_JUMP"], "viewmodel_jump_additive")   # engine generic
+
 
 class BehaviourTest(unittest.TestCase):
     FOUND = {

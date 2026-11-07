@@ -180,14 +180,23 @@ class Port:
     # -- stages ----------------------------------------------------------------------------
     def stage_spec(self):
         scan = load(self.cfg["scan"])
+        available = sorted(os.path.splitext(n)[0] for n in os.listdir(self.cfg["t7_anims"]) if n.endswith(".xab"))
         spec = t7_weapon_spec.build(scan, self.weapon, self.cfg.get("zone"), self.name)
+        filled = {spec["name"]: t7_weapon_spec.fill_roles(spec["anims"], spec["all_anims"], available)}
         save(os.path.join(self.out, "spec.json"), spec)
         written = ["spec.json"]
         if spec["upgrade"]:
             up = t7_weapon_spec.build(scan, spec["upgrade"], self.cfg.get("zone"), spec["name"] + "_pap1")
+            if not up["anims"]:
+                # BO3 upgraded weapons (Ray Gun, Thundergun, DG-2) have no anim table of their own and
+                # play the base weapon's; left empty, the IW7 template's zapper anims remained.
+                up["anims"], up["all_anims"] = dict(spec["anims"]), list(spec["all_anims"])
+                up["anims_from_base"] = True
+            filled[up["name"]] = t7_weapon_spec.fill_roles(up["anims"], up["all_anims"], available)
             save(os.path.join(self.out, "spec_upgraded.json"), up)
             written.append("spec_upgraded.json")
-        self.record("spec", {"written": written, "upgrade": spec["upgrade"]})
+        # roles the anim table left empty, taken from the zone's animations of the same weapon
+        self.record("spec", {"written": written, "upgrade": spec["upgrade"], "anims_from_zone": filled})
 
     def stage_scripts(self):
         """BO3 scripts behind the weapon (decompiled once per zone into the script cache)."""

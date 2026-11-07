@@ -93,6 +93,14 @@ class SpecTest(unittest.TestCase):
         s = spec.build(scan(["vm_x_idle"], upgraded=False), "thundergun_zm")
         self.assertIsNone(s["upgrade"])
 
+    def test_missing_roles_come_from_the_zone_animations(self):
+        table = ["vm_dg2_idle", "vm_dg2_fire", "vm_dg2_reload_empty"]
+        roles = spec.anim_roles(table)
+        added = spec.fill_roles(roles, table, ["vm_dg2_ads_base_up", "vm_dg2_ads_base_down", "vm_raygun_t7_ads_up",
+                                               "vm_dg2_idle"])
+        self.assertEqual(added, {"ads_up": "vm_dg2_ads_base_up", "ads_down": "vm_dg2_ads_base_down"})
+        self.assertEqual(roles["idle"], "vm_dg2_idle")   # the table's own choice stays
+
     def test_unknown_weapon_refused(self):
         with self.assertRaises(SystemExit):
             spec.build(scan(["vm_x_idle"]), "nope_zm")

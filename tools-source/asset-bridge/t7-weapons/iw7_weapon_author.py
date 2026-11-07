@@ -36,6 +36,8 @@ SLOT_MAP = {
     "sprint_loop": ["WEAP_ANIM_SPRINT_LOOP"],
     "sprint_out": ["WEAP_ANIM_SPRINT_OUT"],
 }
+# The template weapon's third-person finger poses (hm_fingers_zapper_*).
+TEMPLATE_WEAPON_SLOTS = ("WEAP_ANIM_3P_FINGER_POSE_LEFT", "WEAP_ANIM_3P_FINGER_POSE_RIGHT")
 # Slots whose stock additive/finger-pose anims would fight a full BO3 pose.
 CLEAR_SLOTS = ("WEAP_ANIM_ADDITIVE_SPRINT_OFFSET", "WEAP_ANIM_ADDITIVE_FINGER_POSE_LEFT",
                "WEAP_ANIM_ADDITIVE_FINGER_POSE_RIGHT", "WEAP_ANIM_ADDITIVE_SETTLE_ADS",
@@ -68,7 +70,10 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     infos = {k: anim_info(spec["xab_dir"], v) for k, v in anims.items()}
 
     pkg = copy.deepcopy(animpkg_tpl)
-    for slot in CLEAR_SLOTS:
+    # Every weapon-specific slot starts empty: a slot BO3 does not fill must not keep the template
+    # weapon's motion (the upgraded ports had played the IW7 zapper's idle, fire and reload).
+    # Engine-wide generic additives (jump, walk, crawl, melee knife) stay.
+    for slot in CLEAR_SLOTS + TEMPLATE_WEAPON_SLOTS + tuple(s for slots in SLOT_MAP.values() for s in slots):
         if slot in pkg["anims"]:
             pkg["anims"][slot] = ""
     for suffix, slots in SLOT_MAP.items():
