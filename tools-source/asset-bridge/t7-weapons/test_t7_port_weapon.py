@@ -71,6 +71,30 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertEqual(pkg["anims"]["WEAP_ANIM_ADDITIVE_JUMP"], "viewmodel_jump_additive")   # engine generic
 
 
+class AuthorNamesAndSoundsTest(unittest.TestCase):
+    WEAPON = {"szDisplayName": "CP_QUEST_WOR_FACEMELTER", "iClipSize": 0,
+              "notetrackSoundMapKeys": ["", "", "", ""], "notetrackSoundMapValues": ["", "", "", ""],
+              "weapDef": {"szDisplayName": ""}}
+    SPEC = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+            "view_model": "v", "world_model": "w"}
+
+    def author(self, **extra):
+        import iw7_weapon_author as author
+        w, _ = author.author(dict(self.SPEC, **extra), self.WEAPON, {"anims": {}, "timers": {}}, {"weapDef": {}})
+        return w
+
+    def test_display_name_never_comes_from_the_template(self):
+        self.assertEqual(self.author(display_key="WEAPON_THUNDERGUN")["szDisplayName"], "Thundergun")
+        self.assertEqual(self.author(display_key="WEAPON_THUNDERGUN", display="DG-2")["szDisplayName"], "DG-2")
+
+    def test_notetrack_table_grows_past_the_template(self):
+        names = ["wpn_ray_1straise", "wpn_ray_reload_open", "wpn_ray_reload_battery_out",
+                 "wpn_ray_reload_battery_in", "wpn_ray_reload_close"]
+        w = self.author(notetrack_sounds={n: n for n in names})
+        self.assertEqual(w["notetrackSoundMapKeys"], names)
+        self.assertEqual(w["notetrackSoundMapValues"], names)
+
+
 class BehaviourTest(unittest.TestCase):
     FOUND = {
         "scripts/zm/_zm_weap_thundergun.csc": {"namespace": "zm_weap_thundergun", "zombie_vars": {}, "effects": {},

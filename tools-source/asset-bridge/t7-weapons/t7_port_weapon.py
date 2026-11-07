@@ -183,6 +183,10 @@ class Port:
         available = sorted(os.path.splitext(n)[0] for n in os.listdir(self.cfg["t7_anims"]) if n.endswith(".xab"))
         spec = t7_weapon_spec.build(scan, self.weapon, self.cfg.get("zone"), self.name)
         filled = {spec["name"]: t7_weapon_spec.fill_roles(spec["anims"], spec["all_anims"], available)}
+        display = self.cfg.get("display")
+        if display:
+            # BO3 localized names are not in the scan; the config names the weapon as BO3 shows it.
+            spec["display"] = display
         save(os.path.join(self.out, "spec.json"), spec)
         written = ["spec.json"]
         if spec["upgrade"]:
@@ -192,6 +196,8 @@ class Port:
                 # play the base weapon's; left empty, the IW7 template's zapper anims remained.
                 up["anims"], up["all_anims"] = dict(spec["anims"]), list(spec["all_anims"])
                 up["anims_from_base"] = True
+            if display:
+                up["display"] = display
             filled[up["name"]] = t7_weapon_spec.fill_roles(up["anims"], up["all_anims"], available)
             save(os.path.join(self.out, "spec_upgraded.json"), up)
             written.append("spec_upgraded.json")
@@ -709,10 +715,14 @@ def main(argv=None):
     ap.add_argument("--config", required=True)
     ap.add_argument("--weapon", required=True, help="BO3 weapon asset, e.g. thundergun_zm")
     ap.add_argument("--name", help="IW7 weapon name (default iw7_<bo3 weapon>)")
+    ap.add_argument("--display", help="name shown in game, as BO3 shows it (e.g. DG-2)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--stages", default=",".join(STAGES), help="comma list, in order: " + ",".join(STAGES))
     args = ap.parse_args(argv)
-    port = Port(load(args.config), args.weapon, args.out, args.name)
+    cfg = load(args.config)
+    if args.display:
+        cfg["display"] = args.display
+    port = Port(cfg, args.weapon, args.out, args.name)
     for stage in args.stages.split(","):
         if stage not in STAGES:
             raise SystemExit("unknown stage %s" % stage)

@@ -95,7 +95,10 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     w = copy.deepcopy(weapon_tpl)
     d = w["weapDef"]
     w["szInternalName"] = spec["name"]
-    w["szDisplayName"] = spec.get("display", w["szDisplayName"])
+    # Never the template's name (the generic ports had shown the IW7 facemelter's): the configured
+    # BO3 name, else the BO3 display key made readable (WEAPON_THUNDERGUN -> Thundergun).
+    key = spec.get("display_key") or spec["name"]
+    w["szDisplayName"] = spec.get("display") or key.split("WEAPON_", 1)[-1].replace("_", " ").title()
     w["iClipSize"] = spec["clip"]
     d["iMaxAmmo"] = spec["max_ammo"]
     d["iStartAmmo"] = spec.get("start_ammo", spec["max_ammo"])
@@ -117,9 +120,12 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     d["szXAnims"] = spec["name"] + "_package"
 
     sounds = spec.get("notetrack_sounds", {})
-    keys = list(sounds)[:len(w["notetrackSoundMapKeys"])]
-    w["notetrackSoundMapKeys"] = keys + [""] * (len(w["notetrackSoundMapKeys"]) - len(keys))
-    w["notetrackSoundMapValues"] = [sounds[k] for k in keys] + [""] * (len(w["notetrackSoundMapValues"]) - len(keys))
+    # The table grows with the weapon (stock IW7 weapons carry 1 to 20 entries): the template's four
+    # slots had dropped the Ray Gun's reload_close.
+    keys = list(sounds)
+    size = max(len(w["notetrackSoundMapKeys"] or []), len(keys))
+    w["notetrackSoundMapKeys"] = keys + [""] * (size - len(keys))
+    w["notetrackSoundMapValues"] = [sounds[k] for k in keys] + [""] * (size - len(keys))
 
     proj = spec.get("projectile")
     if proj:

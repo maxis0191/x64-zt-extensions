@@ -40,6 +40,7 @@ import xab_preflight as xab  # noqa: E402
 
 ENGINE_ROOTS = ('tag_view', 'tag_ads')
 ARMS = (('le', 'j_shoulder_le', 'j_elbow_le', 'j_wrist_le'), ('ri', 'j_shoulder_ri', 'j_elbow_ri', 'j_wrist_ri'))
+SHOULDERS = {arm[1] for arm in ARMS}
 
 
 # --- quaternion helpers (x, y, z, w) ---
@@ -316,12 +317,19 @@ def retarget(anim, src, dst, ads=None):
         gun_t = vadd(gun_t, offset)
         world = {}
         local = {}
+        moved = {}
         for i, n in enumerate(dst.names):
             lq, lt = dst.local[i]
             p = dst.parent[i]
             pq, pt = world[dst.names[p]] if p is not None else ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
             if n in want:
                 lq = qnorm(qmul(qinv(pq), want[n][0]))
+            if n in SHOULDERS and n in want:
+                # BO3 animations place the shoulders per weapon (the DG-2 raises the right one above
+                # the eye and brings the left one forward); at the IW7 bind shoulders its hands could
+                # not reach the gun (7.3 units short) and the right arm folded in front of the camera.
+                lt = qrot(qinv(pq), vsub(want[n][1], pt))
+                moved[n] = lt
             wq = qnorm(qmul(pq, lq))
             wt = vadd(pt, qrot(pq, lt))
             world[n] = (wq, wt)
@@ -353,7 +361,7 @@ def retarget(anim, src, dst, ads=None):
         for i, n in enumerate(dst.names):
             p = dst.parent[i]
             pq, pt = world2[dst.names[p]] if p is not None else ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
-            world2[n] = (qnorm(qmul(pq, local[n])), vadd(pt, qrot(pq, dst.local[i][1])))
+            world2[n] = (qnorm(qmul(pq, local[n])), vadd(pt, qrot(pq, moved.get(n, dst.local[i][1]))))
         if 'tag_weapon' in dst.index and 'tag_weapon_right' in src.index:
             gq, gt = gun_q, gun_t
             parent = dst.names[dst.parent[dst.index['tag_weapon']]]
@@ -363,6 +371,8 @@ def retarget(anim, src, dst, ads=None):
         for n in dict.fromkeys(mapped + [x for _, *chain in ARMS for x in chain]):
             if n in local:
                 rot_keys.setdefault(n, []).append((f, local[n]))
+        for n, lt in moved.items():
+            trans_keys.setdefault(n, []).append((f, lt))
     # Every hand bone is listed, as stock view animations do: the client showed
     # bones left out of the animation collapsed onto the view origin. Bones
     # that do not move get static channels with their bind values.

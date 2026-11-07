@@ -149,5 +149,36 @@ class RootAdsTest(unittest.TestCase):
         self.assertEqual(retarget.ENGINE_ROOTS, ('tag_view', 'tag_ads'))
 
 
+def arm_rig(names, parents, offsets):
+    rig = object.__new__(retarget.Skeleton)
+    rig.names, rig.parent = names, parents
+    rig.local = [((0.0, 0.0, 0.0, 1.0), t) for t in offsets]
+    rig.index = {n: i for i, n in enumerate(names)}
+    rig.world = rig.pose({}, {}, 0)
+    return rig
+
+
+class ShoulderTest(unittest.TestCase):
+    def test_shoulders_follow_the_bo3_animation(self):
+        # The BO3 DG-2 brings the left shoulder forward; at the IW7 bind shoulder the hand fell
+        # 7.3 units short of the gun.
+        src = arm_rig(['tag_origin', 'tag_camera', 'tag_torso', 'j_shoulder_le', 'j_elbow_le', 'j_wrist_le',
+                       'tag_weapon_right'], [None, 0, 0, 2, 3, 4, 2],
+                      [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 8, -6), (10, 0, 0), (10, 0, 0), (12, -4, -5)])
+        dst = arm_rig(['tag_origin', 'tag_camera', 'tag_torso', 'j_clavicle_le', 'j_shoulder_le', 'j_elbow_le',
+                       'j_wrist_le', 'tag_weapon'], [None, 0, 0, 2, 3, 4, 5, 2],
+                      [(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 4, -6), (0, 4, 0), (11, 0, 0), (11, 0, 0), (0, 0, 0)])
+        anim = codec.Animation()
+        anim.frames, anim.notify = 1, []
+        anim.translations = {'j_shoulder_le': [(0, (12.0, 8.0, -6.0))]}
+        out, report = retarget.retarget(anim, src, dst)
+        self.assertEqual(report['wrist_error_max'], 0.0)
+        pose = dst.pose(out.rotations, out.translations, 0)
+        for got, want in zip(pose[dst.index['j_shoulder_le']][1], (12.0, 8.0, -6.0)):
+            self.assertAlmostEqual(got, want, places=4)
+        for got, want in zip(pose[dst.index['j_wrist_le']][1], (32.0, 8.0, -6.0)):
+            self.assertAlmostEqual(got, want, places=3)
+
+
 if __name__ == '__main__':
     unittest.main()
