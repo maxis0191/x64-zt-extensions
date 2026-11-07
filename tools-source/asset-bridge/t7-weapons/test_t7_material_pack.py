@@ -125,5 +125,22 @@ class Bo3ConstantsTest(unittest.TestCase):
         self.assertEqual(pack.lookup_constants(None, "mtl_x"), {})
 
 
+
+class SourceArtTest(unittest.TestCase):
+    def test_compiled_image_finds_its_authored_file(self):
+        saved = dict(pack.SOURCE_ART)
+        try:
+            pack.SOURCE_ART.clear()
+            pack.SOURCE_ART.update({"mtl_wpn_t7_camo_ice_e2": "ice/e2.tif", "mtl_wpn_t7_camo_ice_c": "ice/c.tif",
+                                    "i_wpn_t7_zmb_raygun_power_c": "raygun/power_c.tif"})
+            self.assertEqual(pack.source_art_for("i_wpn_t7_camo_ice_e"), "ice/e2.tif")   # numbered variant
+            self.assertEqual(pack.source_art_for("i_wpn_t7_camo_ice_c"), "ice/c.tif")
+            self.assertEqual(pack.source_art_for("i_wpn_t7_zmb_raygun_power_c"), "raygun/power_c.tif")
+            self.assertIsNone(pack.source_art_for("i_missing"))
+        finally:
+            pack.SOURCE_ART.clear()
+            pack.SOURCE_ART.update(saved)
+
+
 if __name__ == "__main__":
     unittest.main()

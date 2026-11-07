@@ -103,6 +103,10 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     d["iMaxAmmo"] = spec["max_ammo"]
     d["iStartAmmo"] = spec.get("start_ammo", spec["max_ammo"])
     d["iFireTime"] = spec["fire_time_ms"]
+    if (spec.get("burst_count") or 1) > 1:
+        # BO3 burst weapons (Ray Gun Mark II: 3 bolts per pull)
+        d["fireType"] = 2               # WEAPON_FIRETYPE_BURST
+        d["burstCount"] = spec["burst_count"]
     d["gunXModel"] = d["defaultViewModel"] = spec["view_model"]
     d["worldModel"] = d["defaultWorldModel"] = spec["world_model"]
     for key in ("complexWorldModel", "complexGunXModel", "camoWorldModelMaterialOverride",
@@ -127,6 +131,17 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
     w["notetrackSoundMapKeys"] = keys + [""] * (size - len(keys))
     w["notetrackSoundMapValues"] = [sounds[k] for k in keys] + [""] * (size - len(keys))
 
+    # View-model effects played on an anim notetrack: {notetrack: [IW7 effect, tag]} (the DG-2 rail
+    # when the gun switches on). The template's own entries never reach a ported weapon.
+    fx_map = spec.get("notetrack_fx") or {}
+    if isinstance(d.get("notetrackFXMapKeys"), list) or fx_map:
+        keys = list(fx_map)
+        size = max(len(d.get("notetrackFXMapKeys") or []), len(keys))
+        pad = size - len(keys)
+        d["notetrackFXMapKeys"] = keys + [""] * pad
+        d["notetrackFXMapValues"] = [{"type": 1, "fx": fx_map[k][0]} for k in keys] + [None] * pad
+        d["notetrackFXMapTagValues"] = [fx_map[k][1] for k in keys] + [""] * pad
+
     proj = spec.get("projectile")
     if proj:
         pd = projectile_tpl["weapDef"]
@@ -143,6 +158,9 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
         for key in ("projTrailEffect", "projExplosionEffect"):
             if key in proj:
                 d[key] = {"type": 1, "fx": proj[key]}
+    # The template's tracer is a map's own asset (the zapper's shredder_bullet exists on Spaceland
+    # only: on Rave the client faulted holding the Ray Gun); BO3 Wonder Weapons draw no tracer.
+    d["tracerType"] = spec.get("tracer", "")
     return w, pkg
 
 

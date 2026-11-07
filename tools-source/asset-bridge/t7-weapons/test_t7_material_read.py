@@ -52,7 +52,7 @@ class MaterialReadTest(unittest.TestCase):
         self.assertEqual(m["techset"], "mc/lit_emissive#e6142445")
         self.assertEqual(m["constants"]["hdrScale"], [16.0, 0.0, 0.0, 0.0])
         self.assertEqual(m["constants"]["emissiveTint"][:3], [0.026, 0.151, 0.672])
-        self.assertEqual(m["textures"], [{"semantic": "0xA0AB1041", "image": "i_wpn_t7_zmb_raygun_power_e"}])
+        self.assertEqual(m["textures"], [{"semantic": "0xA0AB1041"}])
 
     def test_unresolved_emissive_technique_uses_the_checked_layout(self):
         # Ray Gun reticle: lit_emissive's lit technique is a stub in zm_levelcommon; the buffer stays.

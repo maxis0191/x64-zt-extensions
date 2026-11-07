@@ -579,3 +579,35 @@ placement (51 of 93 animations lowered, wrists exact). The witnesses' FOV
 Witness recovery: a witness stopped from outside left its test client image
 in the game folder and later runs waited on it;
 `ops/bo3wpn/Restore-WeaponVisual.ps1` (server repo) replays its transactions.
+
+## 2026-11-07: Pack-a-Punch camos, DG-2 chain, Ray Gun Mark II, view model preview
+
+Camos: IW7 camo-ready weapon materials use "_2uvt" techniques reading
+per-vertex camo UV records (flag 0x400, 24 bytes: u, v, identity basis,
+measured on the stock Dischord); `iw7_xsurface_uv2.py` adds them to every
+converted surface; opaque lit materials take the stock Dischord camo
+template with BO3's camo mask in packed_a; the author lists each model's
+camo-ready materials. In game the ported Ray Gun, DG-2 and Thundergun take
+Spaceland's camo01/camo04 (map camo via retail get_pap_camo; a weapon name
+carries "+camo<mp/camoTable.csv weapon_index>", not the reference).
+
+Every map: the mod zone referenced three techsets only techsets_cp_zmb
+holds (weapon glass blend, two effect blends) and the template tracer
+shredder_bullet; the client faulted holding the Ray Gun on Rave. The
+tracer is no longer inherited, the techsets are embedded, and
+`iw7_mod_reference_audit.py` reports any reference only some maps carry.
+
+Ray Gun Mark II (zm_prototype): the snapshot holds a map zone from the exit
+handlers (ZoneTool fork), the fork's xpak reader now skips unknown blocks
+and realigns pages (HD meshes were truncated at whole pages), burst
+weapons carry their shot count (+0xEF8) and burst fire sounds
+(+0x388/+0x390), a missing image falls back to the BO3 mod tools' authored
+texture (--source-art), and sound files are looked for in every sound zone.
+Owner override: its bolts pierce (server module, magicbullet past the
+victim, 4 pierces, 6 upgraded).
+
+`t7_viewmodel_preview.py` renders a pose offline, calibrated on in-game
+frames (DG-2 port and stock Dischord at cg_fov 120 overlay their frames).
+The DG-2 and Thundergun ports equal BO3's own pose; at cg_fov 120 BO3's
+long-gun framing puts the stock at the eye. Owner decision 2026-11-07:
+keep the exact BO3 pose.

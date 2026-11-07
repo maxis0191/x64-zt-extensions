@@ -55,6 +55,25 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertIsNone(d["projDudEffect"])
         self.assertEqual(d["iProjectileSpeed"], 2000)
 
+    def test_burst_weapon_fires_bursts(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "fireType": 1, "burstCount": 0}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 21, "max_ammo": 162, "fire_time_ms": 120,
+                "view_model": "v", "world_model": "w", "burst_count": 3}
+        w, _ = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})
+        self.assertEqual((w["weapDef"]["fireType"], w["weapDef"]["burstCount"]), (2, 3))
+
+    def test_template_tracer_never_leaks(self):
+        # shredder_bullet exists on Spaceland only: the Ray Gun faulted the client on Rave.
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "tracerType": "shredder_bullet"}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w"}
+        w, _ = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {"tracerType": "shredder_bullet"}})
+        self.assertEqual(w["weapDef"]["tracerType"], "")
+
     def test_template_weapon_anims_never_leak(self):
         # An upgraded BO3 weapon with no anims of its own had kept the IW7 zapper's idle and fire.
         import iw7_weapon_author as author
@@ -151,6 +170,54 @@ class ModelSurfacesTest(unittest.TestCase):
             f.write(b"\x06\x01wpn_gun_view\x00\x10\x00wpn_hd_gun_view4b01d4fb\x00mc/mtl_gun\x00")
         self.assertEqual([os.path.basename(p) for p in port.model_surfaces(xmb, surf)],
                          ["wpn_hd_gun_view4b01d4fb.xsb"])
+
+
+class ViewEffectTest(unittest.TestCase):
+    def test_author_writes_notetrack_effects(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "notetrackFXMapKeys": ["stock_nt", ""],
+                              "notetrackFXMapValues": [{"type": 1, "fx": "vfx/iw7/stock"}, None],
+                              "notetrackFXMapTagValues": ["j_stock", ""]}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w",
+                "notetrack_fx": {"switch_on": ["vfx/t7/zombie/fx_rail", "tag_flash"]}}
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["notetrackFXMapKeys"], ["switch_on", ""])
+        self.assertEqual(d["notetrackFXMapValues"], [{"type": 1, "fx": "vfx/t7/zombie/fx_rail"}, None])
+        self.assertEqual(d["notetrackFXMapTagValues"], ["tag_flash", ""])
+        spec["notetrack_fx"] = {}                       # the template's entries never reach a port
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["notetrackFXMapKeys"], ["", ""])
+
+    def test_port_resolves_script_effect_keys(self):
+        with tempfile.TemporaryDirectory() as zone:
+            p = object.__new__(port.Port)
+            p.zone = zone
+            p.cfg = {"view_effects": ["switch_on=tesla_viewmodel_rail@tag_flash"]}
+            p.manifest = {"stages": {"scripts": {"found": {"scripts/zm/_zm_weap_tesla.csc": {"effects": {
+                "tesla_viewmodel_rail": "zombie/fx_rail", "tesla_viewmodel_rail_upgraded": "zombie/fx_rail_ug"}}}}}}
+            for name in ("fx_rail", "fx_rail_ug"):
+                os.makedirs(os.path.join(zone, "particlesystem", "vfx", "t7", "zombie"), exist_ok=True)
+                open(os.path.join(zone, "particlesystem", "vfx", "t7", "zombie", name + ".iw7VFX"), "wb").close()
+            self.assertEqual(p.notetrack_effects(False), {"switch_on": ["vfx/t7/zombie/fx_rail", "tag_flash"]})
+            self.assertEqual(p.notetrack_effects(True), {"switch_on": ["vfx/t7/zombie/fx_rail_ug", "tag_flash"]})
+            os.remove(os.path.join(zone, "particlesystem", "vfx", "t7", "zombie", "fx_rail.iw7VFX"))
+            self.assertEqual(p.notetrack_effects(False), {})          # not built: never referenced
+            p.cfg = {"view_effects": ["switch_on=nope@tag_flash"]}
+            with self.assertRaises(SystemExit):
+                p.notetrack_effects(False)
+
+
+class OverrideTest(unittest.TestCase):
+    def test_values_are_typed(self):
+        self.assertEqual(port.weapon_overrides(["penetrateType=3", "penetrateMultiplier=2.5", "bBoltAction=false",
+                                                "szAltWeaponName=x"]),
+                         {"penetrateType": 3, "penetrateMultiplier": 2.5, "bBoltAction": False, "szAltWeaponName": "x"})
+
+    def test_malformed_refused(self):
+        with self.assertRaises(SystemExit):
+            port.weapon_overrides(["penetrateType"])
 
 
 class SnapshotConfigTest(unittest.TestCase):

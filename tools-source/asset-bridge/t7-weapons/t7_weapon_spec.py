@@ -31,8 +31,14 @@ ROLE_MODELS = {"view_model": 0x8, "world_model": 0x878}
 ROLE_FX = {"flash_view": 0x2E0, "flash_world": 0x2E8, "impact": 0x1028, "trail": 0x11B8}
 ROLE_SOUNDS = {"proj_loop": 0x358, "fire_npc": 0x378, "fire_plr": 0x380, "fire_npc_last": 0x418,
                "fire_plr_last": 0x420, "dryfire_npc": 0x428, "dryfire_plr": 0x430, "proj_impact": 0x1088}
+# Burst-fire weapons (BO3 burst AR/SMG/pistol, energy pistol, Ray Gun Mark II) leave the single-shot
+# fire slots empty and name their fire sounds 8 bytes further (26 of 274 zm_levelcommon/zm_prototype
+# weapons; never both).
+ROLE_SOUND_FALLBACKS = {"fire_npc": 0x388, "fire_plr": 0x390}
 CLIP = 0x194              # in the variant
-INTS = {"max_ammo": 0x8F8, "start_ammo": 0x8FC, "fire_time_ms": 0xA1C}
+INTS = {"max_ammo": 0x8F8, "start_ammo": 0x8FC, "fire_time_ms": 0xA1C,
+        # shots per trigger pull: 1, or 3/4 for burst weapons (M8A7 and Pharo 4; RK5 and Ray Gun Mark II 3)
+        "burst_count": 0xEF8}
 # Launch speeds follow BO2's order: forward speed, then the up and forward components added at launch
 # (zm_levelcommon: Cymbal Monkey and Octobomb up 100, Mustang & Sally 50, frag forward 120; the Ray Gun,
 # DG-2 and Thundergun 0, a straight shot). Without them an IW7 template's lob (zapper: up 500) remains.
@@ -144,6 +150,8 @@ def build(scan, weapon, zone=None, name=None):
     for role, off in ROLE_SOUNDS.items():
         if wrefs.get(off):
             spec["sounds"][role] = wrefs[off]
+        elif wrefs.get(ROLE_SOUND_FALLBACKS.get(role)):
+            spec["sounds"][role] = wrefs[ROLE_SOUND_FALLBACKS[role]]
     for key, off in PROJECTILE_INTS.items():
         spec["projectile"][key] = i32(wraw, off)
     for key, off in PROJECTILE_FLOATS.items():

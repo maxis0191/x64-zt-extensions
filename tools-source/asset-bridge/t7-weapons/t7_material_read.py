@@ -101,11 +101,12 @@ def parse_constants(raw, count):
 
 
 def parse_textures(raw, count, assets):
+    """Texture slots by semantic. The image is not named: ZoneTool logs image headers at a reused
+    address (every zm_prototype image at one), so an address does not identify an image."""
     out = []
     for i in range(count):
-        image, name_hash = struct.unpack_from("<QI", raw, i * TEXTURE_SIZE)
-        entry = assets.get(image)
-        out.append({"semantic": "0x%08X" % name_hash, "image": entry["name"] if entry else None})
+        _image, name_hash = struct.unpack_from("<QI", raw, i * TEXTURE_SIZE)
+        out.append({"semantic": "0x%08X" % name_hash})
     return out
 
 
