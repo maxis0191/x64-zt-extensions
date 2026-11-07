@@ -536,15 +536,19 @@ class Port:
         lines += ["weapon," + s["name"] for s in specs]
         with open(os.path.join(self.out, "zone.csv"), "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-        # weapon[:pap weapon:pap1 attachment:pap2 attachment], one module catalog string
+        sounds = set(m.get("sounds", {}).get("aliases", []))
+        # probe alias=weapon[:pap weapon:pap1 attachment:pap2 attachment], one module catalog string
         entry = specs[0]["name"]
         if pap:
             entry += ":%s:%s:%s" % (pap["weapon"], pap["attachments"][0], pap["attachments"][1])
+        probe = probe_alias(specs[0], sounds)
+        if not probe:
+            raise SystemExit("no built sound alias of %s can tell the module the weapon is loaded" % entry)
+        entry = probe + "=" + entry
         with open(os.path.join(self.out, "catalog.txt"), "w", encoding="utf-8") as f:
             f.write(entry + "\n")
         built = {e for e in m.get("fx", {}).get("effects", []) if os.path.exists(
             os.path.join(self.zone, "particlesystem", *t7_weapon_spec.iw7_fx_name(e).split("/")) + ".iw7VFX")}
-        sounds = set(m.get("sounds", {}).get("aliases", []))
         behaviours = behaviour_lines([s["name"] for s in specs], m.get("scripts", {}).get("found", {}), built, sounds)
         with open(os.path.join(self.out, "behaviour.txt"), "w", encoding="utf-8") as f:
             f.write("".join(b + "\n" for b in behaviours))
@@ -756,6 +760,18 @@ def model_surfaces(xmb, surface_dir):
         if os.path.exists(path):
             out.append(path)
     return out
+
+
+def probe_alias(spec, built_aliases):
+    """The sound alias the module probes (soundexists) to know the weapon is in the loaded mod.
+
+    precacheitem or getweaponbasename of a weapon no loaded zone defines raise script errors, so the
+    module tests one of the weapon's own aliases, built into the same zone: the player fire sound first."""
+    roles = spec.get("sounds", {})
+    for role in ("fire_plr", "fire_npc"):
+        if roles.get(role) in built_aliases:
+            return roles[role]
+    return next((a for a in roles.values() if a in built_aliases), None)
 
 
 def behaviour_lines(weapons, found, built_effects, sounds=()):

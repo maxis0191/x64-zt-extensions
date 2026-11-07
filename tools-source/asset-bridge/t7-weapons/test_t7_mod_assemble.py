@@ -61,6 +61,13 @@ class AssembleTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             asm.update_gsc(gsc, ["a"])
 
+    def test_catalog_keyed_by_weapon_not_probe(self):
+        # a generated entry replaces the module's entry for the same weapon whatever its probe alias
+        merged = asm.merge_catalog(["wpn_old_fire=iw7_raygun_zm:iw7_raygun_zm_pap1:rgpap1:rgpap2", "iw7_x_zm"],
+                                   ["wpn_rgun_fire_plr=iw7_raygun_zm:iw7_raygun_zm_pap1:raygun_zpap1:raygun_zpap2"])
+        self.assertEqual(merged, ["wpn_rgun_fire_plr=iw7_raygun_zm:iw7_raygun_zm_pap1:raygun_zpap1:raygun_zpap2",
+                                  "iw7_x_zm"])
+
 
 if __name__ == "__main__":
     unittest.main()
