@@ -463,3 +463,17 @@ forward (zm_levelcommon: Cymbal Monkey and Octobomb up 100, Mustang & Sally
 up 50, frag forward 120; Ray Gun, DG-2, Thundergun 0). The spec now reads
 both and the author writes them. In game the DG-2 projectile had hit no
 zombie in its path; the rerun with the fix is the check.
+
+## 2026-11-07: BO3 ribbon trails (DG-2 white shards)
+
+In game the DG-2 shot filled the screen with white jagged shards and long
+blue bolts. A trail A/B (the same shot with the projectile trail removed,
+then with only its lines, only its sprites and light, only its ribbon)
+traced them to the ribbon element (BO3 type 5) of
+`fx_tesla_electric_bolt_zmb`. The converter had applied BO3's emission to
+it: "every 1 ms, endless" became 1000 IW7 trail particles a second, up to
+402 at once, each a whole ribbon (INIT_GEO_TRAIL). In BO3 that interval
+samples one ribbon's points. A BO3 trail now keeps the IW7 trail
+template's life, emission (one particle) and ribbon geometry, and takes
+material, colour and size from BO3. The muzzle effect's own elements were
+probed in the world and draw correctly.

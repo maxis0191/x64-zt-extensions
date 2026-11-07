@@ -7,6 +7,8 @@ element kind. Each BO3 element becomes one IW7 emitter cloned from the
 template of its kind, then rewritten:
 
 * life: particleLife = lifespan ms / 1000 (base, base + amplitude);
+* trail (type 5): one ribbon; the IW7 trail template's life, emission and
+  ribbon geometry stay (BO3's interval samples the ribbon's points);
 * spawn: one-shot -> burst (count base, base + amplitude); a looping element
   with a finite count (BO3: one particle batch every interval ms, count in
   total) -> burst of `count`, particleDelay spread over count * interval; an
@@ -40,6 +42,7 @@ INT_MAX = 2147483647
 # T7 element types follow T6: 0 billboard, 1 oriented, 2 rotated, 3 tail, 4 line, 5 trail, 6 cloud,
 # 7 model, 8 omni light. A LINE (velocity-aligned streak) maps to the IW7 tail.
 LINE_TYPE = 4
+TRAIL_TYPE = 5
 KIND_OF_TYPE = {0: "sprite", 1: "sprite", 2: "sprite", 4: "tail", 6: "sprite", 3: "tail", 5: "trail",
                 8: "light"}
 
@@ -114,8 +117,14 @@ def size_curves(samples, radius_to_size=2.0, line=False):
 def rewrite(emitter, element, fx, material, intensity, extra_materials=()):
     sc = element["scalars"]
     life = sc["lifespan_msec"]
-    emitter["particleLife"] = {"min": vfx.f32(life["base"] / 1000.0),
-                               "max": vfx.f32((life["base"] + max(0, life["amplitude"])) / 1000.0)}
+    # A BO3 trail is one ribbon: its spawn interval samples the ribbon's points and its lifespan is a
+    # point's. An IW7 trail particle carries the whole ribbon (INIT_GEO_TRAIL), so the trail template's
+    # emission (one particle at a time) and ribbon geometry stay; mapping BO3's 1 ms interval to a spawn
+    # rate made the DG-2 trail 1000 ribbons a second, up to 402 at once.
+    ribbon = element["type"] == TRAIL_TYPE
+    if not ribbon:
+        emitter["particleLife"] = {"min": vfx.f32(life["base"] / 1000.0),
+                                   "max": vfx.f32((life["base"] + max(0, life["amplitude"])) / 1000.0)}
     rng = sc.get("spawn_range")
     if rng and rng["max"] > 0:
         # BO3 repeats elements per camera distance tier; IW7 keeps the band squared.
@@ -125,7 +134,9 @@ def rewrite(emitter, element, fx, material, intensity, extra_materials=()):
         emitter["emitterDelay"] = {"min": vfx.f32(delay["base"] / 1000.0),
                                    "max": vfx.f32((delay["base"] + max(0, delay["amplitude"])) / 1000.0)}
     a, b = sc["spawn"]["a"], sc["spawn"]["b"]
-    if element["spawn_kind"] == "looping" and b >= INT_MAX:
+    if ribbon:
+        pass
+    elif element["spawn_kind"] == "looping" and b >= INT_MAX:
         emitter["particleSpawnRate"] = {"min": vfx.f32(1000.0 / max(1, a)), "max": vfx.f32(1000.0 / max(1, a))}
         emitter["particleBurstCount"] = {"min": 1, "max": 1}
         emitter["particleDelay"] = {"min": 0.0, "max": 0.0}
