@@ -67,7 +67,9 @@ class WeaponSoundTest(unittest.TestCase):
             self.assertEqual(row['duck'], '')
             self.assertEqual(row['StopAliasName'], '')
             self.assertEqual(row['Subtitle'], '')
-            self.assertTrue(row['File'].startswith('test\\rgun\\'))
+            # never a backslash: ZoneTool's CSV reader turns \t and \n into whitespace (t7\tesla_gun_zm)
+            self.assertTrue(row['File'].startswith('test/rgun/'))
+            self.assertNotIn('\\', row['File'])
         flac = os.path.join(self.out, 'sound_assets', 'test', 'rgun', 'wpn_rgun_exp.flac')
         with open(flac, 'rb') as f:
             self.assertEqual(f.read(), b'fLaCexp')

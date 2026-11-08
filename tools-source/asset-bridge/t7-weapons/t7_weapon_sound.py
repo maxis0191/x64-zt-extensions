@@ -134,8 +134,11 @@ def main(argv=None):
         flac = resolve_flac(args.flac_root, r[bcol['FileSpec']])
         if flac is None:
             raise SystemExit('missing FLAC %s under %s' % (r[bcol['FileSpec']], args.flac_root))
-        rel = '%s\\%s' % (args.prefix.replace('/', '\\'), name)
-        dest = os.path.join(args.out, 'sound_assets', *rel.split('\\')) + '.flac'
+        # Forward slashes: ZoneTool's alias CSV reader turns a backslash followed by t or n into a tab or
+        # newline, so t7\tesla_gun_zm\... and t7\thundergun_zm\... named no file and every DG-2 and
+        # Thundergun sound was missing from the zone.
+        rel = '%s/%s' % (args.prefix.replace('\\', '/').strip('/'), name)
+        dest = os.path.join(args.out, 'sound_assets', *rel.split('/')) + '.flac'
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copyfile(flac, dest)
         # BO3 volumes are in dB-like units; keep each chain's relative balance
