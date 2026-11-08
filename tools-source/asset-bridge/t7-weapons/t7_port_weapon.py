@@ -69,7 +69,10 @@ FX_TEMPLATES = {
     "sprite_atlas": ("particlesystem/vfx/iw7/core/zombie/weapon/impact/vfx_zmb_impact_green_ch1.iw7VFX", 5),
     "tail": ("particlesystem/vfx/iw7/core/zombie/weapon/impact/vfx_zmb_impact_green_ch1.iw7VFX", 3),
     "light": ("particlesystem/vfx/iw7/core/zombie/weapon/impact/vfx_zmb_impact_green_ch1.iw7VFX", 1),
-    "trail": ("particlesystem/vfx/iw7/_requests/mp/vfx_plasma_trail_friendly.iw7VFX", 1),
+    # The ribbon of Spaceland's UFO weapon, a projectile_tag projectile like every port: the MP plasma
+    # trail's ribbon (30 points, 10 units apart, flags 0x8) left a line to the world origin behind every
+    # freed projectile, drawn as a beam in the sky (owner 2026-11-08; witness bo3wpn-origin).
+    "trail": ("particlesystem/vfx/iw7/core/zombie/ufo/weapon/vfx_ufo_alien_weapon.iw7VFX", 1),
 }
 FX_LINK_KEYS = ("effect_",)   # element slots that name another effect (runners, emitted effects)
 
