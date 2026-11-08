@@ -54,6 +54,21 @@ class AssembleTest(unittest.TestCase):
         with open(gsc, encoding="utf-8") as f:
             self.assertEqual(f.read(), text)
 
+    def test_bank_files_are_the_mod_zones(self):
+        # iw7-mod opens only mod.sabl/mod.sabs: a bank of zone bo3wpn would name files no client loads
+        root = tempfile.mkdtemp()
+        mod, csv = os.path.join(root, "bo3wpn"), os.path.join(root, "bo3wpn.csv")
+        write(csv, "soundbank,bo3wpn.all\n")
+        write(os.path.join(mod, "soundbank", "bo3wpn.all.json"),
+              json.dumps({"name": "bo3wpn.all", "zone": "bo3wpn", "aliases": []}))
+        port = os.path.join(root, "port")
+        write(os.path.join(port, "zone", "weapons", "iw7_tg_zm.json"), "{}")
+        write(os.path.join(port, "zone.csv"), "weapon,iw7_tg_zm\n")
+        write(os.path.join(port, "catalog.txt"), "iw7_tg_zm:iw7_tg_zm_pap1\n")
+        asm.assemble(mod, csv, "bo3wpn.all", "bo3wpn", [port])
+        with open(os.path.join(mod, "soundbank", "bo3wpn.all.json"), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["zone"], "mod")
+
     def test_gsc_without_block_is_refused(self):
         root = tempfile.mkdtemp()
         gsc = os.path.join(root, "x.gsc")

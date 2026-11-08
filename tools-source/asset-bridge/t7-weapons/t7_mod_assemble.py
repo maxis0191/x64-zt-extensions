@@ -134,14 +134,21 @@ def dedupe_bank_aliases(mod_zone, tables):
     return dropped
 
 
+BANK_ZONE = "mod"
+
+
 def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
     bank_path = os.path.join(mod_zone, "soundbank", bank + ".json")
     if os.path.exists(bank_path):
         with open(bank_path, encoding="utf-8") as f:
             bank_def = json.load(f)
     else:
-        bank_def = {"name": bank, "zone": zone, "gameLanguage": "all", "soundLanguage": "all", "aliases": []}
+        bank_def = {"name": bank, "zone": BANK_ZONE, "gameLanguage": "all", "soundLanguage": "all", "aliases": []}
         bank_def.update({k: [] for k in BANK_LISTS})
+    # The bank's zone names its data files (<zone>.sabl/.sabs) and iw7-mod opens only mod.sabl/mod.sabs
+    # from fs_game: a bank of zone "bo3wpn" pointed every alias at bo3wpn.sabl, which no client loads,
+    # and the weapons played no BO3 sound at all (whatever the ZoneTool zone is called).
+    bank_def["zone"] = BANK_ZONE
     # A catalog the module would refuse (two weapons sharing a raw name) stops before anything is written.
     new_catalog = [c for port in ports for c in read_lines(os.path.join(port, "catalog.txt")) if c]
     merge_catalog([c for c in read_lines(os.path.join(mod_zone, "catalog.txt")) if c], new_catalog)
