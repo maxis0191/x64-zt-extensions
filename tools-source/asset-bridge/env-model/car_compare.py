@@ -74,7 +74,14 @@ def main(argv=None):
     ap.add_argument('--min-px', type=int, default=1500)
     ap.add_argument('--out', required=True)
     ap.add_argument('--json')
+    ap.add_argument('--roles', help='materials.report.json of the port: decal / glass regions are blended over what is '
+                    'behind them, so they are reported but not judged')
     a = ap.parse_args(argv)
+    blend = set()
+    if a.roles:
+        for m in json.load(open(a.roles))['materials']:
+            if m.get('role') in ('decal', 'glass') and m.get('iw7'):
+                blend.add(m['iw7'])
     os.makedirs(a.out, exist_ok=True)
     report = {'views': []}
     for spec in a.view:
@@ -115,15 +122,34 @@ def main(argv=None):
                  'engine_hf': round(float(elap[sel].mean() / max(eluma[sel].mean(), 1e-4)), 3),
                  'ref_hf': round(float(rlap[sel].mean() / max(rluma[sel].mean(), 1e-4)), 3),
                  'black': round(float((eluma[sel] < (12 / 255.0) ** 2.2).mean()), 3)}
-            r['chroma_dist'] = round(float(np.abs(np.array(r['engine_chroma']) - np.array(r['ref_chroma'])).sum() / 2), 3)
+            r['_e'], r['_r'] = ec.tolist(), rc.tolist()
             rows.append(r)
-        ratios = [r['engine_luma'] / max(r['ref_luma'], 1e-4) for r in rows]
-        med = float(np.median(ratios)) if ratios else 1.0
-        for r, q in zip(rows, ratios):
-            r['rel_luma'] = round(q / max(med, 1e-6), 2)
+        # light: the station's light colour and level differ from the unlit reference. Divide them out with the median
+        # engine/reference ratio over the opaque regions (white balance + exposure), then judge each region.
+        opaque = [r for r in rows if r['material'] not in blend]
+        eps = 0.02
+        if opaque:
+            tint = np.median([np.array(r['_e']) / np.maximum(np.array(r['_r']), 1e-4) for r in opaque], axis=0)
+            gain = float(np.median([(r['engine_luma'] + eps) / (r['ref_luma'] + eps) for r in opaque]))
+        else:
+            tint, gain = np.ones(3), 1.0
+        for r in rows:
+            ec = np.array(r['_e']) / np.maximum(tint, 1e-4)
+            rc = np.array(r['_r'])
+            r['engine_chroma_wb'] = (ec / max(ec.sum(), 1e-6)).round(3).tolist()
+            r['chroma_dist'] = round(float(np.abs(np.array(r['engine_chroma_wb']) - np.array(r['ref_chroma'])).sum() / 2), 3)
+            r['rel_luma'] = round(((r['engine_luma'] + eps) / (r['ref_luma'] + eps)) / max(gain, 1e-6), 2)
             r['hf_ratio'] = round(r['engine_hf'] / max(r['ref_hf'], 0.25), 2)     # flat paints: engine shading alone gives ~0.3
+            del r['_e'], r['_r']
+            if r['material'] in blend:
+                r['verdict'] = 'n/a (blended over the scene)'
+                continue
             fails = []
-            if r['chroma_dist'] > a.chroma:
+            # very dark references (navy paint, rubber): reflections of the scene lift and desaturate them in any
+            # renderer, so their hue is judged more loosely
+            tol = a.chroma + 0.08 * (1.0 - min(1.0, r['ref_luma'] / 0.03))
+            r['chroma_tol'] = round(tol, 3)
+            if r['chroma_dist'] > tol:
                 fails.append('colour')
             if not 0.45 <= r['rel_luma'] <= 2.2:
                 fails.append('luma')

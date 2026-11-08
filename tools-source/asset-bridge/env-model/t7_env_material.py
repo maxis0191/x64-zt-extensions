@@ -133,6 +133,29 @@ def is_black(binding):
     return os.path.basename(p).startswith('$black')
 
 
+MIX_COLOUR, MIX_MASK, MIX_NORMAL, MIX_GLOSS = '0x80951342', '0x04429A80', '0x55A604DF', '0x56B697BB'
+
+
+def mix_layer(mat, over):
+    """BO3 *_mix_vehicle* paints reveal a second (rust / bare metal) colour map through a grunge mask; GrayWolf lists
+    those maps only as sources. Rebuild that layer from the sources: colour at --mix_scale (default 4), mask at 1, blended
+    at the reveal threshold mix_reveal (default 0.86: worn spots and edges, not a rusted body)."""
+    if 'mix_vehicle' not in (mat.get('techset') or '') and not over.get('mix'):
+        return None
+    src = {x.get('semantic', '').upper(): x.get('path') for x in mat.get('sources', [])}
+    if MIX_COLOUR.upper() not in src or MIX_MASK.upper() not in src:
+        return None
+    sc = over.get('mix_scale', [4, 4])
+    layer = {'albedo': {'path': src[MIX_COLOUR.upper()]}, 'uv_scale': sc,
+             'mask': {'path': src[MIX_MASK.upper()], 'channel': 'r', 'uv_scale': over.get('mix_mask_scale', [1, 1])},
+             'reveal': over.get('mix_reveal', 0.86)}
+    if MIX_NORMAL.upper() in src:
+        layer['normal'] = {'path': src[MIX_NORMAL.upper()]}
+    if MIX_GLOSS.upper() in src:
+        layer['roughness'] = {'path': src[MIX_GLOSS.upper()], 'channel': 'r', 'invert': True}
+    return layer
+
+
 def composite(mat, bk, over):
     """Linear diffuse (s,s,3), alpha (s,s), gloss 0..1 (s,s), normal (s,s,3), occlusion (s,s), linear specular F0
     colour (s,s,3) or None.
@@ -157,7 +180,7 @@ def composite(mat, bk, over):
         lin = np.clip(lin * tint[None, None, :], 0, 1)
     alpha = alb[..., 3].copy()
     if mat.get('roughness'):
-        gloss = bk.channel(mat.get('roughness'), default=0.5)
+        gloss = 1.0 - bk.channel(mat.get('roughness'), default=0.5)     # GrayWolf: a gloss map flagged invert = roughness
     elif mat.get('roughness_value') is not None:
         gloss = np.full((s, s), 1.0 - float(mat['roughness_value']), np.float32)
     else:
@@ -173,7 +196,11 @@ def composite(mat, bk, over):
     else:
         spec = np.full((s, s, 3), 0.04, np.float32)
     rust_mask = None
-    for k, layer in enumerate(mat.get('layers') or []):
+    layers = list(mat.get('layers') or [])
+    mix = mix_layer(mat, over)
+    if mix:
+        layers.append(mix)
+    for k, layer in enumerate(layers):
         sc = layer.get('uv_scale') or [1, 1]
         la = bk.tile(layer.get('albedo'), sc)
         if la is None:
@@ -188,7 +215,7 @@ def composite(mat, bk, over):
             l_lin = np.clip(la[..., :3] ** 2.2 * lt, 0, 1)
             l_spec = np.full((s, s, 3), 0.04, np.float32)
         if layer.get('roughness'):
-            l_gloss = bk.channel(layer.get('roughness'), sc, 0.5)
+            l_gloss = 1.0 - bk.channel(layer.get('roughness'), sc, 0.5)
         elif layer.get('roughness_value') is not None:
             l_gloss = np.full((s, s), 1.0 - float(layer['roughness_value']), np.float32)
         else:
@@ -201,7 +228,7 @@ def composite(mat, bk, over):
             if mname.endswith('_m'):
                 w = np.clip(m, 0, 1)[..., None]
             else:
-                th = float(over.get('reveal', 0.72))
+                th = float(layer.get('reveal', over.get('reveal', 0.72)))
                 w = smoothstep(th - 0.08, th + 0.08, m)[..., None]
         else:
             w = np.ones((s, s, 1), np.float32)
@@ -370,10 +397,6 @@ def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_ex
     albedo255 = np.dstack([srgb * 255.0, np.full(srgb.shape[:2], 255.0)])
     spec255 = np.clip(spec, 0, 1) ** (1 / 2.2) * 255.0 if spec is not None else None
     cs = pack_cs(albedo255, spec255, mat.get('metalness_value'))
-    if spec255 is None:
-        # t7_material_pack.pack_cs leaves the colour in 0..1 when a material has no specular map (weapon materials
-        # always have one); the stock layout is 0..255 like the alpha it scales
-        cs[..., :3] *= 255.0
     nog = np.empty(cs.shape, np.float32)
     nog[..., 0] = np.clip(gloss, 0, 1) * 255.0
     g, a = octahedral_ga(np.dstack([(n[..., 0] + 1) / 2 * 255.0, (n[..., 1] + 1) / 2 * 255.0]))
