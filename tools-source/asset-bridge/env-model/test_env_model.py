@@ -15,6 +15,7 @@ import iw7_xmodel_io as io  # noqa: E402
 import iw7_zt_stream as zs  # noqa: E402
 import mesh_glb  # noqa: E402
 import t7_env_material as envmat  # noqa: E402
+import t7_env_port as port  # noqa: E402
 
 
 def cube(size=10.0, z0=0.0):
@@ -133,6 +134,30 @@ class Material(unittest.TestCase):
         self.assertEqual(envmat.classify({'name': 'a', 'techset': ',mc/lit_decal#x', 'alpha': 'cutout'}), 'decal')
         self.assertEqual(envmat.classify({'name': 'a', 'techset': ',mc/lit_advanced#x'}), 'opaque')
         self.assertEqual(envmat.classify({'name': 'a', 'techset': ',mc/lit#x', 'emissive': {'path': 'e.png'}}), 'emissive')
+
+
+class MaterialDetail(unittest.TestCase):
+    def test_scale_normal(self):
+        n = np.zeros((2, 2, 3), np.float32)
+        n[..., 0], n[..., 2] = 0.6, 0.8
+        self.assertTrue(np.allclose(envmat.scale_normal(n, 0.0), [0, 0, 1]))
+        h = envmat.scale_normal(n, 0.5)
+        self.assertTrue(np.allclose(np.linalg.norm(h, axis=-1), 1.0))
+        self.assertLess(h[0, 0, 0], 0.6)
+
+    def test_dedupe_images(self):
+        d = tempfile.mkdtemp()
+        os.makedirs(os.path.join(d, 'images'))
+        os.makedirs(os.path.join(d, 'materials', 'mo'))
+        for n, b in (('a_nog', b'same'), ('b_nog', b'same'), ('b_cs', b'other')):
+            open(os.path.join(d, 'images', n + '.dds'), 'wb').write(b)
+        import json
+        json.dump({'textureTable': [{'image': 'b_nog'}, {'image': 'b_cs'}]}, open(os.path.join(d, 'materials', 'mo', 'b.json'), 'w'))
+        mats = [{'iw7': 'mo/b', 'images': {'nog': 'b_nog', 'cs': 'b_cs'}}]
+        self.assertEqual(port.dedupe_images(d, mats), {'b_nog': 'a_nog'})
+        self.assertEqual(mats[0]['images']['nog'], 'a_nog')
+        self.assertFalse(os.path.exists(os.path.join(d, 'images', 'b_nog.dds')))
+        self.assertEqual(json.load(open(os.path.join(d, 'materials', 'mo', 'b.json')))['textureTable'][0]['image'], 'a_nog')
 
 
 class Glb(unittest.TestCase):

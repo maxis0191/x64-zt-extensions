@@ -94,6 +94,33 @@ def merge(groups):
     return {'P': np.concatenate(P), 'N': np.concatenate(N), 'UV': np.concatenate(UV), 'tris': np.concatenate(T)}
 
 
+def dedupe_images(out, mats):
+    """Materials that bake to byte-identical images (paints sharing one micro normal/gloss map, flat decal normal maps)
+    share one image: duplicates are deleted and every material JSON / report entry points at the first name."""
+    import hashlib
+    first, alias = {}, {}
+    for f in sorted(glob.glob(os.path.join(out, 'images', '*.dds'))):
+        h = hashlib.sha256(open(f, 'rb').read()).hexdigest()
+        name = os.path.splitext(os.path.basename(f))[0]
+        if h in first:
+            alias[name] = first[h]
+            os.remove(f)
+        else:
+            first[h] = name
+    if not alias:
+        return {}
+    for m in mats:
+        if m.get('images'):
+            m['images'] = {k: alias.get(v, v) for k, v in m['images'].items()}
+            mp = os.path.join(out, 'materials', m['iw7'] + '.json')
+            if os.path.exists(mp):
+                mj = json.load(open(mp))
+                for t in mj.get('textureTable', []):
+                    t['image'] = alias.get(t['image'], t['image'])
+                json.dump(mj, open(mp, 'w'), indent=4)
+    return alias
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--manifest', required=True)
@@ -140,6 +167,7 @@ def main(argv=None):
         with contextlib.redirect_stdout(buf):
             envmat.main(args)
         mats = json.loads(buf.getvalue())['materials']
+        dedupe_images(out, mats)
         json.dump({'materials': mats}, open(mat_report_path, 'w'), indent=1)
     report['materials'] = mats
     role = {m['material']: m for m in mats}

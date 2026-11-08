@@ -134,6 +134,49 @@ def is_black(binding):
 
 
 MIX_COLOUR, MIX_MASK, MIX_NORMAL, MIX_GLOSS = '0x80951342', '0x04429A80', '0x55A604DF', '0x56B697BB'
+MIX_BASE_NORMAL = '0x55A604DC'      # the base (paint) layer's micro normal of the *_mix_vehicle* / *_blend* techsets
+CONSTANT_SIZE = 16                  # images without variation are written at this size (shared after de-duplication)
+
+
+def scale_normal(n, k):
+    """Tangent-space normal (s,s,3) with its xy scaled by k (0 = flat), renormalised."""
+    if k == 1.0:
+        return n
+    m = n.copy()
+    m[..., :2] *= float(k)
+    return m / np.maximum(np.linalg.norm(m, axis=-1, keepdims=True), 1e-6)
+
+
+def base_micro_normal(mat, bk, over):
+    """BO3 micro-tile techsets whose own normal binding is the flat $normal carry the base layer's micro normal only
+    as a source (semantic 0x55A604DC, at the colour map's scale): the paint's orange peel, dents and brushing.
+    Returns it (s,s,3) or None; manifest 'micro_normal' scales it (0 disables)."""
+    nb = mat.get('normal') or {}
+    if not os.path.basename(nb.get('path', '')).startswith('$normal'):
+        return None
+    k = float(over.get('micro_normal', 1.0))
+    src = {x.get('semantic', '').upper(): x.get('path') for x in mat.get('sources', [])}
+    p = src.get(MIX_BASE_NORMAL.upper())
+    if not k or not p or os.path.basename(p).startswith('$'):
+        return None
+    t = bk.tile({'path': p})
+    return None if t is None else scale_normal(unit_normal(t), k)
+
+
+def write_images(jobs, images, img_dir, tmp, texconv_exe, size=None):
+    """texconv every (key, RGBA 0..255 array, format) job to <img_dir>/<images[key]>.dds with a full mip chain:
+    resized to size (when smaller), and to CONSTANT_SIZE when the map has no variation at all."""
+    os.makedirs(img_dir, exist_ok=True)
+    for key, data, fmt in jobs:
+        png = os.path.join(tmp, images[key] + '.png')
+        im = Image.fromarray(np.clip(data + 0.5, 0, 255).astype(np.uint8), 'RGBA')
+        if float(np.max(data.reshape(-1, 4).std(0))) < 0.5:
+            im = im.resize((CONSTANT_SIZE, CONSTANT_SIZE), Image.Resampling.BOX)
+        elif size and max(im.size) > size:
+            k = size / max(im.size)
+            im = im.resize((max(4, int(round(im.width * k))), max(4, int(round(im.height * k)))), Image.Resampling.LANCZOS)
+        im.save(png)
+        texconv(texconv_exe, png, img_dir, fmt)
 
 
 def mix_layer(mat, over):
@@ -187,6 +230,9 @@ def composite(mat, bk, over):
         gloss = np.full((s, s), 0.5, np.float32)
     nrm = bk.tile(mat.get('normal'))
     n = unit_normal(nrm) if nrm is not None else np.dstack([np.zeros((s, s)), np.zeros((s, s)), np.ones((s, s))])
+    micro = base_micro_normal(mat, bk, over)
+    if micro is not None:
+        n = micro
     occ = bk.channel(mat.get('occlusion'), default=1.0) if mat.get('occlusion') else np.ones((s, s), np.float32)
     sp = bk.tile(mat.get('specular'))
     if sp is not None:
@@ -221,7 +267,7 @@ def composite(mat, bk, over):
         else:
             l_gloss = gloss
         ln = bk.tile(layer.get('normal'), sc)
-        l_n = unit_normal(ln) if ln is not None else n
+        l_n = scale_normal(unit_normal(ln), float(layer.get('normal_scale', 1.0))) if ln is not None else n
         if layer.get('mask'):
             m = bk.channel(layer['mask'], layer['mask'].get('uv_scale') or [1, 1], 0.0)
             mname = os.path.splitext(os.path.basename(layer['mask'].get('path', '')))[0]
@@ -267,6 +313,13 @@ def composite(mat, bk, over):
         dirt = 1.0 - float(g.get('strength', 0.35)) * (1.0 - gm)
         lin = lin * dirt[..., None]
         gloss = gloss * (0.6 + 0.4 * dirt)
+    if 'gloss' in over and not over.get('paint'):
+        # a fixed gloss level (manifest), keeping a quarter of the map's own variation
+        gloss = np.full((s, s), float(over['gloss']), np.float32) * (0.75 + 0.25 * gloss / max(float(gloss.mean()), 1e-3))
+    if 'gloss_gain' in over:
+        gloss = gloss * float(over['gloss_gain'])
+    gloss = np.clip(gloss, 0, float(over.get('gloss_max', 1.0)))
+    n = scale_normal(n, float(over.get('normal_strength', 1.0)))
     n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
     if 'albedo_gain' in over:
         lin = np.clip(lin * float(over['albedo_gain']), 0, 1)
@@ -313,7 +366,7 @@ def copy_state(templates_root, tmpl, techset, new_name, out):
     return copied
 
 
-def passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_exe, tmp):
+def passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_exe, tmp, size=None):
     """An IW7 source material (GrayWolf "iw" export): its images already are the stock packed layout
     (packed_cs, packed_ng/nog, packed_a); re-encode them in the stock formats under the new name."""
     def img(binding):
@@ -342,12 +395,7 @@ def passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_
             a = np.full(cs.shape, 255.0, np.float32)
         images['a'] = stem + '_packed_a'
         jobs.append(('a', a, 'BC4_UNORM'))
-    img_dir = os.path.join(out, 'images')
-    os.makedirs(img_dir, exist_ok=True)
-    for key, data, fmt in jobs:
-        png = os.path.join(tmp, images[key] + '.png')
-        Image.fromarray(np.clip(data + 0.5, 0, 255).astype(np.uint8), 'RGBA').save(png)
-        texconv(texconv_exe, png, img_dir, fmt)
+    write_images(jobs, images, os.path.join(out, 'images'), tmp, texconv_exe, int(over.get('size', size or 1 << 15)))
     m = copy.deepcopy(template)
     for t in m['textureTable']:
         if t['semantic'] == SEM_CS:
@@ -361,7 +409,8 @@ def passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_
     json.dump(m, open(mat_path, 'w'), indent=4)
     state = copy_state(templates_root, tmpl, techset, new_name, out)
     return {'material': mat['name'], 'iw7': new_name, 'role': role, 'template': tmpl, 'techset': techset,
-            'size': int(cs.shape[0]), 'images': images, 'state_files': len(state), 'source': 'iw7 packed passthrough'}
+            'size': min(int(cs.shape[0]), int(over.get('size', size or cs.shape[0]))), 'images': images,
+            'state_files': len(state), 'source': 'iw7 packed passthrough'}
 
 
 def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_exe, keep, tmp):
@@ -381,7 +430,7 @@ def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_ex
     bk = Bake(base, size)
     iw_cs = (mat.get('albedo') or {}).get('path', '')
     if '_packed_cs' in iw_cs:
-        return passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_exe, tmp)
+        return passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_exe, tmp, size)
     lin, alpha, gloss, n, occ, spec = composite(mat, bk, over)
     if role == 'cutout?':
         role = 'cutout' if float(np.mean(alpha < 0.5)) > 0.01 else 'opaque'
@@ -417,12 +466,7 @@ def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_ex
         em[..., 3] = 255.0
         images['e'] = stem + '_e'
         jobs.append(('e', em, 'BC7_UNORM'))
-    img_dir = os.path.join(out, 'images')
-    os.makedirs(img_dir, exist_ok=True)
-    for key, data, fmt in jobs:
-        png = os.path.join(tmp, images[key] + '.png')
-        Image.fromarray(np.clip(data + 0.5, 0, 255).astype(np.uint8), 'RGBA').save(png)
-        texconv(texconv_exe, png, img_dir, fmt)
+    write_images(jobs, images, os.path.join(out, 'images'), tmp, texconv_exe)
     m = copy.deepcopy(template)
     table = []
     for t in m['textureTable']:
