@@ -34,8 +34,8 @@ class WeaponSoundTest(unittest.TestCase):
         ])
         write_csv(os.path.join(self.root, 'stock.csv'), [
             TEMPLATE,
-            ['muted', 'x', '', 'stop', 'sub', 'streamed', 'weap_plr_fire_1_2d', '0', '0', 'duck_a'],
-            ['plr', 'x', '', 'stop', 'sub', 'streamed', 'weap_plr_fire_1_2d', '0.8', '0.9', 'duck_b'],
+            ['muted', 'x', '', 'stop', 'sub', 'streamed', 'weap_plr_fire_overlap_2d', '0', '0', 'duck_a'],
+            ['plr', 'x', '', 'stop', 'sub', 'streamed', 'weap_plr_fire_overlap_2d', '0.8', '0.9', 'duck_b'],
             ['foley', 'x', '', '', '', 'streamed', 'scn_fx_unres_2d', '0.5', '0.6', ''],
             ['boom', 'x', '', '', '', 'streamed', 'explo_1_3d', '1', '1', 'duck_c'],
         ])
@@ -50,7 +50,7 @@ class WeaponSoundTest(unittest.TestCase):
 
     def test_follows_secondary_chain_and_roles(self):
         self.assertEqual(set(self.rows), {'wpn_rgun_fire_plr', 'wpn_rgun_sweet_plr', 'wpn_rgun_reload_open', 'wpn_rgun_exp'})
-        self.assertEqual(self.rows['wpn_rgun_fire_plr']['channel'], 'weap_plr_fire_1_2d')
+        self.assertEqual(self.rows['wpn_rgun_fire_plr']['channel'], 'weap_plr_fire_overlap_2d')
         self.assertEqual(self.rows['wpn_rgun_fire_plr']['SecondaryAliasName'], 'wpn_rgun_sweet_plr')
         self.assertEqual(self.rows['wpn_rgun_reload_open']['channel'], 'scn_fx_unres_2d')
         self.assertEqual(self.rows['wpn_rgun_exp']['channel'], 'explo_1_3d')

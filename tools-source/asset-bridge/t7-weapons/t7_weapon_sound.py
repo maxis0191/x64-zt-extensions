@@ -9,7 +9,7 @@ scales the stock volume by its BO3 volume relative to the role's reference.
 Roles: given per alias with --role alias=role (the port takes them from the
 WeaponDef slot that names the alias; secondaries inherit the role of their
 chain), otherwise from the BO3 alias name:
-  player fire (*_plr with fire/act/flux)  weap_plr_fire_1_2d row
+  player fire (*_plr with fire/act/flux)  weap_plr_fire_overlap_2d row
   npc fire    (*_npc)                     weap_npc_main_3d row
   foley       (reload/raise)              scn_fx_unres_2d row
   projectile  (*loop)                     projectile_loop_close row
@@ -36,7 +36,10 @@ ROLES = (
     ('projectile', lambda n: n.endswith('_loop'), 'projectile_loop_close'),
     ('foley', lambda n: 'reload' in n or 'raise' in n, 'scn_fx_unres_2d'),
     ('npc', lambda n: n.endswith('_npc'), 'weap_npc_main_3d'),
-    ('player', lambda n: n.endswith('_plr'), 'weap_plr_fire_1_2d'),
+    # BO3 fire sounds are chains of layers (Ray Gun: fire, rear, act, flux left, flux right) that play
+    # together; on weap_plr_fire_1_2d each layer stopped the one before and the Ray Gun shot was silent
+    # (witness 2026-11-08). Stock IW7 layered fire chains (G18 + _mech) use the overlap channel.
+    ('player', lambda n: n.endswith('_plr'), 'weap_plr_fire_overlap_2d'),
 )
 ROLE_CHANNELS = {role: channel for role, _, channel in ROLES}
 BO3_REFERENCE_VOLUME = 75.0   # fallback when a BO3 row has no volume
