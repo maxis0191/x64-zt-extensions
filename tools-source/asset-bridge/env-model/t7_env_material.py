@@ -182,6 +182,18 @@ def texconv(exe, png, out_dir, fmt):
                    stdout=subprocess.DEVNULL)
 
 
+NAME_MAX = 40
+
+
+def short_name(name):
+    """Material / image stems stay short: names longer than NAME_MAX keep their head plus a stable hash (suspected
+    cause of the BO3 car not drawing in run a1: its image names reached 78 characters, the drawn zod car's 63)."""
+    if len(name) <= NAME_MAX:
+        return name
+    import hashlib
+    return name[:NAME_MAX - 9] + '_' + hashlib.sha1(name.encode()).hexdigest()[:8]
+
+
 def safe(name):
     return re.sub(r'[^A-Za-z0-9_]', '_', name)
 
@@ -220,7 +232,7 @@ def passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_
     tmpl = TEMPLATES['opaque' if role in ('skip',) else role]
     template = json.load(open(os.path.join(templates_root, 'materials', tmpl + '.json')))
     techset = template['techniqueSet->name']
-    new_name = prefix + mat['name']
+    new_name = prefix + short_name(mat['name'])
     stem = safe(new_name)
     images = {'cs': stem + '_packed_cs', 'nog': stem + '_packed_nog'}
     jobs = [('cs', cs, 'BC7_UNORM'), ('nog', nog, 'BC7_UNORM')]
@@ -282,12 +294,16 @@ def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_ex
     tech_json = os.path.join(templates_root, 'materials', tmpl + '.json')
     template = json.load(open(tech_json))
     techset = template['techniqueSet->name']
-    new_name = prefix + mat['name']
+    new_name = prefix + short_name(mat['name'])
     stem = safe(new_name)
     srgb = np.clip(lin, 0, 1) ** (1 / 2.2)
     albedo255 = np.dstack([srgb * 255.0, np.full(srgb.shape[:2], 255.0)])
     spec255 = spec * 255.0 if spec is not None else None
     cs = pack_cs(albedo255, spec255, mat.get('metalness_value'))
+    if spec255 is None:
+        # t7_material_pack.pack_cs leaves the colour in 0..1 when a material has no specular map (weapon materials
+        # always have one); the stock layout is 0..255 like the alpha it scales
+        cs[..., :3] *= 255.0
     nog = np.empty(cs.shape, np.float32)
     nog[..., 0] = np.clip(gloss, 0, 1) * 255.0
     g, a = octahedral_ga(np.dstack([(n[..., 0] + 1) / 2 * 255.0, (n[..., 1] + 1) / 2 * 255.0]))
