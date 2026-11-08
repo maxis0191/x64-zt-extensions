@@ -396,6 +396,7 @@ class Port:
             surfaces = model_surfaces(xmb, os.path.join(src, "xsurface"))
             if not surfaces:
                 raise SystemExit("model %s references no converted surface under %s" % (m, src))
+            check_lod_order(m, lod_triangles(xmb, os.path.join(src, "xsurface")))
             for xsb in surfaces:
                 os.makedirs(os.path.join(self.zone, "xsurface"), exist_ok=True)
                 dst_xsb = os.path.join(self.zone, "xsurface", os.path.basename(xsb))
@@ -798,6 +799,32 @@ def model_surfaces(xmb, surface_dir):
         if os.path.exists(path):
             out.append(path)
     return out
+
+
+def lod_triangles(xmb, surface_dir):
+    """Triangle count of each LOD of a converted model, in the order the model stores its LODs."""
+    import iw7_xsurface_check
+    with open(xmb, "rb") as f:
+        data = f.read()
+    out, seen = [], set()
+    for m in re.finditer(rb"[\x21-\x7e]{4,}", data):
+        name = m.group().decode("ascii")
+        path = os.path.join(surface_dir, name + ".xsb")
+        if name in seen or not os.path.exists(path):
+            continue
+        seen.add(name)
+        with open(path, "rb") as f:
+            surfaces = iw7_xsurface_check.parse(f.read())[1]
+        out.append(sum(len(triangles) for _, _, triangles in surfaces))
+    return out
+
+
+def check_lod_order(model, tris):
+    """IW7 draws LOD0 up close: a model converted lowest detail first (ZoneTool T7 converter before the
+    LOD order fix) is drawn at its lowest detail at every distance."""
+    if tris != sorted(tris, reverse=True):
+        raise SystemExit("model %s stores its LODs least detailed first (%s): convert it with a ZoneTool "
+                         "whose T7 xmodel converter orders LODs by detail" % (model, tris))
 
 
 def probe_alias(spec, built_aliases):
