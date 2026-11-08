@@ -105,6 +105,35 @@ def read_lines(path):
         return [line.rstrip("\r\n") for line in f]
 
 
+def dedupe_bank_aliases(mod_zone, tables):
+    """Keep one definition of each alias across the bank's tables (the first table in bank order).
+
+    Ported weapons share BO3 aliases (wpn_generic_dryfire_plr in the Ray Gun and the Mark II), each
+    table pointing at its own copy of the sound; a bank defining an alias twice is refused by the Paris
+    mod build. Later tables lose the repeated rows; returns [alias, kept table, dropped table]."""
+    import csv
+    seen, dropped = {}, []
+    for table in tables:
+        path = os.path.join(mod_zone, *table.split("/"))
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8", newline="") as f:
+            rows = list(csv.reader(f))
+        kept = rows[:1]
+        for row in rows[1:]:
+            name = row[0] if row else ""
+            if name and not name.startswith("#") and name in seen:
+                dropped.append([name, seen[name], table])
+                continue
+            if name and not name.startswith("#"):
+                seen[name] = table
+            kept.append(row)
+        if len(kept) != len(rows):
+            with open(path, "w", encoding="utf-8", newline="") as f:
+                csv.writer(f, lineterminator="\n").writerows(kept)
+    return dropped
+
+
 def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
     bank_path = os.path.join(mod_zone, "soundbank", bank + ".json")
     if os.path.exists(bank_path):
@@ -145,6 +174,7 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
                 added.append(line)
         catalog += [c for c in read_lines(os.path.join(port, "catalog.txt")) if c]
         behaviours += [b for b in read_lines(os.path.join(port, "behaviour.txt")) if b]
+    shared = dedupe_bank_aliases(mod_zone, bank_def["aliases"])
     if bank_def["aliases"] and "soundbank," + bank not in present:
         lines.append("soundbank," + bank)
         added.append("soundbank," + bank)
@@ -153,7 +183,7 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
         json.dump(bank_def, f, indent=1)
     with open(csv_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
-    out = {"added_lines": added, "bank_aliases": bank_def["aliases"]}
+    out = {"added_lines": added, "bank_aliases": bank_def["aliases"], "shared_aliases": shared}
     for block, new in (("catalog", catalog), ("behaviours", behaviours)):
         path = os.path.join(mod_zone, block + ".txt")
         full = merge_entries([c for c in read_lines(path) if c], new, block)

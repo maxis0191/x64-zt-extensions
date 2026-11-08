@@ -73,6 +73,17 @@ class AssembleTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             asm.merge_catalog(["a=iw7_raygun_zm"], ["b=iw7_raygun_mark2_zm"])
 
+    def test_shared_alias_defined_once_in_the_bank(self):
+        root = tempfile.mkdtemp()
+        write(os.path.join(root, "sound", "a.aliases.csv"), "Name,File\nwpn_dry,t7\\a\\dry\nwpn_a,t7\\a\\a\n")
+        write(os.path.join(root, "sound", "b.aliases.csv"), "Name,File\n#comment\nwpn_dry,t7\\b\\dry\nwpn_b,t7\\b\\b\n")
+        dropped = asm.dedupe_bank_aliases(root, ["sound/a.aliases.csv", "sound/b.aliases.csv", "sound/none.csv"])
+        self.assertEqual(dropped, [["wpn_dry", "sound/a.aliases.csv", "sound/b.aliases.csv"]])
+        with open(os.path.join(root, "sound", "b.aliases.csv"), encoding="utf-8") as f:
+            self.assertEqual(f.read(), "Name,File\n#comment\nwpn_b,t7\\b\\b\n")
+        with open(os.path.join(root, "sound", "a.aliases.csv"), encoding="utf-8") as f:
+            self.assertIn("wpn_dry", f.read())
+
     def test_refused_catalog_writes_nothing(self):
         root = tempfile.mkdtemp()
         mod, csv, port = (os.path.join(root, x) for x in ("mod", "zone.csv", "port"))
