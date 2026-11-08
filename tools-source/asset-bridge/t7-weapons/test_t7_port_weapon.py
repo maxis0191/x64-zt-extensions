@@ -209,6 +209,29 @@ class ViewEffectTest(unittest.TestCase):
                 p.notetrack_effects(False)
 
 
+class WeaponNameTest(unittest.TestCase):
+    def test_default_names_rebuild_as_retail_does(self):
+        self.assertEqual(port.iw7_weapon_name("ray_gun_zm"), "iw7_raygun_zm")
+        self.assertEqual(port.iw7_weapon_name("raygun_mark2_zm"), "iw7_raygunmark2_zm")
+        self.assertEqual(port.iw7_weapon_name("tesla_gun_zm"), "iw7_teslagun_zm")
+        self.assertEqual(port.iw7_weapon_name("thundergun_upgraded_zm"), "iw7_thundergun_zm")
+
+    def test_names_retail_cannot_rebuild_or_share_are_refused(self):
+        port.check_weapon_name("iw7_raygunmark2_zm", {"facemelter"})
+        for bad in ("iw7_raygun_mark2_zm", "iw7_tesla_gun_zm", "raygun_zm", "iw7_raygun"):
+            with self.assertRaises(SystemExit):
+                port.check_weapon_name(bad)
+        with self.assertRaises(SystemExit):
+            port.check_weapon_name("iw7_facemelter_zm", {"facemelter"})
+
+    def test_stock_raw_names_from_every_map_dump(self):
+        with tempfile.TemporaryDirectory() as root:
+            for zone, name in (("cp_zmb", "iw7_facemelter_zm.json"), ("cp_rave", "iw7_forgefreeze_zm_pap1.json")):
+                os.makedirs(os.path.join(root, zone, "weapons"))
+                open(os.path.join(root, zone, "weapons", name), "w").close()
+            self.assertEqual(port.stock_raw_names(os.path.join(root, "cp_zmb")), {"facemelter", "forgefreeze"})
+
+
 class ProbeAliasTest(unittest.TestCase):
     def test_player_fire_sound_first_and_built_only(self):
         spec = {"sounds": {"proj_loop": "wpn_loop", "fire_npc": "wpn_fire_npc", "fire_plr": "wpn_fire_plr"}}

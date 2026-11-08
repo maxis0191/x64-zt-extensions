@@ -114,6 +114,43 @@ def weapon_overrides(items):
     return out
 
 
+# Retail names a weapon by its "raw" name, the second token (scripts\cp\utility::getrawbaseweaponname:
+# level.pap, level.magic_weapons, the player's pap levels), and Pack-a-Punch rebuilds it from its root
+# as iw7_<raw>_zm (mpbuildweaponname -> buildweaponassetname). A port named iw7_raygun_mark2_zm shared
+# the Ray Gun's raw name "raygun" (the machine turned the Mark II into a Ray Gun) and iw7_tesla_gun_zm
+# was rebuilt as iw7_tesla_zm, which does not exist.
+WEAPON_NAME = re.compile(r"^iw7_[a-z0-9]+_zm$")
+
+
+def iw7_weapon_name(bo3_weapon):
+    """iw7_<BO3 name without _zm/_upgraded and without underscores>_zm (ray_gun_zm -> iw7_raygun_zm)."""
+    base = re.sub(r"(_upgraded)?(_zm)?$", "", bo3_weapon)
+    return "iw7_" + base.replace("_", "") + "_zm"
+
+
+def check_weapon_name(name, taken=()):
+    if not WEAPON_NAME.match(name):
+        raise SystemExit("weapon name %r: retail rebuilds a weapon as iw7_<raw>_zm, so the name must be "
+                         "iw7_<one token>_zm" % name)
+    raw = name.split("_")[1]
+    if raw in taken:
+        raise SystemExit("weapon name %r: the raw name %r is a stock weapon's (retail keys level.pap and the "
+                         "magic wheel by it)" % (name, raw))
+
+
+def stock_raw_names(dump):
+    """Raw names of the stock IW7 weapons in every map dump beside the configured one."""
+    if not dump or not os.path.isdir(os.path.dirname(os.path.abspath(dump))):
+        return set()
+    out = set()
+    for weapons in glob.glob(os.path.join(os.path.dirname(os.path.abspath(dump)), "*", "weapons")):
+        for f in os.listdir(weapons):
+            parts = f.split("_")
+            if parts[0] == "iw7" and len(parts) > 2:
+                out.add(parts[1])
+    return out
+
+
 def with_snapshot(cfg):
     """``snapshots`` (t7_zone_snapshot.py output folder) supplies ``scan``/``effects``/``material_constants``
     for ``zone``."""
@@ -131,7 +168,8 @@ class Port:
         cfg = with_snapshot(cfg)
         self.cfg, self.weapon, self.out = cfg, weapon, os.path.abspath(out)
         self.zone = os.path.join(self.out, "zone")
-        self.name = name
+        self.name = name or iw7_weapon_name(weapon)
+        check_weapon_name(self.name, stock_raw_names(cfg.get("iw7_dump")))
         self.manifest_path = os.path.join(self.out, "manifest.json")
         self.manifest = load(self.manifest_path) if os.path.exists(self.manifest_path) else {"weapon": weapon, "stages": {}}
 

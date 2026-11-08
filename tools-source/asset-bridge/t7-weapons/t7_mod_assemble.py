@@ -52,7 +52,17 @@ def merge_entries(existing, new, block="catalog"):
 
 
 def merge_catalog(existing, new):
-    return merge_entries(existing, new, "catalog")
+    """Merged catalog; two weapons sharing a raw name (iw7_<raw>_...) are refused: retail keys level.pap
+    and the magic wheel by it, so the later one silently replaced the other's Pack-a-Punch."""
+    merged = merge_entries(existing, new, "catalog")
+    seen = {}
+    for entry in merged:
+        weapon = BLOCK_KEYS["catalog"](entry)
+        raw = weapon.split("_")[1] if weapon.startswith("iw7_") and weapon.count("_") >= 1 else weapon
+        if raw in seen:
+            raise SystemExit("catalog weapons %s and %s share the raw name %r" % (seen[raw], weapon, raw))
+        seen[raw] = weapon
+    return merged
 
 
 def gsc_block(text, block="catalog"):
@@ -80,7 +90,7 @@ def update_gsc(path, new, block="catalog"):
     if found is None:
         raise SystemExit("%s has no '%s' ... '%s' block" % ((path,) + gsc_markers(block)))
     start, end, existing = found
-    entries = merge_entries(existing, new, block)
+    entries = merge_catalog(existing, new) if block == "catalog" else merge_entries(existing, new, block)
     begin = text.find(gsc_markers(block)[0])
     indent = re.match(r"[ \t]*", text[text.rindex("\n", 0, begin) + 1:]).group(0)
     with open(path, "w", encoding="utf-8", newline="\n") as f:

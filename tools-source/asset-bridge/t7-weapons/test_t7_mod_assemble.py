@@ -68,6 +68,11 @@ class AssembleTest(unittest.TestCase):
         self.assertEqual(merged, ["wpn_rgun_fire_plr=iw7_raygun_zm:iw7_raygun_zm_pap1:raygun_zpap1:raygun_zpap2",
                                   "iw7_x_zm"])
 
+    def test_catalog_refuses_shared_raw_name(self):
+        # iw7_raygun_mark2_zm's raw name is "raygun": it replaced the Ray Gun's level.pap entry
+        with self.assertRaises(SystemExit):
+            asm.merge_catalog(["a=iw7_raygun_zm"], ["b=iw7_raygun_mark2_zm"])
+
 
 if __name__ == "__main__":
     unittest.main()
