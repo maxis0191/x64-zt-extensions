@@ -1,6 +1,6 @@
-"""Subway car end dressing in Blender (headless): destination blind box over the end door, two marker lamps on the
-end posts, coupler (shank, head, carrier bracket) under the gangway. glTF out, for one car end facing +x; the port
-manifest places it twice (yaw 0 and 180).
+"""Subway car end dressing in Blender (headless): destination blind box over the end door (line, car number, NOT IN
+SERVICE), white head lamps and red marker lamps on the end posts, coupler (shank, head, carrier bracket) under the
+gangway. glTF out, for one car end facing +x; the port manifest places it twice (yaw 0 and 180).
 
   blender -b --factory-startup -P car_end.py -- --out <dir> --images <dir of PNG maps> [--spec end.json]
 
@@ -27,6 +27,8 @@ DEFAULT = {
     # marker lamps on the end posts: (y, z, radius, depth) on the post face x
     'post_face_x': 241.6,
     'lamps': [(50.0, 46.0, 3.0, 2.2), (-50.0, 46.0, 3.0, 2.2)],
+    # head / tail lamps (white lens, unlit: the car is dead) above the markers
+    'head_lamps': [(50.0, 60.0, 3.6, 2.4), (-50.0, 60.0, 3.6, 2.4)],
     # coupler: carrier bracket under the sill end, shank, head (all boxes x0, x1, y0, y1, z0, z1)
     'coupler': [(245.5, 251.5, -5.0, 5.0, 14.0, 22.0), (240.0, 260.0, -3.5, 3.5, 13.5, 19.5),
                 (258.0, 266.5, -7.0, 7.0, 10.0, 20.0)],
@@ -36,6 +38,7 @@ MATERIALS = [
      'tint': [0.05, 0.052, 0.055], 'roughness_value': 0.6},
     {'name': 'iwz_dest_blind', 'albedo': 'iwz_dest_blind_c.png', 'roughness_value': 0.75},
     {'name': 'iwz_end_lamp_red', 'tint': [0.22, 0.012, 0.01], 'roughness_value': 0.15},
+    {'name': 'iwz_end_lamp_white', 'tint': [0.55, 0.55, 0.5], 'roughness_value': 0.1},
     {'name': 'iwz_end_lamp_bezel', 'albedo': 'i_t7_micro_metal_painted_01_c.png', 'tint': [0.03, 0.03, 0.032],
      'roughness_value': 0.55},
     {'name': 'iwz_underframe_grime', 'albedo': 'i_t7_micro_metal_rust_heavy_01_c.png',
@@ -84,8 +87,8 @@ def main():
     names = [m['name'] for m in MATERIALS]
     for n in names:
         me.materials.append(bpy.data.materials.new(n))
-    H, BL, LR, BZ, GR = (names.index(n) for n in ('iwz_end_housing', 'iwz_dest_blind', 'iwz_end_lamp_red',
-                                                   'iwz_end_lamp_bezel', 'iwz_underframe_grime'))
+    H, BL, LR, LW, BZ, GR = (names.index(n) for n in ('iwz_end_housing', 'iwz_dest_blind', 'iwz_end_lamp_red',
+                                                       'iwz_end_lamp_white', 'iwz_end_lamp_bezel', 'iwz_underframe_grime'))
     bm = bmesh.new()
     box(bm, H, *spec['blind_housing'])
     fx, y0, y1, z0, z1 = spec['blind_face']
@@ -96,6 +99,9 @@ def main():
     for y, z, rad, depth in spec['lamps']:
         cylinder_x(bm, BZ, px, y, z, rad + 0.9, depth * 0.6)
         cylinder_x(bm, LR, px, y, z, rad, depth)
+    for y, z, rad, depth in spec['head_lamps']:
+        cylinder_x(bm, BZ, px, y, z, rad + 0.9, depth * 0.6)
+        cylinder_x(bm, LW, px, y, z, rad, depth)
     for b in spec['coupler']:
         box(bm, GR, *b, bevel=0.5)
     bmesh.ops.recalc_face_normals(bm, faces=[f for f in bm.faces if f is not face])

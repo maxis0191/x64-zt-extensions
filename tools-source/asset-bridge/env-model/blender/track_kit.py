@@ -10,6 +10,8 @@ Writes, in game units (inches, Z up; Blender metres x 0.0254) and with world-sca
   third_rail_<L>.glb   low conductor rail (smaller flat-bottom profile, top 3.5 in above the running rail top) on
                        porcelain insulators every 128 in, centre line at y = -(29.61 + 27.5)
   *_lod1.glb           the same with coarser profiles (fewer segments), for the second LOD
+  --variant disused    rails_disused_<L> (rust all over: no polished running band) and ballast_disused_<L> (darker,
+                       silted, with standing-water puddles between and beside the rails); no third rail
 and <name>.materials.json (GrayWolf "greyhound-materials" layout) naming the source maps of each material, so the
 port's material baker treats authored parts like ported ones. Z = 0 is the top of the sleepers' rail seats for the
 rails and third rail (they sit on the BO3 tie p7_zm_ctl_railroad_tie: seat top 6.51 above its base).
@@ -96,12 +98,14 @@ def finish(ob, bm):
     bm.free()
 
 
-def build_rails(L, texel, lod):
-    ob, mats = new_object('rails', ['iwz_rail_web', 'iwz_rail_head'])
+def build_rails(L, texel, lod, disused=False):
+    web = 'iwz_rail_rusty' if disused else 'iwz_rail_web'
+    head = web if disused else 'iwz_rail_head'
+    ob, mats = new_object('rails', sorted({web, head}))
     bm = bmesh.new()
     prof = rail_profile(lod=lod)
     for side in (-1, 1):
-        extrude_profile(bm, prof, 0, L, side * RAIL_CY, 0.0, mats, texel, 'iwz_rail_head', 'iwz_rail_web')
+        extrude_profile(bm, prof, 0, L, side * RAIL_CY, 0.0, mats, texel, head, web)
     finish(ob, bm)
     return ob
 
@@ -137,8 +141,33 @@ def build_third_rail(L, texel, lod):
     return ob
 
 
-def build_ballast(L, texel):
-    ob, mats = new_object('ballast', ['iwz_ballast'])
+PUDDLES = [  # (x centre as a share of L, y centre, radius x, radius y): seeded, irregular outlines; the rails' foot is
+    # at |y| 26.9..32.4, so puddles stay in the four foot and between the rails or in the shoulders
+    (0.18, 0.0, 30.0, 14.0), (0.55, -6.0, 22.0, 11.0), (0.83, 4.0, 16.0, 9.0), (0.35, 46.0, 18.0, 8.0),
+    (0.72, -47.0, 24.0, 7.0)]
+
+
+def add_puddles(bm, mat, L, texel):
+    """Flat standing-water patches 0.35 in above the ballast top (ties are embedded 1.5 in and sit above them)."""
+    uv = bm.loops.layers.uv.verify()
+    for k, (fx, cy, rx, ry) in enumerate(PUDDLES):
+        cx = fx * L
+        n = 18
+        vs = []
+        for i in range(n):
+            t = 2 * math.pi * i / n
+            r = 1.0 + 0.18 * math.sin(3 * t + k) + 0.1 * math.sin(5 * t + 2 * k)
+            vs.append(bm.verts.new(((cx + rx * r * math.cos(t)) * INCH, (cy + ry * r * math.sin(t)) * INCH, 0.35 * INCH)))
+        f = bm.faces.new(vs)
+        f.material_index = mat
+        for loop in f.loops:
+            c = loop.vert.co
+            loop[uv].uv = (c.x / INCH / texel, c.y / INCH / texel)
+
+
+def build_ballast(L, texel, disused=False):
+    names = ['iwz_ballast_disused', 'iwz_puddle'] if disused else ['iwz_ballast']
+    ob, mats = new_object('ballast', names)
     bm = bmesh.new()
     uv = bm.loops.layers.uv.verify()
     top, base, h = 62.0, 86.0, 16.0
@@ -157,6 +186,8 @@ def build_ballast(L, texel):
             for loop in f.loops:
                 c = loop.vert.co
                 loop[uv].uv = (c.x / INCH / texel, c.y / INCH / texel)
+    if disused:
+        add_puddles(bm, mats['iwz_puddle'], L, texel)
     finish(ob, bm)
     return ob
 
@@ -184,6 +215,8 @@ def materials_json(path, images, mats):
                 e[key] = b
         if m.get('tint'):
             e['color_tint'] = {'color': m['tint']}
+        if 'roughness_value' in m:
+            e['roughness_value'] = m['roughness_value']
         if m.get('layers'):
             e['layers'] = [{**l, **{k: {'path': rel + '/' + l[k], **({'channel': 'r', 'invert': True} if k == 'roughness' else {})}
                                    for k in ('albedo', 'normal', 'roughness') if l.get(k)},
@@ -204,6 +237,12 @@ MATERIALS = [
     {'name': 'iwz_insulator', 'albedo': 'i_t7_micro_plastic_rough_02_c.png', 'roughness': 'i_t7_micro_plastic_rough_02_g.png',
      'normal': 'i_t7_micro_plastic_rough_02_n.png', 'tint': [0.16, 0.07, 0.035]},
     {'name': 'iwz_ballast', 'albedo': 'gravel_pebble_bed_c.png', 'normal': 'gravel_pebble_bed_n.png'},
+    # disused trackbed: rail steel rusted all over, silted ballast, standing water (dark, mirror-glossy, flat)
+    {'name': 'iwz_rail_rusty', 'albedo': 'i_t7_micro_metal_rust_heavy_01_c.png', 'roughness': 'i_t7_micro_metal_rust_heavy_01_g.png',
+     'normal': 'i_t7_micro_metal_rust_n.png'},
+    {'name': 'iwz_ballast_disused', 'albedo': 'gravel_pebble_bed_c.png', 'normal': 'gravel_pebble_bed_n.png',
+     'tint': [0.62, 0.58, 0.52]},
+    {'name': 'iwz_puddle', 'tint': [0.045, 0.05, 0.05], 'roughness_value': 0.04},
 ]
 
 
@@ -215,15 +254,19 @@ def main():
     ap.add_argument('--length', type=float, default=256.0)
     ap.add_argument('--texel', type=float, default=48.0, help='inches per UV unit (rails)')
     ap.add_argument('--ballast-texel', type=float, default=72.0)
+    ap.add_argument('--variant', choices=('main', 'disused'), default='main')
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     L = a.length
-    tag = '%d' % L
+    dis = a.variant == 'disused'
+    tag = ('disused_%d' if dis else '%d') % L
     for lod in (0, 1):
         sfx = '' if lod == 0 else '_lod1'
-        for builder, name in ((lambda: build_rails(L, a.texel, lod), 'rails'),
-                              (lambda: build_third_rail(L, a.texel, lod), 'third_rail'),
-                              (lambda: build_ballast(L, a.ballast_texel), 'ballast')):
+        parts = [(lambda: build_rails(L, a.texel, lod, dis), 'rails'),
+                 (lambda: build_ballast(L, a.ballast_texel, dis), 'ballast')]
+        if not dis:
+            parts.insert(1, (lambda: build_third_rail(L, a.texel, lod), 'third_rail'))
+        for builder, name in parts:
             bpy.ops.wm.read_factory_settings(use_empty=True)
             ob = builder()
             path = os.path.join(a.out, '%s_%s%s.glb' % (name, tag, sfx))
