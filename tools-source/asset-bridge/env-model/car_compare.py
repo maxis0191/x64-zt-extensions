@@ -9,6 +9,8 @@ a reference pass (the material's base-colour texture, unlit). Pixels count for a
 it AND the engine frame shows the model (with an off frame: where on and off differ; without one: everywhere the ID
 pass covers). Per material region it measures, in the engine frame and in the reference:
   chroma   mean linear RGB / its sum (hue and saturation, independent of light level)
+  white balance: the engine colour is divided by the median engine/reference colour ratio of the regions that are grey
+           in the reference (all opaque regions when none is)
   luma     mean linear luma; the engine/reference ratio is divided by the median ratio of all regions in the view, so
            a region that is much darker or brighter than the rest of the model stands out ('rel_luma')
   hf       high-frequency energy: mean |Laplacian of luma| / mean luma (noise such as a mask used as colour: 'granite')
@@ -129,7 +131,10 @@ def main(argv=None):
         opaque = [r for r in rows if r['material'] not in blend]
         eps = 0.02
         if opaque:
-            tint = np.median([np.array(r['_e']) / np.maximum(np.array(r['_r']), 1e-4) for r in opaque], axis=0)
+            # light colour from the regions that are grey in the reference (a strongly coloured paint covering most of
+            # the view would otherwise pull the white balance toward its own hue); all opaque regions when none is grey
+            grey = [r for r in opaque if max(r['_r']) / max(sum(r['_r']), 1e-6) - min(r['_r']) / max(sum(r['_r']), 1e-6) < 0.05]
+            tint = np.median([np.array(r['_e']) / np.maximum(np.array(r['_r']), 1e-4) for r in (grey or opaque)], axis=0)
             gain = float(np.median([(r['engine_luma'] + eps) / (r['ref_luma'] + eps) for r in opaque]))
         else:
             tint, gain = np.ones(3), 1.0
