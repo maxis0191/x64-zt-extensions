@@ -68,6 +68,7 @@ RELOAD_INSERT = re.compile(r"(clip|mag|battery|cannisters?|cell|ammo|shell)_?(in
 RELOAD_INTERRUPT_FRACTION = 0.84
 FAST_RELOAD_FRACTION = 0.65
 
+EXPLOSION_CONE_ANGLE = 180.0
 PROJECTILE_FIELDS = ("iExplosionRadius", "iExplosionInnerDamage", "iExplosionOuterDamage",
                      "iProjectileSpeed", "iProjectileSpeedUp", "iProjectileSpeedForward", "projLifetime")
 
@@ -214,6 +215,12 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
         for key in ("projTrailEffect", "projExplosionEffect"):
             if key in proj:
                 d[key] = {"type": 1, "fx": proj[key]}
+    if (d.get("iExplosionRadius") or 0) > 0:
+        # IW7 deals radius damage only inside damageConeAngle around the explosion's direction:
+        # 94 of the 95 stock explosive weapons use 180 (a full sphere). The pistol template's 0 kept
+        # every explosion from damaging anything but the entity it struck (Ray Gun splash, owner
+        # 2026-11-08: one shot into eight packed zombies hit one).
+        d["damageConeAngle"] = EXPLOSION_CONE_ANGLE
     # The template's tracer is a map's own asset (the zapper's shredder_bullet exists on Spaceland
     # only: on Rave the client faulted holding the Ray Gun); BO3 Wonder Weapons draw no tracer.
     d["tracerType"] = spec.get("tracer", "")

@@ -55,6 +55,19 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertIsNone(d["projDudEffect"])
         self.assertEqual(d["iProjectileSpeed"], 2000)
 
+    def test_explosions_damage_all_around(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "damageConeAngle": 0.0}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 20, "max_ammo": 180, "fire_time_ms": 300,
+                "view_model": "v", "world_model": "w", "projectile": {"iExplosionRadius": 64}}
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["damageConeAngle"], 180.0)
+        spec["projectile"] = {"iExplosionRadius": 0}       # no explosion: the template's cone stays
+        weapon["weapDef"]["damageConeAngle"] = 0.0
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["damageConeAngle"], 0.0)
+
     def test_burst_weapon_fires_bursts(self):
         import iw7_weapon_author as author
         weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
