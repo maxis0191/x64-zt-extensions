@@ -113,6 +113,14 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
     else:
         bank_def = {"name": bank, "zone": zone, "gameLanguage": "all", "soundLanguage": "all", "aliases": []}
         bank_def.update({k: [] for k in BANK_LISTS})
+    # A catalog the module would refuse (two weapons sharing a raw name) stops before anything is written.
+    new_catalog = [c for port in ports for c in read_lines(os.path.join(port, "catalog.txt")) if c]
+    merge_catalog([c for c in read_lines(os.path.join(mod_zone, "catalog.txt")) if c], new_catalog)
+    if gsc:
+        with open(gsc, encoding="utf-8") as f:
+            found = gsc_block(f.read(), "catalog")
+        if found:
+            merge_catalog(found[2], new_catalog)
     lines = read_lines(csv_path)
     present = set(lines)
     added, catalog, behaviours = [], [], []
