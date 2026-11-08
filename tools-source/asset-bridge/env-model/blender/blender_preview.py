@@ -30,6 +30,7 @@ def main():
     ap.add_argument('--view', action='append', default=[])
     ap.add_argument('--size', default='1280x720')
     ap.add_argument('--engine', default='workbench')
+    ap.add_argument('--matid', help='write a material-ID render (flat colour per material) + legend json to this name')
     a = ap.parse_args(argv)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     for g in a.glb:
@@ -48,6 +49,24 @@ def main():
         world = bpy.data.worlds.new('w')
         world.color = (0.4, 0.4, 0.45)
         scene.world = world
+    legend = {}
+    if a.matid:
+        import colorsys, json as _json
+        mats = sorted({m.name for o in scene.objects if o.type == 'MESH' for m in o.data.materials if m})
+        for i, name in enumerate(mats):
+            r, g, b = colorsys.hsv_to_rgb((i * 0.618034) % 1.0, 0.85, 0.95)
+            legend[name] = [round(r * 255), round(g * 255), round(b * 255)]
+            m = bpy.data.materials[name]
+            m.diffuse_color = (r, g, b, 1)
+        scene.render.engine = 'BLENDER_WORKBENCH'
+        scene.display.shading.light = 'FLAT'
+        scene.display.shading.color_type = 'MATERIAL'
+        scene.display.shading.show_shadows = False
+        scene.display.shading.show_cavity = False
+        scene.view_settings.view_transform = 'Standard'
+        scene.render.dither_intensity = 0
+        os.makedirs(a.out, exist_ok=True)
+        _json.dump(legend, open(os.path.join(a.out, a.matid + '_legend.json'), 'w'), indent=1)
     cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam'))
     scene.collection.objects.link(cam)
     scene.camera = cam
@@ -72,7 +91,7 @@ def main():
         cam.rotation_euler = (tgt - eye).to_track_quat('-Z', 'Y').to_euler()
         cam.data.lens = lens
         cam.data.clip_start, cam.data.clip_end = 0.01, 500
-        scene.render.filepath = os.path.join(a.out, name + '.png')
+        scene.render.filepath = os.path.join(a.out, (a.matid + '_' if a.matid else '') + name + '.png')
         bpy.ops.render.render(write_still=True)
         print('PREVIEW', scene.render.filepath)
 

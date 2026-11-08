@@ -172,6 +172,7 @@ def composite(mat, bk, over):
         spec = np.broadcast_to(tint, (s, s, 3)).astype(np.float32).copy()
     else:
         spec = np.full((s, s, 3), 0.04, np.float32)
+    rust_mask = None
     for k, layer in enumerate(mat.get('layers') or []):
         sc = layer.get('uv_scale') or [1, 1]
         la = bk.tile(layer.get('albedo'), sc)
@@ -204,10 +205,41 @@ def composite(mat, bk, over):
                 w = smoothstep(th - 0.08, th + 0.08, m)[..., None]
         else:
             w = np.ones((s, s, 1), np.float32)
+        if over.get('paint') and k == 0:
+            continue                                  # the paint replaces the base layer
+        if k > 0:
+            rust_mask = w if rust_mask is None else np.maximum(rust_mask, w)
         lin = lin * (1 - w) + l_lin * w
         spec = spec * (1 - w) + l_spec * w
         gloss = gloss * (1 - w[..., 0]) + l_gloss * w[..., 0]
         n = n * (1 - w) + l_n * w
+    if over.get('paint'):
+        # repaint (manifest): the material becomes painted metal of this linear colour, its own colour map (or the
+        # luminance detail of the first layer) kept as detail; revealed rust layers (k > 0) stay, at the threshold
+        # 'reveal'. Used where a BO3 surface is raw/rusted metal or overgrowth but the station wants painted steel.
+        paint = np.array(over['paint'][:3], np.float32)
+        det = None
+        for b in [mat.get('albedo')] + [l.get('albedo') for l in (mat.get('layers') or [])]:
+            if b and not is_black(b):
+                t = bk.tile(b, (mat.get('layers') or [{}])[0].get('uv_scale') or [1, 1])
+                if t is not None:
+                    det = (t[..., :3] ** 2.2) @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+                    det = np.clip(det / max(float(det.mean()), 1e-3), 0.6, 1.4)
+                    break
+        if det is None:
+            det = np.ones((s, s), np.float32)
+        painted = np.clip(paint[None, None, :] * det[..., None], 0, 1)
+        rust_w = rust_mask if rust_mask is not None else np.zeros((s, s, 1), np.float32)
+        lin = painted * (1 - rust_w) + lin * rust_w
+        spec = np.full((s, s, 3), 0.04, np.float32) * (1 - rust_w) + spec * rust_w
+        gloss = float(over.get('gloss', 0.45)) * (1 - rust_w[..., 0]) + gloss * rust_w[..., 0]
+    g = over.get('grime')
+    if g:
+        # large-scale grime (manifest): a grey-scale grunge map darkens the colour and dulls the gloss
+        gm = bk.channel({'path': g['image'], 'channel': 'r'}, g.get('scale', [1, 1]), 1.0)
+        dirt = 1.0 - float(g.get('strength', 0.35)) * (1.0 - gm)
+        lin = lin * dirt[..., None]
+        gloss = gloss * (0.6 + 0.4 * dirt)
     n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
     if 'albedo_gain' in over:
         lin = np.clip(lin * float(over['albedo_gain']), 0, 1)
@@ -326,7 +358,7 @@ def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_ex
     lin, alpha, gloss, n, occ, spec = composite(mat, bk, over)
     if role == 'cutout?':
         role = 'cutout' if float(np.mean(alpha < 0.5)) > 0.01 else 'opaque'
-    if role == 'glass' and 'alpha' in over:
+    if role in ('glass', 'decal', 'cutout') and 'alpha' in over:
         alpha = alpha * float(over['alpha'])
     tmpl = TEMPLATES[role]
     tech_json = os.path.join(templates_root, 'materials', tmpl + '.json')
