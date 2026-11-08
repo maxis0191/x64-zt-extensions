@@ -128,8 +128,20 @@ def unit_normal(rgba):
     return np.stack([x, y, z], -1)
 
 
+def is_black(binding):
+    p = (binding or {}).get('path', '') if isinstance(binding, dict) else ''
+    return os.path.basename(p).startswith('$black')
+
+
 def composite(mat, bk, over):
-    """Linear albedo (s,s,3), alpha (s,s), gloss 0..1 (s,s), normal (s,s,3), occlusion (s,s), specular sRGB or None."""
+    """Linear diffuse (s,s,3), alpha (s,s), gloss 0..1 (s,s), normal (s,s,3), occlusion (s,s), linear specular F0
+    colour (s,s,3) or None.
+
+    BO3 environment materials are a specular-colour workflow: a metal has a black colour map and its colour in the
+    specular map, or (blend layers of the *_advanced techsets, which GrayWolf exports without a specular map) in the
+    layer tint. A layer whose colour map is $black_color is therefore a metal with F0 = its tint; any other layer is a
+    dielectric (F0 0.04) whose diffuse is colour x tint. Layer masks named *_m are authored per model and blend
+    linearly; tiling reveal maps (grunge, wet concrete) blend through the --reveal threshold."""
     s = bk.size
     tint = np.array(over.get('tint') or ((mat.get('color_tint') or {}).get('color') or [1, 1, 1])[:3], np.float32)
     has_tint = bool(over.get('tint') or (mat.get('color_tint') or {}).get('color'))
@@ -140,40 +152,66 @@ def composite(mat, bk, over):
     if has_tint:
         # BO3 tinted "micro" materials: a grey colour map is detail around the tint (normalised to its mean)
         sat = float(np.mean(alb[..., :3].max(-1) - alb[..., :3].min(-1)))
-        if sat < 0.06:
+        if sat < 0.06 and not is_black(mat.get('albedo')):
             lin = lin / max(float(lin.mean()), 1e-3)
         lin = np.clip(lin * tint[None, None, :], 0, 1)
     alpha = alb[..., 3].copy()
-    gloss = bk.channel(mat.get('roughness'), default=0.5) if mat.get('roughness') else np.full((s, s), 0.5, np.float32)
+    if mat.get('roughness'):
+        gloss = bk.channel(mat.get('roughness'), default=0.5)
+    elif mat.get('roughness_value') is not None:
+        gloss = np.full((s, s), 1.0 - float(mat['roughness_value']), np.float32)
+    else:
+        gloss = np.full((s, s), 0.5, np.float32)
     nrm = bk.tile(mat.get('normal'))
     n = unit_normal(nrm) if nrm is not None else np.dstack([np.zeros((s, s)), np.zeros((s, s)), np.ones((s, s))])
     occ = bk.channel(mat.get('occlusion'), default=1.0) if mat.get('occlusion') else np.ones((s, s), np.float32)
-    spec = bk.tile(mat.get('specular'))
-    spec = spec[..., :3] if spec is not None else None
+    sp = bk.tile(mat.get('specular'))
+    if sp is not None:
+        spec = sp[..., :3] ** 2.2
+    elif is_black(mat.get('albedo')) and has_tint:
+        spec = np.broadcast_to(tint, (s, s, 3)).astype(np.float32).copy()
+    else:
+        spec = np.full((s, s, 3), 0.04, np.float32)
     for k, layer in enumerate(mat.get('layers') or []):
         sc = layer.get('uv_scale') or [1, 1]
         la = bk.tile(layer.get('albedo'), sc)
         if la is None:
             continue
         lt = np.array((layer.get('tint') or [1, 1, 1])[:3], np.float32)
-        l_lin = np.clip(la[..., :3] ** 2.2 * lt, 0, 1)
-        l_gloss = bk.channel(layer.get('roughness'), sc, 0.5) if layer.get('roughness') else gloss
+        if is_black(layer.get('albedo')):
+            l_lin = np.zeros((s, s, 3), np.float32)
+            l_spec = np.broadcast_to(np.clip(lt, 0.04, 1.0), (s, s, 3))
+            if sp is not None and k == 0:
+                l_spec = spec                        # the material's own specular map belongs to its base layer
+        else:
+            l_lin = np.clip(la[..., :3] ** 2.2 * lt, 0, 1)
+            l_spec = np.full((s, s, 3), 0.04, np.float32)
+        if layer.get('roughness'):
+            l_gloss = bk.channel(layer.get('roughness'), sc, 0.5)
+        elif layer.get('roughness_value') is not None:
+            l_gloss = np.full((s, s), 1.0 - float(layer['roughness_value']), np.float32)
+        else:
+            l_gloss = gloss
         ln = bk.tile(layer.get('normal'), sc)
         l_n = unit_normal(ln) if ln is not None else n
         if layer.get('mask'):
             m = bk.channel(layer['mask'], layer['mask'].get('uv_scale') or [1, 1], 0.0)
-            th = float(over.get('reveal', 0.72))
-            w = smoothstep(th - 0.08, th + 0.08, m)[..., None]
+            mname = os.path.splitext(os.path.basename(layer['mask'].get('path', '')))[0]
+            if mname.endswith('_m'):
+                w = np.clip(m, 0, 1)[..., None]
+            else:
+                th = float(over.get('reveal', 0.72))
+                w = smoothstep(th - 0.08, th + 0.08, m)[..., None]
         else:
             w = np.ones((s, s, 1), np.float32)
         lin = lin * (1 - w) + l_lin * w
+        spec = spec * (1 - w) + l_spec * w
         gloss = gloss * (1 - w[..., 0]) + l_gloss * w[..., 0]
         n = n * (1 - w) + l_n * w
-        if spec is not None and k > 0:
-            spec = spec * (1 - w) + 0.22 * w            # revealed layers (rust, grime) are dielectric
     n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
     if 'albedo_gain' in over:
         lin = np.clip(lin * float(over['albedo_gain']), 0, 1)
+        spec = np.clip(spec * float(over['albedo_gain']), 0, 1)
     return lin, alpha, gloss, n, occ, spec
 
 
@@ -298,7 +336,7 @@ def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_ex
     stem = safe(new_name)
     srgb = np.clip(lin, 0, 1) ** (1 / 2.2)
     albedo255 = np.dstack([srgb * 255.0, np.full(srgb.shape[:2], 255.0)])
-    spec255 = spec * 255.0 if spec is not None else None
+    spec255 = np.clip(spec, 0, 1) ** (1 / 2.2) * 255.0 if spec is not None else None
     cs = pack_cs(albedo255, spec255, mat.get('metalness_value'))
     if spec255 is None:
         # t7_material_pack.pack_cs leaves the colour in 0..1 when a material has no specular map (weapon materials
