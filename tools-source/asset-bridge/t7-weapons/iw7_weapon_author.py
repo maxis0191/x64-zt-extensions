@@ -14,6 +14,7 @@ import argparse
 import copy
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -50,6 +51,23 @@ TIMER_MAP = {
     "iDropTime": "putaway", "quickDropTime": "putaway", "iEmptyDropTime": "putaway",
     "sprintInTime": "sprint_in", "sprintLoopTime": "sprint_loop", "sprintOutTime": "sprint_out",
 }
+# Handling the player feels as IW7's (owner 2026-11-08: BO3 switching was two to three times slower
+# than every IW7 weapon, and BO3 sprint poses replaced the reload while running): weapon switching
+# and sprint follow the IW7 template weapon. IW7 sprints with an additive offset over the current
+# animation (stock weapons leave the sprint in/loop/out slots empty), so the template's offset stays
+# and the BO3 sprint animations are not used. Reload, fire and first raise stay BO3's.
+IW7_HANDLING_TIMERS = ("iRaiseTime", "quickRaiseTime", "iEmptyRaiseTime", "iDropTime", "quickDropTime",
+                       "iEmptyDropTime", "sprintInTime", "sprintLoopTime", "sprintOutTime")
+BO3_SPRINT_SLOTS = ("WEAP_ANIM_SPRINT_IN", "WEAP_ANIM_SPRINT_LOOP", "WEAP_ANIM_SPRINT_OUT")
+# The reload notetrack where the ammunition goes in (Ray Gun battery_in, DG-2 clip_in, Mark II magin,
+# Thundergun cannisters_in): IW7 adds the ammo there. The template's add time (1467 ms) had refilled
+# the weapon in the first half of 3.5 to 6 s BO3 reloads.
+RELOAD_INSERT = re.compile(r"(clip|mag|battery|cannisters?|cell|ammo|shell)_?(in|replace)$")
+# Stock IW7 weapons can interrupt a reload at about 84% of it and reload about 35% faster with the
+# fast-reload perk (M1: 3133/3733 ms, fast 2400/3733).
+RELOAD_INTERRUPT_FRACTION = 0.84
+FAST_RELOAD_FRACTION = 0.65
+
 PROJECTILE_FIELDS = ("iExplosionRadius", "iExplosionInnerDamage", "iExplosionOuterDamage",
                      "iProjectileSpeed", "iProjectileSpeedUp", "iProjectileSpeedForward", "projLifetime")
 
@@ -63,6 +81,40 @@ def anim_info(xab_dir, name):
     info = json.loads(out.stdout)
     duration_ms = round(1000.0 * info["numframes"] / info["framerate"]) if info["framerate"] else 0
     return {"duration_ms": duration_ms, "notetracks": info["notetracks"]}
+
+
+def insert_time(info, name=None):
+    """ms of the notetrack where a reload puts the ammunition in (a named one, else the first match)."""
+    for nt in info["notetracks"]:
+        if (nt["name"] == name) if name else RELOAD_INSERT.search(nt["name"]):
+            return round(nt["normalized_time"] * info["duration_ms"])
+    return None
+
+
+def reload_timers(pkg, infos, add_notetrack=None):
+    """Ammo add, interrupt and fast-reload timers from the BO3 reload animations (full and empty)."""
+    t = pkg["timers"]
+    for kind, anim_key, slots in (("", "reload", ("WEAP_ANIM_FAST_RELOAD",)),
+                                  ("Empty", "reload_empty", ("WEAP_ANIM_FAST_RELOAD_EMPTY",))):
+        info = infos.get(anim_key) or infos.get("reload")
+        if not info:
+            continue
+        total = info["duration_ms"]
+        add = insert_time(info, add_notetrack)
+        if add is None:
+            add = round(total * 0.7)
+        interrupt = max(add, round(total * RELOAD_INTERRUPT_FRACTION))
+        t["iReload%sTime" % kind] = total
+        t["iReload%sAddTime" % kind] = add
+        t["iReload%sInterruptTime" % kind] = interrupt
+        # the fast-reload perk plays the same animation faster
+        t["iFastReload%sTime" % kind] = round(total * FAST_RELOAD_FRACTION)
+        t["iFastReload%sAddTime" % kind] = round(add * FAST_RELOAD_FRACTION)
+        t["iFastReload%sInterruptTime" % kind] = round(interrupt * FAST_RELOAD_FRACTION)
+        anim = pkg["anims"].get("WEAP_ANIM_RELOAD_EMPTY" if kind else "WEAP_ANIM_RELOAD")
+        for slot in slots:
+            if slot in pkg["anims"] and anim:
+                pkg["anims"][slot] = anim
 
 
 def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
@@ -85,12 +137,16 @@ def author(spec, weapon_tpl, animpkg_tpl, projectile_tpl):
             if suffix in infos:
                 pkg["timers"][timer] = infos[suffix]["duration_ms"]
                 break
-    reload_add = spec.get("reload_add_notetrack")
-    if reload_add and "reload" in infos:
-        for nt in infos["reload"]["notetracks"]:
-            if nt["name"] == reload_add:
-                pkg["timers"]["iReloadAddTime"] = round(nt["normalized_time"] * infos["reload"]["duration_ms"])
-                break
+    if spec.get("handling", "iw7") == "iw7":
+        for slot in BO3_SPRINT_SLOTS:
+            if slot in pkg["anims"]:
+                pkg["anims"][slot] = ""
+        if "WEAP_ANIM_ADDITIVE_SPRINT_OFFSET" in animpkg_tpl["anims"]:
+            pkg["anims"]["WEAP_ANIM_ADDITIVE_SPRINT_OFFSET"] = animpkg_tpl["anims"]["WEAP_ANIM_ADDITIVE_SPRINT_OFFSET"]
+        for timer in IW7_HANDLING_TIMERS:
+            if timer in animpkg_tpl["timers"]:
+                pkg["timers"][timer] = animpkg_tpl["timers"][timer]
+    reload_timers(pkg, infos, spec.get("reload_add_notetrack"))
 
     w = copy.deepcopy(weapon_tpl)
     d = w["weapDef"]

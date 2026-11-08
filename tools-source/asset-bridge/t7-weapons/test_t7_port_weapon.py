@@ -209,6 +209,42 @@ class ViewEffectTest(unittest.TestCase):
                 p.notetrack_effects(False)
 
 
+class HandlingTest(unittest.TestCase):
+    def test_reload_timers_from_the_insert_notetrack(self):
+        import iw7_weapon_author as author
+        pkg = {"anims": {"WEAP_ANIM_RELOAD": "r", "WEAP_ANIM_RELOAD_EMPTY": "re", "WEAP_ANIM_FAST_RELOAD": "",
+                         "WEAP_ANIM_FAST_RELOAD_EMPTY": ""}, "timers": {}}
+        infos = {"reload": {"duration_ms": 3833, "notetracks": [{"name": "open", "normalized_time": 0.11},
+                                                                  {"name": "battery_in", "normalized_time": 0.48}]},
+                 "reload_empty": {"duration_ms": 6000, "notetracks": [{"name": "clip_in", "normalized_time": 0.52}]}}
+        author.reload_timers(pkg, infos)
+        t = pkg["timers"]
+        self.assertEqual((t["iReloadTime"], t["iReloadAddTime"], t["iReloadInterruptTime"]), (3833, 1840, 3220))
+        self.assertEqual((t["iReloadEmptyTime"], t["iReloadEmptyAddTime"]), (6000, 3120))
+        self.assertEqual(t["iFastReloadTime"], round(3833 * 0.65))
+        self.assertEqual((pkg["anims"]["WEAP_ANIM_FAST_RELOAD"], pkg["anims"]["WEAP_ANIM_FAST_RELOAD_EMPTY"]), ("r", "re"))
+        # magazine names without a separator (Mark II fly_rgunmk2_magin) and canisters (Thundergun)
+        self.assertEqual(author.insert_time({"duration_ms": 1000, "notetracks": [
+            {"name": "fly_rgunmk2_magout", "normalized_time": 0.29}, {"name": "fly_rgunmk2_magin", "normalized_time": 0.72}]}), 720)
+        self.assertEqual(author.insert_time({"duration_ms": 1000, "notetracks": [
+            {"name": "cannisters_out", "normalized_time": 0.07}, {"name": "cannisters_in", "normalized_time": 0.37}]}), 370)
+
+    def test_iw7_switching_and_sprint(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": ""}}
+        tpl = {"timers": {"iRaiseTime": 500, "iDropTime": 360, "quickDropTime": 140, "sprintLoopTime": 500},
+               "anims": {"WEAP_ANIM_SPRINT_LOOP": "", "WEAP_ANIM_ADDITIVE_SPRINT_OFFSET": "vm_zapper_offset",
+                         "WEAP_ANIM_RAISE": "vm_zapper_raise"}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w"}
+        _, pkg = author.author(spec, weapon, tpl, {"weapDef": {}})
+        self.assertEqual((pkg["timers"]["iRaiseTime"], pkg["timers"]["iDropTime"], pkg["timers"]["sprintLoopTime"]),
+                         (500, 360, 500))
+        self.assertEqual(pkg["anims"]["WEAP_ANIM_ADDITIVE_SPRINT_OFFSET"], "vm_zapper_offset")
+        self.assertEqual(pkg["anims"]["WEAP_ANIM_SPRINT_LOOP"], "")
+
+
 class WeaponNameTest(unittest.TestCase):
     def test_default_names_rebuild_as_retail_does(self):
         self.assertEqual(port.iw7_weapon_name("ray_gun_zm"), "iw7_raygun_zm")
