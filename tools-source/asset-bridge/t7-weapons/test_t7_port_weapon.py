@@ -229,6 +229,13 @@ class RecipeTest(unittest.TestCase):
         self.assertTrue(r["overrides"]["bNoPartialReload"])
         self.assertIsNone(port.load_recipe(None, "no_such_weapon_zm"))
 
+    def test_crosshairs_leave_the_energy_pistol_reticle(self):
+        # global materials only: Spaceland's reticle_auto_hit_lrg is missing on the other maps
+        tg = port.load_recipe(None, "thundergun_zm")["overrides"]
+        self.assertEqual((tg["reticleOnePiece"], tg["reticleSide"]), ("", "reticle_side_semi_circle_flat"))
+        dg2 = port.load_recipe(None, "tesla_gun_zm")["overrides"]
+        self.assertEqual((dg2["reticleOnePiece"], dg2["reticleSide"]), ("", "reticle_side_small"))
+
     def test_unknown_keys_and_other_weapons_refused(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "r.json")

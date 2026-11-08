@@ -1,8 +1,18 @@
 {
   "weapon": "tesla_gun_zm",
   "display": "DG-2",
-  "view_effects": ["switch_on=tesla_viewmodel_rail@tag_flash"],
+  "view_effects": [
+    "switch_on=tesla_viewmodel_rail@tag_flash"
+  ],
   "why": {
-    "view_effects": "BO3 plays the rail from client script; IW7 ties it to the switch-on notetrack (first raise, end of reload)"
+    "view_effects": "BO3 plays the rail from client script; IW7 ties it to the switch-on notetrack (first raise, end of reload)",
+    "reticle*": "owner 2026-11-08: the template's energy-pistol hit reticle on a two-handed lightning gun; IW7's energy rifles (CR-56, Erad, Ripper) use the plain side lines at 8/8"
+  },
+  "overrides": {
+    "reticleOnePiece": "",
+    "reticleSide": "reticle_side_small",
+    "reticleCenter": "",
+    "iReticleCenterSize": 8,
+    "iReticleSideSize": 8
   }
 }
