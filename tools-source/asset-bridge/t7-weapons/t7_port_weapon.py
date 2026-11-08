@@ -791,6 +791,11 @@ SFX_ROLES = {"fireSound": "fire_npc", "fireSoundPlayer": "fire_plr", "fireLastSo
 
 def sfx_package(spec, template):
     pkg = json.loads(json.dumps(template))
+    # BO3 fire sounds carry their own tails: no IW7 reflection layer (the Facemelter template's
+    # eng_pistol added a pistol echo to every shot, owner 2026-11-08 "pistol/balloon pop") and the
+    # long envelope, as IW7's own exotic wonder weapons (Forge Freeze, Entangler, Bubble Shot) do.
+    pkg["szWeapSndReflectionClass"] = ""
+    pkg["szAdsrBaseSetting"] = "iw7_long"
     sounds = pkg["sounds"]
     sounds["name"] = spec["name"] + "_sfxpackage"
     for key in list(sounds):

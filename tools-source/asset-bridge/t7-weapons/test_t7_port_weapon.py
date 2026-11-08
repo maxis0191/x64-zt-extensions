@@ -35,6 +35,8 @@ class PackageTest(unittest.TestCase):
         self.assertEqual((s["name"], s["fireSound"], s["fireSoundPlayer"]), ("iw7_t_zm_sfxpackage", "wpn_t_npc", "wpn_t_plr"))
         self.assertEqual(s["reloadSound"], "")          # no stock sound leaks into a BO3 weapon
         self.assertEqual(s["pickupSound"], "weap_pickup_npc")
+        pkg = port.sfx_package(spec, dict(tpl, szWeapSndReflectionClass="eng_pistol", szAdsrBaseSetting="iw7_short"))
+        self.assertEqual((pkg["szWeapSndReflectionClass"], pkg["szAdsrBaseSetting"]), ("", "iw7_long"))
 
 
 class AuthorEffectsTest(unittest.TestCase):
