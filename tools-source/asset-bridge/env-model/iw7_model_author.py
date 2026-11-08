@@ -28,6 +28,7 @@ SURF_FLAGS = 0x80
 PARTBIT_BONE0 = 0x80000000
 MIP_K = 330000.0
 MAX_VERTS = 65535
+LAST_LOD_DIST = 20000.0
 
 
 def pack_unit(v):
@@ -208,7 +209,14 @@ def build_model(name, lods, out_dir, bone='tag_origin', recompute_normals=False)
         struct.pack_into('<I', sh, 20, PARTBIT_BONE0)
         with open(os.path.join(out_dir, 'xsurface', lname + '.xsb'), 'wb') as f:
             f.write(io.write_xsurfs({'head': sh, 'name': lname, 'surfs': surfs}))
-        lod_rows.append((lod['dist'], len(surfs), surf_index))
+        # lodInfo.dist is the distance where this LOD hands over to the next (stock bench 165 / 835 / 20879):
+        # the last LOD keeps the model up to LAST_LOD_DIST unless the caller gives a larger value
+        dist = float(lod.get('dist') or 0.0)
+        if li == len(lods) - 1:
+            dist = max(dist, LAST_LOD_DIST)
+        elif dist <= 0:
+            raise ValueError('LOD %d of %s needs a switch distance' % (li, name))
+        lod_rows.append((dist, len(surfs), surf_index))
         surf_index += len(surfs)
         lod_names.append(lname)
         report['lods'].append({'name': lname, 'dist': lod['dist'], 'surfaces': len(surfs), 'tris': tri_total})

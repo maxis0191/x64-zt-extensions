@@ -141,35 +141,36 @@ def main(argv=None):
     role = {m['material']: m for m in mats}
 
     # ---- models
-    for m in cfg['models']:
+    def compose(m, parts):
         groups = {}
-        for p in m['parts']:
+        for p in parts:
             glb, _ = part_paths(gw_root, p)
             skip = set(p.get('skip_materials', []))
             for mat, g in mesh_glb.meshes(glb).items():
                 info = role.get(mat)
                 if mat in skip or any(k in mat for k in p.get('skip_contains', [])):
                     continue
-                if info is None and not p.get('glb'):
+                if info is None:
                     report['errors'].append('%s: material %s was not baked' % (m['name'], mat))
                     continue
-                if info is not None and info['role'] == 'skip':
+                if info['role'] == 'skip':
                     continue
-                iw = info['iw7'] if info is not None else mat
-                groups.setdefault(iw, []).append(transform(g, p.get('offset', [0, 0, 0]), p.get('yaw', 0)))
-        groups = {k: merge(v) for k, v in groups.items()}
+                for off in p.get('repeat', [p.get('offset', [0, 0, 0])]):
+                    groups.setdefault(info['iw7'], []).append(transform(g, off, p.get('yaw', 0)))
+        return {k: merge(v) for k, v in groups.items()}
+
+    for m in cfg['models']:
+        groups = compose(m, m['parts'])
+        lods = [{'dist': m.get('lod0_dist', 0.0), 'groups': groups}]
+        for extra in m.get('lods', []):              # coarser LODs from their own (simpler) part lists
+            lods.append({'dist': extra['dist'], 'groups': compose(m, extra['parts'])})
         if m.get('origin') == 'base':
             allp = np.concatenate([g['P'] for g in groups.values()])
             lo, hi = allp.min(0), allp.max(0)
             shift = np.array([-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]])
-            for g in groups.values():
-                g['P'] = g['P'] + shift
-        lods = [{'dist': m.get('lod0_dist', 0.0), 'groups': groups}]
-        for extra in m.get('extra_lods', []):        # Blender-decimated LODs (blender_lods.py), same materials
-            eg = {}
-            for mat, g in mesh_glb.meshes(extra['glb']).items():
-                eg[mat] = g
-            lods.append({'dist': extra['dist'], 'groups': eg})
+            for lod in lods:
+                for g in lod['groups'].values():
+                    g['P'] = g['P'] + shift
         try:
             rep = author.build_model(m['name'], lods, out, recompute_normals=m.get('recompute_normals', False))
         except ValueError as e:
