@@ -138,7 +138,7 @@ def pack_cs(albedo, spec, metalness):
     out = np.empty(albedo.shape[:2] + (4,), np.float32)
     if spec is None:
         m = np.float32(metalness or 0.0)
-        out[..., :3] = np.sqrt(d)
+        out[..., :3] = np.sqrt(d) * 255.0
         out[..., 3] = DIELECTRIC_F0 if m <= 0 else METAL_THRESHOLD + (1 - METAL_THRESHOLD) * m
         out[..., 3] *= 255.0
         return out
