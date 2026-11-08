@@ -68,6 +68,25 @@ class AssembleTest(unittest.TestCase):
         self.assertEqual(merged, ["wpn_rgun_fire_plr=iw7_raygun_zm:iw7_raygun_zm_pap1:raygun_zpap1:raygun_zpap2",
                                   "iw7_x_zm"])
 
+    def test_catalog_refuses_shared_raw_name(self):
+        # iw7_raygun_mark2_zm's raw name is "raygun": it replaced the Ray Gun's level.pap entry
+        with self.assertRaises(SystemExit):
+            asm.merge_catalog(["a=iw7_raygun_zm"], ["b=iw7_raygun_mark2_zm"])
+
+    def test_refused_catalog_writes_nothing(self):
+        root = tempfile.mkdtemp()
+        mod, csv, port = (os.path.join(root, x) for x in ("mod", "zone.csv", "port"))
+        write(os.path.join(mod, "catalog.txt"), "a=iw7_raygun_zm\n")
+        write(csv, "weapon,iw7_raygun_zm\n")
+        write(os.path.join(port, "zone", "weapons", "iw7_raygun_mark2_zm.json"), "{}")
+        write(os.path.join(port, "zone.csv"), "weapon,iw7_raygun_mark2_zm\n")
+        write(os.path.join(port, "catalog.txt"), "b=iw7_raygun_mark2_zm\n")
+        with self.assertRaises(SystemExit):
+            asm.assemble(mod, csv, "mod.all", "mod", [port])
+        with open(csv, encoding="utf-8") as f:
+            self.assertEqual(f.read(), "weapon,iw7_raygun_zm\n")
+        self.assertFalse(os.path.exists(os.path.join(mod, "weapons", "iw7_raygun_mark2_zm.json")))
+
 
 if __name__ == "__main__":
     unittest.main()

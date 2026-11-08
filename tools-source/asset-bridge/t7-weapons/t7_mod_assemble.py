@@ -52,7 +52,17 @@ def merge_entries(existing, new, block="catalog"):
 
 
 def merge_catalog(existing, new):
-    return merge_entries(existing, new, "catalog")
+    """Merged catalog; two weapons sharing a raw name (iw7_<raw>_...) are refused: retail keys level.pap
+    and the magic wheel by it, so the later one silently replaced the other's Pack-a-Punch."""
+    merged = merge_entries(existing, new, "catalog")
+    seen = {}
+    for entry in merged:
+        weapon = BLOCK_KEYS["catalog"](entry)
+        raw = weapon.split("_")[1] if weapon.startswith("iw7_") and weapon.count("_") >= 1 else weapon
+        if raw in seen:
+            raise SystemExit("catalog weapons %s and %s share the raw name %r" % (seen[raw], weapon, raw))
+        seen[raw] = weapon
+    return merged
 
 
 def gsc_block(text, block="catalog"):
@@ -80,7 +90,7 @@ def update_gsc(path, new, block="catalog"):
     if found is None:
         raise SystemExit("%s has no '%s' ... '%s' block" % ((path,) + gsc_markers(block)))
     start, end, existing = found
-    entries = merge_entries(existing, new, block)
+    entries = merge_catalog(existing, new) if block == "catalog" else merge_entries(existing, new, block)
     begin = text.find(gsc_markers(block)[0])
     indent = re.match(r"[ \t]*", text[text.rindex("\n", 0, begin) + 1:]).group(0)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
@@ -103,6 +113,14 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
     else:
         bank_def = {"name": bank, "zone": zone, "gameLanguage": "all", "soundLanguage": "all", "aliases": []}
         bank_def.update({k: [] for k in BANK_LISTS})
+    # A catalog the module would refuse (two weapons sharing a raw name) stops before anything is written.
+    new_catalog = [c for port in ports for c in read_lines(os.path.join(port, "catalog.txt")) if c]
+    merge_catalog([c for c in read_lines(os.path.join(mod_zone, "catalog.txt")) if c], new_catalog)
+    if gsc:
+        with open(gsc, encoding="utf-8") as f:
+            found = gsc_block(f.read(), "catalog")
+        if found:
+            merge_catalog(found[2], new_catalog)
     lines = read_lines(csv_path)
     present = set(lines)
     added, catalog, behaviours = [], [], []
