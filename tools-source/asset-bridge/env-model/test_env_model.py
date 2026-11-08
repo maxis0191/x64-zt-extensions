@@ -89,6 +89,9 @@ class Author(unittest.TestCase):
         top = np.where(N[:, 2] > 0.9)[0]
         self.assertTrue(np.allclose(T[top], [1, 0, 0], atol=0.01))
         self.assertTrue(np.all(s['verts']['tangent'][top] >> 30 == 0))
+        # radius from the model origin (the cube spans 0..size, its origin is a corner)
+        r = struct.unpack_from('<f', xm['head'], io.XM['radius'])[0]
+        self.assertAlmostEqual(r, float(np.max(np.linalg.norm(P, axis=1))), places=3)
 
     def test_lod_order_refused(self):
         big = cube()

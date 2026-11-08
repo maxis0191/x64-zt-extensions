@@ -223,7 +223,11 @@ def build_model(name, lods, out_dir, bone='tag_origin', recompute_normals=False)
     P = np.concatenate(all_p)
     lo, hi = P.min(0), P.max(0)
     mid, half = (lo + hi) / 2, (hi - lo) / 2
-    radius = float(np.max(np.linalg.norm(P - mid, axis=1)))
+    # XModel.radius is measured from the model ORIGIN (stock cp_disco: beacon_runningpipe_str_128 radius 129.9 =
+    # |bounds mid| + |half diagonal|; clothing rack 90.1 = farthest vertex): the engine culls the sphere (origin,
+    # radius). From the bounds centre it was too small for off-centre origins (a track segment starting at its
+    # origin vanished when the origin left the view: 'the track appears to end').
+    radius = float(np.max(np.linalg.norm(P, axis=1)))
     head = bytearray(io.XMODEL_SIZE)
     struct.pack_into('<Q', head, 0, 1)
     head[io.XM['hasLods']] = 1 if len(lods) > 1 else 0
