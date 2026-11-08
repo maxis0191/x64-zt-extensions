@@ -5,7 +5,7 @@ manifest places it twice (yaw 0 and 180).
   blender -b --factory-startup -P car_end.py -- --out <dir> --images <dir of PNG maps> [--spec end.json]
 
 Coordinates are car inches, z = 0 at the rail top (the car origin of the env-model ports). The defaults fit the
-BO3 mp_banzai car (end wall x 238, end posts' face x 241.6, gangway curtains |y| 36..39, door top z 149.8, sill
+BO3 mp_banzai car (end wall x 238, end posts' face x 241.6, gangway curtains |y| 26..39 (top folds down to z ~161), door top z 149.8, sill
 end x 250 at z 22..30). Writes car_end.glb + car_end.materials.json (GrayWolf layout) for t7_env_port.py.
 """
 import argparse
@@ -21,8 +21,9 @@ from mathutils import Matrix
 INCH = 0.0254
 DEFAULT = {
     # destination blind: housing box and the blind face (UV 0..1 over the face, text upright seen from +x)
-    'blind_housing': (238.0, 239.8, -26.0, 26.0, 150.6, 165.4),
-    'blind_face': (239.85, -24.0, 24.0, 152.0, 164.0),
+    # (kept below z 161: the gangway curtains' top folds hang over the end wall above that)
+    'blind_housing': (238.0, 239.8, -22.0, 22.0, 149.9, 161.4),
+    'blind_face': (239.85, -20.0, 20.0, 150.2, 160.2),
     # marker lamps on the end posts: (y, z, radius, depth) on the post face x
     'post_face_x': 241.6,
     'lamps': [(50.0, 46.0, 3.0, 2.2), (-50.0, 46.0, 3.0, 2.2)],
