@@ -91,6 +91,9 @@ class ShaderPackingTest(unittest.TestCase):
         albedo = np.array([[[128.0, 128.0, 128.0, 255.0]]])
         self.assertAlmostEqual(pack.pack_cs(albedo, None, 0.0)[0, 0, 3], 0.04 * 255, delta=0.5)
         self.assertAlmostEqual(pack.pack_cs(albedo, None, 1.0)[0, 0, 3], 255.0, delta=0.5)
+        # the colour is in the 0..255 range of the specular-map path (it was 0..1: black materials)
+        diffuse, _ = shader_cs(pack.pack_cs(albedo, None, 0.0)[0, 0])
+        np.testing.assert_allclose(diffuse, pack.srgb_to_linear(albedo[0, 0, :3] / 255.0), atol=0.01)
 
     def test_emissive_is_linear_tint_stored_squared(self):
         emis = np.array([[[255.0, 255.0, 255.0, 255.0], [128.0, 128.0, 128.0, 255.0]]])

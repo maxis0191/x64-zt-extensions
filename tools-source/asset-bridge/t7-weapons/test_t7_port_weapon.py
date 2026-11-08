@@ -232,6 +232,14 @@ class WeaponNameTest(unittest.TestCase):
             self.assertEqual(port.stock_raw_names(os.path.join(root, "cp_zmb")), {"facemelter", "forgefreeze"})
 
 
+class LodOrderTest(unittest.TestCase):
+    def test_least_detailed_first_is_refused(self):
+        port.check_lod_order("m", [10356, 5184, 3105])
+        port.check_lod_order("m", [10548])
+        with self.assertRaises(SystemExit):
+            port.check_lod_order("wpn_t7_zmb_raygun_world", [103, 207, 414, 827, 1552, 3105])
+
+
 class ProbeAliasTest(unittest.TestCase):
     def test_player_fire_sound_first_and_built_only(self):
         spec = {"sounds": {"proj_loop": "wpn_loop", "fire_npc": "wpn_fire_npc", "fire_plr": "wpn_fire_plr"}}
