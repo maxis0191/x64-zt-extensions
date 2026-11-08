@@ -209,6 +209,26 @@ class ViewEffectTest(unittest.TestCase):
                 p.notetrack_effects(False)
 
 
+class RecipeTest(unittest.TestCase):
+    def test_thundergun_recipe(self):
+        r = port.load_recipe(None, "thundergun_zm")
+        self.assertEqual(port.weapon_overrides(r["overrides"])["aimDownSight"], False)
+        self.assertTrue(r["overrides"]["bNoPartialReload"])
+        self.assertIsNone(port.load_recipe(None, "no_such_weapon_zm"))
+
+    def test_unknown_keys_and_other_weapons_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "r.json")
+            with open(path, "w") as f:
+                f.write('{"weapon": "ray_gun_zm", "displya": "x"}')
+            with self.assertRaises(SystemExit):
+                port.load_recipe(path, "ray_gun_zm")
+            with open(path, "w") as f:
+                f.write('{"weapon": "ray_gun_zm"}')
+            with self.assertRaises(SystemExit):
+                port.load_recipe(path, "tesla_gun_zm")
+
+
 class HandlingTest(unittest.TestCase):
     def test_reload_timers_from_the_insert_notetrack(self):
         import iw7_weapon_author as author

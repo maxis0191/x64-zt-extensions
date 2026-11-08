@@ -90,6 +90,25 @@ def run(cmd, **kw):
     return subprocess.run([str(c) for c in cmd], check=True, **kw)
 
 
+RECIPES = os.path.join(HERE, "recipes")
+
+
+def load_recipe(path, weapon):
+    """A weapon's recipe: the owner-requested departures from BO3 and naming, kept with the tools so a
+    port is reproduced by one command (recipes/<bo3 weapon>.json unless a path is given)."""
+    path = path or os.path.join(RECIPES, weapon + ".json")
+    if not os.path.exists(path):
+        return None
+    recipe = load(path)
+    unknown = set(recipe) - {"weapon", "display", "name", "overrides", "view_effects", "handling", "why"}
+    if unknown:
+        raise SystemExit("recipe %s: unknown keys %s" % (path, sorted(unknown)))
+    if recipe.get("weapon", weapon) != weapon:
+        raise SystemExit("recipe %s is for %s, not %s" % (path, recipe["weapon"], weapon))
+    recipe["_path"] = os.path.relpath(path, HERE).replace("\\", "/")
+    return recipe
+
+
 def weapon_overrides(items):
     """--override field=value pairs (or a dict) as weapDef values: ints, floats, true/false, text."""
     if isinstance(items, dict):
@@ -901,10 +920,22 @@ def main(argv=None):
     ap.add_argument("--view-effect", action="append", default=[], metavar="NOTETRACK=KEY@TAG",
                     help="play the scripts' level._effect[KEY] on TAG at an anim notetrack (BO3 view-model "
                     "effects on client timers, e.g. switch_on=tesla_viewmodel_rail@tag_flash)")
+    ap.add_argument("--recipe", help="per-weapon recipe JSON (recipes/<bo3 weapon>.json by default when present): "
+                    "display, name, overrides, view_effects; command-line values win")
     ap.add_argument("--out", required=True)
     ap.add_argument("--stages", default=",".join(STAGES), help="comma list, in order: " + ",".join(STAGES))
     args = ap.parse_args(argv)
     cfg = load(args.config)
+    recipe = load_recipe(args.recipe, args.weapon)
+    if recipe:
+        cfg["recipe"] = recipe.get("_path")
+        for key in ("display", "view_effects", "handling"):
+            if key in recipe:
+                cfg[key] = recipe[key]
+        if recipe.get("overrides"):
+            cfg["weapon_overrides"] = weapon_overrides(recipe["overrides"])
+        if not args.name and recipe.get("name"):
+            args.name = recipe["name"]
     if args.display:
         cfg["display"] = args.display
     if args.override:

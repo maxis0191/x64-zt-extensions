@@ -1,0 +1,15 @@
+{
+  "weapon": "thundergun_zm",
+  "display": "Thundergun",
+  "overrides": {
+    "aimDownSight": false,
+    "bNoPartialReload": true,
+    "vfxImpactType": 0,
+    "sfxImpactType": 0
+  },
+  "why": {
+    "aimDownSight": "owner 2026-11-08: the Thundergun cannot be aimed in Black Ops",
+    "bNoPartialReload": "owner 2026-11-08: reload only when empty, like BO's Thundergun and IW7's M1 carbine",
+    "vfxImpactType/sfxImpactType": "owner 2026-11-08: a wind blast leaves no bullet impact on walls"
+  }
+}
