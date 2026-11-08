@@ -84,6 +84,19 @@ class AssembleTest(unittest.TestCase):
         with open(os.path.join(root, "sound", "a.aliases.csv"), encoding="utf-8") as f:
             self.assertIn("wpn_dry", f.read())
 
+    def test_measure_mix(self):
+        # the engine hash of the Paris mod's own mix, as recorded in the server docs
+        self.assertEqual(asm.sound_hash("paris_music_off"), 3429397084)
+        root = tempfile.mkdtemp()
+        bank = {"aliases": [], "MixDefs": []}
+        asm.write_measure_mix(root, "mod.all", bank)
+        self.assertEqual(bank["MixDefs"], ["sound/mod.all.mixes.csv"])
+        with open(os.path.join(root, "sound", "mod.all.mixes.csv"), encoding="ascii") as f:
+            rows = f.read().splitlines()
+        self.assertEqual(rows[0], "idString,VolMod,Volume,Fade")
+        self.assertIn("%d,music,0.000000,0.100000" % asm.sound_hash("bo3wpn_measure"), rows)
+        self.assertFalse(any(",wpn_plr," in r for r in rows))
+
     def test_refused_catalog_writes_nothing(self):
         root = tempfile.mkdtemp()
         mod, csv, port = (os.path.join(root, x) for x in ("mod", "zone.csv", "port"))

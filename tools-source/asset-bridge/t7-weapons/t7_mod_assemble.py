@@ -175,6 +175,7 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
         catalog += [c for c in read_lines(os.path.join(port, "catalog.txt")) if c]
         behaviours += [b for b in read_lines(os.path.join(port, "behaviour.txt")) if b]
     shared = dedupe_bank_aliases(mod_zone, bank_def["aliases"])
+    write_measure_mix(mod_zone, bank, bank_def)
     if bank_def["aliases"] and "soundbank," + bank not in present:
         lines.append("soundbank," + bank)
         added.append("soundbank," + bank)
@@ -193,6 +194,36 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
             f.write("".join(c + "\n" for c in full))
         out[block] = full
     return out
+
+
+# Witness measurement mix (applied with setsoundsubmix by the audio witness only): every volume group
+# but the weapons' own at zero, so a recording of the client holds the shots, not Spaceland's music,
+# ambience, voices and footsteps.
+MEASURE_MIX = "bo3wpn_measure"
+MEASURE_MUTED = ("music", "music_emitter", "music_emitter_pa", "interface_music", "ambience", "ambience_dist",
+                 "emitter", "chatteral", "voiceover", "deathsdoor", "footstep_npc", "footstep_plr",
+                 "footstepmp_npc", "footstepmp_plr", "bodyfall", "physics", "destruct", "interface", "hud",
+                 "vehicle_npc", "shellcasings", "grenadebounce", "melee_npc", "melee_plr", "default", "na")
+
+
+def sound_hash(name):
+    """IW7 sound name hash (5381, x65599, lower case), as mix ids are stored."""
+    h = 5381
+    for c in name.lower():
+        h = (h * 65599 + ord(c)) % 4294967296
+    return h
+
+
+def write_measure_mix(mod_zone, bank, bank_def):
+    table = "sound/%s.mixes.csv" % bank
+    rows = ["idString,VolMod,Volume,Fade"] + ["%d,%s,0.000000,0.100000" % (sound_hash(MEASURE_MIX), v)
+                                             for v in MEASURE_MUTED]
+    path = os.path.join(mod_zone, *table.split("/"))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="ascii", newline="\n") as f:
+        f.write("\n".join(rows) + "\n")
+    if table not in bank_def.get("MixDefs", []):
+        bank_def["MixDefs"] = list(bank_def.get("MixDefs", [])) + [table]
 
 
 def main(argv=None):
