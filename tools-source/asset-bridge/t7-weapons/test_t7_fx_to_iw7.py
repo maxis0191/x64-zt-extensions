@@ -78,6 +78,13 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(ll["numAssets"], 2)
         self.assertEqual(report["partial"], [{"element": 0, "materials_not_converted": ["ei/missing"]}])
 
+    def test_emission_keeps_emitting_while_the_effect_lives(self):
+        # the Ray Gun trail's rings: one at the muzzle and none after when converted as a burst
+        (em,), _ = self.convert([element("emission", 1, 0, life=700)])
+        self.assertAlmostEqual(em["particleSpawnRate"]["min"], conv.EMISSION_RATE, places=4)
+        self.assertEqual(em["particleBurstCount"], {"min": 1, "max": 1})
+        self.assertGreaterEqual(em["particleCountMax"], int(conv.EMISSION_RATE * 0.75))
+
     def test_endless_looping_becomes_rate(self):
         (em,), _ = self.convert([element("looping", 200, conv.INT_MAX, life=1000)])
         self.assertAlmostEqual(em["particleSpawnRate"]["min"], 5.0, places=4)
