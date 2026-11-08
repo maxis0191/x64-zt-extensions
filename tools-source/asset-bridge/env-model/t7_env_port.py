@@ -75,10 +75,14 @@ def part_paths(gw_root, part):
     return glb[0], (mj[0] if mj else None)
 
 
-def transform(group, offset, yaw):
+def transform(group, offset, yaw, scale=(1.0, 1.0, 1.0)):
+    """Part placement: scale (model axes), then yaw about z, then offset. Normals take the inverse-transpose."""
     c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
     r = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-    return {'P': group['P'] @ r.T + np.asarray(offset, float), 'N': group['N'] @ r.T, 'UV': group['UV'],
+    sc = np.asarray(scale if not np.isscalar(scale) else (scale,) * 3, float)
+    n = (group['N'] / sc) @ r.T
+    n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+    return {'P': (group['P'] * sc) @ r.T + np.asarray(offset, float), 'N': n, 'UV': group['UV'],
             'tris': group['tris']}
 
 
@@ -156,7 +160,7 @@ def main(argv=None):
                 if info['role'] == 'skip':
                     continue
                 for off in p.get('repeat', [p.get('offset', [0, 0, 0])]):
-                    groups.setdefault(info['iw7'], []).append(transform(g, off, p.get('yaw', 0)))
+                    groups.setdefault(info['iw7'], []).append(transform(g, off, p.get('yaw', 0), p.get('scale', 1.0)))
         return {k: merge(v) for k, v in groups.items()}
 
     for m in cfg['models']:
