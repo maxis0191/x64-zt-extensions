@@ -36,9 +36,13 @@ MATERIALS = [
     {'name': 'iwz_g2_handle_tripped', 'tint': [0.45, 0.04, 0.03], 'roughness_value': 0.35},
     {'name': 'iwz_g2_rubber', 'tint': [0.018, 0.018, 0.018], 'roughness_value': 0.7},
     {'name': 'iwz_g2_label', 'albedo': 'iwz_g2_label_c.png', 'roughness_value': 0.4},
-    {'name': 'iwz_g2_tag', 'albedo': 'iwz_g2_tag_c.png', 'alpha': 'cutout', 'roughness_value': 0.8},
-    {'name': 'iwz_g2_stencil', 'albedo': 'iwz_g2_stencil_c.png', 'decal': True},
-    {'name': 'iwz_g2_scorch', 'albedo': 'iwz_g2_scorch_c.png', 'decal': True},
+    # stencils, scorched breaker window and tag are opaque faces with the art composited over the surface they sit on
+    # (in engine the IW7 decal template drew them faintly and the cutout template black: train runs e5 / e6)
+    {'name': 'iwz_g2_tag', 'albedo': 'iwz_g2_tag_opaque_c.png', 'roughness_value': 0.8},
+    {'name': 'iwz_g2_stencil_steel', 'albedo': 'iwz_g2_stencil_steel_c.png', 'roughness_value': 0.6},
+    {'name': 'iwz_g2_stencil_conc', 'albedo': 'iwz_g2_stencil_conc_c.png', 'roughness_value': 0.8},
+    {'name': 'iwz_g2_stencil_green', 'albedo': 'iwz_g2_stencil_green_c.png', 'roughness_value': 0.5},
+    {'name': 'iwz_g2_window', 'albedo': 'iwz_g2_window_c.png', 'roughness_value': 0.5},
     {'name': 'iwz_g2_oil', 'albedo': 'iwz_g2_oil_c.png', 'decal': True},
 ]
 
@@ -124,6 +128,7 @@ def main():
     b.box('iwz_g2_cabinet', 112, 160, 26, 46, 4, 86, bevel=0.4)
     b.box('iwz_g2_panel', 135.8, 136.2, 25.7, 26.0, 6, 84)                                     # door seam
     b.box('iwz_g2_panel', 118, 154, 25.5, 26.0, 40, 70)                                       # breaker window
+    front_quad(b, 'iwz_g2_window', 118, 154, 40, 70, 25.45)         # its face: dark panel scorched round the tripped one
     tripped = (1, 1)
     for row, z in enumerate((48, 60)):
         for col, x in enumerate((122, 131, 140, 149)):
@@ -132,19 +137,17 @@ def main():
             else:
                 b.box('iwz_g2_handle', x - 1.5, x + 1.5, 23.5, 25.5, z, z + 5)
     front_quad(b, 'iwz_g2_label', 120, 152, 72, 80, 25.9)
-    front_quad(b, 'iwz_g2_scorch', 121, 141, 50, 70, 25.35)
     # lockout tag hanging from the tripped handle (tilted 12 deg), both faces
     tx, tz = 131, 57.5
     c, s = math.cos(math.radians(12)), math.sin(math.radians(12))
     corners = [(tx - 1.5, 22.8, tz - 6.0), (tx + 1.5, 22.8, tz - 6.0), (tx + 1.5, 22.8, tz), (tx - 1.5, 22.8, tz)]
     corners = [(x, 22.8 - (tz - z) * s * 0.3, tz - (tz - z) * c) for x, y, z in corners]
-    b.quad('iwz_g2_tag', corners)
-    b.quad('iwz_g2_tag', [corners[1], corners[0], corners[3], corners[2]])
+    b.quad('iwz_g2_tag', corners)                 # one face: the cutout template draws it two-sided
     b.box('iwz_g2_steel', tx - 0.15, tx + 0.15, 22.8, 23.2, tz - 0.2, tz + 1.6)                # tag wire
     # G-2 stencils: engine bed front, plinth front, cabinet side (+x face)
-    front_quad(b, 'iwz_g2_stencil', -78, -38, PL + SK + 3, PL + SK + 23, -30.06)
-    front_quad(b, 'iwz_g2_stencil', -104, -84, 1, 11, -52.06)
-    b.quad('iwz_g2_stencil', [(160.06, 28, 62), (160.06, 44, 62), (160.06, 44, 70), (160.06, 28, 70)])
+    front_quad(b, 'iwz_g2_stencil_steel', -78, -38, PL + SK + 3, PL + SK + 23, -30.06)
+    front_quad(b, 'iwz_g2_stencil_conc', -104, -84, 1, 11, -52.06)
+    b.quad('iwz_g2_stencil_green', [(160.06, 28, 62), (160.06, 44, 62), (160.06, 44, 70), (160.06, 28, 70)])
     # oil: on the plinth top under the engine front and on the floor in front of it
     b.quad('iwz_g2_oil', [(-110, -50, PL + 0.06), (-70, -50, PL + 0.06), (-70, -12, PL + 0.06), (-110, -12, PL + 0.06)])
     b.quad('iwz_g2_oil', [(-92, -112, 0.06), (-28, -112, 0.06), (-28, -52.5, 0.06), (-92, -52.5, 0.06)])
