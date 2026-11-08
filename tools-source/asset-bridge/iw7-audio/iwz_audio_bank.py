@@ -254,8 +254,13 @@ def build(spec, out, check_only=False):
             if overlap:
                 make_retrigger(dest, float(overlap))
             info = flac_info(dest)
-            if info['bits'] != 16 or info['min_block'] != info['max_block']:
-                errors.append('%s: IW7 banks hold fixed-block 16-bit FLAC (%s)' % (dest, info))
+            if kind != 'stock' and (info['min_block'] != IW7_FLAC_BLOCK or info['max_block'] != IW7_FLAC_BLOCK):
+                # the engine plays only 1024-frame FLAC blocks: a 4608-frame source (ffmpeg's default) banked fine
+                # and stayed silent in game (run s4-music, every music cue); re-encode such a source
+                reblock(dest)
+                info = flac_info(dest)
+            if info['bits'] != 16 or info['min_block'] != info['max_block'] or (kind != 'stock' and info['max_block'] != IW7_FLAC_BLOCK):
+                errors.append('%s: IW7 banks hold fixed 1024-frame 16-bit FLAC (%s)' % (dest, info))
             done[dest] = dict(info, sha256=sha256(dest), bytes=os.path.getsize(dest))
         m.update(done[dest])
         if m['type'] not in STREAMED_TYPES and m['seconds'] > 60:
@@ -328,6 +333,22 @@ def make_loop(path, seconds, fade=1.5):
                         '-c:a', 'flac', '-sample_fmt', 's16', '-frame_size', '1024', path], check=True)
     finally:
         os.remove(tmp)
+
+
+IW7_FLAC_BLOCK = 1024
+
+
+def reblock(path):
+    """Re-encode a FLAC file in place as 16-bit FLAC with fixed 1024-frame blocks (the IW7 sound bank format)."""
+    import subprocess
+    tmp = path + '.reblock.flac'
+    try:
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', path, '-c:a', 'flac', '-sample_fmt', 's16', '-frame_size',
+                        str(IW7_FLAC_BLOCK), tmp], check=True)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
 
 
 def make_retrigger(path, overlap):
