@@ -9,16 +9,26 @@ scales the stock volume by its BO3 volume relative to the role's reference.
 Roles: given per alias with --role alias=role (the port takes them from the
 WeaponDef slot that names the alias; secondaries inherit the role of their
 chain), otherwise from the BO3 alias name:
-  player fire (*_plr with fire/act/flux)  weap_plr_fire_overlap_2d row
-  npc fire    (*_npc)                     weap_npc_main_3d row
+  player fire (*_plr with fire/act/flux)  weap_plr_fire_* channels, one per chain layer
+  npc fire    (*_npc)                     weap_npc_* channels, one per chain layer
   foley       (reload/raise)              scn_fx_unres_2d row
   projectile  (*loop)                     projectile_loop_close row
-  impact      (*exp*)                     explo_1_3d row
+  impact      (*exp*)                     explo_*_3d channels, one per chain layer
+
+A chain puts each layer on its own channel, as stock IW7 chains do
+(weap_acr_fire_plr -> _mech -> _lyr -> _lfe on overlap, fire_2, fire_3,
+fire_lfe; NPC chains on main, mech, lfe, mid; explosions on explo_1, 2, 3):
+the layer at depth d of any chain takes LAYER_CHANNELS[role][d], an *lfe*
+layer the role's LFE channel. Layers sharing a channel started about 1.2 s
+late (measured in game). Every layer keeps the stock row of its role's root
+channel (distances, curves, volume); an LFE layer takes the stock LFE row.
+A layer reached from chains of two roles (a BO3 flux in the player and the
+NPC fire chain) is written once per role, the NPC copy named <alias>_npc.
 
 Player fire layers are hybrid_pcm, as every stock IW7 player fire sound: the
 game starts them from an uncompressed head (the first 512 frames as 16-bit PCM,
 sound_assets/<prefix>/<alias>.pcmhead, decoded with ffmpeg) while the FLAC
-decodes. As plain "loaded" sounds they started about 1.2 s late in game.
+decodes. Stock LFE layers stay loaded.
 
 Output under --out (a ZoneTool IW7 asset root, e.g. zonetool/<zone>):
   sound/<bank>.aliases.csv, soundbank/<bank>.json,
@@ -43,10 +53,18 @@ ROLES = (
     ('foley', lambda n: 'reload' in n or 'raise' in n, 'scn_fx_unres_2d'),
     ('npc', lambda n: n.endswith('_npc'), 'weap_npc_main_3d'),
     # BO3 fire sounds are chains of layers (Ray Gun: fire, rear, act, flux left, flux right) that play
-    # together; on weap_plr_fire_1_2d each layer stopped the one before and the Ray Gun shot was silent
-    # (witness 2026-11-08). Stock IW7 layered fire chains (G18 + _mech) use the overlap channel.
+    # together. Two layers of one chain never share a channel, as in stock chains (on weap_plr_fire_1_2d
+    # each layer stopped the one before and the shot was silent): see layer_channel.
     ('player', lambda n: n.endswith('_plr'), 'weap_plr_fire_overlap_2d'),
 )
+# Stock layer channels by depth in a chain (the root on the role's channel), and LFE channels.
+LAYER_CHANNELS = {
+    'player': ('weap_plr_fire_overlap_2d', 'weap_plr_fire_2_2d', 'weap_plr_fire_3_2d', 'weap_plr_fire_4_2d',
+               'weap_plr_fire_alt_2_2d', 'weap_plr_fire_alt_3_2d', 'weap_plr_fire_alt_4_2d'),
+    'npc': ('weap_npc_main_3d', 'weap_npc_mech_3d', 'weap_npc_mid_3d', 'weap_npc_dist_3d'),
+    'impact': ('explo_1_3d', 'explo_2_3d', 'explo_3_3d', 'explo_4_3d'),
+}
+LFE_CHANNELS = {'player': 'weap_plr_fire_lfe_2d', 'npc': 'weap_npc_lfe_3d', 'impact': 'explo_lfe_3d'}
 ROLE_CHANNELS = {role: channel for role, _, channel in ROLES}
 BO3_REFERENCE_VOLUME = 75.0   # fallback when a BO3 row has no volume
 HYBRID_ROLES = ('player',)     # stock: every player fire sound is hybrid_pcm
@@ -87,6 +105,32 @@ def resolve_flac(root, spec):
     return None
 
 
+def layer_channel(role, name, depth):
+    """The channel of a layer of a role at a depth of its chain(s)."""
+    if role not in LAYER_CHANNELS:
+        return ROLE_CHANNELS[role]
+    if 'lfe' in name:
+        return LFE_CHANNELS[role]
+    table = LAYER_CHANNELS[role]
+    if depth >= len(table):
+        raise SystemExit('%s chain of %s is deeper than the %d stock layer channels' % (role, name, len(table)))
+    return table[depth]
+
+
+def chain_depths(names, secondary, own_channel=lambda name: False):
+    """Deepest position of each alias over every chain it is part of: along any chain the depth grows,
+    so no two layers of one chain share a depth (a PaP root may chain into the base weapon's root).
+    A layer with a channel of its own (LFE) takes no depth: the layer after it may reuse it."""
+    depth = {name: 0 for name in names}
+    for _ in range(len(depth)):
+        for name in names:
+            nxt = secondary(name)
+            step = 0 if own_channel(name) else 1
+            if nxt and depth[nxt] < depth[name] + step:
+                depth[nxt] = depth[name] + step
+    return depth
+
+
 def role_of(name):
     for role, match, channel in ROLES:
         if match(name):
@@ -118,6 +162,8 @@ def main(argv=None):
     ap.add_argument('--zone', default='bo3wpn')
     ap.add_argument('--prefix', default='bo3wpn')
     ap.add_argument('--alias', nargs='+', required=True, help='BO3 aliases to include (secondaries are followed)')
+    ap.add_argument('--gain-db', type=float, default=0.0,
+                    help='added to every alias volume (stock rows cap at 1.0): matches a port to stock loudness')
     ap.add_argument('--role', action='append', default=[],
                     help='alias=role, role in %s (default: from the alias name)' % ', '.join(ROLE_CHANNELS))
     args = ap.parse_args(argv)
@@ -129,9 +175,9 @@ def main(argv=None):
     header, col, by_channel = template_rows(args.template)
     roles = dict(r.split('=', 1) for r in args.role)
 
-    wanted, root, queue, unresolved = [], {}, [(a, a) for a in args.alias], []
+    wanted, queue, unresolved = [], list(args.alias), []
     while queue:
-        name, chain = queue.pop(0)
+        name = queue.pop(0)
         if name in wanted or name in unresolved or not name:
             continue
         if name not in source:
@@ -140,8 +186,7 @@ def main(argv=None):
             unresolved.append(name)
             continue
         wanted.append(name)
-        root[name] = chain
-        queue.append((source[name][bcol['Secondary']], chain))
+        queue.append(source[name][bcol['Secondary']])
 
     os.makedirs(os.path.join(args.out, 'sound'), exist_ok=True)
     os.makedirs(os.path.join(args.out, 'soundbank'), exist_ok=True)
@@ -158,44 +203,70 @@ def main(argv=None):
             seen.add(nxt)
             nxt = source[nxt][bcol['Secondary']] if nxt in source else ''
         return nxt if nxt in built else ''
-    for name in wanted:
-        r = source[name]
-        if not r[bcol['FileSpec']]:
-            # BO3 keeps empty aliases for silent roles (the Thundergun's projectile loop): nothing to play.
-            report.append({'alias': name, 'silent': True})
-            continue
-        given = roles.get(name) or roles.get(root[name])
+    def role_in(name, chain_root):
+        given = roles.get(name) or roles.get(chain_root)
         if given:
             if given not in ROLE_CHANNELS:
                 raise SystemExit('unknown role %s for %s' % (given, name))
-            role, channel = given, ROLE_CHANNELS[given]
-        else:
-            role, channel = role_of(name)
-        if channel not in by_channel:
-            raise SystemExit('template has no %s row' % channel)
-        row = list(by_channel[channel])
+            return given
+        return role_of(name)[0]
+
+    # One bank alias per (BO3 alias, role): a layer both the player and the NPC chain end in (the DG-2's
+    # flux layers) gets a copy per role with its own name and FLAC, so the player chain keeps distinct player
+    # channels (two links on weap_npc_main_3d delayed the DG-2 shot by about 1.2 s) and the copies' hybrid
+    # and loaded types never share a bank entry.
+    instances, layers, links, chain_root = {}, [], {}, {}
+
+    def instance(name, role, start):
+        if (name, role) not in instances:
+            inst = name if name not in {i for i in instances.values()} else '%s_%s' % (name, role)
+            instances[(name, role)] = inst
+            layers.append((inst, name, role))
+            chain_root[inst] = start
+        return instances[(name, role)]
+    for start in args.alias:
+        if start not in source:
+            continue
+        name, seen, prev = start if start in built else audible_secondary(start), set(), None
+        while name and name not in seen:
+            seen.add(name)
+            inst = instance(name, role_in(name, start), start)
+            if prev and prev not in links:
+                links[prev] = inst
+            prev, name = inst, audible_secondary(name)
+    depth = chain_depths([inst for inst, _, _ in layers], lambda inst: links.get(inst, ''), lambda inst: 'lfe' in inst)
+    report += [{'alias': name, 'silent': True} for name in wanted if name not in built]
+    for inst, name, role in layers:
+        r = source[name]
+        channel = layer_channel(role, inst, depth[inst])
+        lfe = channel == LFE_CHANNELS.get(role)
+        base = channel if lfe else ROLE_CHANNELS[role]
+        if base not in by_channel:
+            raise SystemExit('template has no %s row' % base)
+        row = list(by_channel[base])
+        row[col['channel']] = channel
         flac = resolve_flac(args.flac_root, r[bcol['FileSpec']])
         if flac is None:
             raise SystemExit('missing FLAC %s under %s' % (r[bcol['FileSpec']], args.flac_root))
         # Forward slashes: ZoneTool's alias CSV reader turns a backslash followed by t or n into a tab or
         # newline, so t7\tesla_gun_zm\... and t7\thundergun_zm\... named no file and every DG-2 and
         # Thundergun sound was missing from the zone.
-        rel = '%s/%s' % (args.prefix.replace('\\', '/').strip('/'), name)
+        rel = '%s/%s' % (args.prefix.replace('\\', '/').strip('/'), inst)
         dest = os.path.join(args.out, 'sound_assets', *rel.split('/')) + '.flac'
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copyfile(flac, dest)
         # BO3 volumes are in dB-like units; keep each chain's relative balance
         # (the chain root plays at the stock volume of its role).
-        reference = float(source[root[name]][bcol['VolMax']] or BO3_REFERENCE_VOLUME)
-        gain = 10 ** ((float(r[bcol['VolMax']] or reference) - reference) / 20.0)
+        reference = float(source[chain_root[inst]][bcol['VolMax']] or BO3_REFERENCE_VOLUME)
+        gain = 10 ** ((float(r[bcol['VolMax']] or reference) - reference + args.gain_db) / 20.0)
         for key in ('vol_min', 'vol_max'):
             row[col[key]] = '%.6f' % min(1.0, float(row[col[key]]) * gain)
-        row[col['Name']] = name
-        row[col['SecondaryAliasName']] = audible_secondary(name)
+        row[col['Name']] = inst
+        row[col['SecondaryAliasName']] = links.get(inst, '')
         row[col['StopAliasName']] = ''
         row[col['Subtitle']] = ''
         row[col['File']] = rel
-        if role in HYBRID_ROLES:
+        if role in HYBRID_ROLES and not lfe:
             row[col['type']] = 'hybrid_pcm'
             with open(dest[:-len('.flac')] + '.pcmhead', 'wb') as f:
                 f.write(pcm_head(dest, args.ffmpeg))
@@ -206,7 +277,7 @@ def main(argv=None):
             if key in col:
                 row[col[key]] = ''
         out.append(row)
-        report.append({'alias': name, 'role': role, 'channel': channel, 'secondary': row[col['SecondaryAliasName']],
+        report.append({'alias': inst, **({'copy_of': name} if inst != name else {}), 'role': role, 'channel': channel, 'secondary': row[col['SecondaryAliasName']],
                        'vol': row[col['vol_max']], 'flac_bytes': os.path.getsize(dest)})
     with open(os.path.join(args.out, 'sound', args.bank + '.aliases.csv'), 'w', newline='') as f:
         csv.writer(f).writerows(out)

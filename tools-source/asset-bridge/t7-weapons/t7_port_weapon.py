@@ -104,7 +104,7 @@ def load_recipe(path, weapon):
     if not os.path.exists(path):
         return None
     recipe = load(path)
-    unknown = set(recipe) - {"weapon", "display", "name", "overrides", "view_effects", "handling", "why"}
+    unknown = set(recipe) - {"weapon", "display", "name", "overrides", "view_effects", "handling", "sound_gain_db", "why"}
     if unknown:
         raise SystemExit("recipe %s: unknown keys %s" % (path, sorted(unknown)))
     if recipe.get("weapon", weapon) != weapon:
@@ -463,7 +463,8 @@ class Port:
             "--bo3-aliases", self.alias_table(), "--flac-root", os.path.join(self.out, "sounds"),
             "--template", self.stock(TEMPLATES["aliases"]), "--out", self.zone,
             "--bank", self.specs()[0]["name"], "--zone", self.cfg.get("mod_zone", "bo3wpn"),
-            "--prefix", "%s/%s" % (self.cfg.get("sound_prefix", "t7"), self.weapon), "--alias"] + aliases
+            "--prefix", "%s/%s" % (self.cfg.get("sound_prefix", "t7"), self.weapon),
+            "--gain-db", str(self.cfg.get("sound_gain_db", 0.0)), "--alias"] + aliases
             + [x for alias, role in self.sound_roles().items() for x in ("--role", "%s=%s" % (alias, role))],
             stdout=subprocess.PIPE, text=True)
         report = json.loads(out.stdout)["aliases"]
@@ -931,6 +932,7 @@ def main(argv=None):
                     "effects on client timers, e.g. switch_on=tesla_viewmodel_rail@tag_flash)")
     ap.add_argument("--recipe", help="per-weapon recipe JSON (recipes/<bo3 weapon>.json by default when present): "
                     "display, name, overrides, view_effects; command-line values win")
+    ap.add_argument("--sound-gain-db", type=float, help="dB added to every sound alias volume (recipe sound_gain_db)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--stages", default=",".join(STAGES), help="comma list, in order: " + ",".join(STAGES))
     args = ap.parse_args(argv)
@@ -938,7 +940,7 @@ def main(argv=None):
     recipe = load_recipe(args.recipe, args.weapon)
     if recipe:
         cfg["recipe"] = recipe.get("_path")
-        for key in ("display", "view_effects", "handling"):
+        for key in ("display", "view_effects", "handling", "sound_gain_db"):
             if key in recipe:
                 cfg[key] = recipe[key]
         if recipe.get("overrides"):
@@ -951,6 +953,8 @@ def main(argv=None):
         cfg["weapon_overrides"] = weapon_overrides(args.override)
     if args.view_effect:
         cfg["view_effects"] = args.view_effect
+    if args.sound_gain_db is not None:
+        cfg["sound_gain_db"] = args.sound_gain_db
     port = Port(cfg, args.weapon, args.out, args.name)
     for stage in args.stages.split(","):
         if stage not in STAGES:
