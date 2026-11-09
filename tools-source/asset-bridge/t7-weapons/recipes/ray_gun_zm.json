@@ -1,4 +1,8 @@
 {
   "weapon": "ray_gun_zm",
-  "display": "Ray Gun"
+  "display": "Ray Gun",
+  "sound_gain_db": 6.0,
+  "why": {
+    "sound_gain_db": "2026-11-09 audio6 witness: 1 s RMS -22 to -25 dBFS against -16 for stock Facemelter in the same capture path; BO3's FLACs are already at full scale, so the alias volume carries the gain (cap 1.0)"
+  }
 }
