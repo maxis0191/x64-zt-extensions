@@ -29,7 +29,9 @@ class WeaponSoundTest(unittest.TestCase):
             ['wpn_rgun_fire_plr', 'wpn/fire.flac', 'wpn_rgun_sweet_plr', '90', '90'],
             ['wpn_rgun_sweet_plr', 'wpn/fire_sweet.flac', '', '70', '70'],
             ['wpn_rgun_reload_open', 'wpn/reload.flac', '', '80', '80'],
-            ['wpn_rgun_exp', 'wpn/exp.flac', '', '', ''],
+            ['wpn_rgun_exp', 'wpn/exp.flac', 'wpn_rgun_exp_silent', '', ''],
+            ['wpn_rgun_exp_silent', '', 'wpn_rgun_exp_tail', '', ''],
+            ['wpn_rgun_exp_tail', 'wpn/exp.flac', '', '', ''],
             ['wpn_rgun_loop', '', '', '', ''],
         ])
         write_csv(os.path.join(self.root, 'stock.csv'), [
@@ -49,11 +51,16 @@ class WeaponSoundTest(unittest.TestCase):
         self.rows = {r['Name']: r for r in rows}
 
     def test_follows_secondary_chain_and_roles(self):
-        self.assertEqual(set(self.rows), {'wpn_rgun_fire_plr', 'wpn_rgun_sweet_plr', 'wpn_rgun_reload_open', 'wpn_rgun_exp'})
+        self.assertEqual(set(self.rows), {'wpn_rgun_fire_plr', 'wpn_rgun_sweet_plr', 'wpn_rgun_reload_open', 'wpn_rgun_exp',
+                                          'wpn_rgun_exp_tail'})
         self.assertEqual(self.rows['wpn_rgun_fire_plr']['channel'], 'weap_plr_fire_overlap_2d')
         self.assertEqual(self.rows['wpn_rgun_fire_plr']['SecondaryAliasName'], 'wpn_rgun_sweet_plr')
         self.assertEqual(self.rows['wpn_rgun_reload_open']['channel'], 'scn_fx_unres_2d')
         self.assertEqual(self.rows['wpn_rgun_exp']['channel'], 'explo_1_3d')
+
+    def test_silent_links_are_skipped(self):
+        # a chain never names an alias the bank lacks: the silent middle layer is stepped over
+        self.assertEqual(self.rows['wpn_rgun_exp']['SecondaryAliasName'], 'wpn_rgun_exp_tail')
 
     def test_volume_is_relative_to_the_chain_root(self):
         # The audible stock row (not the muted one) is the template.

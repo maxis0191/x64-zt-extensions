@@ -118,6 +118,17 @@ def main(argv=None):
     os.makedirs(os.path.join(args.out, 'soundbank'), exist_ok=True)
     out = [header]
     report = [{'alias': name, 'silent': True, 'unresolved': True} for name in unresolved]
+    built = {name for name in wanted if source[name][bcol['FileSpec']]}
+
+    def audible_secondary(name):
+        """The next alias of a chain that is built: a silent or unresolved link is skipped, so no row names
+        an alias the bank lacks (the Mark II fire chain pointed at its silent rear layer)."""
+        seen = set()
+        nxt = source[name][bcol['Secondary']]
+        while nxt and nxt not in built and nxt not in seen:
+            seen.add(nxt)
+            nxt = source[nxt][bcol['Secondary']] if nxt in source else ''
+        return nxt if nxt in built else ''
     for name in wanted:
         r = source[name]
         if not r[bcol['FileSpec']]:
@@ -151,7 +162,7 @@ def main(argv=None):
         for key in ('vol_min', 'vol_max'):
             row[col[key]] = '%.6f' % min(1.0, float(row[col[key]]) * gain)
         row[col['Name']] = name
-        row[col['SecondaryAliasName']] = r[bcol['Secondary']]
+        row[col['SecondaryAliasName']] = audible_secondary(name)
         row[col['StopAliasName']] = ''
         row[col['Subtitle']] = ''
         row[col['File']] = rel
@@ -161,7 +172,7 @@ def main(argv=None):
             if key in col:
                 row[col[key]] = ''
         out.append(row)
-        report.append({'alias': name, 'role': role, 'channel': channel, 'secondary': r[bcol['Secondary']],
+        report.append({'alias': name, 'role': role, 'channel': channel, 'secondary': row[col['SecondaryAliasName']],
                        'vol': row[col['vol_max']], 'flac_bytes': os.path.getsize(dest)})
     with open(os.path.join(args.out, 'sound', args.bank + '.aliases.csv'), 'w', newline='') as f:
         csv.writer(f).writerows(out)
