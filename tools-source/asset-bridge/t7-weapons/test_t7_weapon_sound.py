@@ -159,6 +159,28 @@ class WeaponSoundTest(unittest.TestCase):
         self.assertAlmostEqual(float(rows['wpn_rgun_fire_plr']['vol_max']), 1.0, places=5)   # 0.9 * 2 capped
         self.assertAlmostEqual(float(rows['wpn_rgun_sweet_plr']['vol_max']), 0.09 * 10 ** 0.3, places=4)
 
+    def test_random_variants_stay_rows_of_one_alias(self):
+        # BO3's Mark II shot has three random rows; the port kept only the last
+        bo3 = os.path.join(self.root, 'variants.csv')
+        write_csv(bo3, [['Name', 'FileSpec', 'Secondary', 'VolMin', 'VolMax'],
+                        ['wpn_mk2_fire_plr', 'wpn/fire.flac', 'wpn_mk2_sweet_plr', '90', '90'],
+                        ['wpn_mk2_fire_plr', 'wpn/fire_sweet.flac', 'wpn_mk2_sweet_plr', '84', '84'],
+                        ['wpn_mk2_fire_plr', 'wpn/reload.flac', 'wpn_mk2_sweet_plr', '90', '90'],
+                        ['wpn_mk2_sweet_plr', 'wpn/exp.flac', '', '90', '90']])
+        out = os.path.join(self.root, 'variants')
+        sound.main(['--bo3-aliases', bo3, '--flac-root', os.path.join(self.root, 'flac'),
+                    '--template', os.path.join(self.root, 'stock.csv'), '--out', out, '--bank', 'b', '--zone', 'z',
+                    '--prefix', 'p', '--alias', 'wpn_mk2_fire_plr'])
+        with open(os.path.join(out, 'sound', 'b.aliases.csv'), newline='') as f:
+            rows = [r for r in csv.DictReader(f) if r['Name'] == 'wpn_mk2_fire_plr']
+        self.assertEqual([r['File'] for r in rows], ['p/wpn_mk2_fire_plr', 'p/wpn_mk2_fire_plr_v2', 'p/wpn_mk2_fire_plr_v3'])
+        self.assertEqual({r['channel'] for r in rows}, {'weap_plr_fire_overlap_2d'})
+        self.assertEqual({r['SecondaryAliasName'] for r in rows}, {'wpn_mk2_sweet_plr'})
+        self.assertAlmostEqual(float(rows[1]['vol_max']), 0.9 * 10 ** (-6 / 20.0), places=5)
+        with open(os.path.join(out, 'sound_assets', 'p', 'wpn_mk2_fire_plr_v2.flac'), 'rb') as f:
+            self.assertEqual(f.read(), b'fLaCfire_sweet')
+        self.assertTrue(os.path.exists(os.path.join(out, 'sound_assets', 'p', 'wpn_mk2_fire_plr_v3.pcmhead')))
+
     def test_loaded_mod_files_without_stock_references(self):
         for name, row in self.rows.items():
             # player fire layers start from an uncompressed head, as every stock player fire sound

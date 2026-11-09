@@ -122,7 +122,8 @@ def dedupe_bank_aliases(mod_zone, tables):
         kept = rows[:1]
         for row in rows[1:]:
             name = row[0] if row else ""
-            if name and not name.startswith("#") and name in seen:
+            # Repeated rows in one table are one alias's random variants (kept, as in stock tables).
+            if name and not name.startswith("#") and seen.get(name, table) != table:
                 dropped.append([name, seen[name], table])
                 continue
             if name and not name.startswith("#"):

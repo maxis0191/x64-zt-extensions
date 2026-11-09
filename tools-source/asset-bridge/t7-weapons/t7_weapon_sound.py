@@ -171,7 +171,13 @@ def main(argv=None):
     with open(args.bo3_aliases, newline='', encoding='utf-8', errors='replace') as f:
         bo3 = list(csv.reader(f))
     bcol = {n: i for i, n in enumerate(bo3[0])}
-    source = {r[0]: r for r in bo3[1:] if r}
+    # BO3 picks one of an alias's rows at random (the Mark II shot has shot_00..02); IW7 does the same with
+    # repeated rows under one name (stock slide_start_plr has 37). The first row carries the chain.
+    variants = {}
+    for r in bo3[1:]:
+        if r:
+            variants.setdefault(r[0], []).append(r)
+    source = {name: rows[0] for name, rows in variants.items()}
     header, col, by_channel = template_rows(args.template)
     roles = dict(r.split('=', 1) for r in args.role)
 
@@ -237,48 +243,51 @@ def main(argv=None):
     depth = chain_depths([inst for inst, _, _ in layers], lambda inst: links.get(inst, ''), lambda inst: 'lfe' in inst)
     report += [{'alias': name, 'silent': True} for name in wanted if name not in built]
     for inst, name, role in layers:
-        r = source[name]
         channel = layer_channel(role, inst, depth[inst])
         lfe = channel == LFE_CHANNELS.get(role)
         base = channel if lfe else ROLE_CHANNELS[role]
         if base not in by_channel:
             raise SystemExit('template has no %s row' % base)
-        row = list(by_channel[base])
-        row[col['channel']] = channel
-        flac = resolve_flac(args.flac_root, r[bcol['FileSpec']])
-        if flac is None:
-            raise SystemExit('missing FLAC %s under %s' % (r[bcol['FileSpec']], args.flac_root))
-        # Forward slashes: ZoneTool's alias CSV reader turns a backslash followed by t or n into a tab or
-        # newline, so t7\tesla_gun_zm\... and t7\thundergun_zm\... named no file and every DG-2 and
-        # Thundergun sound was missing from the zone.
-        rel = '%s/%s' % (args.prefix.replace('\\', '/').strip('/'), inst)
-        dest = os.path.join(args.out, 'sound_assets', *rel.split('/')) + '.flac'
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        shutil.copyfile(flac, dest)
-        # BO3 volumes are in dB-like units; keep each chain's relative balance
-        # (the chain root plays at the stock volume of its role).
-        reference = float(source[chain_root[inst]][bcol['VolMax']] or BO3_REFERENCE_VOLUME)
-        gain = 10 ** ((float(r[bcol['VolMax']] or reference) - reference + args.gain_db) / 20.0)
-        for key in ('vol_min', 'vol_max'):
-            row[col[key]] = '%.6f' % min(1.0, float(row[col[key]]) * gain)
-        row[col['Name']] = inst
-        row[col['SecondaryAliasName']] = links.get(inst, '')
-        row[col['StopAliasName']] = ''
-        row[col['Subtitle']] = ''
-        row[col['File']] = rel
-        if role in HYBRID_ROLES and not lfe:
-            row[col['type']] = 'hybrid_pcm'
-            with open(dest[:-len('.flac')] + '.pcmhead', 'wb') as f:
-                f.write(pcm_head(dest, args.ffmpeg))
-        else:
-            row[col['type']] = 'loaded'
-        # Stock references to duck files are not in the mod's sources.
-        for key in ('duck',):
-            if key in col:
-                row[col[key]] = ''
-        out.append(row)
-        report.append({'alias': inst, **({'copy_of': name} if inst != name else {}), 'role': role, 'channel': channel, 'secondary': row[col['SecondaryAliasName']],
-                       'vol': row[col['vol_max']], 'flac_bytes': os.path.getsize(dest)})
+        audible = [r for r in variants[name] if r[bcol['FileSpec']]]
+        for k, r in enumerate(audible):
+            row = list(by_channel[base])
+            row[col['channel']] = channel
+            flac = resolve_flac(args.flac_root, r[bcol['FileSpec']])
+            if flac is None:
+                raise SystemExit('missing FLAC %s under %s' % (r[bcol['FileSpec']], args.flac_root))
+            # Forward slashes: ZoneTool's alias CSV reader turns a backslash followed by t or n into a tab or
+            # newline, so t7\tesla_gun_zm\... and t7\thundergun_zm\... named no file and every DG-2 and
+            # Thundergun sound was missing from the zone. Variants after the first get _v2, _v3...
+            rel = '%s/%s%s' % (args.prefix.replace('\\', '/').strip('/'), inst, '_v%d' % (k + 1) if k else '')
+            dest = os.path.join(args.out, 'sound_assets', *rel.split('/')) + '.flac'
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            shutil.copyfile(flac, dest)
+            # BO3 volumes are in dB-like units; keep each chain's relative balance
+            # (the chain root plays at the stock volume of its role).
+            reference = float(source[chain_root[inst]][bcol['VolMax']] or BO3_REFERENCE_VOLUME)
+            gain = 10 ** ((float(r[bcol['VolMax']] or reference) - reference + args.gain_db) / 20.0)
+            for key in ('vol_min', 'vol_max'):
+                row[col[key]] = '%.6f' % min(1.0, float(row[col[key]]) * gain)
+            row[col['Name']] = inst
+            row[col['SecondaryAliasName']] = links.get(inst, '')
+            row[col['StopAliasName']] = ''
+            row[col['Subtitle']] = ''
+            row[col['File']] = rel
+            if role in HYBRID_ROLES and not lfe:
+                row[col['type']] = 'hybrid_pcm'
+                with open(dest[:-len('.flac')] + '.pcmhead', 'wb') as f:
+                    f.write(pcm_head(dest, args.ffmpeg))
+            else:
+                row[col['type']] = 'loaded'
+            # Stock references to duck files are not in the mod's sources.
+            for key in ('duck',):
+                if key in col:
+                    row[col[key]] = ''
+            out.append(row)
+            report.append({'alias': inst, **({'copy_of': name} if inst != name else {}),
+                           **({'variant': k + 1} if len(audible) > 1 else {}), 'role': role, 'channel': channel,
+                           'secondary': row[col['SecondaryAliasName']], 'vol': row[col['vol_max']],
+                           'flac_bytes': os.path.getsize(dest)})
     with open(os.path.join(args.out, 'sound', args.bank + '.aliases.csv'), 'w', newline='') as f:
         csv.writer(f).writerows(out)
     bank = {'name': args.bank, 'zone': args.zone, 'gameLanguage': 'all', 'soundLanguage': 'all',

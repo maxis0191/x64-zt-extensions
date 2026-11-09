@@ -99,6 +99,15 @@ class AssembleTest(unittest.TestCase):
         with open(os.path.join(root, "sound", "a.aliases.csv"), encoding="utf-8") as f:
             self.assertIn("wpn_dry", f.read())
 
+    def test_variant_rows_of_one_table_are_kept(self):
+        root = tempfile.mkdtemp()
+        write(os.path.join(root, "sound", "a.aliases.csv"), "Name,File\nwpn_shot,t7/a/shot\nwpn_shot,t7/a/shot_v2\n")
+        write(os.path.join(root, "sound", "b.aliases.csv"), "Name,File\nwpn_shot,t7/b/shot\nwpn_shot,t7/b/shot_v2\n")
+        dropped = asm.dedupe_bank_aliases(root, ["sound/a.aliases.csv", "sound/b.aliases.csv"])
+        self.assertEqual(dropped, [["wpn_shot", "sound/a.aliases.csv", "sound/b.aliases.csv"]] * 2)
+        with open(os.path.join(root, "sound", "a.aliases.csv"), encoding="utf-8") as f:
+            self.assertEqual(f.read().count("wpn_shot"), 2)
+
     def test_measure_mix(self):
         # the engine hash of the Paris mod's own mix, as recorded in the server docs
         self.assertEqual(asm.sound_hash("paris_music_off"), 3429397084)
