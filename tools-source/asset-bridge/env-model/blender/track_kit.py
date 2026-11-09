@@ -102,14 +102,14 @@ def finish(ob, bm):
     bm.free()
 
 
-def build_rails(L, texel, lod, disused=False):
+def build_rails(L, texel, lod, disused=False, x1=None):
     web = 'iwz_rail_rusty' if disused else 'iwz_rail_web'
     head = web if disused else 'iwz_rail_head'
     ob, mats = new_object('rails', sorted({web, head}))
     bm = bmesh.new()
     prof = rail_profile(lod=lod)
     for side in (-1, 1):
-        extrude_profile(bm, prof, 0, L, side * RAIL_CY, 0.0, mats, texel, head, web)
+        extrude_profile(bm, prof, 0, L if x1 is None else x1, side * RAIL_CY, 0.0, mats, texel, head, web)
     finish(ob, bm)
     return ob
 
@@ -185,7 +185,10 @@ def add_puddles(bm, mat, L, texel):
             loop[uv].uv = (c.x / INCH / texel, c.y / INCH / texel)
 
 
-def build_ballast(L, texel, disused=False):
+END_SLOPE = 32.0       # an end segment's ballast runs down to the bed over its last 32 in (same slope as the shoulders)
+
+
+def build_ballast(L, texel, disused=False, end=False):
     names = (['iwz_ballast_disused', 'iwz_ballast_shoulder', 'iwz_puddle'] if disused else
              ['iwz_ballast', 'iwz_ballast_shoulder'])
     ob, mats = new_object('ballast', names)
@@ -193,21 +196,35 @@ def build_ballast(L, texel, disused=False):
     uv = bm.loops.layers.uv.verify()
     # the level's ballast prism (collision and navmesh, station_zero2 BALLAST_TOP_HALF / BALLAST_FOOT_HALF): flat top
     # +-62 at z 0, straight 32-unit shoulders down to the bed (z -16) at +-94; the shoulders are a finer, dirtier gravel
+    # a flat 8 in apron at the bed beyond each foot covers the joint with the level's channel floor / walls (g27 kit_14
+    # showed a black slot under the shoulder)
     top, base, h = 62.0, 94.0, 16.0
-    sec = [(-base, -h), (-top - 16, -h / 2), (-top, 0.0), (top, 0.0), (top + 16, -h / 2), (base, -h)]
-    shoulder = {0, 1, 3, 4}             # section edges k (sec[k] -> sec[k + 1]) on the slopes
+    sec = [(-base - 8, -h + 0.15), (-base, -h), (-top - 16, -h / 2), (-top, 0.0), (top, 0.0), (top + 16, -h / 2),
+           (base, -h), (base + 8, -h + 0.15)]
+    shoulder = {0, 1, 2, 4, 5, 6}       # section edges k (sec[k] -> sec[k + 1]) on the slopes and aprons
+    # world-scale UVs: u along the track, v the true distance along the section (no stretch on the slopes)
+    arc = [0.0]
+    for k in range(1, len(sec)):
+        arc.append(arc[-1] + math.hypot(sec[k][0] - sec[k - 1][0], sec[k][1] - sec[k - 1][1]))
+    arc = [a_ - arc[3] - top for a_ in arc]          # v = y on the flat top
     nx = int(L // 32)
+    xs = [L * i / nx for i in range(nx + 1)]
     rows = []
-    for i in range(nx + 1):
-        x = L * i / nx
-        rows.append([bm.verts.new((x * INCH, y * INCH, z * INCH)) for y, z in sec])
+    for x in xs:
+        dz = 0.0
+        if end and x > L - END_SLOPE:
+            dz = (x - (L - END_SLOPE)) / END_SLOPE   # 0 .. 1: the section sinks to the bed
+        rows.append([bm.verts.new((x * INCH, y * INCH, (z + (-h - z) * dz) * INCH)) for y, z in sec])
     for i in range(nx):
         for k in range(len(sec) - 1):
             f = bm.faces.new((rows[i][k], rows[i][k + 1], rows[i + 1][k + 1], rows[i + 1][k]))
-            f.material_index = mats['iwz_ballast_shoulder'] if k in shoulder else 0
-            for loop in f.loops:
-                c = loop.vert.co
-                loop[uv].uv = (c.x / INCH / texel, c.y / INCH / texel)
+            f.material_index = mats['iwz_ballast_shoulder'] if (k in shoulder or (end and xs[i] >= L - END_SLOPE)) else 0
+            for loop, (ii, kk) in zip(f.loops, ((i, k), (i, k + 1), (i + 1, k + 1), (i + 1, k))):
+                zz = loop.vert.co.z / INCH
+                extra = 0.0
+                if end and xs[ii] > L - END_SLOPE:            # along the end slope: its true length
+                    extra = (xs[ii] - (L - END_SLOPE)) * (math.hypot(END_SLOPE, h) / END_SLOPE - 1.0)
+                loop[uv].uv = ((xs[ii] + extra) / texel, arc[kk] / texel)
     if disused:
         add_puddles(bm, mats['iwz_puddle'], L, texel)
     finish(ob, bm)
@@ -220,7 +237,7 @@ SLEEPER_TOP = RAIL_BASE_Z - 0.4             # under the 0.4 in rail pad
 SLEEPER_DEPTH = 8.0                         # (embedded in the ballast to its top - 3.4)
 
 
-def build_sleepers(L, texel, lod, third_rail=True):
+def build_sleepers(L, texel, lod, third_rail=True, x1=None):
     """Concrete monoblock sleepers (trapezoid section 10.5 / 8.5 wide) with a rubber pad and a pair of rail clips
     (cast shoulder + spring clip toe over the foot edge) on both sides of each rail foot, centred on the rails at
     +-RAIL_CY (the BO3 twin-block tie put its bolted blocks 20 in outboard of the rails and showed its tie-bar gap as a
@@ -248,7 +265,7 @@ def build_sleepers(L, texel, lod, third_rail=True):
     n = int(round((L - SLEEPER_FIRST) / SLEEPER_PITCH)) + 1
     for i in range(n):
         xc = SLEEPER_FIRST + SLEEPER_PITCH * i
-        if xc > L:
+        if xc > (L if x1 is None else x1):
             break
         long_ = any(abs(xc - xi) < 1 for xi in ins_x)
         y0 = -(RAIL_CY + 27.5 + 6.0) if long_ else -SLEEPER_HALF
@@ -265,6 +282,39 @@ def build_sleepers(L, texel, lod, third_rail=True):
                 yc = ry + side * 2.6                        # spring clip toe pressing on the foot edge
                 box(mats['iwz_rail_clip'], xc - 0.35, xc + 0.35, min(yo, yc) - 0.2, max(yo, yc) + 0.2,
                     RAIL_BASE_Z + 0.3, RAIL_BASE_Z + 0.85)
+    for f in bm.faces:
+        nx, ny, nz = (abs(c) for c in f.normal)
+        for loop in f.loops:
+            c = loop.vert.co / INCH
+            u, v = ((c.y, c.z) if nx >= max(ny, nz) else (c.x, c.z) if ny >= nz else (c.y, c.x))
+            loop[uv].uv = (u / texel, v / texel)
+    finish(ob, bm)
+    return ob
+
+
+def build_sleeper_buffer(texel, lod):
+    """Disused-siding buffer: a stack of three old sleepers across the track held by two bent-rail posts on each side,
+    a red target disc on a post. Front (impact) face towards -x, at x 0; on the ballast top (z 0)."""
+    ob, mats = new_object('buffer', ['iwz_sleeper', 'iwz_rail_rusty', 'iwz_buffer_red'])
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.verify()
+
+    def box(mi, x0, x1, y0, y1, z0, z1):
+        r = bmesh.ops.create_cube(bm, size=1.0)
+        for v in r['verts']:
+            v.co.x = (x0 if v.co.x < 0 else x1) * INCH
+            v.co.y = (y0 if v.co.y < 0 else y1) * INCH
+            v.co.z = (z0 if v.co.z < 0 else z1) * INCH
+        for f in {f for v in r['verts'] for f in v.link_faces}:
+            f.material_index = mi
+
+    for k, z in enumerate((RAIL_BASE_Z + 6.7, RAIL_BASE_Z + 15.2, RAIL_BASE_Z + 23.7)):
+        box(mats['iwz_sleeper'], 0.0, 10.0, -51.0 + k * 1.5, 51.0 - k, z, z + 8.5)
+    for y in (-40.0, -20.0, 20.0, 40.0):                             # bent rail posts behind the stack
+        box(mats['iwz_rail_rusty'], 10.0, 13.5, y - 1.4, y + 1.4, -6.0, RAIL_BASE_Z + 34.0)
+        box(mats['iwz_rail_rusty'], 13.5, 40.0, y - 1.4, y + 1.4, -2.0, 1.5)                 # strut to the ballast
+    box(mats['iwz_rail_rusty'], 4.0, 6.0, -62.0, -60.0, 0.0, RAIL_BASE_Z + 44.0)             # target post
+    box(mats['iwz_buffer_red'], 2.6, 3.8, -66.0, -56.0, RAIL_BASE_Z + 40.0, RAIL_BASE_Z + 50.0)   # red target board
     for f in bm.faces:
         nx, ny, nz = (abs(c) for c in f.normal)
         for loop in f.loops:
@@ -335,6 +385,8 @@ MATERIALS = [
     {'name': 'iwz_ballast_disused', 'albedo': 'gravel_pebble_bed_c.png', 'normal': 'gravel_pebble_bed_n.png',
      'tint': [0.62, 0.58, 0.52]},
     {'name': 'iwz_puddle', 'tint': [0.045, 0.05, 0.05], 'roughness_value': 0.04},
+    {'name': 'iwz_buffer_red', 'albedo': 'i_t7_micro_metal_painted_01_c.png', 'tint': [0.35, 0.03, 0.02],
+     'roughness_value': 0.5},
 ]
 
 
@@ -347,6 +399,9 @@ def main():
     ap.add_argument('--texel', type=float, default=48.0, help='inches per UV unit (rails)')
     ap.add_argument('--ballast-texel', type=float, default=72.0)
     ap.add_argument('--variant', choices=('main', 'disused'), default='main')
+    ap.add_argument('--end', action='store_true', help='end segment: rails and sleepers stop 40 in short, the '
+                    'ballast slopes down to the bed over the last 32 in (writes *_end_<L>)')
+    ap.add_argument('--buffer', action='store_true', help='write the sleeper-stack buffer (buffer_sleepers.glb) only')
     ap.add_argument('--third-rail-span', help='a,b: the conductor only along x a..b with end ramps (an end segment); '
                     'writes third_rail_<L>_<a>_<b>.glb only')
     a = ap.parse_args(argv)
@@ -354,13 +409,25 @@ def main():
     L = a.length
     dis = a.variant == 'disused'
     tag = ('disused_%d' if dis else '%d') % L
+    if a.end:
+        tag = ('disused_end_%d' if dis else 'end_%d') % L
+    x1 = L - 40.0 if a.end else None
     span = tuple(float(v) for v in a.third_rail_span.split(',')) if a.third_rail_span else None
+    if a.buffer:
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        ob = build_sleeper_buffer(a.texel, 0)
+        path = os.path.join(a.out, 'buffer_sleepers.glb')
+        export([ob], path)
+        used = {s_.material.name for s_ in ob.material_slots if s_.material}
+        materials_json(os.path.splitext(path)[0] + '.materials.json', a.images, [m for m in MATERIALS if m['name'] in used])
+        print('TRACKKIT', path)
+        return
     for lod in (0, 1):
         sfx = '' if lod == 0 else '_lod1'
-        parts = [(lambda: build_rails(L, a.texel, lod, dis), 'rails'),
-                 (lambda: build_ballast(L, a.ballast_texel, dis), 'ballast'),
-                 (lambda: build_sleepers(L, a.texel, lod, not dis), 'sleepers')]
-        if not dis:
+        parts = [(lambda: build_rails(L, a.texel, lod, dis, x1), 'rails'),
+                 (lambda: build_ballast(L, a.ballast_texel, dis, a.end), 'ballast'),
+                 (lambda: build_sleepers(L, a.texel, lod, not dis, x1), 'sleepers')]
+        if not dis and not a.end:
             parts.insert(1, (lambda: build_third_rail(L, a.texel, lod), 'third_rail'))
         if span:
             tag = '%d_%d_%d' % (L, span[0], span[1])

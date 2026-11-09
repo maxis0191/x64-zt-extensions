@@ -29,6 +29,10 @@ DEFAULT = {
     'lamps': [(50.0, 46.0, 3.0, 2.2), (-50.0, 46.0, 3.0, 2.2)],
     # head / tail lamps (white lens, unlit: the car is dead) above the markers
     'head_lamps': [(50.0, 60.0, 3.6, 2.4), (-50.0, 60.0, 3.6, 2.4)],
+    # closed gangway diaphragm: x from the end wall to the coupling face, outer / inner (half width, z0, z1)
+    'gangway_x': (238.4, 266.5), 'gangway_outer': (35.0, 29.0, 171.0), 'gangway_inner': (27.6, 36.0, 165.0),
+    # run-number plate on the -y end post: (y centre, z0, z1, width)
+    'run_plate': (-50.0, 100.0, 112.0, 10.0),
     # coupler: carrier bracket under the sill end, shank, head (all boxes x0, x1, y0, y1, z0, z1)
     'coupler': [(245.5, 251.5, -5.0, 5.0, 14.0, 22.0), (240.0, 260.0, -3.5, 3.5, 13.5, 19.5),
                 (258.0, 266.5, -7.0, 7.0, 10.0, 20.0)],
@@ -41,6 +45,8 @@ MATERIALS = [
     {'name': 'iwz_end_lamp_white', 'tint': [0.55, 0.55, 0.5], 'roughness_value': 0.1},
     {'name': 'iwz_end_lamp_bezel', 'albedo': 'i_t7_micro_metal_painted_01_c.png', 'tint': [0.03, 0.03, 0.032],
      'roughness_value': 0.55},
+    {'name': 'iwz_gangway_rubber', 'tint': [0.028, 0.027, 0.026], 'roughness_value': 0.8},
+    {'name': 'iwz_run_plate', 'albedo': 'iwz_run_plate_c.png', 'roughness_value': 0.4},
     {'name': 'iwz_underframe_grime', 'albedo': 'i_t7_micro_metal_rust_heavy_01_c.png',
      'roughness': 'i_t7_micro_metal_rust_heavy_01_g.png', 'normal': 'i_t7_micro_metal_rust_n.png', 'tint': [0.45, 0.4, 0.38]},
 ]
@@ -102,9 +108,36 @@ def main():
     for y, z, rad, depth in spec['head_lamps']:
         cylinder_x(bm, BZ, px, y, z, rad + 0.9, depth * 0.6)
         cylinder_x(bm, LW, px, y, z, rad, depth)
+    # closed gangway diaphragm (replaces BO3's open side curtains): accordion rings round the end door from the end
+    # wall to the coupled face, a steel face frame; coupled cars' faces meet (pitch 534 = 2 x 266.5 + 1)
+    RB = names.index('iwz_gangway_rubber')
+    gx0, gx1 = spec['gangway_x']
+    (oy, oz0, oz1), (iy, iz0, iz1) = spec['gangway_outer'], spec['gangway_inner']
+    n = int(round((gx1 - 1.0 - gx0) / 2.8))
+    for k in range(n):
+        xa = gx0 + (gx1 - 1.0 - gx0) * k / n
+        xb = gx0 + (gx1 - 1.0 - gx0) * (k + 1) / n
+        e = 1.4 if k % 2 == 0 else 0.0
+        for (y0, y1, z0, z1) in ((-oy - e, -iy, oz0 - e, oz1 + e), (iy, oy + e, oz0 - e, oz1 + e),
+                                 (-iy, iy, oz0 - e, iz0), (-iy, iy, iz1, oz1 + e)):
+            box(bm, RB, xa, xb, y0, y1, z0, z1, bevel=0.3 if e else 0.0)
+    for (y0, y1, z0, z1) in ((-oy - 0.6, -iy, oz0 - 0.6, oz1 + 0.6), (iy, oy + 0.6, oz0 - 0.6, oz1 + 0.6),
+                             (-iy, iy, oz0 - 0.6, iz0), (-iy, iy, iz1, oz1 + 0.6)):
+        box(bm, H, gx1 - 1.0, gx1, y0, y1, z0, z1, bevel=0.2)
+    # run-number plate on the end post (white enamel, black numerals), facing +x
+    RP = names.index('iwz_run_plate')
+    py, pz0, pz1, pw = spec['run_plate']
+    plates = {}
+    for py_ in (py, -py):                     # both end posts: one faces the platform whichever way the car stands
+        rp = [bm.verts.new((px_ * INCH, y_ * INCH, z_ * INCH)) for px_, y_, z_ in
+              ((spec['post_face_x'] + 0.08, py_ - pw / 2, pz0), (spec['post_face_x'] + 0.08, py_ + pw / 2, pz0),
+               (spec['post_face_x'] + 0.08, py_ + pw / 2, pz1), (spec['post_face_x'] + 0.08, py_ - pw / 2, pz1))]
+        f_ = bm.faces.new(rp)
+        f_.material_index = RP
+        plates[f_] = py_
     for b in spec['coupler']:
         box(bm, GR, *b, bevel=0.5)
-    bmesh.ops.recalc_face_normals(bm, faces=[f for f in bm.faces if f is not face])
+    bmesh.ops.recalc_face_normals(bm, faces=[f for f in bm.faces if f is not face and f not in plates])
     uv = bm.loops.layers.uv.verify()
     for f in bm.faces:
         for loop in f.loops:
@@ -112,6 +145,9 @@ def main():
             if f is face:
                 # blind: u along +y (viewer's right seen from +x), v up (Blender bottom-left; glTF export flips)
                 loop[uv].uv = ((c.y - y0) / (y1 - y0), (c.z - z0) / (z1 - z0))
+                continue
+            if f in plates:
+                loop[uv].uv = ((c.y - (plates[f] - pw / 2)) / pw, (c.z - pz0) / (pz1 - pz0))
                 continue
             nx, ny, nz = (abs(k) for k in f.normal)
             u, v = ((c.y, c.z) if nx >= max(ny, nz) else (c.x, c.z) if ny >= nz else (c.x, c.y))

@@ -86,6 +86,17 @@ def transform(group, offset, yaw, scale=(1.0, 1.0, 1.0)):
             'tris': group['tris']}
 
 
+def cut(group, boxes):
+    """Drop the triangles whose centroid lies inside any box {"box": [x0, x1, y0, y1, z0, z1]} (model space, after the
+    part's placement): e.g. a BO3 body skirt that hides the bogies the port adds."""
+    c = group['P'][group['tris']].mean(1)
+    keep = np.ones(len(c), bool)
+    for b in boxes:
+        x0, x1, y0, y1, z0, z1 = b['box']
+        keep &= ~((c[:, 0] > x0) & (c[:, 0] < x1) & (c[:, 1] > y0) & (c[:, 1] < y1) & (c[:, 2] > z0) & (c[:, 2] < z1))
+    return dict(group, tris=group['tris'][keep])
+
+
 def merge(groups):
     P, N, UV, T, base = [], [], [], [], 0
     for g in groups:
@@ -188,7 +199,12 @@ def main(argv=None):
                 if info['role'] == 'skip':
                     continue
                 for off in p.get('repeat', [p.get('offset', [0, 0, 0])]):
-                    groups.setdefault(info['iw7'], []).append(transform(g, off, p.get('yaw', 0), p.get('scale', 1.0)))
+                    t = transform(g, off, p.get('yaw', 0), p.get('scale', 1.0))
+                    cuts = [c_ for c_ in p.get('cut', []) if not c_.get('materials') or any(k in mat for k in c_['materials'])]
+                    if cuts:
+                        t = cut(t, cuts)
+                    if len(t['tris']):
+                        groups.setdefault(info['iw7'], []).append(t)
         return {k: merge(v) for k, v in groups.items()}
 
     for m in cfg['models']:

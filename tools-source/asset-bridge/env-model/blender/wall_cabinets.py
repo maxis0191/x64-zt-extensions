@@ -30,6 +30,11 @@ MATERIALS = [
      'roughness_value': 0.5},
     {'name': 'iwz_firehose_label', 'albedo': 'iwz_firehose_label_c.png', 'roughness_value': 0.35},
     {'name': 'iwz_helppoint_label', 'albedo': 'iwz_helppoint_label_c.png', 'roughness_value': 0.35},
+    {'name': 'iwz_rad_frame', 'albedo': 'i_t7_micro_metal_painted_01_c.png', 'normal': 'i_t7_micro_metal_painted_01_n.png',
+     'tint': [0.09, 0.115, 0.095], 'roughness_value': 0.55},
+    {'name': 'iwz_rad_core', 'albedo': 'i_t7_micro_metal_rust_heavy_01_c.png', 'roughness': 'i_t7_micro_metal_rust_heavy_01_g.png',
+     'normal': 'i_t7_micro_metal_rust_n.png', 'tint': [0.16, 0.14, 0.13]},
+    {'name': 'iwz_g2_stencil_steel', 'albedo': 'iwz_g2_stencil_steel_c.png', 'roughness_value': 0.6},
 ]
 
 
@@ -114,6 +119,34 @@ def help_point(b):
         b.cyl('iwz_cab_steel', (x, -0.4, z), (x, -0.7, z), 0.35, 6)
 
 
+def radiator(b):
+    """G-2's remote radiator (the cooler): a painted steel frame on four legs, a rusted finned core facing -y, top and
+    bottom tanks, a fan shroud with blades on the back (+y), coolant pipes on the -x side, G-2 stencil on the top tank.
+    Model space: floor z 0, front -y, footprint x -32..32, y -16..20, 74 high."""
+    W, D = 30.0, 14.0
+    for x in (-W, W - 3):                                         # legs
+        for y in (-D, D - 3):
+            b.box('iwz_rad_frame', x, x + 3, y, y + 3, 0, 8)
+    b.box('iwz_rad_frame', -W - 1, W + 1, -D - 1, D + 1, 8, 12, bevel=0.3)             # bottom tank
+    b.box('iwz_rad_frame', -W - 1, W + 1, -D - 1, D + 1, 62, 70, bevel=0.3)            # top tank
+    b.box('iwz_rad_frame', -W - 1, -W + 2, -D - 1, D + 1, 12, 62)                      # side frames
+    b.box('iwz_rad_frame', W - 2, W + 1, -D - 1, D + 1, 12, 62)
+    b.box('iwz_rad_core', -W + 2, W - 2, -D + 2, D - 2, 12, 62)                        # core block
+    x = -W + 3.0
+    while x < W - 3:                                                                   # front fins
+        b.box('iwz_rad_core', x, x + 0.35, -D - 0.2, -D + 2, 12.5, 61.5)
+        x += 1.1
+    b.cyl('iwz_rad_frame', (0, D, 37), (0, D + 5, 37), 22, 24)                         # fan shroud ring (back)
+    b.cyl('iwz_rad_core', (0, D + 2, 37), (0, D + 3, 37), 4, 12)                       # hub
+    for k in range(6):                                                                 # blades
+        t = math.radians(60 * k + 15)
+        b.cyl('iwz_rad_core', (0, D + 2.5, 37), (19 * math.cos(t), D + 2.5, 37 + 19 * math.sin(t)), 1.6, 6)
+    b.cyl('iwz_rad_frame', (-W - 1, 0, 66), (-W - 8, 0, 66), 2.2, 12)                  # top hose stub
+    b.cyl('iwz_rad_frame', (-W - 1, 0, 10), (-W - 8, 0, 10), 2.2, 12)                  # bottom hose stub
+    b.cyl('iwz_rad_frame', (6, 0, 70), (6, 0, 74), 1.8, 10)                            # filler cap
+    front_quad(b, 'iwz_g2_stencil_steel', -10, 10, 62.5, 69.5, -D - 1.06)
+
+
 def main():
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     ap = argparse.ArgumentParser()
@@ -123,6 +156,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     build('fire_hose_cabinet', fire_hose, a)
     build('help_point_plate', help_point, a)
+    build('g2_radiator', radiator, a)
 
 
 if __name__ == '__main__':
