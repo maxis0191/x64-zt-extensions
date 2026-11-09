@@ -105,8 +105,10 @@ def fire_hose(b):
     b.box('iwz_cab_red', x1 - 1.6, x1, -D - 0.8, -D, *zf)
     b.box('iwz_cab_red', x0, x1, -D - 0.8, -D, H - 7.2, H - 0.6)                 # top rail carries the label
     b.box('iwz_cab_red', x0, x1, -D - 0.8, -D, 0.6, 2.2)
-    b.quad('iwz_cab_glass', [(x0 + 1.6, -D - 0.4, 2.2), (x1 - 1.6, -D - 0.4, 2.2), (x1 - 1.6, -D - 0.4, H - 7.2),
-                             (x0 + 1.6, -D - 0.4, H - 7.2)])
+    # no glass pane: the IW7 glass template (a lamp-glass material) glowed lavender with a halo in g27 (darkness agent);
+    # the door's glazing is broken out, two glazing bars remain
+    b.box('iwz_cab_red', x0 + 1.6, x1 - 1.6, -D - 0.7, -D - 0.2, 13.0, 13.8)
+    b.box('iwz_cab_red', -0.4, 0.4, -D - 0.7, -D - 0.2, 2.2, H - 7.2)
     b.box('iwz_cab_brass', x1 - 3.2, x1 - 2.4, -D - 2.0, -D - 0.8, 14, 19)
     front_quad(b, 'iwz_firehose_label', x0 + 2.5, x1 - 2.5, H - 6.6, H - 1.2, -D - 0.85)
 
