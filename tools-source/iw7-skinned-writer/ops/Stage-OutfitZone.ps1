@@ -21,7 +21,7 @@ if($Refresh -or !(Test-Path $Z)){
 }
 foreach($m in $Models){
   Copy-Item "$KitDump\xmodel\$m.xmb" "$Z\xmodel\" -Force
-  Copy-Item "$KitDump\xsurface\${m}_lod0.xsb" "$Z\xsurface\" -Force
+  Copy-Item "$KitDump\xsurface\${m}_lod*.xsb" "$Z\xsurface\" -Force
 }
 foreach($r in $MaterialRoots){ robocopy $r $Z /E /NFL /NDL /NJH /NP | Out-Null }
 # level script: stock Spaceland character table -> data-driven outfit table

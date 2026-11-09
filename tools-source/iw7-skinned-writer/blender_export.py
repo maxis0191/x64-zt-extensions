@@ -24,7 +24,7 @@ from mathutils import Vector
 
 def args():
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    o = {"out": None, "glb": None, "modify": [], "objects": None, "unit": 0.0254}
+    o = {"out": None, "glb": None, "modify": [], "objects": None, "unit": 0.0254, "decimate": 1.0}
     i = 0
     while i < len(a):
         k = a[i]
@@ -38,6 +38,8 @@ def args():
             o["objects"] = a[i + 1].split(",")
         elif k == "--unit":
             o["unit"] = float(a[i + 1])
+        elif k == "--decimate":
+            o["decimate"] = float(a[i + 1])
         i += 2
     return o
 
@@ -86,10 +88,25 @@ def apply_modify(spec, unit):
     return n
 
 
-def export_object(ob, unit):
+def export_object(ob, unit, decimate=1.0):
     arm = armature_of(ob)
     # rest-pose mesh data (apply any non-armature modifiers in Blender before exporting)
-    me = ob.data.copy()
+    if decimate < 1.0:
+        # LOD: collapse-decimated rest-pose copy (vertex groups interpolated by the modifier)
+        arms = [(md, md.show_viewport) for md in ob.modifiers if md.type == "ARMATURE"]
+        for md, _ in arms:
+            md.show_viewport = False
+        dec = ob.modifiers.new("iw7_lod_decimate", "DECIMATE")
+        dec.ratio = decimate
+        dec.use_collapse_triangulate = True
+        deps = bpy.context.evaluated_depsgraph_get()
+        deps.update()
+        me = bpy.data.meshes.new_from_object(ob.evaluated_get(deps), preserve_all_data_layers=True, depsgraph=deps)
+        ob.modifiers.remove(dec)
+        for md, s in arms:
+            md.show_viewport = s
+    else:
+        me = ob.data.copy()
     if any(len(p.vertices) != 3 for p in me.polygons):
         bm = bmesh.new()
         bm.from_mesh(me)
@@ -170,7 +187,7 @@ def main():
               "armature": None}
     arm = None
     for ob in meshes:
-        a, surfs = export_object(ob, o["unit"])
+        a, surfs = export_object(ob, o["unit"], o["decimate"])
         arm = arm or a
         result["surfaces"] += surfs
     if arm:

@@ -13,14 +13,17 @@ init_player_characters()
 
 outfit_extra_models()
 {
-    return [ "body_zmb_hero_jock_szred" ];
+    extra = [];
+    return extra;
 }
 
 outfit_rows()
 {
     rows = [];
     //            index  body                          view arms   head   hair
-    rows[rows.size] = [ "4", "body_zmb_hero_jock_sztest", "",         "",    "" ];
+    rows[rows.size] = [ "4", "body_iwz_hero_aj",         "viewmodel_iwz_hero_aj_arms",         "",                         "hair_iwz_hero_aj" ];
+    rows[rows.size] = [ "3", "body_iwz_hero_andre",      "viewmodel_iwz_hero_andre_arms",      "",                         "hair_iwz_hero_andre" ];
+    rows[rows.size] = [ "2", "body_iwz_hero_poindexter", "viewmodel_iwz_hero_poindexter_arms", "head_iwz_hero_poindexter", "hair_iwz_hero_poindexter" ];
     return rows;
 }
 
@@ -47,7 +50,10 @@ apply_outfits( rows )
         else if ( row[4] != "" )
             info.hair_model = outfit_model( row[4] );
         level.iwz_outfits++;
-        print( "[IWZ outfit] hero=" + idx + " body=" + info.body_model + " view=" + info.view_model + " head=" + info.head_model );
+        hair = "none";
+        if ( isdefined( info.hair_model ) )
+            hair = info.hair_model;
+        print( "[IWZ outfit] hero=" + idx + " body=" + info.body_model + " view=" + info.view_model + " head=" + info.head_model + " hair=" + hair );
     }
 }
 

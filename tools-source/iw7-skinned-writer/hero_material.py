@@ -118,6 +118,29 @@ def unpack_nog(nog):
     return nrm, gray(nog[..., 0]), gray(nog[..., 2])
 
 
+def pad_islands(arr, valid, iters=12):
+    """Edge padding: grow the UV islands into the unused atlas texels (average of valid neighbours, `iters` rings),
+    the rest takes the island mean. Stops black / max-gloss background bleeding into islands through mips and BC7."""
+    out = arr.copy()
+    v = valid.copy()
+    for _ in range(iters):
+        if v.all():
+            break
+        acc = np.zeros_like(out)
+        cnt = np.zeros(v.shape, np.float32)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+            sv = np.roll(np.roll(v, dy, 0), dx, 1)
+            so = np.roll(np.roll(out, dy, 0), dx, 1)
+            acc += so * sv[..., None]
+            cnt += sv
+        grow = (~v) & (cnt > 0)
+        out[grow] = acc[grow] / cnt[grow][:, None]
+        v = v | grow
+    if (~v).any():
+        out[~v] = out[v].mean(axis=0) if v.any() else 0
+    return out
+
+
 def hue_rotate(rgb, deg):
     """Rotate the hue of sRGB colours around the grey axis (keeps luminance roughly)."""
     t = np.radians(deg)
@@ -148,6 +171,30 @@ def main():
     argv = sys.argv[sys.argv.index("--") + 1:]
     mode, o = argv[0], opts(argv[1:])
     os.makedirs(o["out"], exist_ok=True)
+    if mode == "normcheck":
+        # Which green convention does a tangent normal map follow? A baked normal map is the gradient of a height
+        # field, so its slope field (p, q) = (-x/z, -y/z) is curl-free in the image frame of its convention:
+        # OpenGL (+Y = image up) or DirectX (+Y = image down). The convention with the smaller curl wins.
+        rep = {}
+        for key in [k for k in o if k.startswith("img")]:
+            arr = load(o[key])                       # rows bottom-up (Blender): row index grows image-up
+            if o.get(key + "-nog") == "1" or "_nog" in o[key]:
+                nrm, _, _ = unpack_nog(arr)
+            else:
+                nrm = arr
+            x = nrm[..., 0] / 255.0 * 2 - 1
+            y = nrm[..., 1] / 255.0 * 2 - 1
+            z = np.clip(nrm[..., 2] / 255.0 * 2 - 1, 0.2, 1.0)
+            p, q = -x / z, -y / z
+            dp_dup = np.diff(p, axis=0)[:, :-1]      # d/d(up)
+            dq_dx = np.diff(q, axis=1)[:-1, :]
+            curl_gl = float(np.mean(np.abs(dp_dup - dq_dx)))   # q = dh/d(up)
+            curl_dx = float(np.mean(np.abs(-dp_dup - dq_dx)))  # q = dh/d(down)
+            rep[o[key]] = {"curl_opengl": curl_gl, "curl_directx": curl_dx,
+                           "verdict": "opengl" if curl_gl < curl_dx else "directx"}
+        json.dump(rep, open(os.path.join(o["out"], "normcheck.json"), "w"), indent=1)
+        print("NORMCHECK " + json.dumps(rep))
+        return
     if mode == "decode":
         cs, nog = load(o["cs"]), load(o["nog"])
         alb, refl = unpack_cs(cs)
@@ -165,6 +212,8 @@ def main():
         alb = hue_rotate(alb, float(o["hue"]))
     ld = lambda k: load(o[k], size) if o.get(k) else None
     refl, nrm, ao = ld("reflectance"), ld("normal"), ld("ao")
+    if nrm is not None and o.get("flip-green") == "1":
+        nrm[..., 1] = 255.0 - nrm[..., 1]          # OpenGL <-> DirectX green
     if o.get("gloss"):
         gloss = ld("gloss")[..., 0]
     elif o.get("roughness"):
@@ -172,6 +221,34 @@ def main():
     else:
         gloss = np.full(alb.shape[:2], 127.0, np.float32)
     ao = ao[..., 0] if ao is not None else np.full(alb.shape[:2], 255.0, np.float32)
+    rep_fix = {}
+    if o.get("pad") == "1":
+        # island mask: texels the bake wrote (albedo or roughness non-black); fit bakes leave the rest black
+        rough_src = ld("roughness")
+        valid = alb[..., :3].sum(-1) > 3.0
+        if rough_src is not None:
+            valid |= rough_src[..., 0] > 0.5
+        rep_fix["island_fraction"] = float(valid.mean())
+        # AO: texels inside islands the AO bake missed (0) mean 'not baked', not 'fully occluded'
+        ao = np.where(valid & (ao < 1.0), 255.0, ao)
+        rep_fix["ao_unbaked_fraction"] = float((valid & (ao >= 255.0)).mean())
+        stack = np.dstack([alb[..., :3], gloss, ao] + ([refl[..., 0]] if refl is not None else []) +
+                          ([nrm[..., :3]] if nrm is not None else []))
+        stack = pad_islands(stack.astype(np.float32), valid)
+        alb = np.dstack([stack[..., 0:3], alb[..., 3:4]])
+        gloss, ao = stack[..., 3], stack[..., 4]
+        k = 5
+        if refl is not None:
+            refl = np.repeat(stack[..., k:k + 1], 4, axis=2)
+            k += 1
+        if nrm is not None:
+            nrm = np.dstack([stack[..., k:k + 3], np.full(gloss.shape, 255.0, np.float32)])
+    if o.get("ao-floor"):
+        f = float(o["ao-floor"])        # 0..1: keep only part of the baked occlusion (stock cloth AO is mostly light)
+        ao = 255.0 - (255.0 - ao) * (1.0 - f)
+    if o.get("gloss-scale"):
+        gloss = np.clip(gloss * float(o["gloss-scale"]), 0, 255)
+    rep_fix.update({"ao_mean": float(ao.mean()), "gloss_mean": float(gloss.mean())})
     cs = pack_cs(alb, refl, float(o["metalness"]) if o.get("metalness") else None)
     nog = pack_nog(nrm, gloss, ao)
     stem = o["stem"]
@@ -179,7 +256,7 @@ def main():
     p_nog = os.path.join(o["out"], stem + "_n_packed_nog.png")
     save(p_cs, cs)
     save(p_nog, nog)
-    rep = {"size": list(size), "cs": p_cs, "nog": p_nog, "hue": o.get("hue")}
+    rep = {"size": list(size), "cs": p_cs, "nog": p_nog, "hue": o.get("hue"), "fix": rep_fix}
     for key, arr in (("ref-cs", cs), ("ref-nog", nog)):
         if o.get(key):
             ref = load(o[key], size)

@@ -180,6 +180,27 @@ def split_surface(src):
     return parts
 
 
+def build_lod(mesh, a, mmap, stock_by_short, stock_inv, bone_index, problems, transfer, vbase):
+    srcs = mesh["surfaces"]
+    if a.surface_order:
+        order = a.surface_order.split(",")
+        srcs = sorted(srcs, key=lambda s: (order.index(s["material"]) if s["material"] in order else len(order),
+                                           s["object"]))
+    surfaces, materials, inv_mip = [], [], []
+    for src in srcs:
+        for part in split_surface(src):
+            s = build_surface(part, bone_index, problems, vbase)
+            if transfer:
+                transfer.apply(s)
+            vbase += s.vert_count
+            surfaces.append(s)
+            short = part["material"].split(".")[0] if part["material"] not in mmap else part["material"]
+            mat = mmap.get(part["material"]) or stock_by_short.get(short) or part["material"]
+            materials.append(mat)
+            inv_mip.append(stock_inv.get(mat, 0xFFFF))
+    return surfaces, materials, inv_mip, vbase
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("mesh")
@@ -188,7 +209,9 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--material-map", default="")
     ap.add_argument("--surface-order", default="", help="comma list of Blender material names giving surface order")
-    ap.add_argument("--lod-dist", type=float, default=1000000.0)
+    ap.add_argument("--lod-dist", type=float, default=1000000.0, help="LOD0 switch distance (inches)")
+    ap.add_argument("--lods", default="", help="extra LODs 'mesh1.json:dist1,mesh2.json:dist2' (decimated exports, "
+                                               "increasing distance; the last distance is the cull distance)")
     ap.add_argument("--report", default="")
     ap.add_argument("--transfer-from", default="",
                     help="stock LOD0 .xsb of the base model: copy per-vertex self-visibility and SH probe simplex "
@@ -218,57 +241,54 @@ def main(argv=None):
     for m in base.materials:
         if m:
             stock_by_short.setdefault(m.split("/")[-1], m)
-
-    srcs = mesh["surfaces"]
-    if a.surface_order:
-        order = a.surface_order.split(",")
-        srcs = sorted(srcs, key=lambda s: (order.index(s["material"]) if s["material"] in order else len(order),
-                                           s["object"]))
-    surfaces, materials, inv_mip = [], [], []
     base_lod0 = base.lod(0)
     stock_inv = {}
     for k in range(base_lod0[1]):
         mat = base.materials[base_lod0[2] + k]
         if mat and k < len(base.inv_high_mip):
             stock_inv.setdefault(mat, base.inv_high_mip[base_lod0[2] + k])
-    vbase = 0
-    for src in srcs:
-        for part in split_surface(src):
-            s = build_surface(part, bone_index, problems, vbase)
-            if transfer:
-                transfer.apply(s)
-            vbase += s.vert_count
-            surfaces.append(s)
-            short = part["material"].split(".")[0] if part["material"] not in mmap else part["material"]
-            mat = mmap.get(part["material"]) or stock_by_short.get(short) or part["material"]
-            materials.append(mat)
-            inv_mip.append(stock_inv.get(mat, 0xFFFF))
 
-    ms = xsurface.ModelSurfs()
-    ms.name = a.name + "_lod0"
-    ms.head_ptrs = (1, 1)
-    union = set()
-    for s in surfaces:
-        union |= vc.surface_bones(s)
-    ms.part_bits = vc.part_bits(union)
-    ms.surfs = surfaces
+    lod_specs = [(mesh, a.lod_dist)]
+    for item in [x for x in a.lods.split(",") if x]:
+        path, dist = item.rsplit(":", 1)
+        lod_specs.append((json.load(open(path)), float(dist)))
+    if len(lod_specs) > 6:
+        raise SystemExit("at most 6 LODs")
+
+    all_mats, all_inv, lods, vbase = [], [], [], 0
+    for li, (lm, dist) in enumerate(lod_specs):
+        surfaces, materials, inv_mip, vbase = build_lod(lm, a, mmap, stock_by_short, stock_inv, bone_index,
+                                                        problems, transfer, vbase)
+        ms = xsurface.ModelSurfs()
+        ms.name = "%s_lod%d" % (a.name, li)
+        ms.head_ptrs = (1, 1)
+        union = set()
+        for s in surfaces:
+            union |= vc.surface_bones(s)
+        ms.part_bits = vc.part_bits(union)
+        ms.surfs = surfaces
+        lods.append({"ms": ms, "dist": dist, "first": len(all_mats), "count": len(surfaces), "materials": materials})
+        all_mats += materials
+        all_inv += inv_mip
 
     m = base
     m.name = a.name
-    m.set("numsurfs", len(surfaces))
-    m.set("numLods", 1)
+    m.set("numsurfs", len(all_mats))
+    m.set("numLods", len(lods))
     m.set("hasLods", 0)
-    m.materials = materials
+    m.materials = all_mats
     m.material_recs = None
-    m.material_ptrs = b"\1" * 8 * len(materials)
-    m.inv_high_mip = inv_mip
-    m.lod_surfs = [ms.name, None, None, None, None, None]
+    m.material_ptrs = b"\1" * 8 * len(all_mats)
+    m.inv_high_mip = all_inv
+    m.lod_surfs = [l["ms"].name for l in lods] + [None] * (6 - len(lods))
     for i in range(6):
-        lod = [a.lod_dist, 0, 0, 0] + [0] * 8 + [0, 0, 0]
-        if i == 0:
-            lod = [a.lod_dist, len(surfaces), 0, 1] + ms.part_bits + [0, 0, 0]
-        m.set_lod(i, lod)
-    pts = [v[:3] for s in surfaces for v in s.verts]
+        if i < len(lods):
+            l = lods[i]
+            m.set_lod(i, [l["dist"], l["count"], l["first"], 1] + l["ms"].part_bits + [0, 0, 0])
+        else:
+            m.set_lod(i, [lods[-1]["dist"], 0, 0, 0] + [0] * 8 + [0, 0, 0])
+    surfaces0 = lods[0]["ms"].surfs
+    pts = [v[:3] for s in surfaces0 for v in s.verts]
     mins = [min(p[i] for p in pts) for i in range(3)]
     maxs = [max(p[i] for p in pts) for i in range(3)]
     half = [(maxs[i] - mins[i]) / 2 for i in range(3)]
@@ -277,14 +297,19 @@ def main(argv=None):
 
     os.makedirs(os.path.join(a.out, "xmodel"), exist_ok=True)
     os.makedirs(os.path.join(a.out, "xsurface"), exist_ok=True)
-    xsb = xsurface.write(ms)
     xmb = xmodel.write(m)
-    # self check: the dumps read back to the same values
-    assert xsurface.write(xsurface.read(xsb)) == xsb and xmodel.write(xmodel.read(xmb)) == xmb
-    open(os.path.join(a.out, "xsurface", ms.name + ".xsb"), "wb").write(xsb)
+    assert xmodel.write(xmodel.read(xmb)) == xmb
+    for l in lods:
+        xsb = xsurface.write(l["ms"])
+        # self check: the dumps read back to the same values
+        assert xsurface.write(xsurface.read(xsb)) == xsb
+        open(os.path.join(a.out, "xsurface", l["ms"].name + ".xsb"), "wb").write(xsb)
     open(os.path.join(a.out, "xmodel", a.name + ".xmb"), "wb").write(xmb)
     rep = {"name": a.name, "surfaces": [{"material": mt, "verts": s.vert_count, "tris": s.tri_count,
-                                         "blend_counts": s.blend_counts[:4]} for s, mt in zip(surfaces, materials)],
+                                         "blend_counts": s.blend_counts[:4]}
+                                        for s, mt in zip(lods[0]["ms"].surfs, lods[0]["materials"])],
+           "lods": [{"dist": l["dist"], "surfaces": l["count"], "tris": sum(s.tri_count for s in l["ms"].surfs)}
+                    for l in lods],
            "problems": problems, "skeleton_check": skel,
            "transfer": {"source": a.transfer_from, "max_dist_in": transfer.max_dist, "flags": hex(transfer.flags or 0)}
            if transfer else None, "bounds": m.get("bounds"), "radius": m.get("radius")}

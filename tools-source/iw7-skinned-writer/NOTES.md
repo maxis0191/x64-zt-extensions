@@ -95,3 +95,20 @@ python -I hero_material_zone.py --techsets-dump <dump>\techsets_cp_zmb --templat
 ops\Stage-OutfitZone.ps1 -SourceWork <good level ztwork> -Work <own ztwork> -Models <names> -KitDump <kitdump> -MaterialRoots <matroot> -Build
 ops\Run-OutfitProof.ps1 -UsermapDir <um> -OutRoot <runs> -View "x,y,z,yaw"
 Add the outfit row in gsc\cp_iwz_outfits.gsc outfit_rows(): [ index, body, view arms, head, hair ].
+
+## Hero outfits ship (2026-11-09 night) - IN PROGRESS (stopped on request 21:18)
+- ship_heroes.py + ship_heroes.json: pack (normal green flipped: stock nog = DirectX, fit = OpenGL, hero_material.py
+  normcheck), materials (body mopw clone of jock jacket/jeans, hair + VM sleeves mo clone of nerd helmet), body with
+  --transfer-from hero stock LOD0, LOD chain 300/1000/10000 (blender_export --decimate 0.35/0.12, build_model --lods),
+  hair (valley girl hair skeleton), VM arms, Poindexter cleaned head (helmet/accessories/lenses dropped, 6 LODs).
+- v1: heroes_v1 (FF A432C131..., runs h1-h4, probes p1/p2b). Reviewers r1 (review_r1): all DO NOT SHIP 2-4/10.
+- Found: script models do NOT draw heads attached with attach(head,"") (any tag) nor attachments of a linked head;
+  fixture now spawns head as own script_model linked at body j_spine4 and hair linked at head j_neck (h4: faces ok).
+  Real-player third person NOT_PROVEN (second client did not join within 90 s in h4).
+- Found: fit textures leave ~55% atlas black; AO missing on ~75% of AJ islands; gloss too high -> packer --pad 1
+  (edge padding), unbaked AO -> white, --ao-floor 0.4, --gloss-scale 0.6.
+- v2: heroes_v2 (new fit READY exports 20:38-20:59, new packing, new LODs) built: um\cp_iwz.ff sha256 AD47695DEFD5D6ED3D6282129028F1A255F8005C283F24B32342776E35FC35B1 ;
+  NOT yet run. Next: Run heroes_v2\run_h5 (see heroes_v1\run_h4.ps1 pattern, fixture heroes_v2\iwzmap_hero_fixture.gsc,
+  -Extra '+set paris_iwz_hero_nohud 1 +set paris_iwz_hero_ref body_zmb_hero_jock,head_zmb_hero_jock'), build
+  review_r2 like review_r1, ask parent for reviewers.
+- Bug fixed: Run-OutfitProof -Extra was silently dropped (PowerShell $Extra/$extra same variable).
