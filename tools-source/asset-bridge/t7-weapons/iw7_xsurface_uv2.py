@@ -84,7 +84,7 @@ def parse(data):
             raise ValueError("surface %d has subdivision data (not handled)" % i)
         vsize = MOTION_VERTEX_SIZE if flags & FLAG_MOTION else VERTEX_SIZE
         _, _, verts = r.record((ARRAY, OFFSET), vsize)
-        r.record((ARRAY, OFFSET), 6)                        # triangles
+        _, _, tris = r.record((ARRAY, OFFSET), 6)           # triangles
         _, _, rigid = r.record((ARRAY, OFFSET), RIGID_SIZE)
         for v in range(rigid_count if rigid else 0):
             tree_ptr, = struct.unpack_from("<Q", rigid, v * RIGID_SIZE + 8)
@@ -97,7 +97,8 @@ def parse(data):
             size = 32 if (flags & 0x500) == 0x500 else (SECOND_UV_SIZE if flags & FLAG_SECONDUV else 24)
             _, _, second = r.record((ARRAY, OFFSET), size)
         surfaces.append({"index": i, "flags": flags, "vert_count": vert_count, "tri_count": tri_count,
-                         "head": heads_start + i * XSURFACE_SIZE, "verts": verts, "end": r.pos, "second": second})
+                         "head": heads_start + i * XSURFACE_SIZE, "verts": verts, "tris": tris, "end": r.pos,
+                         "second": second})
     if r.pos != len(data):
         raise ValueError("%d trailing bytes" % (len(data) - r.pos))
     return name.decode("ascii"), surfaces

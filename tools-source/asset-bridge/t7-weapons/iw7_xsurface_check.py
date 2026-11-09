@@ -63,7 +63,32 @@ def errors_for(measures):
 
 
 def parse(data):
-    """Return the model name and per-surface (flags, vertices, triangles)."""
+    """Return the model name and per-surface (flags, vertices, triangles).
+
+    The exact record walk of iw7_xsurface_uv2 is tried first: it also reads surfaces that carry a second UV
+    set, which the search below takes for the next vertex array when two surfaces have the same vertex count.
+    """
+    try:
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import iw7_xsurface_uv2 as exact
+        name, found = exact.parse(data)
+    except (ImportError, ValueError, IndexError, struct.error):
+        return parse_by_search(data)
+    surfaces = []
+    for item in found:
+        if item['flags'] & FLAG_MOTION_VERTS or item['verts'] is None or item['tris'] is None:
+            surfaces.append((item['flags'], None, None))
+            continue
+        vertices = [struct.unpack_from('<3f12xI4x', item['verts'], i * VERTEX_SIZE)
+                    for i in range(item['vert_count'])]
+        triangles = [struct.unpack_from('<3H', item['tris'], i * 6) for i in range(item['tri_count'])]
+        surfaces.append((item['flags'], vertices, triangles))
+    return name, surfaces
+
+
+def parse_by_search(data):
+    """The same result, finding each vertex array by its count (surfaces without a second UV set)."""
     pos = 0
 
     def record(kind):

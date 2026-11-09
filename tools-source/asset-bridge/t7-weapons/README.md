@@ -77,11 +77,55 @@ IW7 has no client scripts.
 | 4. Infer fields | `t7_weapon_fields.py` | per weapon: anim slots, models, FX, sounds, numeric stats |
 | 4b. Materials | `t7_material_pack.py <materials.json> --template <stock single-UV IW7 weapon material> --texconv <texconv.exe> --out <build> [--max-size 1024] [--only <materials>]` | stock formats: BC7 `_packed_cs`/`_packed_nog`, BC4 `_packed_a`; `materials/*.json`. Opaque parts: `m2o/weapon_ar57_sight.json` (`..._i0c0s0o0n0p0_vm`); alpha parts: `m2o/weapon_ar57_tint2_camo.json`. Two-UV (`2uvt`) camo templates are refused (they draw BO3 meshes black). `--emissive-template m2o/attachment_thermalhybrid.json` (`..._i0c0s0o0n0e0p0_vm`) for BO3 materials with an emissive map (tint baked, BC7_UNORM `_e`); `--blend-template m2o/weapon_zappers_headcutter_glass.json` (`..._ndw_blend_i0c0s0n0pa0_vm`) for BO3 `blend` materials (glass): an opaque `replace` template draws them solid and hides the lit parts behind them |
 | 5. Author IW7 weapon | template from a stock IW7 Zombies weapon dump | `weapons/*.json`, `animpkg/`, `sfxpkg/`, `vfxpkg/` |
+| 5b. Preflight the assembled tree | `iw7_mod_preflight.py <zonetool/<zone>> --csv <zone_source/<zone>.csv>` | exit 1 on a fault that would cost a build or a launch: see below |
 | 6. Build | ZoneTool IW7 `-buildzone mod` | `mod.ff`, `mod.sabl`, `mod.sabs` |
 
 `-holdzone` keeps the process alive until the release file exists; create it
 (or terminate the exact process) when the scan is done. The scan never writes
 to the target process and reads at most `--max-blocks` nested blocks per weapon.
+
+## Preflight the assembled tree (seconds, no game)
+
+`iw7_mod_preflight.py` reads the whole `zonetool/<zone>` tree and its zone csv before ZoneTool or the game
+is started. It is data-driven: it knows asset kinds and fields, never a weapon name.
+
+    python iw7_mod_preflight.py <zonetool/<zone>> --csv <zone_source/<zone>.csv> [--state <file>] [--json <file>]
+
+One pass, about 1.6 s for a 711-file, four-weapon tree:
+
+- every long animation through `iw7_xanim_layout` (the layout that crashes the client) and every model surface
+  through `iw7_xsurface_check` (normals that render black), instead of one file at a time by hand;
+- every zone csv line has a source file; every name a weapon, attachment, package, material, model or effect
+  points at exists in the tree or in the stock lists the csv ignores (`REFERENCE_MISSING`);
+- a source file that no csv line builds (`SOURCE_NOT_BUILT`): it will not be in the fastfile;
+- sound: every alias list is named by a bank, every bank list exists, every alias has its audio file;
+- `catalog.txt` and `behaviours.txt`: each weapon, upgrade, attachment, effect and alias they name is built;
+- a model wearing a two-UV (camo) material whose surfaces have no second UV set.
+
+Errors are faults that have cost a build or a launch before; warnings and notes are there to be read once.
+A pass is a data check, not a rendering proof.
+
+### Look again only at what changed
+
+With `--state <file>` the preflight hashes, per catalog weapon, everything that weapon reaches (its files,
+alias rows, catalog and behaviour lines) and prints which weapons differ from the last accepted state:
+
+    python iw7_mod_preflight.py <zone dir> --csv <csv> --state accepted.json            # what must be looked at
+    python iw7_mod_preflight.py <zone dir> --csv <csv> --state accepted.json --accept   # after the in-game pass
+    python iw7_mod_preflight.py <zone dir> --csv <csv> --state accepted.json --accept <weapon> [...]
+
+A weapon listed under `unchanged since accepted, no launch needed` reaches byte-identical data. A shared file
+(a view model, a texture) puts every weapon that wears it back on the list.
+
+### Measured on the recorded port history (9 Nov 2026)
+
+- Six assembled trees that were built and played: 0 errors (no false alarm), 0.4 to 1.7 s each.
+- All 22,734 recorded `.xab`/`.xsb` files replayed: 7 animations carry the crash layout, among them the
+  Ray Gun idle of the build that crashed the client on 6 Nov; five belong to content not ported yet.
+- The crash animation copied into a clean tree: exit 1 in 1.6 s, and only the weapon that plays it is listed
+  for a new in-game pass.
+- `iw7_xsurface_check.py` now reads surfaces that carry a second UV set (14 of 43 recorded files were
+  unreadable by the count search).
 
 ## Status
 
