@@ -103,6 +103,63 @@ def build_surface(src, bone_index, problems, vlight_base):
     return s
 
 
+class StockTransfer:
+    """Per-vertex lighting data of a stock body (LOD0 .xsb) moved to new vertices by nearest bind-pose position:
+    the packed self-visibility and the 8-byte SH probe simplex record (flag 0x100: 4 probe indices u8 + 4 weights u8
+    summing to 255 over the character's 6 probe points). 'mopw' hero materials light the model from it: without it
+    a writer-built body renders black (run o2_200)."""
+
+    CELL = 2.0
+
+    def __init__(self, xsb_path):
+        ms = xsurface.read(open(xsb_path, "rb").read())
+        self.grid = {}
+        self.flags = None
+        for s in ms.surfs:
+            if not (s.shprobe is not None and s.shprobe.count == s.vert_count and len(s.shprobe.data) == 8 * s.vert_count):
+                continue
+            if s.flags & xsurface.SURF_FLAG_SKINNED and self.flags is None:
+                self.flags = s.flags
+            for k, v in enumerate(s.verts):
+                key = tuple(int(math.floor(c / self.CELL)) for c in v[:3])
+                self.grid.setdefault(key, []).append((v[0], v[1], v[2], v[3], s.shprobe.data[8 * k:8 * k + 8],
+                                                      vc.unpack_normal(v[6])))
+        if not self.grid:
+            raise SystemExit("transfer source has no SH probe records: " + xsb_path)
+        self.max_dist = 0.0
+
+    def nearest(self, p, n=None):
+        """Nearest stock vertex; among vertices within 0.05 in (seam duplicates, overlapping surfaces) the one with
+        the closest normal wins."""
+        c = tuple(int(math.floor(x / self.CELL)) for x in p)
+        best = None
+        for r in range(0, 64):
+            for dx in range(-r, r + 1):
+                for dy in range(-r, r + 1):
+                    for dz in range(-r, r + 1):
+                        if max(abs(dx), abs(dy), abs(dz)) != r:
+                            continue
+                        for q in self.grid.get((c[0] + dx, c[1] + dy, c[2] + dz), ()):
+                            d = math.sqrt((q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2 + (q[2] - p[2]) ** 2)
+                            score = d + (0.05 * (1.0 - sum(a * b for a, b in zip(n, q[5]))) if n is not None else 0.0)
+                            if best is None or score < best[0]:
+                                best = (score, d, q)
+            if best is not None and best[1] <= r * self.CELL:
+                break
+        if best is None:
+            raise ValueError("no stock vertex near %r" % (p,))
+        self.max_dist = max(self.max_dist, best[1])
+        return best[2]
+    def apply(self, s):
+        sh = bytearray()
+        for v in s.verts:
+            q = self.nearest(v[:3], vc.unpack_normal(v[6]))
+            v[3] = q[3]
+            sh += q[4]
+        s.shprobe = xsurface.Rec(xsurface.T_ARRAY, bytes(sh), s.vert_count)
+        s.flags = self.flags or (s.flags | 0x300)
+
+
 def split_surface(src):
     """Split a surface whose vertex or triangle count exceeds the u16 limits (greedy by triangles)."""
     if len(src["verts"]) <= MAX_SURF_VERTS and len(src["tris"]) <= MAX_SURF_TRIS:
@@ -133,7 +190,11 @@ def main(argv=None):
     ap.add_argument("--surface-order", default="", help="comma list of Blender material names giving surface order")
     ap.add_argument("--lod-dist", type=float, default=1000000.0)
     ap.add_argument("--report", default="")
+    ap.add_argument("--transfer-from", default="",
+                    help="stock LOD0 .xsb of the base model: copy per-vertex self-visibility and SH probe simplex "
+                         "records from the nearest stock vertex (required for 'mopw' hero materials)")
     a = ap.parse_args(argv)
+    transfer = StockTransfer(a.transfer_from) if a.transfer_from else None
 
     mesh = json.load(open(a.mesh))
     base = xmodel.read(open(a.base_xmodel, "rb").read())
@@ -174,6 +235,8 @@ def main(argv=None):
     for src in srcs:
         for part in split_surface(src):
             s = build_surface(part, bone_index, problems, vbase)
+            if transfer:
+                transfer.apply(s)
             vbase += s.vert_count
             surfaces.append(s)
             short = part["material"].split(".")[0] if part["material"] not in mmap else part["material"]
@@ -222,7 +285,9 @@ def main(argv=None):
     open(os.path.join(a.out, "xmodel", a.name + ".xmb"), "wb").write(xmb)
     rep = {"name": a.name, "surfaces": [{"material": mt, "verts": s.vert_count, "tris": s.tri_count,
                                          "blend_counts": s.blend_counts[:4]} for s, mt in zip(surfaces, materials)],
-           "problems": problems, "skeleton_check": skel, "bounds": m.get("bounds"), "radius": m.get("radius")}
+           "problems": problems, "skeleton_check": skel,
+           "transfer": {"source": a.transfer_from, "max_dist_in": transfer.max_dist, "flags": hex(transfer.flags or 0)}
+           if transfer else None, "bounds": m.get("bounds"), "radius": m.get("radius")}
     if a.report:
         json.dump(rep, open(a.report, "w"), indent=1)
     print(json.dumps(rep)[:1500])

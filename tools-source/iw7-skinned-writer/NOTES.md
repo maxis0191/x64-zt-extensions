@@ -57,3 +57,41 @@ Python: `C:\Users\ezvalo\AppData\Local\Programs\Python\Python312\python.exe -I` 
      (index 4) body to body_zmb_hero_jock_sztest; call it from cp_iwz2.gsc instead of the stock init.
   3. Fixture: spawn script_model body_zmb_hero_jock_sztest + head_zmb_hero_jock at a view, scriptmodelplayanim an idle
      (e.g. the hero idle used by the stock lobby/intro), capture_frame at 2-3 times; also a stock body beside it.
+
+## M3 in-engine (2026-11-09 evening) - PROVEN
+- Zone: private copy of the level agent's assembled g27dc zone source (level\ztwork read-only; copy in
+  writer\ztwork\zonetool\cp_iwz + zone_source\cp_iwz.csv + their zonetool.exe), rows added:
+  rawfile cp_iwz_outfits.gsc, xmodel body_zmb_hero_jock_sztest / _szred; cp_iwz.gsc calls
+  cp_iwz_outfits::init_player_characters (stock table + data rows). Build: m3\build_cp_iwz.ps1 (zt.ps1 lease).
+  Final FF m3\um\cp_iwz.ff sha256 1800B9758A970B3D1B0ECC16E737D8DE7F898353895FEB464F1C453BC3F7E8D9 (log m3\buildzone_cp_iwz_b2.out.log).
+- Runs (Test-IWZMapLocal, private, FFSHA256 checked): runs\o3_300 (hall, -700,3560,0 yaw -90) and runs\o4_400
+  (platform A, -2300,2300,-320 yaw 0): InGame, Restored, 16 frames each. Lines: [IWZ outfit] hero=4 body=..._sztest,
+  TABLE jock body=body_zmb_hero_jock_sztest outfits=1.
+- Root cause found on the way (run o2_200, FF 8378C56B...): writer bodies rendered BLACK (body and attached head) and
+  szred did not draw at all. Fixes: (1) 'mopw' hero materials need the per-vertex SH probe simplex stream (flag 0x100,
+  8 B/vertex: 4 probe ids u8 + 4 weights u8 summing 255 over 6 character probe points) -> build_model --transfer-from
+  copies it + self-visibility from the nearest stock vertex and restores stock flags 0x386; (2) every model a script
+  setmodel()s must be precached at level load -> outfit_extra_models() table.
+- Torso RGB (m3\torso_rgb.json): o2 sztest [19,17,15] (black) -> o3 [25,38,54] vs stock [29,39,53]; szred [70,28,24].
+- Evidence crops: m3\evidence\*.png/jpg.
+- Procedural bones: cp_iwz csv carries 'proceduralbones,,procedurual_male_undershoulder' (reference row) and the
+  writer xmb keeps the ref (read back): resolved like the stock body. Not separately measured in a frame.
+- LOD: writer models have 1 LOD (dist 1e6): drawn at 500/1000/2000 u (o4 far frames), never reduced -> perf risk.
+
+## New material route - PROVEN (frame)
+- hero_material.py (Blender headless): decode stock packed_cs/packed_nog PNG <-> authoring maps; pack albedo(sRGB)/
+  normal/gloss|roughness/ao/reflectance|metalness -> *_c_packed_cs.png / *_n_packed_nog.png. Re-pack of the decoded
+  stock jacket = stock within 1 LSB (mat\repack_check\pack_report.json).
+- hero_material_zone.py: texconv BC7_UNORM DDS (images\<stem>.dds, embedded), material JSON clone with semantics
+  14/15 rebound, techset state/constantbuffer copies; technique stays the stock runtime one.
+- szred: hue 150 jacket, 1024^2, ZoneTool 'Parsing custom image' x2, drawn red/green in o3/o4.
+
+## Commands (new outfit)
+blender -b --factory-startup outfit.blend -P blender_export.py -- --out o.json
+python -I build_model.py o.json --base-xmodel <cp_zmb>\xmodel\body_zmb_hero_jock.xmb --name <name> --out <kitdump>
+   --transfer-from <cp_zmb>\xsurface\body_zmb_hero_jock_lod030v7e1p3_0060.xsb [--material-map map.json]
+blender -b --factory-startup -P hero_material.py -- pack --albedo a.png --normal n.png --roughness r.png --ao ao.png --metalness 0 --stem <stem> --out <dir>
+python -I hero_material_zone.py --techsets-dump <dump>\techsets_cp_zmb --template mopw/zmb_hero_jock_jacket --name mopw/<new> --cs ... --nog ... --texconv <texconv.exe> --out <matroot>
+ops\Stage-OutfitZone.ps1 -SourceWork <good level ztwork> -Work <own ztwork> -Models <names> -KitDump <kitdump> -MaterialRoots <matroot> -Build
+ops\Run-OutfitProof.ps1 -UsermapDir <um> -OutRoot <runs> -View "x,y,z,yaw"
+Add the outfit row in gsc\cp_iwz_outfits.gsc outfit_rows(): [ index, body, view arms, head, hair ].

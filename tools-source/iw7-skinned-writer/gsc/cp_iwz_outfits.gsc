@@ -6,6 +6,14 @@ init_player_characters()
 {
     scripts\cp\maps\cp_zmb\cp_zmb_player_character_setup::init_player_characters();
     apply_outfits( outfit_rows() );
+    // other outfit models scripts may setmodel later (script_model / test fixtures): precached at level load
+    foreach ( name in outfit_extra_models() )
+        outfit_model( name );
+}
+
+outfit_extra_models()
+{
+    return [ "body_zmb_hero_jock_szred" ];
 }
 
 outfit_rows()
