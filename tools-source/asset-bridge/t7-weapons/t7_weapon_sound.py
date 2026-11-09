@@ -15,9 +15,14 @@ chain), otherwise from the BO3 alias name:
   projectile  (*loop)                     projectile_loop_close row
   impact      (*exp*)                     explo_1_3d row
 
+Player fire layers are hybrid_pcm, as every stock IW7 player fire sound: the
+game starts them from an uncompressed head (the first 512 frames as 16-bit PCM,
+sound_assets/<prefix>/<alias>.pcmhead, decoded with ffmpeg) while the FLAC
+decodes. As plain "loaded" sounds they started about 1.2 s late in game.
+
 Output under --out (a ZoneTool IW7 asset root, e.g. zonetool/<zone>):
   sound/<bank>.aliases.csv, soundbank/<bank>.json,
-  sound_assets/<prefix>/<alias>.flac
+  sound_assets/<prefix>/<alias>.flac (+ .pcmhead for hybrid layers)
 Add `soundbank,<bank>` to the zone CSV; ZoneTool writes mod.sabl/mod.sabs.
 
     python t7_weapon_sound.py --bo3-aliases zm_common.csv --flac-root <dir>
@@ -30,6 +35,7 @@ import json
 import math
 import os
 import shutil
+import subprocess
 
 ROLES = (
     ('impact', lambda n: '_exp' in n, 'explo_1_3d'),
@@ -43,6 +49,28 @@ ROLES = (
 )
 ROLE_CHANNELS = {role: channel for role, _, channel in ROLES}
 BO3_REFERENCE_VOLUME = 75.0   # fallback when a BO3 row has no volume
+HYBRID_ROLES = ('player',)     # stock: every player fire sound is hybrid_pcm
+HYBRID_PCM_FRAMES = 512        # stock head: 1024 bytes mono, 2048 stereo
+
+
+def flac_channels(path):
+    """Channel count from a FLAC's STREAMINFO block."""
+    with open(path, 'rb') as f:
+        data = f.read(4 + 4 + 34)
+    if data[:4] != b'fLaC' or (data[4] & 0x7F) != 0:
+        raise SystemExit('%s is not a FLAC with STREAMINFO first' % path)
+    v = int.from_bytes(data[8 + 10:8 + 18], 'big')
+    return ((v >> 41) & 7) + 1
+
+
+def pcm_head(path, ffmpeg='ffmpeg'):
+    """The first HYBRID_PCM_FRAMES frames of a FLAC as interleaved 16-bit PCM (zero padded)."""
+    size = HYBRID_PCM_FRAMES * flac_channels(path) * 2
+    out = subprocess.run([ffmpeg, '-v', 'error', '-i', path, '-f', 's16le', '-acodec', 'pcm_s16le', '-'],
+                         capture_output=True)
+    if out.returncode:
+        raise SystemExit('ffmpeg could not decode %s: %s' % (path, out.stderr.decode(errors='replace')[:200]))
+    return out.stdout[:size].ljust(size, b'\x00')
 
 
 def resolve_flac(root, spec):
@@ -86,6 +114,7 @@ def main(argv=None):
     ap.add_argument('--template', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--bank', default='bo3wpn.all')
+    ap.add_argument('--ffmpeg', default='ffmpeg', help='decodes the uncompressed head of hybrid layers')
     ap.add_argument('--zone', default='bo3wpn')
     ap.add_argument('--prefix', default='bo3wpn')
     ap.add_argument('--alias', nargs='+', required=True, help='BO3 aliases to include (secondaries are followed)')
@@ -166,7 +195,12 @@ def main(argv=None):
         row[col['StopAliasName']] = ''
         row[col['Subtitle']] = ''
         row[col['File']] = rel
-        row[col['type']] = 'loaded'
+        if role in HYBRID_ROLES:
+            row[col['type']] = 'hybrid_pcm'
+            with open(dest[:-len('.flac')] + '.pcmhead', 'wb') as f:
+                f.write(pcm_head(dest, args.ffmpeg))
+        else:
+            row[col['type']] = 'loaded'
         # Stock references to duck files are not in the mod's sources.
         for key in ('duck',):
             if key in col:

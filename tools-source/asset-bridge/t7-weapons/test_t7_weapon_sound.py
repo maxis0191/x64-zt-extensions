@@ -1,6 +1,8 @@
 """Synthetic tests for t7_weapon_sound.py (no game data)."""
 import csv
 import json
+import shutil
+import subprocess
 import os
 import sys
 import tempfile
@@ -19,6 +21,10 @@ def write_csv(path, rows):
 
 class WeaponSoundTest(unittest.TestCase):
     def setUp(self):
+        # the fixture FLACs are placeholders: the hybrid head decoder is stubbed (PcmHeadTest decodes a real one)
+        self._pcm_head = sound.pcm_head
+        sound.pcm_head = lambda path, ffmpeg='ffmpeg': b'head:' + os.path.basename(path).encode()
+        self.addCleanup(setattr, sound, 'pcm_head', self._pcm_head)
         self.root = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.root, 'flac', 'wpn'))
         for name in ('fire', 'fire_sweet', 'reload', 'exp'):
@@ -69,14 +75,19 @@ class WeaponSoundTest(unittest.TestCase):
         self.assertAlmostEqual(float(self.rows['wpn_rgun_sweet_plr']['vol_max']), 0.09, places=5)
 
     def test_loaded_mod_files_without_stock_references(self):
-        for row in self.rows.values():
-            self.assertEqual(row['type'], 'loaded')
+        for name, row in self.rows.items():
+            # player fire layers start from an uncompressed head, as every stock player fire sound
+            self.assertEqual(row['type'], 'hybrid_pcm' if name.endswith('_plr') else 'loaded')
             self.assertEqual(row['duck'], '')
             self.assertEqual(row['StopAliasName'], '')
             self.assertEqual(row['Subtitle'], '')
             # never a backslash: ZoneTool's CSV reader turns \t and \n into whitespace (t7\tesla_gun_zm)
             self.assertTrue(row['File'].startswith('test/rgun/'))
             self.assertNotIn('\\', row['File'])
+        head = os.path.join(self.out, 'sound_assets', 'test', 'rgun', 'wpn_rgun_fire_plr.pcmhead')
+        with open(head, 'rb') as f:
+            self.assertEqual(f.read(), b'head:wpn_rgun_fire_plr.flac')
+        self.assertFalse(os.path.exists(head.replace('fire_plr', 'exp')))
         flac = os.path.join(self.out, 'sound_assets', 'test', 'rgun', 'wpn_rgun_exp.flac')
         with open(flac, 'rb') as f:
             self.assertEqual(f.read(), b'fLaCexp')
@@ -120,6 +131,21 @@ class WeaponSoundTest(unittest.TestCase):
         report = {r['alias']: r for r in json.loads(buf.getvalue())['aliases']}
         self.assertEqual(report['wpn_missing'], {'alias': 'wpn_missing', 'silent': True, 'unresolved': True})
         self.assertNotIn('silent', report['wpn_rgun_reload_open'])
+
+
+@unittest.skipUnless(shutil.which('ffmpeg'), 'ffmpeg not on PATH')
+class PcmHeadTest(unittest.TestCase):
+    def test_first_512_frames_as_16_bit_pcm(self):
+        root = tempfile.mkdtemp()
+        flac = os.path.join(root, 'tone.flac')
+        # 0.1 s stereo ramp at 48 kHz, encoded as FLAC
+        subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.1:sample_rate=48000',
+                        '-ac', '2', '-c:a', 'flac', flac], check=True)
+        head = sound.pcm_head(flac)
+        self.assertEqual(sound.flac_channels(flac), 2)
+        self.assertEqual(len(head), sound.HYBRID_PCM_FRAMES * 2 * 2)   # stock stereo head: 2048 bytes
+        full = subprocess.run(['ffmpeg', '-v', 'error', '-i', flac, '-f', 's16le', '-'], capture_output=True).stdout
+        self.assertEqual(head, full[:len(head)])
 
 
 if __name__ == '__main__':
