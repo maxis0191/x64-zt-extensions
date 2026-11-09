@@ -227,7 +227,14 @@ def build_ballast(L, texel, disused=False, end=False):
                 loop[uv].uv = ((xs[ii] + extra) / texel, arc[kk] / texel)
     if disused:
         add_puddles(bm, mats['iwz_puddle'], L, texel)
-    finish(ob, bm)
+    # an open surface: point every face up explicitly (recalc_face_normals flipped the whole sheet once the bed aprons
+    # were added, and the ballast was culled from above: train run e8)
+    bm.normal_update()
+    for f in bm.faces:
+        if f.normal.z < 0:
+            f.normal_flip()
+    bm.to_mesh(ob.data)
+    bm.free()
     return ob
 
 

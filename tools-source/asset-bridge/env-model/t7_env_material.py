@@ -321,6 +321,8 @@ def composite(mat, bk, over):
     gloss = np.clip(gloss, 0, float(over.get('gloss_max', 1.0)))
     n = scale_normal(n, float(over.get('normal_strength', 1.0)))
     n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
+    if over.get('dielectric'):
+        spec = np.full((s, s, 3), 0.04, np.float32)       # manifest: no metal anywhere (e.g. a $white_specular binding)
     if 'albedo_gain' in over:
         lin = np.clip(lin * float(over['albedo_gain']), 0, 1)
         spec = np.clip(spec * float(over['albedo_gain']), 0, 1)
