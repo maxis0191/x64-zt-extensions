@@ -64,7 +64,7 @@ class Builder:
             f.material_index = self.m[mat]
         if bevel:
             bmesh.ops.bevel(self.bm, geom=list({e for f in faces for e in f.edges}), offset=bevel * INCH, segments=1,
-                            affect='EDGES')
+                            affect='EDGES', material=self.m[mat])
 
     def cyl(self, mat, p0, p1, r, seg=12):
         """Closed cylinder from p0 to p1 (inches)."""

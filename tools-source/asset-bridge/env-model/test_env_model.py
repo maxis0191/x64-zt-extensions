@@ -148,6 +148,32 @@ class MaterialDetail(unittest.TestCase):
         self.assertTrue(np.allclose(np.linalg.norm(h, axis=-1), 1.0))
         self.assertLess(h[0, 0, 0], 0.6)
 
+    def test_cut_clips_square(self):
+        # a 40 x 10 side sheet (one quad, two long diagonal triangles) with a box cut out of its middle: the remaining
+        # geometry ends exactly on the box faces, keeps its area outside and interpolates UVs
+        P = np.array([(0, 0, 0), (40, 0, 0), (40, 0, 10), (0, 0, 10)], float)
+        g = {'P': P, 'N': np.tile((0, -1, 0), (4, 1)).astype(float), 'UV': P[:, [0, 2]] / 40.0,
+             'tris': np.array([(0, 1, 2), (0, 2, 3)])}
+        r = port.cut(g, [{'box': [10, 30, -5, 5, -1, 6]}])
+        t = r['P'][r['tris']]
+        area = 0.5 * np.linalg.norm(np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1)
+        self.assertAlmostEqual(area.sum(), 400 - 20 * 6, places=6)
+        c = t.mean(1)
+        self.assertFalse(np.any((c[:, 0] > 10) & (c[:, 0] < 30) & (c[:, 2] < 6)))
+        xs = np.unique(np.round(r['P'][np.unique(r['tris'])][:, 0], 6))
+        self.assertTrue({10.0, 30.0} <= set(xs))
+        self.assertTrue(np.allclose(r['UV'][:, 0], r['P'][:, 0] / 40.0) and np.allclose(r['UV'][:, 1], r['P'][:, 2] / 40.0))
+        n = np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0])
+        self.assertTrue(np.all(n[:, 1] < 0))                     # winding kept (normal -y)
+
+    def test_cut_edge_angle(self):
+        # a thin diagonal strip (31 degrees) and a horizontal strip in the same box: only the diagonal one is dropped
+        P = np.array([(0, 0, 0), (55, 0, 33), (55, 0, 34), (0, 0, 40), (60, 0, 40), (60, 0, 41)], float)
+        g = {'P': P, 'N': np.tile((0, -1, 0), (6, 1)).astype(float), 'UV': np.zeros((6, 2)),
+             'tris': np.array([(0, 1, 2), (3, 4, 5)])}
+        r = port.cut(g, [{'box': [-5, 65, -5, 5, -5, 50], 'edge_angle': [20, 50], 'min_edge': 30}])
+        self.assertEqual(r['tris'].tolist(), [[3, 4, 5]])
+
     def test_dedupe_images(self):
         d = tempfile.mkdtemp()
         os.makedirs(os.path.join(d, 'images'))

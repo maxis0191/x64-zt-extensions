@@ -86,15 +86,85 @@ def transform(group, offset, yaw, scale=(1.0, 1.0, 1.0)):
             'tris': group['tris']}
 
 
+def _edge_angle(P, tris):
+    """Angle (degrees, 0..90) of each triangle's longest edge in the model's xz plane against the x axis, and its length."""
+    e = np.stack([P[tris[:, (i + 1) % 3]] - P[tris[:, i]] for i in range(3)], 1)[..., [0, 2]]
+    L = np.linalg.norm(e, axis=2)
+    k = L.argmax(1)
+    v = e[np.arange(len(tris)), k]
+    a = np.degrees(np.abs(np.arctan2(v[:, 1], v[:, 0]))) % 180
+    return np.minimum(a, 180 - a), L.max(1)
+
+
+def _clip_poly(poly, axis, value, P, N, UV, cache):
+    """Split a convex polygon (vertex indices, in order) by the plane P[axis] = value: (below, above) polygons. New
+    vertices interpolate position, normal and UV and are shared through cache (edge, plane)."""
+    below, above = [], []
+    for i in range(len(poly)):
+        a, b = poly[i], poly[(i + 1) % len(poly)]
+        da, db = P[a][axis] - value, P[b][axis] - value
+        (below if da <= 0 else above).append(a)
+        if (da < 0 < db) or (db < 0 < da):
+            key = (min(a, b), max(a, b), axis, value)
+            if key not in cache:
+                t = da / (da - db)
+                P.append(P[a] + (P[b] - P[a]) * t)
+                n = N[a] + (N[b] - N[a]) * t
+                N.append(n / max(np.linalg.norm(n), 1e-12))
+                UV.append(UV[a] + (UV[b] - UV[a]) * t)
+                cache[key] = len(P) - 1
+            below.append(cache[key])
+            above.append(cache[key])
+    return (below if len(below) >= 3 else None), (above if len(above) >= 3 else None)
+
+
 def cut(group, boxes):
-    """Drop the triangles whose centroid lies inside any box {"box": [x0, x1, y0, y1, z0, z1]} (model space, after the
-    part's placement): e.g. a BO3 body skirt that hides the bogies the port adds."""
-    c = group['P'][group['tris']].mean(1)
-    keep = np.ones(len(c), bool)
+    """Remove geometry inside boxes {"box": [x0, x1, y0, y1, z0, z1]} (model space, after the part's placement): e.g. a
+    BO3 body skirt that hides the bogies the port adds. Triangles crossing a box face are clipped exactly at it (square
+    cut ends; the old centroid rule left slanted wedges). A box with "edge_angle": [lo, hi] (and optional "min_edge",
+    inches) instead drops whole triangles whose centroid is inside and whose longest edge, in the xz plane, runs at
+    lo..hi degrees from the x axis: e.g. a decal strip along a diagonal livery split that a repaint removed."""
+    P = list(group['P']); N = list(group['N']); UV = list(group['UV'])
+    tris = group['tris']
     for b in boxes:
         x0, x1, y0, y1, z0, z1 = b['box']
-        keep &= ~((c[:, 0] > x0) & (c[:, 0] < x1) & (c[:, 1] > y0) & (c[:, 1] < y1) & (c[:, 2] > z0) & (c[:, 2] < z1))
-    return dict(group, tris=group['tris'][keep])
+        lo_, hi_ = np.array([x0, y0, z0], float), np.array([x1, y1, z1], float)
+        Pa = np.asarray(P)
+        tp = Pa[tris]
+        if b.get('edge_angle'):
+            c = tp.mean(1)
+            inside = np.all((c > lo_) & (c < hi_), 1)
+            ang, L = _edge_angle(Pa, tris)
+            a0, a1 = b['edge_angle']
+            drop = inside & (ang >= a0) & (ang <= a1) & (L >= b.get('min_edge', 0))
+            tris = tris[~drop]
+            continue
+        tmin, tmax = tp.min(1), tp.max(1)
+        touch = np.all((tmax > lo_) & (tmin < hi_), 1)
+        within = np.all((tmin >= lo_) & (tmax <= hi_), 1)
+        out = [tris[~touch]]
+        cache, new = {}, []
+        for t in tris[touch & ~within]:
+            pieces, done = [list(t)], []
+            for axis in range(3):
+                for value, keep_side in ((lo_[axis], 0), (hi_[axis], 1)):
+                    nxt = []
+                    for poly in pieces:
+                        below, above = _clip_poly(poly, axis, value, P, N, UV, cache)
+                        # the part outside this face is final; the part on the box side goes on to the next face
+                        outside, rest = (below, above) if keep_side == 0 else (above, below)
+                        if outside:
+                            done.append(outside)
+                        if rest:
+                            nxt.append(rest)
+                    pieces = nxt
+            for poly in done:                   # pieces left in `pieces` lie inside the box: dropped
+                for k in range(1, len(poly) - 1):
+                    new.append((poly[0], poly[k], poly[k + 1]))
+        if new:
+            out.append(np.asarray(new, tris.dtype))
+        tris = np.concatenate(out) if out else tris[:0]
+    return {'P': np.asarray(P, float), 'N': np.asarray(N, float), 'UV': np.asarray(UV, float), 'tris': tris}
 
 
 def merge(groups):

@@ -266,7 +266,7 @@ def build_sleepers(L, texel, lod, third_rail=True, x1=None):
             f.material_index = mi
         if bevel and not lod:
             bmesh.ops.bevel(bm, geom=list({e for f in faces for e in f.edges}), offset=bevel * INCH, segments=1,
-                            affect='EDGES')
+                            affect='EDGES', material=mi)
 
     ins_x = [L / 4 + k * 128 for k in range(int(L // 128))] if third_rail else []
     n = int(round((L - SLEEPER_FIRST) / SLEEPER_PITCH)) + 1
@@ -386,12 +386,13 @@ MATERIALS = [
     {'name': 'iwz_rail_clip', 'albedo': 'i_t7_micro_metal_rust_heavy_01_c.png',
      'roughness': 'i_t7_micro_metal_rust_heavy_01_g.png', 'normal': 'i_t7_micro_metal_rust_n.png',
      'tint': [0.35, 0.3, 0.27]},
-    # disused trackbed: rail steel rusted all over, silted ballast, standing water (dark, mirror-glossy, flat)
+    # disused trackbed: rail steel rusted all over, silted ballast, silt / mud patches (g27d review: the mirror-glossy
+    # standing water reflected the green walls and read as "teal plates under the sleepers": now matte dark silt)
     {'name': 'iwz_rail_rusty', 'albedo': 'i_t7_micro_metal_rust_heavy_01_c.png', 'roughness': 'i_t7_micro_metal_rust_heavy_01_g.png',
      'normal': 'i_t7_micro_metal_rust_n.png'},
     {'name': 'iwz_ballast_disused', 'albedo': 'gravel_pebble_bed_c.png', 'normal': 'gravel_pebble_bed_n.png',
      'tint': [0.62, 0.58, 0.52]},
-    {'name': 'iwz_puddle', 'tint': [0.045, 0.05, 0.05], 'roughness_value': 0.04},
+    {'name': 'iwz_puddle', 'albedo': 'gravel_pebble_bed_c.png', 'tint': [0.11, 0.095, 0.075], 'roughness_value': 0.75},
     {'name': 'iwz_buffer_red', 'albedo': 'i_t7_micro_metal_painted_01_c.png', 'tint': [0.35, 0.03, 0.02],
      'roughness_value': 0.5},
 ]

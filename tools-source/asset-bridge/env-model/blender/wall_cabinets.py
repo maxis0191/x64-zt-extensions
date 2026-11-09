@@ -30,15 +30,18 @@ MATERIALS = [
      'roughness_value': 0.5},
     {'name': 'iwz_firehose_label', 'albedo': 'iwz_firehose_label_c.png', 'roughness_value': 0.35},
     {'name': 'iwz_helppoint_label', 'albedo': 'iwz_helppoint_label_c.png', 'roughness_value': 0.35},
-    {'name': 'iwz_rad_frame', 'albedo': 'i_t7_micro_metal_painted_01_c.png', 'normal': 'i_t7_micro_metal_painted_01_n.png',
-     'tint': [0.09, 0.115, 0.095], 'roughness_value': 0.55},
+    # radiator v2 (g27d review: "flat lime-green untextured box"): weathered dark green enamel baked into one tile
+    # (train tools\make_radiator_art.py: mottling, chips to rust, rust streaks, floor dirt), UVs inches / 80
+    {'name': 'iwz_rad_paint', 'albedo': 'iwz_rad_paint_c.png', 'normal': 'i_t7_micro_metal_painted_01_n.png',
+     'roughness_value': 0.7},
+    {'name': 'iwz_g2_stencil_radgreen', 'albedo': 'iwz_g2_stencil_radgreen_c.png', 'roughness_value': 0.7},
     {'name': 'iwz_rad_core', 'albedo': 'i_t7_micro_metal_rust_heavy_01_c.png', 'roughness': 'i_t7_micro_metal_rust_heavy_01_g.png',
      'normal': 'i_t7_micro_metal_rust_n.png', 'tint': [0.16, 0.14, 0.13]},
     {'name': 'iwz_g2_stencil_steel', 'albedo': 'iwz_g2_stencil_steel_c.png', 'roughness_value': 0.6},
 ]
 
 
-def build(name, fn, a):
+def build(name, fn, a, uv_div=24.0):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     me = bpy.data.meshes.new(name)
     ob = bpy.data.objects.new(name, me)
@@ -57,7 +60,7 @@ def build(name, fn, a):
         for loop in f.loops:
             co = loop.vert.co / 0.0254
             u, v = ((co.y, co.z) if nx >= max(ny, nz) else (co.x, co.z) if ny >= nz else (co.x, co.y))
-            loop[b.uv].uv = (u / 24.0, v / 24.0)
+            loop[b.uv].uv = (u / uv_div, v / uv_div)
     bmesh.ops.recalc_face_normals(bm, faces=[f for f in bm.faces if f not in b.mapped])
     bm.to_mesh(me)
     bm.free()
@@ -123,30 +126,53 @@ def help_point(b):
 
 def radiator(b):
     """G-2's remote radiator (the cooler): a painted steel frame on four legs, a rusted finned core facing -y, top and
-    bottom tanks, a fan shroud with blades on the back (+y), coolant pipes on the -x side, G-2 stencil on the top tank.
-    Model space: floor z 0, front -y, footprint x -32..32, y -16..20, 74 high."""
+    bottom tanks, cooling fins down both sides, a ribbed back panel carrying the fan (guard ring, blades, hub),
+    coolant pipe stubs on the -x side, G-2 stencil on the top tank. Every painted part uses the weathered enamel.
+    Model space: floor z 0, front -y, footprint x -38..38, y -16..22, 74 high."""
     W, D = 30.0, 14.0
+    P = 'iwz_rad_paint'
     for x in (-W, W - 3):                                         # legs
         for y in (-D, D - 3):
-            b.box('iwz_rad_frame', x, x + 3, y, y + 3, 0, 8)
-    b.box('iwz_rad_frame', -W - 1, W + 1, -D - 1, D + 1, 8, 12, bevel=0.3)             # bottom tank
-    b.box('iwz_rad_frame', -W - 1, W + 1, -D - 1, D + 1, 62, 70, bevel=0.3)            # top tank
-    b.box('iwz_rad_frame', -W - 1, -W + 2, -D - 1, D + 1, 12, 62)                      # side frames
-    b.box('iwz_rad_frame', W - 2, W + 1, -D - 1, D + 1, 12, 62)
-    b.box('iwz_rad_core', -W + 2, W - 2, -D + 2, D - 2, 12, 62)                        # core block
+            b.box(P, x, x + 3, y, y + 3, 0, 8)
+    b.box(P, -W - 1, W + 1, -D - 1, D + 1, 8, 12, bevel=0.3)                  # bottom tank
+    b.box(P, -W - 1, W + 1, -D - 1, D + 1, 62, 70, bevel=0.3)                 # top tank
+    b.box(P, -W - 1, -W + 2, -D - 1, D + 1, 12, 62)                           # side frames
+    b.box(P, W - 2, W + 1, -D - 1, D + 1, 12, 62)
+    b.box('iwz_rad_core', -W + 2, W - 2, -D + 2, D - 2, 12, 62)               # core block
     x = -W + 3.0
-    while x < W - 3:                                                                   # front fins
+    while x < W - 3:                                                          # front fins
         b.box('iwz_rad_core', x, x + 0.35, -D - 0.2, -D + 2, 12.5, 61.5)
         x += 1.1
-    b.cyl('iwz_rad_frame', (0, D, 37), (0, D + 5, 37), 22, 24)                         # fan shroud ring (back)
-    b.cyl('iwz_rad_core', (0, D + 2, 37), (0, D + 3, 37), 4, 12)                       # hub
-    for k in range(6):                                                                 # blades
+    # cooling fins down both sides (vertical plates standing out of the side frames)
+    for sx in (-1, 1):
+        x0 = sx * (W + 1)
+        y = -D + 0.5
+        while y < D - 0.5:
+            b.box(P, min(x0, x0 + sx * 1.8), max(x0, x0 + sx * 1.8), y, y + 0.35, 15, 59)
+            y += 2.0
+        b.box(P, min(x0, x0 + sx * 2.2), max(x0, x0 + sx * 2.2), -D - 1, D + 1, 13.5, 15)    # fin rails
+        b.box(P, min(x0, x0 + sx * 2.2), max(x0, x0 + sx * 2.2), -D - 1, D + 1, 59, 60.5)
+    # ribbed back panel: a plate over the back of the core with horizontal stiffener ribs
+    b.box(P, -W - 1, W + 1, D + 1, D + 1.6, 12, 62)
+    for z in range(15, 62, 6):
+        b.box(P, -W - 0.5, W + 0.5, D + 1.6, D + 2.6, z, z + 1.2, bevel=0.2)
+    # fan on the back: guard ring (24 segments), hub, six blades; a dark disc behind the blades
+    b.cyl('iwz_rad_core', (0, D + 1.6, 37), (0, D + 2.0, 37), 21, 24)
+    for k in range(24):
+        t0, t1 = math.radians(15 * k), math.radians(15 * (k + 1))
+        p0 = (22 * math.cos(t0), 37 + 22 * math.sin(t0))
+        p1 = (22 * math.cos(t1), 37 + 22 * math.sin(t1))
+        b.cyl(P, (p0[0], D + 4.6, p0[1]), (p1[0], D + 4.6, p1[1]), 1.1, 6)
+        if k % 6 == 0:                                                        # ring struts back to the panel
+            b.cyl(P, (p0[0], D + 2.6, p0[1]), (p0[0], D + 4.6, p0[1]), 0.6, 6)
+    b.cyl('iwz_rad_core', (0, D + 2, 37), (0, D + 5.5, 37), 4, 12)                    # hub
+    for k in range(6):                                                                # blades
         t = math.radians(60 * k + 15)
-        b.cyl('iwz_rad_core', (0, D + 2.5, 37), (19 * math.cos(t), D + 2.5, 37 + 19 * math.sin(t)), 1.6, 6)
-    b.cyl('iwz_rad_frame', (-W - 1, 0, 66), (-W - 8, 0, 66), 2.2, 12)                  # top hose stub
-    b.cyl('iwz_rad_frame', (-W - 1, 0, 10), (-W - 8, 0, 10), 2.2, 12)                  # bottom hose stub
-    b.cyl('iwz_rad_frame', (6, 0, 70), (6, 0, 74), 1.8, 10)                            # filler cap
-    front_quad(b, 'iwz_g2_stencil_steel', -10, 10, 62.5, 69.5, -D - 1.06)
+        b.cyl('iwz_rad_core', (0, D + 3.8, 37), (19 * math.cos(t), D + 3.8, 37 + 19 * math.sin(t)), 1.6, 6)
+    b.cyl(P, (-W - 1, 0, 66), (-W - 8, 0, 66), 2.2, 12)                       # top hose stub
+    b.cyl(P, (-W - 1, 0, 10), (-W - 8, 0, 10), 2.2, 12)                       # bottom hose stub
+    b.cyl(P, (6, 0, 70), (6, 0, 74), 1.8, 10)                                 # filler cap
+    front_quad(b, 'iwz_g2_stencil_radgreen', -10, 10, 62.5, 69.5, -D - 1.06)
 
 
 def main():
@@ -158,7 +184,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     build('fire_hose_cabinet', fire_hose, a)
     build('help_point_plate', help_point, a)
-    build('g2_radiator', radiator, a)
+    build('g2_radiator', radiator, a, uv_div=80.0)
 
 
 if __name__ == '__main__':
