@@ -66,9 +66,16 @@ def apply_modify(spec, unit):
             if p.material_index in idx:
                 verts.update(p.vertices)
         if kind == "offset":
+            # offset along the (custom) corner normals averaged per vertex: seam duplicates of the imported mesh carry
+            # the same custom normal, so they move together (no cracks)
+            acc = {}
+            for li, loop in enumerate(me.loops):
+                if loop.vertex_index in verts:
+                    acc[loop.vertex_index] = acc.get(loop.vertex_index, Vector()) + me.corner_normals[li].vector
             for vi in verts:
                 v = me.vertices[vi]
-                v.co = v.co + v.normal * (amount / max(ob.matrix_world.to_scale()[0], 1e-9))
+                nrm = acc.get(vi, v.normal).normalized()
+                v.co = v.co + nrm * (amount / max(ob.matrix_world.to_scale()[0], 1e-9))
         elif kind == "scale":
             c = sum((me.vertices[vi].co for vi in verts), Vector()) / max(len(verts), 1)
             for vi in verts:
