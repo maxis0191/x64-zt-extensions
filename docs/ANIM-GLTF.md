@@ -1,6 +1,6 @@
 # Animations from outside the game: glTF to and from the game's animation format
 
-Status 10 Nov 2026. Tool: `tools-source/iw7-anim/iw7_anim_gltf.py` (Python 3.12, standard library only). It reads
+Status 11 Nov 2026. Tool: `tools-source/iw7-anim/iw7_anim_gltf.py` (Python 3.12, standard library only). It reads
 and writes the animation files ZoneTool dumps and builds (`xanim/<name>.xab`) and ordinary glTF 2.0 (`.glb`, or
 `.gltf` with its buffers). The byte layout comes from `tools-source/asset-bridge/t7-weapons/iw7_xanim_codec.py`; the
 skeleton reader from `tools-source/iw7-skinned-writer/xmodel.py`. The tool lives in its own folder because it needs
@@ -27,10 +27,10 @@ The whole route, each step one command:
 | 2. Animate | Blender: import `rig.glb`, key the armature, export glb (all defaults). Example done from the command line: `blender -b --factory-startup -P blender_key_clip.py -- --rig rig.glb --out clip.glb --turn j_spine4:z:-35 --turn j_shoulder_le:x:100` | `clip.glb` |
 | 2b. Or make a test clip without any tool | `python author_clip.py <body>.xmb --out clip.glb --rotate j_shoulder_ri:0,100,0 --move 96,0,0 --note hit:1.0` | `clip.glb` |
 | 3. Convert | `iw7_anim_gltf.py from-gltf clip.glb --skeleton <body>.xmb --name my_clip --out <work>/dump [--loop] [--note NAME:SECONDS]` | `<work>/dump/xanim/my_clip.xab` and a report |
-| 4. Zone source | `iw7_anim_gltf.py zone-source <work>/dump --zone mod --out <work>/src` | `zonetool/mod/xanim/*.xab`, `zone_source/mod.csv`, the name table `ncs_anm_mod` |
+| 4. Zone source | `iw7_anim_gltf.py zone-source <work>/dump --zone mod --tree my_anims --out <work>/src` | `zonetool/mod/xanim/*.xab`, `zone_source/mod.csv`, the name table `ncs_anm_mod`, the animation tree file `animtrees/my_anims.atr` (scripts that ask the game about a clip need it, see P3) |
 | 5. Build | `pwsh Build-AnimZone.ps1 -Source <work>/src -Work <new folder> -PreparedSource <server prepared inputs> -StockRoot <stock> -ZoneTool <zonetool.exe> -TlsDll <tlsdll.dll> -Sentinel <main/fileSysCheck.cfg> [-WaitForSlotSeconds 3600]` | `<new folder>/zone/mod.ff` |
 | 6. Check | `Read-CompiledZone.ps1` (docs/CONTENT-AUDITS.md) on that file | the game's loader holds the same animation as the source |
-| 7. Play | script: `precachempanim( "my_clip" );` at load, then `model scriptmodelplayanim( "my_clip", 1 );` | see "Proven in the game" |
+| 7. Play | on a script model: `precachempanim( "my_clip" );` at load, then `model scriptmodelplayanim( "my_clip", 1 );`. On a stock zombie: give the clip the name of the stock animation it replaces | see "Proven in the game": measured for the zombie, accepted but not seen for the script model |
 
 Other commands: `inspect <anim>.xab` (what an animation is), `compare <a> <b> [--model <body>.xmb]` (error between
 two animations, each an `.xab` or a `.glb`), `sample <clip> --model <body>.xmb --bones a,b` (model-space bone
@@ -52,7 +52,7 @@ repository, docs/GAMELAB.md there).
 | Loop flag | `animations[0].extras.iw7.loop`; `--loop` / `--no-loop` on `from-gltf` | glTF has no loop flag |
 | Root motion (delta track) | the node `iw7_root_motion`, parent of the whole skeleton: its translation and rotation are the game's root delta. Rotation about the vertical only is written as the game's two-component form, anything else as the three-dimensional form | a DCC tool shows the character really travelling, and the animator keys one extra bone |
 | Notetracks | `animations[0].extras.iw7.notes` = name, time 0..1 and seconds; `--note NAME:SECONDS` on `from-gltf`. A note `end` at 1.0 is always written (every stock animation has one) | Blender does not keep glTF extras on export, so the command line is the reliable way |
-| Header bytes the tool does not understand | flags, asset type and two more bytes are carried in the extras and written back when the file came from `to-gltf` | so a stock animation round-trips unchanged |
+| Header bytes the tool does not understand | flags, asset type and two more bytes are carried in the extras and written back when the file came from `to-gltf` (unless `--loop`, `--no-loop` or `--asset-type` is given). A new clip gets asset type 2 with root motion and 1 without, as stock has them | so a stock animation round-trips unchanged |
 | Compression on the way in | one key per frame; rotations as four 16-bit numbers, translations as three 16-bit numbers of their own range; a bone that never moves becomes a single value, a bone that never leaves the bind is left at "no track" | the only forms the encoder writes. Cost: file size (a 2.1 s, 90-bone stock walk: 33 KB stock, 49 KB from us) |
 
 How the translation rule was measured: stock full-body animations carry two helper bones, `tag_ik_foot_loc_le/ri`,
@@ -71,7 +71,7 @@ not a view-model animation) and every bone it lists exists in the model.
 | | Zombie body | Player body |
 |---|---|---|
 | Stock animations | 4,029 | 4,029 |
-| Not full-body (view model, props, faces, partial) | 2,827 | 2,827 |
+| Not full-body (2,700 view-model animations, 127 props and partial bodies) | 2,827 | 2,827 |
 | Full-body but lists bones the model lacks (another character's rig) | 256 | 356 |
 | **Qualify** | **946** | **846** |
 | Round trip within tolerance | 946 of 946 | 846 of 846 |
@@ -83,8 +83,8 @@ not a view-model animation) and every bone it lists exists in the model.
 | Root motion error: worst translation (units) / rotation (degrees) | 0.0049 / 0.0024 | 0.0049 / 0.0024 |
 | Time for both conversions: median / longest | 0.40 s / 86 s (2,700 frames) | 0.40 s / 88 s |
 
-The error is the 16-bit storage and nothing else; the worst translation is on a clip whose track spans 1,500 units
-(a 384-unit drop). 0.046 unit is 1.2 mm. Nothing failed for an unsupported track kind: the codec decodes all 4,029
+The error is the 16-bit storage and nothing else: a translation track is stored as 65,536 steps of its own range,
+and the worst case is a dance clip whose prop bone travels 736 units. 0.046 unit is 1.2 mm. Nothing failed for an unsupported track kind: the codec decodes all 4,029
 stock animations, and the root delta is decoded and re-encoded by this tool in its three forms (translation, turn
 about the vertical, full rotation; the last does not occur in Spaceland and is covered by the tests only).
 
@@ -117,8 +117,8 @@ Two more clips were made for the in-game measurement (P3): the stock zombie idle
 same arm and torso motion authored on top and a note at 1.0 s, under the names of the two stock idle animations.
 
 Built with `Build-AnimZone.ps1` (community ZoneTool, IW7 mode): the five animations, the name table and the
-animation tree file compiled to a 6,568-byte `mod.ff`; the compile step took 31 ms (the whole build about 25 s,
-most of it ZoneTool loading the game's base zones).
+animation tree file compiled to a 6,568-byte `mod.ff`; the compile step took 31 ms (the rest of a build is ZoneTool
+starting and loading the game's base zones; it was not timed apart from the wait for the build reservation).
 
 Read back with `Read-CompiledZone.ps1`: the game's loader finished in 6 s; **5 of 5 animations hold the same content
 after decoding, 0 differ; 0 errors, 0 warnings**; the name table is identical. `compare` between each source file
@@ -181,8 +181,6 @@ without the limit it reports the same instant (`within_limit_until_ms`: 7350). T
 
     python iw7_anim_gltf.py compare-run <run>/anim-idle_z1.json iw7_cp_zom_stand_idle_01.glb --model <dump>/xmodel/police_officer_zombie.xmb --loop --to-ms 7300
 
-@@REENCODED
-
 What this proves: the game evaluates the file our writer produced to the bone positions computed from the glTF
 source, on the game's own skeleton, at the game's own timing, including the loop. What it does not prove: anything
 about a client's picture (no frame was taken), and nothing about blending into or out of the clip.
@@ -209,8 +207,8 @@ knows nothing about the pose.
 a client session of the same plan with frames (`Invoke-GameLab.ps1` has no option to load a mod zone today: that is
 the missing piece, a `-FsGame` and a mod copy as the headless runner now has), then either frames judged by
 reviewers, or a client console command that prints an entity's tag positions (native code, components repository)
-so the same `compare-run` works on a client. Retail plays its animated props and the robot N31L this way (`scriptmodelplayanim` by name), which is why
-this route was chosen.
+so the same `compare-run` works on a client. Retail plays its animated props and the robot N31L this way
+(`scriptmodelplayanim` by name), which is why this route was chosen.
 
 ### Root motion and notes in the game (P4)
 
@@ -220,9 +218,10 @@ game sent it to the zombie's script (`self waittill( "idle", note )`, the notify
 start, as authored. A server frame is 50 ms, so that is the resolution of this number. A second run (`a2x`, another
 zombie) gave 2200, 4200, 6200, 8200 against `end` at 1200, 3200, 5200, 7200: the same 1000 ms.
 
-**Notes on a script model: not delivered, by design of the game.** No retail script waits for a note of a script
-model; they read the note time with `getnotetracktimes` and wait (run `b1` above shows the game returns our note
-times exactly). A script that needs the event does the same.
+**Notes on a script model: not measured.** Nothing listened for them, and since the server keeps no pose for a
+script model it is unlikely to send any. No retail script waits for a note of a script model; they read the note
+time with `getnotetracktimes` and wait that long (run `b1` above shows the game returns our note times exactly).
+A script that needs the event does the same.
 
 **Root motion: read exactly, not shown moving a model.** The game's `getmovedelta` returns the authored 96 units
 (and 48.0007 at half time) for our clip. A script model played with `scriptmodelplayanim` did not travel (its origin
@@ -244,7 +243,7 @@ that moves a script model by `getmovedelta` every frame (which then proves the s
 | A character **with its own skeleton** | this tool only writes animations for bones of an existing game model. A new skeleton comes from the skinned writer (`tools-source/iw7-skinned-writer`), which today keeps the stock skeleton too | a model writer that writes new bones, then this tool unchanged |
 | **Animation classes and behaviour trees** (a zombie or boss that chooses its own walk, attack, pain, death) | a new animation can be played by name on a script model, and it can take the place of a stock animation by carrying its name (P3). It cannot be added as a **new** state: the state list (`animclass`), the behaviour tree and the per-map table of class names are separate assets, and the table needs native code today (docs/ANIMATION-AI-BRIDGE.md) | an animation-class writer (states, aliases, transitions) and the table extension without native code |
 | **Blending between two clips** on a script model | `scriptmodelplayanim` plays one animation; nothing was measured about a blend, and retail scripts clear the animation and start the next | either agents (animation classes blend), or accept cuts and author transitions into the clips |
-| **Root motion that moves a script model** | the game function for it (`scriptmodelplayanimdeltamotion`) is not used by any retail script of this game, and a script model played with `scriptmodelplayanim` does not travel (P4) | move the model from script with the distance the game itself reads from the clip (`getmovedelta`, P4), or use an agent |
-| **Notes that call script** on a script model | the game sends animation notes to the script of an agent, not of a script model (P4) | read the note time with `getnotetracktimes` and wait that long, as retail scripts do |
+| **Root motion that moves a body** | a script model played with `scriptmodelplayanim` does not travel on the server (P4); the game function that would move it (`scriptmodelplayanimdeltamotion`) is used by no retail script of this game and was not tried; a zombie moved by our root motion was not tried | move the model from script with the distance the game itself reads from the clip (`getmovedelta`, P4), or use an agent |
+| **Notes that call script** on a script model | measured for a zombie (the game sends the notes to its script, P4); not measured for a script model, and no retail script relies on it | read the note time with `getnotetracktimes` and wait that long, as retail scripts do |
 | Fewer keys (real compression) | the encoder writes every frame | key reduction in the codec; not needed for correctness |
 | Scale tracks | the game format has none; a glTF scale animation is reported and ignored | nothing |
