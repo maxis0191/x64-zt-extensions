@@ -345,6 +345,27 @@ def alias_rows(zone_dir):
     return out
 
 
+def alias_index(rows):
+    """{alias name: [its rows]}: one alias may have several rows, the engine picks one of them each time."""
+    index = {}
+    for row in rows:
+        index.setdefault(row.get('Name', ''), []).append(row)
+    return index
+
+
+def alias_chain(index, name, limit=16):
+    """The alias and every layer it starts through SecondaryAliasName, root first: [(alias name, [rows])].
+
+    A name that is in no list ends the chain with (name, []): the caller decides whether stock has it."""
+    out, seen = [], set()
+    while name and name not in seen and len(out) < limit:
+        seen.add(name)
+        rows = index.get(name, [])
+        out.append((name, rows))
+        name = next((row.get('SecondaryAliasName', '') for row in rows if row.get('SecondaryAliasName')), '')
+    return out
+
+
 def number(text, default=None):
     """A float from CSV text, default when it is empty or not a number."""
     try:
@@ -523,6 +544,100 @@ class Intent:
     def report_problems(self, report):
         for file, text in self.problems:
             report.add('error', 'INTENT-FILE', os.path.basename(file), text, source='intent')
+
+
+# ------------------------------------------------------------------ shared judgement: decided, or left by a template
+def template_of(doc, stock, folder, name=None):
+    """(name, document, share equal) of the stock document this one was made from: the named one when the dump
+    has it, else the stock document of that folder with the most equal values. (None, None, 0.0) without stock."""
+    if not stock:
+        return None, None, 0.0
+    if name:
+        path = stock.find(folder, name, '.json')
+        found = stock.json(path) if path else None
+        if isinstance(found, dict):
+            mine, theirs = leaves(doc), leaves(found)
+            shared = [k for k in mine if k in theirs]
+            equal = sum(1 for k in shared if same(mine[k], theirs[k]))
+            return name, found, (equal / len(shared) if shared else 0.0)
+    candidates = {n: d for _, n, d in stock.docs(folder)}
+    best, share, _ = nearest_stock(doc, candidates)
+    return (best, candidates[best], share) if best is not None else (None, None, 0.0)
+
+
+class GroupJudge:
+    """Judges the player-facing groups (OBSERVABLE) of ONE item across its documents: weapon, animpkg, sfxpkg, vfxpkg.
+
+    feed() each document with the stock document it was made from; report() then writes, per group:
+      error <P>-INTENT          a declared decision is not what was built                      (source intent)
+      warn  <P>-TEMPLATE-GROUP  every value of the group equals the template and nobody declared any of them
+      info  <P>-TEMPLATE-PART   some undeclared values equal the template
+    A value that differs from the template and is not declared is only counted: somebody changed it."""
+
+    def __init__(self, intent, item):
+        self.intent, self.item, self.groups = intent, item, {}
+
+    def feed(self, kind, doc, template_doc=None, template_name=None):
+        base = leaves(template_doc) if isinstance(template_doc, dict) else {}
+        for path, value in leaves(doc).items():
+            key = '%s:%s' % (kind, path)
+            hit = observable_group(key)
+            if not hit:
+                continue
+            group = self.groups.setdefault(hit[0], {
+                'label': hit[1], 'fields': 0, 'declared': 0, 'changed': 0, 'template': [], 'mismatch': []})
+            group['fields'] += 1
+            verdict = self.intent.judge(self.item, key, value)
+            if verdict is not None:
+                group['declared'] += 1
+                if verdict == 'mismatch':
+                    group['mismatch'].append((key, value))
+            elif path in base and same(base[path], value):
+                group['template'].append((key, value, template_name))
+            else:
+                group['changed'] += 1
+
+    def report(self, report, prefix='FEEL', only=None):
+        """only: the group names this tool owns (None = all). Each audit reports its own groups, none twice."""
+        facts = report.facts.setdefault('groups', {}).setdefault(self.item, {})
+        for name, _, _ in OBSERVABLE:
+            group = self.groups.get(name)
+            if not group or (only is not None and name not in only):
+                continue
+            facts[name] = {'values': group['fields'], 'declared': group['declared'], 'changed': group['changed'],
+                           'template': len(group['template'])}
+            for key, value in group['mismatch']:
+                report.add('error', prefix + '-INTENT', self.item,
+                           '%s is %s but the declared decision is %s' % (
+                               key, fmt(value), self.intent.wanted(self.item, key)),
+                           notice=group['label'], source='intent', group=name, key=key, actual=value)
+            left = group['template']
+            if not left:
+                continue
+            origins = ' and '.join(sorted({origin for _, _, origin in left if origin})) or 'the template'
+            sample = ', '.join('%s=%s' % (key.split(':', 1)[1], fmt(value)) for key, value, _ in left[:4])
+            more = '' if len(left) <= 4 else ' and %d more' % (len(left) - 4)
+            whole = len(left) == group['fields']
+            share = ('all %d values' % len(left)) if whole else ('%d of %d values' % (len(left), group['fields']))
+            report.add('warn' if whole else 'info', prefix + ('-TEMPLATE-GROUP' if whole else '-TEMPLATE-PART'),
+                       self.item, '%s: %s are still those of %s (%s%s)' % (name, share, origins, sample, more),
+                       notice=('%s: nobody decided this, it is whatever %s had' % (group['label'], origins))
+                       if whole else None,
+                       source='stock', group=name, keys=[key for key, _, _ in left])
+
+    def skeleton(self, template=None, source='', only=None):
+        """An intent document listing every undeclared value still equal to the template, each with an EMPTY reason.
+        It changes nothing until somebody writes the reasons: a decision without a reason is not a decision."""
+        decisions = {}
+        for name, _, _ in OBSERVABLE:
+            if only is not None and name not in only:
+                continue
+            for key, value, _ in (self.groups.get(name) or {}).get('template', ()):
+                decisions[key] = {'value': value, 'why': ''}
+        doc = {'schema': INTENT_SCHEMA, 'item': self.item, 'kind': 'weapon', 'source': source, 'decisions': decisions}
+        if template:
+            doc['template'] = template
+        return doc
 
 
 # ------------------------------------------------------------------ command line

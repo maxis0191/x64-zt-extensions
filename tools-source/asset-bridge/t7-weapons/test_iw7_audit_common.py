@@ -223,6 +223,81 @@ class IntentTest(unittest.TestCase):
             self.assertEqual(len(common.Intent.load(wrong).problems), 1)
 
 
+class ChainTest(unittest.TestCase):
+    def test_chain_follows_secondary_aliases_and_stops_on_loops_and_unknown_names(self):
+        rows = [{'Name': 'fire', 'SecondaryAliasName': 'layer_a', 'channel': 'c1'},
+                {'Name': 'fire', 'SecondaryAliasName': 'layer_a', 'channel': 'c1'},
+                {'Name': 'layer_a', 'SecondaryAliasName': 'layer_b', 'channel': 'c2'},
+                {'Name': 'layer_b', 'SecondaryAliasName': 'fire', 'channel': 'c3'},
+                {'Name': 'lonely', 'SecondaryAliasName': 'nowhere', 'channel': 'c4'}]
+        index = common.alias_index(rows)
+        chain = common.alias_chain(index, 'fire')
+        self.assertEqual([(name, len(found)) for name, found in chain], [('fire', 2), ('layer_a', 1), ('layer_b', 1)])
+        self.assertEqual(common.alias_chain(index, 'lonely'), [('lonely', [rows[4]]), ('nowhere', [])])
+        self.assertEqual(common.alias_chain(index, ''), [])
+
+
+class GroupJudgeTest(unittest.TestCase):
+    WEAPON = {'weapDef': {'aimDownSight': True, 'fHipSpreadStandMin': 2.0, 'hipSpreadStandMax': 3.5, 'damage': 2000,
+                          'unrelated': 7}}
+    TEMPLATE = {'weapDef': {'aimDownSight': True, 'fHipSpreadStandMin': 2.0, 'hipSpreadStandMax': 3.5, 'damage': 90,
+                            'unrelated': 7}}
+
+    def judged(self, decisions=None, only=None):
+        intent = common.Intent()
+        if decisions is not None:
+            intent.items['gun'] = {'schema': common.INTENT_SCHEMA, 'item': 'gun', 'decisions': decisions}
+        judge = common.GroupJudge(intent, 'gun')
+        judge.feed('weapon', self.WEAPON, self.TEMPLATE, 'stock_gun')
+        report = common.Report('probe', 'gun')
+        judge.report(report, 'FEEL', only=only)
+        return judge, report
+
+    def test_undeclared_template_group_warns_and_a_changed_group_is_silent(self):
+        _, report = self.judged()
+        codes = {(f['code'], f['evidence']['group']) for f in report.findings}
+        self.assertEqual(codes, {('FEEL-TEMPLATE-GROUP', 'aiming'), ('FEEL-TEMPLATE-GROUP', 'spread')})
+        self.assertEqual(report.facts['groups']['gun']['damage'],
+                         {'values': 1, 'declared': 0, 'changed': 1, 'template': 0})
+        self.assertEqual(report.exit_code(), 0)
+
+    def test_a_tool_reports_only_the_groups_it_owns(self):
+        _, report = self.judged(only=('spread',))
+        self.assertEqual([f['evidence']['group'] for f in report.findings], ['spread'])
+        self.assertEqual(list(report.facts['groups']['gun']), ['spread'])
+
+    def test_declared_keep_silences_and_a_broken_decision_is_an_error(self):
+        _, report = self.judged({'weapon:weapDef.fHipSpread*': {'keep': True, 'why': 'wanted'},
+                                 'weapon:weapDef.aimDownSight': {'value': False, 'why': 'cannot aim'}})
+        by_code = {f['code']: f for f in report.findings}
+        self.assertEqual(by_code['FEEL-INTENT']['severity'], 'error')
+        self.assertEqual(by_code['FEEL-TEMPLATE-PART']['evidence']['keys'], ['weapon:weapDef.hipSpreadStandMax'])
+        self.assertNotIn('FEEL-TEMPLATE-GROUP', by_code)
+        self.assertEqual(report.exit_code(), 1)
+
+    def test_a_reason_is_required_and_the_skeleton_is_inert(self):
+        judge, report = self.judged({'weapon:weapDef.aimDownSight': {'keep': True, 'why': ' '}})
+        self.assertIn('FEEL-TEMPLATE-GROUP', {f['code'] for f in report.findings})
+        doc = judge.skeleton('stock_gun', 'probe')
+        self.assertEqual(doc['template'], 'stock_gun')
+        self.assertEqual(doc['decisions']['weapon:weapDef.aimDownSight'], {'value': True, 'why': ''})
+        self.assertNotIn('weapon:weapDef.damage', doc['decisions'])
+        intent = common.Intent()
+        intent.items['gun'] = doc
+        self.assertIsNone(intent.judge('gun', 'weapon:weapDef.aimDownSight', True))
+
+    def test_template_of_names_or_finds_the_nearest(self):
+        with tempfile.TemporaryDirectory() as root:
+            write(root, 'dump/zone_a/weapons/stock_gun.json', self.TEMPLATE)
+            write(root, 'dump/zone_a/weapons/other.json', {'weapDef': {'aimDownSight': False, 'damage': 1}})
+            stock = common.StockDump([os.path.join(root, 'dump')])
+            name, doc, share = common.template_of(self.WEAPON, stock, 'weapons')
+            self.assertEqual((name, doc), ('stock_gun', self.TEMPLATE))
+            self.assertAlmostEqual(share, 0.8)
+            self.assertEqual(common.template_of(self.WEAPON, stock, 'weapons', 'other')[0], 'other')
+            self.assertEqual(common.template_of(self.WEAPON, None, 'weapons'), (None, None, 0.0))
+
+
 class ArgsTest(unittest.TestCase):
     def test_stock_from_environment(self):
         with tempfile.TemporaryDirectory() as temp:
