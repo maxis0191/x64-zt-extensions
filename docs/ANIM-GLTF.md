@@ -96,7 +96,7 @@ Two things the numbers do not say:
 - The animations that list bones the model lacks are not lost: `to-gltf` reports the missing bones and converts
   the rest. They belong on their own skeleton.
 
-Run folder: `IW7-Runtime/anim-gltf/p1` (`results.json` one row per animation and model, `summary.json`).
+Evidence (kept outside the repository): folder `anim-gltf/p1`, `results.json` (one row per animation and model) and `summary.json`.
 
 ## Measured: a new animation through the game's loader (P2)
 
@@ -124,15 +124,15 @@ Read back with `Read-CompiledZone.ps1`: the game's loader finished in 6 s; **5 o
 after decoding, 0 differ; 0 errors, 0 warnings**; the name table is identical. `compare` between each source file
 and the file the loader gave back: 0.000003 degrees, 0 units, root motion 0, notes equal.
 
-So: the game's loader accepts our files. Folders: `IW7-Runtime/anim-gltf/p2` (clips, reports, first zone) and
-`IW7-Runtime/anim-gltf/p3b` (`src`, `ztwork/zone/mod.ff`, `readback`, `readback.json`).
+So: the game's loader accepts our files. Evidence (outside the repository): `anim-gltf/p2` (clips, reports) and
+`anim-gltf/p3b` (`src`, `ztwork/zone/mod.ff`, `readback`, `readback.json`).
 
 ## Proven in the game (P3, P4)
 
 All runs: private dedicated server on loopback with a random password and one engine bot, no client
 (`Invoke-GameLabHeadless.ps1` of the server repository, about 1.1 GB, 40 to 90 s a run), map Spaceland, the mod zone of
 P2 loaded with `-FsGame mods/animgltf`. The plan steps `anim`, `pose` and `animinfo` log what the server itself
-computes; `compare-run` compares the log with the clip. Run folders: `IW7-Runtime/anim-gltf/p3/runs/<name>/run1`
+computes; `compare-run` compares the log with the clip. Evidence (outside the repository): `anim-gltf/p3/runs/<name>/run1`
 (`client.stdout.log`, `anim-<step>.json`, `gamelab.result.json`).
 
 ### What the game's own functions read from our files (run `b1`: PASS, 7 of 7)
