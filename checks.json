@@ -6,6 +6,10 @@
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/t7-map", "-v"]
     },
     {
+      "id": "tools-source-asset-bridge-env-model",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/env-model", "-v"]
+    },
+    {
       "id": "tools-source-asset-bridge-t7-weapons",
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/t7-weapons", "-v"]
     },
