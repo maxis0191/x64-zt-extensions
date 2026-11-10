@@ -23,7 +23,11 @@ class FxMaterialTest(unittest.TestCase):
         self.assertEqual(pack.classify("ei/gfx_ring_thin", "ei/effect_lit_emissive_blend#1"), "add")
         self.assertEqual(pack.classify("ei/gfx_smk_whisp_anim_em", "ei/effect_lit_emissive_blend#1"), "blend")
         self.assertEqual(pack.classify("ei/gfx_bubbles", "ei/effect_lit_specular_blend#1"), "blend")
-        self.assertEqual(pack.classify("ei/gfx_distort_heat", "ei/effect_distortion#1"), "skip")
+        self.assertEqual(pack.classify("ei/gfx_distort_heat", "ei/effect_distortion#1"), "distortion")
+
+    def test_distortion_reuses_iw7_stock(self):
+        self.assertEqual(pack.stock_distortion("ei/gfx_distort_ring_hvy"), "eq/gfx_distortion_ring_heavy")
+        self.assertEqual(pack.stock_distortion("ei/gfx_distort_heat"), "eq/vfx_dist_heat_02")
 
     def test_atlas_from_elements(self):
         effects = {"a": effect("ei/x", [3, 2, 1, 0, 0, 0, 0, 0]), "b": effect("ei/y", [0, 0, 1, 0, 0, 0, 0, 0])}

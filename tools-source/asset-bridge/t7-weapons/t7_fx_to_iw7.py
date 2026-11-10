@@ -39,6 +39,7 @@ import iw7_vfx as vfx  # noqa: E402
 from t7_fx_read import element_visuals  # noqa: E402
 
 INT_MAX = 2147483647
+EMISSION_RATE = 20.0    # BO3 emission elements, per second (see rewrite)
 # T7 element types follow T6: 0 billboard, 1 oriented, 2 rotated, 3 tail, 4 line, 5 trail, 6 cloud,
 # 7 model, 8 omni light. A LINE (velocity-aligned streak) maps to the IW7 tail.
 LINE_TYPE = 4
@@ -141,6 +142,17 @@ def rewrite(emitter, element, fx, material, intensity, extra_materials=()):
         emitter["particleBurstCount"] = {"min": 1, "max": 1}
         emitter["particleDelay"] = {"min": 0.0, "max": 0.0}
         emitter["particleCountMax"] = max(emitter["particleCountMax"], int(life["base"] + life["amplitude"]) // max(1, a) + 2)
+    elif element["spawn_kind"] == "emission":
+        # BO3 "emission" elements spawn as the effect moves (the Ray Gun trail's rings, one per stretch of
+        # flight); converted as a one-shot burst they drew one ring at the muzzle and none after (owner
+        # 2026-11-08). IW7's emit-by-distance flag has one stock user and no documented unit, so they emit
+        # over time instead: EMISSION_RATE per second while the effect lives (a ring every ~160 units at
+        # the Ray Gun's 3200 u/s), each batch BO3's count.
+        emitter["particleSpawnRate"] = {"min": vfx.f32(EMISSION_RATE), "max": vfx.f32(EMISSION_RATE)}
+        emitter["particleBurstCount"] = {"min": max(1, a), "max": max(1, a)}
+        emitter["particleDelay"] = {"min": 0.0, "max": 0.0}
+        emitter["particleCountMax"] = max(emitter["particleCountMax"],
+                                          int(EMISSION_RATE * (life["base"] + max(0, life["amplitude"])) / 1000.0 * max(1, a)) + 2)
     elif element["spawn_kind"] == "looping":
         emitter["particleBurstCount"] = {"min": b, "max": b}
         emitter["particleDelay"] = {"min": 0.0, "max": vfx.f32(a * max(0, b - 1) / 1000.0)}
