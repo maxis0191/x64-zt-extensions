@@ -1135,7 +1135,10 @@
     "tools-source/iwz-zombie-kit/configs/zombie_M1.json",
     "tools-source/iwz-zombie-kit/fit_zombie.py",
     "tools-source/iwz-zombie-kit/inspect_stock_parts.py",
-    "tools-source/iwz-zombie-kit/run_zombie.py"
+    "tools-source/iwz-zombie-kit/run_zombie.py",
+    "docs/CREATION-TOOLS.md",
+    "tools-source/asset-bridge/t7-weapons/iw7_xmodel_lods.py",
+    "tools-source/asset-bridge/t7-weapons/iw7_xsurface_normals.py"
   ],
   "dependencies": [
     {
