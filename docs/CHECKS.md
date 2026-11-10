@@ -42,8 +42,8 @@ without a workspace: `python -B -m unittest discover -s tools-source/asset-bridg
 
 ## What the judge contains
 
-149 checks. Measured on the head that introduced this document (2026-11-11): bootstrap 57 seconds, checks 543
-seconds, 149 passed. Seven guard the living tools; the others guard the frozen October areas (see
+149 checks. Measured on 2026-11-11: bootstrap 57 seconds and checks 545 seconds on e1f23d2, bootstrap 38 seconds
+and checks 572 seconds on e518808, 149 passed both times. Seven guard the living tools; the others guard the frozen October areas (see
 `../tools-source/README.md`). The slow ones: `weapon-export-test_build_default` (65 to 120 seconds),
 `weapon-export-test_export_default` (50 to 80), `Test-T7ResidentExport` (about 50), `Test-T7CatalogueBootstraps`
 (about 40). The eighteen `weapon-export-*` entries take about 200 seconds together.
@@ -60,7 +60,12 @@ Two kinds of entries need a word:
   `weapon-export-test_pair_json_core_source` and `weapon-export-test_pair_owned_session_source` read `product.json`,
   which the checkout has and the composed workspace does not. They run from the checkout; `checks.ps1` tells them
   where it is through the variable `IW7_PRODUCT_ROOT`. Run through `check_product.py` directly, they stop with a
-  message that says so.
+  message that says so. They therefore judge the working tree, not the composed head: `bootstrap.ps1` refuses a
+  dirty tree but `checks.ps1` does not, so keep the tree clean (`git status --porcelain` empty) from bootstrap to
+  the end of the run.
+
+The hidden-folder defect of the frozen runner is real and still open: the plain temp folder keeps its tests
+judged, it does not repair the runner.
 
 These two causes, not changed provider bytes, were the whole of the former red check
 `iw7-player-template-source-support` (61 failures and 6 errors of 266 tests on every head from 2026-11-09 to

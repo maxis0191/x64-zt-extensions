@@ -35,9 +35,9 @@ The table of every living tool with its entry command, its test and what was pro
 | `model` | 2026-10-27 | Full ZoneTool build job and Blender bridge of the October model experiment | none (this row) | `tools-source-asset-bridge-model` | server 1, sdk 1 |
 | `recipient` | 2026-10-12 | Recipient observations, source-only runner | `README.md` | 8 (`tools-source-asset-bridge-recipient`, ...) | sdk 8 |
 | `rig-abi` | 2026-10-12 | Offline write observation proposal for one model surface field | `README.md` | 4 (`tools-source-asset-bridge-rig-abi`, ...) | none |
-| `surfaces` | 2026-10-15 | Material compiler experiment, authored DDS material, the sound experiment under `sound/` | `AUTHORED-DDS-MATERIAL.md`, `sound/README.md` | 19 (`tools-source-asset-bridge-surfaces`, ...) | server 19, sdk 23, components 1 |
-| `t7-bridge` | 2026-10-15 | Black Ops 3 to IW7, selected static model (native bridge experiment) | `README.md` | 37 (`tools-source-asset-bridge-t7-bridge`, ...) | server 1, components 1 |
-| `t7-iw7` | 2026-10-16 | Black Ops 3 images and build profile experiments, 210 files, almost all at one level | none (this row); start at `BUILD-PLAN.md`, `T7-IMAGES.md` | 13 (`tools-source-asset-bridge-t7-iw7`, ...) | sdk 7 |
+| `surfaces` | 2026-10-15 | Material compiler experiment, authored DDS material, the sound experiment under `sound/` | `AUTHORED-DDS-MATERIAL.md`, `sound/README.md` | 27 (`tools-source-asset-bridge-surfaces`, `surfaces-sound-test_*`, ...) | server 19, sdk 23, components 1 |
+| `t7-bridge` | 2026-10-15 | Black Ops 3 to IW7, selected static model (native bridge experiment) | `README.md` | 36 (`tools-source-asset-bridge-t7-bridge`, ...) | server 1, components 1 |
+| `t7-iw7` | 2026-10-16 | Black Ops 3 images and build profile experiments, 210 files, almost all at one level | none (this row); start at `BUILD-PLAN.md`, `T7-IMAGES.md` | 15 (`tools-source-asset-bridge-t7-iw7`, ...) | sdk 7 |
 | `weapon` | 2026-10-12 | Weapon animation bridge and slot contract of October (the living weapon route is `t7-weapons`) | none (this row) | `tools-source-asset-bridge-weapon` | none |
 | `weapon-export` | 2026-10-19 | Bounded player and Pack-a-Punch template source export support | `README.md` | one per test file (`weapon-export-test_*`) | none |
 | `world` | 2026-10-27 | Observer harness, physics probe, original arena, platform contact | `original-arena/README.md` | 6 (`tools-source-asset-bridge-world`, ...) | sdk 8 |

@@ -29,6 +29,11 @@ All in the server repository (iw7-paris-server): `docs/DEVKIT.md` (which tool an
 `docs/TOOLS-INDEX.md` (every tool of every repository), `docs/CREATION-CORE.md` (design and build order of the
 creation tools), `docs/DEVKIT-PLAN.md` (what exists, the holes, the open work).
 
+One chain, for an asset tool's output (a weapon, a model, a zone): run the file check here (the weapon audits and
+`iw7_mod_preflight.py`, or the build-log gate and loader readback of `zone-check`); make a bench root with the
+server's `ops/bench/New-BenchRoot.ps1` and put the output in it; run a headless plan with the server's
+`ops/gamelab/Invoke-GameLabHeadless.ps1`, whose exit code is the verdict. A client plan is only for frames.
+
 ## History
 
 `archive/` holds dated records and checkpoint logs. Their bytes are kept as written; they are evidence, not
@@ -62,7 +67,7 @@ files stood in `docs/`) now need one more `../`; sibling links between archived 
 | `archive/WEAPON-ASSET-BRIDGE.md` | 2026-10-12 | H1 weapon animation tables; the living weapon route is `t7-weapons` |
 | `archive/WORLD-ASSET-BRIDGE.md` | 2026-10-28 | Checkpoint log of the world asset bridge, newest entry first |
 
-The 165 documents inside the tool areas and `ops/` stay beside their code: many are hashed by the tests next to them.
+The 168 documents inside the tool areas and `ops/` stay beside their code: many are hashed by the tests next to them.
 `migration/README.md` explains the extraction of this repository from the server repository on 2026-10-13.
 
 ## Statements in frozen or archived files that are no longer true
