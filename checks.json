@@ -18,6 +18,10 @@
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/zone-check", "-v"]
     },
     {
+      "id": "tools-source-asset-bridge-iw7-audio",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/iw7-audio", "-v"]
+    },
+    {
       "id": "iw7-player-template-source-support",
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-v"]
     },
