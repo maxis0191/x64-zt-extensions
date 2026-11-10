@@ -34,6 +34,8 @@ creation tools), `docs/DEVKIT-PLAN.md` (what exists, the holes, the open work).
 `archive/` holds dated records and checkpoint logs. Their bytes are kept as written; they are evidence, not
 instructions. `migration/import.json` and older documents name these files as `docs/<NAME>.md`; they are now
 `docs/archive/<NAME>.md`, same bytes.
+Because the bytes are unchanged, 24 relative links in the archived documents that start with `../` (written when the
+files stood in `docs/`) now need one more `../`; sibling links between archived documents still work.
 
 | Archived document | Last change | What it is |
 | --- | --- | --- |
