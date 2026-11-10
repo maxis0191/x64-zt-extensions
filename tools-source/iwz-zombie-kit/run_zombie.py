@@ -2,6 +2,10 @@
 
 python -I run_zombie.py --config configs/zombie_<id>.json [--quick] [--reuse-fit] [--skip-fit] [--out-root <dir>]
 
+Local inputs come from the environment, never from the source: IWZ_HEROES (heroes work folder), IWZ_BLENDER
+(blender.exe), IWZ_DUMP (ZoneTool dump root with cp_zmb and techsets_cp_zmb), IWZ_TEXCONV (texconv.exe); optional
+IWZ_FIT_DIR (folder of fit_hero.py, default <IWZ_HEROES>/tools/fit) and IWZ_WRITER (the skinned writer folder).
+
 1. Blender fit_zombie.py -> <out>/<id>_parts.blend + textures + fit_report.json (export objects per part)
 2. writer blender_export.py per export object -> export/<name>.json
 3. writer build_model.py (base = the stock part xmodel: skeleton, physics preset of the gibs) -> kitdump/xmodel,xsurface
@@ -21,11 +25,30 @@ import time
 import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HEROES = r"C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\heroes"
-BLENDER = os.environ.get("IWZ_BLENDER", r"C:\Users\ezvalo\Documents\IW7-Tools\blender-4.5.15\blender-4.5.15-windows-x64\blender.exe")
 WRITER = os.environ.get("IWZ_WRITER", os.path.join(os.path.dirname(HERE), "iw7-skinned-writer"))
-DUMP = r"C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump"
-TEXCONV = r"C:\Users\ezvalo\Documents\IW7-Tools\texconv-may2026\texconv.exe"
+# Local inputs. None is tracked: each comes from an environment variable, read by configure() when the pipeline
+# starts. There is no machine default; a missing variable stops the run with its name.
+ENVIRONMENT = (
+    ("IWZ_HEROES", "the local heroes work folder: relative out_dir values resolve under it, tools/fit holds fit_hero.py"),
+    ("IWZ_BLENDER", "blender.exe"),
+    ("IWZ_DUMP", "the ZoneTool dump root that holds cp_zmb and techsets_cp_zmb"),
+    ("IWZ_TEXCONV", "texconv.exe"),
+)
+HEROES = BLENDER = DUMP = TEXCONV = None
+
+
+def configure(environ=None):
+    """Read the local inputs; set the module values; give Blender's fit step its folder."""
+    global HEROES, BLENDER, DUMP, TEXCONV
+    environ = os.environ if environ is None else environ
+    missing = [name for name, _ in ENVIRONMENT if not environ.get(name)]
+    if missing:
+        raise SystemExit("Set the environment variable(s) %s.\n%s" % (
+            ", ".join(missing), "\n".join("  %s: %s" % row for row in ENVIRONMENT if row[0] in missing)))
+    HEROES, BLENDER, DUMP, TEXCONV = (environ[name] for name, _ in ENVIRONMENT)
+    environ.setdefault("IWZ_FIT_DIR", os.path.join(HEROES, "tools", "fit"))
+
+
 GENDER = {
     "male": {"body_template": "mo/zmb_male_body", "head_template": "mo/zmb_male_head_01",
              "scriptable": "zombie_male_outfit_1",
@@ -85,6 +108,7 @@ def main():
     ap.add_argument("--skip-fit", action="store_true")
     ap.add_argument("--only", default="", help="comma list of steps: fit,export,build,pack,mat,scriptable")
     a = ap.parse_args()
+    configure()
     cfgp = os.path.abspath(a.config)
     cfg = json.load(open(cfgp))
     zid = cfg["zombie"]
