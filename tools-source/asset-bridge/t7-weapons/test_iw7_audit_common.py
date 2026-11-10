@@ -211,8 +211,8 @@ class IntentTest(unittest.TestCase):
             self.assertIn('it cannot aim', intent.wanted('gun', 'weapon:weapDef.aimDownSight'))
             report = common.Report('feel', 'zone')
             intent.report_problems(report)
-            self.assertEqual([f['code'] for f in report.findings], ['INTENT-FILE'])
-            self.assertIn('weapon:weapDef.damage', report.findings[0]['message'])
+            self.assertEqual([(f['code'], f['severity']) for f in report.findings], [('INTENT-UNANSWERED', 'info')])
+            self.assertIn('1 of 5 entries of gun.json', report.findings[0]['message'])
 
     def test_missing_and_broken_files(self):
         self.assertEqual(common.Intent.load(None).items, {})
@@ -457,6 +457,71 @@ class ArgsTest(unittest.TestCase):
                     del os.environ['IW7_STOCK_DUMP']
                 else:
                     os.environ['IW7_STOCK_DUMP'] = old
+
+
+class RefinementTest(unittest.TestCase):
+    """A stock asset is not its own template; many items flatten stock once; an unanswered skeleton is not broken."""
+
+    def test_a_stock_item_audited_as_itself_has_no_template(self):
+        with tempfile.TemporaryDirectory() as root:
+            _, stock = JudgeWeaponTest().tree(root)
+            zone = os.path.join(root, 'dump', 'zone_a')
+            judge, documents, templates = common.judge_weapon(zone, 'stock_gun', common.Intent(), stock)
+            self.assertEqual((templates['weapon']['name'], templates['weapon']['how'], templates['weapon']['share']),
+                             ('stock_gun', 'self', 1.0))
+            self.assertIsNone(templates['weapon']['doc'])
+            self.assertEqual((templates['animpkg']['name'], templates['animpkg']['how']), ('stock_anim', 'self'))
+            self.assertEqual((templates['sfxpkg']['name'], templates['sfxpkg']['how']), ('stock_sfx', 'self'))
+            for prefix, only in (('FEEL', None), ('SND', ('sound profile',))):
+                report = common.Report('probe', 'tree')
+                judge.report(report, prefix, only=only)
+                self.assertEqual(report.findings, [])
+
+    def test_an_edit_of_a_stock_file_is_still_that_file_and_its_packages_are_inherited(self):
+        with tempfile.TemporaryDirectory() as root:
+            tree, stock = JudgeWeaponTest().tree(root)
+            write(root, 'tree/weapons/stock_gun.json',
+                  {'sfxPackage': 'my_sfx', 'weapDef': {'szXAnims': 'stock_anim', 'damage': 91, 'aimDownSight': True}})
+            write(root, 'tree/sfxpkg/my_sfx.json', {'szWeapSndReflectionClass': 'eng_pistol', 'x': 1})
+            judge, documents, templates = common.judge_weapon(tree, 'stock_gun', common.Intent(), stock)
+            self.assertEqual(templates['weapon']['how'], 'self')
+            self.assertLess(templates['weapon']['share'], 1.0)
+            # the renamed sound package still comes from the package the stock weapon of that name points at
+            self.assertEqual((templates['sfxpkg']['name'], templates['sfxpkg']['how']), ('stock_sfx', 'weapon-template'))
+            report = common.Report('probe', 'tree')
+            judge.report(report, 'SND', only=('sound profile',))
+            self.assertEqual([f['code'] for f in report.findings], ['SND-TEMPLATE-GROUP'])
+
+    def test_stock_is_flattened_once_for_many_items(self):
+        with tempfile.TemporaryDirectory() as root:
+            _, stock = JudgeWeaponTest().tree(root)
+            candidates, flat = stock.named('weapons'), stock.flat('weapons')
+            self.assertIs(candidates, stock.named('weapons'))
+            first = common.nearest_stock({'weapDef': {'damage': 90, 'aimDownSight': True}}, candidates, flat=flat)
+            kept = {name: id(value) for name, value in flat.items()}
+            self.assertEqual(sorted(kept), ['far_gun', 'stock_gun'])
+            again = common.nearest_stock({'weapDef': {'damage': 90, 'aimDownSight': True}}, candidates, flat=flat)
+            self.assertEqual(first, again)
+            self.assertEqual(first, common.nearest_stock({'weapDef': {'damage': 90, 'aimDownSight': True}}, candidates))
+            self.assertEqual(kept, {name: id(value) for name, value in flat.items()})
+
+    def test_an_unanswered_skeleton_loads_without_errors_and_decides_nothing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            file = write(temp, 'gun.json', {
+                'schema': common.INTENT_SCHEMA, 'item': 'gun', 'decisions': {
+                    'weapon:weapDef.aimDownSight': {'value': True, 'why': ''},
+                    'weapon:weapDef.damage': {'value': 90, 'why': 'wanted'},
+                    'weapon:weapDef.broken': {'why': 'no value, min, max or keep'},
+                    'weapon:weapDef.worse': 'not an object'}})
+            intent = common.Intent.load(file)
+            self.assertEqual(len(intent.problems), 2)
+            self.assertEqual([(item, waiting, total) for _, item, waiting, total in intent.unanswered], [('gun', 1, 4)])
+            self.assertIsNone(intent.judge('gun', 'weapon:weapDef.aimDownSight', True))
+            self.assertEqual(intent.judge('gun', 'weapon:weapDef.damage', 90), 'match')
+            report = common.Report('probe', 'tree')
+            intent.report_problems(report)
+            self.assertEqual(sorted((f['code'], f['severity']) for f in report.findings),
+                             [('INTENT-FILE', 'error'), ('INTENT-FILE', 'error'), ('INTENT-UNANSWERED', 'info')])
 
 
 if __name__ == '__main__':

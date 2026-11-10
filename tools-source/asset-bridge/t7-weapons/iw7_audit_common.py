@@ -301,15 +301,21 @@ def leaf(doc, path, default=None):
     return node
 
 
-def nearest_stock(doc, candidates, ignore=('name', 'szInternalName', 'szDisplayName')):
+def nearest_stock(doc, candidates, ignore=('name', 'szInternalName', 'szDisplayName'), flat=None):
     """(candidate name, share of equal leaves, compared count): which stock asset this document was made from.
 
     candidates = {name: document}. A share of 1.0 means the document IS that stock asset; residue checks make no
-    sense then. Returns (None, 0.0, 0) with no candidate."""
+    sense then. Returns (None, 0.0, 0) with no candidate. flat: a dict the caller keeps between calls; the flattened
+    values of each candidate are stored there so a run over many items flattens every stock file once."""
     mine = {k: v for k, v in leaves(doc).items() if k.split('.')[-1] not in ignore}
     best = (None, 0.0, 0)
     for name in sorted(candidates):
-        theirs = leaves(candidates[name])
+        if flat is None:
+            theirs = leaves(candidates[name])
+        else:
+            if name not in flat:
+                flat[name] = leaves(candidates[name])
+            theirs = flat[name]
         common = [k for k in mine if k in theirs]
         if not common:
             continue
@@ -428,6 +434,8 @@ class StockDump:
                     if is_zone_dir(os.path.join(root, entry)):
                         self.zones.setdefault(entry, os.path.join(root, entry))
         self._json = {}
+        self._named = {}
+        self._flat = {}
 
     def __bool__(self):
         return bool(self.zones)
@@ -466,6 +474,16 @@ class StockDump:
             if name not in seen and self.json(path) is not None:
                 seen.add(name)
                 yield zone, name, self.json(path)
+
+    def named(self, folder):
+        """{name: document} of a source folder, read once per run."""
+        if folder not in self._named:
+            self._named[folder] = {name: doc for _, name, doc in self.docs(folder)}
+        return self._named[folder]
+
+    def flat(self, folder):
+        """The dict nearest_stock keeps the flattened documents of this folder in."""
+        return self._flat.setdefault(folder, {})
 
 
 # ------------------------------------------------------------------ animations
@@ -514,7 +532,7 @@ class Intent:
            "finding:FX-STOCK-COPY:vfx/zombie/*": {"keep": true, "why": "..."}  for every asset matching the pattern"""
 
     def __init__(self):
-        self.items, self.problems = {}, []
+        self.items, self.problems, self.unanswered = {}, [], []
 
     @classmethod
     def load(cls, path):
@@ -537,11 +555,16 @@ class Intent:
             if not isinstance(item, str) or not isinstance(doc.get('decisions'), dict):
                 intent.problems.append((file, 'needs "item" and "decisions"'))
                 continue
+            waiting = 0
             for key, decision in doc['decisions'].items():
-                if not (isinstance(decision, dict) and isinstance(decision.get('why'), str) and decision['why'].strip()
-                        and (decision.get('keep') is True or 'value' in decision
-                             or 'min' in decision or 'max' in decision)):
+                shaped = isinstance(decision, dict) and isinstance(decision.get('why'), str) and (
+                    decision.get('keep') is True or 'value' in decision or 'min' in decision or 'max' in decision)
+                if not shaped:
                     intent.problems.append((file, '%s: needs a reason ("why") and one of value, min/max, keep' % key))
+                elif not decision['why'].strip():
+                    waiting += 1
+            if waiting:
+                intent.unanswered.append((file, item, waiting, len(doc['decisions'])))
             intent.items[item] = doc
             for other in doc.get('also') or ():
                 if isinstance(other, str):
@@ -615,8 +638,14 @@ class Intent:
         return '%s (%s)' % (what, decision.get('why', ''))
 
     def report_problems(self, report):
+        """A broken intent file is an error. An entry whose reason is still empty (a skeleton nobody answered yet)
+        decides nothing: it is counted once per file, and the warnings it was meant to answer stay open."""
         for file, text in self.problems:
             report.add('error', 'INTENT-FILE', os.path.basename(file), text, source='intent')
+        for file, item, waiting, total in self.unanswered:
+            report.add('info', 'INTENT-UNANSWERED', item,
+                       '%d of %d entries of %s have no reason yet and decide nothing' % (
+                           waiting, total, os.path.basename(file)), source='intent')
 
 
 # ------------------------------------------------------------------ shared judgement: decided, or left by a template
@@ -633,8 +662,8 @@ def template_of(doc, stock, folder, name=None):
             shared = [k for k in mine if k in theirs]
             equal = sum(1 for k in shared if same(mine[k], theirs[k]))
             return name, found, (equal / len(shared) if shared else 0.0)
-    candidates = {n: d for _, n, d in stock.docs(folder)}
-    best, share, _ = nearest_stock(doc, candidates)
+    candidates = stock.named(folder)
+    best, share, _ = nearest_stock(doc, candidates, flat=stock.flat(folder))
     return (best, candidates[best], share) if best is not None else (None, None, 0.0)
 
 
@@ -746,7 +775,10 @@ def judge_weapon(zone_dir, item, intent, stock):
                          'nearest' (the most similar stock file: for the weapon itself, and for a package when a
                          stock file is clearly closer than the inherited one or nothing is inherited),
                          'nearest-weak' (too few values compared), 'none' (no stock dump or nothing comparable),
-                         'declared-missing' (named but not in the dump)
+                         'declared-missing' (named but not in the dump),
+                         'self' (the stock dump holds a file of this very name: the item IS that stock asset, or
+                         an edit of it, so nothing in it is "left by a template"; doc is None, share says how
+                         much of it still equals stock)
 
     kind is weapon | animpkg | sfxpkg | vfxpkg. The caller reports its own groups: judge.report(report, P, only=...)."""
     judge = GroupJudge(intent, item)
@@ -756,13 +788,14 @@ def judge_weapon(zone_dir, item, intent, stock):
     for kind in ('weapon', 'animpkg', 'sfxpkg', 'vfxpkg'):
         folder = 'weapons' if kind == 'weapon' else kind
         if kind == 'weapon':
-            doc = weapon
+            doc, own = weapon, item
         else:
-            ref = package_refs(weapon).get(kind)
-            path = os.path.join(zone_dir, folder, ref + '.json') if ref else None
+            own = package_refs(weapon).get(kind)
+            path = os.path.join(zone_dir, folder, own + '.json') if own else None
             doc = load_json(path) if path and os.path.isfile(path) else None
         documents[kind] = doc
         found = {'name': None, 'doc': None, 'share': 0.0, 'how': 'none'}
+        inherit_from = None
         if isinstance(doc, dict) and stock:
             declared = intent.template(item, kind)
             if declared:
@@ -770,9 +803,13 @@ def judge_weapon(zone_dir, item, intent, stock):
                     folder, declared, '.json') else (declared, None, 0.0)
                 found = {'name': name, 'doc': base, 'share': share,
                          'how': 'declared' if base is not None else 'declared-missing'}
+            elif stock.find(folder, own, '.json'):
+                itself = template_of(doc, stock, folder, own)
+                found = {'name': own, 'doc': None, 'share': itself[2], 'how': 'self'}
+                inherit_from = itself[1]
             else:
-                candidates = {n: d for _, n, d in stock.docs(folder)}
-                name, share, compared = nearest_stock(doc, candidates)
+                candidates = stock.named(folder)
+                name, share, compared = nearest_stock(doc, candidates, flat=stock.flat(folder))
                 inherited = package_refs(weapon_template).get(kind) if isinstance(weapon_template, dict) else None
                 strong = name is not None and compared >= NEAREST_NEEDS
                 if inherited and inherited in candidates:
@@ -785,7 +822,7 @@ def judge_weapon(zone_dir, item, intent, stock):
                              'how': 'nearest' if strong else 'nearest-weak'}
         templates[kind] = found
         if kind == 'weapon':
-            weapon_template = found['doc']
+            weapon_template = found['doc'] if found['doc'] is not None else inherit_from
         if isinstance(doc, dict):
             judge.feed(kind, doc, found['doc'], found['name'])
     return judge, documents, templates
