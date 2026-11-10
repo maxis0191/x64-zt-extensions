@@ -1,0 +1,23 @@
+{
+  "weapon": "thundergun_zm",
+  "display": "Thundergun",
+  "sound_gain_db": 4.0,
+  "overrides": {
+    "aimDownSight": false,
+    "bNoPartialReload": true,
+    "vfxImpactType": 0,
+    "sfxImpactType": 0,
+    "reticleOnePiece": "",
+    "reticleSide": "reticle_side_semi_circle_flat",
+    "reticleCenter": "",
+    "iReticleCenterSize": 20,
+    "iReticleSideSize": 20
+  },
+  "why": {
+    "aimDownSight": "owner 2026-11-08: the Thundergun cannot be aimed in Black Ops",
+    "bNoPartialReload": "owner 2026-11-08: reload only when empty, like BO's Thundergun and IW7's M1 carbine",
+    "vfxImpactType/sfxImpactType": "owner 2026-11-08: a wind blast leaves no bullet impact on walls",
+    "reticle*": "owner 2026-11-08: the template's energy-pistol hit reticle; a wind blast gets the semicircles IW7 gives all five of its shotguns (global material, every map)",
+    "sound_gain_db": "2026-11-09 audio6 witness: 1 s RMS -17 to -21 (peaks to -4.3, so +4 not +6) dBFS against -16 for stock Facemelter in the same capture path; BO3's FLACs are already at full scale, so the alias volume carries the gain (cap 1.0)"
+  }
+}

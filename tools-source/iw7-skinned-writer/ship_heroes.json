@@ -1,0 +1,207 @@
+{
+ "stock_dump": "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-map-ref-a\\dump\\cp_zmb",
+ "techsets_dump": "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-map-ref-a\\dump\\techsets_cp_zmb",
+ "fit_root": "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\fit",
+ "blender": "C:\\Users\\ezvalo\\Documents\\IW7-Tools\\blender-4.5.15\\blender-4.5.15-windows-x64\\blender.exe",
+ "texconv": "C:\\Users\\ezvalo\\Documents\\IW7-Tools\\texconv-may2026\\texconv.exe",
+ "heroes": {
+  "aj": {
+   "materials": {
+    "upper": [
+     [
+      "mopw/iwz_aj_upper",
+      "mopw/zmb_hero_jock_jacket"
+     ],
+     [
+      "mo/iwz_aj_upper_vm",
+      "mo/zmb_hero_nerd_helmet"
+     ]
+    ],
+    "lower": [
+     [
+      "mopw/iwz_aj_lower",
+      "mopw/zmb_hero_jock_jeans"
+     ]
+    ],
+    "hair": [
+     [
+      "mo/iwz_aj_hair",
+      "mo/zmb_hero_nerd_helmet"
+     ]
+    ]
+   },
+   "models": {
+    "body": {
+     "name": "body_iwz_hero_aj",
+     "base": "body_zmb_hero_jock",
+     "transfer_from": "body_zmb_hero_jock_lod030v7e1p3_0060",
+     "material_map": {
+      "iwz_aj_upper": "mopw/iwz_aj_upper",
+      "iwz_aj_lower": "mopw/iwz_aj_lower"
+     },
+     "lod_dist": 300,
+     "lods": [
+      [
+       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\aj_body_lod1.json",
+       1000
+      ],
+      [
+       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\aj_body_lod2.json",
+       10000
+      ]
+     ]
+    },
+    "hair": {
+     "name": "hair_iwz_hero_aj",
+     "base": "zmb_hero_valley_girl_hair",
+     "material_map": {
+      "iwz_aj_hair": "mo/iwz_aj_hair"
+     },
+     "lod_dist": 10000
+    },
+    "viewmodel": {
+     "name": "viewmodel_iwz_hero_aj_arms",
+     "base": "fullbody_zmb_hero_jock_viewmodel_arms",
+     "material_map": {
+      "iwz_aj_upper": "mo/iwz_aj_upper_vm"
+     }
+    }
+   }
+  },
+  "andre": {
+   "materials": {
+    "upper": [
+     [
+      "mopw/iwz_andre_upper",
+      "mopw/zmb_hero_jock_jacket"
+     ],
+     [
+      "mo/iwz_andre_upper_vm",
+      "mo/zmb_hero_nerd_helmet"
+     ]
+    ],
+    "lower": [
+     [
+      "mopw/iwz_andre_lower",
+      "mopw/zmb_hero_jock_jeans"
+     ]
+    ],
+    "hair": [
+     [
+      "mo/iwz_andre_hair",
+      "mo/zmb_hero_nerd_helmet"
+     ]
+    ]
+   },
+   "models": {
+    "body": {
+     "name": "body_iwz_hero_andre",
+     "base": "zmb_hero_rapper",
+     "transfer_from": "zmb_hero_rapper_lod030vf3p3_0060",
+     "material_map": {
+      "iwz_andre_upper": "mopw/iwz_andre_upper",
+      "iwz_andre_lower": "mopw/iwz_andre_lower"
+     },
+     "lod_dist": 300,
+     "lods": [
+      [
+       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\andre_body_lod1.json",
+       1000
+      ],
+      [
+       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\andre_body_lod2.json",
+       10000
+      ]
+     ]
+    },
+    "hair": {
+     "name": "hair_iwz_hero_andre",
+     "base": "zmb_hero_valley_girl_hair",
+     "material_map": {
+      "iwz_andre_hair": "mo/iwz_andre_hair"
+     },
+     "lod_dist": 10000
+    },
+    "viewmodel": {
+     "name": "viewmodel_iwz_hero_andre_arms",
+     "base": "viewmodel_zmb_hero_rapper",
+     "material_map": {
+      "iwz_andre_upper": "mo/iwz_andre_upper_vm"
+     }
+    }
+   }
+  },
+  "poindexter": {
+   "materials": {
+    "upper": [
+     [
+      "mopw/iwz_poindexter_upper",
+      "mopw/zmb_hero_jock_jacket"
+     ],
+     [
+      "mo/iwz_poindexter_upper_vm",
+      "mo/zmb_hero_nerd_helmet"
+     ]
+    ],
+    "lower": [
+     [
+      "mopw/iwz_poindexter_lower",
+      "mopw/zmb_hero_jock_jeans"
+     ]
+    ],
+    "hair": [
+     [
+      "mo/iwz_poindexter_hair",
+      "mo/zmb_hero_nerd_helmet"
+     ]
+    ]
+   },
+   "models": {
+    "body": {
+     "name": "body_iwz_hero_poindexter",
+     "base": "zmb_hero_nerd",
+     "transfer_from": "zmb_hero_nerd_lod030vfp3_0060",
+     "material_map": {
+      "iwz_poindexter_upper": "mopw/iwz_poindexter_upper",
+      "iwz_poindexter_lower": "mopw/iwz_poindexter_lower"
+     },
+     "lod_dist": 300,
+     "lods": [
+      [
+       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\poindexter_body_lod1.json",
+       1000
+      ],
+      [
+       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\poindexter_body_lod2.json",
+       10000
+      ]
+     ]
+    },
+    "hair": {
+     "name": "hair_iwz_hero_poindexter",
+     "base": "zmb_hero_valley_girl_hair",
+     "material_map": {
+      "iwz_poindexter_hair": "mo/iwz_poindexter_hair"
+     },
+     "lod_dist": 10000
+    },
+    "viewmodel": {
+     "name": "viewmodel_iwz_hero_poindexter_arms",
+     "base": "zmb_hero_nerd_viewmode_arms",
+     "material_map": {
+      "iwz_poindexter_upper": "mo/iwz_poindexter_upper_vm"
+     }
+    }
+   },
+   "clean_head": {
+    "base": "head_hero_nerd",
+    "name": "head_iwz_hero_poindexter",
+    "drop": [
+     "mo/zmb_hero_nerd_helmet",
+     "mo/zmb_hero_nerd_accessories",
+     "mo/zmb_hero_nerd_lenses"
+    ]
+   }
+  }
+ }
+}

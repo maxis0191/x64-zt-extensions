@@ -16,9 +16,19 @@ produces the measured live hash. No other difference in that window was observed
 `prepare_world_observer_build.py --zonetool-nop-profile` produces a separate
 header retaining the full 432-byte hash check, now matched to this exact patched
 profile. It preserves the baseline header and its historical receipt. The
-remaining signatures and all inspection guards remain unchanged. This is a
-source candidate: it still requires a fresh build and real observation; the
-five-NOP finding alone does not prove collision, root layout or gameplay.
+remaining signatures and all inspection guards remain unchanged.
+
+The distinct profile candidate was built on 2026-10-27: exit 0, zero warnings
+and errors, original job closed, inputs unchanged and lease released. Its EXE
+SHA-256 is `9e6bb8d3573c529d5a2823c8629ef394884ff86217713e49be8566c7ccdc4e71`,
+PDB SHA-256 `29252cd2d5705ca292bb27f090aab58748f99dc34125eaddcaad4b6b46e692f1`,
+and local result SHA-256
+`b119c536338cfcd2d242d8ca4c71ecd61492896474f247551161c4f89c650ca8`.
+The isolated project verifies its 413 compile units and six patched inputs.
+On 2026-10-28 a new observer plan bound that EXE and the original exact asset;
+the 101 stock identities and metadata still matched. Main was running on
+UDP 27016 and its occupancy was not established, so no second observation was
+launched. This build does not establish collision, root layout or gameplay.
 
 The candidate including `world-observer-zonetool.cpp` built with 413 compiler
 records, zero warnings/errors and a confirmed original-job closure and lease

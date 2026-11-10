@@ -1,0 +1,528 @@
+"""Bake Black Ops III environment materials (GrayWolf *.materials.json) into IW7 model materials.
+
+BO3 environment materials layer tiling "micro" maps (albedo, gloss, normal, specular) with their own UV
+scales, blend them through reveal masks and tint them; IW7 model materials read one packed colour map
+(packed_cs), one packed normal/gloss/occlusion map (packed_nog) and, for alpha, packed_a. This bakes one
+UV period [0, 1)^2 of the BO3 composite (every BO3 scale is an integer, so the composite repeats with the
+model UVs and the IW7 sampler's wrap reproduces it) and writes stock-format images through texconv:
+
+  role     BO3 techset / alpha                           IW7 template (techsets shared at runtime)
+  opaque   lit*, micro_tile*, backlit                    mo/barrier_handrail          mo_l_sm_replace_i0c0s0o0n0p0
+  cutout   alpha test on a non-decal techset with holes  mopw/metal_painted_wall_decal_sheet_01 (atest, packed_a)
+  decal    lit_decal*, cutout decals                     mopw/dirt_stain_leaking_01   (ndw blend, packed_a)
+  glass    glass, transparent, alpha blend               mo/light_interior_ceiling_spotlight_01_glass (blend)
+  emissive any material with an emissive map            mo/signage_exit_sign_emergency_on (+ _e image)
+  skip     decal_normal (normal-only decals), decal_reveal (moss/overgrowth) unless --keep
+
+Packing (pack_cs, octahedral normal, gloss) is t7_material_pack's, the stock IW7 shader layout. Per-material
+overrides (reveal threshold, tint, role, size) come from an optional JSON manifest.
+
+  python t7_env_material.py <materials.json> [...] --templates <techsets_cp_zmb dump> --texconv <exe>
+         --out <dump root> [--prefix mo/] [--size 1024] [--manifest overrides.json] [--keep moss]
+Writes <out>/materials/<prefix><name>.json, <out>/images/*.dds, <out>/techsets/{state,constantbuffer}/...
+copies of the template's per-material state files (kit_import needs them), and prints a JSON report.
+"""
+import argparse
+import copy
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+import numpy as np
+from PIL import Image
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, '..', 't7-weapons'))
+from t7_material_pack import pack_cs, octahedral_ga  # noqa: E402
+
+TEMPLATES = {
+    'opaque': 'mo/barrier_handrail',
+    'cutout': 'mopw/metal_painted_wall_decal_sheet_01',
+    'decal': 'mopw/dirt_stain_leaking_01',
+    'glass': 'mo/light_interior_ceiling_spotlight_01_glass',
+    'emissive': 'mo/signage_exit_sign_emergency_on',
+}
+SEM_COLOR, SEM_CS, SEM_NOG, SEM_A = 2, 14, 15, 16
+
+
+def classify(mat, keep=()):
+    tech = (mat.get('techset') or '').lower()
+    alpha = (mat.get('alpha') or 'opaque').lower()
+    name = mat['name'].lower()
+    if any(k in name for k in keep):
+        pass
+    elif 'decal_reveal' in tech:
+        return 'skip'
+    elif 'decal_normal' in tech:
+        return 'skip'
+    if mat.get('emissive'):
+        return 'emissive'
+    if 'glass' in tech or 'transparent' in tech or alpha == 'blend':
+        return 'glass'
+    if 'decal' in tech:
+        return 'decal'
+    if alpha == 'cutout':
+        return 'cutout?'
+    return 'opaque'
+
+
+class Bake:
+    def __init__(self, base, size):
+        self.base = base
+        self.size = size
+        self.cache = {}
+
+    def path(self, binding):
+        if not binding:
+            return None
+        p = binding['path'] if isinstance(binding, dict) else binding
+        full = os.path.normpath(os.path.join(self.base, p))
+        return full if os.path.exists(full) else None
+
+    def load(self, binding):
+        p = self.path(binding)
+        if p is None:
+            return None
+        if p not in self.cache:
+            self.cache[p] = np.asarray(Image.open(p).convert('RGBA')).astype(np.float32) / 255.0
+        return self.cache[p]
+
+    def tile(self, binding, scale=(1.0, 1.0)):
+        """The image repeated scale times over one baked UV period (size x size), RGBA 0..1."""
+        img = self.load(binding)
+        if img is None:
+            return None
+        s = self.size
+        su, sv = max(1e-3, float(scale[0])), max(1e-3, float(scale[1]))
+        tw, th = max(1, int(round(s / su))), max(1, int(round(s / sv)))
+        key = (id(img), tw, th)
+        if key not in self.cache:
+            im = Image.fromarray(np.clip(img * 255 + 0.5, 0, 255).astype(np.uint8), 'RGBA')
+            self.cache[key] = np.asarray(im.resize((tw, th), Image.Resampling.LANCZOS)).astype(np.float32) / 255.0
+        t = self.cache[key]
+        ry, rx = -(-s // th), -(-s // tw)
+        return np.tile(t, (ry, rx, 1))[:s, :s]
+
+    def channel(self, binding, scale=(1.0, 1.0), default=1.0):
+        t = self.tile(binding, scale)
+        if t is None:
+            return np.full((self.size, self.size), default, np.float32)
+        ch = {'r': 0, 'g': 1, 'b': 2, 'a': 3}[(binding.get('channel') or 'r')] if isinstance(binding, dict) else 0
+        c = t[..., ch]
+        return 1.0 - c if isinstance(binding, dict) and binding.get('invert') else c
+
+
+def smoothstep(e0, e1, x):
+    t = np.clip((x - e0) / max(e1 - e0, 1e-6), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def unit_normal(rgba):
+    x = rgba[..., 0] * 2 - 1
+    y = rgba[..., 1] * 2 - 1
+    z = np.sqrt(np.clip(1 - x * x - y * y, 0, 1))
+    return np.stack([x, y, z], -1)
+
+
+def is_black(binding):
+    p = (binding or {}).get('path', '') if isinstance(binding, dict) else ''
+    return os.path.basename(p).startswith('$black')
+
+
+MIX_COLOUR, MIX_MASK, MIX_NORMAL, MIX_GLOSS = '0x80951342', '0x04429A80', '0x55A604DF', '0x56B697BB'
+MIX_BASE_NORMAL = '0x55A604DC'      # the base (paint) layer's micro normal of the *_mix_vehicle* / *_blend* techsets
+CONSTANT_SIZE = 16                  # images without variation are written at this size (shared after de-duplication)
+
+
+def scale_normal(n, k):
+    """Tangent-space normal (s,s,3) with its xy scaled by k (0 = flat), renormalised."""
+    if k == 1.0:
+        return n
+    m = n.copy()
+    m[..., :2] *= float(k)
+    return m / np.maximum(np.linalg.norm(m, axis=-1, keepdims=True), 1e-6)
+
+
+def base_micro_normal(mat, bk, over):
+    """BO3 micro-tile techsets whose own normal binding is the flat $normal carry the base layer's micro normal only
+    as a source (semantic 0x55A604DC, at the colour map's scale): the paint's orange peel, dents and brushing.
+    Returns it (s,s,3) or None; manifest 'micro_normal' scales it (0 disables)."""
+    nb = mat.get('normal') or {}
+    if not os.path.basename(nb.get('path', '')).startswith('$normal'):
+        return None
+    k = float(over.get('micro_normal', 1.0))
+    src = {x.get('semantic', '').upper(): x.get('path') for x in mat.get('sources', [])}
+    p = src.get(MIX_BASE_NORMAL.upper())
+    if not k or not p or os.path.basename(p).startswith('$'):
+        return None
+    t = bk.tile({'path': p})
+    return None if t is None else scale_normal(unit_normal(t), k)
+
+
+def write_images(jobs, images, img_dir, tmp, texconv_exe, size=None):
+    """texconv every (key, RGBA 0..255 array, format) job to <img_dir>/<images[key]>.dds with a full mip chain:
+    resized to size (when smaller), and to CONSTANT_SIZE when the map has no variation at all."""
+    os.makedirs(img_dir, exist_ok=True)
+    for key, data, fmt in jobs:
+        png = os.path.join(tmp, images[key] + '.png')
+        im = Image.fromarray(np.clip(data + 0.5, 0, 255).astype(np.uint8), 'RGBA')
+        if float(np.max(data.reshape(-1, 4).std(0))) < 0.5:
+            im = im.resize((CONSTANT_SIZE, CONSTANT_SIZE), Image.Resampling.BOX)
+        elif size and max(im.size) > size:
+            k = size / max(im.size)
+            im = im.resize((max(4, int(round(im.width * k))), max(4, int(round(im.height * k)))), Image.Resampling.LANCZOS)
+        im.save(png)
+        texconv(texconv_exe, png, img_dir, fmt)
+
+
+def mix_layer(mat, over):
+    """BO3 *_mix_vehicle* paints reveal a second (rust / bare metal) colour map through a grunge mask; GrayWolf lists
+    those maps only as sources. Rebuild that layer from the sources: colour at --mix_scale (default 4), mask at 1, blended
+    at the reveal threshold mix_reveal (default 0.86: worn spots and edges, not a rusted body)."""
+    if 'mix_vehicle' not in (mat.get('techset') or '') and not over.get('mix'):
+        return None
+    src = {x.get('semantic', '').upper(): x.get('path') for x in mat.get('sources', [])}
+    if MIX_COLOUR.upper() not in src or MIX_MASK.upper() not in src:
+        return None
+    sc = over.get('mix_scale', [4, 4])
+    layer = {'albedo': {'path': src[MIX_COLOUR.upper()]}, 'uv_scale': sc,
+             'mask': {'path': src[MIX_MASK.upper()], 'channel': 'r', 'uv_scale': over.get('mix_mask_scale', [1, 1])},
+             'reveal': over.get('mix_reveal', 0.86)}
+    if MIX_NORMAL.upper() in src:
+        layer['normal'] = {'path': src[MIX_NORMAL.upper()]}
+    if MIX_GLOSS.upper() in src:
+        layer['roughness'] = {'path': src[MIX_GLOSS.upper()], 'channel': 'r', 'invert': True}
+    return layer
+
+
+def composite(mat, bk, over):
+    """Linear diffuse (s,s,3), alpha (s,s), gloss 0..1 (s,s), normal (s,s,3), occlusion (s,s), linear specular F0
+    colour (s,s,3) or None.
+
+    BO3 environment materials are a specular-colour workflow: a metal has a black colour map and its colour in the
+    specular map, or (blend layers of the *_advanced techsets, which GrayWolf exports without a specular map) in the
+    layer tint. A layer whose colour map is $black_color is therefore a metal with F0 = its tint; any other layer is a
+    dielectric (F0 0.04) whose diffuse is colour x tint. Layer masks named *_m are authored per model and blend
+    linearly; tiling reveal maps (grunge, wet concrete) blend through the --reveal threshold."""
+    s = bk.size
+    tint = np.array(over.get('tint') or ((mat.get('color_tint') or {}).get('color') or [1, 1, 1])[:3], np.float32)
+    has_tint = bool(over.get('tint') or (mat.get('color_tint') or {}).get('color'))
+    alb = bk.tile(mat.get('albedo'))
+    if alb is None:
+        alb = np.ones((s, s, 4), np.float32)
+    lin = alb[..., :3] ** 2.2
+    if has_tint:
+        # BO3 tinted "micro" materials: a grey colour map is detail around the tint (normalised to its mean)
+        sat = float(np.mean(alb[..., :3].max(-1) - alb[..., :3].min(-1)))
+        if sat < 0.06 and not is_black(mat.get('albedo')):
+            lin = lin / max(float(lin.mean()), 1e-3)
+        lin = np.clip(lin * tint[None, None, :], 0, 1)
+    alpha = alb[..., 3].copy()
+    if mat.get('roughness'):
+        gloss = 1.0 - bk.channel(mat.get('roughness'), default=0.5)     # GrayWolf: a gloss map flagged invert = roughness
+    elif mat.get('roughness_value') is not None:
+        gloss = np.full((s, s), 1.0 - float(mat['roughness_value']), np.float32)
+    else:
+        gloss = np.full((s, s), 0.5, np.float32)
+    nrm = bk.tile(mat.get('normal'))
+    n = unit_normal(nrm) if nrm is not None else np.dstack([np.zeros((s, s)), np.zeros((s, s)), np.ones((s, s))])
+    micro = base_micro_normal(mat, bk, over)
+    if micro is not None:
+        n = micro
+    occ = bk.channel(mat.get('occlusion'), default=1.0) if mat.get('occlusion') else np.ones((s, s), np.float32)
+    sp = bk.tile(mat.get('specular'))
+    if sp is not None:
+        spec = sp[..., :3] ** 2.2
+    elif is_black(mat.get('albedo')) and has_tint:
+        spec = np.broadcast_to(tint, (s, s, 3)).astype(np.float32).copy()
+    else:
+        spec = np.full((s, s, 3), 0.04, np.float32)
+    rust_mask = None
+    layers = list(mat.get('layers') or [])
+    mix = mix_layer(mat, over)
+    if mix:
+        layers.append(mix)
+    for k, layer in enumerate(layers):
+        sc = layer.get('uv_scale') or [1, 1]
+        la = bk.tile(layer.get('albedo'), sc)
+        if la is None:
+            continue
+        lt = np.array((layer.get('tint') or [1, 1, 1])[:3], np.float32)
+        if is_black(layer.get('albedo')):
+            l_lin = np.zeros((s, s, 3), np.float32)
+            l_spec = np.broadcast_to(np.clip(lt, 0.04, 1.0), (s, s, 3))
+            if sp is not None and k == 0:
+                l_spec = spec                        # the material's own specular map belongs to its base layer
+        else:
+            l_lin = np.clip(la[..., :3] ** 2.2 * lt, 0, 1)
+            l_spec = np.full((s, s, 3), 0.04, np.float32)
+        if layer.get('roughness'):
+            l_gloss = 1.0 - bk.channel(layer.get('roughness'), sc, 0.5)
+        elif layer.get('roughness_value') is not None:
+            l_gloss = np.full((s, s), 1.0 - float(layer['roughness_value']), np.float32)
+        else:
+            l_gloss = gloss
+        ln = bk.tile(layer.get('normal'), sc)
+        l_n = scale_normal(unit_normal(ln), float(layer.get('normal_scale', 1.0))) if ln is not None else n
+        if layer.get('mask'):
+            m = bk.channel(layer['mask'], layer['mask'].get('uv_scale') or [1, 1], 0.0)
+            mname = os.path.splitext(os.path.basename(layer['mask'].get('path', '')))[0]
+            if mname.endswith('_m'):
+                w = np.clip(m, 0, 1)[..., None]
+            else:
+                th = float(layer.get('reveal', over.get('reveal', 0.72)))
+                w = smoothstep(th - 0.08, th + 0.08, m)[..., None]
+        else:
+            w = np.ones((s, s, 1), np.float32)
+        if over.get('paint') and k == 0:
+            continue                                  # the paint replaces the base layer
+        if k > 0:
+            rust_mask = w if rust_mask is None else np.maximum(rust_mask, w)
+        lin = lin * (1 - w) + l_lin * w
+        spec = spec * (1 - w) + l_spec * w
+        gloss = gloss * (1 - w[..., 0]) + l_gloss * w[..., 0]
+        n = n * (1 - w) + l_n * w
+    if over.get('paint'):
+        # repaint (manifest): the material becomes painted metal of this linear colour, its own colour map (or the
+        # luminance detail of the first layer) kept as detail; revealed rust layers (k > 0) stay, at the threshold
+        # 'reveal'. Used where a BO3 surface is raw/rusted metal or overgrowth but the station wants painted steel.
+        paint = np.array(over['paint'][:3], np.float32)
+        det = None
+        for b in [mat.get('albedo')] + [l.get('albedo') for l in (mat.get('layers') or [])]:
+            if b and not is_black(b):
+                t = bk.tile(b, (mat.get('layers') or [{}])[0].get('uv_scale') or [1, 1])
+                if t is not None:
+                    det = (t[..., :3] ** 2.2) @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+                    det = np.clip(det / max(float(det.mean()), 1e-3), 0.6, 1.4)
+                    break
+        if det is None:
+            det = np.ones((s, s), np.float32)
+        painted = np.clip(paint[None, None, :] * det[..., None], 0, 1)
+        rust_w = rust_mask if rust_mask is not None else np.zeros((s, s, 1), np.float32)
+        lin = painted * (1 - rust_w) + lin * rust_w
+        spec = np.full((s, s, 3), 0.04, np.float32) * (1 - rust_w) + spec * rust_w
+        gloss = float(over.get('gloss', 0.45)) * (1 - rust_w[..., 0]) + gloss * rust_w[..., 0]
+    g = over.get('grime')
+    if g:
+        # large-scale grime (manifest): a grey-scale grunge map darkens the colour and dulls the gloss
+        gm = bk.channel({'path': g['image'], 'channel': 'r'}, g.get('scale', [1, 1]), 1.0)
+        dirt = 1.0 - float(g.get('strength', 0.35)) * (1.0 - gm)
+        lin = lin * dirt[..., None]
+        gloss = gloss * (0.6 + 0.4 * dirt)
+    if 'gloss' in over and not over.get('paint'):
+        # a fixed gloss level (manifest), keeping a quarter of the map's own variation
+        gloss = np.full((s, s), float(over['gloss']), np.float32) * (0.75 + 0.25 * gloss / max(float(gloss.mean()), 1e-3))
+    if 'gloss_gain' in over:
+        gloss = gloss * float(over['gloss_gain'])
+    gloss = np.clip(gloss, 0, float(over.get('gloss_max', 1.0)))
+    n = scale_normal(n, float(over.get('normal_strength', 1.0)))
+    n /= np.maximum(np.linalg.norm(n, axis=-1, keepdims=True), 1e-6)
+    if over.get('dielectric'):
+        spec = np.full((s, s, 3), 0.04, np.float32)       # manifest: no metal anywhere (e.g. a $white_specular binding)
+    if 'albedo_gain' in over:
+        lin = np.clip(lin * float(over['albedo_gain']), 0, 1)
+        spec = np.clip(spec * float(over['albedo_gain']), 0, 1)
+    return lin, alpha, gloss, n, occ, spec
+
+
+def texconv(exe, png, out_dir, fmt):
+    subprocess.run([exe, '-nologo', '-y', '-m', '0', '-f', fmt, '-o', out_dir, png], check=True,
+                   stdout=subprocess.DEVNULL)
+
+
+NAME_MAX = 40
+
+
+def short_name(name):
+    """Material / image stems stay short: names longer than NAME_MAX keep their head plus a stable hash (suspected
+    cause of the BO3 car not drawing in run a1: its image names reached 78 characters, the drawn zod car's 63)."""
+    if len(name) <= NAME_MAX:
+        return name
+    import hashlib
+    return name[:NAME_MAX - 9] + '_' + hashlib.sha1(name.encode()).hexdigest()[:8]
+
+
+def safe(name):
+    return re.sub(r'[^A-Za-z0-9_]', '_', name)
+
+
+def copy_state(templates_root, tmpl, techset, new_name, out):
+    """Per-material state/constant files of the template, renamed for the new material."""
+    copied = []
+    for sub in ('state', 'constantbuffer'):
+        src_dir = os.path.join(templates_root, 'techsets', sub, techset, os.path.dirname(tmpl))
+        if not os.path.isdir(src_dir):
+            continue
+        stem = os.path.basename(tmpl)
+        for f in os.listdir(src_dir):
+            if f.startswith(stem + '.'):
+                dst = os.path.join(out, 'techsets', sub, techset, os.path.dirname(new_name),
+                                   os.path.basename(new_name) + f[len(stem):])
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copyfile(os.path.join(src_dir, f), dst)
+                copied.append(os.path.relpath(dst, out).replace(os.sep, '/'))
+    return copied
+
+
+def passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_exe, tmp, size=None):
+    """An IW7 source material (GrayWolf "iw" export): its images already are the stock packed layout
+    (packed_cs, packed_ng/nog, packed_a); re-encode them in the stock formats under the new name."""
+    def img(binding):
+        p = os.path.normpath(os.path.join(base, binding['path'])) if binding else None
+        return np.asarray(Image.open(p).convert('RGBA')).astype(np.float32) if p and os.path.exists(p) else None
+    cs = img(mat.get('albedo'))
+    nog = img(mat.get('normal'))
+    if nog is None:
+        nog = np.full(cs.shape, 127.5, np.float32)
+    if '_packed_ng' in (mat.get('normal') or {}).get('path', ''):
+        nog[..., 2] = 255.0                                  # packed_ng has no occlusion: full
+    role = role if role not in ('cutout?',) else 'opaque'
+    tmpl = TEMPLATES['opaque' if role in ('skip',) else role]
+    template = json.load(open(os.path.join(templates_root, 'materials', tmpl + '.json')))
+    techset = template['techniqueSet->name']
+    new_name = prefix + short_name(mat['name'])
+    stem = safe(new_name)
+    images = {'cs': stem + '_packed_cs', 'nog': stem + '_packed_nog'}
+    jobs = [('cs', cs, 'BC7_UNORM'), ('nog', nog, 'BC7_UNORM')]
+    a = None
+    for s_ in mat.get('sources', []):
+        if '_packed_a' in s_.get('path', ''):
+            a = img(s_)
+    if role in ('cutout', 'decal', 'glass'):
+        if a is None:
+            a = np.full(cs.shape, 255.0, np.float32)
+        images['a'] = stem + '_packed_a'
+        jobs.append(('a', a, 'BC4_UNORM'))
+    write_images(jobs, images, os.path.join(out, 'images'), tmp, texconv_exe, int(over.get('size', size or 1 << 15)))
+    m = copy.deepcopy(template)
+    for t in m['textureTable']:
+        if t['semantic'] == SEM_CS:
+            t['image'] = images['cs']
+        elif t['semantic'] == SEM_NOG:
+            t['image'] = images['nog']
+        elif t['semantic'] == SEM_A and 'a' in images:
+            t['image'] = images['a']
+    mat_path = os.path.join(out, 'materials', new_name + '.json')
+    os.makedirs(os.path.dirname(mat_path), exist_ok=True)
+    json.dump(m, open(mat_path, 'w'), indent=4)
+    state = copy_state(templates_root, tmpl, techset, new_name, out)
+    return {'material': mat['name'], 'iw7': new_name, 'role': role, 'template': tmpl, 'techset': techset,
+            'size': min(int(cs.shape[0]), int(over.get('size', size or cs.shape[0]))), 'images': images,
+            'state_files': len(state), 'source': 'iw7 packed passthrough'}
+
+
+def bake_material(mat, base, templates_root, out, prefix, size, over, texconv_exe, keep, tmp):
+    role = over.get('role') or classify(mat, keep)
+    if role == 'skip':
+        return {'material': mat['name'], 'role': 'skip'}
+    if not mat.get('layers'):
+        # single-scale material: bake at the largest map it binds (64 .. --size)
+        dims = [64]
+        for key in ('albedo', 'normal', 'roughness', 'specular', 'occlusion', 'emissive'):
+            b = mat.get(key)
+            p = os.path.normpath(os.path.join(base, b['path'])) if isinstance(b, dict) and b.get('path') else None
+            if p and os.path.exists(p) and not os.path.basename(p).startswith('$'):
+                dims.append(max(Image.open(p).size))
+        size = min(size, max(dims))
+    size = int(over.get('size', size))
+    bk = Bake(base, size)
+    iw_cs = (mat.get('albedo') or {}).get('path', '')
+    if '_packed_cs' in iw_cs:
+        return passthrough_iw7(mat, base, templates_root, out, prefix, role, over, texconv_exe, tmp, size)
+    lin, alpha, gloss, n, occ, spec = composite(mat, bk, over)
+    if role == 'cutout?':
+        role = 'cutout' if float(np.mean(alpha < 0.5)) > 0.01 else 'opaque'
+    if role in ('glass', 'decal', 'cutout') and 'alpha' in over:
+        alpha = alpha * float(over['alpha'])
+    tmpl = TEMPLATES[role]
+    tech_json = os.path.join(templates_root, 'materials', tmpl + '.json')
+    template = json.load(open(tech_json))
+    techset = template['techniqueSet->name']
+    new_name = prefix + short_name(mat['name'])
+    stem = safe(new_name)
+    srgb = np.clip(lin, 0, 1) ** (1 / 2.2)
+    albedo255 = np.dstack([srgb * 255.0, np.full(srgb.shape[:2], 255.0)])
+    spec255 = np.clip(spec, 0, 1) ** (1 / 2.2) * 255.0 if spec is not None else None
+    cs = pack_cs(albedo255, spec255, mat.get('metalness_value'))
+    nog = np.empty(cs.shape, np.float32)
+    nog[..., 0] = np.clip(gloss, 0, 1) * 255.0
+    g, a = octahedral_ga(np.dstack([(n[..., 0] + 1) / 2 * 255.0, (n[..., 1] + 1) / 2 * 255.0]))
+    nog[..., 1], nog[..., 3] = g, a
+    nog[..., 2] = np.clip(occ, 0, 1) * 255.0
+    images = {'cs': stem + '_packed_cs', 'nog': stem + '_packed_nog'}
+    jobs = [('cs', cs, 'BC7_UNORM'), ('nog', nog, 'BC7_UNORM')]
+    if role in ('cutout', 'decal', 'glass'):
+        am = np.zeros(cs.shape, np.float32)
+        am[..., 0] = np.clip(alpha, 0, 1) * 255.0
+        am[..., 3] = 255.0
+        images['a'] = stem + '_packed_a'
+        jobs.append(('a', am, 'BC4_UNORM'))
+    if role == 'emissive':
+        e = bk.tile(mat.get('emissive'))
+        em = np.zeros(cs.shape, np.float32)
+        em[..., :3] = np.sqrt(np.clip(e[..., :3] ** 2.2, 0, 1)) * 255.0
+        em[..., 3] = 255.0
+        images['e'] = stem + '_e'
+        jobs.append(('e', em, 'BC7_UNORM'))
+    write_images(jobs, images, os.path.join(out, 'images'), tmp, texconv_exe)
+    m = copy.deepcopy(template)
+    table = []
+    for t in m['textureTable']:
+        t = dict(t)
+        if t['semantic'] == SEM_CS:
+            t['image'] = images['cs']
+        elif t['semantic'] == SEM_NOG:
+            t['image'] = images['nog']
+        elif t['semantic'] == SEM_A and 'a' in images:
+            t['image'] = images['a']
+        elif t['semantic'] == SEM_COLOR and 'e' in images:
+            t['image'] = images['e']
+        table.append(t)
+    m['textureTable'] = table
+    for c in m.get('constantTable', []):
+        if c.get('name') == 'emissivePara' and 'emissive' in over:
+            c['literal'][0] = float(over['emissive'])
+    mat_path = os.path.join(out, 'materials', new_name + '.json')
+    os.makedirs(os.path.dirname(mat_path), exist_ok=True)
+    json.dump(m, open(mat_path, 'w'), indent=4)
+    state = copy_state(templates_root, tmpl, techset, new_name, out)
+    return {'material': mat['name'], 'iw7': new_name, 'role': role, 'template': tmpl, 'techset': techset,
+            'size': size, 'images': images, 'state_files': len(state),
+            'albedo_mean_srgb': [round(float(x), 3) for x in srgb.reshape(-1, 3).mean(0)],
+            'alpha_mean': round(float(alpha.mean()), 3)}
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument('materials', nargs='+')
+    ap.add_argument('--templates', required=True, help='ZoneTool dump root with materials/ and techsets/ of the templates (techsets_cp_zmb)')
+    ap.add_argument('--texconv', required=True)
+    ap.add_argument('--out', required=True)
+    ap.add_argument('--prefix', default='mo/')
+    ap.add_argument('--size', type=int, default=1024)
+    ap.add_argument('--manifest', help='JSON {material: {role, tint, reveal, size, alpha, emissive, albedo_gain}}')
+    ap.add_argument('--keep', nargs='*', default=[], help='name substrings of materials never skipped')
+    ap.add_argument('--only', nargs='*')
+    a = ap.parse_args(argv)
+    over_all = json.load(open(a.manifest)) if a.manifest else {}
+    done, report = set(), []
+    with tempfile.TemporaryDirectory() as tmp:
+        for mj in a.materials:
+            base = os.path.dirname(os.path.abspath(mj))
+            for mat in json.load(open(mj))['materials']:
+                if mat['name'] in done or (a.only and mat['name'] not in a.only):
+                    continue
+                done.add(mat['name'])
+                over = over_all.get(mat['name'], {})
+                report.append(bake_material(mat, base, a.templates, a.out, a.prefix, a.size, over, a.texconv,
+                                            a.keep, tmp))
+    print(json.dumps({'materials': report}, indent=1))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

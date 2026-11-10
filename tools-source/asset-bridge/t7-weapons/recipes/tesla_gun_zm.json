@@ -1,0 +1,20 @@
+{
+  "weapon": "tesla_gun_zm",
+  "display": "DG-2",
+  "sound_gain_db": 6.0,
+  "view_effects": [
+    "switch_on=tesla_viewmodel_rail@tag_flash"
+  ],
+  "why": {
+    "view_effects": "BO3 plays the rail from client script; IW7 ties it to the switch-on notetrack (first raise, end of reload)",
+    "reticle*": "owner 2026-11-08: the template's energy-pistol hit reticle on a two-handed lightning gun; IW7's energy rifles (CR-56, Erad, Ripper) use the plain side lines at 8/8",
+    "sound_gain_db": "2026-11-09 audio6 witness: 1 s RMS -19 to -25 dBFS against -16 for stock Facemelter in the same capture path; BO3's FLACs are already at full scale, so the alias volume carries the gain (cap 1.0)"
+  },
+  "overrides": {
+    "reticleOnePiece": "",
+    "reticleSide": "reticle_side_small",
+    "reticleCenter": "",
+    "iReticleCenterSize": 8,
+    "iReticleSideSize": 8
+  }
+}
