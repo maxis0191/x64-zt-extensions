@@ -22,8 +22,76 @@
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/iw7-audio", "-v"]
     },
     {
-      "id": "iw7-player-template-source-support",
-      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-v"]
+      "id": "weapon-export-test_build_default",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$t=(New-Item -ItemType Directory -Force -Path '{run}/tmp').FullName;$env:TEMP=$t;$env:TMP=$t;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_build_default.py -v;exit $LASTEXITCODE"]
+    },
+    {
+      "id": "weapon-export-test_definition_export",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$t=(New-Item -ItemType Directory -Force -Path '{run}/tmp').FullName;$env:TEMP=$t;$env:TMP=$t;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_definition_export.py -v;exit $LASTEXITCODE"]
+    },
+    {
+      "id": "weapon-export-test_definition_recipe",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_definition_recipe.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_definition_source",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_definition_source.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_export_default",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$t=(New-Item -ItemType Directory -Force -Path '{run}/tmp').FullName;$env:TEMP=$t;$env:TMP=$t;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_export_default.py -v;exit $LASTEXITCODE"]
+    },
+    {
+      "id": "weapon-export-test_export_publication",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_export_publication.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_native_body_schema",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_native_body_schema.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_native_body_schema_table_source",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "if(!$env:IW7_PRODUCT_ROOT){throw 'Run through checks.ps1: it names the checkout whose product.json these tests read.'};Set-Location -LiteralPath $env:IW7_PRODUCT_ROOT;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_native_body_schema_table_source.py -v;exit $LASTEXITCODE"]
+    },
+    {
+      "id": "weapon-export-test_native_pair_bodies_source",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "if(!$env:IW7_PRODUCT_ROOT){throw 'Run through checks.ps1: it names the checkout whose product.json these tests read.'};Set-Location -LiteralPath $env:IW7_PRODUCT_ROOT;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_native_pair_bodies_source.py -v;exit $LASTEXITCODE"]
+    },
+    {
+      "id": "weapon-export-test_neutral_dependencies_source",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_neutral_dependencies_source.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_neutral_dependency_inputs",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_neutral_dependency_inputs.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_neutral_inventory_source",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_neutral_inventory_source.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_neutral_pair_inputs",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_neutral_pair_inputs.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_pair_checked_memory_source",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_pair_checked_memory_source.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_pair_json_core_source",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "if(!$env:IW7_PRODUCT_ROOT){throw 'Run through checks.ps1: it names the checkout whose product.json these tests read.'};Set-Location -LiteralPath $env:IW7_PRODUCT_ROOT;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_pair_json_core_source.py -v;exit $LASTEXITCODE"]
+    },
+    {
+      "id": "weapon-export-test_pair_owned_session_source",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "if(!$env:IW7_PRODUCT_ROOT){throw 'Run through checks.ps1: it names the checkout whose product.json these tests read.'};Set-Location -LiteralPath $env:IW7_PRODUCT_ROOT;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_pair_owned_session_source.py -v;exit $LASTEXITCODE"]
+    },
+    {
+      "id": "weapon-export-test_pair_session_source",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_pair_session_source.py", "-v"]
+    },
+    {
+      "id": "weapon-export-test_prepare_module",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-p", "test_prepare_module.py", "-v"]
     },
     {
       "id": "tools-source-asset-bridge-model",
@@ -198,17 +266,32 @@
       ]
     },
     {
-      "id": "tools-source-asset-bridge-surfaces-sound",
-      "command": [
-        "python",
-        "-B",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "tools-source/asset-bridge/surfaces/sound",
-        "-v"
-      ]
+      "id": "surfaces-sound-test_codec_worker",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/surfaces/sound", "-p", "test_codec_worker.py", "-v"]
+    },
+    {
+      "id": "surfaces-sound-test_dump_only",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/surfaces/sound", "-p", "test_dump_only.py", "-v"]
+    },
+    {
+      "id": "surfaces-sound-test_native_checksum",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/surfaces/sound", "-p", "test_native_checksum.py", "-v"]
+    },
+    {
+      "id": "surfaces-sound-test_sab",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/surfaces/sound", "-p", "test_sab.py", "-v"]
+    },
+    {
+      "id": "surfaces-sound-test_sound",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/surfaces/sound", "-p", "test_sound.py", "-v"]
+    },
+    {
+      "id": "surfaces-sound-test_sound_closure",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/surfaces/sound", "-p", "test_sound_closure.py", "-v"]
+    },
+    {
+      "id": "surfaces-sound-test_standard_mod",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/surfaces/sound", "-p", "test_standard_mod.py", "-v"]
     },
     {
       "id": "tools-source-asset-bridge-surfaces-sound-native-checksum",
@@ -342,6 +425,10 @@
         "-File",
         "tools-source/asset-bridge/t7-bridge/Test-T7PrepatchImageCallerConsumer.ps1"
       ]
+    },
+    {
+      "id": "Test-T7PrepatchImageCaller",
+      "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", "tools-source/asset-bridge/t7-iw7/Test-T7PrepatchImageCaller.ps1"]
     },
     {
       "id": "Test-T7PrepatchReferenceV2Consumer",
@@ -671,17 +758,6 @@
         "-NonInteractive",
         "-File",
         "tools-source/asset-bridge/t7-bridge/Test-T7CatalogueBootstraps.ps1"
-      ]
-    },
-    {
-      "id": "Test-T7BootstrapGroup",
-      "command": [
-        "pwsh",
-        "-NoLogo",
-        "-NoProfile",
-        "-NonInteractive",
-        "-File",
-        "tools-source/asset-bridge/t7-bridge/Test-T7BootstrapGroup.ps1"
       ]
     },
     {
