@@ -2,7 +2,7 @@
 # build it under the resource lease. Never touches the source work dir (read-only copy).
 #   .\Stage-OutfitZone.ps1 -SourceWork <assembled ztwork of a good level build> -Work <own ztwork (new-work.ps1)>
 #       -Models body_zmb_hero_jock_sztest,body_zmb_hero_jock_szred -KitDump <writer kitdump> [-MaterialRoots <dirs>]
-#       [-Build -ZoneTool <iw7-creator-sdk checkout>	ools-source\iwzmap\zt.ps1]
+#       [-Build -ZoneTool <iw7-creator-sdk checkout>\tools-source\iwzmap\zt.ps1]
 # -Build runs once. When the build slot is busy it stops with the tool's message: run it again later, do not loop.
 param(
   [Parameter(Mandatory)][string]$SourceWork,
@@ -16,7 +16,7 @@ param(
   [switch]$Build,
   [string]$ZoneTool)                                     # with -Build: zt.ps1 of iw7-creator-sdk (tools-source\iwzmap)
 $ErrorActionPreference='Stop'
-if($Build -and (!$ZoneTool -or !(Test-Path -LiteralPath $ZoneTool -PathType Leaf))){throw '-Build needs -ZoneTool <iw7-creator-sdk checkout>	ools-source\iwzmap\zt.ps1 (an existing file).'}
+if($Build -and (!$ZoneTool -or !(Test-Path -LiteralPath $ZoneTool -PathType Leaf))){throw '-Build needs -ZoneTool <iw7-creator-sdk checkout>\tools-source\iwzmap\zt.ps1 (an existing file).'}
 $Z="$Work\zonetool\$Map"
 if($Refresh -or !(Test-Path $Z)){
   robocopy "$SourceWork\zonetool\$Map" $Z /E /MT:16 /NFL /NDL /NJH /NP /R:1 /W:1 | Out-Null
