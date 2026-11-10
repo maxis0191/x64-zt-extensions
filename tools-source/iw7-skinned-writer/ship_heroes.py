@@ -1,6 +1,11 @@
 """Ship fitted hero outfits (heroes/fit/<hero>/export) as zone-ready IW7 assets.
 
-python -I ship_heroes.py --config ship_heroes.json --out <dir> [--heroes aj,andre] [--skip-pack]
+python -I ship_heroes.py --config ship_heroes.example.json --out <dir> [--heroes aj,andre] [--skip-pack]
+
+The config names local inputs. Its root values (stock_dump, techsets_dump, fit_root, lods_root, blender, texconv) may
+contain ${NAME}: the environment variable NAME is put there, and a missing one stops the run with its name. A model's
+"lods" paths that are not absolute resolve under lods_root. ship_heroes.example.json uses IWZ_DUMP, IWZ_HEROES,
+IWZ_BLENDER and IWZ_TEXCONV (the same variables as the zombie kit).
 
 Per hero: pack the fit textures (normal map green flipped: the fit bakes OpenGL +Y, stock IW7 packed_nog decodes as
 DirectX +Y down, see hero_material.py normcheck), make the new materials (hero_material_zone.py, stock templates),
@@ -11,6 +16,7 @@ Output: <out>/kitdump (xmodel, xsurface), <out>/matroot (images, materials, tech
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -69,6 +75,37 @@ def strip_model(dump, src_name, new_name, drop, out):
     return {"model": new_name, "materials_per_lod": [l[0][1] for l in lods], "dropped": sorted(drop)}
 
 
+ROOT_KEYS = ("stock_dump", "techsets_dump", "fit_root", "lods_root", "blender", "texconv")
+
+
+def load_config(path, environ=None):
+    """Read a ship config: put environment variables in the root values, resolve relative LOD paths."""
+    environ = os.environ if environ is None else environ
+    with open(path, encoding="utf-8") as f:
+        cfg = json.load(f)
+    missing = []
+
+    def expand(match):
+        value = environ.get(match.group(1))
+        if not value:
+            missing.append(match.group(1))
+            return match.group(0)
+        return value
+
+    for key in ROOT_KEYS:
+        if isinstance(cfg.get(key), str):
+            cfg[key] = re.sub(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}", expand, cfg[key])
+    if missing:
+        raise SystemExit("%s: set the environment variable(s) %s" % (path, ", ".join(sorted(set(missing)))))
+    for hero in cfg.get("heroes", {}).values():
+        for spec in hero.get("models", {}).values():
+            lods = spec.get("lods") or []
+            if any(not os.path.isabs(p) for p, _ in lods) and not cfg.get("lods_root"):
+                raise SystemExit("%s: relative \"lods\" paths need the root value \"lods_root\"" % path)
+            spec["lods"] = [[p if os.path.isabs(p) else os.path.join(cfg["lods_root"], p), d] for p, d in lods]
+    return cfg
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
@@ -76,7 +113,7 @@ def main():
     ap.add_argument("--heroes", default="")
     ap.add_argument("--skip-pack", action="store_true")
     a = ap.parse_args()
-    cfg = json.load(open(a.config))
+    cfg = load_config(a.config)
     out = a.out
     kit, matroot = os.path.join(out, "kitdump"), os.path.join(out, "matroot")
     for d in (os.path.join(kit, "xmodel"), os.path.join(kit, "xsurface"), matroot, os.path.join(out, "logs")):

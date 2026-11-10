@@ -21,6 +21,8 @@ python t7_env_port.py --manifest port.json --out <dump root> [--graywolf <GrayWo
 | `blender/track_kit.py` | procedural rails (AREMA-like profile), ballast prism, third rail on porcelain insulators, LOD1, materials.json |
 | `blender/underframe.py` | subway car underframe: centre sill, bearers, bevelled equipment boxes |
 | `blender/car_end.py` | subway car end dressing: destination blind box, marker lamps, coupler (the blind's text image comes from the SDK art tools) |
+| `blender/genset.py` | generator set dressing around two BO3 machines: plinth, skid, coupling guard, switchgear cabinet, label plate, cable trough; writes the glb, its materials.json and placement anchors |
+| `blender/wall_cabinets.py` | period wall fittings: a fire-hose cabinet and a help-point backing plate, one glb per fitting |
 | `blender/blender_decimate.py`, `blender/blender_match_view.py` | LOD decimation; material-ID + reference render at an engine camera |
 | `car_compare.py` | per-material comparison of an engine frame against the reference render from the same camera |
 | `test_env_model.py` | unit tests (`python -m unittest test_env_model`) |

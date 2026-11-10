@@ -1,8 +1,8 @@
 # Station Zero zombie kit - NOTES (updated 2026-11-09 ~21:40, agent stopped on request)
 
 ## Where things are
-- Code: x64-zt-extensions branch `codex/iwz-zombie-kit`, worktree
-  `C:\Users\ezvalo\Documents\IW7-Products\worktrees\ext-iwz-zombie-kit` (based on codex/iw7-skinned-writer 3283f2a).
+- Code: on the main line of x64-zt-extensions since 2026-11-10, in `tools-source/iwz-zombie-kit` (written on the
+  branch `codex/iwz-zombie-kit`, based on codex/iw7-skinned-writer 3283f2a). Overview: `README.md` beside this file.
   - `tools-source/iwz-zombie-kit/fit_zombie.py` (Blender): AI mesh -> 6 normal parts + 5 damaged gibs, loads
     heroes\tools\fit\fit_hero.py functions WITHOUT running its main (hero file untouched).
   - `run_zombie.py` (stdlib): fit -> blender_export -> build_model (base = stock part xmb) -> hero_material pack ->
@@ -52,3 +52,8 @@
    (roster forced) + capture; FFSHA256 check.
 3. Dismember fixture (3954.gsc:949-975 bitmask), then the other 7 configs (F* = gender female; F4 glb present).
 4. Reviewers, fixes, report.
+
+## Since 2026-11-10: local inputs come from the environment
+`run_zombie.py` reads `IWZ_HEROES`, `IWZ_BLENDER`, `IWZ_DUMP` and `IWZ_TEXCONV` (optional `IWZ_FIT_DIR`, `IWZ_WRITER`)
+and stops with the missing names; `fit_zombie.py` needs `IWZ_FIT_DIR`. No machine path remains in the code. The
+pipeline was not run again after this change.

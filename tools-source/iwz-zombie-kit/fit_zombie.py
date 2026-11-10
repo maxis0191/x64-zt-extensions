@@ -30,10 +30,13 @@ import numpy as np
 from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
-FIT_DIR = os.environ.get("IWZ_FIT_DIR", r"C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\heroes\tools\fit")
+FIT_DIR = os.environ.get("IWZ_FIT_DIR", "")  # folder of the local fit_hero.py; run_zombie.py sets it
 
 
 def load_fit_hero():
+    if not FIT_DIR:
+        raise SystemExit("Set the environment variable IWZ_FIT_DIR to the folder that holds fit_hero.py "
+                         "(run_zombie.py sets it to <IWZ_HEROES>/tools/fit).")
     src_path = os.path.join(FIT_DIR, "fit_hero.py")
     src = open(src_path, encoding="utf-8").read()
     lines = src.rstrip().split("\n")

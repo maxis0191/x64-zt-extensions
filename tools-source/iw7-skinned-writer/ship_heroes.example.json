@@ -1,9 +1,10 @@
 {
- "stock_dump": "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-map-ref-a\\dump\\cp_zmb",
- "techsets_dump": "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-map-ref-a\\dump\\techsets_cp_zmb",
- "fit_root": "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\fit",
- "blender": "C:\\Users\\ezvalo\\Documents\\IW7-Tools\\blender-4.5.15\\blender-4.5.15-windows-x64\\blender.exe",
- "texconv": "C:\\Users\\ezvalo\\Documents\\IW7-Tools\\texconv-may2026\\texconv.exe",
+ "stock_dump": "${IWZ_DUMP}/cp_zmb",
+ "techsets_dump": "${IWZ_DUMP}/techsets_cp_zmb",
+ "fit_root": "${IWZ_HEROES}/fit",
+ "blender": "${IWZ_BLENDER}",
+ "texconv": "${IWZ_TEXCONV}",
+ "lods_root": "${IWZ_HEROES}/writer/heroes_v2/lods",
  "heroes": {
   "aj": {
    "materials": {
@@ -42,11 +43,11 @@
      "lod_dist": 300,
      "lods": [
       [
-       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\aj_body_lod1.json",
+       "aj_body_lod1.json",
        1000
       ],
       [
-       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\aj_body_lod2.json",
+       "aj_body_lod2.json",
        10000
       ]
      ]
@@ -105,11 +106,11 @@
      "lod_dist": 300,
      "lods": [
       [
-       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\andre_body_lod1.json",
+       "andre_body_lod1.json",
        1000
       ],
       [
-       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\andre_body_lod2.json",
+       "andre_body_lod2.json",
        10000
       ]
      ]
@@ -168,11 +169,11 @@
      "lod_dist": 300,
      "lods": [
       [
-       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\poindexter_body_lod1.json",
+       "poindexter_body_lod1.json",
        1000
       ],
       [
-       "C:\\Users\\ezvalo\\Documents\\IW7-Runtime\\iwz-stage2\\heroes\\writer\\heroes_v2\\lods\\poindexter_body_lod2.json",
+       "poindexter_body_lod2.json",
        10000
       ]
      ]

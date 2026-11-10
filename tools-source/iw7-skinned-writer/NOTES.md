@@ -1,8 +1,8 @@
 # IW7 skinned model writer (heroes/writer) - NOTES
 
-Code: x64-zt-extensions branch `codex/iw7-skinned-writer`, worktree
-`C:\Users\ezvalo\Documents\IW7-Products\worktrees\ext-iw7-skinned-writer\tools-source\iw7-skinned-writer`.
-Python: `C:\Users\ezvalo\AppData\Local\Programs\Python\Python312\python.exe -I` (pure stdlib, no numpy).
+Code: on the main line of x64-zt-extensions since 2026-11-10, in `tools-source/iw7-skinned-writer` (written on the
+branch `codex/iw7-skinned-writer`). Overview and entry commands: `README.md` beside this file.
+Python: `python -I` with Python 3.12 (pure stdlib, no numpy).
 
 ## M1 reader (PROVEN_LOCAL, 2026-11-09)
 - `ztdump.py` ZoneTool assetmanager record stream (type byte, existing byte, u32 count/size, OFFSET re-use records).
@@ -74,6 +74,10 @@ Python: `C:\Users\ezvalo\AppData\Local\Programs\Python\Python312\python.exe -I` 
   setmodel()s must be precached at level load -> outfit_extra_models() table.
 - Torso RGB (m3\torso_rgb.json): o2 sztest [19,17,15] (black) -> o3 [25,38,54] vs stock [29,39,53]; szred [70,28,24].
 - Evidence crops: m3\evidence\*.png/jpg.
+- Tracked copy of the torso measurement: `evidence-m3-torso_rgb.json` beside this file (evidence, kept as recorded).
+- `gsc/iwzmap_head_probe.gsc` and `gsc/iwzmap_head_probe2.gsc`: fixtures of a local private session that asked how
+  head models draw on script models (attach tags). Nothing else in the repository refers to them; kept as the record
+  of that question.
 - Procedural bones: cp_iwz csv carries 'proceduralbones,,procedurual_male_undershoulder' (reference row) and the
   writer xmb keeps the ref (read back): resolved like the stock body. Not separately measured in a frame.
 - LOD: writer models have 1 LOD (dist 1e6): drawn at 500/1000/2000 u (o4 far frames), never reduced -> perf risk.
@@ -92,12 +96,12 @@ python -I build_model.py o.json --base-xmodel <cp_zmb>\xmodel\body_zmb_hero_jock
    --transfer-from <cp_zmb>\xsurface\body_zmb_hero_jock_lod030v7e1p3_0060.xsb [--material-map map.json]
 blender -b --factory-startup -P hero_material.py -- pack --albedo a.png --normal n.png --roughness r.png --ao ao.png --metalness 0 --stem <stem> --out <dir>
 python -I hero_material_zone.py --techsets-dump <dump>\techsets_cp_zmb --template mopw/zmb_hero_jock_jacket --name mopw/<new> --cs ... --nog ... --texconv <texconv.exe> --out <matroot>
-ops\Stage-OutfitZone.ps1 -SourceWork <good level ztwork> -Work <own ztwork> -Models <names> -KitDump <kitdump> -MaterialRoots <matroot> -Build
-ops\Run-OutfitProof.ps1 -UsermapDir <um> -OutRoot <runs> -View "x,y,z,yaw"
+ops\Stage-OutfitZone.ps1 -SourceWork <good level ztwork> -Work <own ztwork> -Models <names> -KitDump <kitdump> -MaterialRoots <matroot> -Build -ZoneTool <iw7-creator-sdk>\tools-source\iwzmap\zt.ps1
+ops\Run-OutfitProof.ps1 -Runner <server>\ops\iwzmap\Test-IWZMapLocal.ps1 -SourcePackage <source package> -GameRoot <bench root> -InjectDll <error journal dll> -UsermapDir <um> -OutputRoot <new run dir> -View "x,y,z,yaw"
 Add the outfit row in gsc\cp_iwz_outfits.gsc outfit_rows(): [ index, body, view arms, head, hair ].
 
 ## Hero outfits ship (2026-11-09 night) - IN PROGRESS (stopped on request 21:18)
-- ship_heroes.py + ship_heroes.json: pack (normal green flipped: stock nog = DirectX, fit = OpenGL, hero_material.py
+- ship_heroes.py + ship_heroes.example.json: pack (normal green flipped: stock nog = DirectX, fit = OpenGL, hero_material.py
   normcheck), materials (body mopw clone of jock jacket/jeans, hair + VM sleeves mo clone of nerd helmet), body with
   --transfer-from hero stock LOD0, LOD chain 300/1000/10000 (blender_export --decimate 0.35/0.12, build_model --lods),
   hair (valley girl hair skeleton), VM arms, Poindexter cleaned head (helmet/accessories/lenses dropped, 6 LODs).
@@ -112,3 +116,11 @@ Add the outfit row in gsc\cp_iwz_outfits.gsc outfit_rows(): [ index, body, view 
   -Extra '+set paris_iwz_hero_nohud 1 +set paris_iwz_hero_ref body_zmb_hero_jock,head_zmb_hero_jock'), build
   review_r2 like review_r1, ask parent for reviewers.
 - Bug fixed: Run-OutfitProof -Extra was silently dropped (PowerShell $Extra/$extra same variable).
+
+## Since 2026-11-10: no machine paths, no retry loop
+- `ops/Run-OutfitProof.ps1` takes the runner, the source package, the game root and the diagnostic DLL as mandatory
+  parameters, refuses a game root that is not a bench root (`paris-bench-root.json` absent) and runs once: the
+  former version tested in the owner's game folder and retried for up to three hours. Not run since this change.
+- `ops/Stage-OutfitZone.ps1 -Build` takes `-ZoneTool` and runs the build once.
+- `ship_heroes.py` reads `${NAME}` environment variables in the root values of its config and resolves relative
+  LOD paths under `lods_root`; the tracked config is `ship_heroes.example.json`.
