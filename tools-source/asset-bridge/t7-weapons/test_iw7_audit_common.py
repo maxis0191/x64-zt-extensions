@@ -298,6 +298,150 @@ class GroupJudgeTest(unittest.TestCase):
             self.assertEqual(common.template_of(self.WEAPON, None, 'weapons'), (None, None, 0.0))
 
 
+class ClosingTest(unittest.TestCase):
+    def intent(self, doc):
+        with tempfile.TemporaryDirectory() as root:
+            write(root, 'gun.json', doc)
+            return common.Intent.load(os.path.join(root, 'gun.json'))
+
+    def test_twins_fold_into_one_finding_and_different_evidence_does_not(self):
+        report = common.Report('probe', 'tree')
+        report.add('warn', 'X-ONE', 'gun', 'spread is stock', source='stock', keys=['a'])
+        report.add('warn', 'X-ONE', 'gun_pap1', 'spread is stock', source='stock', keys=['a'])
+        report.add('warn', 'X-ONE', 'other', 'spread is stock', source='stock', keys=['b'])
+        report.fold()
+        self.assertEqual([(f['asset'], f['evidence'].get('also')) for f in report.findings],
+                         [('gun', ['gun_pap1']), ('other', None)])
+        out = io.StringIO()
+        report.write_text(out)
+        self.assertIn('gun (+1: gun_pap1): spread is stock', out.getvalue())
+
+    def test_a_declared_reason_answers_a_warning_never_an_error(self):
+        intent = self.intent({'schema': common.INTENT_SCHEMA, 'item': 'gun', 'also': ['gun_pap1'], 'decisions': {
+            'finding:X-COPY': {'keep': True, 'why': 'the stock trail is wanted'},
+            'finding:X-BIG:vfx/zombie/*': {'keep': True, 'why': 'meant to fill the room'},
+            'finding:X-NOWHY': {'keep': True, 'why': ''}}})
+        report = common.Report('probe', 'tree')
+        report.add('warn', 'X-COPY', 'gun', 'copy')
+        report.add('warn', 'X-COPY', 'gun_pap1', 'copy')
+        report.add('warn', 'X-COPY', 'stranger', 'copy')
+        report.add('warn', 'X-BIG', 'vfx/zombie/boom', 'big')
+        report.add('warn', 'X-NOWHY', 'gun', 'no reason given')
+        report.add('error', 'X-COPY', 'gun', 'broken')
+        report.answer(intent)
+        got = [(f['severity'], f['code'], f['asset'], f.get('answered')) for f in report.findings]
+        self.assertEqual(got, [('info', 'X-COPY', 'gun', 'the stock trail is wanted'),
+                               ('info', 'X-COPY', 'gun_pap1', 'the stock trail is wanted'),
+                               ('warn', 'X-COPY', 'stranger', None),
+                               ('info', 'X-BIG', 'vfx/zombie/boom', 'meant to fill the room'),
+                               ('warn', 'X-NOWHY', 'gun', None),
+                               ('error', 'X-COPY', 'gun', None)])
+
+    def test_strict_fails_on_an_unanswered_warning_only(self):
+        report = common.Report('probe', 'tree')
+        report.add('info', 'X', 'gun', 'fact')
+        self.assertEqual((report.exit_code(), report.exit_code(strict=True)), (0, 0))
+        report.add('warn', 'X', 'gun', 'look')
+        self.assertEqual((report.exit_code(), report.exit_code(strict=True)), (0, 2))
+        report.add('error', 'X', 'gun', 'broken')
+        self.assertEqual((report.exit_code(), report.exit_code(strict=True)), (1, 1))
+
+    def test_finish_answers_folds_and_applies_the_gate(self):
+        intent = self.intent({'schema': common.INTENT_SCHEMA, 'item': 'gun', 'decisions': {
+            'finding:X-COPY': {'keep': True, 'why': 'wanted'}}})
+        args = common.add_common_args(argparse.ArgumentParser()).parse_args(['--strict'])
+        report = common.Report('probe', 'tree')
+        report.add('warn', 'X-COPY', 'gun', 'copy')
+        self.assertEqual(common.finish(report, args, io.StringIO(), intent=intent), 0)
+        report.add('warn', 'X-OTHER', 'gun', 'look')
+        self.assertEqual(common.finish(report, args, io.StringIO(), intent=intent), 2)
+
+    def test_template_per_kind_and_variants(self):
+        intent = self.intent({'schema': common.INTENT_SCHEMA, 'item': 'gun', 'also': ['gun_pap1'],
+                              'template': {'weapon': 'stock_gun', 'sfxpkg': 'stock_sfx'},
+                              'decisions': {'weapon:a': {'value': 1, 'why': 'because'}}})
+        self.assertEqual(intent.template('gun'), 'stock_gun')
+        self.assertEqual(intent.template('gun_pap1', 'sfxpkg'), 'stock_sfx')
+        self.assertIsNone(intent.template('gun', 'animpkg'))
+        self.assertEqual(intent.judge('gun_pap1', 'weapon:a', 1), 'match')
+        plain = self.intent({'schema': common.INTENT_SCHEMA, 'item': 'gun', 'template': 'stock_gun', 'decisions': {}})
+        self.assertEqual((plain.template('gun'), plain.template('gun', 'sfxpkg')), ('stock_gun', None))
+
+
+class JudgeWeaponTest(unittest.TestCase):
+    def tree(self, root):
+        big = {'timers': {'t%d' % i: i for i in range(50)}}
+        write(root, 'dump/zone_a/weapons/stock_gun.json',
+              {'sfxPackage': 'stock_sfx', 'weapDef': {'szXAnims': 'stock_anim', 'damage': 90, 'aimDownSight': True}})
+        write(root, 'dump/zone_a/weapons/far_gun.json', {'weapDef': {'damage': 5, 'aimDownSight': False}})
+        write(root, 'dump/zone_a/animpkg/stock_anim.json', dict(big, timers=dict(big['timers'], iRaiseTime=500)))
+        write(root, 'dump/zone_a/sfxpkg/stock_sfx.json', {'szWeapSndReflectionClass': 'eng_pistol', 'x': 1})
+        write(root, 'dump/zone_a/sfxpkg/lookalike_sfx.json', {'szWeapSndReflectionClass': 'eng_pistol', 'x': 1, 'y': 2})
+        write(root, 'tree/weapons/gun.json',
+              {'sfxPackage': 'gun_sfx', 'vfxPackage': 'stock_vfx_used_as_is',
+               'weapDef': {'szXAnims': 'gun_anim', 'damage': 2000, 'aimDownSight': True}})
+        write(root, 'tree/animpkg/gun_anim.json', dict(big, timers=dict(big['timers'], iRaiseTime=500)))
+        write(root, 'tree/sfxpkg/gun_sfx.json', {'szWeapSndReflectionClass': 'eng_pistol', 'x': 1, 'y': 2})
+        return os.path.join(root, 'tree'), common.StockDump([os.path.join(root, 'dump')])
+
+    def test_templates_are_found_the_same_way_for_every_audit(self):
+        with tempfile.TemporaryDirectory() as root:
+            tree, stock = self.tree(root)
+            self.assertEqual(common.weapon_names(tree), ['gun'])
+            judge, documents, templates = common.judge_weapon(tree, 'gun', common.Intent(), stock)
+            facts = common.template_facts(templates)
+            self.assertEqual((facts['weapon']['name'], facts['weapon']['how']), ('stock_gun', 'nearest-weak'))
+            # a clone copies the weapon with its packages: the weapon template's own package is the answer,
+            # even when another stock file happens to look more alike (lookalike_sfx is identical here)
+            self.assertEqual((facts['animpkg']['name'], facts['animpkg']['how']), ('stock_anim', 'weapon-template'))
+            self.assertEqual((facts['sfxpkg']['name'], facts['sfxpkg']['how']), ('stock_sfx', 'weapon-template'))
+            self.assertIsNone(documents['vfxpkg'])
+            self.assertEqual(facts['vfxpkg']['how'], 'none')
+            report = common.Report('probe', 'tree')
+            judge.report(report, 'SND', only=('sound profile',))
+            self.assertEqual([(f['code'], f['severity']) for f in report.findings], [('SND-TEMPLATE-GROUP', 'warn')])
+            self.assertIn('identical to stock stock_sfx', report.findings[0]['message'])
+
+    def test_a_clearly_closer_stock_package_replaces_the_inherited_one(self):
+        with tempfile.TemporaryDirectory() as root:
+            tree, stock = self.tree(root)
+            other = {'timers': {'t%d' % i: i + 1000 for i in range(50)}}
+            write(root, 'dump/zone_a/animpkg/other_anim.json', other)
+            write(root, 'tree/animpkg/gun_anim.json', dict(other, timers=dict(other['timers'], t0=7)))
+            _, _, templates = common.judge_weapon(tree, 'gun', common.Intent(), stock)
+            facts = common.template_facts(templates)
+            self.assertEqual((facts['animpkg']['name'], facts['animpkg']['how']), ('other_anim', 'nearest'))
+            # without an inherited package the most similar one is used, and said to be weak when it is
+            write(root, 'tree/weapons/lone.json', {'weapDef': {'szXAnims': 'gun_anim', 'damage': 1}, 'vfxPackage': 'v'})
+            write(root, 'tree/vfxpkg/v.json', {'a': 1})
+            write(root, 'dump/zone_a/vfxpkg/stock_v.json', {'a': 1})
+            _, _, templates = common.judge_weapon(tree, 'lone', common.Intent(), stock)
+            facts = common.template_facts(templates)
+            self.assertEqual((facts['vfxpkg']['name'], facts['vfxpkg']['how']), ('stock_v', 'nearest-weak'))
+
+    def test_a_declared_template_wins_and_a_missing_one_is_said(self):
+        with tempfile.TemporaryDirectory() as root:
+            tree, stock = self.tree(root)
+            intent = common.Intent()
+            intent.items['gun'] = {'schema': common.INTENT_SCHEMA, 'item': 'gun', 'decisions': {},
+                                   'template': {'weapon': 'far_gun', 'sfxpkg': 'lookalike_sfx', 'animpkg': 'gone'}}
+            _, _, templates = common.judge_weapon(tree, 'gun', intent, stock)
+            facts = common.template_facts(templates)
+            self.assertEqual((facts['weapon']['name'], facts['weapon']['how']), ('far_gun', 'declared'))
+            self.assertEqual((facts['sfxpkg']['name'], facts['sfxpkg']['how'], facts['sfxpkg']['share']),
+                             ('lookalike_sfx', 'declared', 1.0))
+            self.assertEqual((facts['animpkg']['name'], facts['animpkg']['how']), ('gone', 'declared-missing'))
+
+    def test_without_stock_nothing_is_called_a_template(self):
+        with tempfile.TemporaryDirectory() as root:
+            tree, _ = self.tree(root)
+            judge, _, templates = common.judge_weapon(tree, 'gun', common.Intent(), common.StockDump([]))
+            self.assertEqual({t['how'] for t in templates.values()}, {'none'})
+            report = common.Report('probe', 'tree')
+            judge.report(report, 'FEEL')
+            self.assertEqual(report.findings, [])
+
+
 class ArgsTest(unittest.TestCase):
     def test_stock_from_environment(self):
         with tempfile.TemporaryDirectory() as temp:

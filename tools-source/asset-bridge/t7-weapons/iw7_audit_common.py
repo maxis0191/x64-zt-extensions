@@ -17,6 +17,10 @@ the stock central band; a whole player-facing group still equal to the template 
 info = where a value sits among stock. "Zero false alarms on stock" means zero errors on stock.
 
 proof: 'data' = the files settle it. 'engine' = files only raise the question; the bench must answer it.
+
+A warning is closed in one of two ways, never by lowering a threshold: the content is changed, or somebody declares
+the decision with a reason (then the audit holds the build to it: a later mismatch is an error). Exit code: 1 with
+errors; with --strict also 2 while a warning is unanswered. Release gate = --strict returns 0.
 """
 import argparse
 import csv
@@ -141,6 +145,34 @@ class Report:
                 self.questions.append(entry)
         self.facts.setdefault(other.tool, other.facts)
 
+    def answer(self, intent):
+        """Warnings covered by a declared decision become notes that carry the reason. Errors never do."""
+        for finding in self.findings:
+            if finding['severity'] != 'warn':
+                continue
+            why = intent.acknowledged(finding['code'], finding['asset'])
+            if why:
+                finding['severity'], finding['answered'] = 'info', why
+        return self
+
+    def fold(self):
+        """The same finding on several assets (a weapon and its upgraded twin) is written once, with 'also'."""
+        kept, index = [], {}
+        for finding in self.findings:
+            evidence = {k: v for k, v in (finding.get('evidence') or {}).items() if k != 'also'}
+            key = json.dumps([finding['severity'], finding['code'], finding['message'], finding['proof'],
+                              finding.get('source'), finding.get('answered'), evidence], sort_keys=True, default=str)
+            first = index.get(key)
+            if first is None:
+                index[key] = finding
+                kept.append(finding)
+            elif finding['asset'] != first['asset']:
+                also = first.setdefault('evidence', {}).setdefault('also', [])
+                if finding['asset'] not in also:
+                    also.append(finding['asset'])
+        self.findings = kept
+        return self
+
     def counts(self):
         return {s: sum(1 for f in self.findings if f['severity'] == s) for s in SEVERITIES}
 
@@ -156,14 +188,19 @@ class Report:
         counts = self.counts()
         for f in self.sorted_findings():
             tail = '  [only the engine can confirm]' if f['proof'] == 'engine' else ''
-            stream.write('  %-5s %s  %s: %s%s\n' % (f['severity'].upper(), f['code'], f['asset'], f['message'], tail))
+            also = (f.get('evidence') or {}).get('also') or ()
+            asset = f['asset'] + (' (+%d: %s)' % (len(also), ', '.join(also)) if also else '')
+            stream.write('  %-5s %s  %s: %s%s\n' % (f['severity'].upper(), f['code'], asset, f['message'], tail))
             if f.get('notice'):
                 stream.write('        player: %s\n' % f['notice'])
+            if f.get('answered'):
+                stream.write('        answered: %s\n' % f['answered'])
         stream.write('%s %s: errors %d, warnings %d, notes %d, engine questions %d\n' % (
             self.tool, self.target, counts['error'], counts['warn'], counts['info'], len(self.questions)))
 
-    def exit_code(self):
-        return 1 if self.counts()['error'] else 0
+    def exit_code(self, strict=False):
+        counts = self.counts()
+        return 1 if counts['error'] else (2 if strict and counts['warn'] else 0)
 
 
 # ------------------------------------------------------------------ numbers
@@ -467,7 +504,14 @@ class Intent:
            "weapon:weapDef.aimDownSight": {"value": false, "why": "the BO3 Thundergun cannot aim"},
            "animpkg:timers.iRaiseTime":   {"min": 900, "max": 1100, "why": "matches its 1.0 s raise animation"},
            "weapon:weapDef.fHipSpread*":  {"keep": true, "why": "hip spread of the Facemelter is wanted"}}}
-    A decision without a reason is not a decision. Keys may be fnmatch patterns; an exact key wins."""
+    A decision without a reason is not a decision. Keys may be fnmatch patterns; an exact key wins.
+
+    "also": ["iw7_thundergun_zm_pap1"]   the same decisions hold for these items too (an upgraded twin).
+    "template": {"weapon": "...", "animpkg": "...", "sfxpkg": "...", "vfxpkg": "..."}   one stock asset per file kind;
+                a plain string names the weapon template only.
+    A warning that is about no single value is answered by its code:
+           "finding:FX-STOCK-COPY": {"keep": true, "why": "..."}              for this item (and its "also")
+           "finding:FX-STOCK-COPY:vfx/zombie/*": {"keep": true, "why": "..."}  for every asset matching the pattern"""
 
     def __init__(self):
         self.items, self.problems = {}, []
@@ -499,10 +543,39 @@ class Intent:
                              or 'min' in decision or 'max' in decision)):
                     intent.problems.append((file, '%s: needs a reason ("why") and one of value, min/max, keep' % key))
             intent.items[item] = doc
+            for other in doc.get('also') or ():
+                if isinstance(other, str):
+                    intent.items.setdefault(other, doc)
         return intent
 
-    def template(self, item):
-        return (self.items.get(item) or {}).get('template')
+    def template(self, item, kind='weapon'):
+        """The declared stock asset this item's file of that kind was made from, or None."""
+        declared = (self.items.get(item) or {}).get('template')
+        if isinstance(declared, dict):
+            declared = declared.get(kind)
+        elif kind != 'weapon':
+            declared = None
+        return declared if isinstance(declared, str) and declared else None
+
+    def acknowledged(self, code, asset):
+        """The reason somebody gave for accepting this finding on this asset, or None."""
+        mine = self.decision(asset, 'finding:%s' % code) if 'finding:%s' % code in (
+            (self.items.get(asset) or {}).get('decisions') or {}) else None
+        if mine and mine.get('keep') is True:
+            return mine['why'].strip()
+        prefix = 'finding:%s:' % code
+        seen = set()
+        for doc in self.items.values():
+            if id(doc) in seen:
+                continue
+            seen.add(id(doc))
+            for key in sorted(doc.get('decisions') or {}):
+                decision = doc['decisions'][key]
+                if (key.startswith(prefix) and fnmatch.fnmatchcase(asset, key[len(prefix):])
+                        and isinstance(decision, dict) and decision.get('keep') is True
+                        and isinstance(decision.get('why'), str) and decision['why'].strip()):
+                    return decision['why'].strip()
+        return None
 
     def decision(self, item, key):
         """The valid decision that covers this key for this item, or None."""
@@ -614,14 +687,14 @@ class GroupJudge:
             left = group['template']
             if not left:
                 continue
-            origins = ' and '.join(sorted({origin for _, _, origin in left if origin})) or 'the template'
+            origins = ' and '.join(sorted({'stock ' + origin for _, _, origin in left if origin})) or 'the template'
             sample = ', '.join('%s=%s' % (key.split(':', 1)[1], fmt(value)) for key, value, _ in left[:4])
             more = '' if len(left) <= 4 else ' and %d more' % (len(left) - 4)
             whole = len(left) == group['fields']
             share = ('all %d values' % len(left)) if whole else ('%d of %d values' % (len(left), group['fields']))
             report.add('warn' if whole else 'info', prefix + ('-TEMPLATE-GROUP' if whole else '-TEMPLATE-PART'),
-                       self.item, '%s: %s are still those of %s (%s%s)' % (name, share, origins, sample, more),
-                       notice=('%s: nobody decided this, it is whatever %s had' % (group['label'], origins))
+                       self.item, '%s: %s are identical to %s (%s%s)' % (name, share, origins, sample, more),
+                       notice=('%s: nobody declared a decision, it is exactly what %s has' % (group['label'], origins))
                        if whole else None,
                        source='stock', group=name, keys=[key for key, _, _ in left])
 
@@ -640,6 +713,89 @@ class GroupJudge:
         return doc
 
 
+PACKAGE_FIELDS = (('animpkg', 'szXAnims'), ('sfxpkg', 'sfxPackage'), ('vfxpkg', 'vfxPackage'))
+NEAREST_NEEDS = 40           # compared values below which "the most similar stock file" is not a reliable answer
+CLEARLY_CLOSER = 0.10        # share by which a stock file must beat the weapon template's own package to replace it
+
+
+def package_refs(weapon_doc):
+    """{'animpkg' | 'sfxpkg' | 'vfxpkg': name} of the packages a weapon file points at; a missing kind is absent."""
+    weap = weapon_doc.get('weapDef') if isinstance(weapon_doc.get('weapDef'), dict) else {}
+    out = {}
+    for kind, field in PACKAGE_FIELDS:
+        ref = weapon_doc.get(field) or weap.get(field)
+        if isinstance(ref, str) and ref:
+            out[kind] = ref
+    return out
+
+
+def weapon_names(zone_dir):
+    """Names of the weapon files of a tree, sorted."""
+    folder = os.path.join(zone_dir, 'weapons')
+    return sorted(name[:-5] for name in os.listdir(folder) if name.endswith('.json')) if os.path.isdir(folder) else []
+
+
+def judge_weapon(zone_dir, item, intent, stock):
+    """The ONE way every audit judges a weapon: its weapon file and the packages it points at, each against the
+    stock file it was made from. Returns (judge, documents, templates):
+
+        documents[kind]  the tree's document, None when the tree has no such file (a stock package used as is)
+        templates[kind]  {'name', 'doc', 'share', 'how'}; how = 'declared' (the intent names it), 'weapon-template'
+                         (the package the weapon's own template points at: a clone copies the weapon with its
+                         packages, and packages look like too many stock files to be named by similarity),
+                         'nearest' (the most similar stock file: for the weapon itself, and for a package when a
+                         stock file is clearly closer than the inherited one or nothing is inherited),
+                         'nearest-weak' (too few values compared), 'none' (no stock dump or nothing comparable),
+                         'declared-missing' (named but not in the dump)
+
+    kind is weapon | animpkg | sfxpkg | vfxpkg. The caller reports its own groups: judge.report(report, P, only=...)."""
+    judge = GroupJudge(intent, item)
+    documents, templates = {}, {}
+    weapon = load_json(os.path.join(zone_dir, 'weapons', item + '.json'))
+    weapon_template = None
+    for kind in ('weapon', 'animpkg', 'sfxpkg', 'vfxpkg'):
+        folder = 'weapons' if kind == 'weapon' else kind
+        if kind == 'weapon':
+            doc = weapon
+        else:
+            ref = package_refs(weapon).get(kind)
+            path = os.path.join(zone_dir, folder, ref + '.json') if ref else None
+            doc = load_json(path) if path and os.path.isfile(path) else None
+        documents[kind] = doc
+        found = {'name': None, 'doc': None, 'share': 0.0, 'how': 'none'}
+        if isinstance(doc, dict) and stock:
+            declared = intent.template(item, kind)
+            if declared:
+                name, base, share = (declared,) + template_of(doc, stock, folder, declared)[1:] if stock.find(
+                    folder, declared, '.json') else (declared, None, 0.0)
+                found = {'name': name, 'doc': base, 'share': share,
+                         'how': 'declared' if base is not None else 'declared-missing'}
+            else:
+                candidates = {n: d for _, n, d in stock.docs(folder)}
+                name, share, compared = nearest_stock(doc, candidates)
+                inherited = package_refs(weapon_template).get(kind) if isinstance(weapon_template, dict) else None
+                strong = name is not None and compared >= NEAREST_NEEDS
+                if inherited and inherited in candidates:
+                    found = dict(zip(('name', 'doc', 'share'), template_of(doc, stock, folder, inherited)),
+                                 how='weapon-template')
+                    if strong and name != inherited and share >= found['share'] + CLEARLY_CLOSER:
+                        found = {'name': name, 'doc': candidates[name], 'share': share, 'how': 'nearest'}
+                elif name is not None:
+                    found = {'name': name, 'doc': candidates[name], 'share': share,
+                             'how': 'nearest' if strong else 'nearest-weak'}
+        templates[kind] = found
+        if kind == 'weapon':
+            weapon_template = found['doc']
+        if isinstance(doc, dict):
+            judge.feed(kind, doc, found['doc'], found['name'])
+    return judge, documents, templates
+
+
+def template_facts(templates):
+    """templates of judge_weapon without the documents, for report.facts."""
+    return {kind: {'name': t['name'], 'share': round(t['share'], 3), 'how': t['how']} for kind, t in templates.items()}
+
+
 # ------------------------------------------------------------------ command line
 def add_common_args(parser):
     parser.add_argument('--stock', action='append', default=[], metavar='DIR',
@@ -647,6 +803,9 @@ def add_common_args(parser):
                              'default: the IW7_STOCK_DUMP environment variable, %s-separated)' % os.pathsep)
     parser.add_argument('--intent', metavar='FILE_OR_DIR', help='declared decisions (iw7.content-intent/1)')
     parser.add_argument('--json', metavar='FILE', help='write the full result here')
+    parser.add_argument('--strict', action='store_true',
+                        help='release gate: also fail (exit 2) while a warning is neither fixed nor answered by a '
+                             'declared decision')
     return parser
 
 
@@ -655,13 +814,16 @@ def stock_from_args(args):
     return StockDump(roots)
 
 
-def finish(report, args, stream=None):
-    """Print the report, write --json, return the exit code."""
+def finish(report, args, stream=None, intent=None):
+    """Close answered warnings, fold twins, print the report, write --json, return the exit code."""
+    if intent is not None:
+        report.answer(intent)
+    report.fold()
     report.write_text(stream)
     if getattr(args, 'json', None):
         with open(args.json, 'w', encoding='utf-8') as handle:
             json.dump(report.as_dict(), handle, indent=1, sort_keys=True)
-    return report.exit_code()
+    return report.exit_code(getattr(args, 'strict', False))
 
 
 if __name__ == '__main__':
