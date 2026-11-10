@@ -1,8 +1,7 @@
 name: Selected XPAK fixture
+# Started by hand only: the hosting account does not start these jobs, and the local
+# checks.ps1 run on the exact head is the judge (docs/CHECKS.md).
 on:
-  push:
-    branches: [main, "codex/**"]
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read

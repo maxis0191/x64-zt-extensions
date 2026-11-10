@@ -1,5 +1,8 @@
 # Creation tools: one table
 
+This table covers this repository only. Every tool of every repository is listed in `docs/TOOLS-INDEX.md` of the
+server repository (iw7-paris-server). Other documents of this repository: `docs/INDEX.md`.
+
 Every tool area for making game content that lives in this repository, on the main line. Paths are relative to the
 repository root. Test commands run from the repository root with Python 3.12 (stdlib only, unless a row says
 Blender or a local game dump is needed). "Proven in the running game" is copied from the area's own document
@@ -41,5 +44,7 @@ Game files, dumps, audio and built fastfiles are never committed. Every tool rea
 
 ## Not merged into this line
 
-`codex/t7-selected-material-observation` (a native header and fixture; main already carries a different version of the same
-files) and the older `codex/native-file-ingress-source` stay on their own branches.
+Two older lines of work were not merged and are kept as tags on the remote, not as branches:
+`archive/codex/t7-selected-material-observation` (a native header and fixture; main already carries a different
+version of the same files) and `archive/codex/native-file-ingress-source` (pull request #229, closed without merge
+on 2026-11-10).
