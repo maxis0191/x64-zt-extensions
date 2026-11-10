@@ -29,7 +29,8 @@ head that will be merged. **Main is green: a red check on your head is yours to 
 ./checks.ps1 -Workspace runtime/<short> -Only tools-source-asset-bridge-t7-weapons,tools-source-asset-bridge-zone-check
 ```
 
-`-Only` takes check ids (comma separated). The seven checks of the living tools take about 15 seconds together:
+`-Only` takes check ids (comma separated). The seven checks of the living tools take under 10 seconds together
+(7 seconds when measured):
 
 `tools-source-asset-bridge-t7-weapons`, `tools-source-asset-bridge-zone-check`, `tools-source-asset-bridge-env-model`,
 `tools-source-asset-bridge-iw7-audio`, `tools-source-asset-bridge-t7-map`, `tools-source-iw7-skinned-writer`,
@@ -41,9 +42,11 @@ without a workspace: `python -B -m unittest discover -s tools-source/asset-bridg
 
 ## What the judge contains
 
-149 checks, measured on 2026-11-10: MEASURED_TOTAL. Seven guard the living tools; the others guard the frozen October areas
-(see `../tools-source/README.md`). The slow ones: `weapon-export-test_export_default` and
-`weapon-export-test_build_default` (about 65 to 80 seconds each), `Test-T7ResidentExport`.
+149 checks. Measured on the head that introduced this document (2026-11-11): bootstrap 57 seconds, checks 543
+seconds, 149 passed. Seven guard the living tools; the others guard the frozen October areas (see
+`../tools-source/README.md`). The slow ones: `weapon-export-test_build_default` (65 to 120 seconds),
+`weapon-export-test_export_default` (50 to 80), `Test-T7ResidentExport` (about 50), `Test-T7CatalogueBootstraps`
+(about 40). The eighteen `weapon-export-*` entries take about 200 seconds together.
 
 Two kinds of entries need a word:
 

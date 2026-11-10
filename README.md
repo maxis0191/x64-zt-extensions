@@ -32,7 +32,7 @@ Every living tool, with its entry command, its test and what was proven in the g
 ```
 
 This local run on the exact head is the judge of a change; the hosted checks do not run. `-Only <id,...>` runs a
-subset (the living tools in about 15 seconds). Details, the tests kept out of the judge and what no check covers:
+subset (the living tools in under 10 seconds). Details, the tests kept out of the judge and what no check covers:
 [docs/CHECKS.md](docs/CHECKS.md).
 
 Prerequisites: Git, PowerShell 7.4+, Python 3.12, and the GitHub CLI signed in with read access to this private
