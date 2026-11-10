@@ -22,6 +22,14 @@
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/iw7-audio", "-v"]
     },
     {
+      "id": "tools-source-iw7-skinned-writer",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/iw7-skinned-writer", "-v"]
+    },
+    {
+      "id": "tools-source-iwz-zombie-kit",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/iwz-zombie-kit", "-v"]
+    },
+    {
       "id": "weapon-export-test_build_default",
       "command": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "$t=(New-Item -ItemType Directory -Force -Path '{run}/tmp').FullName;$env:TEMP=$t;$env:TMP=$t;python -B -m unittest discover -s tools-source/asset-bridge/weapon-export -p test_build_default.py -v;exit $LASTEXITCODE"]
     },
