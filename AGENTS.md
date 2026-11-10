@@ -36,27 +36,79 @@ Start here, in the server repository (iw7-paris-server): `docs/DEVKIT.md` says w
 
 Older lines this replaces: testing in the owner's base game folder; one heavy session on the whole machine;
 waiting for GitHub checks; per-test game copies; launching once per question.
-# Product ownership
 
-Private asset serializers, converters, independent readers and bounded extraction/build adapters for the pinned owner ZoneTool fork. No server gameplay or creator distribution policy.
+# x64-zt-extensions: this repository
 
-Before editing, classify the change by product and inspect `product.json`,
-README.md and the migration map. This repository is the canonical owner only
-for its declared exports. Do not add server logic, another product's full tree,
-game assets, binaries, symbols, credentials, player data or decompiled dumps.
-Extend an explicit interface/dependency rather than copying implementations.
-Keep author/license notices and exact upstream pins. Never force-push history.
+The section above is the owner's current workflow, kept word for word. The older text it says is "kept below
+as history" now lives in `docs/archive/AGENTS-HISTORY.md`, with a table from each old rule to its place here.
+Everything below is current; each rule appears once.
 
-Preserve unrelated work, ignored evidence and frozen plans. Historical results
-do not qualify relocated input identities. Existing features, experiments,
-workers and heartbeat remain paused; refactoring/source tests do not authorize
-game, server, extraction or deployment. Main UDP27016 remains untouched.
-Heavy native builds need complete shared resource admission. Do not delete a
-lease or lower an estimate to bypass refusal. Never archive a live worktree.
+## What this repository is
 
-Use coherent codex/* commits, owner-private PRs, exact-head checks and merge
-commits. Inspect actual CI jobs. Only the existing account quota refusal before
-any runner/step has the owner's conditional exception; executed failures must
-be fixed. Do not change visibility, billing, protection or credentials.
-Return clean synchronized main; report source/build/runtime/owner validation
-separately. No upstream PRs or automatic Codex memory changes.
+- Private. Asset tools for the IW7 engine and the owner's ZoneTool fork (`maxis0191/x64-zt`, pinned in
+  `product.json`): readers, writers, converters, audits. No server gameplay, no creator distribution policy.
+- One of four products: server = iw7-paris-server, engine tools = iw7-mod-components, creator kit =
+  iw7-creator-sdk, asset tools = here. Classify a change by product before editing (`product.json`, `README.md`).
+  One canonical implementation per component: extend a declared dependency, never copy another product's files
+  and never add server logic here.
+- Two populations (table in `tools-source/README.md`): living tools you may change, and frozen October
+  experiments whose bytes and paths are pinned by tests and by the other products. Do not edit, move or tidy a
+  frozen area unless your task is that area.
+- Read next: `docs/INDEX.md` (every document), `docs/CREATION-TOOLS.md` (every living tool, its entry command,
+  its test, what was proven in the game). All tools of all repositories: `docs/TOOLS-INDEX.md` in the server
+  repository (it has landed).
+- The tools the section above names under `ops/bench`, `ops/gamelab`, `ops/enginelab`, `ops/netlab`, `ops/soak`,
+  `ops/atlas` and `ops/quality` are in the server repository; `iwz_emitcheck.py` is in iw7-creator-sdk. The file
+  checks that live here are the weapon audits and `iw7_mod_preflight.py` (`tools-source/asset-bridge/t7-weapons`)
+  and the build-log gate and loader readback (`tools-source/asset-bridge/zone-check`).
+
+## Safety rules that never change
+
+- Never commit game assets, binaries, symbols (PDB), executables, credentials, keys, player data, bank data or
+  decompiled dumps. Tools read them from a local path given on the command line.
+- Never publish private project code into a public fork; never change repository visibility, billing, branch
+  protection or credentials. Public distribution is a separate owner decision with its own license review.
+- Keep author and license notices and the exact upstream pins.
+- Never force-push; never rewrite published history.
+- Never test in the owner's game folder and never copy the game (bench roots only). Every test server is
+  private: password, `sv_lanOnly 1`, loopback, absent from the server browser. Main (UDP 27016) and the Canada
+  server are never part of a test.
+- Never stop a game process you did not start; never touch a game instance another application or session
+  started.
+- Never delete a resource lease and never lower an estimate to get past a refusal.
+- Other sessions' work is theirs: preserve unrelated edits, dirty or unpublished worktrees, ignored evidence
+  and frozen plans; never archive or remove a live worktree; never change another agent's memory or
+  configuration.
+- A historical result does not qualify a moved or rebuilt input: new input, new run. Failed results stay
+  recorded as failed.
+
+## How to work here
+
+- Tool first. Real work in the game is also the test of the tools. Whenever a tool, the workflow or the environment is seen to be slow, unoptimized, buggy or blind, or a new tool would be a real jump, fix or build that FIRST, prove it with a measured run, document it, then return to the job. Never grind: the same build or launch repeated more than about three times for one question, a cause that is guessed instead of read from data, minutes of waiting for what a file check answers in seconds, a result judged by looking at a picture, a manual step done twice: each of these means stop and improve the tool. (Owner rule, 2026-11-10.)
+- Edit the canonical tracked file; never edit a generated source workspace under `runtime/`.
+- Every tracked file is an export: add, move or delete a file and edit `product.json` exports in the same
+  commit, or the ownership gate fails.
+- Python 3.12, standard library only unless the area README says otherwise. No machine paths, personal names,
+  e-mail addresses or account names other than the organisation's in tracked files: take paths as arguments or
+  environment variables and fail clearly when one is absent.
+- A new tool comes with a test registered in `checks.json` and a row in `docs/CREATION-TOOLS.md`.
+- Results are measured runs. State separately what was proven by source tests, by a build, in the running
+  game, and by the owner.
+
+## How to land
+
+- Branch (`claude/*` or `codex/*`), coherent commits, private pull request, merge commit, then local main clean
+  and equal to `origin/main`.
+- The judge, once per head, in the background: `./bootstrap.ps1 -Output runtime/<short>`, then
+  `./checks.ps1 -Workspace runtime/<short>`. Post the result on the pull request and merge on it. GitHub's own
+  checks do not run; never wait for them.
+- Main is green. `docs/CHECKS.md` says how to run a subset and lists every test that is kept out of the judge,
+  with its reason; anything red in the judge is yours to fix.
+
+## What needs the owner
+
+- Anything deployed to players (then to both public servers, Main and Canada).
+- Making anything public. Nothing is sent to the public game-client project (no issue, no pull request, no
+  message) without the owner; the same holds for any other upstream project.
+- Reopening a retired effort (Spaceland Rhino, the Doom negative-texture candidate).
+- Technical choices do not need the owner: decide, record the decision and its measured reason.
