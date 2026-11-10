@@ -19,8 +19,9 @@ head that will be merged. **Main is green: a red check on your head is yours to 
 - Run it once per head, in the background, and post the result on the pull request. Do not run a live game session
   while it runs: some checks take the machine's build slot. A check whose log says `Resource busy` or
   `already reserved` lost that slot to another session; run it again alone with `-Only`.
-- The hosted workflow also ran `git diff --check` (whitespace errors); run `git diff --check origin/main...HEAD`
-  yourself before you push.
+- A full run (no `-Only`) refuses a dirty tree (`git status --porcelain` not empty), runs
+  `git diff --check origin/main...HEAD` (whitespace errors, as the hosted workflow did) and fails if the tree or
+  `HEAD` changed before it ended.
 
 ## Run a subset
 
@@ -60,9 +61,9 @@ Two kinds of entries need a word:
   `weapon-export-test_pair_json_core_source` and `weapon-export-test_pair_owned_session_source` read `product.json`,
   which the checkout has and the composed workspace does not. They run from the checkout; `checks.ps1` tells them
   where it is through the variable `IW7_PRODUCT_ROOT`. Run through `check_product.py` directly, they stop with a
-  message that says so. They therefore judge the working tree, not the composed head: `bootstrap.ps1` refuses a
-  dirty tree but `checks.ps1` does not, so keep the tree clean (`git status --porcelain` empty) from bootstrap to
-  the end of the run.
+  message that says so. They therefore judge the working tree, not the composed head, so a full run of `checks.ps1`
+  refuses a dirty tree at its start and fails if the tree or `HEAD` changed by its end; keep the tree clean from
+  bootstrap to the end of the run.
 
 The hidden-folder defect of the frozen runner is real and still open: the plain temp folder keeps its tests
 judged, it does not repair the runner.

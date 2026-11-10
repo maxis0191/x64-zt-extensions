@@ -40,7 +40,7 @@ The table of every living tool with its entry command, its test and what was pro
 | `t7-iw7` | 2026-10-16 | Black Ops 3 images and build profile experiments, 210 files, almost all at one level | none (this row); start at `BUILD-PLAN.md`, `T7-IMAGES.md` | 15 (`tools-source-asset-bridge-t7-iw7`, ...) | sdk 7 |
 | `weapon` | 2026-10-12 | Weapon animation bridge and slot contract of October (the living weapon route is `t7-weapons`) | none (this row) | `tools-source-asset-bridge-weapon` | none |
 | `weapon-export` | 2026-10-19 | Bounded player and Pack-a-Punch template source export support | `README.md` | one per test file (`weapon-export-test_*`) | none |
-| `world` | 2026-10-27 | Observer harness, physics probe, original arena, platform contact | `original-arena/README.md` | 6 (`tools-source-asset-bridge-world`, ...) | sdk 8 |
+| `world` | 2026-10-27 | Observer harness, physics probe, original arena, platform contact | `original-arena/README.md` | 7 (`tools-source-asset-bridge-world`, ...) | sdk 8 |
 
 ## Frozen areas outside `tools-source` (named here because nothing else explains them)
 
@@ -72,7 +72,7 @@ one file. Both names are kept because other products pin the paths.
 
 - The flat frozen areas (`t7-iw7` 210 files, `t7-bridge` 132, `weapon-export` 79, `h1-fixture` 40) stay flat: their
   tests hash each other's files and other products pin their paths.
-- `t7-weapons` (living, 63 files at one level) is not split: its tests discover by folder, the preflight imports its
+- `t7-weapons` (living, 63 files, 59 at one level) is not split: its tests discover by folder, the preflight imports its
   siblings by name, and weapon ports are being worked on today. Its README and `docs/CREATION-TOOLS.md` are the guide.
 - `iw7-skinned-writer` and `iwz-zombie-kit` stay outside `asset-bridge`, although their peers are inside: moving them
   would change the commands in every document and in the scripts of running sessions.

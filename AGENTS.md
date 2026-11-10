@@ -40,8 +40,7 @@ waiting for GitHub checks; per-test game copies; launching once per question.
 # x64-zt-extensions: this repository
 
 The section above is the owner's current workflow, kept word for word. None of the `ops/` tools it names are
-in this repository: they are in the server repository (list under "What this repository is").
-`docs/TOOLS-INDEX.md` has landed there. The older text it says is "kept below as history" is in
+in this repository: they are in the server repository (list under "What this repository is"). The older text it says is "kept below as history" is in
 `docs/archive/AGENTS-HISTORY.md`, with a table from each old rule to its place here.
 Everything below is current; each rule appears once.
 
@@ -87,11 +86,18 @@ Everything below is current; each rule appears once.
 
 ## How to work here
 
-- Tool first. Real work in the game is also the test of the tools. Whenever a tool, the workflow or the environment is seen to be slow, unoptimized, buggy or blind, or a new tool would be a real jump, fix or build that FIRST, prove it with a measured run, document it, then return to the job. Never grind: the same build or launch repeated more than about three times for one question, a cause that is guessed instead of read from data, minutes of waiting for what a file check answers in seconds, a result judged by looking at a picture, a manual step done twice: each of these means stop and improve the tool. (Owner rule, 2026-11-10.)
+- Tool first. Real work in the game is also the test of the tools. Whenever a tool, the workflow or the
+  environment is seen to be slow, unoptimized, buggy or blind, or a new tool would be a real jump, fix or build
+  that FIRST, prove it with a measured run, document it, then return to the job. Never grind: the same build or
+  launch repeated more than about three times for one question, a cause that is guessed instead of read from
+  data, minutes of waiting for what a file check answers in seconds, a result judged by looking at a picture, a
+  manual step done twice: each of these means stop and improve the tool. (Owner rule, 2026-11-10.)
 - Edit the canonical tracked file; never edit a generated source workspace under `runtime/`.
-- Every tracked file is an export of `product.json` or one of a few meta files (this file, `README.md`,
-  `checks.json`, `.github/`, `migration/`, `licenses/`): add, move or delete a file and edit the exports in the
-  same commit, or the ownership gate fails.
+- Every tracked file is an export of `product.json` or a meta file. The ownership gate
+  (`check_boundaries.py`) holds the exact meta list (among them this file, `README.md`, `checks.json`,
+  `checks.ps1`, `bootstrap.ps1`, `dependency-package.json`, `.gitattributes`, `LICENSE.upstream`, `.github/`,
+  `.codex/`, `migration/`, `licenses/`). Any other file you add, move or delete needs its exports edit in the same
+  commit, or the gate fails.
 - Python 3.12, standard library only unless the area README says otherwise. No machine paths, personal names,
   e-mail addresses or account names other than the organisation's in tracked files: take paths as arguments or
   environment variables and fail clearly when one is absent.
