@@ -38,6 +38,37 @@ launch a process fixture, deploy, publish, or change Main. Build/run entrypoints
 inside the package retain their own input, identity, resource and authorization
 gates. Feature experiments remain paused until the owner's explicit GO.
 
+## Map compiler
+
+The IW7 map compiler (`zonetool -iwzcompile`, lightmaps, static models, door
+brush models, trigger volumes, darkness lights) is on the main line of the owner
+ZoneTool fork `maxis0191/x64-zt` since pull request #12, merge commit
+`07a5aa08d07d26e3a5011c440ec9fcad8d5bafe9`. Build that main line; no branch is needed.
+
+```
+zonetool.exe -headless -unbuffered-io -iwzcompile <template zone> <template map> <new map> <source dir>
+zonetool.exe -headless -unbuffered-io -iwzcompile cp_zmb_tpl cp_zmb cp_iwz <work>\iwz_src
+```
+
+- Takes: `<source dir>` with `world.bin`, `colmap.hkx`, `navgraph.bin`, `ents.txt`
+  (optional `lighting.txt`, `lights.txt`, `probes.txt`, `smodels.txt`, `triggers.txt`,
+  `scriptables.txt`, `lightmap/`), the stock template map dumped at
+  `<work>\zonetool\<template zone>`, and the game `zone` files in the work folder.
+  Switches are environment variables (`IWZ_GEN_TOME=1`, `IWZ_KEEP_ENTSHAPES=1`,
+  `IWZ_KEEP_SUBMODELS=1`, `IWZ_TRIGGER_SHAPES=1`, ...).
+- Writes: `<work>\dump\<new map>\` (`maps\cp\<map>.d3dbsp.*`, `images`, `lightmaps`,
+  `transient_zones`): 18 files, 104 MB for Station Zero, ready for `-buildzone`.
+- Measured: 23 to 72 s per compile of the Station Zero input (cold start 72 s,
+  warm 23 to 44 s, 7 runs). The output of the main-line build equals the branch build
+  except for run-to-run padding bytes and the nine generated trigger shapes
+  (volumes); see the pull request for the byte comparison.
+- The creator SDK map generator (`iw7-creator-sdk`, `tools-source/iwzmap`,
+  `build-sz2.ps1`) calls this command; point its `-ZoneToolExe` at a main-line build.
+- The patches in this repository still target ZoneTool `fab9358`
+  (`product.json` `upstream`), which this repository keeps as its patch base:
+  against the new main line the `flac-dump` and `world-observer` patches no longer
+  apply (`sound_bank.cpp`, `zonetool.cpp` includes) and need a rebase before that pin moves.
+
 ## Evidence and rollback
 
 Historical documents and pinned plans retain their original bytes and claims.
