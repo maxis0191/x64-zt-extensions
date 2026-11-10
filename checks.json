@@ -10,6 +10,10 @@
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/t7-weapons", "-v"]
     },
     {
+      "id": "tools-source-asset-bridge-zone-check",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/zone-check", "-v"]
+    },
+    {
       "id": "iw7-player-template-source-support",
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/weapon-export", "-v"]
     },
