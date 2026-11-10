@@ -5,6 +5,3 @@
 tools-source/asset-bridge/t7-iw7/RegistrationBindingsBuild.Source.ps1 text eol=lf
 *.cfg text eol=crlf
 *.bat text eol=crlf
-originals/*.gsc -text
-# Exact pinned Aurora input.cpp fixture; its upstream trailing tabs are hashed.
-ops/voice-agent/PTT-InputBase.inc whitespace=-blank-at-eol

@@ -1,42 +1,72 @@
 # ZoneTool extensions
 
-Private asset serializers, converters, independent readers and bounded extraction/build adapters for the pinned owner ZoneTool fork. No server gameplay or creator distribution policy.
+Private asset tools for the IW7 engine and the owner's ZoneTool fork (`maxis0191/x64-zt`, pinned in `product.json`):
+readers, writers, converters and audits for models, characters, weapons, sounds, maps and compiled zones.
+No server gameplay and no creator distribution policy live here.
 
-This repository is private. It complements the public owner forks; it does not
-publish private project code into them. See `product.json` for exact source
-revisions and explicit file dependencies. Source extraction preserved authors
-and commit messages; `migration/import.json` and `migration/commit-map.txt` map
-the original server paths/commits to this history.
+One of four products: the server (iw7-paris-server), the engine tools (iw7-mod-components), the creator kit
+(iw7-creator-sdk) and the asset tools (this repository). Rules for agents: [AGENTS.md](AGENTS.md).
 
-The creation tools (model import, skinned characters, zombie kit, sound banks, weapon port and audits) are listed in
-one table, with entry commands, tests and what was proven in the game, in [docs/CREATION-TOOLS.md](docs/CREATION-TOOLS.md).
+## What you can do with it today
 
-## Editing and source preparation
+Every living tool, with its entry command, its test and what was proven in the game, is in one table:
+[docs/CREATION-TOOLS.md](docs/CREATION-TOOLS.md).
 
-Edit the canonical tracked file here. Do not edit generated source workspaces.
-The existing relative source layout is an explicit compatibility contract used
-by hash-sensitive tools. Dependencies contribute only their listed files to a
-fresh, bounded source package; they are not vendored into this repository.
-The composition receipt records every owner, commit, Git blob and checkout-byte
-hash. It does not qualify a native build or inherit an older runtime receipt.
+- Port a Black Ops 3 weapon (models, animations, sounds, effects, materials) into one mod fastfile.
+- Turn a glTF file or a Black Ops 3 environment model into game model sources, with collision boxes.
+- Write skinned characters, hero outfits and materials, and fit a mesh to the stock zombie parts.
+- Read the game's sound banks and write a bank source for a map or a mod.
+- Audit content before a build, gate a build log and read a compiled zone back.
 
-The [owned rig binding](tools-source/asset-bridge/animation/rig/OWNED-RIG-BINDING.md)
-is a generic decoded-data interface for model bone order, skin influences and
-clip channels. It keeps complete typed input identities and immutable results;
-authored checks do not qualify real assets or engine playback. BO3 interoperability
-and the two secondary demonstrations do not gate generic engine modding work.
+## Map
 
-Run the pinned IW7-Mod `ops/source_workspace.py` with `--project`, exact
-`--revision`, one `--source PRODUCT=CHECKOUT` per dependency, and a fresh `--output`.
-Each source checkout must match the manifest revision and have clean tracked
-files. Paths with spaces are supported. Missing, different, dirty, redirected,
-oversized, binary and overlapping sources are refused before output creation.
-Then run `checks.ps1 -Workspace <output>` from this canonical checkout.
+- [tools-source/README.md](tools-source/README.md): which folders are living tools and which are frozen
+  experiments of October 2026 (most of the tree), and who pins them.
+- [docs/INDEX.md](docs/INDEX.md): which document answers which question; the archive of dated records.
 
-The command does not install a game, copy retail assets, build native code,
-launch a process fixture, deploy, publish, or change Main. Build/run entrypoints
-inside the package retain their own input, identity, resource and authorization
-gates. Feature experiments remain paused until the owner's explicit GO.
+## Run the checks
+
+```powershell
+./bootstrap.ps1 -Output runtime/w1
+./checks.ps1 -Workspace runtime/w1
+```
+
+This local run on the exact head is the judge of a change; the hosted checks do not run. `-Only <id,...>` runs a
+subset (the living tools in under 10 seconds). Details, the tests kept out of the judge and what no check covers:
+[docs/CHECKS.md](docs/CHECKS.md).
+
+Prerequisites: Git, PowerShell 7.4+, Python 3.12, and the GitHub CLI signed in with read access to this private
+repository (bootstrap downloads the pinned dependency archive once; offline, pass
+`-DependencyArchive <dependencies.zip>`). The image tests use the hash-pinned Pillow requirement in
+`ops/doom-textures`. No check command calls Node.js or Java, and a search of the test scripts on 2026-11-10 found
+no call; only the hosted workflow installed Node.js. Native compilation, which no check performs, needs the VS2022
+C++ toolchain.
+
+## How the source package works
+
+- Edit the canonical tracked file here. Never edit a generated source workspace under `runtime/`.
+- Every tracked file is an export listed in `product.json` (or one of a few meta files). The ownership gate, first
+  step of `checks.ps1`, refuses a tracked file that is not listed and a listed file that is not tracked.
+- `bootstrap.ps1` composes a fresh, bounded source workspace: this repository's exports plus only the listed files
+  of the three dependencies, at the exact revisions of `product.json`. Dependencies are not vendored here. The
+  archive named in `dependency-package.json` is checked by SHA-256, length, members, owners and commits; it holds
+  selected text sources, never tools, game data or binaries. A missing archive fails clearly; no other version is
+  selected.
+- The composer refuses dirty, redirected, oversized (1 MiB a file, 32 MiB in all), binary and overlapping sources.
+  One reviewed generated header (`weapon-export/native_pair_body_schema.hpp`) is accepted by its exact digest.
+- The composition receipt records every owner, commit, Git blob and byte hash. It does not qualify a native build
+  and does not inherit an older runtime receipt.
+- Composing and checking install no game, copy no retail asset, build no native code, launch nothing and deploy
+  nothing. Build and run entry points inside the package keep their own input, identity and resource gates; run one
+  with `bootstrap.ps1 -Entry ops/<entry>.ps1 -Arguments @(...)`.
+
+## Who pins this repository
+
+The three other products list files of this repository in their own `product.json`, at October revisions:
+iw7-paris-server (36 files), iw7-creator-sdk (73 files), iw7-mod-components (8 files), as read on 2026-11-10. All
+of them are in the frozen areas (`ops/`, `src/` and folders of `tools-source/asset-bridge`); none pins a November
+tool or a document. The tests of the frozen areas also hash each other's files. This is why the relative layout is
+a compatibility contract and no folder was moved: moving a pinned file breaks a consumer or a test.
 
 ## Map compiler
 
@@ -69,49 +99,22 @@ zonetool.exe -headless -unbuffered-io -iwzcompile cp_zmb_tpl cp_zmb cp_iwz <work
   against the new main line the `flac-dump` and `world-observer` patches no longer
   apply (`sound_bank.cpp`, `zonetool.cpp` includes) and need a rebase before that pin moves.
 
-## Evidence and rollback
+## What is never in the repository; licensing
 
-Historical documents and pinned plans retain their original bytes and claims.
-Use the recorded original checkout/commit for a frozen experiment. A moved or
-rebuilt source needs a new plan and qualification. Failed results remain failed.
-To roll back an integration, restore its earlier dependency revision in a new
-reviewed commit, generate a fresh source package, and rerun the relevant tests.
-This never restores or deploys game data, banks or binaries automatically.
+Commercial game assets, dumps, installed SDKs, symbols (PDB), executables, credentials and player data are excluded;
+tools read them from a local path you give. Preserve upstream notices and per-file provenance
+([licenses/README.md](licenses/README.md), `LICENSE.upstream`). No blanket license is granted to all private
+adaptations. This repository is private and complements the public owner forks; it does not publish private project
+code into them. Public distribution requires its own license and privacy review and an owner decision.
 
-## Licensing
+## History
 
-Preserve upstream notices and per-file provenance. No blanket license is granted
-to all private adaptations by this extraction. Public distribution requires its
-own license/privacy review and owner decision. Commercial game assets, dumps,
-installed SDKs, PDBs, executables, credentials and player data are excluded.
-
-## Reproduce the source checks
-
-Prerequisites: Git, authenticated GitHub CLI with read access to this private
-repository, PowerShell 7.4+, Python 3.12 and Node.js 22. Native source checks also
-use Java 21; pure native compilation requires the existing VS2022 C++ toolchain.
-Asset image tests use the hash-pinned Pillow requirement in ops/doom-textures.
-
-```powershell
-./bootstrap.ps1 -Output "$PWD/runtime/source inputs"
-./checks.ps1 -Workspace "$PWD/runtime/source inputs"
-```
-
-Bootstrap downloads only the immutable source dependency archive named in
-`dependency-package.json` from this repository's private release. Its SHA-256,
-length, members, owners and commits are checked. It needs no cross-repository
-CI secret. Offline use: supply `-DependencyArchive <downloaded dependencies.zip>`.
-The archive contains selected text sources, never tools, game data or binaries.
-A missing archive fails clearly; no fallback version is selected.
-
-The source composer accepts the reviewed generated body-schema header by its
-exact owner, path, blob and byte digest. Other files retain the normal 1 MiB
-limit, and the package retains the 32 MiB total limit. An older dependency
-archive lacked this qualification and refused the current source tree. The
-current archive updates the native source pin without changing old receipts.
-
-Run an authorized operation from the generated package, or use
-`bootstrap.ps1 -Entry ops/<entry>.ps1 -Arguments @(...)`. Canonical repositories
-are editing locations; operations requiring another product must use prepared
-inputs. Older commands in dated documents refer to their original frozen layout.
-Do not reuse an old runtime receipt for a newly composed input.
+- [migration/README.md](migration/README.md): this repository was extracted from the server repository on
+  2026-10-13 with authors and commit messages preserved; `migration/import.json` and `migration/commit-map.txt` map
+  the original paths and commits.
+- [docs/archive/](docs/archive/): dated records and checkpoint logs. They keep their original bytes and claims.
+  Older commands in them refer to their original frozen layout.
+- Failed results stay recorded as failed. A moved or rebuilt source needs a new plan and a new run; an old runtime
+  receipt never qualifies a newly composed input.
+- To roll back an integration, restore its earlier dependency revision in a new reviewed commit, compose a fresh
+  source package and rerun the checks. This never restores or deploys game data, banks or binaries.
