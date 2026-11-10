@@ -7,10 +7,12 @@
     python iw7_anim_gltf.py inspect <xanim>
     python iw7_anim_gltf.py sample <xanim|glb> --model <xmodel> --bones j_head,j_wrist_ri
     python iw7_anim_gltf.py zone-source <dump folder> --zone mod --out <work tree>
+    python iw7_anim_gltf.py compare-run <run>/anim-<name>.json clip.glb --model <xmodel>
 
 Mapping (docs/ANIM-GLTF.md has the reasons):
-  * tracks are parent-relative (local) rotations and translations, as the game stores them;
-    a bone the animation does not list stays in the model's bind pose;
+  * the game stores, per bone, the rotation relative to the parent bone and the translation as an
+    offset from the model's bind translation; glTF gets the plain local rotation and translation
+    (bind + offset); a bone the animation does not list stays in the model's bind pose;
   * game (x forward, y left, z up, inches) -> glTF (x, z, -y), metres (scale 0.0254, --scale);
     Blender's importer turns this back into the game's axes;
   * one key per game frame (30 per second unless the animation says otherwise), linear;
@@ -327,7 +329,8 @@ def dense(keys, frames, rotation):
 class Clip:
     """A decoded or imported animation, one value per frame.
 
-    rot[bone] = list of quaternions; trans[bone] = list of vectors or None (the model's bind translation);
+    rot[bone] = list of quaternions (relative to the parent bone); trans[bone] = list of offsets from the
+    model's bind translation, as the game stores them, or None (no offset);
     delta_t / delta_q = per-frame root delta or None; notes = [(name, time 0..1)]."""
 
     def __init__(self):
@@ -370,7 +373,7 @@ class Clip:
             if n in self.rot:
                 lq[i] = self.rot[n][frame]
                 if self.trans.get(n) is not None:
-                    lt[i] = self.trans[n][frame]
+                    lt[i] = v_add(skel.t[i], self.trans[n][frame])
         return skel.globals(lq, lt)
 
     def write_xanim(self, out_dir, asset_type=None, flags=None, unk=(0, 0)):
@@ -544,7 +547,8 @@ def write_gltf(path, skel, clip=None, scale=INCH):
             node = skel.index[n] + 1
             channel(node, 'rotation', [to_gltf_q(q) for q in continuous(clip.rot[n])], 'VEC4')
             if clip.trans.get(n) is not None:
-                channel(node, 'translation', [to_gltf_v(v, scale) for v in clip.trans[n]], 'VEC3')
+                bind = skel.t[skel.index[n]]
+                channel(node, 'translation', [to_gltf_v(v_add(bind, v), scale) for v in clip.trans[n]], 'VEC3')
         if clip.delta_t is not None:
             channel(0, 'translation', [to_gltf_v(v, scale) for v in clip.delta_t], 'VEC3')
         if clip.delta_q is not None:
@@ -823,8 +827,9 @@ def read_gltf(path, skel, name=None, animation=None, rate=None, scale=None, loop
     for b in included:
         i = skel.index[b]
         clip.rot[b] = rot[b]
-        at_bind = max(v_len(v_sub(v, skel.t[i])) for v in trans[b]) < 2e-5 * max(1.0, v_len(skel.t[i]))
-        clip.trans[b] = None if at_bind else trans[b]
+        offsets = [v_sub(v, skel.t[i]) for v in trans[b]]
+        at_bind = max(v_len(v) for v in offsets) < 2e-5 * max(1.0, v_len(skel.t[i]))
+        clip.trans[b] = None if at_bind else offsets
     clip.bones = included
     if ref is not None and ((ref, 'translation') in channels or (ref, 'rotation') in channels or extras.get('delta')):
         t0 = (0.0, 0.0, 0.0) if extras.get('delta') else delta_t[0]
@@ -890,16 +895,15 @@ def compare_clips(a, b, skel=None):
     worst_r, worst_t = (0.0, None, 0), (0.0, None, 0)
     skipped = []
 
+    zero = [(0.0, 0.0, 0.0)] * (a.frames + 1)
+
     def tracks(clip, n):
         i = skel.index.get(n) if skel else None
         r = clip.rot.get(n)
         t = clip.trans.get(n)
-        if r is None:
+        if r is None:           # the clip does not list the bone: it stays in the bind pose
             r = [skel.q[i]] * (a.frames + 1) if i is not None else None
-            t = [skel.t[i]] * (a.frames + 1) if i is not None else None
-        elif t is None and i is not None:
-            t = [skel.t[i]] * (a.frames + 1)
-        return r, t
+        return r, t if t is not None else zero
 
     for n in bones + only_a + only_b:
         ra, ta = tracks(a, n)
@@ -912,10 +916,7 @@ def compare_clips(a, b, skel=None):
             rot_err.append(e)
             if e > worst_r[0]:
                 worst_r = (e, n, f)
-        if ta is None and tb is None:
-            continue
-        if ta is None or tb is None:
-            skipped.append(n + ' (translation against bind: needs --model)')
+        if ta is zero and tb is zero:
             continue
         for f in range(a.frames + 1):
             e = v_len(v_sub(ta[f], tb[f]))
@@ -968,6 +969,99 @@ def sample_positions(clip, skel, bones, with_delta=False):
     return rows
 
 
+def angle_axes(angles):
+    """The game's (pitch, yaw, roll) in degrees -> the forward, left and up axes of an entity."""
+    p, y, r = (math.radians(a) for a in angles)
+    sp, cp, sy, cy, sr, cr = math.sin(p), math.cos(p), math.sin(y), math.cos(y), math.sin(r), math.cos(r)
+    forward = (cp * cy, cp * sy, -sp)
+    right = (-sr * sp * cy + cr * sy, -sr * sp * sy - cr * cy, -sr * cp)
+    up = (cr * sp * cy + sr * sy, cr * sp * sy - sr * cy, cr * cp)
+    return forward, tuple(-c for c in right), up
+
+
+def pose_between(clip, skel, frame):
+    """Model-space bone positions at a fractional frame (local tracks interpolated as the game does)."""
+    f0 = max(0, min(clip.frames, int(math.floor(frame))))
+    f1 = min(clip.frames, f0 + 1)
+    u = min(1.0, max(0.0, frame - f0))
+    lq, lt = list(skel.q), list(skel.t)
+    for n, i in skel.index.items():
+        if n in clip.rot:
+            lq[i] = q_nlerp(clip.rot[n][f0], clip.rot[n][f1], u)
+            tr = clip.trans.get(n)
+            if tr is not None:
+                lt[i] = tuple(c + a + (b - a) * u for c, a, b in zip(skel.t[i], tr[f0], tr[f1]))
+    return skel.globals(lq, lt)[1]
+
+
+def compare_run(doc, clip, skel, loop=None, window=0.5, bind_tolerance=0.05):
+    """Tag positions sampled in the running game (a gamelab `anim-<name>.json`) against the clip.
+
+    Each sample carries the entity's origin and angles, so the expected world position of a tag is
+    origin + axes * (model-space position at that time). The one unknown is when the game started the clip
+    relative to the script's clock: the start offset is searched (within `window` seconds, or over the whole
+    loop for a looping clip) and reported. If no tag ever leaves its first position the game did not pose the
+    model at all, and that is the verdict."""
+    loop = clip.loop if loop is None else loop
+    samples = [x for x in doc['samples'] if x['k'] >= 0 and x.get('origin') and x.get('tags')]
+    if not samples:
+        return {'verdict': 'no samples'}
+    tags = [t for t in samples[0]['tags'] if t in skel.index]
+    local = []          # per sample: tag -> position in the entity's own axes
+    for x in samples:
+        fw, lf, up = angle_axes(x.get('angles') or (0.0, 0.0, 0.0))
+        row = {}
+        for t in tags:
+            d = v_sub(x['tags'][t], x['origin'])
+            row[t] = (d[0] * fw[0] + d[1] * fw[1] + d[2] * fw[2], d[0] * lf[0] + d[1] * lf[1] + d[2] * lf[2], d[0] * up[0] + d[1] * up[1] + d[2] * up[2])
+        local.append(row)
+    travel = {t: max(v_len(v_sub(r[t], local[0][t])) for r in local) for t in tags}
+    expected_travel = {}
+    frames = [pose_between(clip, skel, f) for f in range(clip.frames + 1)]
+    for t in tags:
+        i = skel.index[t]
+        expected_travel[t] = max(v_len(v_sub(fr[i], frames[0][i])) for fr in frames)
+    _, bind = skel.globals()
+    bind_error = max(v_len(v_sub(local[0][t], bind[skel.index[t]])) for t in tags) if tags else 0.0
+    out = {'animation': clip.name, 'samples': len(samples), 'tags': tags, 'seconds_sampled': (samples[-1]['ms'] - samples[0]['ms']) / 1000.0,
+           'measured_travel_units': {t: round(v, 3) for t, v in travel.items()},
+           'authored_travel_units': {t: round(v, 3) for t, v in expected_travel.items()},
+           'first_sample_from_bind_units': round(bind_error, 4)}
+    if max(travel.values(), default=0.0) < bind_tolerance and max(expected_travel.values(), default=0.0) > 1.0:
+        out['verdict'] = 'not posed: no tag moved in the game although the clip moves them'
+        return out
+    duration = clip.duration()
+
+    def errors(offset):
+        errs = []
+        for x, row in zip(samples, local):
+            t = x['ms'] / 1000.0 - offset
+            if loop and duration > 0:
+                t %= duration
+            pos = pose_between(clip, skel, max(0.0, min(duration, t)) * clip.rate)
+            for tag in tags:
+                errs.append((v_len(v_sub(row[tag], pos[skel.index[tag]])), tag, x['ms']))
+        return errs
+
+    def rms(offset):
+        e = errors(offset)
+        return math.sqrt(sum(v[0] * v[0] for v in e) / len(e))
+
+    span = duration if loop else window
+    start = 0.0 if loop else -window
+    step = 0.01
+    best = min((start + k * step for k in range(int(round((span - start if not loop else span) / step)) + 1)), key=rms)
+    for fine in (0.002, 0.0005):
+        best = min((best + k * fine for k in range(-6, 7)), key=rms)
+    e = errors(best)
+    worst = max(e)
+    per_tag = {t: round(max(v[0] for v in e if v[1] == t), 4) for t in tags}
+    out.update(verdict='posed', start_offset_seconds=round(best, 4), rms_units=round(rms(best), 4),
+               worst_units=round(worst[0], 4), worst_tag=worst[1], worst_at_ms=worst[2],
+               p99_units=round(percentile([v[0] for v in e], 99), 4), worst_by_tag_units=per_tag)
+    return out
+
+
 def inspect(path):
     a = codec.decode(path)
     d = decode_delta(a)
@@ -996,9 +1090,12 @@ def inspect(path):
         'notes': [{'name': n, 'time': round(t, 6)} for n, t in a.notify], 'bone_names': names}
 
 
-def zone_source(dump, zone, out):
-    """A ZoneTool source tree for every animation of a dump folder: the files, the zone list and the table of
-    names a script may play (`scriptmodelplayanim` takes a name the game finds in such a table)."""
+def zone_source(dump, zone, out, tree_name=None):
+    """A ZoneTool source tree for every animation of a dump folder: the files, the zone list, the table of names
+    (`ncs_anm_<zone>`) and an animation tree file (`animtrees/<tree>.atr`): a script that names an animation as a
+    value (`#using_animtree("<tree>"); %my_clip`, for getanimlength, getmovedelta, getnotetracktimes) needs the
+    animation listed in that tree."""
+    tree_name = tree_name or zone + '_anims'
     src = os.path.join(dump, 'xanim')
     names = sorted(f[:-4] for f in os.listdir(src) if f.lower().endswith('.xab'))
     if not names:
@@ -1013,9 +1110,12 @@ def zone_source(dump, zone, out):
     table = 'ncs_anm_' + zone
     with open(os.path.join(tree, 'netconststrings', table + '.json'), 'w', newline='\n') as f:
         json.dump({'stringType': 16, 'sourceType': 2, 'stringList': names}, f, indent=4)
+    os.makedirs(os.path.join(tree, 'animtrees'), exist_ok=True)
+    with open(os.path.join(tree, 'animtrees', tree_name + '.atr'), 'w', newline='\n') as f:
+        f.write('// written by iw7_anim_gltf.py zone-source\n' + ''.join(n + '\n' for n in names))
     with open(os.path.join(out, 'zone_source', zone + '.csv'), 'w', newline='\n') as f:
-        f.write(''.join('xanim,%s\n' % n for n in names) + 'netconststrings,%s\n' % table)
-    return {'zone': zone, 'animations': names, 'name_table': table, 'tree': tree,
+        f.write(''.join('xanim,%s\n' % n for n in names) + 'netconststrings,%s\n' % table + 'rawfile,animtrees/%s.atr\n' % tree_name)
+    return {'zone': zone, 'animations': names, 'name_table': table, 'animtree': tree_name, 'tree': tree,
             'csv': os.path.join(out, 'zone_source', zone + '.csv')}
 
 
@@ -1058,7 +1158,15 @@ def main(argv=None):
     p = sub.add_parser('zone-source', help='a ZoneTool source tree (files, zone list, name table) for a dump folder')
     p.add_argument('dump')
     p.add_argument('--zone', default='mod')
+    p.add_argument('--tree', help='name of the animation tree file written for scripts (default: <zone>_anims)')
     p.add_argument('--out', required=True)
+    p = sub.add_parser('compare-run', help='tag positions sampled in the running game against a clip')
+    p.add_argument('run_json', help='anim-<name>.json written by the gamelab verdict')
+    p.add_argument('clip', help='the source .glb or the built .xab')
+    p.add_argument('--model', required=True)
+    p.add_argument('--loop', action='store_true', help='the game loops the clip (default: the clip\'s own flag)')
+    p.add_argument('--window', type=float, default=0.5, help='seconds searched for the start offset of a clip that does not loop')
+    p.add_argument('--max-error', type=float, default=1.0, help='worst tag error in game units for a pass')
     p = sub.add_parser('sample', help='model-space bone positions at every frame')
     p.add_argument('clip')
     p.add_argument('--model', required=True)
@@ -1099,8 +1207,14 @@ def main(argv=None):
             ok = 'error' not in report and report['rotation_deg']['worst'] <= a.max_rotation and \
                 report['translation_units']['worst'] <= a.max_translation and 'error' not in report['root_motion']
             report['pass'] = ok
+        elif a.cmd == 'compare-run':
+            skel = Skeleton.load(a.model)
+            with open(a.run_json, encoding='utf-8') as f:
+                doc = json.load(f)
+            report = compare_run(doc, load_clip(a.clip, skel), skel, True if a.loop else None, a.window)
+            report['pass'] = report.get('verdict') == 'posed' and report['worst_units'] <= a.max_error
         elif a.cmd == 'zone-source':
-            report = zone_source(a.dump, a.zone, a.out)
+            report = zone_source(a.dump, a.zone, a.out, a.tree)
         elif a.cmd == 'inspect':
             report = inspect(a.xanim)
             if not a.names:

@@ -41,7 +41,7 @@ def clip(skel, frames=40, move=(60, 5, 0), loop=True):
     c.bones.append('j_mainroot')
     i = skel.index['j_mainroot']
     c.rot['j_mainroot'] = [skel.q[i]] * (frames + 1)
-    c.trans['j_mainroot'] = [(skel.t[i][0], skel.t[i][1] + math.sin(f / 5.0), skel.t[i][2] + 0.2 * f) for f in range(frames + 1)]
+    c.trans['j_mainroot'] = [(0.0, math.sin(f / 5.0), 0.2 * f) for f in range(frames + 1)]     # offsets from the bind translation
     c.bones.append('tag_origin')
     c.rot['tag_origin'] = [T.IDENT] * (frames + 1)
     c.trans['tag_origin'] = None
@@ -214,11 +214,13 @@ class RoundTrip(unittest.TestCase):
     def test_sample_gives_model_space_positions(self):
         src = clip(self.skel)
         a = src.write_xanim(os.path.join(self.d, 'a'))
-        code, out = run('sample', a, '--model', self.sk, '--bones', 'j_head,j_wrist_ri')
+        code, out = run('sample', a, '--model', self.sk, '--bones', 'j_head,j_wrist_ri,j_knee_le')
         self.assertEqual(code, 0)
         _, gt = self.skel.globals()
         first = out['samples'][0]
-        self.assertLess(T.v_len(T.v_sub(first['j_wrist_ri'], gt[self.skel.index['j_wrist_ri']])), 0.3)   # frame 0 is the bind pose (root lifted by its track)
+        self.assertLess(T.v_len(T.v_sub(first['j_wrist_ri'], gt[self.skel.index['j_wrist_ri']])), 1e-3)   # frame 0 is the bind pose: a zero offset moves nothing
+        lifted = T.v_sub(out['samples'][40]['j_knee_le'], gt[self.skel.index['j_knee_le']])
+        self.assertAlmostEqual(lifted[2], 8.0, delta=0.5)                                                   # the root offset of 0.2 a frame lifts the legs with it
         self.assertGreater(T.v_len(T.v_sub(out['samples'][40]['j_wrist_ri'], first['j_wrist_ri'])), 5)
         code, out = run('sample', a, '--model', self.sk, '--bones', 'nope')
         self.assertEqual(code, 2)
@@ -232,10 +234,68 @@ class RoundTrip(unittest.TestCase):
         self.assertEqual(code, 0)
         with open(out['csv']) as f:
             listed = f.read()
-        self.assertEqual(listed, 'xanim,second_clip\nxanim,synthetic_clip\nnetconststrings,ncs_anm_mod\n')
+        self.assertEqual(listed, 'xanim,second_clip\nxanim,synthetic_clip\nnetconststrings,ncs_anm_mod\nrawfile,animtrees/mod_anims.atr\n')
+        with open(os.path.join(out['tree'], 'animtrees', 'mod_anims.atr')) as f:
+            self.assertEqual([l for l in f.read().splitlines() if not l.startswith('//')], ['second_clip', 'synthetic_clip'])
         table = load(os.path.join(out['tree'], 'netconststrings', 'ncs_anm_mod.json'))
         self.assertEqual(table, {'stringType': 16, 'sourceType': 2, 'stringList': ['second_clip', 'synthetic_clip']})
         self.assertTrue(os.path.isfile(os.path.join(out['tree'], 'xanim', 'second_clip.xab')))
+
+
+class GameRun(unittest.TestCase):
+    """Samples as the gamelab verdict writes them: entity origin, angles and tag origins every server frame."""
+
+    def setUp(self):
+        self.skel = skeleton()
+        self.clip = clip(self.skel, 60, move=None, loop=False)
+        self.tags = ['j_head', 'j_wrist_ri']
+
+    def samples(self, offset=0.1, yaw=37.0, posed=True):
+        origin = (100.0, 200.0, 30.0)
+        fw, lf, up = T.angle_axes((0.0, yaw, 0.0))
+        rows = []
+        for k in range(50):
+            t = max(0.0, min(2.0, k * 0.05 - offset)) if posed else 0.0
+            pos = T.pose_between(self.clip, self.skel, t * 30)
+            rows.append({'k': k, 'ms': k * 50, 'origin': list(origin), 'angles': [0.0, yaw, 0.0],
+                         'tags': {n: [origin[i] + pos[self.skel.index[n]][0] * fw[i] + pos[self.skel.index[n]][1] * lf[i] + pos[self.skel.index[n]][2] * up[i]
+                                      for i in range(3)] for n in self.tags}})
+        return {'samples': rows}
+
+    def test_axes_of_a_yawed_entity(self):
+        fw, lf, up = T.angle_axes((0.0, 90.0, 0.0))
+        for got, want in ((fw, (0, 1, 0)), (lf, (-1, 0, 0)), (up, (0, 0, 1))):
+            self.assertLess(T.v_len(T.v_sub(got, want)), 1e-9)
+
+    def test_a_posed_run_matches_and_the_start_offset_is_found(self):
+        r = T.compare_run(self.samples(), self.clip, self.skel)
+        self.assertEqual(r['verdict'], 'posed')
+        self.assertAlmostEqual(r['start_offset_seconds'], 0.1, delta=0.002)
+        self.assertLess(r['worst_units'], 0.05)
+        self.assertGreater(r['measured_travel_units']['j_wrist_ri'], 5)
+
+    def test_a_run_whose_tags_never_move_is_reported_as_not_posed(self):
+        r = T.compare_run(self.samples(posed=False), self.clip, self.skel)
+        self.assertTrue(r['verdict'].startswith('not posed'))
+        self.assertNotIn('worst_units', r)
+
+    def test_a_wrong_clip_is_far_off(self):
+        other = clip(self.skel, 60, move=None, loop=False)
+        other.rot['j_shoulder_ri'] = [T.q_mul(q, author_clip.euler((0, 0, 40.0 * f / 60))) for f, q in enumerate(other.rot['j_shoulder_ri'])]
+        r = T.compare_run(self.samples(), other, self.skel)
+        self.assertGreater(r['worst_units'], 2.0)
+
+    def test_command_line(self):
+        with tempfile.TemporaryDirectory() as d:
+            sk = os.path.join(d, 'skeleton.json')
+            save(sk, SKELETON_DOC)
+            xab = self.clip.write_xanim(d)
+            save(os.path.join(d, 'anim-x.json'), self.samples())
+            code, r = run('compare-run', os.path.join(d, 'anim-x.json'), xab, '--model', sk)
+            self.assertEqual((code, r['pass']), (0, True))
+            save(os.path.join(d, 'anim-y.json'), self.samples(posed=False))
+            code, r = run('compare-run', os.path.join(d, 'anim-y.json'), xab, '--model', sk)
+            self.assertEqual((code, r['pass']), (1, False))
 
 
 class ForeignGltf(unittest.TestCase):
