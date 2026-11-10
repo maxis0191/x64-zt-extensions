@@ -279,6 +279,33 @@ class GameRun(unittest.TestCase):
         self.assertTrue(r['verdict'].startswith('not posed'))
         self.assertNotIn('worst_units', r)
 
+    def test_a_looping_clip_that_jumps_at_its_loop_point(self):
+        # The pose at the end differs from the pose at the start: a sample taken on the loop point may show either.
+        loop = clip(self.skel, 60, move=None, loop=True)
+        origin = (0.0, 0.0, 0.0)
+        rows = []
+        for k in range(100):
+            t = (k * 0.05 - 0.2) % 2.0
+            if k * 0.05 - 0.2 > 0 and abs(t) < 1e-9:
+                t = 2.0                                  # the game shows the last pose on the loop point
+            pos = T.pose_between(loop, self.skel, max(0.0, t) * 30)
+            rows.append({'k': k, 'ms': k * 50, 'origin': list(origin), 'angles': [0.0, 0.0, 0.0],
+                         'tags': {n: list(pos[self.skel.index[n]]) for n in self.tags}})
+        r = T.compare_run({'samples': rows[4:]}, loop, self.skel)
+        self.assertEqual(r['verdict'], 'posed')
+        self.assertAlmostEqual(r['start_offset_seconds'] % 2.0, 0.2, delta=0.002)
+        self.assertLess(r['worst_units'], 0.05)
+
+    def test_a_stretch_of_the_log_can_be_chosen(self):
+        doc = self.samples()
+        for row in doc['samples'][30:]:                       # after 1.5 s the entity does something else
+            row['tags'] = {n: [c + 9.0 for c in v] for n, v in row['tags'].items()}
+        whole = T.compare_run(doc, self.clip, self.skel)
+        self.assertGreater(whole['worst_units'], 5)
+        part = T.compare_run(doc, self.clip, self.skel, to_ms=1450)
+        self.assertLess(part['worst_units'], 0.05)
+        self.assertEqual((part['samples'], part['within_limit_until_ms']), (30, 1450))
+
     def test_a_wrong_clip_is_far_off(self):
         other = clip(self.skel, 60, move=None, loop=False)
         other.rot['j_shoulder_ri'] = [T.q_mul(q, author_clip.euler((0, 0, 40.0 * f / 60))) for f, q in enumerate(other.rot['j_shoulder_ri'])]

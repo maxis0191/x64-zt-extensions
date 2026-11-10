@@ -994,16 +994,19 @@ def pose_between(clip, skel, frame):
     return skel.globals(lq, lt)[1]
 
 
-def compare_run(doc, clip, skel, loop=None, window=0.5, bind_tolerance=0.05):
+def compare_run(doc, clip, skel, loop=None, window=0.5, bind_tolerance=0.05, from_ms=None, to_ms=None, limit=1.0):
     """Tag positions sampled in the running game (a gamelab `anim-<name>.json`) against the clip.
 
     Each sample carries the entity's origin and angles, so the expected world position of a tag is
     origin + axes * (model-space position at that time). The one unknown is when the game started the clip
     relative to the script's clock: the start offset is searched (within `window` seconds, or over the whole
     loop for a looping clip) and reported. If no tag ever leaves its first position the game did not pose the
-    model at all, and that is the verdict."""
+    model at all, and that is the verdict. `from_ms` / `to_ms` keep only the samples of that stretch (a zombie
+    plays a clip only while it stays in that animation state); `within_limit_until_ms` says how long the game
+    stayed within `limit` units of the clip."""
     loop = clip.loop if loop is None else loop
-    samples = [x for x in doc['samples'] if x['k'] >= 0 and x.get('origin') and x.get('tags')]
+    samples = [x for x in doc['samples'] if x['k'] >= 0 and x.get('origin') and x.get('tags')
+               and (from_ms is None or x['ms'] >= from_ms) and (to_ms is None or x['ms'] <= to_ms)]
     if not samples:
         return {'verdict': 'no samples'}
     tags = [t for t in samples[0]['tags'] if t in skel.index]
@@ -1032,20 +1035,50 @@ def compare_run(doc, clip, skel, loop=None, window=0.5, bind_tolerance=0.05):
         return out
     duration = clip.duration()
 
+    index = [skel.index[t] for t in tags]
+    keyed = [[fr[i] for i in index] for fr in frames]       # tag positions at whole frames: enough to find the offset
+
+    seam = 0.5 / clip.rate      # a sample this close to the loop point may show the last pose or the first
+
+    def clip_times(x, offset):
+        t = x['ms'] / 1000.0 - offset
+        if loop and duration > 0:
+            t %= duration
+            if t < seam or duration - t < seam:
+                return (0.0, duration)
+        return (max(0.0, min(duration, t)),)
+
     def errors(offset):
         errs = []
         for x, row in zip(samples, local):
-            t = x['ms'] / 1000.0 - offset
-            if loop and duration > 0:
-                t %= duration
-            pos = pose_between(clip, skel, max(0.0, min(duration, t)) * clip.rate)
-            for tag in tags:
-                errs.append((v_len(v_sub(row[tag], pos[skel.index[tag]])), tag, x['ms']))
+            best_rows = None
+            for t in clip_times(x, offset):
+                pos = pose_between(clip, skel, t * clip.rate)
+                rows = [(v_len(v_sub(row[tag], pos[skel.index[tag]])), tag, x['ms']) for tag in tags]
+                if best_rows is None or sum(r[0] for r in rows) < sum(r[0] for r in best_rows):
+                    best_rows = rows
+            errs.extend(best_rows)
         return errs
 
     def rms(offset):
-        e = errors(offset)
-        return math.sqrt(sum(v[0] * v[0] for v in e) / len(e))
+        total, count = 0.0, 0
+        for x, row in zip(samples, local):
+            best_sum = None
+            for t in clip_times(x, offset):
+                f = t * clip.rate
+                f0 = min(clip.frames, int(f))
+                f1 = min(clip.frames, f0 + 1)
+                u = f - f0
+                part = 0.0
+                for k, tag in enumerate(tags):
+                    a, b, m = keyed[f0][k], keyed[f1][k], row[tag]
+                    d0, d1, d2 = a[0] + (b[0] - a[0]) * u - m[0], a[1] + (b[1] - a[1]) * u - m[1], a[2] + (b[2] - a[2]) * u - m[2]
+                    part += d0 * d0 + d1 * d1 + d2 * d2
+                if best_sum is None or part < best_sum:
+                    best_sum = part
+            total += best_sum
+            count += len(tags)
+        return math.sqrt(total / count)
 
     span = duration if loop else window
     start = 0.0 if loop else -window
@@ -1056,7 +1089,14 @@ def compare_run(doc, clip, skel, loop=None, window=0.5, bind_tolerance=0.05):
     e = errors(best)
     worst = max(e)
     per_tag = {t: round(max(v[0] for v in e if v[1] == t), 4) for t in tags}
-    out.update(verdict='posed', start_offset_seconds=round(best, 4), rms_units=round(rms(best), 4),
+    over = sorted(v[2] for v in e if v[0] > limit)
+    out['within_limit_until_ms'] = (max(x['ms'] for x in samples if x['ms'] < over[0]) if any(x['ms'] < over[0] for x in samples) else None) if over else samples[-1]['ms']
+    exact = math.sqrt(sum(v[0] * v[0] for v in e) / len(e))
+    # The clip's own travel over the sampled stretch, from the pose at the first sample: comparable with the measured one.
+    first = pose_between(clip, skel, clip_times(samples[0], best)[0] * clip.rate)
+    along = [pose_between(clip, skel, clip_times(x, best)[-1] * clip.rate) for x in samples]
+    out['authored_travel_units'] = {t: round(max(v_len(v_sub(pos[skel.index[t]], first[skel.index[t]])) for pos in along), 3) for t in tags}
+    out.update(verdict='posed', start_offset_seconds=round(best, 4), rms_units=round(exact, 4),
                worst_units=round(worst[0], 4), worst_tag=worst[1], worst_at_ms=worst[2],
                p99_units=round(percentile([v[0] for v in e], 99), 4), worst_by_tag_units=per_tag)
     return out
@@ -1167,6 +1207,8 @@ def main(argv=None):
     p.add_argument('--loop', action='store_true', help='the game loops the clip (default: the clip\'s own flag)')
     p.add_argument('--window', type=float, default=0.5, help='seconds searched for the start offset of a clip that does not loop')
     p.add_argument('--max-error', type=float, default=1.0, help='worst tag error in game units for a pass')
+    p.add_argument('--from-ms', type=int, help='use only the samples from this time of the log on')
+    p.add_argument('--to-ms', type=int, help='use only the samples up to this time of the log')
     p = sub.add_parser('sample', help='model-space bone positions at every frame')
     p.add_argument('clip')
     p.add_argument('--model', required=True)
@@ -1211,7 +1253,8 @@ def main(argv=None):
             skel = Skeleton.load(a.model)
             with open(a.run_json, encoding='utf-8') as f:
                 doc = json.load(f)
-            report = compare_run(doc, load_clip(a.clip, skel), skel, True if a.loop else None, a.window)
+            report = compare_run(doc, load_clip(a.clip, skel), skel, True if a.loop else None, a.window,
+                                 from_ms=a.from_ms, to_ms=a.to_ms, limit=a.max_error)
             report['pass'] = report.get('verdict') == 'posed' and report['worst_units'] <= a.max_error
         elif a.cmd == 'zone-source':
             report = zone_source(a.dump, a.zone, a.out, a.tree)

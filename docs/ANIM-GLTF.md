@@ -100,11 +100,138 @@ Run folder: `IW7-Runtime/anim-gltf/p1` (`results.json` one row per animation and
 
 ## Measured: a new animation through the game's loader (P2)
 
-@@P2
+Three new animations for the zombie skeleton (`police_officer_zombie`), each 2 seconds, none copied from a stock clip:
+
+| Clip | Made with | Content |
+|---|---|---|
+| `animgltf_wave` | `author_clip.py` (Python) | torso turned 40 degrees, right arm raised 100 degrees (wrist travels 32 units); note `animgltf_hit` at 1.0 s |
+| `animgltf_walk` | `author_clip.py` | the same pose change, root motion 96 units forward, note `animgltf_step` at 0.5 s |
+| `animgltf_blender` | Blender 5.2 from the command line (`blender_key_clip.py`: import `rig.glb`, key spine and left shoulder at the first and last frame, export glb with default settings) | torso turned the other way, left arm raised (wrist rises 18 units) |
+
+Blender exported all 102 bones and its own easing; `from-gltf` matched 102 of 102 by name, wrote 102 bones (100 of
+them a single value), and the bind pose came back exact (the wrist at frame 0 is where the model has it, to 0.004
+unit). Conversion error of the three clips against their glTF source: at most 0.003 degrees and 0.002 unit in model
+space. Conversion time 0.05 to 0.08 s a clip. Sizes 1.4 KB, 1.9 KB and 3.6 KB.
+
+Two more clips were made for the in-game measurement (P3): the stock zombie idle's first frame held still, with the
+same arm and torso motion authored on top and a note at 1.0 s, under the names of the two stock idle animations.
+
+Built with `Build-AnimZone.ps1` (community ZoneTool, IW7 mode): the five animations, the name table and the
+animation tree file compiled to a 6,568-byte `mod.ff`; the compile step took 31 ms (the whole build about 25 s,
+most of it ZoneTool loading the game's base zones).
+
+Read back with `Read-CompiledZone.ps1`: the game's loader finished in 6 s; **5 of 5 animations hold the same content
+after decoding, 0 differ; 0 errors, 0 warnings**; the name table is identical. `compare` between each source file
+and the file the loader gave back: 0.000003 degrees, 0 units, root motion 0, notes equal.
+
+So: the game's loader accepts our files. Folders: `IW7-Runtime/anim-gltf/p2` (clips, reports, first zone) and
+`IW7-Runtime/anim-gltf/p3b` (`src`, `ztwork/zone/mod.ff`, `readback`, `readback.json`).
 
 ## Proven in the game (P3, P4)
 
-@@P3
+All runs: private dedicated server on loopback with a random password and one engine bot, no client
+(`Invoke-GameLabHeadless.ps1` of the server repository, about 1.1 GB, 40 to 90 s a run), map Spaceland, the mod zone of
+P2 loaded with `-FsGame mods/animgltf`. The plan steps `anim`, `pose` and `animinfo` log what the server itself
+computes; `compare-run` compares the log with the clip. Run folders: `IW7-Runtime/anim-gltf/p3/runs/<name>/run1`
+(`client.stdout.log`, `anim-<step>.json`, `gamelab.result.json`).
+
+### What the game's own functions read from our files (run `b1`: PASS, 7 of 7)
+
+A script names the animation as a value (`#using_animtree("animgltf"); %animgltf_walk`) and asks the game:
+
+| Asked | Authored | The game answered |
+|---|---|---|
+| `getanimlength` of the three new clips | 2.0 s (60 frames at 30) | 2 |
+| `getmovedelta( walk, 0, 1 )` (root motion over the clip) | 96 units forward | (96, 0, 0) |
+| `getmovedelta( walk, 0, 0.5 )` | 48 | (48.0007, 0, 0) |
+| `getmovedelta` of the two clips without root motion | none | (0, 0, 0) |
+| `getnotetracktimes( walk, "animgltf_step" )` | 0.5 s of 2 s | 0.25 |
+| `getnotetracktimes( wave, "animgltf_hit" )` | 1.0 s of 2 s | 0.5 |
+| `getnotetracktimes( blender clip, "end" )` | end | 1 |
+
+The animation tree file that `zone-source` writes is what makes this work. Without it (the same script under the
+stock tree `mp_script_model`, run `e1`) the server stopped while loading scripts, printed nothing and never started
+the map: an animation named as a value must be listed in the tree the script names.
+
+### Bones of a zombie playing our clip, measured on the server (P3)
+
+A dedicated server does not pose a script model (next section), but it does pose its zombies. So the measurement
+uses a zombie: the mod zone carries our authored clip under the names of the two stock idle animations, the stock
+zombie's idle state plays it, and the `pose` step logs the origin of six bones every server frame (50 ms).
+
+First the method on stock content, no mod (runs `c1`, `c2x`): the logged bones of an idle stock zombie against the
+stock idle animation as this tool decodes it.
+
+| Run | Body | Samples | Clip start found | RMS | Worst | Against the other stock idle |
+|---|---|---|---|---|---|---|
+| `c1` | male (`zombie_male_outfit_2_5`) | 181 x 4 bones, 9 s | 0.700 s after the log began; the idle's `end` note arrived at 700 ms | 0.004 unit | 0.033 unit | 37 units |
+
+So the tool reads the game's format the way the game evaluates it: rotations, translation offsets, timing and loop.
+
+Then our clip (run `a4z`, zombie `z1`, male body `zombie_male_outfit_5_3`; `compare-run` against the **glTF
+source**, not against our own output):
+
+| Samples | Clip start found | RMS | Worst | Right wrist travel, game / clip | Against the stock idle it replaced |
+|---|---|---|---|---|---|
+| 147 x 6 bones (head, both wrists, right elbow, pelvis, left ankle), 7.3 s = 3.65 loops | 1.000 s; the clip's `end` notes arrived at 1000, 3000, 5000, 7000 ms | 0.004 unit | **0.007 unit** | 14.283 / 14.279 units | 31 units |
+
+After 7.35 s that zombie left the idle state by itself (the error then grows within three server frames), which is
+the game's behaviour and not part of the clip; `compare-run --to-ms 7300` limits the comparison to the stretch, and
+without the limit it reports the same instant (`within_limit_until_ms`: 7350). The command:
+
+    python iw7_anim_gltf.py compare-run <run>/anim-idle_z1.json iw7_cp_zom_stand_idle_01.glb --model <dump>/xmodel/police_officer_zombie.xmb --loop --to-ms 7300
+
+@@REENCODED
+
+What this proves: the game evaluates the file our writer produced to the bone positions computed from the glTF
+source, on the game's own skeleton, at the game's own timing, including the loop. What it does not prove: anything
+about a client's picture (no frame was taken), and nothing about blending into or out of the clip.
+
+Two things learned on the way, both now in the tools:
+
+- Zombies come in several bodies, and the body sets the proportions: the same idle on a female body puts head and
+  wrists 2 to 3 units away from where the male skeleton has them (run `c2x` against the male skeleton: worst 2.9; the
+  pelvis agrees to 0.1). Expected positions must be computed on the skeleton of the body that was spawned. The
+  comparison above uses zombies with the male body, whose bones match `police_officer_zombie` (stock run: worst
+  0.03). The female body's full skeleton is spread over several part models and was not assembled.
+- Zombies standing in a crowd step around and leave the idle state; the measurement spawns each zombie alone.
+
+### A script model on a dedicated server is not posed (run `a1`)
+
+`precachempanim( name )` at load and `model scriptmodelplayanim( name, 1 )` were accepted for the three new names
+without any error line. For 2.4 s after each call the server reported every tag exactly where the bind pose has it
+(49 samples a clip, three tags, travel 0.000; the first sample is 0.006 unit from the model's bind, which is the
+print precision). The same for a stock animation name. The model's origin did not move with the root-motion clip
+either. So on a dedicated server a script model's animation is the client's business: the server sends the name and
+knows nothing about the pose.
+
+**Not proven: that a client shows the clip on a script model.** No client session was run for it. What it needs:
+a client session of the same plan with frames (`Invoke-GameLab.ps1` has no option to load a mod zone today: that is
+the missing piece, a `-FsGame` and a mod copy as the headless runner now has), then either frames judged by
+reviewers, or a client console command that prints an entity's tag positions (native code, components repository)
+so the same `compare-run` works on a client. Retail plays its animated props and the robot N31L this way (`scriptmodelplayanim` by name), which is why
+this route was chosen.
+
+### Root motion and notes in the game (P4)
+
+**Notes: proven on a zombie.** The clip above carries the note `animgltf_hit`, authored 1.0 s into its 2.0 s. The
+game sent it to the zombie's script (`self waittill( "idle", note )`, the notify retail uses) at 0, 2000, 4000 and
+6000 ms of the log, and the clip's `end` at 1000, 3000, 5000 and 7000 ms: the note fires 1000 ms after each loop
+start, as authored. A server frame is 50 ms, so that is the resolution of this number. A second run (`a2x`, another
+zombie) gave 2200, 4200, 6200, 8200 against `end` at 1200, 3200, 5200, 7200: the same 1000 ms.
+
+**Notes on a script model: not delivered, by design of the game.** No retail script waits for a note of a script
+model; they read the note time with `getnotetracktimes` and wait (run `b1` above shows the game returns our note
+times exactly). A script that needs the event does the same.
+
+**Root motion: read exactly, not shown moving a model.** The game's `getmovedelta` returns the authored 96 units
+(and 48.0007 at half time) for our clip. A script model played with `scriptmodelplayanim` did not travel (its origin
+after the root-motion clip equals its origin before, run `a1`), and the game function that would move it
+(`scriptmodelplayanimdeltamotion`, known from other games of the series) is used by no retail script of this game
+and was not tried. A zombie moved by a root-motion clip of ours was not tried either: its walk states are driven
+by the path code, and which state lets the animation move the body was not established. What is missing for
+"the model advances by the authored distance in the game": either that state for agents, or a three-line script
+that moves a script model by `getmovedelta` every frame (which then proves the script, not the engine).
 
 ## Not possible yet
 
