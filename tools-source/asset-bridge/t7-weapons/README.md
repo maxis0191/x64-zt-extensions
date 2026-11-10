@@ -127,6 +127,14 @@ A weapon listed under `unchanged since accepted, no launch needed` reaches byte-
 - `iw7_xsurface_check.py` now reads surfaces that carry a second UV set (14 of 43 recorded files were
   unreadable by the count search).
 
+## Is the weapon right, not only loadable
+
+`iw7_weapon_feel_audit.py`, `iw7_weapon_sound_audit.py` and `iw7_weapon_fx_audit.py` compare a weapon with
+declared decisions and with the stock population: handling left over from the cloned stock weapon, fire
+sounds set up unlike any stock shot, measured loudness, ribbons that are copies of stock ribbons. The compiled
+fastfile is then read back through the game's own loader (`../zone-check`). Contract, commands and measured
+results: `docs/CONTENT-AUDITS.md`.
+
 ## Status
 
 See `STATUS.md` for measured results. Field meanings in BO3's WeaponDef are
