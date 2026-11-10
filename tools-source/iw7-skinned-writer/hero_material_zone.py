@@ -31,6 +31,8 @@ def main():
     ap.add_argument("--texconv", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--csv", default="")
+    ap.add_argument("--tex", action="append", default=[],
+                    help="extra SEMANTIC=png rebinding (e.g. 16=white.png for packed_a, 2=black.png for emissive)")
     a = ap.parse_args()
 
     tpl_path = os.path.join(a.techsets_dump, "materials", a.template.replace("/", os.sep) + ".json")
@@ -39,7 +41,8 @@ def main():
     img_dir = os.path.join(a.out, "images")
     os.makedirs(img_dir, exist_ok=True)
     images = {}
-    for sem, png in ((SEM_CS, a.cs), (SEM_NOG, a.nog)):
+    extra = [(int(x.split("=", 1)[0]), x.split("=", 1)[1]) for x in a.tex]
+    for sem, png in [(SEM_CS, a.cs), (SEM_NOG, a.nog)] + extra:
         if not png:
             continue
         stem = os.path.splitext(os.path.basename(png))[0]
