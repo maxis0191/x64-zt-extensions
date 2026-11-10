@@ -54,6 +54,21 @@ class AssembleTest(unittest.TestCase):
         with open(gsc, encoding="utf-8") as f:
             self.assertEqual(f.read(), text)
 
+    def test_bank_files_are_the_mod_zones(self):
+        # iw7-mod opens only mod.sabl/mod.sabs: a bank of zone bo3wpn would name files no client loads
+        root = tempfile.mkdtemp()
+        mod, csv = os.path.join(root, "bo3wpn"), os.path.join(root, "bo3wpn.csv")
+        write(csv, "soundbank,bo3wpn.all\n")
+        write(os.path.join(mod, "soundbank", "bo3wpn.all.json"),
+              json.dumps({"name": "bo3wpn.all", "zone": "bo3wpn", "aliases": []}))
+        port = os.path.join(root, "port")
+        write(os.path.join(port, "zone", "weapons", "iw7_tg_zm.json"), "{}")
+        write(os.path.join(port, "zone.csv"), "weapon,iw7_tg_zm\n")
+        write(os.path.join(port, "catalog.txt"), "iw7_tg_zm:iw7_tg_zm_pap1\n")
+        asm.assemble(mod, csv, "bo3wpn.all", "bo3wpn", [port])
+        with open(os.path.join(mod, "soundbank", "bo3wpn.all.json"), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["zone"], "mod")
+
     def test_gsc_without_block_is_refused(self):
         root = tempfile.mkdtemp()
         gsc = os.path.join(root, "x.gsc")
@@ -72,6 +87,39 @@ class AssembleTest(unittest.TestCase):
         # iw7_raygun_mark2_zm's raw name is "raygun": it replaced the Ray Gun's level.pap entry
         with self.assertRaises(SystemExit):
             asm.merge_catalog(["a=iw7_raygun_zm"], ["b=iw7_raygun_mark2_zm"])
+
+    def test_shared_alias_defined_once_in_the_bank(self):
+        root = tempfile.mkdtemp()
+        write(os.path.join(root, "sound", "a.aliases.csv"), "Name,File\nwpn_dry,t7\\a\\dry\nwpn_a,t7\\a\\a\n")
+        write(os.path.join(root, "sound", "b.aliases.csv"), "Name,File\n#comment\nwpn_dry,t7\\b\\dry\nwpn_b,t7\\b\\b\n")
+        dropped = asm.dedupe_bank_aliases(root, ["sound/a.aliases.csv", "sound/b.aliases.csv", "sound/none.csv"])
+        self.assertEqual(dropped, [["wpn_dry", "sound/a.aliases.csv", "sound/b.aliases.csv"]])
+        with open(os.path.join(root, "sound", "b.aliases.csv"), encoding="utf-8") as f:
+            self.assertEqual(f.read(), "Name,File\n#comment\nwpn_b,t7\\b\\b\n")
+        with open(os.path.join(root, "sound", "a.aliases.csv"), encoding="utf-8") as f:
+            self.assertIn("wpn_dry", f.read())
+
+    def test_variant_rows_of_one_table_are_kept(self):
+        root = tempfile.mkdtemp()
+        write(os.path.join(root, "sound", "a.aliases.csv"), "Name,File\nwpn_shot,t7/a/shot\nwpn_shot,t7/a/shot_v2\n")
+        write(os.path.join(root, "sound", "b.aliases.csv"), "Name,File\nwpn_shot,t7/b/shot\nwpn_shot,t7/b/shot_v2\n")
+        dropped = asm.dedupe_bank_aliases(root, ["sound/a.aliases.csv", "sound/b.aliases.csv"])
+        self.assertEqual(dropped, [["wpn_shot", "sound/a.aliases.csv", "sound/b.aliases.csv"]] * 2)
+        with open(os.path.join(root, "sound", "a.aliases.csv"), encoding="utf-8") as f:
+            self.assertEqual(f.read().count("wpn_shot"), 2)
+
+    def test_measure_mix(self):
+        # the engine hash of the Paris mod's own mix, as recorded in the server docs
+        self.assertEqual(asm.sound_hash("paris_music_off"), 3429397084)
+        root = tempfile.mkdtemp()
+        bank = {"aliases": [], "MixDefs": []}
+        asm.write_measure_mix(root, "mod.all", bank)
+        self.assertEqual(bank["MixDefs"], ["sound/mod.all.mixes.csv"])
+        with open(os.path.join(root, "sound", "mod.all.mixes.csv"), encoding="ascii") as f:
+            rows = f.read().splitlines()
+        self.assertEqual(rows[0], "idString,VolMod,Volume,Fade")
+        self.assertIn("%d,music,0.000000,0.100000" % asm.sound_hash("bo3wpn_measure"), rows)
+        self.assertFalse(any(",wpn_plr," in r for r in rows))
 
     def test_refused_catalog_writes_nothing(self):
         root = tempfile.mkdtemp()

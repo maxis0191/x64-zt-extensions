@@ -8,6 +8,9 @@ revisions and explicit file dependencies. Source extraction preserved authors
 and commit messages; `migration/import.json` and `migration/commit-map.txt` map
 the original server paths/commits to this history.
 
+The creation tools (model import, skinned characters, zombie kit, sound banks, weapon port and audits) are listed in
+one table, with entry commands, tests and what was proven in the game, in [docs/CREATION-TOOLS.md](docs/CREATION-TOOLS.md).
+
 ## Editing and source preparation
 
 Edit the canonical tracked file here. Do not edit generated source workspaces.

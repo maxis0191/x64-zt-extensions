@@ -105,14 +105,51 @@ def read_lines(path):
         return [line.rstrip("\r\n") for line in f]
 
 
+def dedupe_bank_aliases(mod_zone, tables):
+    """Keep one definition of each alias across the bank's tables (the first table in bank order).
+
+    Ported weapons share BO3 aliases (wpn_generic_dryfire_plr in the Ray Gun and the Mark II), each
+    table pointing at its own copy of the sound; a bank defining an alias twice is refused by the Paris
+    mod build. Later tables lose the repeated rows; returns [alias, kept table, dropped table]."""
+    import csv
+    seen, dropped = {}, []
+    for table in tables:
+        path = os.path.join(mod_zone, *table.split("/"))
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8", newline="") as f:
+            rows = list(csv.reader(f))
+        kept = rows[:1]
+        for row in rows[1:]:
+            name = row[0] if row else ""
+            # Repeated rows in one table are one alias's random variants (kept, as in stock tables).
+            if name and not name.startswith("#") and seen.get(name, table) != table:
+                dropped.append([name, seen[name], table])
+                continue
+            if name and not name.startswith("#"):
+                seen[name] = table
+            kept.append(row)
+        if len(kept) != len(rows):
+            with open(path, "w", encoding="utf-8", newline="") as f:
+                csv.writer(f, lineterminator="\n").writerows(kept)
+    return dropped
+
+
+BANK_ZONE = "mod"
+
+
 def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
     bank_path = os.path.join(mod_zone, "soundbank", bank + ".json")
     if os.path.exists(bank_path):
         with open(bank_path, encoding="utf-8") as f:
             bank_def = json.load(f)
     else:
-        bank_def = {"name": bank, "zone": zone, "gameLanguage": "all", "soundLanguage": "all", "aliases": []}
+        bank_def = {"name": bank, "zone": BANK_ZONE, "gameLanguage": "all", "soundLanguage": "all", "aliases": []}
         bank_def.update({k: [] for k in BANK_LISTS})
+    # The bank's zone names its data files (<zone>.sabl/.sabs) and iw7-mod opens only mod.sabl/mod.sabs
+    # from fs_game: a bank of zone "bo3wpn" pointed every alias at bo3wpn.sabl, which no client loads,
+    # and the weapons played no BO3 sound at all (whatever the ZoneTool zone is called).
+    bank_def["zone"] = BANK_ZONE
     # A catalog the module would refuse (two weapons sharing a raw name) stops before anything is written.
     new_catalog = [c for port in ports for c in read_lines(os.path.join(port, "catalog.txt")) if c]
     merge_catalog([c for c in read_lines(os.path.join(mod_zone, "catalog.txt")) if c], new_catalog)
@@ -145,6 +182,8 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
                 added.append(line)
         catalog += [c for c in read_lines(os.path.join(port, "catalog.txt")) if c]
         behaviours += [b for b in read_lines(os.path.join(port, "behaviour.txt")) if b]
+    shared = dedupe_bank_aliases(mod_zone, bank_def["aliases"])
+    write_measure_mix(mod_zone, bank, bank_def)
     if bank_def["aliases"] and "soundbank," + bank not in present:
         lines.append("soundbank," + bank)
         added.append("soundbank," + bank)
@@ -153,7 +192,7 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
         json.dump(bank_def, f, indent=1)
     with open(csv_path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
-    out = {"added_lines": added, "bank_aliases": bank_def["aliases"]}
+    out = {"added_lines": added, "bank_aliases": bank_def["aliases"], "shared_aliases": shared}
     for block, new in (("catalog", catalog), ("behaviours", behaviours)):
         path = os.path.join(mod_zone, block + ".txt")
         full = merge_entries([c for c in read_lines(path) if c], new, block)
@@ -163,6 +202,36 @@ def assemble(mod_zone, csv_path, bank, zone, ports, gsc=None):
             f.write("".join(c + "\n" for c in full))
         out[block] = full
     return out
+
+
+# Witness measurement mix (applied with setsoundsubmix by the audio witness only): every volume group
+# but the weapons' own at zero, so a recording of the client holds the shots, not Spaceland's music,
+# ambience, voices and footsteps.
+MEASURE_MIX = "bo3wpn_measure"
+MEASURE_MUTED = ("music", "music_emitter", "music_emitter_pa", "interface_music", "ambience", "ambience_dist",
+                 "emitter", "chatteral", "voiceover", "deathsdoor", "footstep_npc", "footstep_plr",
+                 "footstepmp_npc", "footstepmp_plr", "bodyfall", "physics", "destruct", "interface", "hud",
+                 "vehicle_npc", "shellcasings", "grenadebounce", "melee_npc", "melee_plr", "default", "na")
+
+
+def sound_hash(name):
+    """IW7 sound name hash (5381, x65599, lower case), as mix ids are stored."""
+    h = 5381
+    for c in name.lower():
+        h = (h * 65599 + ord(c)) % 4294967296
+    return h
+
+
+def write_measure_mix(mod_zone, bank, bank_def):
+    table = "sound/%s.mixes.csv" % bank
+    rows = ["idString,VolMod,Volume,Fade"] + ["%d,%s,0.000000,0.100000" % (sound_hash(MEASURE_MIX), v)
+                                             for v in MEASURE_MUTED]
+    path = os.path.join(mod_zone, *table.split("/"))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="ascii", newline="\n") as f:
+        f.write("\n".join(rows) + "\n")
+    if table not in bank_def.get("MixDefs", []):
+        bank_def["MixDefs"] = list(bank_def.get("MixDefs", [])) + [table]
 
 
 def main(argv=None):

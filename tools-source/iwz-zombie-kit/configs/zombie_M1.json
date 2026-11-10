@@ -1,0 +1,6 @@
+{
+  "zombie": "M1",
+  "gender": "male",
+  "ai_glb": "gen3d/zombie_M1_hy31.glb",
+  "coat": {"lateral": 0.16, "above_hip": 0.0, "pelvis_share": 0.4, "axis_dist": 0.11, "root": "j_mainroot"}
+}

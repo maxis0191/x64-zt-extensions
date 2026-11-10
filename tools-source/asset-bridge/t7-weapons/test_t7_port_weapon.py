@@ -35,6 +35,8 @@ class PackageTest(unittest.TestCase):
         self.assertEqual((s["name"], s["fireSound"], s["fireSoundPlayer"]), ("iw7_t_zm_sfxpackage", "wpn_t_npc", "wpn_t_plr"))
         self.assertEqual(s["reloadSound"], "")          # no stock sound leaks into a BO3 weapon
         self.assertEqual(s["pickupSound"], "weap_pickup_npc")
+        pkg = port.sfx_package(spec, dict(tpl, szWeapSndReflectionClass="eng_pistol", szAdsrBaseSetting="iw7_short"))
+        self.assertEqual((pkg["szWeapSndReflectionClass"], pkg["szAdsrBaseSetting"]), ("", "iw7_long"))
 
 
 class AuthorEffectsTest(unittest.TestCase):
@@ -54,6 +56,19 @@ class AuthorEffectsTest(unittest.TestCase):
         self.assertIsNone(d["projExplosionEffect"])      # BO3 has none: no stock impact either
         self.assertIsNone(d["projDudEffect"])
         self.assertEqual(d["iProjectileSpeed"], 2000)
+
+    def test_explosions_damage_all_around(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": "", "damageConeAngle": 0.0}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 20, "max_ammo": 180, "fire_time_ms": 300,
+                "view_model": "v", "world_model": "w", "projectile": {"iExplosionRadius": 64}}
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["damageConeAngle"], 180.0)
+        spec["projectile"] = {"iExplosionRadius": 0}       # no explosion: the template's cone stays
+        weapon["weapDef"]["damageConeAngle"] = 0.0
+        d = author.author(spec, weapon, {"anims": {}, "timers": {}}, {"weapDef": {}})[0]["weapDef"]
+        self.assertEqual(d["damageConeAngle"], 0.0)
 
     def test_burst_weapon_fires_bursts(self):
         import iw7_weapon_author as author
@@ -207,6 +222,69 @@ class ViewEffectTest(unittest.TestCase):
             p.cfg = {"view_effects": ["switch_on=nope@tag_flash"]}
             with self.assertRaises(SystemExit):
                 p.notetrack_effects(False)
+
+
+class RecipeTest(unittest.TestCase):
+    def test_thundergun_recipe(self):
+        r = port.load_recipe(None, "thundergun_zm")
+        self.assertEqual(port.weapon_overrides(r["overrides"])["aimDownSight"], False)
+        self.assertTrue(r["overrides"]["bNoPartialReload"])
+        self.assertIsNone(port.load_recipe(None, "no_such_weapon_zm"))
+
+    def test_crosshairs_leave_the_energy_pistol_reticle(self):
+        # global materials only: Spaceland's reticle_auto_hit_lrg is missing on the other maps
+        tg = port.load_recipe(None, "thundergun_zm")["overrides"]
+        self.assertEqual((tg["reticleOnePiece"], tg["reticleSide"]), ("", "reticle_side_semi_circle_flat"))
+        dg2 = port.load_recipe(None, "tesla_gun_zm")["overrides"]
+        self.assertEqual((dg2["reticleOnePiece"], dg2["reticleSide"]), ("", "reticle_side_small"))
+
+    def test_unknown_keys_and_other_weapons_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "r.json")
+            with open(path, "w") as f:
+                f.write('{"weapon": "ray_gun_zm", "displya": "x"}')
+            with self.assertRaises(SystemExit):
+                port.load_recipe(path, "ray_gun_zm")
+            with open(path, "w") as f:
+                f.write('{"weapon": "ray_gun_zm"}')
+            with self.assertRaises(SystemExit):
+                port.load_recipe(path, "tesla_gun_zm")
+
+
+class HandlingTest(unittest.TestCase):
+    def test_reload_timers_from_the_insert_notetrack(self):
+        import iw7_weapon_author as author
+        pkg = {"anims": {"WEAP_ANIM_RELOAD": "r", "WEAP_ANIM_RELOAD_EMPTY": "re", "WEAP_ANIM_FAST_RELOAD": "",
+                         "WEAP_ANIM_FAST_RELOAD_EMPTY": ""}, "timers": {}}
+        infos = {"reload": {"duration_ms": 3833, "notetracks": [{"name": "open", "normalized_time": 0.11},
+                                                                  {"name": "battery_in", "normalized_time": 0.48}]},
+                 "reload_empty": {"duration_ms": 6000, "notetracks": [{"name": "clip_in", "normalized_time": 0.52}]}}
+        author.reload_timers(pkg, infos)
+        t = pkg["timers"]
+        self.assertEqual((t["iReloadTime"], t["iReloadAddTime"], t["iReloadInterruptTime"]), (3833, 1840, 3220))
+        self.assertEqual((t["iReloadEmptyTime"], t["iReloadEmptyAddTime"]), (6000, 3120))
+        self.assertEqual(t["iFastReloadTime"], round(3833 * 0.65))
+        self.assertEqual((pkg["anims"]["WEAP_ANIM_FAST_RELOAD"], pkg["anims"]["WEAP_ANIM_FAST_RELOAD_EMPTY"]), ("r", "re"))
+        # magazine names without a separator (Mark II fly_rgunmk2_magin) and canisters (Thundergun)
+        self.assertEqual(author.insert_time({"duration_ms": 1000, "notetracks": [
+            {"name": "fly_rgunmk2_magout", "normalized_time": 0.29}, {"name": "fly_rgunmk2_magin", "normalized_time": 0.72}]}), 720)
+        self.assertEqual(author.insert_time({"duration_ms": 1000, "notetracks": [
+            {"name": "cannisters_out", "normalized_time": 0.07}, {"name": "cannisters_in", "normalized_time": 0.37}]}), 370)
+
+    def test_iw7_switching_and_sprint(self):
+        import iw7_weapon_author as author
+        weapon = {"szDisplayName": "", "iClipSize": 0, "notetrackSoundMapKeys": [""], "notetrackSoundMapValues": [""],
+                  "weapDef": {"szDisplayName": ""}}
+        tpl = {"timers": {"iRaiseTime": 500, "iDropTime": 360, "quickDropTime": 140, "sprintLoopTime": 500},
+               "anims": {"WEAP_ANIM_SPRINT_LOOP": "", "WEAP_ANIM_ADDITIVE_SPRINT_OFFSET": "vm_zapper_offset",
+                         "WEAP_ANIM_RAISE": "vm_zapper_raise"}}
+        spec = {"name": "iw7_t_zm", "anims": {}, "xab_dir": ".", "clip": 2, "max_ammo": 12, "fire_time_ms": 950,
+                "view_model": "v", "world_model": "w"}
+        _, pkg = author.author(spec, weapon, tpl, {"weapDef": {}})
+        self.assertEqual((pkg["timers"]["iRaiseTime"], pkg["timers"]["iDropTime"], pkg["timers"]["sprintLoopTime"]),
+                         (500, 360, 500))
+        self.assertEqual(pkg["anims"]["WEAP_ANIM_ADDITIVE_SPRINT_OFFSET"], "vm_zapper_offset")
+        self.assertEqual(pkg["anims"]["WEAP_ANIM_SPRINT_LOOP"], "")
 
 
 class WeaponNameTest(unittest.TestCase):

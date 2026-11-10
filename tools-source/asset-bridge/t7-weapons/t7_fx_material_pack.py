@@ -14,7 +14,10 @@ BO3 colour map with its alpha). Templates (stock, loaded by cp_zmb):
   blend atlas   eq_effectunlit_zfeather_blend_tab_lin_ndw_nocast_evc
 "_evc" techniques take the particle colour from the emitter, as BO3's do.
 BO3 "emissive" materials become additive except smoke and debris (blend);
-distortion materials are reported and skipped (no IW7 counterpart here).
+distortion materials (which bend what lies behind them and carry no colour)
+reuse IW7's own distortion materials from common_core_mp, which every Zombies
+map loads: a ring (the Thundergun's wind blast) the heavy distortion ring,
+anything else the heat distortion. They are referenced, never rebuilt.
 """
 import argparse
 import copy
@@ -36,10 +39,19 @@ def safe(name):
     return re.sub(r"[^A-Za-z0-9_]", "_", name)
 
 
+# BO3 distortion material (name fragment) -> IW7 stock distortion material, all in common_core_mp
+STOCK_DISTORTION = (("ring", "eq/gfx_distortion_ring_heavy"), ("", "eq/vfx_dist_heat_02"))
+
+
+def stock_distortion(material_name):
+    base = material_name.split("/")[-1].lower()
+    return next(iw7 for frag, iw7 in STOCK_DISTORTION if frag in base)
+
+
 def classify(material_name, techset):
     t = techset.lower()
     if "distortion" in t:
-        return "skip"
+        return "distortion"
     base = material_name.split("/")[-1].lower()
     if "emissive" in t and not any(h in base for h in ALPHA_BLEND_HINTS):
         return "add"
@@ -134,8 +146,10 @@ def main(argv=None):
         if name not in used:
             continue
         kind = classify(name, src["techset"])
-        if kind == "skip":
-            report["skipped"].append({"material": name, "reason": "distortion"})
+        if kind == "distortion":
+            cols, rows = atlases[name]
+            report["materials"].append({"bo3": name, "iw7": stock_distortion(name), "mode": "distortion",
+                                        "atlas": [1, 1], "stock": True, "bo3_atlas": [cols, rows]})
             continue
         diffuse = [i["name"] for i in src["images"] if i.get("usage") == "diffuse"]
         if not diffuse:

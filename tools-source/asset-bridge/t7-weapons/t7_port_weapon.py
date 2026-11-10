@@ -69,7 +69,11 @@ FX_TEMPLATES = {
     "sprite_atlas": ("particlesystem/vfx/iw7/core/zombie/weapon/impact/vfx_zmb_impact_green_ch1.iw7VFX", 5),
     "tail": ("particlesystem/vfx/iw7/core/zombie/weapon/impact/vfx_zmb_impact_green_ch1.iw7VFX", 3),
     "light": ("particlesystem/vfx/iw7/core/zombie/weapon/impact/vfx_zmb_impact_green_ch1.iw7VFX", 1),
-    "trail": ("particlesystem/vfx/iw7/_requests/mp/vfx_plasma_trail_friendly.iw7VFX", 1),
+    # The ribbon of Spaceland's UFO weapon, a projectile_tag projectile like every port and stock CP's
+    # own fast-projectile ribbon (100 points, 30 units apart). The MP plasma trail's (30 points, 10 units
+    # apart) kept only ~0.1 s of a 3200 u/s bolt. Not proven to cause the owner's sky beams: Spaceland's
+    # Magic Wheel beam (moves every match) confounded the first witnesses.
+    "trail": ("particlesystem/vfx/iw7/core/zombie/ufo/weapon/vfx_ufo_alien_weapon.iw7VFX", 1),
 }
 FX_LINK_KEYS = ("effect_",)   # element slots that name another effect (runners, emitted effects)
 
@@ -88,6 +92,25 @@ def save(path, data):
 def run(cmd, **kw):
     print("+ " + " ".join(str(c) for c in cmd), flush=True)
     return subprocess.run([str(c) for c in cmd], check=True, **kw)
+
+
+RECIPES = os.path.join(HERE, "recipes")
+
+
+def load_recipe(path, weapon):
+    """A weapon's recipe: the owner-requested departures from BO3 and naming, kept with the tools so a
+    port is reproduced by one command (recipes/<bo3 weapon>.json unless a path is given)."""
+    path = path or os.path.join(RECIPES, weapon + ".json")
+    if not os.path.exists(path):
+        return None
+    recipe = load(path)
+    unknown = set(recipe) - {"weapon", "display", "name", "overrides", "view_effects", "handling", "sound_gain_db", "why"}
+    if unknown:
+        raise SystemExit("recipe %s: unknown keys %s" % (path, sorted(unknown)))
+    if recipe.get("weapon", weapon) != weapon:
+        raise SystemExit("recipe %s is for %s, not %s" % (path, recipe["weapon"], weapon))
+    recipe["_path"] = os.path.relpath(path, HERE).replace("\\", "/")
+    return recipe
 
 
 def weapon_overrides(items):
@@ -440,7 +463,8 @@ class Port:
             "--bo3-aliases", self.alias_table(), "--flac-root", os.path.join(self.out, "sounds"),
             "--template", self.stock(TEMPLATES["aliases"]), "--out", self.zone,
             "--bank", self.specs()[0]["name"], "--zone", self.cfg.get("mod_zone", "bo3wpn"),
-            "--prefix", "%s/%s" % (self.cfg.get("sound_prefix", "t7"), self.weapon), "--alias"] + aliases
+            "--prefix", "%s/%s" % (self.cfg.get("sound_prefix", "t7"), self.weapon),
+            "--gain-db", str(self.cfg.get("sound_gain_db", 0.0)), "--alias"] + aliases
             + [x for alias, role in self.sound_roles().items() for x in ("--role", "%s=%s" % (alias, role))],
             stdout=subprocess.PIPE, text=True)
         report = json.loads(out.stdout)["aliases"]
@@ -772,6 +796,11 @@ SFX_ROLES = {"fireSound": "fire_npc", "fireSoundPlayer": "fire_plr", "fireLastSo
 
 def sfx_package(spec, template):
     pkg = json.loads(json.dumps(template))
+    # BO3 fire sounds carry their own tails: no IW7 reflection layer (the Facemelter template's
+    # eng_pistol added a pistol echo to every shot, owner 2026-11-08 "pistol/balloon pop") and the
+    # long envelope, as IW7's own exotic wonder weapons (Forge Freeze, Entangler, Bubble Shot) do.
+    pkg["szWeapSndReflectionClass"] = ""
+    pkg["szAdsrBaseSetting"] = "iw7_long"
     sounds = pkg["sounds"]
     sounds["name"] = spec["name"] + "_sfxpackage"
     for key in list(sounds):
@@ -901,16 +930,31 @@ def main(argv=None):
     ap.add_argument("--view-effect", action="append", default=[], metavar="NOTETRACK=KEY@TAG",
                     help="play the scripts' level._effect[KEY] on TAG at an anim notetrack (BO3 view-model "
                     "effects on client timers, e.g. switch_on=tesla_viewmodel_rail@tag_flash)")
+    ap.add_argument("--recipe", help="per-weapon recipe JSON (recipes/<bo3 weapon>.json by default when present): "
+                    "display, name, overrides, view_effects; command-line values win")
+    ap.add_argument("--sound-gain-db", type=float, help="dB added to every sound alias volume (recipe sound_gain_db)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--stages", default=",".join(STAGES), help="comma list, in order: " + ",".join(STAGES))
     args = ap.parse_args(argv)
     cfg = load(args.config)
+    recipe = load_recipe(args.recipe, args.weapon)
+    if recipe:
+        cfg["recipe"] = recipe.get("_path")
+        for key in ("display", "view_effects", "handling", "sound_gain_db"):
+            if key in recipe:
+                cfg[key] = recipe[key]
+        if recipe.get("overrides"):
+            cfg["weapon_overrides"] = weapon_overrides(recipe["overrides"])
+        if not args.name and recipe.get("name"):
+            args.name = recipe["name"]
     if args.display:
         cfg["display"] = args.display
     if args.override:
         cfg["weapon_overrides"] = weapon_overrides(args.override)
     if args.view_effect:
         cfg["view_effects"] = args.view_effect
+    if args.sound_gain_db is not None:
+        cfg["sound_gain_db"] = args.sound_gain_db
     port = Port(cfg, args.weapon, args.out, args.name)
     for stage in args.stages.split(","):
         if stage not in STAGES:
