@@ -44,6 +44,20 @@ in this repository: they are in the server repository (list under "What this rep
 `docs/archive/AGENTS-HISTORY.md`, with a table from each old rule to its place here.
 Everything below is current; each rule appears once.
 
+## Test conditions come first - owner rule 2026-11-11
+
+No test in the game starts before its conditions and its tier are chosen; the gamelab runners refuse a run without them.
+
+- Tier: the lightest that answers. No game (a file or data check), then headless (a server and one bot: about 1.1 GB,
+  usually under 3 minutes), then one client (5 to 7 GB), then several clients. A heavier tier needs a reason.
+- Conditions: preset `quiet` (no zombie but the test's own), `ignored` (zombies there, ignoring the player), `normal`
+  (zombies attack, the player cannot be hurt), `exposed` (real damage: downs and deaths); or the switches `zombies`,
+  `damage`, `kick`, `rounds`, `points`, `companions`. Every preset turns the inactivity kick off.
+- The game measures them before the first step and stops in seconds when one did not take (verdict `conditions`).
+- A failure caused by the environment and not by the thing tested (a kick, a death, a crowd, rounds, a join stall, a
+  busy machine) is fixed in the tools first and written in the quality ledger.
+- How: iw7-paris-server `docs/GAMELAB.md`, "Test conditions"; which tool for which question: its `docs/DEVKIT.md`.
+
 ## What this repository is
 
 - Private. Asset tools for the IW7 engine and the owner's ZoneTool fork (`maxis0191/x64-zt`, pinned in
