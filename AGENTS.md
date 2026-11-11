@@ -92,6 +92,12 @@ Everything below is current; each rule appears once.
   launch repeated more than about three times for one question, a cause that is guessed instead of read from
   data, minutes of waiting for what a file check answers in seconds, a result judged by looking at a picture, a
   manual step done twice: each of these means stop and improve the tool. (Owner rule, 2026-11-10.)
+- Delegation (owner, 2026-11-11): in Claude Code sessions the lead session plans and orchestrates; helpers run
+  Opus 5.5 at medium effort for real work and Sonnet 5.5 at medium effort for cheap and easy tasks (searches,
+  inventories, mechanical edits, landing a finished branch). Other agent programs follow their own program's
+  equivalent: the strongest model plans, a cheaper one does routine work. Briefs name exact paths, commands,
+  limits and what proves the work. Where this differs from point 10 above, this rule is the current one (owner,
+  2026-11-11).
 - Edit the canonical tracked file; never edit a generated source workspace under `runtime/`.
 - Every tracked file is an export of `product.json` or a meta file. The ownership gate
   (`check_boundaries.py`) holds the exact meta list (among them this file, `README.md`, `checks.json`,
