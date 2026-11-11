@@ -99,6 +99,10 @@ Everything below is current; each rule appears once.
   limits and what proves the work. Where this differs from point 10 above, this rule is the current one (owner,
   2026-11-11).
 - Edit the canonical tracked file; never edit a generated source workspace under `runtime/`.
+- `product.json` `exports` stays in sorted order, one path a line, so branches that add files in parallel change
+  different lines and merge without a conflict. `checks.ps1` refuses an unsorted list; put the path at its place or
+  run `pwsh -NoProfile -File checks.ps1 -SortExports` (inside a conflicted merge of main it keeps every path of both
+  sides that exists on disk, which resolves that file).
 - Every tracked file is an export of `product.json` or a meta file. The ownership gate
   (`check_boundaries.py`) holds the exact meta list (among them this file, `README.md`, `checks.json`,
   `checks.ps1`, `bootstrap.ps1`, `dependency-package.json`, `.gitattributes`, `LICENSE.upstream`, `.github/`,
