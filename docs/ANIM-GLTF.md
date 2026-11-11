@@ -38,6 +38,16 @@ positions at every frame), `compare-run <run>/anim-<name>.json <clip> --model <b
 by the running game against the clip; the log comes from the gamelab steps `anim` and `pose` of the server
 repository, docs/GAMELAB.md there).
 
+`cut <anim>.xab --from F --to T --name N --out <dump> [--pingpong] [--loop] [--no-notes] [--drop-note PREFIX] [--note NAME:SECONDS]`
+writes frames F to T (inclusive) of a game animation as a new one, header bytes (asset type, additive flag) kept: the
+way to split a one-shot stock clip into a take-out, a hold and a put-away. `--pingpong` runs the range forward then
+back, so the first and last key are equal and the clip loops without a jump (a held pose that breathes); notes inside
+the range keep their time, `end` is written again. A clip with root motion is refused (its delta track is cumulative).
+To find a hold, `sample` the clip and pick the frames where the holding hand barely moves. Used for Maxis' Phone
+(server repository docs/MAXIS-PHONE.md, "Animation"): the multiplayer selfie (84 frames) cut at frames 38 and 53, where
+the hand holding the phone moves less than 2 units a second in the first-person and the third-person clip; the cuts
+differ from the source by 0.003 degrees at most (the 16-bit storage).
+
 ## The mapping, and why
 
 | Point | Choice | Reason |
