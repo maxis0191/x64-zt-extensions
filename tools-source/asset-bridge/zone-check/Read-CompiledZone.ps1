@@ -16,6 +16,7 @@ param(
     [string]$Json = '',
     [string]$Python = 'python',
     [int]$TimeoutSec = 900,
+    [ValidateRange(0, 14400)][int]$WaitForSlotSeconds = 0, # wait in the scheduler's queue this long for the lease
     [switch]$Strict
 )
 # Reads a compiled fastfile back through the game's own loader and compares what the loader holds with
@@ -58,9 +59,23 @@ foreach ($i in $profile.inputs) {
 }
 
 . $SchedulerCore
-try {
-    $lease = Enter-IW7ResourceLease -Scope $Work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Compiled zone readback'
-} catch { Refuse "no lease: $($_.Exception.Message)" }
+# With -WaitForSlotSeconds the lease is asked again every 5 s while the scheduler answers with a refusal it counts as a
+# wait (Test-IW7RetryableRefusal): a refused caller that asks again keeps its place in the waiting order. Measured
+# 11 Nov 2026: without it a readback was refused in 1 s whenever any session ran, which on a shared machine is always.
+$until = [datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
+$lease = $null
+while (-not $lease) {
+    try {
+        # The scheduler is not written for strict mode: under this script's Set-StrictMode, its queue path indexed an
+        # empty list and threw 'Index was outside the bounds of the array.' (11 Nov 2026) instead of 'Resource busy'.
+        $lease = & { Set-StrictMode -Off; Enter-IW7ResourceLease -Scope $Work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Compiled zone readback' }
+    } catch {
+        $message = $_.Exception.Message
+        $retry = if (Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue) { Test-IW7RetryableRefusal $message } else { $message -like 'Resource busy:*' }
+        if (-not $retry -or [datetime]::UtcNow -ge $until) { Refuse "no lease: $message" }
+        Start-Sleep -Seconds 5
+    }
+}
 
 $outLog = Join-Path $Work 'readback.stdout.log'
 $errLog = Join-Path $Work 'readback.stderr.log'
@@ -88,7 +103,7 @@ try {
     $watch = [Diagnostics.Stopwatch]::StartNew()
     $p = Start-Process -FilePath (Join-Path $Work 'zonetool.exe') -ArgumentList $arguments -WorkingDirectory $Work `
         -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru -NoNewWindow
-    Add-IW7ResourceProcess -Token $lease.Token -ProcessId $p.Id
+    & { Set-StrictMode -Off; Add-IW7ResourceProcess -Token $lease.Token -ProcessId $p.Id }
     $state = 'running'
     $read = 0L
     while (-not $p.WaitForExit(1000)) {
@@ -112,7 +127,7 @@ try {
     $seconds = [int]$watch.Elapsed.TotalSeconds
     if ($state -eq 'running') { $state = if ($p.ExitCode -eq 0) { 'finished' } else { "exit-$($p.ExitCode)" } }
 } finally {
-    Exit-IW7ResourceLease -Token $lease.Token
+    & { Set-StrictMode -Off; Exit-IW7ResourceLease -Token $lease.Token }
 }
 
 $dump = Join-Path $Work "dump/$ZoneName"
