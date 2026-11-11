@@ -1146,6 +1146,12 @@
     "tools-source/iwz-zombie-kit/inspect_stock_parts.py",
     "tools-source/iwz-zombie-kit/run_zombie.py",
     "docs/CREATION-TOOLS.md",
+    "docs/ANIM-GLTF.md",
+    "tools-source/iw7-anim/iw7_anim_gltf.py",
+    "tools-source/iw7-anim/author_clip.py",
+    "tools-source/iw7-anim/blender_key_clip.py",
+    "tools-source/iw7-anim/Build-AnimZone.ps1",
+    "tools-source/iw7-anim/test_iw7_anim_gltf.py",
     "tools-source/asset-bridge/t7-weapons/iw7_xmodel_lods.py",
     "tools-source/asset-bridge/t7-weapons/iw7_xsurface_normals.py"
   ],

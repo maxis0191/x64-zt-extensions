@@ -14,6 +14,10 @@
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/t7-weapons", "-v"]
     },
     {
+      "id": "tools-source-iw7-anim",
+      "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/iw7-anim", "-v"]
+    },
+    {
       "id": "tools-source-asset-bridge-zone-check",
       "command": ["python", "-B", "-m", "unittest", "discover", "-s", "tools-source/asset-bridge/zone-check", "-v"]
     },
