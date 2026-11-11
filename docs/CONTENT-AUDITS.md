@@ -89,10 +89,15 @@ compare that with the source:
     pwsh -File Read-CompiledZone.ps1 -ZoneFile <zone.ff> -SourceCsv <zone_source/zone.csv> `
         -SourceTree <zonetool/zone> -Work <new folder on the stock's volume> -StockRoot <stock> `
         -ZoneTool <zonetool.exe> -TlsDll <tlsdll.dll> -Sentinel <main/fileSysCheck.cfg> `
-        -SchedulerCore <prepared inputs>/ops/Resource-Scheduler.Core.ps1 [-Types kind,kind] [-Json out.json] [-Strict]
+        -SchedulerCore <prepared inputs>/ops/Resource-Scheduler.Core.ps1 [-Types kind,kind] [-Json out.json] [-Strict] `
+        [-WaitForSlotSeconds 3600]
 
 Exit 0 pass, 1 errors, 2 warnings unanswered under `-Strict`, 3 the loader did not finish (nothing is proven),
-4 refused. The work folder stays afterwards: its dump is the evidence. Delete it file by file, never with a
+4 refused. `-WaitForSlotSeconds` asks for the lease again every 5 s while the scheduler answers with a refusal it
+counts as a wait, so the readback keeps its place in the waiting order; without it a busy machine refuses at once
+(measured 11 Nov 2026: refused in 1 s whenever any session ran). The scheduler's calls run without this script's
+strict mode: under it the scheduler's queue path threw "Index was outside the bounds of the array." instead of
+answering "Resource busy" (two readbacks ended that way the same day). The work folder stays afterwards: its dump is the evidence. Delete it file by file, never with a
 forced recursive delete: forcing would change attributes on files shared with the stock.
 
 What the comparison decides:
