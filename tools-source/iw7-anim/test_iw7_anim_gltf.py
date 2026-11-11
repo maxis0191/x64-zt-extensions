@@ -162,6 +162,32 @@ class RoundTrip(unittest.TestCase):
         self.assertTrue(info['has_delta'] and info['loop'])
         self.assertEqual(info['delta']['end_translation'][0], 60.0)
 
+    def test_cut_splits_a_clip_into_in_hold_and_out(self):
+        src = clip(self.skel, 40, move=None)
+        src.notes = [('show', 10 / 40), ('fx_flash', 12 / 40), ('hide', 30 / 40), ('end', 1.0)]
+        a = src.write_xanim(os.path.join(self.d, 'src'), asset_type=6, flags=0, unk=(2, 2))
+        code, cin = run('cut', a, '--from', '0', '--to', '20', '--name', 'p_in', '--out', self.d, '--drop-note', 'fx_')
+        self.assertEqual(code, 0, cin)
+        self.assertEqual((cin['frames'], cin['asset_type'], cin['loop']), (20, 6, False))
+        self.assertEqual([(n['name'], n['time']) for n in cin['notes']], [('show', 0.5), ('end', 1.0)])
+        code, hold = run('cut', a, '--from', '20', '--to', '25', '--name', 'p_hold', '--out', self.d, '--pingpong', '--loop', '--no-notes')
+        self.assertEqual(code, 0, hold)
+        self.assertEqual((hold['frames'], hold['loop']), (10, True))
+        back = T.Clip.from_xanim(hold['written'])
+        for n in back.bones:
+            self.assertLess(T.q_angle(back.rot[n][0], back.rot[n][-1]), 0.01)  # seamless loop
+            self.assertLess(T.q_angle(back.rot[n][5], src.rot[n][25]), 0.01)
+        code, out = run('cut', a, '--from', '25', '--to', '40', '--name', 'p_out', '--out', self.d)
+        self.assertEqual(code, 0, out)
+        self.assertEqual([n['name'] for n in out['notes']], ['hide', 'end'])
+        self.assertAlmostEqual(out['notes'][0]['time'], 5 / 15, places=4)
+        self.assertLess(out['rotation_deg_worst_vs_source'], 0.01)
+        code, bad = run('cut', a, '--from', '30', '--to', '50', '--name', 'x', '--out', self.d)
+        self.assertNotEqual(code, 0)
+        moving = clip(self.skel, 40).write_xanim(os.path.join(self.d, 'mv'))
+        code, bad = run('cut', moving, '--from', '0', '--to', '10', '--name', 'y', '--out', self.d)
+        self.assertNotEqual(code, 0)
+
     def test_empty_delta_part_and_rotation_delta_round_trip(self):
         src = clip(self.skel, move=None)
         src.has_delta_part = True

@@ -1130,6 +1130,48 @@ def inspect(path):
         'notes': [{'name': n, 'time': round(t, 6)} for n, t in a.notify], 'bone_names': names}
 
 
+def cut_clip(clip, start, end, name, pingpong=False, loop=False, keep_notes=True, drop_prefixes=(), add_notes=()):
+    """Frames start..end (inclusive) of a decoded clip as a new clip. With pingpong the keys run start..end..start, so
+    the first and last key are equal and the clip loops without a jump (a held pose that breathes). Notes inside the
+    range keep their place in time; `end` is written again by write_xanim. A clip with root motion is refused: its
+    delta track is cumulative and a cut would need re-basing."""
+    if clip.delta_t is not None or clip.delta_q is not None:
+        raise Problem('cut: the clip has root motion; cutting it is not supported')
+    if not (0 <= start < end <= clip.frames):
+        raise Problem('cut: frames must satisfy 0 <= from < to <= %d' % clip.frames)
+    keys = list(range(start, end + 1))
+    if pingpong:
+        keys += list(range(end - 1, start - 1, -1))
+    out = Clip()
+    out.name, out.rate, out.loop, out.three_d = name, clip.rate, loop, False
+    out.frames = len(keys) - 1
+    out.bones = list(clip.bones)
+    out.has_delta_part = clip.has_delta_part
+    for n in clip.bones:
+        out.rot[n] = [clip.rot[n][k] for k in keys]
+        t = clip.trans.get(n)
+        out.trans[n] = None if t is None else [t[k] for k in keys]
+    notes = []
+    if keep_notes:
+        span = end - start
+        for n, t in clip.notes:
+            if n == 'end' or any(n.startswith(p) for p in drop_prefixes):
+                continue
+            frame = t * clip.frames
+            if start - 1e-6 <= frame <= end + 1e-6:
+                notes.append((n, (frame - start) / out.frames))
+    for spec in add_notes:
+        n, _, sec = spec.rpartition(':')
+        if not n:
+            raise Problem('note must be NAME:SECONDS: ' + spec)
+        notes.append((n, min(1.0, max(0.0, float(sec) * out.rate / out.frames))))
+    out.notes = notes
+    if clip.header_bytes:
+        flags = (clip.header_bytes[0] & ~ANIM_LOOP) | (ANIM_LOOP if loop else 0)
+        out.header_bytes = (flags, clip.header_bytes[1], clip.header_bytes[2], clip.header_bytes[3])
+    return out
+
+
 def zone_source(dump, zone, out, tree_name=None):
     """A ZoneTool source tree for every animation of a dump folder: the files, the zone list, the table of names
     (`ncs_anm_<zone>`) and an animation tree file (`animtrees/<tree>.atr`): a script that names an animation as a
@@ -1200,6 +1242,17 @@ def main(argv=None):
     p.add_argument('--zone', default='mod')
     p.add_argument('--tree', help='name of the animation tree file written for scripts (default: <zone>_anims)')
     p.add_argument('--out', required=True)
+    p = sub.add_parser('cut', help='frames of a game animation as a new animation (split a clip into in, hold and out)')
+    p.add_argument('xanim')
+    p.add_argument('--from', dest='start', type=int, required=True, help='first frame')
+    p.add_argument('--to', dest='end', type=int, required=True, help='last frame (inclusive)')
+    p.add_argument('--name', required=True)
+    p.add_argument('--out', required=True, help='dump folder; writes <out>/xanim/<name>.xab')
+    p.add_argument('--pingpong', action='store_true', help='play the range forward then back: a seamless loop')
+    p.add_argument('--loop', action='store_true', help='set the loop flag')
+    p.add_argument('--no-notes', action='store_true', help='drop every note of the source')
+    p.add_argument('--drop-note', action='append', default=[], help='drop the notes that start with this text, repeatable')
+    p.add_argument('--note', action='append', default=[], help='NAME:SECONDS, repeatable')
     p = sub.add_parser('compare-run', help='tag positions sampled in the running game against a clip')
     p.add_argument('run_json', help='anim-<name>.json written by the gamelab verdict')
     p.add_argument('clip', help='the source .glb or the built .xab')
@@ -1256,6 +1309,21 @@ def main(argv=None):
             report = compare_run(doc, load_clip(a.clip, skel), skel, True if a.loop else None, a.window,
                                  from_ms=a.from_ms, to_ms=a.to_ms, limit=a.max_error)
             report['pass'] = report.get('verdict') == 'posed' and report['worst_units'] <= a.max_error
+        elif a.cmd == 'cut':
+            src = Clip.from_xanim(a.xanim)
+            clip = cut_clip(src, a.start, a.end, a.name, a.pingpong, a.loop, not a.no_notes, tuple(a.drop_note), tuple(a.note))
+            flags, asset_type, unk = clip.header_bytes[0], clip.header_bytes[1], clip.header_bytes[2:]
+            path = clip.write_xanim(a.out, asset_type, flags, unk)
+            back = Clip.from_xanim(path)
+            keys = list(range(a.start, a.end + 1)) + (list(range(a.end - 1, a.start - 1, -1)) if a.pingpong else [])
+            worst = 0.0
+            for n in src.bones:
+                for i, k in enumerate(keys):
+                    worst = max(worst, q_angle(src.rot[n][k], back.rot[n][i]))
+            report = dict(written=path, source=src.name, source_frames=src.frames, frames=back.frames,
+                          seconds=round(back.frames / back.rate, 4), loop=back.loop, asset_type=asset_type,
+                          notes=[{'name': n, 'time': round(t, 6)} for n, t in back.notes],
+                          rotation_deg_worst_vs_source=round(worst, 5))
         elif a.cmd == 'zone-source':
             report = zone_source(a.dump, a.zone, a.out, a.tree)
         elif a.cmd == 'inspect':
