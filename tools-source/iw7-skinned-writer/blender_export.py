@@ -6,6 +6,9 @@ blender -b --factory-startup [<file.blend>] -P blender_export.py -- --out <mesh.
                                          (move verts of objects whose material matches along their normal by N inches)
         [--objects a,b]                  restrict to these mesh objects (default: all meshes bound to an armature)
         [--unit 0.0254]                  Blender metres per IW7 unit (glb hero import: 1 in = 0.0254 m)
+        [--uv2 <uv layer>]               also export this UV layer per vertex as "uv2" (camo UV records)
+        [--all-meshes]                   export every visible mesh, armature or not; weights = vertex groups by
+                                         name (rigid weapon parts: one group per part, named after its bone)
 
 Space: a Greyhound glb imported by Blender lands in IW7 axes (x fwd, y left, z up) at 0.0254 m per inch, so the
 exporter writes world-space positions / normals / tangents divided by --unit. Bone rest heads are exported too so the
@@ -24,7 +27,8 @@ from mathutils import Vector
 
 def args():
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    o = {"out": None, "glb": None, "modify": [], "objects": None, "unit": 0.0254, "decimate": 1.0}
+    o = {"out": None, "glb": None, "modify": [], "objects": None, "unit": 0.0254, "decimate": 1.0, "uv2": None,
+         "all": False}
     i = 0
     while i < len(a):
         k = a[i]
@@ -40,6 +44,12 @@ def args():
             o["unit"] = float(a[i + 1])
         elif k == "--decimate":
             o["decimate"] = float(a[i + 1])
+        elif k == "--uv2":
+            o["uv2"] = a[i + 1]
+        elif k == "--all-meshes":
+            o["all"] = True
+            i += 1
+            continue
         i += 2
     return o
 
@@ -88,7 +98,7 @@ def apply_modify(spec, unit):
     return n
 
 
-def export_object(ob, unit, decimate=1.0):
+def export_object(ob, unit, decimate=1.0, uv2_name=None):
     arm = armature_of(ob)
     # rest-pose mesh data (apply any non-armature modifiers in Blender before exporting)
     if decimate < 1.0:
@@ -116,6 +126,10 @@ def export_object(ob, unit, decimate=1.0):
     uv = me.uv_layers.active
     has_uv = uv is not None
     uvs = [0.0] * (2 * len(me.loops))
+    uv2s = None
+    if uv2_name and uv2_name in me.uv_layers:
+        uv2s = [0.0] * (2 * len(me.loops))
+        me.uv_layers[uv2_name].uv.foreach_get("vector", uv2s)
     if has_uv:
         uv.uv.foreach_get("vector", uvs)  # read before calc_tangents (it can reallocate corner layers)
         me.calc_tangents(uvmap=uv.name)
@@ -146,7 +160,8 @@ def export_object(ob, unit, decimate=1.0):
                        key=lambda x: -x[1])
             # split a vertex only when uv / tangent sign differ or the normals really differ (custom normal storage
             # in Blender jitters by ~1e-3, which must not split the stock seams)
-            key = (loop.vertex_index, round(u, 6), round(vv, 6), sign)
+            u2 = (uv2s[2 * li], uv2s[2 * li + 1]) if uv2s else None
+            key = (loop.vertex_index, round(u, 6), round(vv, 6), sign) + ((round(u2[0], 6), round(u2[1], 6)) if u2 else ())
             k = None
             for kk, nn in surf["_key"].get(key, []):
                 if nn.dot(n) > 0.9995:
@@ -159,6 +174,8 @@ def export_object(ob, unit, decimate=1.0):
                     "p": [c / unit for c in p], "n": list(n), "t": list(t), "s": sign,
                     # Blender UV origin is bottom-left; IW7/glTF origin top-left
                     "uv": [u, 1.0 - vv], "w": [[b, round(x, 7)] for b, x in w[:8]], "src": loop.vertex_index})
+                if u2:
+                    surf["verts"][-1]["uv2"] = [u2[0], 1.0 - u2[1]]
             tri.append(k)
         surf["tris"].append(tri)
     bpy.data.meshes.remove(me)
@@ -181,13 +198,14 @@ def main():
         bpy.ops.wm.read_factory_settings(use_empty=True)
         bpy.ops.import_scene.gltf(filepath=o["glb"])
     modified = {m: apply_modify(m, o["unit"]) for m in o["modify"]}
-    meshes = [ob for ob in bpy.data.objects if ob.type == "MESH" and armature_of(ob)
+    meshes = [ob for ob in bpy.data.objects if ob.type == "MESH" and (armature_of(ob) or (o["all"] and not ob.hide_render))
               and (o["objects"] is None or ob.name in o["objects"])]
+    meshes.sort(key=lambda ob: ob.name)
     result = {"schema": "iw7-skinned-writer/blender-1", "unit": o["unit"], "modified": modified, "surfaces": [],
               "armature": None}
     arm = None
     for ob in meshes:
-        a, surfs = export_object(ob, o["unit"], o["decimate"])
+        a, surfs = export_object(ob, o["unit"], o["decimate"], o["uv2"])
         arm = arm or a
         result["surfaces"] += surfs
     if arm:

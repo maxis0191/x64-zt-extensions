@@ -124,3 +124,14 @@ Add the outfit row in gsc\cp_iwz_outfits.gsc outfit_rows(): [ index, body, view 
 - `ops/Stage-OutfitZone.ps1 -Build` takes `-ZoneTool` and runs the build once.
 - `ship_heroes.py` reads `${NAME}` environment variables in the root values of its config and resolves relative
   LOD paths under `lods_root`; the tracked config is `ship_heroes.example.json`.
+
+## Rigid weapon parts and camo records (2026-11-11, authored weapons)
+- `blender_export.py --all-meshes` exports meshes with no armature (weights = vertex groups by name);
+  `--uv2 <layer>` adds a second UV per vertex (vertex split on it too).
+- `build_model.py --camo-materials a,b`: surfaces of those Blender materials get flag 0x400 and one 24-byte camo
+  record per vertex (u2, v2, 2x2 basis = normalised Jacobian d(uv2)/d(uv1); identity for a scaled UV1), the
+  layout stock camo-ready weapon surfaces carry (0x482 rigid, 0x486 skinned on the stock 1887 view model).
+  `--inv-mip-map` sets invHighMipRadius for new material names (the driver passes the template's stock value).
+- Weapon parts are written as skinned surfaces with every vertex in blend group 0 (one bone, weight 1), the
+  form of the stock 1887 sling surface (0x486), not as rigid lists. Proven offline only
+  (`tools-source/asset-bridge/t7-weapons/authored/authored_weapon_proof.py`); not built or drawn in game yet.

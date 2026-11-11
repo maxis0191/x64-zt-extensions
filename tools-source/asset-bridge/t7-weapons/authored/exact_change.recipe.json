@@ -1,0 +1,69 @@
+{
+  "name": "exact_change",
+  "about": "EXACT CHANGE: a fare box rebuilt into a lever-action carbine, on the stock Model 1887 skeleton (view and world models). The world model leaves the hopper glass out: the stock world-model glass technique (m2o_l_sm_ndw_blend_i0c0s0) reads unpacked _c/_sg images whose layout is not measured yet.",
+  "generator": "exact_change_gun.py",
+  "tools": {
+    "blender": "${IWZ_BLENDER}",
+    "texconv": "${IWZ_TEXCONV}",
+    "template_root": "${IWZ_TEMPLATE_ROOT}"
+  },
+  "image_prefix": "weapon_iwz_exactchange",
+  "camo_uv_per_inch": 0.12,
+  "surface_order": ["main", "acc", "glass"],
+  "atlases": {
+    "main": {"size": 1024, "camo": true, "samples": 16,
+             "materials": {"vm": {"name": "m2o/weapon_iwz_exactchange_camo", "template": "m2o/weapon_1887_camo"},
+                           "wm": {"name": "m2o/weapon_wm_iwz_exactchange_camo", "template": "m2o/weapon_wm_1887_camo"}}},
+    "acc": {"size": 1024, "camo": true, "samples": 16,
+            "materials": {"vm": {"name": "m2o/weapon_iwz_exactchange_acc_camo", "template": "m2o/weapon_1887_acc_camo"},
+                          "wm": {"name": "m2o/weapon_wm_iwz_exactchange_acc_camo", "template": "m2o/weapon_wm_1887_acc_camo"}}},
+    "glass": {"size": 256, "blend": true, "samples": 16,
+              "materials": {"vm": {"name": "m2o/weapon_iwz_exactchange_glass", "template": "m2o/weapon_zappers_headcutter_glass"},
+                            "wm": null}}
+  },
+  "from_donor": {
+    "shell_x": ["xs", "weapon_1887_vm_camo", ["j_mag_shell_1", "j_mag_shell_2", "j_mag_shell_3", "j_mag_shell_4", "j_mag_shell_5"]],
+    "pivot": ["pos", "weapon_1887_vm_camo", "j_shotgun1887_lever"]
+  },
+  "generator_params": {
+    "seed": 1950,
+    "bones": {"body": "j_shotgun1887_body", "lever": "j_shotgun1887_lever", "hammer": "j_shotgun1887_hammer",
+              "trigger": "j_shotgun1887_trigger", "mag1": "j_mag1", "mag2": "j_mag2",
+              "shells": ["j_mag_shell_1", "j_mag_shell_2", "j_mag_shell_3", "j_mag_shell_4", "j_mag_shell_5"],
+              "loose": ["j_loose_round", "j_loose_round2"]},
+    "loose_center": [-8.9, 0.0, -0.03],
+    "shell_offset_x": 0.79,
+    "enamel": "#1f4a38",
+    "chip_steel": "#8a8984",
+    "glass_tint": "#c8d8cf",
+    "glass_alpha": 0.18,
+    "camo": {"enamel": 1.0, "brass": 1.0, "token": 0.0, "plate": 0.0, "chrome": 0.0, "steel": 0.0},
+    "preview": {"camera_loc": [-36.0, 36.0, 18.0], "target": [-8.0, 0.0, -1.8], "lens": 50, "size": [1600, 1000],
+                "samples": 96}
+  },
+  "models": [
+    {"name": "weapon_iwz_exactchange_vm", "donor": "weapon_1887_vm_camo", "view": "vm",
+     "lods": [{"decimate": 1.0, "dist": 2500.0}]},
+    {"name": "weapon_iwz_exactchange_wm", "donor": "weapon_1887_wm_camo", "view": "wm",
+     "align_bone": "j_shotgun1887_body", "copy_physics_lod": true,
+     "bone_map": {"j_shotgun1887_hammer": "j_shotgun1887_body", "j_shotgun1887_trigger": "j_shotgun1887_lever",
+                  "j_mag_shell_1": "j_mag1", "j_mag_shell_2": "j_mag1", "j_mag_shell_3": "j_mag1",
+                  "j_mag_shell_4": "j_mag1", "j_mag_shell_5": "j_mag1",
+                  "j_mag2": null, "j_loose_round": null, "j_loose_round2": null},
+     "lods": [{"decimate": 0.35, "dist": 200.0}, {"decimate": 0.12, "dist": 700.0}, {"decimate": 0.04, "dist": 3500.0}]}
+  ],
+  "proof": {
+    "hand_zones": [
+      {"name": "wrist (right hand)", "bone": "j_shotgun1887_body", "x": [-17.5, -15.5], "tolerance": 0.6},
+      {"name": "fore-end (left hand)", "bone": "j_shotgun1887_body", "x": [-7.0, -3.0], "tolerance": 0.6},
+      {"name": "lever loop (fingers)", "bone": "j_shotgun1887_lever", "x": [-20.0, -15.5], "z": [-7.0, -2.6], "measure": ["ymin", "ymax", "zmin"], "tolerance": 0.6},
+      {"name": "magazine (left hand)", "bone": "j_mag1", "x": [-7.0, -3.0], "tolerance": 0.6},
+      {"name": "trigger", "bone": "j_shotgun1887_trigger", "x": [-16.0, -14.4], "tolerance": 0.6}
+    ],
+    "preview": {"hands_skeleton": "${IWZ_HANDS_XMB}", "hands_mesh": "${IWZ_HANDS_EXPORT}",
+                "anim_dir": "${IWZ_DONOR_XANIM}",
+                "shots": [{"anim": "vm_1887_idle", "frame": 0}, {"anim": "vm_1887_rechamber", "frame": 14},
+                          {"anim": "vm_1887_reload", "frame": 40}, {"anim": "vm_1887_fire", "frame": 3}],
+                "fov": 65, "size": "1280x720"}
+  }
+}

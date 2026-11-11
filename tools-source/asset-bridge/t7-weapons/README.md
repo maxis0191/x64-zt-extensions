@@ -137,6 +137,47 @@ sounds set up unlike any stock shot, measured loudness, ribbons that are copies 
 fastfile is then read back through the game's own loader (`../zone-check`). Contract, commands and measured
 results: `docs/CONTENT-AUDITS.md`.
 
+## Original weapons from Blender
+
+An original weapon is modelled by a deterministic Blender generator on the skeleton of a stock donor weapon, so
+the donor's animations drive it and its hands hold it. One command builds the ZoneTool fragment, the zone rows
+and the proofs:
+
+    set IWZ_BLENDER=<blender.exe>  IWZ_TEXCONV=<texconv.exe>  IWZ_TEMPLATE_ROOT=<zonetool/<map> with stock materials and techsets>
+    set IWZ_HANDS_XMB=<viewmodel_base_viewhands_iw7.xmb>  IWZ_HANDS_EXPORT=<its XMODEL_EXPORT>  IWZ_DONOR_XANIM=<dump>/xanim
+    python -I authored/build_authored_weapon.py authored/exact_change.recipe.json --donor-dump <dump with xmodel/ xsurface/> --out <...>/model/zonetool [--fast]
+
+| Piece | Role |
+| --- | --- |
+| `authored/<weapon>_gun.py` | the weapon's own generator (Blender Python): parts, bone per part, atlas per part, look materials; EXACT CHANGE: `exact_change_gun.py` |
+| `authored/authored_blender.py` | shared Blender helpers: shapes (box, prism, cylinder, tube, curve tube, dome, raised text, booleans, panel grooves, bevels), look-material contract, atlas unwrap, camo UV layer, Cycles bake (albedo, roughness/metalness/mask, tangent normal, AO), copies sharing a UV island, join per (bone, atlas), 3/4 preview |
+| `authored/<weapon>.recipe.json` | donor models, bone bindings per model (`bone_map`, `null` drops), world-model offset (`align_bone`), LOD ratios and distances, atlases and their stock template materials per view, image prefix, hand zones for the proof |
+| `authored/build_authored_weapon.py` | generic driver: generator, `blender_export.py --all-meshes --uv2 camo`, remap per model, `build_model.py` on the donor skeleton, texture packing, material JSON + techset state/constant buffer copies, `rows.csv`, proofs |
+| `authored/authored_weapon_proof.py` | offline proofs, exit code 1 on a failure (below) |
+
+Texture packing (stock formats, `t7_material_pack.py` layouts): `packed_cs` BC7 = sqrt(albedo), alpha 0.04 for
+dielectrics or 0.1 + 0.9 metalness; `packed_nog` BC7 = R gloss (from the GGX roughness via the shader's power
+2^(20 (1 - sqrt(1 - R))) + 2), G/A octahedral normal with the green flipped (Blender bakes OpenGL, stock is
+DirectX), B baked AO; blend (glass) atlases `packed_ng`; `packed_a` BC4 R = camo mask (camo atlases: where a
+Pack-a-Punch camo shows) or opacity (blend atlases). Camo atlases get a second UV set = UV1 scaled to the stock
+camo density (0.12 UV per inch measured on the stock 1887), so the camo records' basis is the identity; decimated
+LODs get their camo UV rebuilt from that scale (the decimator breaks it at seams). A recipe material of `null`
+leaves an atlas out of one view (EXACT CHANGE's world model has no hopper glass: the stock world-model glass
+technique reads unpacked `_c`/`_sg` images whose layout is not measured yet).
+
+What the proof says, per model: bone names, parents, bind matrices, tag angles/positions and part classes equal
+the donor's byte for byte; every vertex of every LOD in blend group 0 (one bone at weight 1) on an existing bone;
+per-bone boxes against the donor and the recipe's hand zones (triangles clipped to an x/z window: grip, fore-end,
+lever loop, magazine, trigger) within tolerance; every surface on a `_2uvt` material has flag 0x400 and one
+24-byte record per vertex (read back with `iw7_xsurface_uv2.parse`); the xmodel and xsurface files read and write
+back byte-identical and pass `iw7_xsurface_check`. Preview PNGs: the donor's first-person camera with the hands
+and the gun parts posed by the donor's own animations (ours beside the donor), and a 3/4 Cycles render with the
+baked maps. They are for information: the look is judged on in-game frames by independent reviewers.
+
+Not proven by these checks: that ZoneTool builds the fragment, that the game draws it, the camo look, the glass
+blend, the world-model physics (the donor's `_lod.hkx` is copied as is) and the LOD switch. Tests:
+`test_authored_weapon.py` (synthetic data).
+
 ## Status
 
 See `STATUS.md` for measured results. Field meanings in BO3's WeaponDef are

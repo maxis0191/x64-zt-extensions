@@ -2,16 +2,21 @@
 
 python -I build_model.py <mesh.json> --base-xmodel <stock .xmb> --name <new model name> --out <dump root>
        [--material-map <json {"blender material": "iw7 material"}>] [--report <report.json>]
+       [--camo-materials a,b] [--inv-mip-map <json {"iw7 material": u16}>]
 
 Writes <out>/xmodel/<name>.xmb and <out>/xsurface/<name>_lod0.xsb (one LOD). The skeleton (bone list/order, parents,
 rest pose, part classification, procedural bones, collision bounds type, ...) is copied from --base-xmodel; meshes
-must be weighted to bones of that skeleton (names). Materials: --material-map, else a stock material of the base
+must be weighted to bones of that skeleton (names). Rigid weapon parts are surfaces whose vertices each carry one
+bone at weight 1 (blend group 0). --camo-materials: surfaces of these Blender materials get the per-vertex camo UV
+records of camo-ready (_2uvt) weapon materials (flag 0x400, 24 bytes: u2, v2 and the 2x2 basis taking the first UV
+set's directions to the second set's), from the exported "uv2" (else the first UV). Materials: --material-map, else a stock material of the base
 model whose name after the last '/' equals the Blender material name, else the Blender name is used as is.
 """
 import argparse
 import json
 import math
 import os
+import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -70,7 +75,71 @@ def quantize_weights(raw, bone_index, problems):
     return out
 
 
-def build_surface(src, bone_index, problems, vlight_base):
+FLAG_CAMO_UV = 0x400        # ZoneTool SURF_FLAG_MAYHEM_SELFVIS: stock camo-ready weapon surfaces (0x482 / 0x486)
+
+
+def uniform_scale(verts, tol=1e-4):
+    """True when uv2 = k * uv + c (one k > 0 for u and v) for every vertex, within tol of the uv2 range."""
+    if not verts or not all("uv2" in v for v in verts):
+        return not verts or not any("uv2" in v for v in verts)
+    us = [v["uv"][0] for v in verts] + [v["uv"][1] for v in verts]
+    ws = [v["uv2"][0] for v in verts] + [v["uv2"][1] for v in verts]
+    n = len(verts)
+    mu_u = (sum(us[:n]) / n, sum(us[n:]) / n)
+    mu_w = (sum(ws[:n]) / n, sum(ws[n:]) / n)
+    cov = var = 0.0
+    for i in range(2 * n):
+        a = us[i] - mu_u[i // n]
+        cov += a * (ws[i] - mu_w[i // n])
+        var += a * a
+    if var <= 0:
+        return False
+    k = cov / var
+    if k <= 0:
+        return False
+    span = max(ws) - min(ws) or 1.0
+    return all(abs(ws[i] - (k * (us[i] - mu_u[i // n]) + mu_w[i // n])) <= tol * span for i in range(2 * n))
+
+
+def camo_records(verts, tris):
+    """24-byte camo UV record per vertex: float u2, v2, then the 2x2 basis. The basis is the per-vertex average of the
+    triangles' Jacobians d(uv2)/d(uv1), columns normalised (a rotation/reflection; stock values are of that kind).
+    uv2 = k * uv1 gives the identity, the value measured on the stock Dischord and most stock 1887 vertices."""
+    if uniform_scale(verts):
+        # uv2 = k uv + c over the whole surface: the basis is exactly the identity (per-triangle Jacobians of tiny
+        # bevel slivers only add float noise: 518 of 42306 vertices off by > 0.1 on the first authored weapon)
+        return b"".join(struct.pack("<6f", float(v.get("uv2", v["uv"])[0]), float(v.get("uv2", v["uv"])[1]),
+                                    1.0, 0.0, 0.0, 1.0) for v in verts)
+    acc = [[0.0, 0.0, 0.0, 0.0] for _ in verts]
+    for tri in tris:
+        a, b, c = (verts[i] for i in tri)
+        uv = [v["uv"] for v in (a, b, c)]
+        u2 = [v.get("uv2", v["uv"]) for v in (a, b, c)]
+        d1 = [(uv[1][0] - uv[0][0], uv[1][1] - uv[0][1]), (uv[2][0] - uv[0][0], uv[2][1] - uv[0][1])]
+        d2 = [(u2[1][0] - u2[0][0], u2[1][1] - u2[0][1]), (u2[2][0] - u2[0][0], u2[2][1] - u2[0][1])]
+        det = d1[0][0] * d1[1][1] - d1[1][0] * d1[0][1]
+        if abs(det) < 1e-12:
+            continue
+        inv = (d1[1][1] / det, -d1[1][0] / det, -d1[0][1] / det, d1[0][0] / det)  # inverse of [[d1x0,d1x1],[d1y0,d1y1]]
+        # J = D2 * D1^-1 with D = [[du_e0, du_e1], [dv_e0, dv_e1]]
+        D2 = (d2[0][0], d2[1][0], d2[0][1], d2[1][1])
+        j = (D2[0] * inv[0] + D2[1] * inv[2], D2[0] * inv[1] + D2[1] * inv[3],
+             D2[2] * inv[0] + D2[3] * inv[2], D2[2] * inv[1] + D2[3] * inv[3])
+        area = abs(det)
+        for i in tri:
+            for k in range(4):
+                acc[i][k] += j[k] * area
+    out = bytearray()
+    for v, m in zip(verts, acc):
+        c0 = math.hypot(m[0], m[2]) or 1.0
+        c1 = math.hypot(m[1], m[3]) or 1.0
+        basis = (m[0] / c0, m[2] / c0, m[1] / c1, m[3] / c1) if any(m) else (1.0, 0.0, 0.0, 1.0)
+        u2 = v.get("uv2", v["uv"])
+        out += struct.pack("<6f", float(u2[0]), float(u2[1]), *basis)
+    return bytes(out)
+
+
+def build_surface(src, bone_index, problems, vlight_base, camo=False):
     verts = src["verts"]
     infl = [quantize_weights(v["w"], bone_index, problems) for v in verts]
     order = sorted(range(len(verts)), key=lambda i: (len(infl[i]), i))   # blend groups: 1-bone verts first
@@ -100,6 +169,12 @@ def build_surface(src, bone_index, problems, vlight_base):
     for k in s.ptrs:
         s.ptrs[k] = 0
     s.ptrs["verts0"] = s.ptrs["triIndices"] = s.ptrs["blendVerts"] = 1
+    if camo:
+        ordered = [verts[i] for i in order]
+        rec = camo_records(ordered, [(remap[a], remap[b], remap[c]) for a, b, c in src["tris"]])
+        s.shprobe = xsurface.Rec(xsurface.T_ARRAY, rec, s.vert_count)
+        s.flags |= FLAG_CAMO_UV
+        s.ptrs["shProbeSimplexVertData"] = 1
     return s
 
 
@@ -180,7 +255,7 @@ def split_surface(src):
     return parts
 
 
-def build_lod(mesh, a, mmap, stock_by_short, stock_inv, bone_index, problems, transfer, vbase):
+def build_lod(mesh, a, mmap, stock_by_short, stock_inv, bone_index, problems, transfer, vbase, camo_mats=()):
     srcs = mesh["surfaces"]
     if a.surface_order:
         order = a.surface_order.split(",")
@@ -189,7 +264,7 @@ def build_lod(mesh, a, mmap, stock_by_short, stock_inv, bone_index, problems, tr
     surfaces, materials, inv_mip = [], [], []
     for src in srcs:
         for part in split_surface(src):
-            s = build_surface(part, bone_index, problems, vbase)
+            s = build_surface(part, bone_index, problems, vbase, camo=part["material"] in camo_mats)
             if transfer:
                 transfer.apply(s)
             vbase += s.vert_count
@@ -213,6 +288,9 @@ def main(argv=None):
     ap.add_argument("--lods", default="", help="extra LODs 'mesh1.json:dist1,mesh2.json:dist2' (decimated exports, "
                                                "increasing distance; the last distance is the cull distance)")
     ap.add_argument("--report", default="")
+    ap.add_argument("--camo-materials", default="", help="comma list of Blender material names whose surfaces get "
+                                                         "camo UV records (flag 0x400) for _2uvt camo materials")
+    ap.add_argument("--inv-mip-map", default="", help="json {iw7 material: invHighMipRadius u16} for new materials")
     ap.add_argument("--transfer-from", default="",
                     help="stock LOD0 .xsb of the base model: copy per-vertex self-visibility and SH probe simplex "
                          "records from the nearest stock vertex (required for 'mopw' hero materials)")
@@ -248,6 +326,10 @@ def main(argv=None):
         if mat and k < len(base.inv_high_mip):
             stock_inv.setdefault(mat, base.inv_high_mip[base_lod0[2] + k])
 
+    if a.inv_mip_map:
+        stock_inv.update(json.load(open(a.inv_mip_map)))
+    camo_mats = set(x for x in a.camo_materials.split(",") if x)
+
     lod_specs = [(mesh, a.lod_dist)]
     for item in [x for x in a.lods.split(",") if x]:
         path, dist = item.rsplit(":", 1)
@@ -258,7 +340,7 @@ def main(argv=None):
     all_mats, all_inv, lods, vbase = [], [], [], 0
     for li, (lm, dist) in enumerate(lod_specs):
         surfaces, materials, inv_mip, vbase = build_lod(lm, a, mmap, stock_by_short, stock_inv, bone_index,
-                                                        problems, transfer, vbase)
+                                                        problems, transfer, vbase, camo_mats)
         ms = xsurface.ModelSurfs()
         ms.name = "%s_lod%d" % (a.name, li)
         ms.head_ptrs = (1, 1)
@@ -306,7 +388,7 @@ def main(argv=None):
         open(os.path.join(a.out, "xsurface", l["ms"].name + ".xsb"), "wb").write(xsb)
     open(os.path.join(a.out, "xmodel", a.name + ".xmb"), "wb").write(xmb)
     rep = {"name": a.name, "surfaces": [{"material": mt, "verts": s.vert_count, "tris": s.tri_count,
-                                         "blend_counts": s.blend_counts[:4]}
+                                         "blend_counts": s.blend_counts[:4], "flags": hex(s.flags)}
                                         for s, mt in zip(lods[0]["ms"].surfs, lods[0]["materials"])],
            "lods": [{"dist": l["dist"], "surfaces": l["count"], "tris": sum(s.tri_count for s in l["ms"].surfs)}
                     for l in lods],
