@@ -72,6 +72,8 @@ while (-not $lease) {
     } catch {
         $message = $_.Exception.Message
         $retry = if (Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue) { Test-IW7RetryableRefusal $message } else { $message -like 'Resource busy:*' }
+        # the scheduler's state lock held by another caller for a moment (12 Nov 2026: a readback ended on it)
+        if ($message -like 'Resource admission lock busy*') { $retry = $true }
         if (-not $retry -or [datetime]::UtcNow -ge $until) { Refuse "no lease: $message" }
         Start-Sleep -Seconds 5
     }
@@ -127,7 +129,11 @@ try {
     $seconds = [int]$watch.Elapsed.TotalSeconds
     if ($state -eq 'running') { $state = if ($p.ExitCode -eq 0) { 'finished' } else { "exit-$($p.ExitCode)" } }
 } finally {
-    & { Set-StrictMode -Off; Exit-IW7ResourceLease -Token $lease.Token }
+    $exitUntil = [datetime]::UtcNow.AddMinutes(2)
+    while ($true) {
+        try { & { Set-StrictMode -Off; Exit-IW7ResourceLease -Token $lease.Token }; break }
+        catch { if ($_.Exception.Message -notlike 'Resource admission lock busy*' -or [datetime]::UtcNow -ge $exitUntil) { throw }; Start-Sleep -Seconds 2 }
+    }
 }
 
 $dump = Join-Path $Work "dump/$ZoneName"
