@@ -464,7 +464,8 @@ try {
     & ./tools/premake5.exe vs2022
     if ($LASTEXITCODE) { throw 'ZoneTool project generation failed.' }
     . "$PSScriptRoot/Resource-Scheduler.Core.ps1"
-    Invoke-IW7ResourceJob -Scope $repo -Owner 'ZoneTool native build' -PhysicalBytes (4GB * $BuildJobs) -CommitBytes (6GB * $BuildJobs) -Body {
+    $named=@{}; if((Get-Command Invoke-IW7ResourceJob).Parameters.ContainsKey('Resources')){ $named.Resources=@("native-build:$repo") }
+    Invoke-IW7ResourceJob -Scope $repo -Owner 'ZoneTool native build' -PhysicalBytes (4GB * $BuildJobs) -CommitBytes (6GB * $BuildJobs) @named -Body {
         & "$installation/MSBuild/Current/Bin/MSBuild.exe" build/x64-zt.sln "/m:$BuildJobs" /nr:false /v:minimal /p:Configuration=Release /p:Platform=x64 /p:MultiProcessorCompilation=false
         if ($LASTEXITCODE) { throw 'ZoneTool native build failed.' }
     }
