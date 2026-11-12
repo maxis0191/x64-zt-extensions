@@ -65,7 +65,8 @@ function Invoke-EnemyToolBuild([string]$Project, [string]$Log, [string]$Target =
     if ($LASTEXITCODE) { throw "Enemy-tool compilation failed; inspect $Log" }
 }
 
-Invoke-IW7ResourceJob -Scope $source -Kind Build -Owner 'Pinned enemy ZoneTool and asset-free tests' -PhysicalBytes 4GB -CommitBytes 6GB -Body {
+$named=@{}; if((Get-Command Invoke-IW7ResourceJob).Parameters.ContainsKey('Resources')){ $named.Resources=@("native-build:$source") }
+Invoke-IW7ResourceJob -Scope $source -Kind Build -Owner 'Pinned enemy ZoneTool and asset-free tests' -PhysicalBytes 4GB -CommitBytes 6GB @named -Body {
     if (!(Test-Path -LiteralPath $source)) {
         # Only a newly created clone may be checked out. Existing branches stay put.
         New-Item -ItemType Directory -Path (Split-Path $source -Parent) -Force | Out-Null
