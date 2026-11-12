@@ -105,7 +105,13 @@ try {
     $watch = [Diagnostics.Stopwatch]::StartNew()
     $p = Start-Process -FilePath (Join-Path $Work 'zonetool.exe') -ArgumentList $arguments -WorkingDirectory $Work `
         -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru -NoNewWindow
-    & { Set-StrictMode -Off; Add-IW7ResourceProcess -Token $lease.Token -ProcessId $p.Id }
+    # the scheduler's busy state lock is a wait here too: an exception here went to the release while the loader still
+    # ran, the lease stayed held and the loader was orphaned (12 Nov 2026)
+    $addUntil = [datetime]::UtcNow.AddMinutes(2)
+    while ($true) {
+        try { & { Set-StrictMode -Off; Add-IW7ResourceProcess -Token $lease.Token -ProcessId $p.Id }; break }
+        catch { if ($_.Exception.Message -notlike 'Resource admission lock busy*' -or [datetime]::UtcNow -ge $addUntil) { throw }; Start-Sleep -Seconds 2 }
+    }
     $state = 'running'
     $read = 0L
     while (-not $p.WaitForExit(1000)) {
@@ -129,6 +135,9 @@ try {
     $seconds = [int]$watch.Elapsed.TotalSeconds
     if ($state -eq 'running') { $state = if ($p.ExitCode -eq 0) { 'finished' } else { "exit-$($p.ExitCode)" } }
 } finally {
+    # a failure above must not leave the loader running behind a released (or retained) lease
+    $loader = Get-Variable -Name p -ValueOnly -ErrorAction SilentlyContinue
+    if ($loader -and -not $loader.HasExited) { $loader.Kill(); [void]$loader.WaitForExit(15000) }
     $exitUntil = [datetime]::UtcNow.AddMinutes(2)
     while ($true) {
         try { & { Set-StrictMode -Off; Exit-IW7ResourceLease -Token $lease.Token }; break }
